@@ -147,7 +147,7 @@ class LinuxProfilingContext(PosixProfilingContext):
           "(echo 'Authenticating with gcert:'; gcert)",
           shell=True)
       size = len(perf_files)
-      items = zip(perf_files, [run_details_json] * size)
+      items = zip(perf_files, [run_details_json] * size, strict=True)
       urls: list[str] = []
       if self.browser_platform.is_remote:
         # Use loop, as we cannot easily serialize the remote platform.

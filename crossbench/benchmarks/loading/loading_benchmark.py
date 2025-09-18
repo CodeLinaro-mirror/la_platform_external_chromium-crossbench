@@ -28,6 +28,7 @@ from crossbench.parse import DurationParser, ObjectParser
 if TYPE_CHECKING:
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.stories.story import Story
 
 
@@ -137,7 +138,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         "possible actions check config/doc/pages.config.hjson")
 
   @classmethod
-  def add_page_config_parser(cls, parser) -> None:
+  def add_page_config_parser(cls, parser: argparse.ArgumentParser) -> None:
     page_config_group = parser.add_mutually_exclusive_group()
     # TODO: move --stories into mutually exclusive group as well
     page_config_group.add_argument(
@@ -274,8 +275,7 @@ class LoadingBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def add_cli_parser(
-      cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
+  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
     cls.STORY_FILTER_CLS.add_cli_arguments(parser)
     return parser

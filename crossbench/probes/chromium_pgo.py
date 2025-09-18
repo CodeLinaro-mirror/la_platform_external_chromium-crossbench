@@ -126,9 +126,7 @@ class ChromiumPgoProbeContextAndroid(ChromiumPgoProbeContext):
         "id": self.PGO_CMD_ID
     }
     logging.debug("Triggering PGO dump.")
-    devtools_client = self._get_devtools_client()
-    # Ensure devtools_client is connected before sending command
-    with devtools_client:
+    with self._get_devtools_client().open() as devtools_client:
       success, _ = devtools_client.send_command(request)
       if success:
         logging.info("PGO dump triggered successfully.")

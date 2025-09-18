@@ -131,7 +131,7 @@ def merge_csv(csv_list: Sequence[LocalPath],
 
   # Fill in the header column taken from the first file
   if headers:
-    table_headers = [None] * row_header_len
+    table_headers: list[str | None] = [None] * row_header_len
   else:
     table_headers = []
 
@@ -176,8 +176,10 @@ def _detect_row_header_len(row: list[str]) -> int:
 
 
 def _merge_csv_append(csv_data: list[list[Any]], table: list[list[Any]],
-                      table_headers, row_header_len: int, headers,
-                      known_row_headers, table_row_len) -> int:
+                      table_headers: list[str | None], row_header_len: int,
+                      headers: Optional[list[str]],
+                      known_row_headers: Set[tuple[str, ...]],
+                      table_row_len: int) -> int:
   # Find the max row width in added csv_data.
   max_csv_row_len = max(len(row) for row in csv_data) - row_header_len
   if table:

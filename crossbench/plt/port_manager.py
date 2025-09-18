@@ -175,7 +175,7 @@ class PortManager(abc.ABC):
     self._port_scope: PortScope = PortScope(self, None)
     self._start()
 
-  def _start(self):
+  def _start(self) -> None:
     assert not self._is_active, f"Cannot activate {self} twice"
     assert self._port_scope.is_empty, "Expected empty port scope"
     self._is_active = True
@@ -203,12 +203,12 @@ class PortManager(abc.ABC):
       finally:
         self._port_scope = old_scope
 
-  def assert_is_active(self):
+  def assert_is_active(self) -> None:
     if not self._is_active:
       raise PortForwardException("Need active PortManager")
 
   @property
-  def is_empty(self):
+  def is_empty(self) -> bool:
     return self._port_scope.is_empty and not self.has_nested_scopes
 
   @property
@@ -231,7 +231,7 @@ class PortManager(abc.ABC):
         self._stop_scoped_ports(port_scope, exceptions)
     exceptions.assert_success("Could not stop all port forwarding")
 
-  def _stop_current_scoped_ports(self):
+  def _stop_current_scoped_ports(self) -> None:
     exceptions = exception.Annotator(self._throw)
     self._stop_scoped_ports(self._port_scope, exceptions)
     exceptions.assert_success("Could not stop all port forwarding")

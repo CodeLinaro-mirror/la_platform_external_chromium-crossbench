@@ -92,7 +92,7 @@ class ConfigArgParser:
       return
 
     signature = None
-    if getattr(self.type, "__module__") != "builtins":
+    if hasattr(self.type, "__module__") and self.type.__module__ != "builtins":
       try:
         signature = inspect.signature(self.type)
       except ValueError as e:
@@ -306,7 +306,7 @@ class ConfigArgParser:
       return self.parse_list_data(data, depending_kwargs)
     return self.parse_data(data, depending_kwargs)
 
-  def _pop_alias(self, config_data) -> Optional[Any]:
+  def _pop_alias(self, config_data: dict[str, Any]) -> Optional[Any]:
     value: Any | None = None
     found: bool = False
     for alias in self.aliases:
@@ -329,7 +329,7 @@ class ConfigArgParser:
         raise ValueError(
             f"{arg_name}.depends_on['{arg_name}'] was not provided.")
 
-  def _validate_no_aliases(self, config_data) -> None:
+  def _validate_no_aliases(self, config_data: dict[str, Any]) -> None:
     for alias in self.aliases:
       if alias in config_data:
         raise ValueError(
@@ -380,7 +380,7 @@ class ConfigArgParser:
     return self.type(data, **depending_kwargs)
 
   def parse_config_object(self, config_object_type: Type[ConfigObject],
-                          data) -> Any:
+                          data: Any) -> Any:
     config_object: ConfigObject = config_object_type.parse(data)
     return config_object.to_argument_value()
 
@@ -711,7 +711,7 @@ class TemplateArg:
   value: Any
   used: bool = False
 
-  def __post_init__(self):
+  def __post_init__(self) -> None:
     if not self.name:
       raise argparse.ArgumentTypeError("name cannot be empty")
 

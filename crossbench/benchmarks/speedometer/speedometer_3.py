@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.runner.actions import Actions
   from crossbench.stories.story import Story
   from crossbench.types import Json
@@ -353,8 +354,7 @@ class Speedometer3Benchmark(SpeedometerBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def add_cli_parser(
-      cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
+  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
     parser.add_argument(
         "--detailed-metrics",

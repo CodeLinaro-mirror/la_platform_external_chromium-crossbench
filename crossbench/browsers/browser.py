@@ -280,7 +280,7 @@ class Browser(abc.ABC):
         "log": {}
     }
 
-  def validate(self):
+  def validate(self) -> None:
     self.validate_flags()
     self.validate_binary()
 

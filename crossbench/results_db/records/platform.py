@@ -20,7 +20,7 @@ class PlatformRecord(BaseRecord):
   __tablename__ = "platform"
 
   @classmethod
-  def create(cls, session, platform: Platform) -> Self:
+  def create(cls, session: orm.Session, platform: Platform) -> Self:
     del session
     os_details = platform.os_details()
     cpu_details = platform.cpu_details()

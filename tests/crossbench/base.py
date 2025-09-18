@@ -12,7 +12,7 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Final, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Final, Iterator, Optional, Sequence, Type
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -34,7 +34,6 @@ from crossbench.cli.config.env import EnvConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
-from crossbench.helper.wake_lock import WakeLock
 from crossbench.probes.perfetto.perfetto import TraceConfig
 from crossbench.runner.runner import Runner
 from tests.crossbench import mock_browser
@@ -61,10 +60,11 @@ class CrossbenchFakeFsTestCase(
     sleep_patcher = mock.patch("time.sleep", return_value=None)
     self.sleep_mock = sleep_patcher.start()
     self.addCleanup(sleep_patcher.stop)
+
     # This is platform specific and causes issues pending sh commands
-    self.sleep_preventer_patcher = mock.patch.object(WakeLock, "__enter__")
-    self.addCleanup(self.sleep_preventer_patcher.stop)
-    self.sleep_preventer_patcher.start()
+    self.wakelock_patcher = mock.patch.object(plt.PLATFORM, "wakelock")
+    self.addCleanup(self.wakelock_patcher.stop)
+    self.wakelock_patcher.start()
 
   def create_file(self, path_str: str, contents: str = "") -> pathlib.Path:
     path = pathlib.Path(path_str)
@@ -233,7 +233,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     patcher.start()
 
   @contextlib.contextmanager
-  def capture_io(self):
+  def capture_io(self) -> Iterator[IoCapture]:
     io_capture = IoCapture()
     with mock.patch(
         "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
@@ -254,7 +254,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     return cli, io_capture.stdout, io_capture.stderr
 
   @contextlib.contextmanager
-  def _patch_get_runner(self):
+  def _patch_get_runner(self) -> Iterator[None]:
     with mock.patch.object(
         BenchmarkSubcommand, "_get_runner", side_effect=self._mock_get_runner):
       yield
@@ -278,7 +278,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     return runner
 
   @contextlib.contextmanager
-  def _patch_sys_exit(self):
+  def _patch_sys_exit(self) -> Iterator[None]:
     with mock.patch(
         "sys.exit", side_effect=SysExitTestException), mock.patch.object(
             plt, "PLATFORM", self.platform):
@@ -287,7 +287,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
   @contextlib.contextmanager
   def _patch_get_browser_cls(self,
                              return_value: Optional[Type[Browser]] = None,
-                             **kwargs):
+                             **kwargs) -> Iterator[mock.MagicMock]:
     if not kwargs:
       kwargs["return_value"] = return_value or mock_browser.MockChromeStable
     with mock.patch.object(BaseBrowserVariantsConfig, "get_browser_cls",
@@ -295,7 +295,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
       yield patcher
 
   @contextlib.contextmanager
-  def cli(self, enable_logging: bool = False):
+  def cli(self, enable_logging: bool = False) -> Iterator[MockCLI]:
     cli = MockCLI(platform=self.platform, enable_logging=enable_logging)
     with self._patch_sys_exit(), self._patch_get_runner():
       yield cli
@@ -314,7 +314,8 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
 
   @contextlib.contextmanager
   def _patch_get_browser(self,
-                         return_value: Optional[Sequence[Browser]] = None):
+                         return_value: Optional[Sequence[Browser]] = None
+                        ) -> Iterator[None]:
     if not return_value:
       return_value = self.browsers
     with mock.patch.object(

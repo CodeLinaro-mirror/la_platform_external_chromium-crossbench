@@ -25,6 +25,7 @@ if TYPE_CHECKING:
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.runner.run import Run
 
 
@@ -75,11 +76,11 @@ class PowerlineStory(Story):
       logging.info("Stopping benchmark...")
 
   @classmethod
-  def url_from_story(cls, name):
+  def url_from_story(cls, name: str) -> str:
     return cls.URL_BASE + cls.STORY_URLS[name]
 
   @classmethod
-  def should_remute(cls, name):
+  def should_remute(cls, name: str) -> bool:
     return name.endswith("_muted")
 
   @classmethod
@@ -134,8 +135,7 @@ class PowerlineBenchmark(Benchmark):
 
   @classmethod
   @override
-  def add_cli_parser(
-    cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
+  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
     parser.add_argument(
         "--run-for",

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import contextlib
 import os
+from typing import Iterator
 from unittest import mock, skipIf
 
 import pyfakefs
@@ -127,18 +128,18 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
         "FILE1\nFILE2\n")
 
   @contextlib.contextmanager
-  def mock_popen(self, platform):
+  def mock_popen(self, platform) -> Iterator[mock.MagicMock]:
     with mock.patch.object(type(platform), "popen") as patcher:
       yield patcher
 
   @contextlib.contextmanager
-  def mock_get_free_port(self, platform, port):
+  def mock_get_free_port(self, platform, port) -> Iterator[mock.MagicMock]:
     with mock.patch.object(
         type(platform), "get_free_port", return_value=port) as patcher:
       yield patcher
 
   @contextlib.contextmanager
-  def mock_wait_for_port(self, platform):
+  def mock_wait_for_port(self, platform) -> Iterator[mock.MagicMock]:
     with mock.patch.object(type(platform), "wait_for_port") as patcher:
       yield patcher
 

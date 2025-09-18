@@ -186,7 +186,7 @@ class ActionBlockListConfig(ConfigObject):
       raise ValueError(
           "Invalid data: Expected a list of either blocks or actions.")
 
-    def block_config_data_gen():
+    def block_config_data_gen() -> Iterator[tuple[int, str | None, dict]]:
       for index, block_config in enumerate(config):
         with exception.annotate_argparsing(f"Parsing {info} ...[{index}]"):
           block_config = ObjectParser.dict(block_config, f"blocks[{index}]")
@@ -209,7 +209,7 @@ class ActionBlockListConfig(ConfigObject):
   def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
     config = ObjectParser.non_empty_dict(config, "blocks")
 
-    def block_config_data_gen():
+    def block_config_data_gen() -> Iterator[tuple[int, str | None, dict]]:
       for index, (label, block_data) in enumerate(config.items()):
         with exception.annotate_argparsing(
             f"Parsing action block  ...[{label}]"):
@@ -218,7 +218,9 @@ class ActionBlockListConfig(ConfigObject):
     return cls._parse_blocks(block_config_data_gen())
 
   @classmethod
-  def _parse_blocks(cls, block_config_data_gen) -> Self:
+  def _parse_blocks(
+      cls, block_config_data_gen: Iterator[tuple[int, str | None,
+                                                 dict]]) -> Self:
     blocks: list[ActionBlock] = []
     for index, label, block_data in block_config_data_gen:
       block = cls._parse_block(index, label, block_data)
@@ -226,7 +228,8 @@ class ActionBlockListConfig(ConfigObject):
     return cls(tuple(blocks))
 
   @classmethod
-  def _parse_block(cls, index: int, label: str, block_data: Any) -> ActionBlock:
+  def _parse_block(cls, index: int, label: str | None,
+                   block_data: Any) -> ActionBlock:
     if isinstance(block_data, dict):
       # Early warning for better usability.
       if inner_label := block_data.get("label"):

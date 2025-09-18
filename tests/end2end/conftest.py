@@ -151,7 +151,7 @@ def session_patch_chrome_stable(browser_path):
 
 
 @contextlib.contextmanager
-def mock_patch_chrome_stable(browser_path):
+def mock_patch_chrome_stable(browser_path) -> Iterator[None]:
   is_chromium = is_browser_path_chromium(browser_path)
   original_get_browser_cls = BrowserVariantsConfig.get_browser_cls
 

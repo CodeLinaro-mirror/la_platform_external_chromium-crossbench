@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import abc
 import contextlib
 import logging
 from typing import TYPE_CHECKING, Final, Iterator, Optional, TypeVar
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 GS_PREFIX: Final[str] = "gs://"
 
 
-class ReplayNetwork(Network):
+class ReplayNetwork(Network, metaclass=abc.ABCMeta):
   """ A network implementation that can be used to replay requests
   from a an archive."""
 
@@ -58,7 +59,8 @@ class ReplayNetwork(Network):
             yield self
 
   @contextlib.contextmanager
-  def _open_replay_server(self, session: BrowserSessionRunGroup):
+  def _open_replay_server(self,
+                          session: BrowserSessionRunGroup) -> Iterator[None]:
     del session
     yield
 

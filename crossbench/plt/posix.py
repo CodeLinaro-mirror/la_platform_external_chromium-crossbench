@@ -28,7 +28,7 @@ if TYPE_CHECKING:
   import subprocess
 
   from crossbench.plt.signals import AnyPosixSignals, Signals
-  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessLike
+  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo, ProcessLike
   from crossbench.types import JsonDict
 
 
@@ -114,7 +114,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
     if core_ids:
       if len(core_ids) == len(physical_ids):
-        pairs = set(zip(core_ids, physical_ids))
+        pairs = set(zip(core_ids, physical_ids, strict=True))
         return len(pairs)
       logging.debug("Invalid cpuinfo data: Cannot determine core counts.")
 
@@ -393,6 +393,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     # TODO: implement stdin bypass for small content
     dest_file = self.path(file)
     with self.host_platform.NamedTemporaryFile("push.data") as tmp_file:
+      tmp_file = self.host_platform.local_path(tmp_file)
       self.host_platform.write_text(tmp_file, data, encoding=encoding)
       self.push(tmp_file, dest_file)
 
@@ -404,6 +405,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     # TODO: implement stdin bypass for small content
     dest_file = self.path(file)
     with self.host_platform.NamedTemporaryFile("push.data") as tmp_file:
+      tmp_file = self.host_platform.local_path(tmp_file)
       self.host_platform.write_bytes(tmp_file, data)
       self.push(tmp_file, dest_file)
 
@@ -561,9 +563,9 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
             *args: CmdArg,
             bufsize: int = -1,
             shell: bool = False,
-            stdout=None,
-            stderr=None,
-            stdin=None,
+            stdout: ProcessIo = None,
+            stderr: ProcessIo = None,
+            stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
             quiet: bool = False) -> subprocess.Popen:
     del shell

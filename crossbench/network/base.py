@@ -96,3 +96,7 @@ class Network(abc.ABC):
         yield self
     finally:
       self._is_running = False
+
+  @abc.abstractmethod
+  def __str__(self) -> str:
+    pass

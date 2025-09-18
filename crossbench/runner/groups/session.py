@@ -311,7 +311,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         self.raw_session_dir.symlink_to(self.path)
 
   @contextlib.contextmanager
-  def _start_network(self, is_dry_run: bool = False):
+  def _start_network(self, is_dry_run: bool = False) -> Iterator[None]:
     logging.debug("Starting network: %s", self.network)
     if is_dry_run:
       yield
@@ -321,7 +321,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         yield
 
   @contextlib.contextmanager
-  def _start_probes(self, is_dry_run: bool):
+  def _start_probes(self, is_dry_run: bool) -> Iterator[None]:
     with self._exceptions.annotate("Starting Session Probes"):
       with self._probe_session_context_manager.open(is_dry_run):
         yield

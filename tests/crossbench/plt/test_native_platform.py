@@ -143,7 +143,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.assertTrue(self.platform.is_dir(path))
       if self.platform.is_local:
         self.assertTrue(path.is_dir())
-      with self.assertRaises(Exception):
+      with self.assertRaisesRegex(Exception, str(path.parent)):
         self.platform.rm(path.parent)
       self.platform.rm(path.parent, dir=True)
       self.assertFalse(self.platform.exists(path))
@@ -644,9 +644,9 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     env = self.platform.environ
     custom_key = f"CROSSBENCH_TEST_KEY_{len(env)}"
     self.assertNotIn(custom_key, env)
-    with self.assertRaises(Exception):
+    with self.assertRaises(NotImplementedError):
       env[custom_key] = 1234
-    with self.assertRaises(Exception):
+    with self.assertRaises(NotImplementedError):
       env[custom_key] = "1234"
 
   def test_environ_set_property(self):
@@ -655,7 +655,7 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     env = self.platform.environ
     custom_key = f"CROSSBENCH_TEST_KEY_{len(env)}"
     self.assertNotIn(custom_key, env)
-    with self.assertRaises(Exception):
+    with self.assertRaises(TypeError):
       env[custom_key] = 1234
     env[custom_key] = "1234"
     self.assertEqual(env[custom_key], "1234")

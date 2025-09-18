@@ -7,7 +7,8 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Set, Type
+from typing import (TYPE_CHECKING, Any, Final, Iterable, Optional, Sequence,
+                    Set, Type)
 
 from crossbench import exception
 from crossbench import path as pth
@@ -18,7 +19,6 @@ from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import collection_helper
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.helper.wait import WaitRange
-from crossbench.helper.wake_lock import WakeLock
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal.summary import ResultsSummaryProbe
@@ -97,6 +97,9 @@ class RunnerState(BaseState):
   SETUP = enum.auto()
   RUNNING = enum.auto()
   TEARDOWN = enum.auto()
+
+
+_DEFAULT_TIMING: Final[Timing] = Timing()
 
 class Runner:
 
@@ -235,7 +238,7 @@ class Runner:
                repetitions: int = 1,
                warmup_repetitions: int = 0,
                cache_temperatures: Iterable[str] = ("default",),
-               timing: Timing = Timing(),
+               timing: Timing = _DEFAULT_TIMING,
                cool_down_threshold: Optional[ThermalStatus] = None,
                thread_mode: ThreadMode = ThreadMode.NONE,
                throw: bool = False,
@@ -466,7 +469,7 @@ class Runner:
 
   def run(self, is_dry_run: bool = False) -> None:
     self._state.expect(RunnerState.INITIAL)
-    with WakeLock(self._platform):
+    with self._platform.wakelock():
       with self._exceptions.annotate("Preparing"):
         self._setup()
       with self._exceptions.capture("Running"):

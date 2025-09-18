@@ -180,5 +180,5 @@ class ChromeExtensions(Freezable):
       return flag
     return f"{flag}={value}"
 
-  def __bool__(self):
+  def __bool__(self) -> bool:
     return bool(self.extensions) or self._mode is not ExtensionsMode.DEFAULT

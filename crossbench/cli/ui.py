@@ -91,13 +91,14 @@ DEFAULT_INTERVAL_S: Final[float] = 0.5
 
 @contextlib.contextmanager
 def timer(msg: str = "Elapsed Time",
-          update_interval=DEFAULT_INTERVAL_S) -> Iterator[None]:
+          update_interval: float = DEFAULT_INTERVAL_S) -> Iterator[None]:
   if not IS_ATTY:
     yield
     return
 
   start_time = dt.datetime.now()
-  def print_timer():
+
+  def print_timer() -> None:
     delta = dt.datetime.now() - start_time
     write_indented(f"{msg}: {format_duration(delta)}")
   with RepeatTimer(interval=update_interval, function=print_timer):
@@ -108,14 +109,15 @@ def timer(msg: str = "Elapsed Time",
 @contextlib.contextmanager
 def countdown(duration: dt.timedelta,
               msg: str = "Waiting",
-              update_interval=DEFAULT_INTERVAL_S) -> Iterator[None]:
+              update_interval: float = DEFAULT_INTERVAL_S) -> Iterator[None]:
   if not IS_ATTY:
     print(f"{msg}: {format_duration(duration)}")
     yield
     return
 
   start_time = dt.datetime.now()
-  def print_timer():
+
+  def print_timer() -> None:
     delta = dt.datetime.now() - start_time
     time_left = duration - delta
     write_indented(f"{msg}: {format_duration(time_left)}")
@@ -137,5 +139,7 @@ class RepeatTimer(threading.Timer):
     self.cancel()
 
 
-def spinner(sleep: float = 0.5, title: str = "") -> Spinner:
-  return Spinner(IS_ATTY, sleep, title)
+@contextlib.contextmanager
+def spinner(sleep: float = 0.5, title: str = "") -> Iterator[Spinner]:
+  with Spinner(IS_ATTY, sleep, title).open() as spinner_instance:
+    yield spinner_instance

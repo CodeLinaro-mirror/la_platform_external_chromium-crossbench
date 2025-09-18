@@ -84,7 +84,7 @@ def default_chromium_candidates(platform: Platform) -> tuple[pth.AnyPath, ...]:
   return tuple(candidates)
 
 
-def chromium_src_relative_local_path():
+def chromium_src_relative_local_path() -> pth.LocalPath:
   """Gets the local relative path of `chromium/src`.
 
   Assuming the cli.py path is `third_party/crossbench/crossbench/cli/cli.py`.

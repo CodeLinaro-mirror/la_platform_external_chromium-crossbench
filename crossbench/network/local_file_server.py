@@ -57,7 +57,7 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
     # Use a temporary class to bind arguments.
     class BoundDirectoryRequestHandler(cls):  # type: ignore
 
-      def __init__(self, *args, **kwargs):
+      def __init__(self, *args, **kwargs) -> None:
         super().__init__(
             *args,
             directory=os.fspath(server_dir),
@@ -156,7 +156,7 @@ class LocalFileNetwork(Network):
             yield self
 
   @contextlib.contextmanager
-  def _open_local_file_server(self):
+  def _open_local_file_server(self) -> Iterator[None]:
     # TODO: write request log file to session results folder.
     # TODO: support  https server using SSLContext.wrap_socket(httpd.socket)
     request_handler_cls = CustomHeadersRequestHandler.bind(
@@ -184,7 +184,7 @@ class LocalFileNetwork(Network):
         server_thread.join()
 
   @contextlib.contextmanager
-  def _forward_ports(self, session: BrowserSessionRunGroup) -> Iterator:
+  def _forward_ports(self, session: BrowserSessionRunGroup) -> Iterator[None]:
     browser_platform = session.browser_platform
     ports = browser_platform.ports
     if browser_platform.is_remote:
@@ -214,6 +214,7 @@ class LocalFileNetwork(Network):
   def host(self) -> Optional[str]:
     return self._host
 
+  @override
   def __str__(self) -> str:
     extra_headers_str = ""
     if self._extra_headers:

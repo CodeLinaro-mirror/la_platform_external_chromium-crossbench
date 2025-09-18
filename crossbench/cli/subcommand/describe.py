@@ -22,11 +22,14 @@ from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 
 if TYPE_CHECKING:
   import argparse
-  HelpData: TypeAlias = dict[str, dict[str, Any]]
+  from collections.abc import Mapping
+
   from crossbench.config import ConfigParser
 
+  HelpData: TypeAlias = dict[str, dict[str, Any]]
 
-def get_all_subclasses(cls) -> set:
+
+def get_all_subclasses(cls: Type) -> set:
   """
     Recursively gets all subclasses of a given class.
     """
@@ -38,7 +41,7 @@ def get_all_subclasses(cls) -> set:
   return all_subclasses
 
 
-def is_abstract(cls) -> bool:
+def is_abstract(cls: Type) -> bool:
   return bool(getattr(cls, "__abstractmethods__", False))
 
 
@@ -149,7 +152,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
     if not printed_any:
       self.no_match_error(search_str)
 
-  def help_data(self, category: str, search_str) -> HelpData:
+  def help_data(self, category: str, search_str: str | None) -> HelpData:
     data: HelpData = {
         "benchmarks": {},
         "probes": {},
@@ -223,7 +226,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
                     "or config objects found")
     self.choice_error(base_message, search_str, self.CATEGORIES)
 
-  def choice_error(self, message, search_str: str | None,
+  def choice_error(self, message: str, search_str: str | None,
                    choices: Sequence[str]) -> None:
     if search_str:
       choices_message, alternative = close_matches_message(search_str, choices)
@@ -263,7 +266,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
                                      table, self.config_object_names())
 
   def format_property_table(self, data: dict[str, Any],
-                            table: list[list[str | None]]):
+                            table: list[list[str | None]]) -> None:
     max_width: int = 50
     for name, values in data.items():
       table.append([name])
@@ -332,7 +335,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
 
   def _config_object_help_data(
       self, search_str: str | None) -> dict[str, dict[str, Any]]:
-    usage_lookup = defaultdict(list)
+    usage_lookup: dict[str, list[str]] = defaultdict(list)
     config_parsers: list[ConfigParser] = []
     for config_object_cls in self.config_classes():
       config_parser: ConfigParser = config_object_cls.config_parser()
@@ -346,14 +349,16 @@ class DescribeSubcommand(CrossbenchSubcommand):
     ]
     return self._config_parser_help_data(config_parsers, usage_lookup)
 
-  def _config_parser_help_data(self,
-                               config_parsers: list[ConfigParser],
-                               usage_lookup=None) -> dict[str, dict[str, Any]]:
+  def _config_parser_help_data(
+      self,
+      config_parsers: list[ConfigParser],
+      usage_lookup: Optional[Mapping[str, list[str]]] = None
+  ) -> dict[str, dict[str, Any]]:
     config_data: dict[str, dict[str, Any]] = {}
     for config_parser in config_parsers:
-      help_data = dict(config_parser.help_text_items)
+      help_data: dict[str, str] = dict(config_parser.help_text_items)
       if usage_lookup:
         if used_in := usage_lookup[config_parser.cls_name]:
-          help_data["used-in"] = used_in
+          help_data["used-in"] = ", ".join(used_in)
       config_data[config_parser.key] = help_data
     return config_data

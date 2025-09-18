@@ -18,7 +18,7 @@ if TYPE_CHECKING:
   TrafficShaperT = TypeVar("TrafficShaperT", bound="TrafficShaper")
 
 
-class TrafficShaper(abc.ABC):
+class TrafficShaper(abc.ABC):  # noqa: B024
 
   def __init__(self, browser_platform: Platform) -> None:
     self._browser_platform: Final[Platform] = browser_platform
@@ -57,6 +57,6 @@ class TrafficShaper(abc.ABC):
       self._is_running = False
 
   @contextlib.contextmanager
-  def pause(self):
+  def pause(self) -> Iterator[None]:
     """Temporarily pause traffic shaping if supported."""
     yield None

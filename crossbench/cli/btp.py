@@ -31,8 +31,8 @@ class MergedTraceUriResolver(TraceUriResolver):
 
   def __init__(self, result_path: pth.LocalPath) -> None:
 
-    def metadata(path) -> dict[str, str]:
-      parts = str(path).split("/")
+    def metadata(path: pth.LocalPath) -> dict[str, str]:
+      parts: tuple[str, ...] = path.parts
       return {
           "cb_browser": parts[-7],
           "cb_story": parts[-5],
@@ -46,7 +46,7 @@ class MergedTraceUriResolver(TraceUriResolver):
         TraceUriResolver.Result(trace=str(path), metadata=metadata(path))
         for path in listdir]
 
-  def resolve(self):
+  def resolve(self) -> list[TraceUriResolver.Result]:
     return self._resolved
 
 class BTPUtil:

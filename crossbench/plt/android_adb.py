@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
   from crossbench.plt.base import Platform
   from crossbench.plt.display_info import DisplayInfo
-  from crossbench.plt.types import CmdArg, ListCmdArgs
+  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo
   from crossbench.types import JsonDict
 
 # Defines the Android permissions to be granted.
@@ -197,9 +197,9 @@ class Adb:
            *args: CmdArg,
            shell: bool = False,
            capture_output: bool = False,
-           stdout=None,
-           stderr=None,
-           stdin=None,
+           stdout: ProcessIo = None,
+           stderr: ProcessIo = None,
+           stdin: ProcessIo = None,
            env: Optional[Mapping[str, str]] = None,
            quiet: bool = False,
            check: bool = True,
@@ -219,7 +219,7 @@ class Adb:
   def _adb_stdout(self,
                   *args: CmdArg,
                   quiet: bool = False,
-                  stdin=None,
+                  stdin: ProcessIo = None,
                   encoding: str = "utf-8",
                   use_serial_id: bool = True,
                   check: bool = True) -> str:
@@ -234,7 +234,7 @@ class Adb:
   def _adb_stdout_bytes(self,
                         *args: CmdArg,
                         quiet: bool = False,
-                        stdin=None,
+                        stdin: ProcessIo = None,
                         use_serial_id: bool = True,
                         check: bool = True) -> bytes:
     adb_cmd = self._build_adb_cmd(*args, use_serial_id=use_serial_id)
@@ -268,7 +268,7 @@ class Adb:
                    shell: bool = False,
                    quiet: bool = False,
                    encoding: str = "utf-8",
-                   stdin=None,
+                   stdin: ProcessIo = None,
                    env: Optional[Mapping[str, str]] = None,
                    check: bool = True) -> str:
     result = self.shell_stdout_bytes(
@@ -279,7 +279,7 @@ class Adb:
                          *args: CmdArg,
                          shell: bool = False,
                          quiet: bool = False,
-                         stdin=None,
+                         stdin: ProcessIo = None,
                          env: Optional[Mapping[str, str]] = None,
                          check: bool = True) -> bytes:
     # -e: choose escape character, or "none"; default '~'
@@ -297,9 +297,9 @@ class Adb:
             *args: CmdArg,
             shell: bool = False,
             capture_output: bool = False,
-            stdout=None,
-            stderr=None,
-            stdin=None,
+            stdout: ProcessIo = None,
+            stderr: ProcessIo = None,
+            stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
             quiet: bool = False,
             check: bool = True) -> subprocess.CompletedProcess:
@@ -597,7 +597,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return self.adb.getprop("ro.product.model")
 
   @property
-  def serial_id(self):
+  def serial_id(self) -> str:
     return self._adb.serial_id
 
   @functools.cached_property
@@ -736,9 +736,9 @@ class AndroidAdbPlatform(RemotePosixPlatform):
          *args: CmdArg,
          shell: bool = False,
          capture_output: bool = False,
-         stdout=None,
-         stderr=None,
-         stdin=None,
+         stdout: ProcessIo = None,
+         stderr: ProcessIo = None,
+         stdin: ProcessIo = None,
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
@@ -758,7 +758,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                       *args: CmdArg,
                       shell: bool = False,
                       quiet: bool = False,
-                      stdin=None,
+                      stdin: ProcessIo = None,
                       env: Optional[Mapping[str, str]] = None,
                       check: bool = True) -> bytes:
     return self.adb.shell_stdout_bytes(

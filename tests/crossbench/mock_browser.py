@@ -215,7 +215,8 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
           f"Number of JS arguments does not match. "
           f"Expected: {len(expectation.arguments)} Got: {len(arguments)}")
 
-      for expected_argument, argument in zip(expectation.arguments, arguments):
+      for expected_argument, argument in zip(
+          expectation.arguments, arguments, strict=True):
         assert expected_argument == argument, (
             f"Arguments do not match. "
             f"Expected: {expected_argument} Got: {argument}")

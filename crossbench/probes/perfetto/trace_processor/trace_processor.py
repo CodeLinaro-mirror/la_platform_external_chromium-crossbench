@@ -376,7 +376,7 @@ class TraceProcessorProbe(Probe):
     return LocalProbeResult(csv=csv_files, json=json_files)
 
   def _run_btp(self, group: BrowsersRunGroup) -> LocalProbeResult:
-    group_dir = group.get_local_probe_result_path(self)
+    group_dir: pth.LocalPath = group.get_local_probe_result_path(self)
     group_dir.mkdir()
     btp_config = BatchTraceProcessorConfig(tp_config=self.tp_config)
 
@@ -384,7 +384,7 @@ class TraceProcessorProbe(Probe):
         traces=CrossbenchTraceUriResolver(group.runs),
         config=btp_config) as btp:
 
-      def run_query(query: TraceProcessorQueryConfig):
+      def run_query(query: TraceProcessorQueryConfig) -> pth.LocalPath:
         csv_file = group_dir / f"{query.name}.csv"
         btp.query_and_flatten(query.sql).to_csv(
             path_or_buf=csv_file, index=False)
@@ -392,7 +392,7 @@ class TraceProcessorProbe(Probe):
 
       csv_files = list(map(run_query, self.queries))
 
-      def run_metric(metric: str):
+      def run_metric(metric: str) -> pth.LocalPath:
         json_file = group_dir / f"{pth.safe_filename(metric)}.json"
         protos = btp.metric([metric])
         with json_file.open("x") as f:
@@ -458,7 +458,7 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
 
   def _run_queries(self, tp: TraceProcessor) -> LocalProbeResult:
 
-    def run_query(query: TraceProcessorQueryConfig):
+    def run_query(query: TraceProcessorQueryConfig) -> pth.LocalPath:
       csv_file = self.local_result_path / f"{query.name}.csv"
       tp.query(query.sql).as_pandas_dataframe().to_csv(
           path_or_buf=csv_file, index=False)
@@ -470,7 +470,7 @@ class TraceProcessorProbeContext(ProbeContext[TraceProcessorProbe]):
 
   def _run_metrics(self, tp: TraceProcessor) -> LocalProbeResult:
 
-    def run_metric(metric: str):
+    def run_metric(metric: str) -> pth.LocalPath:
       json_file = self.local_result_path / f"{pth.safe_filename(metric)}.json"
       proto = tp.metric([metric])
       assert not json_file.exists(), (

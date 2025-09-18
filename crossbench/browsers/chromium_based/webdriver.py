@@ -70,7 +70,7 @@ class ChromiumBasedWebDriver(
     return None
 
   def _execute_cdp_cmd(self, driver: webdriver.Remote, cmd: str,
-                       cmd_args: dict):
+                       cmd_args: dict) -> Any:
     return driver.execute("executeCdpCommand", {
         "cmd": cmd,
         "params": cmd_args
@@ -145,7 +145,7 @@ class ChromiumBasedWebDriver(
     if hasattr(service, "log_file"):
       # TODO: remove once we upgrade the min selenium version
       # Workaround for older selenium versions which ignore the log_file kwarg.
-      setattr(service, "log_file", self._stdout_log_file)
+      service.log_file = self._stdout_log_file
 
     # TODO: support remote platforms
     driver = self._create_driver(options, service)

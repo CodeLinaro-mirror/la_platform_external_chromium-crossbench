@@ -10,7 +10,7 @@ import logging
 import sys
 import traceback as tb
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Self, Type
 
 from crossbench.helper import collection_helper, txt_helper
 
@@ -213,10 +213,12 @@ class ExceptionAnnotator:
                                     self._throw_cls)
 
   @contextlib.contextmanager
-  def annotate(self,
-               *stack_entries,
-               exceptions: TExceptionTypes = (Exception,),
-               ignore: TExceptionTypes = tuple()):
+  def annotate(
+      self,
+      *stack_entries,
+      exceptions: TExceptionTypes = (Exception,),
+      ignore: TExceptionTypes = tuple()
+  ) -> Iterator[Self]:
     """Sets info stack entries and rethrows an annotated
       MultiException by default ."""
     with self.capture(*stack_entries, exceptions=exceptions, ignore=ignore):

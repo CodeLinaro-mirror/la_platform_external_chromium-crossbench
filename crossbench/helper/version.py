@@ -54,7 +54,7 @@ class Version:
   def parts_str(self) -> str:
     return ".".join(map(str, self._parts))
 
-  def comparable_parts(self, padded_len) -> tuple[int, ...]:
+  def comparable_parts(self, padded_len: int) -> tuple[int, ...]:
     if self.is_complete:
       return self._parts
     padding = (self._MAX_PART_VALUE,) * (padded_len - len(self._parts))

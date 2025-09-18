@@ -123,7 +123,7 @@ class IOSPlatform(RemotePlatformMixin, Platform):
     return matches[0]
 
   @override
-  def _create_port_manager(self):
+  def _create_port_manager(self) -> IOSPortManager:
     return IOSPortManager(self)
 
   @property

@@ -33,13 +33,13 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_invalid_empty(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      self.parse_config({}).probes
+      _ = self.parse_config({}).probes
     with self.assertRaises(argparse.ArgumentTypeError):
-      self.parse_config({"foo": {}}).probes
+      _ = self.parse_config({"foo": {}})
 
   def test_invalid_names(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      self.parse_config({"probes": {"invalid probe name": {}}}).probes
+      _ = self.parse_config({"probes": {"invalid probe name": {}}}).probes
 
   def test_empty(self):
     config = self.parse_config({"probes": {}})

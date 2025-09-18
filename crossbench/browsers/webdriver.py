@@ -11,7 +11,7 @@ import os
 import time
 import traceback
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Sequence, cast
 
 import selenium.common.exceptions
 import urllib3
@@ -62,13 +62,13 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     executor = cast("RemoteConnection", self._private_driver.command_executor)
     return executor.client_config.timeout
 
-  def _set_http_timeout(self, timeout: float):
+  def _set_http_timeout(self, timeout: float) -> None:
     logging.debug("Setting http request timeout to %s", timeout)
     executor = cast("RemoteConnection", self._private_driver.command_executor)
     executor.client_config.timeout = timeout
 
   @contextmanager
-  def js_timeout(self, timeout: Optional[dt.timedelta]):
+  def js_timeout(self, timeout: Optional[dt.timedelta]) -> Iterator[None]:
     """
     A context manager method to temporarily adjust timeouts.
     """
@@ -296,8 +296,11 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       with self.js_timeout(timeout):
         return self._private_driver.execute_script(script, *arguments)
     except selenium.common.exceptions.WebDriverException as e:
+      # Do not include the webdriver exception since it adds a lot of noise
+      # with internal stack traces.
+      logging.debug("WebDriverException: %s", e)
       # pylint: disable=raise-missing-from
-      raise ValueError(f"Could not execute JS: {e.msg}")
+      raise ValueError(f"Could not execute JS: {e.msg}")  # noqa: B904
 
   def close_all_tabs(self) -> None:
     try:
@@ -392,7 +395,7 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
     pass
 
   @override
-  def _setup_cache_dir(self):
+  def _setup_cache_dir(self) -> None:
     pass
 
   def validate_binary(self) -> None:

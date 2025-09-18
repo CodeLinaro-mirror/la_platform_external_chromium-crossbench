@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Iterator, Optional, cast
 
 from typing_extensions import override
 
@@ -107,7 +107,7 @@ class InteractivePage(Page):
       logging.error("Failed to dump HTML on failure: %s", e)
 
   @contextlib.contextmanager
-  def _performance_mark_scope(self, run: Run, name: str):
+  def _performance_mark_scope(self, run: Run, name: str) -> Iterator[None]:
     browser: Browser = run.browser
     browser.performance_mark(f"{name}-start", self._name)
     yield

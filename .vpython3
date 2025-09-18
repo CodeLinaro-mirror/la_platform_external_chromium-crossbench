@@ -19,6 +19,11 @@ wheel: <
 >
 
 wheel: <
+  name: "infra/python/wheels/types-protobuf-py3"
+  version: "version:4.21.0.7"
+>
+
+wheel: <
   name: "infra/python/wheels/selenium-py3"
   version: "version:4.35.0"
 >
@@ -27,6 +32,7 @@ wheel: <
   name: "infra/python/wheels/psutil/${vpython_platform}"
   version: "version:5.8.0.chromium.3"
 >
+
 
 wheel: <
   name: "infra/python/wheels/websockets-py3"

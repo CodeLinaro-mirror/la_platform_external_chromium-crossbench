@@ -12,7 +12,7 @@ import shlex
 import subprocess
 import threading
 import time
-from typing import TYPE_CHECKING, Final, Optional, Sequence
+from typing import IO, TYPE_CHECKING, Final, Optional, Sequence
 
 from crossbench.helper.state import BaseState, StateMachine
 
@@ -27,13 +27,13 @@ DEFAULT_TIMEOUT: Final = dt.timedelta(seconds=10)
 
 class BackgroundReader(threading.Thread):
 
-  def __init__(self, stream, read_len: int) -> None:
+  def __init__(self, stream: IO[str], read_len: int) -> None:
     super().__init__()
     self.print_output: bool = False
     self.daemon = True
-    self._queue: queue.Queue[str] = queue.Queue()
-    self._stream = stream
-    self._read_len: int = read_len
+    self._queue: Final[queue.Queue[str]] = queue.Queue()
+    self._stream: Final[IO[str]] = stream
+    self._read_len: Final[int] = read_len
 
   def run(self) -> None:
     while True:

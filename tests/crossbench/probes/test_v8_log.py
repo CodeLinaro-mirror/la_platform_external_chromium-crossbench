@@ -24,11 +24,11 @@ class V8LogProbeTestCase(unittest.TestCase):
                         set(probe.js_flags.keys()))
 
   def test_conflicting_flags(self):
-    with self.assertRaises(Exception):
+    with self.assertRaises(ValueError):
       V8LogProbe(js_flags=["--log-maps", "--no-log-maps"])
-    with self.assertRaises(Exception):
+    with self.assertRaises(ValueError):
       V8LogProbe(prof=True, js_flags=["--no-prof"])
-    with self.assertRaises(Exception):
+    with self.assertRaises(ValueError):
       V8LogProbe(
           prof_sampling_interval=dt.timedelta(milliseconds=12),
           js_flags=["--prof-sampling-interval=3"])

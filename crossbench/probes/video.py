@@ -103,11 +103,11 @@ class VideoProbe(Probe):
     return self._generate_timestrip
 
   @property
-  def primary_orientation(self):
+  def primary_orientation(self) -> Orientation:
     return self._orientation
 
   @property
-  def secondary_orientation(self):
+  def secondary_orientation(self) -> Orientation:
     if self._orientation == Orientation.VERTICAL:
       return Orientation.HORIZONTAL
     return Orientation.VERTICAL
@@ -168,7 +168,7 @@ class VideoProbe(Probe):
       # In the simple case just copy the files
       run_files = runs[0].results[self].file_list
       group_files = [group.path / f.name for f in run_files]
-      for src, dest in zip(run_files, group_files):
+      for src, dest in zip(run_files, group_files, strict=True):
         self.host_platform.copy(src, dest)
       return LocalProbeResult(file=group_files)
 

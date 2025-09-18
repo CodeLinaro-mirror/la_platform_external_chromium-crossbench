@@ -8,6 +8,7 @@ import contextlib
 import pathlib
 import tempfile
 import unittest
+from typing import Iterator
 from unittest import mock
 
 from sqlalchemy.exc import IntegrityError
@@ -24,7 +25,7 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 class OpenResultDBMixin:
 
   @contextlib.contextmanager
-  def open_results_db(self, in_memory: bool = False):
+  def open_results_db(self, in_memory: bool = False) -> Iterator[ResultsDB]:
     with tempfile.TemporaryDirectory() as tmp_dir:
       if in_memory:
         db = ResultsDB()

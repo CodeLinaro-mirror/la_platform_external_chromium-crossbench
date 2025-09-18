@@ -23,6 +23,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.loading.config.blocks import ActionBlock
   from crossbench.browsers.webview.embedder import WebviewEmbedder
   from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.runner.run import Run
 
 
@@ -85,8 +86,7 @@ class EmbedderBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def add_cli_parser(
-      cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
+  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
     parser.add_argument(
         "--cujs-config",

@@ -120,8 +120,9 @@ class ProbeResult(abc.ABC):
   def is_remote(self) -> bool:
     return False
 
+  @abc.abstractmethod
   def __bool__(self) -> bool:
-    return not self.is_empty
+    pass
 
   def __eq__(self, other: Any) -> bool:
     if not isinstance(other, ProbeResult):
@@ -217,6 +218,7 @@ class EmptyProbeResult(ProbeResult):
   def __init__(self) -> None:
     super().__init__()
 
+  @override
   def __bool__(self) -> bool:
     return False
 
@@ -224,6 +226,10 @@ class EmptyProbeResult(ProbeResult):
 class LocalProbeResult(ProbeResult):
   """LocalProbeResult can be used for files that are always available on the
   runner/local machine."""
+
+  @override
+  def __bool__(self) -> bool:
+    return not self.is_empty
 
 
 class BrowserProbeResult(ProbeResult):
@@ -252,6 +258,10 @@ class BrowserProbeResult(ProbeResult):
       local_kwargs = cast(dict[str, Iterable[pth.LocalPath]], kwargs)
 
     super().__init__(url, local_file, **local_kwargs)
+
+  @override
+  def __bool__(self) -> bool:
+    return not self.is_empty
 
   @property
   @override

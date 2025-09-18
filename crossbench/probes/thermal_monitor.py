@@ -25,6 +25,7 @@ if TYPE_CHECKING:
   from crossbench.probes.probe_context import ProbeContext
   from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
+  from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
@@ -113,7 +114,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
     return self._merge_group(
         group, (story_group.results for story_group in group.story_groups))
 
-  def _merge_group(self, group,
+  def _merge_group(self, group: RunGroup,
                    results_iter: Iterable[ProbeResultDict]) -> ProbeResult:
     group_max_status: ThermalStatus = ThermalStatus.UNAVAILABLE
     has_results: bool = False

@@ -85,7 +85,7 @@ class PerfettoToolDownloaderTestCase(CrossbenchFakeFsTestCase):
 
   def test_download_win_invalid(self):
     platform = WinMockPlatform()
-    with self.assertRaises(Exception):
+    with self.assertRaises(ValueError):
       self._download_perfetto_tool(platform, "win-arm64")
 
   def _download_perfetto_tool(self, platform, key):

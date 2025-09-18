@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import atexit
+import contextlib
 import ctypes
 import ctypes.util
 import functools
@@ -12,6 +14,7 @@ import logging
 import plistlib
 import re
 import socket
+import subprocess
 import traceback as tb
 from subprocess import SubprocessError
 from typing import TYPE_CHECKING, Any, Final, Iterator, Optional, Type
@@ -345,6 +348,16 @@ class MacOSPlatform(PosixPlatform):
 
     return None
 
+  @contextlib.contextmanager
+  def wakelock(self) -> Iterator[None]:
+    process: subprocess.Popen = self.popen("caffeinate", "-imdsu")
+    atexit.register(process.kill)
+    try:
+      yield
+    finally:
+      atexit.unregister(process.kill)
+      process.kill()
+
   def check_system_monitoring(self, disable: bool = False) -> bool:
     return self.check_crowdstrike(disable)
 
@@ -456,7 +469,7 @@ class MacOSPlatform(PosixPlatform):
     assert ret == 0, f"ret={ret}, display_brightness={display_brightness}"
     return round(display_brightness.value * 100)
 
-  def _core_graphics_types(self, core_graphics) -> None:
+  def _core_graphics_types(self, core_graphics) -> None:  # noqa: ANN001
     # https://developer.apple.com/documentation/coregraphics/1455620-cgmaindisplayid?language=objc
     core_graphics.CGMainDisplayID.argtypes = ()
     core_graphics.CGMainDisplayID.restype = ctypes.c_uint32
@@ -481,7 +494,7 @@ class MacOSPlatform(PosixPlatform):
                                                       ctypes.c_void_p)
     core_graphics.CGDisplaySetDisplayMode.restype = ctypes.c_int32
 
-  def _core_foundation_types(self, core_foundation) -> None:
+  def _core_foundation_types(self, core_foundation) -> None:  # noqa: ANN001
     # https://developer.apple.com/documentation/corefoundation/1388772-cfarraygetcount?language=objc
     core_foundation.CFArrayGetCount.argtypes = (ctypes.c_void_p,)
     core_foundation.CFArrayGetCount.restype = ctypes.c_long

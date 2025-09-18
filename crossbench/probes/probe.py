@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import (TYPE_CHECKING, ClassVar, Hashable, Optional, Self, Set,
-                    Type, TypeVar)
+from typing import (TYPE_CHECKING, Any, ClassVar, Hashable, Optional, Self,
+                    Set, Type, TypeVar)
 
 from typing_extensions import override
 
@@ -35,6 +35,7 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
 
 
 ProbeT = TypeVar("ProbeT", bound="Probe")
@@ -123,7 +124,7 @@ class Probe(ProbeResultKey, abc.ABC):
   def __str__(self) -> str:
     return type(self).__name__
 
-  def __eq__(self, other) -> bool:
+  def __eq__(self, other: Any) -> bool:
     if self is other:
       return True
     if type(self) is not type(other):
@@ -206,9 +207,9 @@ class Probe(ProbeResultKey, abc.ABC):
     if not browser.platform.is_android:
       raise ProbeIncompatibleBrowser(self, browser, "Only supported on Android")
 
-  def setup(self, runner) -> None:
+  def setup(self, runner: Runner) -> None:
     """Called before any runs or browsers have been started."""
-    pass
+    del runner
 
   def merge_cache_temperatures(self,
                                group: CacheTemperaturesRunGroup) -> ProbeResult:

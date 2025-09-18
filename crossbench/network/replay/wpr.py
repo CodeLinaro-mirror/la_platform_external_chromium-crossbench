@@ -97,11 +97,11 @@ class WprReplayNetwork(ReplayNetwork):
 
   @contextlib.contextmanager
   @override
-  def _open_replay_server(self, session: BrowserSessionRunGroup):
+  def _open_replay_server(self,
+                          session: BrowserSessionRunGroup) -> Iterator[None]:
     self._ensure_server_started(session)
-
     try:
-      yield self
+      yield
     finally:
       if not self._persist_server and self._server:
         self._server.stop()
@@ -124,6 +124,7 @@ class WprReplayNetwork(ReplayNetwork):
     assert self._server, "WPR is not running"
     return self._server.host
 
+  @override
   def __str__(self) -> str:
     return f"WPR(archive={self.archive_path}, speed={self.traffic_shaper})"
 

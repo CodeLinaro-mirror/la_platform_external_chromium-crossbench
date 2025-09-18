@@ -48,7 +48,7 @@ if TYPE_CHECKING:
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
-  from crossbench.plt.types import CmdArg, ProcessLike, TupleCmdArgs
+  from crossbench.plt.types import CmdArg, ProcessIo, ProcessLike, TupleCmdArgs
   from crossbench.plt.version import PlatformVersion
   from crossbench.types import JsonDict
 
@@ -81,7 +81,8 @@ class LocalEnviron(Environ):
 class SubprocessError(subprocess.CalledProcessError):
   """ Custom version that also prints stderr for debugging"""
 
-  def __init__(self, platform: Platform, process) -> None:
+  def __init__(self, platform: Platform,
+               process: subprocess.CompletedProcess) -> None:
     self.platform = platform
     super().__init__(process.returncode, shlex.join(map(str, process.args)),
                      process.stdout, process.stderr)
@@ -108,6 +109,7 @@ def _next_id() -> int:
   new_id = _NEXT_PLATFORM_ID
   _NEXT_PLATFORM_ID += 1
   return new_id
+
 
 DEFAULT_CACHE_DIR: Final = pth.LocalPath(__file__).parents[2] / "cache"
 
@@ -483,7 +485,7 @@ class Platform(abc.ABC):
 
   @contextlib.contextmanager
   def override_binary(self, binary: pth.AnyPathLike | Binary,
-                      result: Optional[pth.AnyPath]):
+                      result: Optional[pth.AnyPath]) -> Iterator[None]:
     binary_name: pth.AnyPathLike = ""
     if isinstance(binary, Binary):
       if override := binary.platform_path(self):
@@ -808,7 +810,7 @@ class Platform(abc.ABC):
       self,
       suffix: Optional[str] = None,
       prefix: Optional[str] = None,
-      dir: Optional[pth.AnyPathLike] = None):
+      dir: Optional[pth.AnyPathLike] = None) -> Iterator[pth.AnyPath]:
     tmp_file: pth.AnyPath = self.mktemp(suffix, prefix, dir)
     try:
       yield tmp_file
@@ -820,7 +822,7 @@ class Platform(abc.ABC):
       self,
       suffix: Optional[str] = None,
       prefix: Optional[str] = None,
-      dir: Optional[pth.AnyPathLike] = None):
+      dir: Optional[pth.AnyPathLike] = None) -> Iterator[pth.AnyPath]:
     tmp_dir = self.mkdtemp(suffix, prefix, dir)
     try:
       yield tmp_dir
@@ -860,7 +862,7 @@ class Platform(abc.ABC):
                 shell: bool = False,
                 quiet: bool = False,
                 encoding: str = "utf-8",
-                stdin=None,
+                stdin: ProcessIo = None,
                 env: Optional[Mapping[str, str]] = None,
                 check: bool = True) -> str:
     result = self.sh_stdout_bytes(
@@ -871,7 +873,7 @@ class Platform(abc.ABC):
                       *args: CmdArg,
                       shell: bool = False,
                       quiet: bool = False,
-                      stdin=None,
+                      stdin: ProcessIo = None,
                       env: Optional[Mapping[str, str]] = None,
                       check: bool = True) -> bytes:
     completed_process = self.sh(
@@ -893,9 +895,9 @@ class Platform(abc.ABC):
             *args: CmdArg,
             bufsize: int = -1,
             shell: bool = False,
-            stdout=None,
-            stderr=None,
-            stdin=None,
+            stdout: ProcessIo = None,
+            stderr: ProcessIo = None,
+            stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
             quiet: bool = False) -> subprocess.Popen:
     self.assert_is_local()
@@ -916,9 +918,9 @@ class Platform(abc.ABC):
          *args: CmdArg,
          shell: bool = False,
          capture_output: bool = False,
-         stdout=None,
-         stderr=None,
-         stdin=None,
+         stdout: ProcessIo = None,
+         stderr: ProcessIo = None,
+         stdin: ProcessIo = None,
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
@@ -1004,6 +1006,14 @@ class Platform(abc.ABC):
         with input_file.open(encoding="utf-8") as input_f:
           shutil.copyfileobj(input_f, output_f)
     return output
+
+  @contextlib.contextmanager
+  def wakelock(self) -> Iterator[None]:
+    """
+    Prevent the system from going to sleep while running active.
+    """
+    logging.debug("Missing wakelock support on %s", self)
+    yield
 
   def set_main_display_brightness(self, brightness_level: int) -> None:
     raise NotImplementedError(

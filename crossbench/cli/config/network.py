@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 # pylint: disable=redefined-builtin
 
 
-def _parse_existing_file_path_and_resolve(value: str):
+def _parse_existing_file_path_and_resolve(value: str) -> pth.LocalPath:
   # During config parsing, a ChangePWD call ensures that config paths can be
   # specified as relative to the config directory. But the PWD is later reverted
   # to the original one. Resolving to an absolute path upfront ensures we're

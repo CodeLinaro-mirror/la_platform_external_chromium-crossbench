@@ -30,5 +30,6 @@ class LiveNetwork(Network):
       with self._traffic_shaper.open(self, session):
         yield self
 
+  @override
   def __str__(self) -> str:
     return f"LIVE(speed={self.traffic_shaper})"

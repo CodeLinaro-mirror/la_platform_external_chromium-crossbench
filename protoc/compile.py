@@ -15,7 +15,7 @@ import subprocess
 import sys
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Final, Sequence
+from typing import Final, Iterator, Sequence
 
 # List of modules we want to depend on. We will protoc this module and all its
 # dependencies.
@@ -73,7 +73,7 @@ REPOS: Sequence[RepoConfig] = (
 
 
 @contextmanager
-def change_cwd(cwd):
+def change_cwd(cwd: Path) -> Iterator[None]:
   previous_cwd = os.getcwd()
   try:
     os.chdir(str(cwd))
@@ -82,7 +82,7 @@ def change_cwd(cwd):
     os.chdir(previous_cwd)
 
 
-def sh(*args):
+def sh(*args: str | Path) -> None:
   logging.debug("Running: %s", " ".join(map(str, args)))
   subprocess.run(args, check=True)
 
@@ -211,7 +211,7 @@ easier importing into Crossbench.
 """
 
 
-def main():
+def main() -> None:
   parser = argparse.ArgumentParser(description=HELP)
   parser.add_argument("--version", action="version", version="%(prog)s 1.0")
   parser.add_argument(

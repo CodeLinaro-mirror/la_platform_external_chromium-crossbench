@@ -6,7 +6,7 @@ import contextlib
 import json
 import pathlib
 import unittest
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator
 from unittest import mock
 
 from typing_extensions import override
@@ -106,7 +106,7 @@ class TestThreadModeTestCase(unittest.TestCase):
   def test_group_session(self):
     groups = ThreadMode.SESSION.group(self.runs)
     self.assertEqual(len(groups), len(self.runs))
-    for group, run in zip(groups, self.runs):
+    for group, run in zip(groups, self.runs, strict=True):
       self.assertTupleEqual(group.runs, (run,))
     for index, group in enumerate(groups):
       self.assertEqual(group.index, index)
@@ -416,7 +416,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     self.assertIn("same Runner", str(cm.exception))
 
   @contextlib.contextmanager
-  def patch_teardown_run(self, runner):
+  def patch_teardown_run(self, runner) -> Iterator[mock.MagicMock]:
     with mock.patch.object(
         runner.results_db, "teardown_run",
         side_effect=None) as teardown_run_mock:

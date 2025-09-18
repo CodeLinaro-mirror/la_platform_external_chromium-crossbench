@@ -28,13 +28,15 @@ if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.cli.types import Subparsers
   from crossbench.plt.base import Platform
   from crossbench.runner.runner import Runner
 
 
 
 class Benchmark(abc.ABC):
-  NAME: ClassVar[str] = ""
+  # TODO: migrate to abstract class methods
+  NAME: ClassVar[str]
   DEFAULT_STORY_CLS: ClassVar[Type[Story]] = Story  # type: ignore
   PROBES: ClassVar[tuple[Type[BenchmarkProbeMixin], ...]] = ()
   DEFAULT_REPETITIONS: ClassVar[int] = 1
@@ -62,7 +64,7 @@ class Benchmark(abc.ABC):
     return tuple()
 
   @classmethod
-  def add_cli_parser(cls, subparsers) -> CrossBenchArgumentParser:
+  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
     parser = subparsers.add_parser(
         cls.NAME,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -491,7 +493,7 @@ class PressBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def add_cli_parser(cls, subparsers) -> CrossBenchArgumentParser:
+  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
     # TODO: Move story-related args to dedicated PressBenchmarkStoryFilter class
     cls._add_story_url_arguments(parser)
@@ -499,7 +501,7 @@ class PressBenchmark(SubStoryBenchmark):
     return parser
 
   @classmethod
-  def _add_story_url_arguments(cls, parser) -> None:
+  def _add_story_url_arguments(cls, parser: CrossBenchArgumentParser) -> None:
     benchmark_url_group = parser.add_argument_group(
         "Story URL Options").add_mutually_exclusive_group()
     live_url: str = cls.DEFAULT_STORY_CLS.URL

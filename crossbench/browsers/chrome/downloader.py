@@ -10,8 +10,8 @@ import os
 import shutil
 import tempfile
 import zipfile
-from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Type,
-                    cast)
+from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Iterator,
+                    Optional, Type, cast)
 
 from typing_extensions import override
 
@@ -521,7 +521,8 @@ class ChromeDownloaderAndroid(ChromeDownloader):
       super()._download_archive(lib_archive_url, lib_tmp_dir)
 
   @contextlib.contextmanager
-  def _prepare_lib_archive_download(self, archive_url: str):
+  def _prepare_lib_archive_download(
+      self, archive_url: str) -> Iterator[tuple[str, pth.LocalPath]]:
     # Also download the trichrome library (such a mess)
     main_archive_path = self._archive_path
     lib_archive_path = main_archive_path.with_suffix(

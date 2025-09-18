@@ -15,7 +15,8 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Final, Iterator, Optional, Self, TypeVar
+from typing import (IO, TYPE_CHECKING, Final, Iterator, Optional, Self, Type,
+                    TypeVar)
 
 from typing_extensions import override
 
@@ -28,6 +29,8 @@ from crossbench.network.traffic_shaping.base import TrafficShaper
 from crossbench.parse import NumberParser, PathParser
 
 if TYPE_CHECKING:
+  from types import TracebackType
+
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.network.base import Network
   from crossbench.path import AnyPath, LocalPath
@@ -53,7 +56,7 @@ _PORT_RE: re.Pattern[str] = re.compile(r"Started Socks5 proxy server on "
                                        r"(?P<port>\d+)")
 
 
-def parse_ts_socks_proxy_port(output_line) -> Optional[int]:
+def parse_ts_socks_proxy_port(output_line: str) -> Optional[int]:
   if match := _PORT_RE.match(output_line):
     return int(match.group("port"))
   return None
@@ -169,7 +172,9 @@ class TsProxyServer:
     self.start()
     return self
 
-  def __exit__(self, unused_exc_type, unused_exc_val, unused_exc_tb) -> None:
+  def __exit__(self, exc_type: Optional[Type[BaseException]],
+               exc_value: Optional[BaseException],
+               traceback: Optional[TracebackType]) -> None:
     self.stop()
 
 
@@ -415,7 +420,7 @@ class TsProxyTrafficShaper(TrafficShaper):
 
   @contextlib.contextmanager
   @override
-  def pause(self):
+  def pause(self) -> Iterator[None]:
     old_settings = {
         "rtt_ms": self._ts_proxy.rtt_ms,
         "in_kbps": self._ts_proxy.in_kbps,
@@ -426,13 +431,13 @@ class TsProxyTrafficShaper(TrafficShaper):
       logging.info("TRAFFIC SHAPING: Pausing")
       self._ts_proxy.set_traffic_settings(0, 0, 0,
                                           ts_proxy_settings.DEFAULT_WINDOW_SIZE)
-      yield None
+      yield
     finally:
       logging.info("TRAFFIC SHAPING: Restoring settings")
       self._ts_proxy.set_traffic_settings(
           **old_settings, timeout=ts_proxy_settings.DEFAULT_TIMEOUT)
 
-  def _create_remapping_ts_proxy(self, network) -> TsProxyServer:
+  def _create_remapping_ts_proxy(self, network: Network) -> TsProxyServer:
     return TsProxyServer(
         self.host_platform,
         self._ts_proxy.ts_proxy_path,

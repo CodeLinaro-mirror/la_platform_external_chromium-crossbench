@@ -13,7 +13,7 @@ if TYPE_CHECKING:
   from crossbench.path import AnyPathLike, LocalPath
   from crossbench.plt.base import Platform
   from crossbench.plt.signals import Signals
-  from crossbench.plt.types import CmdArg, ListCmdArgs
+  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo
 
 
 class RemotePlatformMixin:
@@ -50,9 +50,9 @@ class RemotePopen(subprocess.Popen):
                platform: Platform,
                args: ListCmdArgs,
                bufsize: int = -1,
-               stdout=None,
-               stderr=None,
-               stdin=None) -> None:
+               stdout: ProcessIo = None,
+               stderr: ProcessIo = None,
+               stdin: ProcessIo = None) -> None:
     self._platform: Platform = platform
     assert self._platform.is_remote, (
         f"Cannot create remote process on local platform {self._platform}")

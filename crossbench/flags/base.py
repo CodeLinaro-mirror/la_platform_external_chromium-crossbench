@@ -201,7 +201,7 @@ class BasicFlags(Freezable, collections.UserDict):
   def copy(self: Self) -> Self:
     return self.__class__(self)
 
-  def merge_copy(self, other: FlagsData):
+  def merge_copy(self, other: FlagsData) -> Self:
     ret = self.copy()
     ret.merge(other)
     return ret
@@ -227,7 +227,7 @@ class BasicFlags(Freezable, collections.UserDict):
   def to_dict(self) -> dict[str, Optional[str]]:
     return dict(self.items())
 
-  def clear(self):
+  def clear(self) -> None:
     self.data.clear()
 
   def __iter__(self) -> Iterator[str]:

@@ -63,6 +63,7 @@ pytest-profiling = "1.7.0"
 pytest-subtests = "0.11.0"
 pytest-xdist = "3.3.1"
 ruff = "^0.12.11"
+types-protobuf = "^6.30.2.20250914"
 types-psutil = "5.8.23"
 
 [tool.poetry.group.dev-pytype.dependencies]
@@ -91,10 +92,26 @@ target-version = "py311"
 [tool.ruff.lint]
 extend-select = [
     "TCH",  # flake8-type-checking
+    "ANN",  # flake8-annotations
+    "B",    # flake8-bugbear
     # TODO: Add more categories
 ]
 ignore = [
     "TC006", # Allow non-string type in casts
+    "ANN002", # Missing type annotation for `**args`
+    "ANN003", # Missing type annotation for `**kwargs`
+    "ANN401", # Using typing.Any
+    "B027",   # empty-method-without-abstract-decorator
+    "B019",   # Use of `functools.lru_cache` or `functools.cache` on methods can lead to memory leaks
+    # TODO: try to clean up code for these errors
+    "B008",   # Do not perform function call in default arguments
+]
+
+[tool.ruff.lint.per-file-ignores]
+
+"tests/*" = [
+    "ANN",      # tests are allowed to skip type annotations
+    "B018",     # Found useless attribute access
 ]
 
 [tool.ruff.lint.flake8-type-checking]
@@ -104,6 +121,9 @@ runtime-evaluated-base-classes = [
     "sqlalchemy.orm.DeclarativeBase",
     "crossbench.results_db.records.base.BaseRecord"
 ]
+
+[tool.ruff.lint.flake8-annotations]
+mypy-init-return = true
 
 [tool.ruff.lint.isort]
 required-imports = [ "from __future__ import annotations" ]

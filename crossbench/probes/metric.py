@@ -320,7 +320,8 @@ class CSVFormatter:
     max_path_depth += 1
     return max_path_depth
 
-  def append_headers(self, headers, max_path_depth: int) -> None:
+  def append_headers(self, headers: Sequence[tuple[Any, ...]],
+                     max_path_depth: int) -> None:
     header_padding = ("",) * max_path_depth
     for header in headers:
       assert isinstance(header, tuple), (

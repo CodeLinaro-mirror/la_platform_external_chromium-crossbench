@@ -37,7 +37,7 @@ class CUJsConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str):
+  def parse_str(cls, value: str) -> Self:
     del value
     raise NotImplementedError("Cannot create CUJsConfig from string")
 

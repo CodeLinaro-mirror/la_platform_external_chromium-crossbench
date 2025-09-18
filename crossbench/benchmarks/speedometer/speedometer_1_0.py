@@ -15,7 +15,7 @@ from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
-
+  from crossbench.types import Json
 
 class Speedometer10Probe(SpeedometerProbe):
   NAME: ClassVar[str] = "speedometer_1.0"
@@ -28,7 +28,7 @@ class Speedometer10Probe(SpeedometerProbe):
 class Speedometer10ProbeContext(SpeedometerProbeContext):
 
   @override
-  def process_json_data(self, json_data) -> Any:
+  def process_json_data(self, json_data: Json) -> Any:
     json_data = ObjectParser.non_empty_sequence(json_data,
                                                 f"{self.probe.name} metrics")
     # Move aggregate scores to the end

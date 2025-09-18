@@ -302,8 +302,8 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(str(group[1].flags), "")
     self.assertEqual(group[0].label, "config_1")
     self.assertEqual(group[1].label, "config_2")
-    for index, group in enumerate(group):
-      self.assertEqual(group.index, index)
+    for index, variant in enumerate(group):
+      self.assertEqual(variant.index, index)
 
   def test_parse_dict_with_labels_duplicate_flags(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -351,8 +351,8 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(str(group[0].flags), "--bar")
     self.assertEqual(str(group[1].flags), "--foo=1 --bar")
     self.assertEqual(str(group[2].flags), "--foo=2 --bar")
-    for index, group in enumerate(group):
-      self.assertEqual(group.index, index)
+    for index, variant in enumerate(group):
+      self.assertEqual(variant.index, index)
 
   def test_parse_dict_multiple_2_x_2(self):
     group = FlagsGroupConfig.parse({
@@ -368,8 +368,8 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(group[1].label, "bar=b")
     self.assertEqual(group[2].label, "foo=a")
     self.assertEqual(group[3].label, "foo=a_bar=b")
-    for index, group in enumerate(group):
-      self.assertEqual(group.index, index)
+    for index, variant in enumerate(group):
+      self.assertEqual(variant.index, index)
 
   def test_product_single(self):
     group_a = FlagsGroupConfig.parse("--foo-a=1")
@@ -450,8 +450,8 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(group[1].label, "foo_b=1")
     self.assertEqual(group[2].label, "foo_a=1")
     self.assertEqual(group[3].label, "foo_a=1_foo_b=1")
-    for index, group in enumerate(group):
-      self.assertEqual(group.index, index)
+    for index, variant in enumerate(group):
+      self.assertEqual(variant.index, index)
 
   def test_product_conflicting(self):
     group_a = FlagsGroupConfig.parse(("--foo=1"))

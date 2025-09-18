@@ -269,12 +269,12 @@ class XLSXWriter:
                                       self._percent_format)
       dst_col_index += 1
 
-  def _write_header_cols(self, row_index, row_data) -> int:
+  def _write_header_cols(self, row_index: int, row_data: list[str]) -> int:
     for col in range(self._nof_header_cols):
       self._worksheet.write(row_index, col, row_data[col])
     return self._nof_header_cols
 
-  def _close_xlsx(self):
+  def _close_xlsx(self) -> None:
     self._worksheet.freeze_panes(self._nof_header_rows, self._nof_header_cols)
     self._worksheet.set_default_row(hide_unused_rows=True)
     self._workbook.close()

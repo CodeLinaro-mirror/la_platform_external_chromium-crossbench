@@ -28,7 +28,6 @@ from crossbench.cli.config.probe import PROBE_LOOKUP, ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
-from crossbench.helper.wake_lock import WakeLock
 from crossbench.parse import (DurationParser, LateArgumentError, ObjectParser,
                               PathParser)
 from crossbench.probes.debugger import DebuggerProbe
@@ -52,9 +51,9 @@ class EnableFastAction(argparse.Action):
                namespace: argparse.Namespace,
                values: str | Sequence[Any] | None,
                option_string: Optional[str] = None) -> None:
-    setattr(namespace, "cool_down_time", dt.timedelta())
-    setattr(namespace, "splash_screen", SplashScreen.NONE)
-    setattr(namespace, "env_validation", ValidationMode.SKIP)
+    namespace.cool_down_time = dt.timedelta()
+    namespace.splash_screen = SplashScreen.NONE
+    namespace.env_validation = ValidationMode.SKIP
 
 
 class AppendDebuggerProbeAction(argparse.Action):
@@ -77,7 +76,7 @@ class AppendDebuggerProbeAction(argparse.Action):
     if not getattr(namespace, "timeout_unit", None):
       # Set a very large --timeout-unit to allow for very slow debugging without
       # causing timeouts (for instance when waiting on a breakpoint).
-      setattr(namespace, "timeout_unit", dt.timedelta.max)
+      namespace.timeout_unit = dt.timedelta.max
 
 
 class BenchmarkSubcommand(CrossbenchSubcommand):
@@ -503,7 +502,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       self._process_args(args)
       benchmark = self._get_benchmark(args)
       with plt.PLATFORM.TemporaryDirectory(
-          prefix="crossbench") as tmp_dirname, WakeLock(plt.PLATFORM):
+          prefix="crossbench") as tmp_dirname, plt.PLATFORM.wakelock():
         self._run(args, benchmark, tmp_dirname)
     except KeyboardInterrupt:
       sys.exit(2)
@@ -574,7 +573,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       self.cli.describe_subcommand.run(args)
       sys.exit(0)
 
-  def _process_args(self, args) -> None:
+  def _process_args(self, args: argparse.Namespace) -> None:
     if args.config:
       self._process_config_args(args)
     else:
@@ -583,7 +582,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       # copy the args.*_config back.
       self._process_network_args(args)
 
-  def _process_network_args(self, args) -> None:
+  def _process_network_args(self, args: argparse.Namespace) -> None:
     # The order of preference of flags is as follows:
     # Explicitly specified network config > explicitly specified network >
     # benchmark-specific network config > default network.
@@ -596,7 +595,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     else:
       args.network = NetworkConfig.default()
 
-  def _process_env_args(self, args) -> None:
+  def _process_env_args(self, args: argparse.Namespace) -> None:
     if env_config := args.env_config:
       args.env = env_config
     elif args.env:
@@ -604,7 +603,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     else:
       args.env = EnvConfig.default()
 
-  def _process_config_args(self, args) -> None:
+  def _process_config_args(self, args: argparse.Namespace) -> None:
     if args.env_config:
       raise argparse.ArgumentTypeError(
           "--config cannot be used together with --env-config")

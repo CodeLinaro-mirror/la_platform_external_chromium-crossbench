@@ -275,7 +275,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
               }
           },
           browser_lookup_override=self.browser_lookup,
-          args=self.mock_args()).variants
+          args=self.mock_args())
     message = str(cm.exception)
     self.assertIn("chrome-stable-label", message)
     self.assertIn("chrome-stable-custom", message)
@@ -284,13 +284,11 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     invalid: Any
     for invalid in (None, 1, []):
       with self.assertRaises(ConfigError) as cm:
-        _ = BrowserVariantsConfigDict(
-            {
-                "browsers": {
-                    "chrome-stable-default": invalid
-                }
-            },
-            args=self.mock_args()).variants
+        BrowserVariantsConfigDict(
+            {"browsers": {
+                "chrome-stable-default": invalid
+            }},
+            args=self.mock_args())
       self.assertIn("Expected str or dict", str(cm.exception))
 
   def test_browser_custom_driver_variants(self):
@@ -511,7 +509,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("--flag", str(cm.exception))
 
   def test_unknown_path(self):
-    with self.assertRaises(Exception):
+    with self.assertRaises(argparse.ArgumentTypeError):
       BrowserVariantsConfigDict(
           {
               "browsers": {
@@ -521,7 +519,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
               }
           },
           args=self.mock_args()).variants
-    with self.assertRaises(Exception):
+    with self.assertRaises(argparse.ArgumentTypeError):
       BrowserVariantsConfigDict(
           {
               "browsers": {
@@ -697,7 +695,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_conflicting_chrome_features(self):
     with self.assertRaises(ConfigError) as cm:
-      _ = BrowserVariantsConfigDict(
+      BrowserVariantsConfigDict(
           {
               "flags": {
                   "compile-hints-experiment": {

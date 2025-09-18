@@ -9,7 +9,8 @@ import datetime as dt
 import logging
 import sys
 import time as py_time
-from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type
+from typing import (TYPE_CHECKING, Any, Callable, Iterator, Optional, Sequence,
+                    Type)
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.cli import ui
@@ -197,7 +198,7 @@ class Actions(TimeScope):
   @contextlib.contextmanager
   def wait_until(self,
                  timeout: AnyTimeUnit = dt.timedelta(seconds=1),
-                 absolute_time: bool = False):
+                 absolute_time: bool = False) -> Iterator[None]:
     """Wait until the given timeout elapsed.
     Unlike wait(...), this takes into account the time spent in the the
     wrapped block.
