@@ -968,8 +968,9 @@ class Platform(abc.ABC):
     self.assert_is_local()
     logging.debug("DOWNLOAD: %s\n       TO: %s", url, path)
     assert not self.exists(path), f"Download destination {path} exists already."
+    url = ObjectParser.url_str(url, schemes=("http", "https"))
     try:
-      urllib.request.urlretrieve(url, path)
+      urllib.request.urlretrieve(url, path)  # noqa: S310
     except (urllib.error.HTTPError, urllib.error.URLError) as e:
       raise OSError(f"Could not load {url}") from e
     assert self.exists(path), (

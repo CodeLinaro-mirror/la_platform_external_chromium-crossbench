@@ -223,7 +223,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
         self._default_tmp_dir = tmp_path
         assert self.is_absolute(self._default_tmp_dir)
         return tmp_path
-    self._default_tmp_dir = self.path("/tmp")
+    self._default_tmp_dir = self.path("/tmp")  # noqa: S108
     assert self.is_dir(self._default_tmp_dir), (
         f"Fallback tmp dir does not exist: {self._default_tmp_dir}")
     return self._default_tmp_dir
@@ -579,8 +579,9 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
       shell_cmd += f" & PID=$! && echo $PID >{temp_pid_file} && wait $PID"
       if not quiet:
         logging.debug("REMOTE SHELL: %s", shell_cmd)
-
-      host_platform_cmd = self.build_shell_cmd(shell_cmd, shell=True)
+      # Run with shell=True since we use '>' and use shlex.join.
+      host_platform_cmd = self.build_shell_cmd(  # noqa: S604
+          shell_cmd, shell=True)
 
       remote_popen = RemotePopen(
           self, host_platform_cmd, bufsize=bufsize, stdout=stdout,

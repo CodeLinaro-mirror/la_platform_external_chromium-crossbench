@@ -161,7 +161,7 @@ class BaseCrossbenchTestCase(
     for mock_browser_cls in mock_browser.ALL:
       mock_browser_cls.setup_fs(self.fs)
       self.assertTrue(mock_browser_cls.mock_app_path(self.platform).exists())
-    self.out_dir = pathlib.Path("/tmp/results/test")
+    self.out_dir = pathlib.Path("/crossbench-test/results/test")
     self.out_dir.parent.mkdir(parents=True)
     self.browsers: list[mock_browser.MockBrowser] = [
         mock_browser.MockChromeDev(

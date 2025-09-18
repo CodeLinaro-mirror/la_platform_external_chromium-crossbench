@@ -142,7 +142,7 @@ class LinuxProfilingContext(PosixProfilingContext):
         f"Probe {self.probe.name}: "
         f"exporting {len(perf_files)} profiles to pprof (slow)",
         verbose=True), ui.spinner():
-      self.browser_platform.sh(
+      self.browser_platform.sh(  # noqa: S604
           "gcertstatus >&/dev/null || "
           "(echo 'Authenticating with gcert:'; gcert)",
           shell=True)

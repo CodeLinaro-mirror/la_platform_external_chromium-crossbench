@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-import random
+import secrets
 from typing import TYPE_CHECKING, Self
 
 from typing_extensions import override
@@ -118,7 +118,7 @@ class CycledUsernamePassword(UsernamePassword):
                start: int = 0,
                end: int = 0) -> None:
     if use_range:
-      account_selection = random.randint(start, end)
+      account_selection = secrets.randbelow(end - start) + start
       username = username % account_selection
 
     super().__init__(username, password)

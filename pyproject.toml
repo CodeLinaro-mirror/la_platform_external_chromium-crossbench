@@ -94,6 +94,8 @@ extend-select = [
     "TCH",  # flake8-type-checking
     "ANN",  # flake8-annotations
     "B",    # flake8-bugbear
+    "YTT",  # flake8-2020 sys.version misuse
+    "S",    # flake8-bandit security checks
     "T10",  # flake8-debugger
     "C4",   # flake8-comprehensions
     # TODO: Add more categories
@@ -107,12 +109,15 @@ ignore = [
     "B019",   # Use of `functools.lru_cache` or `functools.cache` on methods can lead to memory leaks
     # TODO: try to clean up code for these errors
     "B008",   # Do not perform function call in default arguments
+    "S101",   # Do not use assert
+    "S603",   # Untrusted shell inputs.
 ]
 
 [tool.ruff.lint.per-file-ignores]
 
 "tests/*" = [
     "ANN",      # tests are allowed to skip type annotations
+    "S",        # general security issues and input validation.
     "B018",     # Found useless attribute access
 ]
 

@@ -215,7 +215,7 @@ class TestChromeFlags(TestFlags):
 
   def test_get_list(self):
     flags = self.CLASS()
-    flags["--user-data-dir"] = "/tmp"
+    flags["--user-data-dir"] = "/test/user-data"
     flags.set("--single-process")
     flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
     flags["--enable-features"] = "F1,F2"
@@ -224,7 +224,7 @@ class TestChromeFlags(TestFlags):
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
     flags_list = list(flags)
     self.assertListEqual(flags_list, [
-        "--user-data-dir=/tmp",
+        "--user-data-dir=/test/user-data",
         "--single-process",
         "--js-flags=--js-foo=v3,--no-js-bar",
         "--enable-features=F1,F2",
@@ -235,7 +235,7 @@ class TestChromeFlags(TestFlags):
 
   def test_to_dict(self):
     flags = self.CLASS()
-    flags["--user-data-dir"] = "/tmp"
+    flags["--user-data-dir"] = "/test/user-data"
     flags.set("--single-process")
     flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
     flags["--enable-features"] = "F1,F2"
@@ -244,7 +244,7 @@ class TestChromeFlags(TestFlags):
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
     self.assertDictEqual(
         flags.to_dict(), {
-            "--user-data-dir": "/tmp",
+            "--user-data-dir": "/test/user-data",
             "--single-process": None,
             "--js-flags": "--js-foo=v3,--no-js-bar",
             "--enable-features": "F1,F2",
