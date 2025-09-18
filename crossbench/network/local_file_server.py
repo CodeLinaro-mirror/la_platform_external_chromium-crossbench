@@ -34,9 +34,9 @@ _DEFAULT_PORT: Final[int] = 8000
 # List of known headers that are served by the default HTTPServer and might
 # be accidentally overridden by provided extra headers.
 _CONFLICTING_EXTRA_HEADERS: Final[frozenset[str]] = frozenset(
-    map(lambda header: header.lower(),
-        ("Content-Type", "Content-Length", "Last-Modified", "Server", "Date",
-         "Connection", "Location")))
+    header.lower()
+    for header in ("Content-Type", "Content-Length", "Last-Modified", "Server",
+                   "Date", "Connection", "Location"))
 
 # Enable cross original isolation for high-precision timers.
 # This can be easily override by profiling a custom HEADER.txt file in the

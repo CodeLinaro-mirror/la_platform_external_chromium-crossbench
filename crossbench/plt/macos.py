@@ -175,7 +175,7 @@ class MacOSPlatform(PosixPlatform):
     if spdisplays_data := display_info.get("SPDisplaysDataType"):
       if spdisplays_ndrvs := spdisplays_data[0].get("spdisplays_ndrvs"):
         return tuple(parse_display_ndrvs(spdisplays_ndrvs))
-    return tuple()
+    return ()
 
   def display_resolution(self) -> tuple[int, int]:
     return self.display_details()[0]["resolution"]

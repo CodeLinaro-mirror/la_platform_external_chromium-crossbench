@@ -69,7 +69,7 @@ class ChromiumVersion(BrowserVersion):
       full_version: str) -> tuple[tuple[int, ...], BrowserVersionChannel, str]:
     channel = cls._parse_exact_channel(channel_str, full_version)
     version_str = ""
-    return tuple(), channel, version_str
+    return (), channel, version_str
 
   @classmethod
   def _numbered_version(

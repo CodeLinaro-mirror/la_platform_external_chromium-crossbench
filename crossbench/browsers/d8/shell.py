@@ -60,7 +60,7 @@ class D8Shell:
   def __init__(self,
                platform: plt.Platform,
                d8_bin: pth.LocalPath,
-               flags: Sequence[str] = tuple(),
+               flags: Sequence[str] = (),
                cwd: Optional[pth.LocalPath] = None):
     self._state = StateMachine(State.INITIAL)
     self._platform = platform

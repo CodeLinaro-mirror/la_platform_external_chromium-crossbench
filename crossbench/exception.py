@@ -197,13 +197,13 @@ class ExceptionAnnotator:
 
   def info(self, *stack_entries: str) -> ExceptionAnnotationScope:
     """Only sets info stack entries, exceptions are passed-through."""
-    return ExceptionAnnotationScope(self, tuple(), tuple(), stack_entries)
+    return ExceptionAnnotationScope(self, (), (), stack_entries)
 
   def capture(
       self,
       *stack_entries: str,
       exceptions: TExceptionTypes = (Exception,),
-      ignore: TExceptionTypes = tuple(),
+      ignore: TExceptionTypes = (),
   ) -> ExceptionAnnotationScope:
     """Sets info stack entries and captures exceptions.
     - Does not rethrow captured exceptions
@@ -217,7 +217,7 @@ class ExceptionAnnotator:
       self,
       *stack_entries,
       exceptions: TExceptionTypes = (Exception,),
-      ignore: TExceptionTypes = tuple()
+      ignore: TExceptionTypes = ()
   ) -> Iterator[Self]:
     """Sets info stack entries and rethrows an annotated
       MultiException by default ."""
@@ -326,7 +326,7 @@ Annotator = ExceptionAnnotator
 def annotate(
     *stack_entries: str,
     exceptions: TExceptionTypes = (Exception,),
-    ignore: TExceptionTypes = tuple(),
+    ignore: TExceptionTypes = (),
     throw_cls: Optional[Type[BaseException]] = MultiException
 ) -> ExceptionAnnotationScope:
   """Use to annotate an exception.

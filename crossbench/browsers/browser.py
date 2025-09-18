@@ -273,7 +273,7 @@ class Browser(abc.ABC):
         "version": self.version.parts_str,
         "channel": self.version.channel_name,
         "flags": tuple(self.flags),
-        "js_flags": tuple(),
+        "js_flags": (),
         "path": os.fspath(self.path),
         "clear_cache_dir": self.clear_cache_dir,
         "major_version": self.version.major,

@@ -37,7 +37,7 @@ LOGIN_LABEL: Final[str] = "login"
 class ActionBlock(ConfigObject):
   label: str = "default"
   index: int = 0
-  actions: tuple[Action, ...] = tuple()
+  actions: tuple[Action, ...] = ()
 
   @classmethod
   @override
@@ -154,7 +154,7 @@ class ActionBlock(ConfigObject):
 
 @dataclasses.dataclass(frozen=True)
 class ActionBlockListConfig(ConfigObject):
-  blocks: tuple[ActionBlock, ...] = tuple()
+  blocks: tuple[ActionBlock, ...] = ()
 
   def to_argument_value(self) -> tuple[ActionBlock, ...]:
     return self.blocks

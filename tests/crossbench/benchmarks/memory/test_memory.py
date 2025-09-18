@@ -55,7 +55,7 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
                     "synthetic/memory?alloc=8&blocksize=128&compress=50"
                     "&prefill=8&randomperpage=false")
     self.assertEqual(story.first_url, expected_url)
-    names = set(story.name for story in stories)
+    names = {story.name for story in stories}
     self.assertEqual(len(names), len(stories))
 
   def test_run_throw(self):

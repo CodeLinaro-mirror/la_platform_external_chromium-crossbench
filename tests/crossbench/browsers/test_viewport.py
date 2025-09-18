@@ -137,7 +137,7 @@ class ViewportTestCase(unittest.TestCase):
 
   def test_parse_sized_invalid(self):
     invalid: Any
-    for invalid in (None, 1, tuple()):
+    for invalid in (None, 1, ()):
       with self.assertRaises(ArgumentTypeError):
         Viewport.parse_sized(invalid)
 

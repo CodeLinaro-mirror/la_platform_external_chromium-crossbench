@@ -234,10 +234,9 @@ class WprToolsFinderTestCase(BaseCheckoutTestCase):
         self._with_arch(MacOsMockPlatform(), "x64"),
         self._with_arch(WinMockPlatform(), "x64"),
     ]
-    self.assertSetEqual(
-        set(p.key for p in platforms),
-        set(WprGoToolFinder.WPR_PREBUILT_LOOKUP.keys()),
-        "Please add any new platform(s) to the list above")
+    self.assertSetEqual({p.key for p in platforms},
+                        set(WprGoToolFinder.WPR_PREBUILT_LOOKUP.keys()),
+                        "Please add any new platform(s) to the list above")
     for platform in platforms:
       cloud_binary: WprCloudBinary = WprGoToolFinder(
           self.platform).cloud_binary(platform)

@@ -171,10 +171,10 @@ class LinuxPlatform(PosixPlatform):
   @functools.lru_cache(maxsize=1)
   def display_details(self) -> tuple[DisplayInfo, ...]:
     if not self.has_display:
-      return tuple()
+      return ()
     if xrandr_str := self.sh_stdout("xrandr"):
       return tuple(parse_display_xrandr(xrandr_str))
-    return tuple()
+    return ()
 
   _MEMINFO_SCRIPT_PROCESS_PATTERN: Final[re.Pattern] = re.compile(
       r"==== process (\d+) ====")

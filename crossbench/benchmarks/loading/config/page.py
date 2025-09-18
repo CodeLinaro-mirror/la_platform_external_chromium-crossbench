@@ -38,7 +38,7 @@ class PageConfig(ConfigObject):
   secrets: Secrets = Secrets()
   login: LoginBlock | None = None
   setup: ActionBlock | None = None
-  blocks: tuple[ActionBlock, ...] = tuple()
+  blocks: tuple[ActionBlock, ...] = ()
   teardown: ActionBlock | None = None
 
   @classmethod

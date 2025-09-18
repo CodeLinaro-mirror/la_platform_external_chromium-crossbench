@@ -61,7 +61,7 @@ class Benchmark(abc.ABC):
 
   @classmethod
   def aliases(cls) -> tuple[str, ...]:
-    return tuple()
+    return ()
 
   @classmethod
   def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
@@ -272,7 +272,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
   @classmethod
   def describe_stories(cls) -> Mapping[str, str]:
     # TODO: use story objects instead
-    return {name: "" for name in cls.all_story_names()}
+    return dict.fromkeys(cls.all_story_names(), "")
 
   @classmethod
   def all_stories(cls) -> Sequence[Story]:

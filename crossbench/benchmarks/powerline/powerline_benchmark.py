@@ -86,7 +86,7 @@ class PowerlineStory(Story):
   @classmethod
   @override
   def all_story_names(cls) -> Sequence[str]:
-    return list(sorted(cls.STORY_URLS))
+    return sorted(cls.STORY_URLS)
 
 
 class PowerlineBenchmark(Benchmark):

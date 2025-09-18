@@ -101,8 +101,8 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
   def test_percentile(self):
     metrics = parse_histogram_metrics(
         {self.HISTOGRAM_NAME: ["p25", "p50", "p75", "p90", "p99"]})
-    values = map(lambda m: m.compute(self._delta(), self._baseline()), metrics)
-    self.assertListEqual([16.875, 43, 75, 90, 90], list(values))
+    values = [m.compute(self._delta(), self._baseline()) for m in metrics]
+    self.assertListEqual([16.875, 43, 75, 90, 90], values)
 
   def test_sample_invalid_header(self):
     with pytest.raises(

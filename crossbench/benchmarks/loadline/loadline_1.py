@@ -40,7 +40,7 @@ def process_scores(df: pd.DataFrame) -> pd.DataFrame:
   df.index.rename("browser", inplace=True)
   df = df.reindex(
       columns=(["TOTAL_SCORE"] +
-               sorted(list(c for c in df.columns if c != "TOTAL_SCORE"))))
+               sorted(c for c in df.columns if c != "TOTAL_SCORE")))
   return df
 
 

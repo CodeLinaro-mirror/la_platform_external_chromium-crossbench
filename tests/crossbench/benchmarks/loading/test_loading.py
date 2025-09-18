@@ -85,18 +85,18 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     self.assertGreater(len(stories), 1)
     for story in stories:
       self.assertIsInstance(story, LivePage)
-    names = set(story.name for story in stories)
+    names = {story.name for story in stories}
     self.assertEqual(len(names), len(stories))
-    self.assertEqual(names, set(page.name for page in PAGE_LIST))
+    self.assertSetEqual(names, {page.name for page in PAGE_LIST})
 
   def test_default_stories(self):
     stories = self.story_filter(["default"]).stories
     self.assertGreater(len(stories), 1)
     for story in stories:
       self.assertIsInstance(story, LivePage)
-    names = set(story.name for story in stories)
+    names = {story.name for story in stories}
     self.assertEqual(len(names), len(stories))
-    self.assertEqual(names, set(page.name for page in PAGE_LIST_SMALL))
+    self.assertSetEqual(names, {page.name for page in PAGE_LIST_SMALL})
 
   def test_combined_stories(self):
     stories = self.story_filter(["all"], separate=False).stories

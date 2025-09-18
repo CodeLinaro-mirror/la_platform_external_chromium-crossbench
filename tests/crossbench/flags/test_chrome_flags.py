@@ -124,7 +124,7 @@ class TestChromeFlags(TestFlags):
     flags["--disable-features"] = "F3,F4"
     self.assertEqual(features.enabled, {"F1": None, "F2": None})
     self.assertEqual(flags["--enable-features"], "F1,F2")
-    self.assertEqual(features.disabled, set(("F3", "F4")))
+    self.assertEqual(features.disabled, {"F3", "F4"})
     self.assertEqual(flags["--disable-features"], "F3,F4")
     self.assertTrue(flags)
     self.assertTrue(flags.features)
@@ -155,7 +155,7 @@ class TestChromeFlags(TestFlags):
     flags["--disable-blink-features"] = "F3,F4"
     self.assertEqual(features.enabled, {"F1": None, "F2": None})
     self.assertEqual(flags["--enable-blink-features"], "F1,F2")
-    self.assertEqual(features.disabled, set(("F3", "F4")))
+    self.assertEqual(features.disabled, {"F3", "F4"})
     self.assertEqual(flags["--disable-blink-features"], "F3,F4")
 
   def test_features_none(self):
@@ -176,11 +176,11 @@ class TestChromeFlags(TestFlags):
     flags["--enable-features"] = "F1,F2"
     flags["--disable-features"] = "F3,F4"
     self.assertEqual(features.enabled, {"F1": None, "F2": None})
-    self.assertEqual(features.disabled, set(("F3", "F4")))
+    self.assertEqual(features.disabled, {"F3", "F4"})
 
     flags["--enable-features"] = None
     self.assertFalse(features.enabled)
-    self.assertEqual(features.disabled, set(("F3", "F4")))
+    self.assertEqual(features.disabled, {"F3", "F4"})
 
     flags["--disable-features"] = None
     self.assertFalse(features)

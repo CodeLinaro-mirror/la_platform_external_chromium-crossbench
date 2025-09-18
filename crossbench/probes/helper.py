@@ -55,7 +55,7 @@ class Flatten:
     return dict(items)
 
   def append(self, *args: Mapping, ignore_toplevel: bool = False) -> None:
-    toplevel_path: tuple[str, ...] = tuple()
+    toplevel_path: tuple[str, ...] = ()
     for merged_data in args:
       self._flatten(toplevel_path, merged_data, ignore_toplevel)
 

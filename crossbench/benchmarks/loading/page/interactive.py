@@ -144,7 +144,7 @@ class InteractivePage(Page):
   @override
   def details_json(self) -> JsonDict:
     result = super().details_json()
-    result["actions"] = list(block.to_json() for block in self._blocks)
+    result["actions"] = [block.to_json() for block in self._blocks]
     return result
 
   def _get_duration(self) -> dt.timedelta:

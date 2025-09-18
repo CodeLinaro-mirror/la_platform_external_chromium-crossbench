@@ -90,7 +90,7 @@ class MotionMark1BaseTestCase(
     self.assertGreater(len(stories), 1)
     for story in stories:
       self.assertIsInstance(story, self.story_cls)
-    names = set(story.name for story in stories)
+    names = {story.name for story in stories}
     self.assertEqual(len(names), len(stories))
     self.assertEqual(len(names), len(self.story_cls.SUBSTORIES))
 
@@ -99,7 +99,7 @@ class MotionMark1BaseTestCase(
     self.assertGreater(len(stories), 1)
     for story in stories:
       self.assertIsInstance(story, self.story_cls)
-    names = set(story.name for story in stories)
+    names = {story.name for story in stories}
     self.assertEqual(len(names), len(stories))
     self.assertEqual(len(names), len(self.story_cls.ALL_STORIES["MotionMark"]))
 

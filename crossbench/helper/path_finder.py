@@ -22,7 +22,7 @@ class BaseToolFinder(abc.ABC):
 
   def __init__(
       self, platform: Platform, candidates: tuple[pth.AnyPath,
-                                                  ...] = tuple()) -> None:
+                                                  ...] = ()) -> None:
     self._platform = platform
     self._candidates = candidates + self.default_candidates()
     self._path: pth.AnyPath | None = self._find_path()
@@ -48,7 +48,7 @@ class BaseToolFinder(abc.ABC):
     return self._candidates
 
   def default_candidates(self) -> tuple[pth.AnyPath, ...]:
-    return tuple()
+    return ()
 
   def _find_path(self) -> Optional[pth.AnyPath]:
     # Try potential build location
@@ -122,7 +122,7 @@ class ChromiumBuildBinaryFinder(BaseToolFinder):
       self,
       platform: Platform,
       binary_name: str,
-      candidates: tuple[pth.AnyPath, ...] = tuple()) -> None:
+      candidates: tuple[pth.AnyPath, ...] = ()) -> None:
     self._binary_name = binary_name
     super().__init__(platform, candidates)
 

@@ -149,7 +149,7 @@ def _verify_experimental_metrics(out_dir):
       "loadline_experimental_worker.csv"
   }
   tp_output_files = list(out_dir.rglob("trace_processor/*.csv"))
-  assert set(f.name for f in tp_output_files) == expected_files
+  assert {f.name for f in tp_output_files} == expected_files
 
   # Some metrics for some runs might have no values. But we expect at
   # least one metric to have some values.

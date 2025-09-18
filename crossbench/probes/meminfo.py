@@ -89,7 +89,7 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
     process_meminfos: list[ProcessMeminfo] = []
 
     if packages is None:
-      packages = tuple()
+      packages = ()
     for package in packages:
       process_meminfos += self.browser_platform.process_meminfo(
           package, self._timeout_from_deadline(deadline))

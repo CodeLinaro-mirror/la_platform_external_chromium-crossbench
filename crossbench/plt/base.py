@@ -349,7 +349,7 @@ class Platform(abc.ABC):
 
   def display_details(self) -> tuple[DisplayInfo, ...]:
     # TODO: implement on more platforms
-    return tuple()
+    return ()
 
   def get_relative_cpu_speed(self) -> float:
     return 1

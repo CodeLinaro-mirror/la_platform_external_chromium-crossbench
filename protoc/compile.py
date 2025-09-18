@@ -33,7 +33,7 @@ PROTO_MODULES = [
 class RepoConfig:
   name: str
   url: str
-  sparse_dirs: Sequence[str] = tuple()
+  sparse_dirs: Sequence[str] = ()
   proto_dir: str = ""
 
   def checkout(self, repos_dir: Path) -> None:

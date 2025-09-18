@@ -217,7 +217,7 @@ class IOSPlatform(RemotePlatformMixin, Platform):
     return 1.0
 
   def display_details(self) -> tuple[DisplayInfo, ...]:  #type: ignore[override]
-    return tuple()
+    return ()
 
   @property
   @override

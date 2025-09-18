@@ -115,7 +115,7 @@ class LoadLinePageFilter(LoadingPageFilter):
   @classmethod
   @override
   def all_stories(cls) -> tuple[Page, ...]:
-    return tuple()
+    return ()
 
 
 class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):

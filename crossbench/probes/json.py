@@ -184,8 +184,9 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
         table[info_key].append(browser_result["info"][info_key])
       data = browser_result["data"]
       self._extract_result_metrics_table(data, table)
-    flattened: list[list[str]] = list(
-        [label] + values for label, values in table.items())
+    flattened: list[list[str]] = [
+        [label] + values for label, values in table.items()
+    ]
     logging.critical(tabulate(flattened, tablefmt="plain"))
 
   def _extract_result_metrics_table(self, metrics: dict[str, Any],

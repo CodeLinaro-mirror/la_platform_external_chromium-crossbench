@@ -194,7 +194,8 @@ class LoadingPageFilter(StoryFilter[Page]):
   @classmethod
   def stories_from_config(cls, args: argparse.Namespace,
                           config: PagesConfig) -> Sequence[Page]:
-    labels = set(page_config.label for page_config in config.pages)
+    labels: set[str
+                | None] = {page_config.label for page_config in config.pages}
     use_labels = len(labels) == len(config.pages)
 
     stories: list[Page] = []
@@ -203,8 +204,7 @@ class LoadingPageFilter(StoryFilter[Page]):
 
     if not use_labels:
       # Double check that the urls are unique
-
-      urls = set(page_config.first_url for page_config in config.pages)
+      urls: set[str] = {page_config.first_url for page_config in config.pages}
       if len(urls) != len(config.pages):
         raise argparse.ArgumentTypeError(
             "Got non-unique story labels and urls.")

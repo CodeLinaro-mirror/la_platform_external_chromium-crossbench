@@ -20,7 +20,7 @@ from crossbench.parse import ObjectParser
 @dataclasses.dataclass(frozen=True)
 class CUJConfig:
   label: str
-  blocks: tuple[ActionBlock, ...] = tuple()
+  blocks: tuple[ActionBlock, ...] = ()
 
 
 @dataclasses.dataclass(frozen=True)

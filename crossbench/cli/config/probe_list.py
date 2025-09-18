@@ -75,8 +75,8 @@ class ProbeListConfig(ConfigObject):
 
   def __init__(
       self,
-      probe_configs: Iterable[ProbeConfig] = tuple(),
-      probes: Iterable[Probe] = tuple()
+      probe_configs: Iterable[ProbeConfig] = (),
+      probes: Iterable[Probe] = ()
   ) -> None:
     self._probes: dict[str, Probe] = {}
     if not probe_configs and not probes:

@@ -242,9 +242,8 @@ class Speedometer3Story(SpeedometerStory, metaclass=abc.ABCMeta):
   @classmethod
   @override
   def default_story_names(cls) -> tuple[str, ...]:
-    return tuple(
-        tuple(name for name, data in SPEEDOMETER_3_STORY_DATA.items()
-              if data["enabled"]))
+    return tuple(name for name, data in SPEEDOMETER_3_STORY_DATA.items()
+                 if data["enabled"])
 
   @override
   def _wait_for_ready(self, actions: Actions) -> None:

@@ -309,7 +309,7 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertFalse(runner.is_success)
     self.assertEqual(setup_count, 4)
     self.assertEqual(len(runner.runs), 4)
-    failed_runs = list(run for run in runner.runs if not run.is_success)
+    failed_runs = [run for run in runner.runs if not run.is_success]
     self.assertEqual(len(failed_runs), 1)
     failed_run = failed_runs[0]
 

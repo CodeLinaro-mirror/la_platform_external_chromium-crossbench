@@ -32,7 +32,7 @@ class ChromeExtensions(Freezable):
   def __init__(self, extensions: Optional[Iterable[str]] = None) -> None:
     super().__init__()
     self._mode: ExtensionsMode = ExtensionsMode.DEFAULT
-    self._extensions: OrderedSet[str] = OrderedSet(extensions or tuple())
+    self._extensions: OrderedSet[str] = OrderedSet(extensions or ())
 
   def disable(self) -> None:
     self.assert_not_frozen()

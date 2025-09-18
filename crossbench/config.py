@@ -54,7 +54,7 @@ class ConfigArgParser:
       type: Optional[ArgParserType],
       default: Any = NOT_SET,
       choices: Optional[Iterable[Any]] = None,
-      aliases: Iterable[str] = tuple(),
+      aliases: Iterable[str] = (),
       help: Optional[str] = None,
       is_list: bool = False,
       required: bool = False,
@@ -414,7 +414,7 @@ class ConfigObject(abc.ABC):
   - It is then used to create a real instance of an object.
   """
   HJSON_EXTENSIONS: ClassVar[tuple[str, ...]] = (".hjson", ".json")
-  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = tuple()
+  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = ()
   VALID_SCHEMES: ClassVar[tuple[str, ...]] = ()
 
   def __post_init__(self) -> None:
@@ -1085,7 +1085,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       type: Optional[ArgParserType],
       default: Optional[Any] = NOT_SET,
       choices: Optional[Iterable[Any]] = None,
-      aliases: tuple[str, ...] = tuple(),
+      aliases: tuple[str, ...] = (),
       help: Optional[str] = None,
       is_list: bool = False,
       required: bool = False,
@@ -1099,7 +1099,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       type: Optional[ArgParserType],
       default: Optional[Any] = NOT_SET,
       choices: Optional[Iterable[Any]] = None,
-      aliases: tuple[str, ...] = tuple(),
+      aliases: tuple[str, ...] = (),
       help: Optional[str] = None,
       is_list: bool = False,
       required: bool = False,

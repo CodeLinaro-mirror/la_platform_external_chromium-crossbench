@@ -412,7 +412,7 @@ class Runner:
 
   @property
   def platforms(self) -> Set[plt.Platform]:
-    return set(browser.platform for browser in self.browsers)
+    return {browser.platform for browser in self.browsers}
 
   @property
   def results_db(self) -> ResultsDB:
@@ -589,7 +589,7 @@ class Runner:
   def assert_successful_sessions_and_runs(self) -> None:
     if self._exceptions.is_success:
       return
-    failed_runs: int = len(list(run for run in self.runs if not run.is_success))
+    failed_runs: int = len([run for run in self.runs if not run.is_success])
     all_runs: int = len(tuple(self.runs))
     num_exceptions = len(self._exceptions)
     message: str = (
@@ -729,7 +729,7 @@ class Runner:
     out_dir = self.out_dir
     sessions_dir = out_dir / "sessions"
     sessions_dir.mkdir()
-    for session in set(run.browser_session for run in runs):
+    for session in {run.browser_session for run in runs}:
       relative = pth.LocalPath("..") / session.path.relative_to(out_dir)
       (sessions_dir / str(session.index)).symlink_to(relative)
 

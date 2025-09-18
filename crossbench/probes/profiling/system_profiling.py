@@ -159,7 +159,7 @@ class ProfilingProbe(Probe):
         "cpu",
         type=NumberParser.positive_zero_int,
         is_list=True,
-        default=tuple(),
+        default=(),
         help=("Android/Linux-only: Sample only on the selected cpus, "
               "specified as a list of 0-indexed cpu indices. "
               "Please refer to '--cpu' in the simpleperf/linux-perf "
@@ -168,7 +168,7 @@ class ProfilingProbe(Probe):
         "events",
         type=str,
         is_list=True,
-        default=tuple(),
+        default=(),
         help=("Android/Linux-only-only: Events to record. "
               "Please refer to the '-e' simpleperf/linux-perf "
               "documentation for more details."))
@@ -176,7 +176,7 @@ class ProfilingProbe(Probe):
         "grouped_events",
         type=str,
         is_list=True,
-        default=tuple(),
+        default=(),
         help=("Android-only: Events to record as a single group. "
               "These events are monitored as a group, "
               "and scheduled in and out together. "
@@ -186,7 +186,7 @@ class ProfilingProbe(Probe):
         "add_counters",
         type=str,
         is_list=True,
-        default=tuple(),
+        default=(),
         help=("Android-only: Add additional event counts in samples. NOTE: If "
               "`add_counter` is used, `--no-inherit` is implicitly set, since "
               "this is required by simpleperf. Please refer to simpleperf "
@@ -481,7 +481,7 @@ class ProfilingProbe(Probe):
     self._log_results(group.runs)
 
   def _log_results(self, runs: Iterable[Run]) -> None:
-    filtered_runs = list(run for run in runs if self in run.results)
+    filtered_runs = [run for run in runs if self in run.results]
     if not filtered_runs:
       return
     logging.info("-" * 80)

@@ -72,7 +72,7 @@ class Binary:
   def _convert(self,
                paths: Optional[BinaryLookup] = None) -> tuple[pth.AnyPath, ...]:
     if paths is None:
-      return tuple()
+      return ()
     if isinstance(paths, str):
       path: str = paths
       if not path:

@@ -37,7 +37,7 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     config = FlagsConfig.parse({
         "a": None,
         "b": {},
-        "c": tuple(),
+        "c": (),
     })
     self.assertEqual(len(config), 3)
     for group in config.values():
@@ -219,7 +219,7 @@ class FlagsVariantConfigTestCase(unittest.TestCase):
     self.assertEqual(variant_b, variant_a)
     self.assertNotEqual(variant_a, variant_c)
     self.assertNotEqual(variant_b, variant_c)
-    variants = set((variant_a,))
+    variants = {variant_a}
     self.assertIn(variant_a, variants)
     self.assertIn(variant_b, variants)
     self.assertNotIn(variant_c, variants)

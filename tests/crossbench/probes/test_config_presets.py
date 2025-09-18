@@ -70,8 +70,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
 
     probes = ProbeListConfig.parse(config_file).probes
     self.assertTrue(probes)
-    self.assertTrue(
-        any(map(lambda probe: isinstance(probe, probe_cls), probes)))
+    self.assertTrue(any(isinstance(probe, probe_cls) for probe in probes))
     for probe in probes:
       self.assertFalse(probe.is_attached)
     return probes

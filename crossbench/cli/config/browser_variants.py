@@ -159,7 +159,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
       self, name: str, raw_browser_data: str | dict[str, Any],
       flag_variants: FlagsGroupConfig) -> dict[FlagsVariantConfig, str]:
     labels_lookup: dict[FlagsVariantConfig, str] = {}
-    group_labels = set(variant.label for variant in flag_variants)
+    group_labels: set[str] = {variant.label for variant in flag_variants}
     use_unique_variant_label = len(group_labels) == len(flag_variants)
 
     for variant in flag_variants:
@@ -576,8 +576,9 @@ class BrowserVariantConfigArgs(BaseBrowserVariantsConfig):
                 f"Used chrome/chromium-specific flags {flag_name} "
                 f"for non-chrome {browser_cls.type_name()}.\n"
                 "Use --browser-config for complex variants.")
-    browser_types = set(
-        variant.browser_cls.type_name() for variant in self._variants)
+    browser_types: set[str] = {
+        variant.browser_cls.type_name() for variant in self._variants
+    }
     if len(browser_types) == 1:
       return
     if args.driver_path:

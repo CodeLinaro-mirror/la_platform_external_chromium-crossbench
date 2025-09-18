@@ -178,7 +178,7 @@ class MockRunner:
 
   def __init__(self, probes: list[Probe] | None = None) -> None:
     self.benchmark = MockBenchmark(stories=[MockStory("mock_story")])
-    self.runs: tuple[Run, ...] = tuple()
+    self.runs: tuple[Run, ...] = ()
     self.platform = MockPlatform("test-platform")
     self.repetitions = 1
     self.create_symlinks = True

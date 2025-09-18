@@ -67,7 +67,7 @@ class BrowserConfig(ConfigObject):
 
   cache_dir: pth.AnyPath | None = None
   clear_cache: bool | None = None
-  extensions: tuple[ExtensionConfig, ...] = tuple()
+  extensions: tuple[ExtensionConfig, ...] = ()
 
   def __post_init__(self) -> None:
     if not self.browser:

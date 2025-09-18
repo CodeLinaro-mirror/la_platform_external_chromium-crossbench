@@ -226,7 +226,7 @@ class V8LogProbe(ChromiumProbe):
 
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
-    runs: list[Run] = list(run for run in group.runs if self in run.results)
+    runs: list[Run] = [run for run in group.runs if self in run.results]
     if not runs:
       return
     logging.info("-" * 80)
