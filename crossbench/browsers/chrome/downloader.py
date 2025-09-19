@@ -533,10 +533,12 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     lib_url = archive_url.replace("TrichromeChromeGoogle",
                                   "TrichromeLibraryGoogle")
     lib_url = lib_url.replace(self.ARCHIVE_SUFFIX, ".apk")
-    with tempfile.TemporaryDirectory(prefix="cb_download_") as tmp_dir_name:
-      lib_tmp_dir = pth.LocalPath(tmp_dir_name)
-      yield lib_url, lib_tmp_dir
-    self._archive_path = main_archive_path
+    try:
+      with tempfile.TemporaryDirectory(prefix="cb_download_") as tmp_dir_name:
+        lib_tmp_dir = pth.LocalPath(tmp_dir_name)
+        yield lib_url, lib_tmp_dir
+    finally:
+      self._archive_path = main_archive_path
 
   @override
   def _install_archive(self, archive_path: pth.LocalPath) -> None:

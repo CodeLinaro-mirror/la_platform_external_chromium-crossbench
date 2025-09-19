@@ -101,9 +101,12 @@ def timer(msg: str = "Elapsed Time",
   def print_timer() -> None:
     delta = dt.datetime.now() - start_time
     write_indented(f"{msg}: {format_duration(delta)}")
-  with RepeatTimer(interval=update_interval, function=print_timer):
-    yield
-  clear_indented()
+
+  try:
+    with RepeatTimer(interval=update_interval, function=print_timer):
+      yield
+  finally:
+    clear_indented()
 
 
 @contextlib.contextmanager
@@ -121,9 +124,12 @@ def countdown(duration: dt.timedelta,
     delta = dt.datetime.now() - start_time
     time_left = duration - delta
     write_indented(f"{msg}: {format_duration(time_left)}")
-  with RepeatTimer(interval=update_interval, function=print_timer):
-    yield
-  clear_indented()
+
+  try:
+    with RepeatTimer(interval=update_interval, function=print_timer):
+      yield
+  finally:
+    clear_indented()
 
 
 class RepeatTimer(threading.Timer):

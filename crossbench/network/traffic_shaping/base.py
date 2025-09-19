@@ -22,7 +22,7 @@ class TrafficShaper(abc.ABC):  # noqa: B024
 
   def __init__(self, browser_platform: Platform) -> None:
     self._browser_platform: Final[Platform] = browser_platform
-    self._is_running = False
+    self._is_running: bool = False
 
   @property
   def browser_platform(self) -> Platform:

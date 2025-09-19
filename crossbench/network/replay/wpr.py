@@ -158,8 +158,8 @@ class LocalWprReplayNetwork(WprReplayNetwork):
     if not self._traffic_shaper.is_live or not browser_platform.is_remote:
       yield
       return
-    http_port = self.http_port
-    https_port = self.https_port
+    http_port: int = self.http_port
+    https_port: int = self.https_port
     logging.info("REMOTE PORT FORWARDING: %s <= %s", self.host_platform,
                  browser_platform)
     # TODO: make ports configurable
@@ -223,9 +223,11 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
   @contextlib.contextmanager
   def _remote_temp_dir(self, session: BrowserSessionRunGroup) -> Iterator:
     with session.browser_platform.TemporaryDirectory() as tmp_dir:
-      self._tmp_dir = tmp_dir
-      yield
-      self._tmp_dir = None
+      try:
+        self._tmp_dir = tmp_dir
+        yield
+      finally:
+        self._tmp_dir = None
 
   def _push_file(self, path: LocalPath) -> AnyPath:
     assert self._tmp_dir is not None

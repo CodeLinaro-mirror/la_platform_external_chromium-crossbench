@@ -238,12 +238,14 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     with mock.patch(
         "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
             "sys.stderr", new_callable=io.StringIO) as mock_stderr:
-      yield io_capture
-      # Make sure we don't accidentally reuse the buffers across run_cli calls.
-      io_capture.stdout = mock_stdout.getvalue()
-      io_capture.stderr = mock_stderr.getvalue()
-      mock_stdout.close()
-      mock_stderr.close()
+      try:
+        yield io_capture
+      finally:
+        # Ensure we don't accidentally reuse the buffers across run_cli calls.
+        io_capture.stdout = mock_stdout.getvalue()
+        io_capture.stderr = mock_stderr.getvalue()
+        mock_stdout.close()
+        mock_stderr.close()
 
   def run_cli_output(self,
                      *args,
