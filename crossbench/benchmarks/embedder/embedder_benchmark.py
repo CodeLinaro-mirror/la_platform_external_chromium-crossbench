@@ -8,7 +8,7 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Sequence, cast
 
 from typing_extensions import override
 
@@ -76,10 +76,16 @@ class EmbedderBenchmark(SubStoryBenchmark):
   def __init__(
       self,
       stories: Sequence[Story],
-      action_runner_config: Optional[ActionRunnerConfig] = None) -> None:
+      action_runner_config: Optional[ActionRunnerConfig] = None,
+      embedder_process_name: str = "search") -> None:
     for story in stories:
       assert isinstance(story, self.DEFAULT_STORY_CLS)
     super().__init__(stories, action_runner_config)
+    self._embedder_process_name = embedder_process_name
+
+  @property
+  def embedder_process_name(self) -> str:
+    return self._embedder_process_name
 
   @classmethod
   @override
@@ -97,6 +103,10 @@ class EmbedderBenchmark(SubStoryBenchmark):
         type=CUJsConfig.parse,
         help="Stories we want to perform in the benchmark run following a"
         "specified scenario.")
+    parser.add_argument(
+        "--embedder-process-name",
+        default="search",
+        help="Name of the embedder process.")
     return parser
 
   @classmethod
@@ -111,6 +121,13 @@ class EmbedderBenchmark(SubStoryBenchmark):
       for cuj_config in config.cujs
     )
     return cujs
+
+  @classmethod
+  @override
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+    kwargs = super().kwargs_from_cli(args)
+    kwargs["embedder_process_name"] = args.embedder_process_name
+    return kwargs
 
   @classmethod
   def get_cujs_config(cls, args: argparse.Namespace) -> CUJsConfig:

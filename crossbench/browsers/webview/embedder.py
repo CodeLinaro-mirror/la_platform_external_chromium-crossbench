@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, cast
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -19,6 +19,8 @@ if TYPE_CHECKING:
   from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
   from crossbench import path as pth
+  from crossbench.benchmarks.embedder.embedder_benchmark import (
+      EmbedderBenchmark)
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -65,10 +67,12 @@ class WebviewEmbedder(Webview):
   def _create_options(self, session: BrowserSessionRunGroup,
                       args: Sequence[str]) -> ChromeOptions:
     options = ChromeOptions()
-    # TODO(zbikowski): process name should come from config
     options.add_experimental_option("androidPackage", self.android_package)
-    options.add_experimental_option(
-      "androidProcess", f"{self.android_package}:search")
+    session_benchmark = cast("EmbedderBenchmark", session.benchmark)
+    if process_name := session_benchmark.embedder_process_name:
+      options.add_experimental_option(
+          "androidProcess",
+          f"{self.android_package}:{process_name}")
     options.add_experimental_option("androidUseRunningApp", True)
     return options
 
