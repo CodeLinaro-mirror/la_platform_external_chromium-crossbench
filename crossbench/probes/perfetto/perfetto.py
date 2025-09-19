@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import atexit
 import dataclasses
+import datetime as dt
 import functools
 import logging
 import subprocess
@@ -229,11 +230,16 @@ class PerfettoProbe(Probe):
     return DesktopPerfettoProbeContext(self, run)
 
 
+PERFETTO_CONFIG_NAME: Final[str] = "perfetto_config.textproto"
+PERFETTO_TRACE_NAME: Final[str] = "perfetto.trace.pb"
+
 class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
   def __init__(self, probe: PerfettoProbe, run: Run) -> None:
+    self._file_prefix: Final[str] = dt.datetime.now().strftime(
+        "%Y-%m-%d_%H%M%S")
     super().__init__(probe, run)
-    self._host_config_file: pth.LocalPath = (
-        run.out_dir / "perfetto_config.textproto")
+    self._host_config_file: Final[pth.LocalPath] = (
+        run.out_dir / PERFETTO_CONFIG_NAME)
     self._perfetto_pid: int | None = None
 
   def setup(self) -> None:
@@ -324,17 +330,32 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
     self._perfetto_pid = None
 
   def teardown(self) -> ProbeResult:
-    # Copy files:
+    try:
+      return self._transfer_results()
+    finally:
+      if self.browser_platform.is_remote:
+        self._cleanup_remote_perfetto_files()
+
+  def _transfer_results(self) -> ProbeResult:
     browser_result = self.browser_result(file=[self.result_path])
     local_result_file = browser_result.file
     assert local_result_file.is_file(), (
         f"Could not copy perfetto results: {local_result_file}")
+    renamed_result_file = local_result_file.with_name(PERFETTO_TRACE_NAME)
+    self.host_platform.rename(local_result_file, renamed_result_file)
 
-    self.host_platform.sh("gzip", local_result_file)
-    local_result_file = local_result_file.with_suffix(
+    self.host_platform.sh("gzip", renamed_result_file)
+    renamed_result_file = renamed_result_file.with_suffix(
         f"{local_result_file.suffix}.gz")
+    assert renamed_result_file.is_file(), (
+        f"Could not compress {renamed_result_file}")
 
-    return LocalProbeResult(trace=(local_result_file,))
+    return LocalProbeResult(trace=(renamed_result_file,))
+
+  def _cleanup_remote_perfetto_files(self) -> None:
+    # Especially on android, the perfetto files are not in the default tmp dir.
+    self.browser_platform.rm(self.result_path, missing_ok=True)
+    self.browser_platform.rm(self.get_browser_config_path(), missing_ok=True)
 
 
 class DesktopPerfettoProbeContext(PerfettoProbeContext):
@@ -346,12 +367,12 @@ class DesktopPerfettoProbeContext(PerfettoProbeContext):
 
   @override
   def get_browser_config_path(self) -> pth.AnyPath:
-    return self.result_path.with_name("perfetto_config.textproto")
+    return self.result_path.with_name(PERFETTO_CONFIG_NAME)
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
     return self._run.get_default_probe_result_path(
-        self._probe).with_name("perfetto.trace.pb")
+        self._probe).with_name(PERFETTO_TRACE_NAME)
 
   @override
   def setup(self) -> None:
@@ -392,11 +413,13 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
 
   @override
   def get_browser_config_path(self) -> pth.AnyPath:
-    return _PERFETTO_CONFIG_REMOTE_DIR_ANDROID / "_perfetto_config.textproto"
+    return _PERFETTO_CONFIG_REMOTE_DIR_ANDROID / (
+        f"{self._file_prefix}_{PERFETTO_CONFIG_NAME}")
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
-    return _PERFETTO_TRACE_REMOTE_DIR_ANDROID / "_perfetto.trace.pb"
+    return _PERFETTO_TRACE_REMOTE_DIR_ANDROID / (
+        f"{self._file_prefix}_{PERFETTO_TRACE_NAME}")
 
   @property
   @override
@@ -417,8 +440,10 @@ class ChromeOsPerfettoProbeContext(PerfettoProbeContext):
 
   @override
   def get_browser_config_path(self) -> pth.AnyPath:
-    return _PERFETTO_REMOTE_DIR_CROS / "perfetto_config.textproto"
+    return _PERFETTO_REMOTE_DIR_CROS / (
+        f"{self._file_prefix}_{PERFETTO_CONFIG_NAME}")
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
-    return _PERFETTO_REMOTE_DIR_CROS / "perfetto.trace.pb"
+    return _PERFETTO_REMOTE_DIR_CROS / (
+        f"{self._file_prefix}_{PERFETTO_TRACE_NAME}")
