@@ -84,10 +84,11 @@ class LoadingPageFilter(StoryFilter[Page]):
         type=PlaybackController.parse,
         default=PlaybackController.default(),
         help="Set limit on looping through/repeating the selected stories. "
-        "Default is once."
+        "Default is once. "
         "Valid values are: 'once', 'forever', number, time. "
         "Cycle 10 times: '--playback=10x'. "
-        "Repeat for 1.5 hours: '--playback=1.5h'.")
+        "Repeat for 1.5 hours: '--playback=1.5h'. "
+        "Run 5 times, once every 10 seconds: '--playback=\"5x every 10s\"'.")
     playback_group.add_argument(
         "--forever",
         dest="playback",

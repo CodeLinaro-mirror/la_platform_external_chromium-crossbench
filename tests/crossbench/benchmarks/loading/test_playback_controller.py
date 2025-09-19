@@ -10,8 +10,8 @@ import unittest
 from unittest import mock
 
 from crossbench.benchmarks.loading.playback_controller import (
-    ForeverPlaybackController, PlaybackController, RepeatPlaybackController,
-    TimeoutPlaybackController)
+    ForeverPlaybackController, PeriodicPlaybackController, PlaybackController,
+    RepeatPlaybackController, TimeoutPlaybackController)
 from tests import test_helper
 
 
@@ -78,6 +78,13 @@ class PlaybackControllerTestCase(unittest.TestCase):
     assert isinstance(playback, TimeoutPlaybackController)
     self.assertEqual(playback.duration, dt.timedelta(minutes=5.5))
 
+  def test_parse_periodic(self):
+    playback = PlaybackController.parse("10x every 1m")
+    self.assertIsInstance(playback, PeriodicPlaybackController)
+    assert isinstance(playback, PeriodicPlaybackController)
+    self.assertEqual(playback.period, dt.timedelta(minutes=1))
+    self.assertEqual(playback.count, 10)
+
   def test_once(self):
     iterations = list(PlaybackController.once())
     self.assertListEqual(iterations, [0])
@@ -125,6 +132,28 @@ class PlaybackControllerTestCase(unittest.TestCase):
       count += 1
       if count > 100:
         break
+
+  def test_periodic_mocked(self):
+    controller = PlaybackController.periodic(
+        period=dt.timedelta(seconds=1), count=2)
+    now = dt.datetime.now()
+    with mock.patch(
+        "crossbench.benchmarks.loading.playback_controller.dt"
+    ) as mock_dt, mock.patch(
+        "crossbench.benchmarks.loading.playback_controller.time") as mock_time:
+      mock_dt.datetime.now.return_value = now
+      iterator = iter(controller)
+
+      self.assertEqual(next(iterator), 0)
+      mock_time.sleep.assert_not_called()
+
+      mock_dt.datetime.now.return_value = now + dt.timedelta(seconds=0.5)
+      self.assertEqual(next(iterator), 1)
+      mock_time.sleep.assert_called_once_with(0.5)
+
+      mock_dt.datetime.now.return_value = now + dt.timedelta(seconds=1.5)
+      with self.assertRaises(StopIteration):
+        next(iterator)
 
 
 if __name__ == "__main__":
