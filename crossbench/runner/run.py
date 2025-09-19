@@ -92,7 +92,7 @@ class Run(ResultOrigin):
     self._out_dir = self._get_out_dir().absolute()
     self._probe_results = ProbeResultDict(self._out_dir)
     self._durations = Durations()
-    self._start_datetime = dt.datetime.utcfromtimestamp(0)
+    self._start_datetime = dt.datetime.fromtimestamp(0, dt.timezone.utc)
     self._timeout = timeout
     self._exceptions = Annotator(throw)
     self._browser_tmp_dir: pth.AnyPath | None = None

@@ -183,7 +183,7 @@ class MetricsMerger:
     return merger
 
   def __init__(self,
-               *args: dict | list[dict],
+               *args: dict | Iterable[dict],
                key_fn: Optional[helper.KeyFnType] = None):
     """Create a new MetricsMerger
 
@@ -226,16 +226,16 @@ class MetricsMerger:
       else:
         self._data[key] = Metric.from_json(item)
 
-  def add(self, data: dict | list[dict]) -> None:
+  def add(self, data: dict | Iterable[dict]) -> None:
     """ Merge "arbitrary" hierarchical data that ends up having primitive leafs.
     Anything that is not a dict is considered a leaf node.
     """
-    if isinstance(data, list):
+    if isinstance(data, dict):
+      self._merge(data)
+    else:
       # Assume that top-level lists are repetitions of the same data
       for item in data:
         self._merge(item)
-    else:
-      self._merge(data)
 
   def _merge(
       self, data: dict | list[dict], parent_path: tuple[str, ...] = ()) -> None:

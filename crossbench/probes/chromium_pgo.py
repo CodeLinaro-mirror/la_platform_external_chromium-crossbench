@@ -22,7 +22,7 @@ from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.runner.run import Run
 
 DEFAULT_REMOTE_PGO_ROOT_PATH: pth.AnyPath = (
@@ -66,7 +66,7 @@ class ChromiumPgoProbe(ChromiumProbe):
     flags["--remote-allow-origins"] = "*"
 
   @override
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     super().validate_browser(env, browser)
     self.expect_android(browser)
 
