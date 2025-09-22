@@ -31,8 +31,8 @@ class ChromiumVersion(BrowserVersion):
   _CHANNEL_NAME_LOOKUP: Final[dict[BrowserVersionChannel, str]] = {
       channel: name for name, channel in _CHANNEL_LOOKUP.items()
   }
-  _CHANNEL_RE: Final[re.Pattern] = re.compile("|".join(_CHANNEL_LOOKUP.keys()),
-                                              re.I)
+  CHANNEL_RE: Final[re.Pattern] = re.compile("|".join(_CHANNEL_LOOKUP.keys()),
+                                             re.I)
 
   @classmethod
   @override
@@ -59,7 +59,7 @@ class ChromiumVersion(BrowserVersion):
 
   @classmethod
   def _parse_channel(cls, full_version: str) -> str:
-    if matches := cls._CHANNEL_RE.search(full_version):
+    if matches := cls.CHANNEL_RE.search(full_version):
       return matches[0]
     return ""
 

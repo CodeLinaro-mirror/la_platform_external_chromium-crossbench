@@ -31,7 +31,7 @@ from crossbench.cli.config.flags import (DEFAULT_LABEL, FlagsConfig,
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError
 from crossbench.flags.base import Flags
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from crossbench.parse import LateArgumentError, ObjectParser
 
 if TYPE_CHECKING:
@@ -346,7 +346,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
       if not isinstance(network_config, NetworkConfig):
         network_config = NetworkConfig.parse(network_config)
       return network_config.create(browser_platform)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   def _get_browser_env_config(self, args: argparse.Namespace,
                               browser_config: BrowserConfig) -> EnvConfig:
@@ -399,7 +399,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
 
   def parse_config_path(self, path: pth.LocalPath,
                         args: argparse.Namespace) -> None:
-    with ChangeCWD(path.parent):
+    with change_cwd(path.parent):
       with path.open(encoding="utf-8") as f:
         self.parse_text_io(f, args)
 

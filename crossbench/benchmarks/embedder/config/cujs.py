@@ -56,7 +56,7 @@ class CUJsConfig(ConfigObject):
       with exception.annotate_argparsing("Parsing config 'cujs'"):
         cujs = cls._parse_cujs(cujs_config)
         return cls(cujs)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   @classmethod
   def _parse_cujs(cls, data: dict[str, Any]) -> tuple[CUJConfig, ...]:

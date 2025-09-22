@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 def _get_term_color_support() -> int:
   try:
-    import curses  # pylint: disable=import-outside-toplevel
+    import curses  # pylint: disable=import-outside-toplevel  # noqa: PLC0415
   except ImportError:
     # Probably Windows, which doesn't have great curses support
     return 16

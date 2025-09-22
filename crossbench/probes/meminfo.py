@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Self, Type
 
 from typing_extensions import override
 
-from crossbench.path import AnyPath, safe_filename
+from crossbench.path import AnyPath, LocalPath, safe_filename
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 
 if TYPE_CHECKING:
@@ -57,12 +57,12 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
     pass
 
   def _dump_file(self, title: str | None,
-                 info_stack: exception.TInfoStack) -> AnyPath:
+                 info_stack: exception.TInfoStack) -> LocalPath:
     name = "_".join(info_stack)
     if title:
       name = f"{title}.{name}"
     name = safe_filename(name).lower() + ".json"
-    return self._default_result_path / name
+    return self.local_result_path / name
 
   def _timeout_from_deadline(self, deadline: dt.datetime) -> dt.timedelta:
     timeout = deadline - dt.datetime.now()
@@ -114,7 +114,7 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
       meminfo_json["processes"].append(dataclasses.asdict(process_meminfo))
 
     self.browser.performance_mark("meminfo", detail=meminfo_json)
-    with open(self._dump_file(title, info_stack), "x", encoding="utf-8") as f:
+    with self._dump_file(title, info_stack).open("x", encoding="utf-8") as f:
       json.dump(meminfo_json, f)
 
   @override

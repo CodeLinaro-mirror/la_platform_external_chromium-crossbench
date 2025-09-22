@@ -1,6 +1,7 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import argparse
 import unittest
@@ -33,7 +34,7 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
 70 ----O                      (4 = 8.0%) {64.0%}
 80 --O                        (2 = 4.0%) {72.0%}
 90 ------------O              (12 = 24.0%) {76.0%}
-"""
+"""  # noqa: W291
 
   DELTA_HEADER = (
       "Histogram: test recorded 100 samples, mean = 52.11 (flags = 0x41)")

@@ -1,6 +1,7 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import os
 import pathlib
@@ -45,7 +46,7 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
     self.assertIsNone(V8CheckoutFinder(self.platform).path)
     self.assertIsNone(V8CheckoutFinder(self.platform).local_path)
 
-  def test_D8_PATH(self):
+  def test_d8_path(self):
     with mock.patch.dict(os.environ, {}, clear=True):
       self.assertIsNone(V8CheckoutFinder(self.platform).path)
     candidate_dir = pathlib.Path("/custom/v8/")

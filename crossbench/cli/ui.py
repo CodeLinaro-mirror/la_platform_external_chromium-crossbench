@@ -12,6 +12,7 @@ import threading
 from typing import TYPE_CHECKING, Final, Iterator, Optional, Type
 
 import colorama
+from typing_extensions import override
 
 from crossbench.helper import terminal
 from crossbench.helper.spinner import Spinner
@@ -47,14 +48,18 @@ class ColoredLogFormatter(logging.Formatter):
     formatter = logging.Formatter(log_fmt)
     return formatter.format(record)
 
+  @override
   def formatException(
       self,
       ei: tuple[Type[BaseException], BaseException, Optional[TracebackType]]
       | tuple[None, ...]
   ) -> str:
+    del ei
     return ""
 
+  @override
   def formatStack(self, stack_info: str) -> str:
+    del stack_info
     return ""
 
 

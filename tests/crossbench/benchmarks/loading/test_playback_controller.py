@@ -125,11 +125,9 @@ class PlaybackControllerTestCase(unittest.TestCase):
         next(iterator)
 
   def test_forever(self):
-    count = 0
-    for i in PlaybackController.forever():
+    for count, i in enumerate(PlaybackController.forever()):
       self.assertEqual(count, i)
       # Just run for some large-ish amount of iterations to get code coverage.
-      count += 1
       if count > 100:
         break
 

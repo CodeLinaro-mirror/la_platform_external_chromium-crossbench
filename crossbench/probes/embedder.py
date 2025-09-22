@@ -53,6 +53,7 @@ class WebviewEmbedderProbe(JsonResultProbe):
     return self._metric_js
 
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
+    del env
     if not isinstance(browser, WebviewEmbedder):
       raise ProbeIncompatibleBrowser(self, browser,
                                      "Only supported for WV embedders")

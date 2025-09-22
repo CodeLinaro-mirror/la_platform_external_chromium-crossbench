@@ -55,6 +55,9 @@ class StateMachine(Generic[StateT]):
   def name(self) -> str:
     return self._state.name
 
+  def __hash__(self) -> int:
+    return hash(self._state)
+
   def __eq__(self, other: object) -> bool:
     if self is other:
       return True

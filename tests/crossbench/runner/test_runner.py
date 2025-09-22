@@ -1,6 +1,7 @@
 # Copyright 2022 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import contextlib
 import json
@@ -11,9 +12,7 @@ from unittest import mock
 
 from typing_extensions import override
 
-from crossbench.browsers.browser import Browser
 from crossbench.browsers.webdriver import RemoteWebDriver
-from crossbench.env.runner_env import RunnerEnv
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError
@@ -31,6 +30,8 @@ from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockBrowser,
                                             MockRunner)
 
 if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.probes.probe import Probe
 
 # Skip strict type checks for better mocking
@@ -440,7 +441,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       run_method(is_dry_run=False)
 
     for run in runs:
-      run.run = (  # pylint: disable=unnecessary-direct-lambda-call
+      run.run = (  # pylint: disable=unnecessary-direct-lambda-call  # noqa: PLC3002
           lambda run_method: lambda is_dry_run: test_run(run_method))(
               run.run)
     with self.patch_teardown_run(runner) as teardown_run_mock:
@@ -469,7 +470,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         return MockProbeContext(probe, run)
       nonlocal setup_fail_count
       setup_fail_count += 1
-      raise CustomException()
+      raise CustomException
 
     probe.create_context = mock_get_context_fail
 
@@ -506,7 +507,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     def mock_setup_fail() -> None:
       nonlocal setup_fail_count
       setup_fail_count += 1
-      raise CustomException()
+      raise CustomException
 
     def mock_get_context_fail(run):
       context = MockProbeContext(probe, run)
@@ -554,7 +555,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       del session
       nonlocal setup_fail_count
       setup_fail_count += 1
-      raise CustomException()
+      raise CustomException
 
     failing_run.browser.start = mock_start_fail
 
@@ -588,7 +589,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     def mock_run_story_fail():
       nonlocal run_fail_count
       run_fail_count += 1
-      raise CustomException()
+      raise CustomException
 
     with mock.patch.object(failing_run, "_run_story", mock_run_story_fail):
       self.assertEqual(run_fail_count, 0)

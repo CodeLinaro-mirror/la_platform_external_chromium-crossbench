@@ -134,7 +134,7 @@ class ProbeConfig(ConfigObject):
       if config_str := self.config_str:
         return self.probe_cls.parse_str(config_str)
       return self.probe_cls.parse_dict(self.config_dict or {})
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   @property
   def name(self) -> str:

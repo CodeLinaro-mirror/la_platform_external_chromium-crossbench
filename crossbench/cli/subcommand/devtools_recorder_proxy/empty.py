@@ -25,4 +25,4 @@ class CrossbenchDevToolsRecorderProxy:
 
   @classmethod
   def run_subcommand(cls, args: argparse.Namespace) -> None:
-    raise NotImplementedError()
+    raise NotImplementedError

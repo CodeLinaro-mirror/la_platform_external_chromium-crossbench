@@ -80,7 +80,7 @@ class UsernamePassword(Secret):
 
 
 class InteractiveUsernamePassword(UsernamePassword):
-  """Interactive secret that defers the input to the user so we can 
+  """Interactive secret that defers the input to the user so we can
   live test the login process. """
 
   def __init__(self) -> None:

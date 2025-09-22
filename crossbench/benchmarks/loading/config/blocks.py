@@ -80,7 +80,7 @@ class ActionBlock(ConfigObject):
     with exception.annotate_argparsing(
         "Parsing default block action sequence:"):
       return cls.parse_dict({"actions": config}, label=label, index=index)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   @classmethod
   def _parse_block_label(cls, value: Any) -> Optional[str]:

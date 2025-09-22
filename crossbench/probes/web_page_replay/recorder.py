@@ -13,7 +13,7 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.helper import fs_helper
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
 from crossbench.parse import PathParser
@@ -176,7 +176,7 @@ class WebPageReplayProbe(Probe):
         input_archive,
         output_archive,
     ]
-    with ChangeCWD(self._wpr_go_bin.parent):
+    with change_cwd(self._wpr_go_bin.parent):
       self.host_platform.sh(*cmd)
 
   @override

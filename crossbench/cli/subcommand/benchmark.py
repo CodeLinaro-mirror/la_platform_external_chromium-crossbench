@@ -51,6 +51,7 @@ class EnableFastAction(argparse.Action):
                namespace: argparse.Namespace,
                values: str | Sequence[Any] | None,
                option_string: Optional[str] = None) -> None:
+    del parser, values, option_string
     namespace.cool_down_time = dt.timedelta()
     namespace.splash_screen = SplashScreen.NONE
     namespace.env_validation = ValidationMode.SKIP
@@ -68,6 +69,7 @@ class AppendDebuggerProbeAction(argparse.Action):
                namespace: argparse.Namespace,
                values: str | Sequence[Any] | None,
                option_string: Optional[str] = None) -> None:
+    del parser, values
     probes: list[ProbeConfig] = getattr(namespace, self.dest, [])
     probe_settings: dict[str, str] = {"debugger": "gdb"}
     if option_string and "lldb" in option_string:
@@ -765,7 +767,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     with exception.annotate_argparsing(
         f"Parsing {benchmark_cls.NAME} arguments"):
       return benchmark_cls.from_cli_args(args)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   def _get_benchmark_cls(self, args: argparse.Namespace) -> Type[Benchmark]:
     del args

@@ -1,15 +1,15 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import datetime as dt
 import pathlib
 import unittest
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.scroll import ScrollAction
@@ -33,6 +33,9 @@ from tests.crossbench.mock_browser import JsInvocation, MockChromeAndroidStable
 from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
                                           LinuxMockPlatform, MockAdb)
 from tests.crossbench.runner.helper import MockRun, MockRunner
+
+if TYPE_CHECKING:
+  from crossbench.action_runner.action.action import Action
 
 
 class ViewportInfoTestCase(unittest.TestCase):

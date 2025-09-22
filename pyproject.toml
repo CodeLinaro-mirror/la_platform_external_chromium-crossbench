@@ -108,6 +108,24 @@ extend-select = [
     "PIE",  # flake8-pie
     "PYI",  # flake8-pyi
     "Q",    # flake8-quotes
+    "RSE",  # flake8-raise
+    "RET",  # flake8-return
+    "SLF",  # flake8-self
+    "SIM",  # flake8-simplify
+    "TID",  # flake8-tidy-imports.
+    "TC",   # flake8-type-checking,
+    "ARG",  # flake8-unused-arguments.
+    "PTH",  # lake8-use-pathlib
+    "FLY",  # flynt (static string join)
+    "I",    # isort
+    "N",    # pep8-naming
+    "PERF", # Perflint
+    "E",    # pycodestyle error
+    "W",    # pycodestyle warning
+    "F",    # pyflakes
+    "PLE",  # pylint error
+    "PLC",  # pylint refactor
+    "PLW",  # pylint warnings
     # TODO: Add more categories
 ]
 ignore = [
@@ -118,21 +136,36 @@ ignore = [
     "B027",   # empty-method-without-abstract-decorator
     "B019",   # Use of `functools.lru_cache` or `functools.cache` on methods can lead to memory leaks
     "LOG015", # Disallow root-logger-calls
+    "RET504", # unnecessary-assign
+    "SIM300", # allow yoda-conditions
+    "SIM117", # Allow nested with scopes
+    "SIM102", # Allow nested ifs
+    "SIM108", # Don't force ternary operator
+    "SIM103", # Don't force folded bool returns
+    "E501",   # Line too long
+    "PLW2901", # loop variable overwrite
     # TODO: try to clean up code for these errors
     "B008",   # Do not perform function call in default arguments
     "S101",   # Do not use assert
     "S603",   # Untrusted shell inputs.
+    "ARG005", # Unused lambda argument
+    "I001",   # Imports sorting and formatting (conflicts if git cl format)
+    "N818",   # Exceptions subclass names must end in "Error"
+    "PERF401", # force list comprehensions
 ]
 
 [tool.ruff.lint.per-file-ignores]
-
+"PRESUBMIT.py" = [
+    "N",
+]
 "tests/*" = [
     "ANN",      # tests are allowed to skip type annotations
     "S",        # general security issues and input validation.
     "B018",     # Found useless attribute access
     "BLE",      # flake8-blind-except
+    "SLF001",   # Allow private field access for tests.
+    "ARG",      # Allow unused args in tests
 ]
-
 "crossbench/action_runner/chromeos_scripts/*" = [
     "INP001",   # Need module __init__.py
 ]

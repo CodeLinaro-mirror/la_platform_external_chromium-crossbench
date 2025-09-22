@@ -34,7 +34,7 @@ class RemotePlatformMixin:
     return self._host_platform.local_path(path)
 
   def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 class RemotePopen(subprocess.Popen):

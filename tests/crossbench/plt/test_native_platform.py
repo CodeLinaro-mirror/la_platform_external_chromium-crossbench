@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from crossbench import plt
+from crossbench.path import LocalPath
 from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
@@ -92,7 +93,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.platform.search_binary(pathlib.Path())
     self.assertIn("empty", str(cm.exception))
     with self.assertRaises(ValueError) as cm:
-      self.platform.search_binary(pathlib.Path(""))
+      self.platform.search_binary(pathlib.Path())
     self.assertIn("empty", str(cm.exception))
 
   def test_search_app_empty_path(self):
@@ -100,7 +101,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.platform.search_app(pathlib.Path())
     self.assertIn("empty", str(cm.exception))
     with self.assertRaises(ValueError) as cm:
-      self.platform.search_app(pathlib.Path(""))
+      self.platform.search_app(pathlib.Path())
     self.assertIn("empty", str(cm.exception))
 
   def test_cat(self):
@@ -218,7 +219,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
   def test_default_tmp_dir(self):
     self.assertTrue(self.platform.is_dir(self.platform.default_tmp_dir))
 
-  def test_NamedTemporaryFile(self):
+  def test_NamedTemporaryFile(self):  # noqa: N802
     with self.platform.NamedTemporaryFile() as path:
       self.assertTrue(self.platform.is_file(path))
       self.assertTrue(self.platform.exists(path))
@@ -237,7 +238,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.assertTrue(self.platform.exists(path))
     self.assertFalse(self.platform.exists(path))
 
-  def test_TemporaryDirectory(self):
+  def test_TemporaryDirectory(self):  # noqa: N802
     with self.platform.TemporaryDirectory() as path:
       self.assertTrue(self.platform.is_dir(path))
       self.assertTrue(self.platform.exists(path))
@@ -408,16 +409,16 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     if self.platform.is_remote:
       return
     with self.platform.TemporaryDirectory() as tmp_dir:
-      tmp_file = tmp_dir / "test.txt"
+      tmp_file = LocalPath(tmp_dir) / "test.txt"
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.write_text(tmp_file, "")
       mode = 0o400
       self.platform.chmod(tmp_file, mode)
-      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
+      self.assertEqual(tmp_file.stat()[stat.ST_MODE] & mode, mode)
       mode = 0o600
-      self.assertNotEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
+      self.assertNotEqual(tmp_file.stat()[stat.ST_MODE] & mode, mode)
       self.platform.chmod(tmp_file, mode)
-      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
+      self.assertEqual(tmp_file.stat()[stat.ST_MODE] & mode, mode)
 
   def test_cache_dir(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
@@ -820,9 +821,9 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
       tmp_file = tmp_dir / "test.txt"
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.touch(tmp_file)
-      self.assertNotEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
+      self.assertNotEqual(tmp_file.stat()[stat.ST_MODE] & 0o755, 0o755)
       self.platform.chmod(tmp_file, 0o755)
-      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
+      self.assertEqual(tmp_file.stat()[stat.ST_MODE] & 0o755, 0o755)
 
 
 class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):

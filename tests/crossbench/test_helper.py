@@ -14,7 +14,7 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.helper import collection_helper, fs_helper, url_helper
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from crossbench.helper.durations import Durations
 from crossbench.helper.wait import WaitRange
 from crossbench.str_enum_with_help import StrEnumWithHelp
@@ -87,12 +87,10 @@ class WaitTestCase(unittest.TestCase):
   def test_wait_with_backoff(self):
     data: list[tuple[dt.timedelta, dt.timedelta]] = []
     delta = dt.timedelta(seconds=0.0005)
-    expected_i = 0
-    for i, time_spent, time_left in WaitRange(
-        min=0.01, max=0.05).wait_with_backoff():
+    for expected_i, (i, time_spent, time_left) in enumerate(
+        WaitRange(min=0.01, max=0.05).wait_with_backoff()):
       data.append((time_spent, time_left))
       self.assertEqual(expected_i, i)
-      expected_i += 1
       if len(data) == 2:
         break
       plt.PLATFORM.sleep(delta)
@@ -104,20 +102,17 @@ class WaitTestCase(unittest.TestCase):
 
   def test_wait_with_backoff_max_iterations(self):
     i = 0
-    expected_i = 0
-    for i, _, _ in WaitRange(
-        min=0.01, max=0.05, max_iterations=11).wait_with_backoff():
+    for expected_i, (i, _, _) in enumerate(
+        WaitRange(min=0.01, max=0.05, max_iterations=11).wait_with_backoff()):
       self.assertEqual(expected_i, i)
-      expected_i += 1
     self.assertEqual(i, 10)
 
   def test_wait_with_backoff_max_iterations_delay(self):
     i = 0
-    expected_i = 0
-    for i, _, _ in WaitRange(
-        min=0.01, max=0.05, delay=0.1, max_iterations=11).wait_with_backoff():
+    for expected_i, (i, _, _) in enumerate(
+        WaitRange(min=0.01, max=0.05, delay=0.1,
+                  max_iterations=11).wait_with_backoff()):
       self.assertEqual(expected_i, i)
-      expected_i += 1
     self.assertEqual(i, 10)
 
 
@@ -136,9 +131,8 @@ class DurationsTestCase(unittest.TestCase):
     durations = Durations()
     with durations.measure("a"):
       pass
-    with self.assertRaises(AssertionError):
-      with durations.measure("a"):
-        pass
+    with self.assertRaises(AssertionError), durations.measure("a"):
+      pass
     self.assertTrue(len(durations) == 1)
     self.assertListEqual(list(durations.to_json().keys()), ["a"])
 
@@ -157,7 +151,7 @@ class ChangeCWDTestCase(CrossbenchFakeFsTestCase):
     old_cwd = pathlib.Path.cwd()
     new_cwd = pathlib.Path("/foo/bar").absolute()
     new_cwd.mkdir(parents=True)
-    with ChangeCWD(new_cwd):
+    with change_cwd(new_cwd):
       self.assertNotEqual(old_cwd, pathlib.Path.cwd())
       self.assertEqual(new_cwd, pathlib.Path.cwd())
     self.assertEqual(old_cwd, pathlib.Path.cwd())

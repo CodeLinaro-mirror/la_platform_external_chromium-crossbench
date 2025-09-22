@@ -123,6 +123,9 @@ class ProbeResult(abc.ABC):
   def __bool__(self) -> bool:
     pass
 
+  def __hash__(self) -> int:
+    return hash((self._files, self._url_list))
+
   def __eq__(self, other: object) -> bool:
     if not isinstance(other, ProbeResult):
       return False

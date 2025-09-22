@@ -301,7 +301,7 @@ class RegexFilter():
       assert name, "Invalid empty story name"
       assert not name.startswith("-"), (
           f"Known story names cannot start with '-', but got '{name}'.")
-      assert not name == "all", "Known story name cannot match 'all'."
+      assert name != "all", "Known story name cannot match 'all'."
 
   def process_all(self, patterns: Sequence[str]) -> OrderedSet[str]:
     if not isinstance(patterns, (list, tuple)):
@@ -457,17 +457,17 @@ class PressBenchmark(SubStoryBenchmark):
   @classmethod
   @abc.abstractmethod
   def short_base_name(cls) -> str:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @classmethod
   @abc.abstractmethod
   def base_name(cls) -> str:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @classmethod
   @abc.abstractmethod
   def version(cls) -> VersionParts:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @classmethod
   @override

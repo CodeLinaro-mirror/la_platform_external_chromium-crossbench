@@ -39,7 +39,7 @@ from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
@@ -76,7 +76,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                 (mock_browser.MockChromeDev,
                  BrowserConfig(mock_browser.MockChromeDev.mock_app_path())),
         }
-    for _, (_, browser_config) in self.browser_lookup.items():
+    for (_, browser_config) in self.browser_lookup.values():
       self.assertTrue(browser_config.path.exists())
 
   @contextlib.contextmanager
@@ -853,13 +853,13 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.assertLessEqual(len(label), 255, f"Too long label: {repr(label)}")
 
   def test_flag_combination_js_flags_with_fixed(self):
-    long_js_flags: str = ",".join(
-        ("--max_maglev_inlined_bytecode_size=363",
-         "--max_maglev_inlined_bytecode_size_small=32",
-         "--max_maglev_inlined_bytecode_size_cumulative=892",
-         "--max_inlined_bytecode_size=482",
-         "--max_inlined_bytecode_size_cumulative=905",
-         "--max_inlined_bytecode_size_small=3", "--no-opt"))
+    flags = ("--max_maglev_inlined_bytecode_size=363",
+             "--max_maglev_inlined_bytecode_size_small=32",
+             "--max_maglev_inlined_bytecode_size_cumulative=892",
+             "--max_inlined_bytecode_size=482",
+             "--max_inlined_bytecode_size_cumulative=905",
+             "--max_inlined_bytecode_size_small=3", "--no-opt")
+    long_js_flags: str = ",".join(flags)
     self.assertLess(len(long_js_flags), 255)
     self.assertLess(240, len(long_js_flags))
     config = BrowserVariantsConfigDict(
@@ -995,7 +995,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   def test_from_cli_args_browser_config_relative_path(self):
     some_dir = pth.LocalPath("custom/test/dir")
     some_dir.mkdir(parents=True)
-    with ChangeCWD(some_dir):
+    with change_cwd(some_dir):
       self.test_from_cli_args_browser_config()
 
   def test_from_cli_args_browser(self):

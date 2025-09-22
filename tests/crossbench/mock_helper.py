@@ -282,8 +282,11 @@ class MockPlatformMixin:
   def disk_usage(self, path: pth.AnyPathLike) -> psutil._common.sdiskusage:
     del path
     # pylint: disable=protected-access
-    return psutil._common.sdiskusage(
-        total=GIB * 100, used=20 * GIB, free=80 * GIB, percent=20)
+    return psutil._common.sdiskusage(  # noqa: SLF001
+        total=GIB * 100,
+        used=20 * GIB,
+        free=80 * GIB,
+        percent=20)
 
   def cpu_usage(self) -> float:
     return 0.1

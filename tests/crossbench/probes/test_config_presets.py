@@ -1,9 +1,10 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import pathlib
-from typing import Type
+from typing import TYPE_CHECKING, Type
 
 from pyfakefs import fake_filesystem_unittest
 
@@ -15,11 +16,13 @@ from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
                                             LoadLine2TabletBenchmark,
                                             LoadLine2TabletDebugBenchmark)
 from crossbench.cli.config.probe_list import ProbeListConfig
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder import default_chromium_candidates
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
-from crossbench.probes.probe import Probe
 from tests import test_helper
+
+if TYPE_CHECKING:
+  from crossbench.probes.probe import Probe
 
 PROBE_LOOKUP: dict[str, Type[Probe]] = {
     probe_cls.NAME: probe_cls for probe_cls in GENERAL_PURPOSE_PROBES
@@ -58,7 +61,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     # make sure we have a fakefs path
     fake_config_dir = pathlib.Path(real_config_dir)
     for probe_config in fake_config_dir.glob("**/*.config.hjson"):
-      with ChangeCWD(probe_config.parent):
+      with change_cwd(probe_config.parent):
         probes += self._parse_config(probe_config)
     return probes
 

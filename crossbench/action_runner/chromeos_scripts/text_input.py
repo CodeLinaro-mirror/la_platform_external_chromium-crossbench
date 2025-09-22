@@ -6,6 +6,7 @@
 
 # This script is to be run directly on a ChromeOS device to redirect characters
 # read from stdin to be typed on an emulated keyboard device.
+from __future__ import annotations
 
 import sys
 

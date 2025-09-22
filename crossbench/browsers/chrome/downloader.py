@@ -251,7 +251,7 @@ class ChromeDownloaderLinux(ChromeDownloader):
     if version.has_channel:
       channel_name = self.CHANNEL_BINARY_LOOKUP[version.channel]
       return base_dir / channel_name / "chrome"
-    for _, channel_name in self.CHANNEL_BINARY_LOOKUP.items():
+    for channel_name in self.CHANNEL_BINARY_LOOKUP.values():
       bin_path: pth.LocalPath = base_dir / channel_name / "chrome"
       if bin_path.exists():
         return bin_path

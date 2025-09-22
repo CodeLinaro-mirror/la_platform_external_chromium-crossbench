@@ -107,10 +107,7 @@ class ExceptionAnnotationScope:
       if self._throw_cls:
         self._annotator.assert_success(exception_cls=self._throw_cls)
       return True
-    if exception_value not in self._annotator._pending_exceptions:
-      self._annotator._pending_exceptions[
-          exception_value] = self._annotator.info_stack
-    self._annotator._info_stack = self._previous_info_stack
+    self._annotator.leave_pending(exception_value, self._previous_info_stack)
     # False => exception not handled
     return False
 
@@ -170,6 +167,12 @@ class ExceptionAnnotator:
 
   def leave(self, previous_stack: tuple[str, ...]) -> None:
     self._depth -= 1
+    self._info_stack = previous_stack
+
+  def leave_pending(self, exception_value: BaseException,
+                    previous_stack: tuple[str, ...]) -> None:
+    if exception_value not in self._pending_exceptions:
+      self._pending_exceptions[exception_value] = self.info_stack
     self._info_stack = previous_stack
 
   def matching(self, *args: Type[BaseException]) -> list[BaseException]:
@@ -258,7 +261,7 @@ class ExceptionAnnotator:
         stack = self._pending_exceptions[exception]
       self._exceptions.append(Entry(traceback, exception, stack))
     if self.throw:
-      raise  # pylint: disable=misplaced-bare-raise
+      raise  # pylint: disable=misplaced-bare-raise  # noqa: PLE0704
 
   def log(self, message: str, separator: str = "=") -> None:
     if self.is_success:

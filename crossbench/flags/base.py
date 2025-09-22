@@ -57,14 +57,14 @@ class BasicFlags(Freezable, collections.UserDict):
   _WHITE_SPACE_RE: Final[re.Pattern] = re.compile(r"\s+")
   _BASIC_FLAG_NAME_RE: Final[re.Pattern] = re.compile(r"(--?)[^\s=-][^\s=]*")
   # Handles space-separated flags: --foo="1" --bar  --baz='2'  --boo=3
-  _VALUE_PATTERN: ClassVar[str] = (r"('(?P<value_single_quotes>[^']*)')|"
-                                   r"(\"(?P<value_double_quotes>[^\"]*)\")|"
-                                   r"(?P<value_no_quotes>[^'\" ]+)")
-  _END_OR_SEPARATOR_PATTERN: ClassVar[str] = r"(\s*\s\s*|$)"
+  VALUE_PATTERN: ClassVar[str] = (r"('(?P<value_single_quotes>[^']*)')|"
+                                  r"(\"(?P<value_double_quotes>[^\"]*)\")|"
+                                  r"(?P<value_no_quotes>[^'\" ]+)")
+  END_OR_SEPARATOR_PATTERN: ClassVar[str] = r"(\s*\s\s*|$)"
   _PARSE_RE: ClassVar[re.Pattern] = re.compile(
       fr"(?P<name>{_BASIC_FLAG_NAME_RE.pattern})"
-      fr"((?P<equal>=)({_VALUE_PATTERN})?)?"
-      fr"{_END_OR_SEPARATOR_PATTERN}")
+      fr"((?P<equal>=)({VALUE_PATTERN})?)?"
+      fr"{END_OR_SEPARATOR_PATTERN}")
 
   @classmethod
   def split(cls, flag_str: str) -> tuple[str, Optional[str]]:
@@ -263,8 +263,8 @@ class Flags(BasicFlags):
   """
   _FLAG_NAME_RE = re.compile(r"(--?)[a-zA-Z0-9][a-zA-Z0-9_-]*")
   _PARSE_RE = re.compile(fr"(?P<name>{_FLAG_NAME_RE.pattern})"
-                         fr"((?P<equal>=)({BasicFlags._VALUE_PATTERN})?)?"
-                         fr"{BasicFlags._END_OR_SEPARATOR_PATTERN}")
+                         fr"((?P<equal>=)({BasicFlags.VALUE_PATTERN})?)?"
+                         fr"{BasicFlags.END_OR_SEPARATOR_PATTERN}")
 
   @override
   def _validate_flag_name(self, flag_name: str) -> None:

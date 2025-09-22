@@ -383,12 +383,12 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
 
   @override
   def _find_driver(self) -> LocalPath:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: AnyPath) -> webdriver.Remote:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @override
   def _setup_binary(self) -> None:

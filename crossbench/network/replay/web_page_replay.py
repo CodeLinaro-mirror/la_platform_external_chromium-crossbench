@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import atexit
+import contextlib
 import logging
 import os
 import re
@@ -17,7 +18,7 @@ from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, TextIO
 from typing_extensions import override
 
 from crossbench.helper import url_helper
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.parse import NumberParser, PathParser
 from crossbench.path import AnyPath, LocalPath
@@ -231,7 +232,7 @@ class WprBase(abc.ABC):
     work_dir: LocalPath = LocalPath.cwd()
     if self._platform.is_local:
       work_dir = self._platform.local_path(self._bin_path.parent)
-    with ChangeCWD(work_dir):
+    with change_cwd(work_dir):
       logging.debug("Logging to %s", self._log_path)
       self._process = self._platform.popen(
           *go_cmd,
@@ -344,12 +345,10 @@ class WprBase(abc.ABC):
 
   def _shut_down(self) -> None:
     logging.info("WPR: shutting down %s.", self.NAME)
-    try:
-      self._open_wpr_cmd_url("command-exit", verbose=False)
-    except url_helper.RequestException:
-      # The above request always fails because WPR closes the connection
+    with contextlib.suppress(url_helper.RequestException):
+      # The request always fails because WPR closes the connection
       # without response.
-      pass
+      self._open_wpr_cmd_url("command-exit", verbose=False)
 
 
 class WprRecorder(WprBase):

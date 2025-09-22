@@ -102,7 +102,7 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
   def parse_dict(cls, config: dict) -> Self:
     if not config:
       return cls()
-    all_flag_keys = all(key.startswith("-") for key in config.keys())
+    all_flag_keys = all(key.startswith("-") for key in config)
     all_str_values = all(isinstance(value, str) for value in config.values())
     if not all_flag_keys:
       return cls.parse_dict_with_labels(config)

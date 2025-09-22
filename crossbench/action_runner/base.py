@@ -147,6 +147,7 @@ class ActionRunner:
       raise RuntimeError(f"Unsupported input source: '{input_source}'")
 
   def get(self, run: Run, action: i_action.GetAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def text_input(self, run: Run, action: i_action.TextInputAction) -> None:
@@ -159,50 +160,64 @@ class ActionRunner:
       raise RuntimeError(f"Unsupported input source: '{input_source}'")
 
   def click_js(self, run: Run, action: i_action.ClickAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def click_touch(self, run: Run, action: i_action.ClickAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def click_mouse(self, run: Run, action: i_action.ClickAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def scroll_js(self, run: Run, action: i_action.ScrollAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def scroll_mouse(self, run: Run, action: i_action.ScrollAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def text_input_js(self, run: Run, action: i_action.TextInputAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def text_input_keyboard(self, run: Run,
                           action: i_action.TextInputAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def wait_for_condition(self, run: Run,
                          action: i_action.WaitForConditionAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def wait_for_element(self, run: Run,
                        action: i_action.WaitForElementAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def wait_for_ready_state(self, run: Run,
                            action: i_action.WaitForReadyStateAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def invoke_probe(self, run: Run, action: BaseProbeAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def screenshot_impl(
@@ -316,11 +331,14 @@ class ActionRunner:
     pass
 
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def close_tab(self, run: Run, action: i_action.CloseTabAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def close_all_tabs(self, run: Run,
                      action: i_action.CloseAllTabsAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)

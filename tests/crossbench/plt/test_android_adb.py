@@ -413,7 +413,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_search_binary_empty_path(self):
     with self.assertRaises(ValueError) as cm:
-      self.platform.search_binary(pathlib.Path(""))
+      self.platform.search_binary(pathlib.Path())
     self.assertIn("empty path", str(cm.exception))
     with self.assertRaises(ValueError) as cm:
       self.platform.search_binary("")
@@ -578,11 +578,11 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_adb("reverse", "tcp:0", "tcp:33221", result="666")
     self.expect_adb("reverse", "--remove", "tcp:666")
     self.expect_adb("reverse", "--remove", "tcp:333")
-    with self.platform.ports.nested() as ports:
-      port = ports.reverse_forward(0, 33300)
+    with self.platform.ports.nested() as ports_1:
+      port = ports_1.reverse_forward(0, 33300)
       self.assertEqual(port, 333)
-      with self.platform.ports.nested() as ports:
-        port = ports.reverse_forward(0, 33221)
+      with self.platform.ports.nested() as ports_2:
+        port = ports_2.reverse_forward(0, 33221)
         self.assertEqual(port, 666)
 
   def test_reverse_port_forward_auto_close(self):

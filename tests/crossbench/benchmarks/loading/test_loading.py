@@ -341,7 +341,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     url_1 = "http://one.test.com"
     url_2 = "http://two.test.com"
     with config.open("w", encoding="utf-8") as f:
-      f.write("\n".join((url_1, url_2)))
+      f.write(f"{url_1}\n{url_2}")
     with self._patch_get_browser():
       self.run_cli("loading", "run", f"--urls-file={config}",
                    "--env-validation=skip", "--throw")
@@ -355,7 +355,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     url_1 = "http://one.test.com"
     url_2 = "http://two.test.com"
     with config.open("w", encoding="utf-8") as f:
-      f.write("\n".join((url_1, url_2)))
+      f.write(f"{url_1}\n{url_2}")
     with self._patch_get_browser():
       self.run_cli("loading", "run", f"--urls-file={config}",
                    "--env-validation=skip", "--separate", "--throw")

@@ -34,7 +34,7 @@ class ProbeListConfig(ConfigObject):
       with exception.annotate(
           f"Merging probe config ({probe_config_path.name}) with cli --probe:"):
         return config_from_file.merge(config_from_args, should_override=True)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   @classmethod
   def parse_other(cls, value: Any) -> Self:
@@ -71,7 +71,7 @@ class ProbeListConfig(ConfigObject):
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   def __init__(
       self,

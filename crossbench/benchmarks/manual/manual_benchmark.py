@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import contextlib
 import datetime as dt
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
@@ -69,10 +70,8 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
   def _wait_for_input(self) -> None:
     if self._run_for is None:
       logging.critical("Press enter to stop:")
-      try:
+      with contextlib.suppress(KeyboardInterrupt):
         input()
-      except KeyboardInterrupt:
-        pass
     else:
       logging.critical(
           "Measurement has started. The browser will close in %s"

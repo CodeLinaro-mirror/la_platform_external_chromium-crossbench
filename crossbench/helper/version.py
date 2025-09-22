@@ -70,6 +70,9 @@ class Version:
     other_type = type(other)
     return issubclass(other_type, Version) and isinstance(self, other_type)
 
+  def __hash__(self) -> int:
+    return hash(self.key)
+
   def __eq__(self, other: object) -> bool:
     if not self.is_compatible_type(other):
       return False

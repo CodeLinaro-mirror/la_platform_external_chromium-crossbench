@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import contextlib
 import datetime as dt
 import functools
 import logging
@@ -470,20 +471,16 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if self.is_local:
       super().terminate(process)
     else:
-      try:
+      with contextlib.suppress(*proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS):
         self.send_signal(process, self.signals.SIGTERM)
-      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
-        pass
 
   @override
   def kill(self, process: ProcessLike) -> None:
     if self.is_local:
       super().kill(process)
     else:
-      try:
+      with contextlib.suppress(*proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS):
         self.send_signal(process, self.signals.SIGKILL)
-      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
-        pass
 
   @override
   def process_info(self, process: ProcessLike) -> Optional[dict[str, Any]]:

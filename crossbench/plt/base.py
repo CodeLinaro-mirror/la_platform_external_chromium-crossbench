@@ -105,7 +105,7 @@ _NEXT_PLATFORM_ID = 0
 
 
 def _next_id() -> int:
-  global _NEXT_PLATFORM_ID  # pylint: disable=global-statement
+  global _NEXT_PLATFORM_ID  # pylint: disable=global-statement  # noqa: PLW0603
   new_id = _NEXT_PLATFORM_ID
   _NEXT_PLATFORM_ID += 1
   return new_id
@@ -536,10 +536,8 @@ class Platform(abc.ABC):
       pid: int = self.process_pid(process)
       ps_process = psutil.Process(pid)
       for child_process in ps_process.children(recursive=True):
-        try:
+        with contextlib.suppress(*proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS):
           callback(child_process)
-        except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
-          pass
       callback(ps_process)
     except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       pass
@@ -576,10 +574,8 @@ class Platform(abc.ABC):
       self, process_iterator: Iterable[psutil.Process]) -> list[dict[str, Any]]:
     process_info_list: list[dict[str, Any]] = []
     for process in process_iterator:
-      try:
+      with contextlib.suppress(*proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS):
         process_info_list.append(process.as_dict())
-      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
-        pass
     return process_info_list
 
   def process_info(self, process: ProcessLike) -> Optional[dict[str, Any]]:
@@ -805,7 +801,7 @@ class Platform(abc.ABC):
     return self.path(name)
 
   @contextlib.contextmanager
-  def NamedTemporaryFile(  # pylint: disable=invalid-name
+  def NamedTemporaryFile(  # pylint: disable=invalid-name  # noqa: N802
       self,
       suffix: Optional[str] = None,
       prefix: Optional[str] = None,
@@ -817,7 +813,7 @@ class Platform(abc.ABC):
       self.rm(tmp_file, missing_ok=True)
 
   @contextlib.contextmanager
-  def TemporaryDirectory(  # pylint: disable=invalid-name
+  def TemporaryDirectory(  # pylint: disable=invalid-name  # noqa: N802
       self,
       suffix: Optional[str] = None,
       prefix: Optional[str] = None,
@@ -903,7 +899,7 @@ class Platform(abc.ABC):
     self.validate_shell_args(args, shell)
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
-      logging.debug("CWD: %s", os.getcwd())
+      logging.debug("CWD: %s", pth.LocalPath.cwd())
     return subprocess.Popen(
         args=args,
         bufsize=bufsize,
@@ -927,7 +923,7 @@ class Platform(abc.ABC):
     self.validate_shell_args(args, shell)
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
-      logging.debug("CWD: %s", os.getcwd())
+      logging.debug("CWD: %s", pth.LocalPath.cwd())
     process = subprocess.run(
         args=args,
         shell=shell,
@@ -960,7 +956,7 @@ class Platform(abc.ABC):
   # TODO(cbruni): split into separate list_system_monitoring and
   # disable_system_monitoring methods
   def check_system_monitoring(self, disable: bool = False) -> bool:
-    # pylint: disable=unused-argument
+    del disable
     return True
 
   def download_to(self, url: str, path: pth.AnyPath) -> pth.AnyPath:

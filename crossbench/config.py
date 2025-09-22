@@ -26,7 +26,7 @@ from typing_extensions import override
 from crossbench import exception
 from crossbench import path as pth
 from crossbench.helper import txt_helper
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from crossbench.parse import ObjectParser, PathParser
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
@@ -438,7 +438,7 @@ class ConfigObject(abc.ABC):
     # Make sure we wrap any exception in a argparse.ArgumentTypeError)
     with exception.annotate_argparsing(f"Parsing {cls.__name__}"):
       return cls._parse(value, **kwargs)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   @classmethod
   def _parse(cls, value: Any, **kwargs) -> Self:
@@ -553,7 +553,7 @@ class ConfigObject(abc.ABC):
   def parse_str(cls, value: str) -> Self:
     """Custom implementation for parsing config values that are
     not handled by the default .parse(...) method."""
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @classmethod
   def parse_url(cls, url: urlparse.ParseResult, **kwargs) -> Self:
@@ -563,6 +563,7 @@ class ConfigObject(abc.ABC):
   @classmethod
   def parse_any_url(cls, url: urlparse.ParseResult, **kwargs) -> Self:
     """Called for urls that do not pass the is_valid_url() test."""
+    del kwargs
     raise argparse.ArgumentTypeError(
         f"Cannot parse unsupported url: {url.geturl()}")
 
@@ -601,7 +602,7 @@ class ConfigObject(abc.ABC):
     with exception.annotate(f"Parsing inline {cls.__name__}"):
       data = ObjectParser.inline_hjson(value)
       return cls.parse_dict(data, **kwargs)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   @classmethod
   def parse_hjson_path(cls, path: pth.LocalPathLike, **kwargs) -> Self:
@@ -616,9 +617,9 @@ class ConfigObject(abc.ABC):
     with exception.annotate_argparsing(f"Parsing {cls.__name__} file: {path}"):
       file_path = PathParser.existing_file_path(path)
       data = ObjectParser.non_empty_hjson_file(file_path)
-      with ChangeCWD(file_path.parent):
+      with change_cwd(file_path.parent):
         return cls.parse(data, **kwargs)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   @classmethod
   def parse_dict(cls: Type[Self], config: dict[str, Any], **kwargs) -> Self:
@@ -923,8 +924,7 @@ class _TemplatedConfigParser(ConfigObject):
                 f"Argument value for the spread operator {child_value}"
                 f" is not a list: {arg_expansion}")
 
-          for list_item in arg_expansion:
-            result.append(list_item)
+          result.extend(arg_expansion)
         else:
           result.append(self._substitute_args(child_value))
     return result
@@ -1173,7 +1173,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       if config_data:
         self._handle_unused_config_data(config_data)
       return kwargs.as_dict()
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   def parse(self, config_data: Any, **kwargs) -> ConfigResultObjectT:
     if isinstance(config_data, dict):
@@ -1202,7 +1202,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
         f"Parsing {self._cls.__name__} default argument: "
         f"{repr(default_arg_name)}"):
       return self.parse(config_data)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   def _prepare_config_data(self, config_data: dict[str, Any],
                            **extra_kwargs) -> dict[str, Any]:

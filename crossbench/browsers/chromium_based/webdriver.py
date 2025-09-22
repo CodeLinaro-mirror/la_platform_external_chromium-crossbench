@@ -261,12 +261,10 @@ class ChromiumBasedWebDriver(
 
       for handle in handles:
         driver.switch_to.window(handle)
-        if title is not None:
-          if title.search(driver.title) is None:
-            continue
-        if url is not None:
-          if url.search(driver.current_url) is None:
-            continue
+        if title is not None and title.search(driver.title) is None:
+          continue
+        if url is not None and url.search(driver.current_url) is None:
+          continue
         return handle
     error = "No new tab found"
     if title is not None:

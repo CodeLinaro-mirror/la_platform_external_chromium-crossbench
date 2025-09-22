@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import contextlib
-import os
 from typing import Iterator
 from unittest import mock, skipIf
 
@@ -210,7 +209,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
         self.platform.path("local/dest/path/file"))
 
     self.assertEqual(self.mock_platform.mkdir_calls, 1)
-    self.assertTrue(os.path.exists("local/dest/path"))
+    self.assertTrue(pth.LocalPath("local/dest/path").exists())
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

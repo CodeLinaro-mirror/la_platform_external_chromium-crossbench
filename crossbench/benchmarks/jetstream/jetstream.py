@@ -177,7 +177,7 @@ class JetStreamProbeContext(JsonResultProbeContext):
                                                    Any]) -> dict[str, float]:
     # Manually add all total scores
     accumulated_metrics = defaultdict(list)
-    for _, metrics in json_data.items():
+    for metrics in json_data.values():
       for metric, value in metrics.items():
         accumulated_metrics[metric].append(value)
     total: dict[str, float] = {}

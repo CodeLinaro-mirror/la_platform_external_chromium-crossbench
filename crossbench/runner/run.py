@@ -18,7 +18,7 @@ from crossbench.cli.config.env import ValidationMode
 from crossbench.env.run_env import RunEnv
 from crossbench.env.runner_env import ValidationError
 from crossbench.exception import Annotator, TInfoStack
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from crossbench.helper.durations import Durations
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import ProbeContext
@@ -314,7 +314,7 @@ class Run(ResultOrigin):
   def setup(self, is_dry_run: bool) -> None:
     self._state.transition(State.INITIAL, to=State.SETUP)
     self._setup_dirs()
-    with ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
+    with change_cwd(self._out_dir), self.exception_info(*self.info_stack):
       self._probe_context_manager.setup(self.probes, is_dry_run)
     self._log_setup()
 
@@ -372,7 +372,7 @@ class Run(ResultOrigin):
   def run(self, is_dry_run: bool) -> None:
     self._state.transition(State.SETUP, to=State.READY)
     self._start_datetime = dt.datetime.now()
-    with ChangeCWD(self._out_dir), self.exception_info(*self.info_stack):
+    with change_cwd(self._out_dir), self.exception_info(*self.info_stack):
       assert self._probe_context_manager.is_ready
       try:
         self._run(is_dry_run)

@@ -158,8 +158,9 @@ class CrossbenchDevToolsRecorderProxy:
         logging.error("Invalid request token: %s", payload_token)
         raise AuthenticationError("Invalid Token")
     command = payload["command"]
-    args = payload.get("args", None)
+    args = payload.get("args")
     if command == "run":
+      assert isinstance(args, dict)
       return await self._run_command(args)
     if command == "stop":
       return await self._stop_command()

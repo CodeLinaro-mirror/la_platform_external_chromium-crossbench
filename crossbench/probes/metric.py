@@ -193,7 +193,7 @@ class MetricsMerger:
           as keys to group/merge values, or None to skip property paths.
     """
     self._data: dict[str, Metric] = {}
-    self._key_fn: helper.KeyFnType = key_fn or helper._default_flatten_key_fn
+    self._key_fn: helper.KeyFnType = key_fn or helper.default_flatten_key_fn
     self._ignored_keys: Set[str] = set()
     for data in args:
       self.add(data)

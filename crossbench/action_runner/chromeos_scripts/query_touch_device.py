@@ -6,6 +6,7 @@
 
 # This script is to be run directly on a ChromeOS device to query and return
 # the touch device information.
+from __future__ import annotations
 
 import logging
 import sys

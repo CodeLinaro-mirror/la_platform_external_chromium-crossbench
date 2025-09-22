@@ -284,7 +284,7 @@ class BaseChromiumToolFinder(BaseToolFinder):
 
   @classmethod
   def chrome_path(cls) -> pth.AnyPath:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @override
   def default_candidates(self) -> tuple[pth.AnyPath, ...]:

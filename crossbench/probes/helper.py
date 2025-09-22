@@ -16,7 +16,7 @@ INTERNAL_NAME_PREFIX: Final[str] = "cb."
 KeyFnType = Callable[[tuple[str, ...]], Optional[str]]
 
 
-def _default_flatten_key_fn(path: tuple[str, ...]) -> str:
+def default_flatten_key_fn(path: tuple[str, ...]) -> str:
   return "/".join(path)
 
 
@@ -43,7 +43,7 @@ class Flatten:
           as final result keys, or None to skip property paths.
     """
     self._accumulator: dict[str, Any] = {}
-    self._key_fn: KeyFnType = key_fn or _default_flatten_key_fn
+    self._key_fn: KeyFnType = key_fn or default_flatten_key_fn
     self._sort: bool = sort
     self.append(*args)
 

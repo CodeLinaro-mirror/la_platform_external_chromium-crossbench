@@ -9,4 +9,6 @@ from typing import TypeAlias
 
 from crossbench.cli.parser import CrossBenchArgumentParser
 
-Subparsers: TypeAlias = argparse._SubParsersAction[CrossBenchArgumentParser]  # pylint: disable=W0212,E1136
+Subparsers: TypeAlias = (
+    argparse._SubParsersAction[CrossBenchArgumentParser]  # pylint: disable=W0212,E1136  # noqa: SLF001
+)

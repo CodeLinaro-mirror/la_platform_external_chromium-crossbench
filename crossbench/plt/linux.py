@@ -65,7 +65,7 @@ def parse_display_xrandr(xrandr_str: str) -> Iterator[DisplayInfo]:
   DUMMY1 disconnected
     1600x1200_60  60.00
     ...
-  """
+  """  # noqa: W291
   display_infos: list[XrandrDisplayInfo] = []
   current_info: XrandrDisplayInfo | None = None
   # Group display info and resolution entries:
@@ -113,6 +113,7 @@ class LinuxPlatform(PosixPlatform):
     return LinuxSignals
 
   def check_system_monitoring(self, disable: bool = False) -> bool:
+    del disable
     return True
 
   @functools.cached_property

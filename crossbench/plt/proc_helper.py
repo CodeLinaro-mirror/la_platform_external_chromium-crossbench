@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from subprocess import Popen, TimeoutExpired
 from typing import TYPE_CHECKING, Final, Optional
@@ -43,7 +44,5 @@ def terminate_gracefully(platform: Platform,
   except PROCESS_NOT_FOUND_EXCEPTIONS as e:  # pylint: disable=broad-except  # noqa: BLE001
     logging.debug("Ignoring exception during process termination: %s", e)
   finally:
-    try:
+    with contextlib.suppress(*PROCESS_NOT_FOUND_EXCEPTIONS):
       platform.kill(process)
-    except PROCESS_NOT_FOUND_EXCEPTIONS:
-      pass

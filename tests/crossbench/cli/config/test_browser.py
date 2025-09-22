@@ -24,7 +24,7 @@ from crossbench.cli.config.env import ENV_CONFIG_PRESETS
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.exception import MultiException
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
@@ -129,7 +129,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     with self.platform.TemporaryDirectory() as tmp_dir:
       cwd = tmp_dir / "crossbench"
       cwd.mkdir()
-      with ChangeCWD(cwd):
+      with change_cwd(cwd):
         browser_path = pth.LocalPath("../out/Release/chrome")
         self.fs.create_file(browser_path, st_size=100)
         self.assertTrue((tmp_dir / "out").is_dir())
@@ -137,7 +137,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         self.assertEqual(config.path, browser_path.resolve())
         config = BrowserConfig.parse(browser_path)
         self.assertEqual(config.path, browser_path.resolve())
-      with ChangeCWD(tmp_dir):
+      with change_cwd(tmp_dir):
         browser_path = pth.LocalPath("out/Release/chrome")
         config = BrowserConfig.parse(str(browser_path))
         self.assertEqual(config.path, browser_path.resolve())

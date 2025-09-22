@@ -6,6 +6,7 @@
 
 # This script is to be run directly on a ChromeOS device to emulate a mouse and
 # then move to and click a location.
+from __future__ import annotations
 
 import sys
 import time

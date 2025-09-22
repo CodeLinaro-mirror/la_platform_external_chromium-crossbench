@@ -70,6 +70,7 @@ class EnableDebuggingAction(argparse.Action):
                namespace: argparse.Namespace,
                values: str | Sequence[Any] | None,
                option_string: Optional[str] = None) -> None:
+    del parser, values, option_string
     namespace.throw = True
     namespace.verbosity = 3
     namespace.driver_logging = True
@@ -378,9 +379,7 @@ class CrossBenchCLI:
   def _detect_terminal_color(self, argv: Sequence[str]) -> bool:
     if "--no-color" in argv:
       return False
-    if os.environ.get("NO_COLOR", ""):
-      return False
-    return True
+    return not os.environ.get("NO_COLOR", "")
 
   def _setup_logging(self) -> None:
     if not self._enable_logging:

@@ -1,15 +1,18 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import override
 
-from crossbench.browsers.browser import Browser
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests.crossbench.runner.helper import BaseRunnerTestCase
+
+if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
 
 
 class BaseRunGroupTestCase(BaseRunnerTestCase):
