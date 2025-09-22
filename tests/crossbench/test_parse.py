@@ -645,7 +645,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_sh_cmd_invalid(self):
     invalid: Any
-    for invalid in (1, "", None, [], "ls -al \"."):
+    for invalid in (1, "", None, [], 'ls -al ".'):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.sh_cmd(invalid)
 

@@ -67,7 +67,7 @@ class FlagsVariantConfig:
   def __hash__(self) -> int:
     return hash(self.flags)
 
-  def __eq__(self, other: Any) -> bool:
+  def __eq__(self, other: object) -> bool:
     if not isinstance(other, FlagsVariantConfig):
       return False
     return self.flags == other.flags

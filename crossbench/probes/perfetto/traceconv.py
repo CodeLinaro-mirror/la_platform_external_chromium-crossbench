@@ -51,6 +51,6 @@ def convert_to_json(platform: Platform, traceconv: pth.LocalPath | None,
   try:
     platform.sh(*cmd)
     return output_json
-  except Exception as e:  # pylint: disable=broad-exception-caught
+  except Exception as e:  # pylint: disable=broad-exception-caught  # noqa: BLE001
     logging.error("traceconv failure: %s", e)
     return None

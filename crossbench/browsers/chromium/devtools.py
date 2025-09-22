@@ -61,7 +61,7 @@ class DevToolsClient:
     if self._devtools_port:
       try:
         self._platform.ports.stop_forward(self._devtools_port)
-      except Exception as e:  # pylint: disable=broad-except
+      except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
         # Best effort to remove forwarding, log if it fails but don't crash
         logging.warning(
             "Error removing DevTools port forwarding for port %s: %s",

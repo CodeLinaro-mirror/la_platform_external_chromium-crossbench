@@ -481,7 +481,7 @@ class Adb:
       raise ValueError("Got empty package name")
     try:
       self._adb("uninstall", package_name)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
       if missing_ok:
         logging.debug("Could not uninstall %s: %s", package_name, e)
       else:

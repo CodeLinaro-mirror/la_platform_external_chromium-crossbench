@@ -43,7 +43,7 @@ class SplashScreen:
       return cls.MINIMAL
     if value == "detailed":
       return cls.DETAILED
-    if value.startswith("http:") or value.startswith("https:"):
+    if value.startswith(("http:", "https:")):
       return URLSplashScreen(value)
     maybe_path = pth.LocalPath(value)
     if maybe_path.exists():

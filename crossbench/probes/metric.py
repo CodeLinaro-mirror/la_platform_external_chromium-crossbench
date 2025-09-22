@@ -30,7 +30,7 @@ class Metric:
   """
 
   @classmethod
-  def format(cls, value: float | int, stddev: Optional[float] = None) -> str:
+  def format(cls, value: float, stddev: Optional[float] = None) -> str:
     """Format value and stdev to only expose significant + 1 digits.
     Example outputs:
       100 ± 10%

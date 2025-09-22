@@ -208,7 +208,7 @@ class ObjectParser:
       assert isinstance(enum_value, enum.Enum)
       assert isinstance(enum_value, enum_cls)
       return enum_value
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
       logging.debug("Could not auto-convert data '%s' to enum %s: %s", data,
                     enum_cls, e)
 
@@ -802,7 +802,7 @@ class TimeUnit(TimeUnitData, enum.Enum):
     raise DurationParseError(f"Error: {unit} is not supported for duration. "
                              "Make sure to use a supported time unit/suffix")
 
-  def timedelta(self, value: int | float) -> dt.timedelta:
+  def timedelta(self, value: float) -> dt.timedelta:
     return dt.timedelta(**{self.timedelta_kwarg: value})
 
 

@@ -93,7 +93,7 @@ class CrossbenchDevToolsRecorderProxy:
   async def run_server(self) -> None:
     try:
       serve = websockets.serve(self.handler, "localhost", self.DEFAULT_PORT)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
       logging.exception(e)
       serve = websockets.serve(self.handler, "localhost")
     async with serve as server:
@@ -130,12 +130,12 @@ class CrossbenchDevToolsRecorderProxy:
         response_type, payload = result
         response["payload"] = payload
         response["type"] = response_type.value
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
       logging.exception(e)
       response["error"] = str(type(e).__name__)
     try:
       response_json = json.dumps(response)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
       logging.exception(e)
       response["success"] = False
       response["error"] = "Failed to encode message"

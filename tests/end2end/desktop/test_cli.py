@@ -363,7 +363,7 @@ def test_loading_playback_firefox(test_env: TestEnv, test_chrome_name) -> None:
   try:
     if not platform.exists(all_browsers.Firefox.default_path(platform)):
       pytest.skip("Test requires Firefox.")
-  except Exception:  # pylint: disable=broad-exception-caught
+  except Exception:  # pylint: disable=broad-exception-caught  # noqa: BLE001
     pytest.skip("Test requires Firefox.")
   _run_cli(
       "loading",

@@ -55,11 +55,11 @@ AC_POWERED_OUTPUT = load_pb("battery/ac_powered.pb")
 BATTERY_POWERED_OUTPUT = load_pb("battery/battery_powered.pb")
 DUMPSYS_WINDOW_DISPLAYS_OUTPUT = load_pb("display/1080p.pb")
 
-DUMPSYS_MEMINFO_TIMEOUT_OUTPUT = b'''
+DUMPSYS_MEMINFO_TIMEOUT_OUTPUT = b"""
 *** SERVICE 'meminfo' DUMP TIMEOUT (1ms) EXPIRED ***
-'''
+"""
 
-DUMPSYS_MEMINFO_SYSTEM_OUTPUT = b'''
+DUMPSYS_MEMINFO_SYSTEM_OUTPUT = b"""
           0K: GL mtrack
           0K: Other mtrack
 
@@ -74,9 +74,9 @@ DMA-BUF Heaps pool:         0K
  Lost RAM:   362,207K
      ZRAM:   557,480K physical used for 1,723,064K in swap (11,284K total swap)
    Tuning: 192 (large 512), oom 322,560K, restore limit 107,520K (high-end-gfx)
-'''
+"""
 
-DUMPSYS_MEMINFO_SYSTEM_OUTPUT_NO_DMA_BUF = b'''
+DUMPSYS_MEMINFO_SYSTEM_OUTPUT_NO_DMA_BUF = b"""
         800K: Ashmem
         324K: .ttf mmap
           0K: Cursor
@@ -90,7 +90,7 @@ Total RAM: 3,486,196K (status moderate)
  Lost RAM:   282,400K
      ZRAM:   203,732K physical used for 745,216K in swap (4,194,300K total swap)
    Tuning: 256 (large 512), oom 322,560K, restore limit 107,520K (high-end-gfx)
-'''
+"""
 
 class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   DEVICE_ID = "emulator-5554"

@@ -147,7 +147,7 @@ def compile_missing_file(protos_dir: Path, protoc_bin: str,
   compile_proto(protoc_bin, protos_dir, proto_file)
 
 
-ROOT_MODULE_PROLOGUE: Final[str] = '''# Copyright 2025 The Chromium Authors
+ROOT_MODULE_PROLOGUE: Final[str] = """# Copyright 2025 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -155,7 +155,7 @@ ROOT_MODULE_PROLOGUE: Final[str] = '''# Copyright 2025 The Chromium Authors
 from protoc.sys_path import protoc_in_sys_path
 
 with protoc_in_sys_path():
-'''
+"""
 
 
 def write_root_module(root_dir: Path) -> None:

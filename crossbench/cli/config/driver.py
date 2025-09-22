@@ -159,7 +159,7 @@ class DriverConfig(ConfigObject):
   def compile_search_pattern(cls, maybe_pattern: str) -> re.Pattern:
     try:
       return re.compile(maybe_pattern)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
       logging.debug(
           "Falling back to full string match for "
           "invalid regexp search pattern: %s %s", maybe_pattern, e)

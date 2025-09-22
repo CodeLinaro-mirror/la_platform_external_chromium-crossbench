@@ -83,7 +83,7 @@ def _get_tb_printer() -> Callable[[str], None]:
   try:
     if ui.COLOR_LOGGING:
       return _get_formatting_tb_printer()
-  except Exception as e:  # pylint: disable=broad-exception-caught
+  except Exception as e:  # pylint: disable=broad-exception-caught  # noqa: BLE001
     logging.debug("Failed to initializer error formatting: %s", e)
   return print
 

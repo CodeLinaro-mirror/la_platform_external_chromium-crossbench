@@ -166,7 +166,7 @@ class LinuxProfilingContext(PosixProfilingContext):
         if perf_files:
           # TODO: Add "combined" profile again
           pass
-      except Exception as e:  # pylint: disable=broad-except
+      except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
         logging.debug("Failed to run pprof: %s", e)
       return urls
 

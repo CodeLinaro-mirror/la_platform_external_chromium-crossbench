@@ -11,8 +11,8 @@ import json
 import logging
 import os
 import threading
-from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Type,
-                    TypeVar)
+from typing import (TYPE_CHECKING, Final, Iterator, Mapping, Optional, Self,
+                    Type, TypeVar)
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -146,8 +146,7 @@ class LocalFileNetwork(Network):
 
   @contextlib.contextmanager
   @override
-  def open(self: LocalFileNetworkT,
-           session: BrowserSessionRunGroup) -> Iterator[LocalFileNetworkT]:
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[Self]:
     with super().open(session):
       with self._open_local_file_server():
         # TODO: properly hook up traffic shaper for the local http server

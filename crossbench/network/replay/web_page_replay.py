@@ -250,7 +250,7 @@ class WprBase(abc.ABC):
       with self._log_path.open("r", encoding="utf-8") as f:
         log_lines = list(f.readlines())
         logging.error("  %s", "  ".join(log_lines[-4:]))
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
       logging.debug("Got exception while reading wpr log file: %s", e)
 
   def _forward_ports(self) -> None:

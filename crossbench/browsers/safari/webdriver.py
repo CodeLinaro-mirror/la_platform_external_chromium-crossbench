@@ -97,7 +97,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
         min=2, timeout=self.MAX_STARTUP_TIMEOUT).wait_with_backoff():
       try:
         return webdriver.Safari(**driver_kwargs)
-      except Exception as e:  # pylint: disable=broad-except
+      except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
         retries += 1
         exception_type = type(e)
         logging.warning("SafariWebDriver: startup failed (%s), retrying...",

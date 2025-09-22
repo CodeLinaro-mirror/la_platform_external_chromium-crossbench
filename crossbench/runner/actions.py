@@ -9,8 +9,8 @@ import datetime as dt
 import logging
 import sys
 import time as py_time
-from typing import (TYPE_CHECKING, Any, Callable, Iterator, Optional, Sequence,
-                    Type)
+from typing import (TYPE_CHECKING, Any, Callable, Iterator, Optional, Self,
+                    Sequence, Type)
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.cli import ui
@@ -72,7 +72,7 @@ class Actions(TimeScope):
   def platform(self) -> plt.Platform:
     return self._run.browser_platform
 
-  def __enter__(self) -> Actions:
+  def __enter__(self) -> Self:
     self._exception_annotation.__enter__()
     super().__enter__()
     self._is_active = True

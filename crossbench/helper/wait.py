@@ -14,7 +14,7 @@ if TYPE_CHECKING:
   from crossbench.runner.timing import AnyTime, AnyTimeUnit
 
 
-def as_timedelta(value: int | float | dt.timedelta) -> dt.timedelta:
+def as_timedelta(value: float | dt.timedelta) -> dt.timedelta:
   if isinstance(value, dt.timedelta):
     return value
   return dt.timedelta(seconds=value)
@@ -42,7 +42,7 @@ class WaitRange:
       timeout: AnyTime = 10,
       factor: float = 1.01,
       max: Optional[AnyTime] = None,  # pylint: disable=redefined-builtin
-      max_iterations: int | float = math.inf,
+      max_iterations: float = math.inf,
       delay: AnyTime = 0) -> None:
     self._min: dt.timedelta = as_timedelta(min)
     assert self._min.total_seconds() > 0

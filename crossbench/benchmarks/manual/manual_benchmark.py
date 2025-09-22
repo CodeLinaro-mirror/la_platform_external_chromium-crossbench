@@ -50,7 +50,7 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
     elif self._start_after.total_seconds():
       logging.critical("-" * 80)
       logging.critical(
-          "The browser has launched. Measurement will start in %s" +
+          "The browser has launched. Measurement will start in %s"
           " (or press enter to start immediately)", self._start_after)
       input_helper.input_with_timeout(timeout=self._start_after)
     logging.info("Starting Manual Benchmark...")
@@ -75,7 +75,7 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
         pass
     else:
       logging.critical(
-          "Measurement has started. The browser will close in %s" +
+          "Measurement has started. The browser will close in %s"
           " (or press enter to close immediately)", self._run_for)
       input_helper.input_with_timeout(timeout=self._run_for)
 

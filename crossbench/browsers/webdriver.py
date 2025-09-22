@@ -344,11 +344,11 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       # Sometimes a second quit is needed, ignore any warnings there
       try:
         self._private_driver.quit()
-      except Exception as e:  # pylint: disable=broad-except
+      except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
         logging.debug("Driver raised exception on quit: %s\n%s", e,
                       traceback.format_exc())
       return
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
       logging.debug("Could not quit browser: %s\n%s", e, traceback.format_exc())
     finally:
       self._is_running = False

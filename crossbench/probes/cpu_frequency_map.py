@@ -78,7 +78,7 @@ class CPUFrequencyMap(ConfigObject, metaclass=abc.ABCMeta):
     except argparse.ArgumentTypeError as e:
       raise argparse.ArgumentTypeError(
           f"Invalid value in CPU frequency map: {value}. Should "
-          "have been one of \"max\"|\"min\"|<int>|\"<int>\"") from e
+          'have been one of "max"|"min"|<int>|"<int>"') from e
 
   def _get_target_frequency(self, platform: Platform, cpu_name: str,
                             frequency: FrequencyType) -> int:

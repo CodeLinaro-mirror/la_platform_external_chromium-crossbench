@@ -98,6 +98,16 @@ extend-select = [
     "S",    # flake8-bandit security checks
     "T10",  # flake8-debugger
     "C4",   # flake8-comprehensions
+    "BLE",  # flake8-blind-except
+    "FA",   # flake8-future-annotations
+    "ISC",  # flake8-implicit-str-concat
+    "ICN",  # flake8-import-conventions
+    "LOG",  # flake8-logging
+    "G",    # flake8-logging-format
+    "INP",  # flake8-no-pep420
+    "PIE",  # flake8-pie
+    "PYI",  # flake8-pyi
+    "Q",    # flake8-quotes
     # TODO: Add more categories
 ]
 ignore = [
@@ -107,6 +117,7 @@ ignore = [
     "ANN401", # Using typing.Any
     "B027",   # empty-method-without-abstract-decorator
     "B019",   # Use of `functools.lru_cache` or `functools.cache` on methods can lead to memory leaks
+    "LOG015", # Disallow root-logger-calls
     # TODO: try to clean up code for these errors
     "B008",   # Do not perform function call in default arguments
     "S101",   # Do not use assert
@@ -119,6 +130,11 @@ ignore = [
     "ANN",      # tests are allowed to skip type annotations
     "S",        # general security issues and input validation.
     "B018",     # Found useless attribute access
+    "BLE",      # flake8-blind-except
+]
+
+"crossbench/action_runner/chromeos_scripts/*" = [
+    "INP001",   # Need module __init__.py
 ]
 
 [tool.ruff.lint.flake8-type-checking]

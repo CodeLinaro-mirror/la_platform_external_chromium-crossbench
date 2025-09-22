@@ -181,20 +181,19 @@ class TsProxyServer:
 class TsProxyProcess:
   """Separate wrapper around the ts_proxy to simplify pytype testing."""
 
-  def __init__(
-      self,
-      platform: Platform,
-      ts_proxy_path: LocalPath,
-      host: Optional[str] = None,
-      socks_proxy_port: Optional[int] = None,
-      http_port: Optional[int] = None,
-      https_port: Optional[int] = None,
-      rtt_ms: Optional[int] = None,
-      in_kbps: Optional[int] = None,
-      out_kbps: Optional[int] = None,
-      window: Optional[int] = None,
-      verbose: bool = False,
-      timeout: int | float = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
+  def __init__(self,
+               platform: Platform,
+               ts_proxy_path: LocalPath,
+               host: Optional[str] = None,
+               socks_proxy_port: Optional[int] = None,
+               http_port: Optional[int] = None,
+               https_port: Optional[int] = None,
+               rtt_ms: Optional[int] = None,
+               in_kbps: Optional[int] = None,
+               out_kbps: Optional[int] = None,
+               window: Optional[int] = None,
+               verbose: bool = False,
+               timeout: float = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     self._platform = platform
     """Start TsProxy server and verify that it started."""
     cmd: ListCmdArgs = [
@@ -281,7 +280,7 @@ class TsProxyProcess:
     if encoding != "UTF-8":
       logging.warning("Decoding will use %s instead of UTF-8", encoding)
 
-  def _wait_for_startup(self, timeout: int | float) -> None:
+  def _wait_for_startup(self, timeout: float) -> None:
     for _ in wait.wait_with_backoff(timeout):
       if self._has_started():
         logging.info("TsProxy: port=%i", self._socks_proxy_port)
@@ -303,7 +302,7 @@ class TsProxyProcess:
     self._socks_proxy_port = NumberParser.port_number(port, "socks_proxy_port")
     return True
 
-  def _read_line_ts_proxy_stdout(self, timeout: int | float) -> str:
+  def _read_line_ts_proxy_stdout(self, timeout: float) -> str:
     for _ in wait.wait_with_backoff(timeout):
       try:
         return self._stdout.readline().strip()
@@ -311,10 +310,9 @@ class TsProxyProcess:
         logging.debug("TsProxy: Error while reading tsproxy line: %s", io_error)
     return ""
 
-  def _send_command(
-      self,
-      command: str,
-      timeout: int | float = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
+  def _send_command(self,
+                    command: str,
+                    timeout: float = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     logging.debug("TsProxy: Sending command to ts_proxy_server: %s", command)
     self._stdin.write(f"{command}\n")
     command_output = self._wait_for_status_response(timeout)
@@ -324,7 +322,7 @@ class TsProxyProcess:
     if not success:
       raise TsProxyServerError(f"Failed to execute command: {command}")
 
-  def _wait_for_status_response(self, timeout: int | float) -> list[str]:
+  def _wait_for_status_response(self, timeout: float) -> list[str]:
     logging.debug("TsProxy: waiting for status response")
     command_output = []
     for _ in wait.wait_with_backoff(timeout):
@@ -342,7 +340,7 @@ class TsProxyProcess:
       in_kbps: Optional[int] = None,
       out_kbps: Optional[int] = None,
       window: Optional[int] = None,
-      timeout: float | int = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
+      timeout: float = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     if rtt_ms is not None and self._rtt_ms != rtt_ms:
       assert rtt_ms >= 0, f"Invalid rtt value: {rtt_ms}"
       self._send_command(f"set rtt {rtt_ms}", timeout)
@@ -406,8 +404,8 @@ class TsProxyTrafficShaper(TrafficShaper):
 
   @contextlib.contextmanager
   @override
-  def open(self: TsProxyTrafficShaperT, network: Network,
-           session: BrowserSessionRunGroup) -> Iterator[TsProxyTrafficShaperT]:
+  def open(self, network: Network,
+           session: BrowserSessionRunGroup) -> Iterator[Self]:
     with exception.annotate("Starting tsproxy traffic shaping"):
       if not network.is_live:
         self._ts_proxy = self._create_remapping_ts_proxy(network)

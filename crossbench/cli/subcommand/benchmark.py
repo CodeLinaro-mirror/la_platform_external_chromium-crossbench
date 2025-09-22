@@ -144,7 +144,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         help=(
             "Enable general purpose probes to measure data on all cb.stories. "
             "This argument can be specified multiple times to add more probes. "
-            "Use inline hjson (e.g. --probe=\"$NAME{$CONFIG}\") "
+            'Use inline hjson (e.g. --probe="$NAME{$CONFIG}") '
             "to configure probes. "
             "Individual probe configs can be specified in files as well: "
             "--probe='path/to/config.hjson'. "
@@ -231,7 +231,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
             "* Use --browser=path/to/archive.dmg on macOS or "
             "--browser=path/to/archive.rpm on linux "
             "for locally cached versions (chrome only).\n"
-            "* Use --browser=\"${ADB_SERIAL}:chrome\" "
+            '* Use --browser="${ADB_SERIAL}:chrome" '
             "(e.g. --browser='0a388e93:chrome') for specific "
             "android devices or --browser='adb:chrome' if only once device is "
             "attached.\n"
@@ -510,7 +510,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       if args.throw:
         raise
       self.cli.handle_late_argument_error(e)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
       if args.throw:
         raise
       self._log_benchmark_subcommand_failure(benchmark, self._runner, e)
@@ -693,7 +693,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       runner.run(is_dry_run=args.dry_run)
       logging.info("")
       self._log_results(args, runner, is_success=runner.is_success)
-    except:  # pylint: disable=broad-except
+    except:  # pylint: disable=broad-except  # noqa: BLE001
       self._log_results(args, runner, is_success=False)
       raise
     finally:
@@ -715,7 +715,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     for probe in runner.probes:
       try:
         probe.log_browsers_result(browser_group)
-      except Exception as e:  # pylint: disable=broad-except
+      except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
         if args.throw:
           raise
         logging.warning("log_result_summary failed: %s", e)
@@ -812,7 +812,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     for log_file in candidates[:limit]:
       try:
         log_file = log_file.relative_to(pth.LocalPath.cwd())
-      except Exception as e:  # pylint: disable=broad-except
+      except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
         logging.debug("Could not create relative log_file: %s", e)
       logging.error("  - %s", log_file)
     if (pending := len(candidates) - limit) > 0:

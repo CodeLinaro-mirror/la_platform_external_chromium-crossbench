@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import datetime as dt
 import logging
-from typing import Iterator
+from typing import Iterator, Self
 
 
 class Durations:
@@ -65,7 +65,7 @@ class TimeScope:
   def duration(self) -> dt.timedelta:
     return self._duration
 
-  def __enter__(self) -> TimeScope:
+  def __enter__(self) -> Self:
     self._start = dt.datetime.now()
     return self
 

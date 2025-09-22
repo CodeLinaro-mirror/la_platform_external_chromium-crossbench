@@ -153,7 +153,6 @@ class Platform(abc.ABC):
   @abc.abstractmethod
   def name(self) -> str:
     """Descriptive name e.g. macos of the platform. non-unique."""
-    pass
 
   @property
   @abc.abstractmethod
@@ -437,7 +436,7 @@ class Platform(abc.ABC):
     This can be false on linux without $DISPLAY, true an all other platforms."""
     return True
 
-  def sleep(self, seconds: int | float | dt.timedelta) -> None:
+  def sleep(self, seconds: float | dt.timedelta) -> None:
     wait.sleep(seconds)
 
   def parse_binary_path(self,

@@ -8,7 +8,7 @@ import abc
 import contextlib
 import json
 import logging
-from typing import TYPE_CHECKING, Final, Iterator, Optional, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Optional, Self, TypeVar
 
 from typing_extensions import override
 
@@ -80,8 +80,7 @@ class WprReplayNetwork(ReplayNetwork):
 
   @contextlib.contextmanager
   @override
-  def open(self: WprReplayNetworkT,
-           session: BrowserSessionRunGroup) -> Iterator[WprReplayNetworkT]:
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[Self]:
     with super().open(session):
       yield self
 

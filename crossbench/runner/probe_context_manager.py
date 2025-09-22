@@ -24,7 +24,7 @@ ResultOriginT = TypeVar("ResultOriginT", bound=ResultOrigin)
 ProbeContextT = TypeVar("ProbeContextT", bound=BaseProbeContext)
 
 
-class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
+class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
 
   def __init__(self, result_origin: ResultOriginT,
                probe_results: ProbeResultDict) -> None:

@@ -78,7 +78,7 @@ class ExceptionAnnotationScope:
     self._throw_cls: Type[BaseException] | None = throw_cls
     self._previous_info_stack: TInfoStack = ()
 
-  def __enter__(self) -> ExceptionAnnotationScope:
+  def __enter__(self) -> Self:
     self._previous_info_stack = self._annotator.enter(
         self._added_info_stack_entries)
     return self

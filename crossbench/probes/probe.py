@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import (TYPE_CHECKING, Any, ClassVar, Hashable, Optional, Self,
-                    Set, Type, TypeVar)
+from typing import (TYPE_CHECKING, ClassVar, Hashable, Optional, Self, Set,
+                    Type, TypeVar)
 
 from typing_extensions import override
 
@@ -124,12 +124,12 @@ class Probe(ProbeResultKey, abc.ABC):
   def __str__(self) -> str:
     return type(self).__name__
 
-  def __eq__(self, other: Any) -> bool:
+  def __eq__(self, other: object) -> bool:
     if self is other:
       return True
-    if type(self) is not type(other):
-      return False
-    return self.key == other.key
+    if isinstance(other, type(self)):
+      return self.key == other.key
+    return False
 
   @property
   def is_internal(self) -> bool:

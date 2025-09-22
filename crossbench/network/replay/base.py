@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Final, Iterator, Optional, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Optional, Self, TypeVar
 from urllib.parse import urlparse
 
 from typing_extensions import override
@@ -50,8 +50,7 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
 
   @contextlib.contextmanager
   @override
-  def open(self: ReplayNetworkT,
-           session: BrowserSessionRunGroup) -> Iterator[ReplayNetworkT]:
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[Self]:
     with exception.annotate(f"Starting {type(self).__name__}"):
       with super().open(session):
         with self._open_replay_server(session):

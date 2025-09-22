@@ -64,12 +64,16 @@ class Version:
   def is_complete(self) -> bool:
     return True
 
-  def is_compatible_type(self, other: Version) -> bool:
-    return isinstance(other, type(self)) or isinstance(self, type(other))
+  def is_compatible_type(self, other: object) -> bool:
+    if isinstance(other, type(self)):
+      return True
+    other_type = type(other)
+    return issubclass(other_type, Version) and isinstance(self, other_type)
 
-  def __eq__(self, other: Any) -> bool:
+  def __eq__(self, other: object) -> bool:
     if not self.is_compatible_type(other):
       return False
+    assert isinstance(other, Version)
     return self.key == other.key
 
   def __le__(self, other: Any) -> bool:

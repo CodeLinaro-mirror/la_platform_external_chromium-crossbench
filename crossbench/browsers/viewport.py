@@ -165,7 +165,7 @@ class Viewport:
       return f"Viewport({self.width}x{self.height},{self.x}x{self.y})"
     return f"Viewport({self.mode})"
 
-  def __eq__(self, other: Any) -> bool:
+  def __eq__(self, other: object) -> bool:
     if not isinstance(other, Viewport):
       return False
     if self is other:

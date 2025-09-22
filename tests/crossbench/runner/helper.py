@@ -5,11 +5,10 @@
 from __future__ import annotations
 
 import abc
-import collections
 import datetime as dt
 import json
 import pathlib
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Type
 
 from typing_extensions import override
 
@@ -171,7 +170,9 @@ class MockPlatform:
     return self.name
 
 
-MockWait = collections.namedtuple("MockWait", ("time", "absolute_time"))
+class MockWait(NamedTuple):
+  time: AnyTimeUnit
+  absolute_time: bool
 
 
 class MockRunner:

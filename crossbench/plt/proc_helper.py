@@ -40,7 +40,7 @@ def terminate_gracefully(platform: Platform,
   except TimeoutExpired as e:
     logging.debug("Got timeout while waiting "
                   "for process shutdown (%s): %s", process, e)
-  except PROCESS_NOT_FOUND_EXCEPTIONS as e:  # pylint: disable=broad-except
+  except PROCESS_NOT_FOUND_EXCEPTIONS as e:  # pylint: disable=broad-except  # noqa: BLE001
     logging.debug("Ignoring exception during process termination: %s", e)
   finally:
     try:

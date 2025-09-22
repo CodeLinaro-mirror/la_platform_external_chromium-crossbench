@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import (TYPE_CHECKING, Any, Iterable, Optional, TypeVar, cast,
-                    overload)
+from typing import TYPE_CHECKING, Iterable, Optional, TypeVar, cast, overload
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -124,7 +123,7 @@ class ProbeResult(abc.ABC):
   def __bool__(self) -> bool:
     pass
 
-  def __eq__(self, other: Any) -> bool:
+  def __eq__(self, other: object) -> bool:
     if not isinstance(other, ProbeResult):
       return False
     if self is other:

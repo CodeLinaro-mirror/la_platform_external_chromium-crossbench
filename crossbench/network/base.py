@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
-from typing import TYPE_CHECKING, Final, Iterator, Optional, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Optional, Self, TypeVar
 
 from crossbench import plt
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
@@ -84,8 +84,7 @@ class Network(abc.ABC):
     return self.traffic_shaper.extra_flags(browser_attributes)
 
   @contextlib.contextmanager
-  def open(self: NetworkT,
-           session: BrowserSessionRunGroup) -> Iterator[NetworkT]:
+  def open(self, session: BrowserSessionRunGroup) -> Iterator[Self]:
     del session
     assert not self._is_running, "Cannot start network more than once."
     self._is_running = True

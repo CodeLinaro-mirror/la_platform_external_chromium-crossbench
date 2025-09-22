@@ -354,7 +354,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
   def test_parse_click_xpath_selector_hjson(self):
     action = ClickAction.parse(
         "{action:'click',selector:'//*[@id=\"rso\"]/div[2]/div[1]'}")
-    self.assertEqual(action.selector.selector, "//*[@id=\"rso\"]/div[2]/div[1]")
+    self.assertEqual(action.selector.selector, '//*[@id="rso"]/div[2]/div[1]')
 
   def test_parse_click_invalid_source(self):
     with self.assertRaises(ValueError) as cm:

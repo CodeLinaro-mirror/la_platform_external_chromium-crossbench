@@ -284,7 +284,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
 
   def test_env_config_inline_hjson(self):
     with self._patch_get_browser():
-      self.run_cli("loading", "--env={\"power_use_battery\":false}",
+      self.run_cli("loading", '--env={"power_use_battery":false}',
                    "--urls=http://test.com", "--env-validation=skip")
 
   def test_env_config_inline_invalid(self):
