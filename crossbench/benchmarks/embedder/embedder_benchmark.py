@@ -14,6 +14,8 @@ from typing_extensions import override
 
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.benchmarks.embedder.config.cujs import CUJsConfig
+from crossbench.benchmarks.embedder.config.setup_commands import (
+    SetupCommandsConfig)
 from crossbench.cli.ui import timer
 from crossbench.parse import ObjectParser
 from crossbench.stories.story import Story
@@ -77,15 +79,22 @@ class EmbedderBenchmark(SubStoryBenchmark):
       self,
       stories: Sequence[Story],
       action_runner_config: Optional[ActionRunnerConfig] = None,
-      embedder_process_name: str = "search") -> None:
+      embedder_process_name: str = "search",
+      embedder_setup_command_config: Optional[SetupCommandsConfig] = None
+  ) -> None:
     for story in stories:
       assert isinstance(story, self.DEFAULT_STORY_CLS)
     super().__init__(stories, action_runner_config)
     self._embedder_process_name = embedder_process_name
+    self._embedder_setup_command_config = embedder_setup_command_config
 
   @property
   def embedder_process_name(self) -> str:
     return self._embedder_process_name
+
+  @property
+  def embedder_setup_command_config(self) -> Optional[SetupCommandsConfig]:
+    return self._embedder_setup_command_config
 
   @classmethod
   @override
@@ -107,6 +116,10 @@ class EmbedderBenchmark(SubStoryBenchmark):
         "--embedder-process-name",
         default="search",
         help="Name of the embedder process.")
+    parser.add_argument(
+        "--embedder-setup-command-config",
+        type=SetupCommandsConfig.parse,
+        help="Setup commands to run before the benchmark.")
     return parser
 
   @classmethod
@@ -127,6 +140,7 @@ class EmbedderBenchmark(SubStoryBenchmark):
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["embedder_process_name"] = args.embedder_process_name
+    kwargs["embedder_setup_command_config"] = args.embedder_setup_command_config
     return kwargs
 
   @classmethod

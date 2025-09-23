@@ -29,9 +29,14 @@ class WebviewEmbedder(Webview):
   def start(self, session: BrowserSessionRunGroup) -> None:
     # Start is a no-op. Embedder activity will be started by the Benchmark.
     # Webview will be started by the Embedder. Driver will be started
-    # by the ProbeContext. We do, however, need to set up browser flags
-    # and kill any currently running Embedder app instances to make sure
-    # it picks up the new flags when started by the Benchmark.
+    # by the ProbeContext. We do, however, need to run custom setup commands,
+    # set up browser flags, and kill any currently running Embedder app
+    # instances to make sure it picks up the new flags when started by the
+    # Benchmark.
+    session_benchmark = cast("EmbedderBenchmark", session.benchmark)
+    if setup_command_config := session_benchmark.embedder_setup_command_config:
+      for command in setup_command_config.commands:
+        self.platform.sh(*command.command)
     self._backup_chrome_flags()
     args = self._get_browser_flags_for_session(session)
     logging.debug("%s: setting flags file contents in %s", self,
