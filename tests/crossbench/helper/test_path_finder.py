@@ -21,7 +21,7 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
                                           ChromeOsSshMockPlatform,
                                           LinuxMockPlatform, MacOsMockPlatform,
-                                          MockAdb, WinMockPlatform)
+                                          MockAdb, ShResult, WinMockPlatform)
 
 
 class BaseCheckoutTestCase(BaseCrossbenchTestCase):
@@ -209,6 +209,9 @@ class WprToolsFinderTestCase(BaseCheckoutTestCase):
 
   def test_cloud_binary(self):
     for _ in range(3):
+      if self.platform.is_macos:
+        self.platform.expect_sh(
+            "brew", "--prefix", result=ShResult(success=False))
       self.platform.expect_sh(
           "/usr/bin/adb",
           "devices",

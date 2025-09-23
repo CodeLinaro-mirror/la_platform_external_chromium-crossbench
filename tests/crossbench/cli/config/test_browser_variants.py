@@ -44,7 +44,8 @@ from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
                                               BaseConfigTestCase)
-from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
+from tests.crossbench.mock_helper import (AndroidAdbMockPlatform, MockAdb,
+                                          ShResult)
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -239,10 +240,12 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         desktop_config,
     ]
     self.assertFalse(self.platform.sh_results)
-    self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT,
-        ADB_DEVICES_SINGLE_OUTPUT,
-    ]
+    sh_results = [ADB_DEVICES_SINGLE_OUTPUT] * 2
+    if self.platform.is_macos:
+      # For `brew --prefix`.
+      sh_results.insert(0, ShResult(success=False))
+    # Note: insert() on self.platform.sh_results fails, that returns a copy.
+    self.platform.sh_results = sh_results
 
     def mock_get_browser_cls(browser_config: BrowserConfig):
       if browser_config is adb_config:
@@ -292,10 +295,13 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.assertIn("Expected str or dict", str(cm.exception))
 
   def test_browser_custom_driver_variants(self):
-    self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT,
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
-    ]
+    sh_results = [ADB_DEVICES_SINGLE_OUTPUT] * 4
+    if self.platform.is_macos:
+      # For `brew --prefix`.
+      sh_results.insert(1, ShResult(success=False))
+      sh_results.insert(4, ShResult(success=False))
+    # Note: insert() on self.platform.sh_results fails, that returns a copy.
+    self.platform.sh_results = sh_results
 
     def mock_get_browser_platform(
         browser_config: BrowserConfig) -> plt.Platform:

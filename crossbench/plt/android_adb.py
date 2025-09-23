@@ -20,6 +20,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData
+from crossbench.helper.path_finder import BuildtoolFinder
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
@@ -119,7 +120,7 @@ class Adb:
     if bundletool:
       self._bundletool = host_platform.parse_binary_path(bundletool)
     else:
-      self._bundletool = pth.LocalPath("bundletool")
+      self._bundletool = BuildtoolFinder(host_platform).local_path
     self.start_server()
     self._serial_id, self._device_info = self._find_serial_id(device_identifier)
     logging.debug("ADB Selected device: %s %s", self._serial_id,

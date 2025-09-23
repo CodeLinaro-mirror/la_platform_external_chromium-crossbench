@@ -8,6 +8,7 @@ import abc
 import dataclasses
 import json
 import logging
+import subprocess
 from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, Sequence
 
 from typing_extensions import override
@@ -399,6 +400,32 @@ class WprGoToolFinder(BaseCrossbenchToolFinder):
     platform_key = self.WPR_PREBUILT_LOOKUP[browser_platform.key]
     return WprCloudBinary(
         hashes_json["wpr_go"][platform_key]["cloud_storage_hash"])
+
+
+class BuildtoolFinder(BaseChromiumToolFinder):
+
+  @classmethod
+  @override
+  def chrome_path(cls) -> pth.AnyPath:
+    return pth.AnyPath(
+        "third_party/android_build_tools/bundletool/cipd/bundletool.jar")
+
+  @override
+  def default_candidates(self) -> tuple[pth.AnyPath, ...]:
+    super_candidates: tuple[pth.AnyPath, ...] = super().default_candidates()
+    if not self.platform.is_macos:
+      return super_candidates
+
+    try:
+      brew_path: pth.LocalPath = self.platform.local_path(
+          self.platform.sh_stdout("brew", "--prefix").strip("\n"))
+    except FileNotFoundError:
+      return super_candidates
+    except subprocess.CalledProcessError:
+      return super_candidates
+
+    return super_candidates + (self.platform.local_path(
+        brew_path / "bin/bundletool"),)
 
 
 class TsProxyFinder(BaseCrossbenchToolFinder):

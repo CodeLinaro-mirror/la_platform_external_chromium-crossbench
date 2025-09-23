@@ -21,7 +21,7 @@ from crossbench.plt.arch import MachineArch
 from crossbench.plt.port_manager import PortForwardException
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
-from tests.crossbench.mock_helper import WinMockPlatform
+from tests.crossbench.mock_helper import ShResult, WinMockPlatform
 from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
 
 ADB_DEVICE_SAMPLE_OUTPUT = (
@@ -117,6 +117,9 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.adb = Adb(self.mock_platform, self.DEVICE_ID)
 
   def expect_startup_devices(self, devices: str = ADB_DEVICES_SAMPLE_OUTPUT):
+    if self.mock_platform.is_macos:
+      self.mock_platform.expect_sh(
+          "brew", "--prefix", result=ShResult(success=False))
     self.mock_platform.expect_sh(pathlib.Path("adb"), "start-server")
     self.mock_platform.expect_sh(
         pathlib.Path("adb"), "devices", "-l", result=devices)

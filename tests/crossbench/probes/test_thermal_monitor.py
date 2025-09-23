@@ -11,7 +11,8 @@ from crossbench.probes.thermal_monitor import (ThermalMonitorProbe,
                                                ThermalStatus)
 from tests import test_helper
 from tests.crossbench.mock_browser import MockChromeAndroidStable
-from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
+from tests.crossbench.mock_helper import (AndroidAdbMockPlatform, MockAdb,
+                                          ShResult)
 from tests.crossbench.runner.helper import BaseRunnerTestCase
 
 
@@ -57,6 +58,9 @@ class ThermalStatusTestCase(unittest.TestCase):
 class TestThermalMonitorProbe(BaseRunnerTestCase):
 
   def test_android_run(self):
+    if self.platform.is_macos:
+      self.platform.expect_sh(
+          "brew", "--prefix", result=ShResult(success=False))
     self.platform.expect_sh(
         "/usr/bin/adb",
         "devices",
