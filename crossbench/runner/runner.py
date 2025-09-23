@@ -146,6 +146,11 @@ class Runner:
               "Defaults to 0. "
               "Metrics for warmup-repetitions are discarded."))
     run_group.add_argument(
+        "--ignore-partial-failures",
+        action="store_true",
+        default=False,
+        help="Do not fail on partial run failures.")
+    run_group.add_argument(
         "--cache-temperatures",
         default=["default"],
         const=["cold", "warm", "hot"],
@@ -225,6 +230,7 @@ class Runner:
         "create_symlinks": args.create_symlinks,
         "cool_down_threshold": args.cool_down_threshold,
         "step_by_step_mode": args.step_by_step_mode,
+        "ignore_partial_failures": args.ignore_partial_failures,
     }
 
   def __init__(self,
@@ -244,7 +250,8 @@ class Runner:
                throw: bool = False,
                create_symlinks: bool = True,
                in_memory_result_db: bool = False,
-               step_by_step_mode: bool = False) -> None:
+               step_by_step_mode: bool = False,
+               ignore_partial_failures: bool = False) -> None:
     self._state = StateMachine(RunnerState.INITIAL)
     self.out_dir = out_dir.absolute()
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
@@ -282,6 +289,7 @@ class Runner:
     self._browser_group: BrowsersRunGroup | None = None
     self._create_symlinks: bool = create_symlinks
     self._step_by_step_mode: bool = step_by_step_mode
+    self._ignore_partial_failures: bool = ignore_partial_failures
 
   def _prepare_benchmark(self) -> None:
     benchmark_validator.validate_cls(type(self._benchmark))
@@ -393,6 +401,10 @@ class Runner:
   @property
   def create_symlinks(self) -> bool:
     return self._create_symlinks
+
+  @property
+  def ignore_partial_failures(self) -> bool:
+    return self._ignore_partial_failures
 
   @property
   def exceptions(self) -> exception.Annotator:
@@ -606,7 +618,10 @@ class Runner:
       logging.error("❗ %s", message.upper())
       logging.error("=" * 80)
     # Raise a RunnerException to be handled in the CLI.
-    self._exceptions.assert_success(message, RunnerException)
+    if (not self.ignore_partial_failures
+        or all_runs == failed_runs
+        or self._exceptions.throw):
+      self._exceptions.assert_success(message, RunnerException)
 
   def _get_thread_groups(self) -> list[RunThreadGroup]:
     # Also include warmup runs here.

@@ -613,6 +613,48 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       exception_entry = exceptions[0]
       self.assertIsInstance(exception_entry.exception, CustomException)
 
+  def test_run_ignore_partial_failures(self):
+    # 4 runs = (2 browser) x (2 stories)
+    runner = self.default_runner(throw=False)
+    runs = tuple(runner.get_runs())
+    thread = RunThreadGroup(runs)
+    failing_run = runs[0]
+    failing_session = failing_run.browser_session
+
+    run_fail_count = 0
+
+    def mock_run_story_fail():
+      nonlocal run_fail_count
+      run_fail_count += 1
+      raise CustomException
+
+    with mock.patch.object(failing_run, "_run_story", mock_run_story_fail):
+      self.assertEqual(run_fail_count, 0)
+      with self.patch_teardown_run(runner) as teardown_run_mock:
+        thread.run()
+        self.assertEqual(teardown_run_mock.call_count, len(runs))
+      self.assertEqual(run_fail_count, 1)
+
+    for session in thread.browser_sessions:
+      if session != failing_run.browser_session:
+        self.assertTrue(session.is_success)
+    for run in runs:
+      if run != failing_run:
+        self.assertTrue(run.is_success)
+
+    # Errors are propagate up:
+    for exceptions_holder in (runner, thread, failing_session, failing_run):
+      self.assertFalse(exceptions_holder.is_success)
+      exceptions = exceptions_holder.exceptions
+      self.assertEqual(len(exceptions), 1)
+      exception_entry = exceptions[0]
+      self.assertIsInstance(exception_entry.exception, CustomException)
+
+    with (
+        mock.patch.object(runner, "_ignore_partial_failures", True),
+        mock.patch.object(runner, "_measured_runs", runs)):
+      runner.assert_successful_sessions_and_runs()
+
 # pytype: enable=wrong-arg-types
 
 del BaseRunnerTestCase
