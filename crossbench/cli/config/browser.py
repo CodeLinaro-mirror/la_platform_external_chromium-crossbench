@@ -19,6 +19,7 @@ from crossbench import plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.webkit.downloader import WebKitDownloader
+from crossbench.browsers.webview.embedder import EMBEDDER_SHORT_NAME_TO_PACKAGE
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
@@ -30,7 +31,7 @@ from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import adb_devices
 from crossbench.plt.ios import ios_devices
 
-SUPPORTED_EMBEDDER = ("googlequicksearchbox",)
+SUPPORTED_EMBEDDER = tuple(EMBEDDER_SHORT_NAME_TO_PACKAGE)
 SUPPORTED_BROWSER = ("chrome", "chromium", "d8", "edge", "firefox", "safari",
                      "webkit") + SUPPORTED_EMBEDDER
 

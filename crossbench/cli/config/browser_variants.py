@@ -209,6 +209,12 @@ class BaseBrowserVariantsConfig(abc.ABC):
       return all_browsers.WebKitWebDriver
     if "safari" in path_str:
       return cls.get_safari_browser_cls(browser_config)
+    # Embedder needs to be checked before Webview, as production embedder
+    # APKs might also contain "webview" in the path.
+    if any(embedder in path_str for embedder in SUPPORTED_EMBEDDER):
+      return all_browsers.WebviewEmbedder
+    # Webview needs to be checked before Chromium, as WebviewShell package name
+    # contains "chromium".
     if "webview" in path_str:
       return all_browsers.WebviewBrowser
     if "chrome" in path_str:
@@ -220,8 +226,6 @@ class BaseBrowserVariantsConfig(abc.ABC):
         return all_browsers.FirefoxWebDriver
     if "edge" in path_str:
       return all_browsers.EdgeWebDriver
-    if any(embedder in path_str for embedder in SUPPORTED_EMBEDDER):
-      return all_browsers.WebviewEmbedder
     if "d8" in path_str:
       return all_browsers.D8
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
