@@ -121,6 +121,12 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   SortImports(input_api, output_api, results, modified_py_files)
 
   # ---------------------------------------------------------------------------
+  # js:
+  # ---------------------------------------------------------------------------
+  results += input_api.canned_checks.CheckPatchFormatted(
+      input_api, output_api, check_js=True)
+
+  # ---------------------------------------------------------------------------
   # hjson:
   # ---------------------------------------------------------------------------
   FormatHjsonFiles(input_api, output_api, results, modified_hjson_files)
