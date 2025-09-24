@@ -32,6 +32,7 @@ from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
                                               XCTRACE_DEVICES_OUTPUT,
                                               XCTRACE_DEVICES_SINGLE_OUTPUT,
                                               BaseConfigTestCase)
+from tests.crossbench.mock_helper import ShResult
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
@@ -600,6 +601,32 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     msg = str(cm.exception).lower()
     self.assertIn("limit", msg)
     self.assertIn("'chr'", msg)
+
+  def test_parse_with_multiple_android_devices(self):
+    adb_devices = ShResult("List of devices attached\n"
+                           "1111 device usb:1 product:p1 model:m1 device:d1\n"
+                           "2222 device usb:2 product:p2 model:m2 device:d2\n"
+                           "3333 device usb:3 product:p3 model:m3 device:d3\n")
+    self.platform.sh_results = [adb_devices] * 13
+    self.assertTupleEqual(
+        BrowserConfig.parse_with_range("adb-all:chrome"),
+        (BrowserConfig.parse("1111:chrome"), BrowserConfig.parse("2222:chrome"),
+         BrowserConfig.parse("3333:chrome")))
+
+  @unittest.skipUnless(plt.PLATFORM.is_macos,
+                       "Running on iOS is only possible in mac hosts")
+  def test_parse_with_multiple_ios_devices(self):
+    adb_devices = ShResult("List of devices attached\n\n")
+    xctrace_devices = ShResult("== Devices ==\n"
+                               "device1 (26.0) (ID-1)\n"
+                               "device2 (26.0) (ID-2)\n"
+                               "device3 (26.0) (ID-3)\n")
+    self.platform.sh_results = (
+        [xctrace_devices] + [adb_devices, xctrace_devices, xctrace_devices] * 6)
+    self.assertTupleEqual(
+        BrowserConfig.parse_with_range("ios-all:safari"),
+        (BrowserConfig.parse("ID-1:safari"), BrowserConfig.parse("ID-2:safari"),
+         BrowserConfig.parse("ID-3:safari")))
 
   def test_parse_safari_variants(self):
     config = BrowserConfig.parse("safari")
