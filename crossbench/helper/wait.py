@@ -36,14 +36,13 @@ class WaitRange:
   wait_with_backoff().
   """
 
-  def __init__(
-      self,
-      min: AnyTime = 0.1,  # pylint: disable=redefined-builtin
-      timeout: AnyTime = 10,
-      factor: float = 1.01,
-      max: Optional[AnyTime] = None,  # pylint: disable=redefined-builtin
-      max_iterations: float = math.inf,
-      delay: AnyTime = 0) -> None:
+  def __init__(self,
+               min: AnyTime = 0.1,
+               timeout: AnyTime = 10,
+               factor: float = 1.01,
+               max: Optional[AnyTime] = None,
+               max_iterations: float = math.inf,
+               delay: AnyTime = 0) -> None:
     self._min: dt.timedelta = as_timedelta(min)
     assert self._min.total_seconds() > 0
     if not max:

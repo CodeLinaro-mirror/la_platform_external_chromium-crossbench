@@ -265,7 +265,7 @@ class Probe(ProbeResultKey, abc.ABC):
   def get_context_cls(self: Self) -> Type[ProbeContext[Self]]:
     raise NotImplementedError(f"Missing default ProbeContext class for {self}")
 
-  def create_session_context(  # pylint: disable=useless-return
+  def create_session_context(
       self: Self,
       session: BrowserSessionRunGroup) -> ProbeSessionContext[Self] | None:
     del session

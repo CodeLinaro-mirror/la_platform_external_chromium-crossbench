@@ -261,7 +261,7 @@ class ExceptionAnnotator:
         stack = self._pending_exceptions[exception]
       self._exceptions.append(Entry(traceback, exception, stack))
     if self.throw:
-      raise  # pylint: disable=misplaced-bare-raise  # noqa: PLE0704
+      raise  # noqa: PLE0704
 
   def log(self, message: str, separator: str = "=") -> None:
     if self.is_success:

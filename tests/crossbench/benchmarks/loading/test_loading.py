@@ -51,16 +51,15 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     return LoadingBenchmark
 
   @override
-  def story_filter(  # pylint: disable=arguments-differ
-      self,
-      patterns: Sequence[str],
-      separate: bool = True,
-      playback: PlaybackController = PlaybackController.default(),
-      tabs: TabController = TabController.default(),
-      action_runner: ActionRunner = DefaultActionRunner(),
-      about_blank_duration: dt.timedelta = dt.timedelta(),
-      run_login: bool = True,
-      run_setup: bool = True) -> LoadingPageFilter:
+  def story_filter(self,
+                   patterns: Sequence[str],
+                   separate: bool = True,
+                   playback: PlaybackController = PlaybackController.default(),
+                   tabs: TabController = TabController.default(),
+                   action_runner: ActionRunner = DefaultActionRunner(),
+                   about_blank_duration: dt.timedelta = dt.timedelta(),
+                   run_login: bool = True,
+                   run_setup: bool = True) -> LoadingPageFilter:
     args = argparse.Namespace(
         about_blank_duration=about_blank_duration,
         playback=playback,

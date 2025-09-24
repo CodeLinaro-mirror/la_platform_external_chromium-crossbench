@@ -176,12 +176,12 @@ class BasicFlags(Freezable, collections.UserDict):
       raise ValueError(f"Flag {flag_name}={repr(flag_value)} was already set "
                        f"with a different previous value: {repr(old_value)}")
 
-  # pylint: disable=arguments-differ
+
   def update(  # type: ignore
       self,
       initial_data: FlagsData = None,
       should_override: bool = False) -> None:
-    # pylint: disable=arguments-differ
+
     if initial_data is None:
       return
     if isinstance(initial_data, (Flags, dict)):

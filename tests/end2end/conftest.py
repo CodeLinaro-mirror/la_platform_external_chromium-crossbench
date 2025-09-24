@@ -34,8 +34,6 @@ if TYPE_CHECKING:
 
 WIN_APP_SUFFIX: Final = (".exe", ".bat")
 
-# pytest.fixtures rely on params having the same name as the fixture function
-# pylint: disable=redefined-outer-name
 ADB_DEVICE_ID_FLAG: Final = "--adb-device-id"
 ADB_PATH_FLAG: Final = "--adb-path"
 BUNDLETOOL_FLAG: Final = "--bundletool"

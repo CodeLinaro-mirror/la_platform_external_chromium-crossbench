@@ -208,7 +208,7 @@ class ObjectParser:
       assert isinstance(enum_value, enum.Enum)
       assert isinstance(enum_value, enum_cls)
       return enum_value
-    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
       logging.debug("Could not auto-convert data '%s' to enum %s: %s", data,
                     enum_cls, e)
 
@@ -642,11 +642,10 @@ class NumberParser:
     return cls.float_range(0.0, math.inf, name=name)(value)
 
   @classmethod
-  def float_range(  # pylint: disable=redefined-builtin
-      cls,
-      min: float = 0.0,
-      max: float = math.inf,
-      name: str = "float") -> Callable[[Any], float]:
+  def float_range(cls,
+                  min: float = 0.0,
+                  max: float = math.inf,
+                  name: str = "float") -> Callable[[Any], float]:
     assert min < max, f"Expected min={min} to be less than max={max}"
 
     def float_ranged(value: Any) -> float:
@@ -694,12 +693,11 @@ class NumberParser:
     return value_i
 
   @classmethod
-  def int_range(  # pylint: disable=redefined-builtin
-      cls,
-      min: float = 0.0,
-      max: float = math.inf,
-      name: str = "value",
-      parse_str: bool = True) -> Callable[[Any], int]:
+  def int_range(cls,
+                min: float = 0.0,
+                max: float = math.inf,
+                name: str = "value",
+                parse_str: bool = True) -> Callable[[Any], int]:
     assert min < max, f"Expected min={min} to be less than max={max}"
 
     def int_ranged(value: Any) -> int:

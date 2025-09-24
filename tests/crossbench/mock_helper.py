@@ -281,7 +281,6 @@ class MockPlatformMixin:
 
   def disk_usage(self, path: pth.AnyPathLike) -> psutil._common.sdiskusage:
     del path
-    # pylint: disable=protected-access
     return psutil._common.sdiskusage(  # noqa: SLF001
         total=GIB * 100,
         used=20 * GIB,

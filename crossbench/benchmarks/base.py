@@ -277,10 +277,8 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
   @classmethod
   def all_stories(cls) -> Sequence[Story]:
     all_args = argparse.Namespace()
-    return cls.STORY_FILTER_CLS(  # pylint: disable=abstract-class-instantiated
-        cls.DEFAULT_STORY_CLS, ["all"],
-        args=all_args,
-        separate=True).stories
+    return cls.STORY_FILTER_CLS(
+        cls.DEFAULT_STORY_CLS, ["all"], args=all_args, separate=True).stories
 
   @classmethod
   def all_story_names(cls) -> Sequence[str]:

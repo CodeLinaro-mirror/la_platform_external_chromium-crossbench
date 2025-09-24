@@ -237,7 +237,7 @@ class TsProxyProcess:
     self._verify_default_encoding()
     # In python3 universal_newlines forces subprocess to encode/decode,
     # allowing per-line buffering.
-    process = subprocess.Popen(  # pylint: disable=consider-using-with
+    process = subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
         stdin=subprocess.PIPE,
@@ -255,7 +255,7 @@ class TsProxyProcess:
       self._stdin: IO[str] = stdin
     else:
       raise RuntimeError("Missing stdin")
-    if fcntl:  # pylint: disable=using-constant-test
+    if fcntl:
       self._setup_non_blocking_io()
     self._wait_for_startup(timeout)
 
@@ -265,7 +265,7 @@ class TsProxyProcess:
     assert fcntl, "Did not load fcntl module"
     fd = self._stdout.fileno()
     fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-    fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)  # pylint: disable=no-member
+    fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
   @property
   def socks_proxy_port(self) -> int:

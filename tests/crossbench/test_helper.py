@@ -311,7 +311,7 @@ class StrEnumWithHelpTestCase(unittest.TestCase):
     self.assertIs(self.TestEnum["B"], self.TestEnum.B)
 
   def test_value_help(self):
-    # pylint: disable=no-member
+
     self.assertEqual(self.TestEnum.A.name, "A")
     self.assertEqual(self.TestEnum.B.name, "B")
     self.assertEqual(self.TestEnum.A.value, "a")

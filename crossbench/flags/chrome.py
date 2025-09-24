@@ -87,7 +87,6 @@ class ChromeFlags(Flags):
            flag_value: Optional[str] = None,
            should_override: bool = False) -> None:
     self.assert_not_frozen()
-    # pylint: disable=signature-differs
     if self._set_special_flags(flag_name, flag_value, should_override):
       return
     if candidate := self._find_misspelled_flag(flag_name):

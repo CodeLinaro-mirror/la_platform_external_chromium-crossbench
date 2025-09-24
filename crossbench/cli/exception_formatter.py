@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 def _get_term_color_support() -> int:
   try:
-    import curses  # pylint: disable=import-outside-toplevel  # noqa: PLC0415
+    import curses  # noqa: PLC0415
   except ImportError:
     # Probably Windows, which doesn't have great curses support
     return 16
@@ -83,7 +83,7 @@ def _get_tb_printer() -> Callable[[str], None]:
   try:
     if ui.COLOR_LOGGING:
       return _get_formatting_tb_printer()
-  except Exception as e:  # pylint: disable=broad-exception-caught  # noqa: BLE001
+  except Exception as e:  # noqa: BLE001
     logging.debug("Failed to initializer error formatting: %s", e)
   return print
 

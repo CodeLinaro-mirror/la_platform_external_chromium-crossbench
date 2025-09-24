@@ -52,8 +52,6 @@ if TYPE_CHECKING:
 
 
 class TestBrowserVariantsConfig(BaseConfigTestCase):
-  # pylint: disable=expression-not-assigned
-
   EXAMPLE_CONFIG_PATH = test_helper.config_dir() / "doc/browser.config.hjson"
 
   EXAMPLE_REMOTE_CONFIG_PATH = (
@@ -1226,7 +1224,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       config = BrowserVariantsConfig.parse_args(args,)
     browsers = config.browsers
     self.assertEqual(len(browsers), 3)
-    browser_1, browser_2, browser_3 = browsers  # pylint: disable=unbalanced-tuple-unpacking
+    browser_1, browser_2, browser_3 = browsers
     # Browser 1 provides an explicit default override:
     self.assertTrue(browser_1.network.is_live)
     self.assertTrue(browser_1.network.traffic_shaper.is_live)

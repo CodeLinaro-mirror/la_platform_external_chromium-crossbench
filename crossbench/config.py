@@ -47,18 +47,17 @@ class ConfigArgParser:
   Parser for a single config arg.
   """
 
-  def __init__(  # pylint: disable=redefined-builtin
-      self,
-      parser: ConfigParser,
-      name: str,
-      type: Optional[ArgParserType],
-      default: Any = NOT_SET,
-      choices: Optional[Iterable[Any]] = None,
-      aliases: Iterable[str] = (),
-      help: Optional[str] = None,
-      is_list: bool = False,
-      required: bool = False,
-      depends_on: Optional[Iterable[str]] = None):
+  def __init__(self,
+               parser: ConfigParser,
+               name: str,
+               type: Optional[ArgParserType],
+               default: Any = NOT_SET,
+               choices: Optional[Iterable[Any]] = None,
+               aliases: Iterable[str] = (),
+               help: Optional[str] = None,
+               is_list: bool = False,
+               required: bool = False,
+               depends_on: Optional[Iterable[str]] = None):
     self.parser: ConfigParser = parser
     self.name: str = name
     self.aliases = tuple(aliases)
@@ -1079,21 +1078,20 @@ class ConfigParser(Generic[ConfigResultObjectT]):
   def default(self) -> Optional[ConfigResultObjectT]:
     return self._default
 
-  def add_argument(  # pylint: disable=redefined-builtin
-      self,
-      name: str,
-      type: Optional[ArgParserType],
-      default: Optional[Any] = NOT_SET,
-      choices: Optional[Iterable[Any]] = None,
-      aliases: tuple[str, ...] = (),
-      help: Optional[str] = None,
-      is_list: bool = False,
-      required: bool = False,
-      depends_on: Optional[Iterable[str]] = None) -> None:
+  def add_argument(self,
+                   name: str,
+                   type: Optional[ArgParserType],
+                   default: Optional[Any] = NOT_SET,
+                   choices: Optional[Iterable[Any]] = None,
+                   aliases: tuple[str, ...] = (),
+                   help: Optional[str] = None,
+                   is_list: bool = False,
+                   required: bool = False,
+                   depends_on: Optional[Iterable[str]] = None) -> None:
     self._add_argument(name, type, default, choices, aliases, help, is_list,
                        required, depends_on)
 
-  def _add_argument(  # pylint: disable=redefined-builtin
+  def _add_argument(
       self,
       name: str,
       type: Optional[ArgParserType],

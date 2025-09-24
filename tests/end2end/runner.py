@@ -22,8 +22,7 @@ REPO_DIR: Final = pathlib.Path(__file__).absolute().parents[2]
 if REPO_DIR not in sys.path:
   sys.path.insert(0, str(REPO_DIR))
 
-from tests.test_helper import (  # pylint: disable=wrong-import-position # noqa: E402
-    DEFAULT_PYTEST_FLAGS, to_flags)
+from tests.test_helper import DEFAULT_PYTEST_FLAGS, to_flags  # noqa: E402
 
 if __name__ == "__main__":
   pass_through_args = sys.argv[1:]

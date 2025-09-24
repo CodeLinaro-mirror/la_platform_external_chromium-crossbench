@@ -98,7 +98,7 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(len(config), 2)
     self.assertEqual(len(config["a"]), 2)
     self.assertEqual(len(config["b"]), 1)
-    labels = tuple(v.label for v in config["a"])  # pylint: disable=no-member
+    labels = tuple(v.label for v in config["a"])
     self.assertTupleEqual(labels, ("foo=1_bar=1", "foo=1_bar=2"))
     variants_a = config["a"]
     flags_a_1 = variants_a[0].flags

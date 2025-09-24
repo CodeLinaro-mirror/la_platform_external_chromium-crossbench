@@ -37,8 +37,6 @@ if TYPE_CHECKING:
 # Skip strict type checks for better mocking
 # pytype: disable=wrong-arg-types
 class TestThreadModeTestCase(unittest.TestCase):
-  # pylint has some issues with enums.
-  # pylint: disable=no-member
 
   def create_session(self, browser, index) -> BrowserSessionRunGroup:
     return BrowserSessionRunGroup(
@@ -441,7 +439,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       run_method(is_dry_run=False)
 
     for run in runs:
-      run.run = (  # pylint: disable=unnecessary-direct-lambda-call  # noqa: PLC3002
+      run.run = (  # noqa: PLC3002
           lambda run_method: lambda is_dry_run: test_run(run_method))(
               run.run)
     with self.patch_teardown_run(runner) as teardown_run_mock:

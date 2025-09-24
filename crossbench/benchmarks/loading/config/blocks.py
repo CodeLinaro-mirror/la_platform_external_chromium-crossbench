@@ -52,12 +52,11 @@ class ActionBlock(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(  # pylint: disable=arguments-differ
-      cls,
-      config: dict[str, Any],
-      label: Optional[str] = None,
-      index: Optional[int] = None,
-      **kwargs) -> Self:
+  def parse_dict(cls,
+                 config: dict[str, Any],
+                 label: Optional[str] = None,
+                 index: Optional[int] = None,
+                 **kwargs) -> Self:
     return cls.config_parser().parse(config, label=label, index=index, **kwargs)
 
   @classmethod

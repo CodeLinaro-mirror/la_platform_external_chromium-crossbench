@@ -228,7 +228,7 @@ class WprBase(abc.ABC):
                  shlex.join(map(str, go_cmd)))
     self._num_parsed_ports = 0
     if self._log_path:
-      self._log_file = self._log_path.open("w", encoding="utf-8")  # pylint: disable=consider-using-with
+      self._log_file = self._log_path.open("w", encoding="utf-8")
     work_dir: LocalPath = LocalPath.cwd()
     if self._platform.is_local:
       work_dir = self._platform.local_path(self._bin_path.parent)
@@ -251,7 +251,7 @@ class WprBase(abc.ABC):
       with self._log_path.open("r", encoding="utf-8") as f:
         log_lines = list(f.readlines())
         logging.error("  %s", "  ".join(log_lines[-4:]))
-    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
       logging.debug("Got exception while reading wpr log file: %s", e)
 
   def _forward_ports(self) -> None:

@@ -60,20 +60,6 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
       source_file_filter=source_file_filter)
 
   # ---------------------------------------------------------------------------
-  # Pylint:
-  # ---------------------------------------------------------------------------
-  pylint_file_patterns_to_check: list[str] = LinterFilePatterns(
-      on_commit, modified_py_files)
-  if pylint_file_patterns_to_check:
-    tests += input_api.canned_checks.GetPylint(
-        input_api,
-        output_api,
-        files_to_check=pylint_file_patterns_to_check,
-        files_to_skip=SOURCE_SKIP_RE,
-        pylintrc=".pylintrc",
-        version="3.2")
-
-  # ---------------------------------------------------------------------------
   # Ruff:
   # ---------------------------------------------------------------------------
   # Ruff is fast, let's run it on all sources, excludes are configured

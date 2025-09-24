@@ -482,7 +482,7 @@ class Adb:
       raise ValueError("Got empty package name")
     try:
       self._adb("uninstall", package_name)
-    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
       if missing_ok:
         logging.debug("Could not uninstall %s: %s", package_name, e)
       else:
@@ -491,7 +491,7 @@ class Adb:
   def grant_permissions(self, package_name: str) -> None:
     if self.build_version < 13:
       # Notification permission setting is needed for Android 13 and above.
-      # https://developer.android.com/develop/ui/views/notifications/notification-permission  # pylint: disable=line-too-long
+      # https://developer.android.com/develop/ui/views/notifications/notification-permission
       return
     if not package_name:
       raise ValueError("Got empty package name")
@@ -558,7 +558,7 @@ class AndroidVersion(PosixVersion):
   pass
 
 class AndroidAdbPlatform(RemotePosixPlatform):
-  # pylint: disable=redefined-builtin
+
 
   def __init__(self,
                host_platform: Platform,

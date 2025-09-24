@@ -21,9 +21,6 @@ from tests import test_helper
 if TYPE_CHECKING:
   from tests.test_helper import TestEnv
 
-# pytest.fixtures rely on params having the same name as the fixture function
-# pylint: disable=redefined-outer-name
-
 CHROME_APK_URL = "gs://chrome-telemetry/apks/MonochromeCanary.apk"
 CHROME_APK_HASH = "5de59881c02783d2174e1e891d82c9dbbce09c67"
 

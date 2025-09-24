@@ -397,7 +397,7 @@ class RunnerEnv(BaseEnv):
         assert self.platform.read_text(test_file) == test_file.name
         self.platform.rm(test_file)
         return True
-    except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
       logging.debug("Failed file access test: %s", e)
       return False
 

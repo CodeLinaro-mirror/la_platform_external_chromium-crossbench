@@ -949,11 +949,11 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
         "a value")
 
   def test_exec_apple_script_args(self):
-    result = self.platform.exec_apple_script(  # pylint: disable=assignment-from-no-return
-        "copy item 1 of argv to stdout", "a value", "b")
+    result = self.platform.exec_apple_script("copy item 1 of argv to stdout",
+                                             "a value", "b")
     self.assertEqual(result.strip(), "a value")
-    result = self.platform.exec_apple_script(  # pylint: disable=assignment-from-no-return
-        "copy item 2 of argv to stdout", "a value", "b")
+    result = self.platform.exec_apple_script("copy item 2 of argv to stdout",
+                                             "a value", "b")
     self.assertEqual(result.strip(), "b")
 
   def test_exec_apple_script_invalid(self):

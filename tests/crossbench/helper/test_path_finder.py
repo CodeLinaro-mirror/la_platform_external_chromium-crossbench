@@ -74,7 +74,6 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
       self.assertIsNone(V8CheckoutFinder(self.platform).path)
       path = pathlib.Path(__file__)
       self.assertFalse(path.exists())
-      # pylint: disable=line-too-long
       # In:   chromium/src/third_party/crossbench/tests/crossbench/probes/test_helper.py
       # Out:  chromium/src
       fake_chrome_root = path.parents[5]

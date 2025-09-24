@@ -55,7 +55,7 @@ class State(BaseState):
 
 
 class D8Shell:
-  # pylint: disable=redefined-builtin
+
 
   def __init__(self,
                platform: plt.Platform,
@@ -73,7 +73,7 @@ class D8Shell:
     cmd = [str(d8_bin), *flags]
     logging.debug("SHELL: %s", shlex.join(map(str, cmd)))
     logging.debug("CWD: %s", cwd)
-    self._process = subprocess.Popen(  # pylint: disable=consider-using-with
+    self._process = subprocess.Popen(
         cmd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,

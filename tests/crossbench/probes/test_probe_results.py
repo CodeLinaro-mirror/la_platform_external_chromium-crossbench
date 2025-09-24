@@ -332,7 +332,6 @@ class BrowserProbeResultTestCase(BaseCrossbenchTestCase):
     self.assertEqual(local_kwargs, browser_kwargs)
 
   def test_copy_remote_files(self):
-    # pylint: disable=attribute-defined-outside-init
     out_dir_local = pathlib.Path("local/results")
     out_dir_remote = pathlib.Path("remote/results")
     out_dir_local.mkdir(parents=True)

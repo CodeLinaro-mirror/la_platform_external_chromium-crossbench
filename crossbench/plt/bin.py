@@ -94,7 +94,7 @@ class Binary:
   def __str__(self) -> str:
     return self._name
 
-  @functools.cache  # pylint: disable=method-cache-max-size-none
+  @functools.cache
   def resolve_cached(self, platform: Platform) -> pth.AnyPath:
     return self.resolve(platform)
 

@@ -376,7 +376,7 @@ class Run(ResultOrigin):
       assert self._probe_context_manager.is_ready
       try:
         self._run(is_dry_run)
-      except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
+      except Exception as e:  # noqa: BLE001
         self._exceptions.append(e)
       finally:
         self.teardown(is_dry_run)
@@ -464,7 +464,7 @@ class Run(ResultOrigin):
         "Quit browser"):
       try:
         self._browser.quit()
-      except Exception as e:  # pylint: disable=broad-except  # noqa: BLE001
+      except Exception as e:  # noqa: BLE001
         logging.warning("Error quitting browser: %s", e)
         return
 

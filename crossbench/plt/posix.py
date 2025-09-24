@@ -38,8 +38,6 @@ class PosixVersion(PlatformVersion):
 
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):
-  # pylint: disable=locally-disabled, redefined-builtin
-
   def __init__(self) -> None:
     super().__init__()
     self._default_tmp_dir: pth.AnyPath | None = None

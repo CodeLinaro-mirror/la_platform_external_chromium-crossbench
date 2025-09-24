@@ -32,7 +32,6 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 # We're using 'type' here a lot, let's skip the warnings from pylint.
-# pylint: disable=redefined-builtin
 
 
 def _parse_existing_file_path_and_resolve(value: str) -> pth.LocalPath:
@@ -137,10 +136,7 @@ class NetworkConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(  # pylint: disable=arguments-differ
-      cls,
-      value: str,
-      type: Optional[NetworkType] = None) -> Self:
+  def parse_str(cls, value: str, type: Optional[NetworkType] = None) -> Self:
     if not value:
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
     if value == "default":

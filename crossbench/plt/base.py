@@ -105,7 +105,7 @@ _NEXT_PLATFORM_ID = 0
 
 
 def _next_id() -> int:
-  global _NEXT_PLATFORM_ID  # pylint: disable=global-statement  # noqa: PLW0603
+  global _NEXT_PLATFORM_ID  # noqa: PLW0603
   new_id = _NEXT_PLATFORM_ID
   _NEXT_PLATFORM_ID += 1
   return new_id
@@ -114,8 +114,6 @@ def _next_id() -> int:
 DEFAULT_CACHE_DIR: Final = pth.LocalPath(__file__).parents[2] / "cache"
 
 class Platform(abc.ABC):
-  # pylint: disable=locally-disabled, redefined-builtin
-
   def __init__(self) -> None:
     self._id: Final[int] = _next_id()
     self._binary_lookup_override: dict[str, pth.AnyPath] = {}
@@ -801,7 +799,7 @@ class Platform(abc.ABC):
     return self.path(name)
 
   @contextlib.contextmanager
-  def NamedTemporaryFile(  # pylint: disable=invalid-name  # noqa: N802
+  def NamedTemporaryFile(  # noqa: N802
       self,
       suffix: Optional[str] = None,
       prefix: Optional[str] = None,
@@ -813,7 +811,7 @@ class Platform(abc.ABC):
       self.rm(tmp_file, missing_ok=True)
 
   @contextlib.contextmanager
-  def TemporaryDirectory(  # pylint: disable=invalid-name  # noqa: N802
+  def TemporaryDirectory(  # noqa: N802
       self,
       suffix: Optional[str] = None,
       prefix: Optional[str] = None,

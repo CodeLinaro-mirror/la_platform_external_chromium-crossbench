@@ -21,10 +21,6 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.base import PressBenchmark
   from tests.test_helper import TestEnv
 
-# pytest.fixtures rely on params having the same name as the fixture function
-# pylint: disable=redefined-outer-name
-
-
 def get_benchmark(benchmark_cls) -> PressBenchmark:
   """Returns a benchmark instance for the corresponding benchmark_name"""
   story_class = cbb_adapter.get_pressbenchmark_story_cls(benchmark_cls.NAME)

@@ -17,9 +17,6 @@ from crossbench.path import check_hash
 from crossbench.plt import PLATFORM
 from tests import test_helper
 
-# pytest.fixtures rely on params having the same name as the fixture function
-# pylint: disable=redefined-outer-name
-
 
 @pytest.fixture(scope="session")
 def tmp_dir() -> Iterator[pathlib.Path]:

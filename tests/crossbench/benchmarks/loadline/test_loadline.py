@@ -36,7 +36,7 @@ class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
     self.setup_loadline_configs()
 
   @override
-  def story_filter(  # pylint: disable=arguments-differ
+  def story_filter(
       self,
       patterns: Sequence[str],
       separate: bool = True,

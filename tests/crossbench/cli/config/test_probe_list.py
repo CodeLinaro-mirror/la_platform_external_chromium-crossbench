@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 
 
 class TestProbeListConfig(BaseConfigTestCase):
-  # pylint: disable=expression-not-assigned
 
   def parse_config(self, config_data) -> ProbeListConfig:
     probe_config_file = pth.LocalPath("/probe.config.hjson")
