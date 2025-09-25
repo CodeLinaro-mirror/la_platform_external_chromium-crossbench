@@ -35,7 +35,6 @@ if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
 
 # Skip strict type checks for better mocking
-# pytype: disable=wrong-arg-types
 class TestThreadModeTestCase(unittest.TestCase):
 
   def create_session(self, browser, index) -> BrowserSessionRunGroup:
@@ -653,7 +652,6 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         mock.patch.object(runner, "_measured_runs", runs)):
       runner.assert_successful_sessions_and_runs()
 
-# pytype: enable=wrong-arg-types
 
 del BaseRunnerTestCase
 

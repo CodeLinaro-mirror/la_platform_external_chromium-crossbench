@@ -75,7 +75,7 @@ class NetworkConfig(ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls, default=cls.default())
     parser.add_argument("type", type=NetworkType, default=NetworkType.LIVE)
-    preset_choices = tuple(str(preset) for preset in NetworkSpeedPreset) # pytype: disable=missing-parameter
+    preset_choices = tuple(str(preset) for preset in NetworkSpeedPreset)
     parser.add_argument(
         "speed",
         type=NetworkSpeedConfig,

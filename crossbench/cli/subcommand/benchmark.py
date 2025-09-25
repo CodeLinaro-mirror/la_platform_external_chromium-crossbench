@@ -323,7 +323,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
               f"{', '.join(str(e) for e in ViewportMode)}. "
               "Examples: --viewport=1550x300 --viewport=fullscreen. "
               f"Default: {Viewport.DEFAULT}"))
-    # pytype: enable=missing-parameter
     viewport_group.add_argument(
         "--headless",
         dest="viewport",

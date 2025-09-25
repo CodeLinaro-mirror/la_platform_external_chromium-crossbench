@@ -149,7 +149,6 @@ class ChromiumBasedWebDriver(
 
     # TODO: support remote platforms
     driver = self._create_driver(options, service)
-    # pytype: enable=wrong-keyword-args
     # Prevent debugging overhead.
     self._execute_cdp_cmd(driver, "Runtime.setMaxCallStackSizeToCapture",
                           {"size": 0})
