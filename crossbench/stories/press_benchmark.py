@@ -163,8 +163,8 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     if self._substories == self.SUBSTORIES:
       return
     for substory in self._substories:
-      assert substory in self.SUBSTORIES, (f"Unknown {self.NAME} substory %s" %
-                                           substory)
+      if substory not in self.SUBSTORIES:
+        raise ValueError(f"Unknown {self.NAME} substory %s" % substory)
 
   @override
   def log_run_details(self, run: Run) -> None:

@@ -73,7 +73,7 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
       DUMMY1 disconnected
         5120x1440_120 120.00  
         2160x3840_120 120.00  
-      """)
+      """)  # noqa: W291
     parsed = tuple(parse_display_xrandr(xrandr_output))
     self.assertEqual(len(parsed), 1)
     self.assertDictEqual(parsed[0], {

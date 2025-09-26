@@ -254,7 +254,6 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
       self.skipTest(f"{type(self).__name__}: beta version not supported.")
     version_stable = self.parse(self.STABLE_VERSION_STR)
     version_beta = self.parse(self.BETA_VERSION_STR)
-    # pylint: disable=comparison-with-itself
     self.assertFalse(version_stable > version_stable)
     self.assertFalse(version_stable < version_stable)
     self.assertTrue(version_stable >= version_stable)

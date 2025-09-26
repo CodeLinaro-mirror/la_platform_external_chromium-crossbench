@@ -62,7 +62,8 @@ class FirefoxVersion(BrowserVersion):
     return parts, browser_channel, version_str
 
   @classmethod
-  def _parse_channel(cls, full_version: str, matches) -> BrowserVersionChannel:
+  def _parse_channel(cls, full_version: str,
+                     matches: re.Match[str]) -> BrowserVersionChannel:
     channel_long: str | None = matches["channel_long"]
     channel_short: str | None = matches["channel_short"]
     if not channel_long and not channel_short:

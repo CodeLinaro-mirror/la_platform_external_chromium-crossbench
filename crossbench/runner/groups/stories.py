@@ -95,7 +95,7 @@ class StoriesRunGroup(RunGroup):
         "major_version": self.browser.version.major,
         "channel": self.browser.version.channel_name,
         "os": self.browser.platform.full_version,
-        "device": self.browser.platform.device,
+        "model": self.browser.platform.model,
         "cpu": self.browser.platform.cpu,
         "binary": str(self.browser.path),
         "flags": str(self.browser.flags),

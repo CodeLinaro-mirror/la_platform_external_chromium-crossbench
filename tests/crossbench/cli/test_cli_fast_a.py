@@ -1,21 +1,25 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import argparse
 import json
 import pathlib
 import unittest
+from typing import TYPE_CHECKING
 
 import hjson
 
 from crossbench import __version__, plt
 from crossbench.cli.cli import CrossBenchCLI
-from crossbench.cli.config.browser import BrowserConfig
 from crossbench.env.runner_env import EnvConfig
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
+
+if TYPE_CHECKING:
+  from crossbench.cli.config.browser import BrowserConfig
 
 
 class FastCliTestCasePartA(BaseCliTestCase):

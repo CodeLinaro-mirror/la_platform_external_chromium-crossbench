@@ -1,8 +1,10 @@
 # Copyright 2025 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
+
 import pathlib
-from typing import Any, Type
+from typing import TYPE_CHECKING, Any, Type
 
 from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
@@ -15,7 +17,6 @@ from crossbench.probes.downloads import (DownloadsProbe,
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.meminfo import MeminfoProbe
-from crossbench.probes.probe import Probe, ProbeContext
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
@@ -24,6 +25,9 @@ from tests.crossbench.action_runner.action_runner_test_case import \
 from tests.crossbench.mock_browser import MockChromeStable
 from tests.crossbench.mock_helper import LinuxMockPlatform
 from tests.crossbench.runner.helper import MockRun, MockRunner
+
+if TYPE_CHECKING:
+  from crossbench.probes.probe import Probe, ProbeContext
 
 
 class DefaultActionRunnerTestCase(ActionRunnerTestCase):

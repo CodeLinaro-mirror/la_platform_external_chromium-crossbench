@@ -66,5 +66,5 @@ class DevToolsTracer:
       if eof:
         return output
 
-  def _on_tracing_complete(self, event) -> None:
+  def _on_tracing_complete(self, event: Any) -> None:
     self._out_stream = event.stream

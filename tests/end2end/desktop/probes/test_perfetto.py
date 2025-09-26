@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator
 
 import pytest
 
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 @contextlib.contextmanager
-def setup_platform_cache_dir():
+def setup_platform_cache_dir() -> Iterator[plt.Platform]:
   platform = plt.PLATFORM
   original_cache_dir = platform.cache_dir()
   with platform.TemporaryDirectory() as temp_dir:

@@ -1,19 +1,18 @@
 # Copyright 2022 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import contextlib
 import json
 import pathlib
 import unittest
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterator
 from unittest import mock
 
 from typing_extensions import override
 
-from crossbench.browsers.browser import Browser
 from crossbench.browsers.webdriver import RemoteWebDriver
-from crossbench.env.runner_env import RunnerEnv
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError
@@ -31,13 +30,12 @@ from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockBrowser,
                                             MockRunner)
 
 if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.probes.probe import Probe
 
 # Skip strict type checks for better mocking
-# pytype: disable=wrong-arg-types
 class TestThreadModeTestCase(unittest.TestCase):
-  # pylint has some issues with enums.
-  # pylint: disable=no-member
 
   def create_session(self, browser, index) -> BrowserSessionRunGroup:
     return BrowserSessionRunGroup(
@@ -106,7 +104,7 @@ class TestThreadModeTestCase(unittest.TestCase):
   def test_group_session(self):
     groups = ThreadMode.SESSION.group(self.runs)
     self.assertEqual(len(groups), len(self.runs))
-    for group, run in zip(groups, self.runs):
+    for group, run in zip(groups, self.runs, strict=True):
       self.assertTupleEqual(group.runs, (run,))
     for index, group in enumerate(groups):
       self.assertEqual(group.index, index)
@@ -309,7 +307,7 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertFalse(runner.is_success)
     self.assertEqual(setup_count, 4)
     self.assertEqual(len(runner.runs), 4)
-    failed_runs = list(run for run in runner.runs if not run.is_success)
+    failed_runs = [run for run in runner.runs if not run.is_success]
     self.assertEqual(len(failed_runs), 1)
     failed_run = failed_runs[0]
 
@@ -416,7 +414,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     self.assertIn("same Runner", str(cm.exception))
 
   @contextlib.contextmanager
-  def patch_teardown_run(self, runner):
+  def patch_teardown_run(self, runner) -> Iterator[mock.MagicMock]:
     with mock.patch.object(
         runner.results_db, "teardown_run",
         side_effect=None) as teardown_run_mock:
@@ -440,7 +438,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       run_method(is_dry_run=False)
 
     for run in runs:
-      run.run = (  # pylint: disable=unnecessary-direct-lambda-call
+      run.run = (  # noqa: PLC3002
           lambda run_method: lambda is_dry_run: test_run(run_method))(
               run.run)
     with self.patch_teardown_run(runner) as teardown_run_mock:
@@ -469,7 +467,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         return MockProbeContext(probe, run)
       nonlocal setup_fail_count
       setup_fail_count += 1
-      raise CustomException()
+      raise CustomException
 
     probe.create_context = mock_get_context_fail
 
@@ -506,7 +504,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     def mock_setup_fail() -> None:
       nonlocal setup_fail_count
       setup_fail_count += 1
-      raise CustomException()
+      raise CustomException
 
     def mock_get_context_fail(run):
       context = MockProbeContext(probe, run)
@@ -554,7 +552,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       del session
       nonlocal setup_fail_count
       setup_fail_count += 1
-      raise CustomException()
+      raise CustomException
 
     failing_run.browser.start = mock_start_fail
 
@@ -588,7 +586,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     def mock_run_story_fail():
       nonlocal run_fail_count
       run_fail_count += 1
-      raise CustomException()
+      raise CustomException
 
     with mock.patch.object(failing_run, "_run_story", mock_run_story_fail):
       self.assertEqual(run_fail_count, 0)
@@ -612,7 +610,48 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       exception_entry = exceptions[0]
       self.assertIsInstance(exception_entry.exception, CustomException)
 
-# pytype: enable=wrong-arg-types
+  def test_run_ignore_partial_failures(self):
+    # 4 runs = (2 browser) x (2 stories)
+    runner = self.default_runner(throw=False)
+    runs = tuple(runner.get_runs())
+    thread = RunThreadGroup(runs)
+    failing_run = runs[0]
+    failing_session = failing_run.browser_session
+
+    run_fail_count = 0
+
+    def mock_run_story_fail():
+      nonlocal run_fail_count
+      run_fail_count += 1
+      raise CustomException
+
+    with mock.patch.object(failing_run, "_run_story", mock_run_story_fail):
+      self.assertEqual(run_fail_count, 0)
+      with self.patch_teardown_run(runner) as teardown_run_mock:
+        thread.run()
+        self.assertEqual(teardown_run_mock.call_count, len(runs))
+      self.assertEqual(run_fail_count, 1)
+
+    for session in thread.browser_sessions:
+      if session != failing_run.browser_session:
+        self.assertTrue(session.is_success)
+    for run in runs:
+      if run != failing_run:
+        self.assertTrue(run.is_success)
+
+    # Errors are propagate up:
+    for exceptions_holder in (runner, thread, failing_session, failing_run):
+      self.assertFalse(exceptions_holder.is_success)
+      exceptions = exceptions_holder.exceptions
+      self.assertEqual(len(exceptions), 1)
+      exception_entry = exceptions[0]
+      self.assertIsInstance(exception_entry.exception, CustomException)
+
+    with (
+        mock.patch.object(runner, "_ignore_partial_failures", True),
+        mock.patch.object(runner, "_measured_runs", runs)):
+      runner.assert_successful_sessions_and_runs()
+
 
 del BaseRunnerTestCase
 

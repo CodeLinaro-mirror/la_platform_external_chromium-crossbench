@@ -39,6 +39,9 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
   def test_is_macos(self):
     self.assertTrue(self.platform.is_macos)
 
+  def test_is_apple(self):
+    self.assertTrue(self.platform.is_apple)
+
   def test_app_version_non_existing(self):
     app_path = pth.AnyPosixPath("/Applications/Google Chrome.app")
     self.assertFalse(self.platform.exists(app_path))

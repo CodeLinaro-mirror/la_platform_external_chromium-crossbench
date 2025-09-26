@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 
 
 class TestProbeListConfig(BaseConfigTestCase):
-  # pylint: disable=expression-not-assigned
 
   def parse_config(self, config_data) -> ProbeListConfig:
     probe_config_file = pth.LocalPath("/probe.config.hjson")
@@ -33,13 +32,13 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_invalid_empty(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      self.parse_config({}).probes
+      _ = self.parse_config({}).probes
     with self.assertRaises(argparse.ArgumentTypeError):
-      self.parse_config({"foo": {}}).probes
+      _ = self.parse_config({"foo": {}})
 
   def test_invalid_names(self):
     with self.assertRaises(argparse.ArgumentTypeError):
-      self.parse_config({"probes": {"invalid probe name": {}}}).probes
+      _ = self.parse_config({"probes": {"invalid probe name": {}}}).probes
 
   def test_empty(self):
     config = self.parse_config({"probes": {}})
@@ -138,14 +137,14 @@ class TestProbeListConfig(BaseConfigTestCase):
     win_mock_d8_file = "D:/out/d8.exe"
     self.fs.create_file(win_mock_d8_file, contents=b"d8")
     win_config_data = {"d8_binary": win_mock_d8_file}
-    probe_config_path = pth.LocalPath("C:/config/v8.probe.config")
+    win_probe_config_path = pth.AnyWindowsPath("C:/config/v8.probe.config")
+    probe_config_path = pth.LocalPath(str(win_probe_config_path))
     self.fs.create_file(probe_config_path)
     with probe_config_path.open("w", encoding="utf-8") as f:
       hjson.dump(win_config_data, f)
-    probe_config_path = pth.AnyWindowsPath(probe_config_path)
     # with ":" separator:
     args.probe = [
-        ProbeConfig.parse(f"v8.log:{probe_config_path}"),
+        ProbeConfig.parse(f"v8.log:{win_probe_config_path}"),
     ]
     config = ProbeListConfig.from_cli_args(args)
     self.assertEqual(len(config.probes), 1)
@@ -168,14 +167,16 @@ class TestProbeListConfig(BaseConfigTestCase):
     v8_probe = ProbeConfig.parse("v8.log")
     with self.assertLogs(level="ERROR") as cm:
       v8_close_probe = ProbeConfig.parse("v8_log")
-    self.assertEqual(v8_probe, v8_close_probe)
+    self.assertEqual(v8_probe.probe_cls, v8_close_probe.probe_cls)
+    self.assertEqual(v8_close_probe.probe_cls, V8LogProbe)
     output = "\n".join(cm.output)
     self.assertIn("v8.log", output)
     self.assertIn("v8_log", output)
 
     with self.assertLogs(level="ERROR") as cm:
       v8_close_probe = ProbeConfig.parse("v8_log:{}")
-    self.assertEqual(v8_probe, v8_close_probe)
+    self.assertEqual(v8_probe.probe_cls, v8_close_probe.probe_cls)
+    self.assertEqual(v8_close_probe.probe_cls, V8LogProbe)
     output = "\n".join(cm.output)
     self.assertIn("v8.log", output)
     self.assertIn("v8_log", output)

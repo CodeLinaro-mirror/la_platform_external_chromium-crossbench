@@ -150,7 +150,7 @@ class ShellProbeContext(ProbeContext[ShellProbe]):
     self.host_platform.touch(stderr_path)
     self._result_files.append(stderr_path)
     with stdout_path.open("w") as stdout, stderr_path.open("w") as stderr:
-      self.browser_platform.sh(*cmd, shell=True, stdout=stdout, stderr=stderr)
+      self.browser_platform.sh(*cmd, stdout=stdout, stderr=stderr)
 
   @override
   def setup(self) -> None:

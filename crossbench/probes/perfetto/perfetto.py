@@ -6,6 +6,9 @@ from __future__ import annotations
 
 import abc
 import atexit
+import dataclasses
+import datetime as dt
+import functools
 import logging
 import subprocess
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, cast
@@ -14,7 +17,9 @@ import google.protobuf.text_format as proto_text_format
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.config import ConfigObject, config_dir
 from crossbench.helper import fs_helper
+from crossbench.helper.collection_helper import close_matches_message
 from crossbench.helper.wait import WaitRange
 from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
@@ -37,6 +42,68 @@ _PERFETTO_CONFIG_REMOTE_DIR_ANDROID: Final = pth.AnyPath(
 _PERFETTO_TRACE_REMOTE_DIR_ANDROID: Final = pth.AnyPath(
     "/data/misc/perfetto-traces/")
 _PERFETTO_REMOTE_DIR_CROS: Final = pth.AnyPath("/usr/local/tmp")
+
+
+@dataclasses.dataclass
+class TraceConfig(ConfigObject):
+  """ See https://perfetto.dev/docs/reference/trace-config-proto for more
+  details."""
+  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = (".pbtxt", ".proto",
+                                                 ".textproto", ".txtpb")
+  trace_config: trace_config_pb2.TraceConfig
+
+  @classmethod
+  @override
+  def parse_str(cls, value: str) -> Self:
+    if ":" in value:
+      return cls.parse_textproto(value)
+    presets = cls.presets()
+    if preset_file := presets.get(value):
+      return cls.parse_path(preset_file)
+    error_message, alternative = close_matches_message(value, presets.keys(),
+                                                       "TraceConfig preset")
+    if not alternative:
+      raise ValueError(error_message)
+    logging.error(error_message)
+    preset_file = presets[alternative]
+    return cls.parse_path(preset_file)
+
+  @classmethod
+  def parse_textproto(cls, value: str) -> Self:
+    trace_config = trace_config_pb2.TraceConfig()
+    ObjectParser.parse_text_or_binary_proto(trace_config, value.encode("utf-8"))
+    return cls(trace_config)
+
+  @classmethod
+  @override
+  def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
+    trace_config = trace_config_pb2.TraceConfig()
+    ObjectParser.parse_text_or_binary_proto_file(trace_config, path)
+    return cls(trace_config, **kwargs)
+
+  @classmethod
+  def preset_dir(cls) -> pth.LocalPath:
+    return config_dir() / "probe/perfetto/trace_config"
+
+  @classmethod
+  @functools.cache
+  def presets(cls) -> dict[str, pth.LocalPath]:
+    result: dict[str, pth.LocalPath] = {}
+    for preset_config in cls.preset_dir().glob("*.pbtxt"):
+      result[preset_config.stem] = preset_config
+    assert result, f"No trace_config presets found {cls.preset_dir()}"
+    return result
+
+  @override
+  def to_argument_value(self) -> trace_config_pb2.TraceConfig:
+    return self.trace_config
+
+  @classmethod
+  @override
+  def help_text_items(cls) -> list[tuple[str, str]]:
+    help_items = super().help_text_items()
+    help_items.append(("presets", ",".join(cls.presets().keys())))
+    return help_items
 
 
 class PerfettoProbe(Probe):
@@ -63,10 +130,10 @@ class PerfettoProbe(Probe):
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
-    parser.add_argument(
+    parser.add_default_argument(
         "trace_config",
         aliases=("config", "textproto"),
-        type=ObjectParser.proto_or_file(trace_config_pb2.TraceConfig),
+        type=TraceConfig,
         help=("Serialized perfetto configuration. "
               "See probe instructions for more details"))
     parser.add_argument(
@@ -163,11 +230,16 @@ class PerfettoProbe(Probe):
     return DesktopPerfettoProbeContext(self, run)
 
 
+PERFETTO_CONFIG_NAME: Final[str] = "perfetto_config.textproto"
+PERFETTO_TRACE_NAME: Final[str] = "perfetto.trace.pb"
+
 class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
   def __init__(self, probe: PerfettoProbe, run: Run) -> None:
+    self._file_prefix: Final[str] = dt.datetime.now().strftime(
+        "%Y-%m-%d_%H%M%S")
     super().__init__(probe, run)
-    self._host_config_file: pth.LocalPath = (
-        run.out_dir / "perfetto_config.textproto")
+    self._host_config_file: Final[pth.LocalPath] = (
+        run.out_dir / PERFETTO_CONFIG_NAME)
     self._perfetto_pid: int | None = None
 
   def setup(self) -> None:
@@ -258,17 +330,32 @@ class PerfettoProbeContext(ProbeContext[PerfettoProbe], metaclass=abc.ABCMeta):
     self._perfetto_pid = None
 
   def teardown(self) -> ProbeResult:
-    # Copy files:
+    try:
+      return self._transfer_results()
+    finally:
+      if self.browser_platform.is_remote:
+        self._cleanup_remote_perfetto_files()
+
+  def _transfer_results(self) -> ProbeResult:
     browser_result = self.browser_result(file=[self.result_path])
     local_result_file = browser_result.file
     assert local_result_file.is_file(), (
         f"Could not copy perfetto results: {local_result_file}")
+    renamed_result_file = local_result_file.with_name(PERFETTO_TRACE_NAME)
+    self.host_platform.rename(local_result_file, renamed_result_file)
 
-    self.host_platform.sh("gzip", local_result_file)
-    local_result_file = local_result_file.with_suffix(
+    self.host_platform.sh("gzip", renamed_result_file)
+    renamed_result_file = renamed_result_file.with_suffix(
         f"{local_result_file.suffix}.gz")
+    assert renamed_result_file.is_file(), (
+        f"Could not compress {renamed_result_file}")
 
-    return LocalProbeResult(trace=(local_result_file,))
+    return LocalProbeResult(trace=(renamed_result_file,))
+
+  def _cleanup_remote_perfetto_files(self) -> None:
+    # Especially on android, the perfetto files are not in the default tmp dir.
+    self.browser_platform.rm(self.result_path, missing_ok=True)
+    self.browser_platform.rm(self.get_browser_config_path(), missing_ok=True)
 
 
 class DesktopPerfettoProbeContext(PerfettoProbeContext):
@@ -280,12 +367,12 @@ class DesktopPerfettoProbeContext(PerfettoProbeContext):
 
   @override
   def get_browser_config_path(self) -> pth.AnyPath:
-    return self.result_path.with_name("perfetto_config.textproto")
+    return self.result_path.with_name(PERFETTO_CONFIG_NAME)
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
     return self._run.get_default_probe_result_path(
-        self._probe).with_name("perfetto.trace.pb")
+        self._probe).with_name(PERFETTO_TRACE_NAME)
 
   @override
   def setup(self) -> None:
@@ -326,11 +413,13 @@ class AndroidPerfettoProbeContext(PerfettoProbeContext):
 
   @override
   def get_browser_config_path(self) -> pth.AnyPath:
-    return _PERFETTO_CONFIG_REMOTE_DIR_ANDROID / "perfetto_config.textproto"
+    return _PERFETTO_CONFIG_REMOTE_DIR_ANDROID / (
+        f"{self._file_prefix}_{PERFETTO_CONFIG_NAME}")
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
-    return _PERFETTO_TRACE_REMOTE_DIR_ANDROID / "perfetto.trace.pb"
+    return _PERFETTO_TRACE_REMOTE_DIR_ANDROID / (
+        f"{self._file_prefix}_{PERFETTO_TRACE_NAME}")
 
   @property
   @override
@@ -351,8 +440,10 @@ class ChromeOsPerfettoProbeContext(PerfettoProbeContext):
 
   @override
   def get_browser_config_path(self) -> pth.AnyPath:
-    return _PERFETTO_REMOTE_DIR_CROS / "perfetto_config.textproto"
+    return _PERFETTO_REMOTE_DIR_CROS / (
+        f"{self._file_prefix}_{PERFETTO_CONFIG_NAME}")
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
-    return _PERFETTO_REMOTE_DIR_CROS / "perfetto.trace.pb"
+    return _PERFETTO_REMOTE_DIR_CROS / (
+        f"{self._file_prefix}_{PERFETTO_TRACE_NAME}")

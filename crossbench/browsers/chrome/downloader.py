@@ -10,8 +10,8 @@ import os
 import shutil
 import tempfile
 import zipfile
-from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Type,
-                    cast)
+from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Iterator,
+                    Optional, Type, cast)
 
 from typing_extensions import override
 
@@ -251,7 +251,7 @@ class ChromeDownloaderLinux(ChromeDownloader):
     if version.has_channel:
       channel_name = self.CHANNEL_BINARY_LOOKUP[version.channel]
       return base_dir / channel_name / "chrome"
-    for _, channel_name in self.CHANNEL_BINARY_LOOKUP.items():
+    for channel_name in self.CHANNEL_BINARY_LOOKUP.values():
       bin_path: pth.LocalPath = base_dir / channel_name / "chrome"
       if bin_path.exists():
         return bin_path
@@ -521,7 +521,8 @@ class ChromeDownloaderAndroid(ChromeDownloader):
       super()._download_archive(lib_archive_url, lib_tmp_dir)
 
   @contextlib.contextmanager
-  def _prepare_lib_archive_download(self, archive_url: str):
+  def _prepare_lib_archive_download(
+      self, archive_url: str) -> Iterator[tuple[str, pth.LocalPath]]:
     # Also download the trichrome library (such a mess)
     main_archive_path = self._archive_path
     lib_archive_path = main_archive_path.with_suffix(
@@ -532,10 +533,12 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     lib_url = archive_url.replace("TrichromeChromeGoogle",
                                   "TrichromeLibraryGoogle")
     lib_url = lib_url.replace(self.ARCHIVE_SUFFIX, ".apk")
-    with tempfile.TemporaryDirectory(prefix="cb_download_") as tmp_dir_name:
-      lib_tmp_dir = pth.LocalPath(tmp_dir_name)
-      yield lib_url, lib_tmp_dir
-    self._archive_path = main_archive_path
+    try:
+      with tempfile.TemporaryDirectory(prefix="cb_download_") as tmp_dir_name:
+        lib_tmp_dir = pth.LocalPath(tmp_dir_name)
+        yield lib_url, lib_tmp_dir
+    finally:
+      self._archive_path = main_archive_path
 
   @override
   def _install_archive(self, archive_path: pth.LocalPath) -> None:

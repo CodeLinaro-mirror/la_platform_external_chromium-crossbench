@@ -7,13 +7,13 @@ from __future__ import annotations
 import contextlib
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Iterator, Optional, cast
 
 from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.dump_html import DumpHtmlAction
 from crossbench.action_runner.action.get import GetAction
-from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
@@ -96,19 +96,18 @@ class InteractivePage(Page):
     action_runner = run.action_runner
     try:
       action_runner.failure_screenshot(run, message)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # noqa: BLE001
       logging.error("Failed to take a failure screenshot: %s", e)
 
     try:
-      action_runner.invoke_probe(
-          run, ProbeAction(probe="dump_html", kwargs={"suffix": message}))
+      action_runner.invoke_probe(run, DumpHtmlAction(suffix=message))
     except ProbeContextLookupError:
       pass
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # noqa: BLE001
       logging.error("Failed to dump HTML on failure: %s", e)
 
   @contextlib.contextmanager
-  def _performance_mark_scope(self, run: Run, name: str):
+  def _performance_mark_scope(self, run: Run, name: str) -> Iterator[None]:
     browser: Browser = run.browser
     browser.performance_mark(f"{name}-start", self._name)
     yield
@@ -145,7 +144,7 @@ class InteractivePage(Page):
   @override
   def details_json(self) -> JsonDict:
     result = super().details_json()
-    result["actions"] = list(block.to_json() for block in self._blocks)
+    result["actions"] = [block.to_json() for block in self._blocks]
     return result
 
   def _get_duration(self) -> dt.timedelta:

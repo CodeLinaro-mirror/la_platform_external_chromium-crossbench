@@ -43,7 +43,7 @@ class JSProbe(JsonResultProbe):
             "Optional JavaScript code that is run immediately before a story. "
             "This can be used for setting up some JS tracking code or patch "
             "existing code for custom metric tracking."))
-    parser.add_argument(
+    parser.add_default_argument(
         "js",
         type=parse_javascript,
         required=True,

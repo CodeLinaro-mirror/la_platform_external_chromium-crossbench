@@ -9,4 +9,3 @@ from crossbench.browsers.safari.webdriver import SafariWebDriver
 
 class WebKitWebDriver(SafariWebDriver):
   """Basic implementation for "raw" WebKit builds """
-  pass

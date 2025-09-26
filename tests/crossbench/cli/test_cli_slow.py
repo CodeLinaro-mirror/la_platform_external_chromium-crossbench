@@ -1,19 +1,18 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import argparse
 import json
 import pathlib
-from typing import Type
+from typing import TYPE_CHECKING, Type
 from unittest import mock
 
 import hjson
 
-from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.cli import CrossBenchCLI
-from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.driver import BrowserDriverType
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.network.local_file_server import LocalFileNetwork
@@ -21,8 +20,11 @@ from crossbench.probes.internal.summary import ResultsSummaryProbe
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
-from tests.crossbench.mock_helper import MockCLI
 
+if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
+  from crossbench.cli.config.browser import BrowserConfig
+  from tests.crossbench.mock_helper import MockCLI
 
 class CliSlowTestCase(BaseCliTestCase):
   """Collection of slower tests that are not worth running
