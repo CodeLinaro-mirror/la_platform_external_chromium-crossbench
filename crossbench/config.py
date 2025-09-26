@@ -527,6 +527,13 @@ class ConfigObject(abc.ABC):
   def maybe_valid_path(cls, path: pth.LocalPath) -> pth.LocalPath | None:
     if path.suffix in cls.VALID_EXTENSIONS and path.is_file():
       return path
+
+    if path.is_file() and cls.VALID_EXTENSIONS:
+      logging.warning(
+          "Path exists but does not have a valid extension for %s: %s", cls,
+          path)
+      logging.warning("Valid extensions: %s", cls.VALID_EXTENSIONS)
+
     return None
 
   @classmethod
