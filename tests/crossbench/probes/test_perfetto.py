@@ -46,7 +46,7 @@ class PerfettoProbeTestCase(unittest.TestCase):
   def test_trace_config_preset(self):
     trace_config_dir = test_helper.config_dir() / "probe/perfetto/trace_config"
     preset_count = 0
-    for config_file in trace_config_dir.glob("*.pbtx"):
+    for config_file in trace_config_dir.glob("*.pbtxt"):
       preset_count += 1
       with self.subTest(config_file=str(config_file)):
         probe_a = PerfettoProbe.parse_dict({"trace_config": config_file.stem})

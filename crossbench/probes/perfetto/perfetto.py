@@ -48,8 +48,8 @@ _PERFETTO_REMOTE_DIR_CROS: Final = pth.AnyPath("/usr/local/tmp")
 class TraceConfig(ConfigObject):
   """ See https://perfetto.dev/docs/reference/trace-config-proto for more
   details."""
-  VALID_EXTENSIONS: ClassVar[tuple[str,
-                                   ...]] = (".pbtx", ".proto", ".textproto")
+  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = (".pbtxt", ".proto",
+                                                 ".textproto", ".txtpb")
   trace_config: trace_config_pb2.TraceConfig
 
   @classmethod
@@ -89,7 +89,7 @@ class TraceConfig(ConfigObject):
   @functools.cache
   def presets(cls) -> dict[str, pth.LocalPath]:
     result: dict[str, pth.LocalPath] = {}
-    for preset_config in cls.preset_dir().glob("*.pbtx"):
+    for preset_config in cls.preset_dir().glob("*.pbtxt"):
       result[preset_config.stem] = preset_config
     assert result, f"No trace_config presets found {cls.preset_dir()}"
     return result
