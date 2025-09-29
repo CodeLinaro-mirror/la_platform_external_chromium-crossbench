@@ -19,7 +19,7 @@ from typing_extensions import override
 
 from crossbench.helper import url_helper
 from crossbench.helper.cwd import change_cwd
-from crossbench.helper.path_finder import WprGoToolFinder
+from crossbench.helper.path_finder import WprGoFinder
 from crossbench.parse import NumberParser, PathParser
 from crossbench.path import AnyPath, LocalPath
 from crossbench.plt import PLATFORM, Platform
@@ -101,7 +101,7 @@ class WprBase(abc.ABC):
     # Assuming the binary path is precompiled and executable.
     go_cmd = (self._bin_path,)
     if self._platform.is_local:
-      if local_wpr_go := WprGoToolFinder(self._platform).local_path:
+      if local_wpr_go := WprGoFinder(self._platform).local_path:
         wpr_root = local_wpr_go.parents[1]
       else:
         raise ValueError(f"Could not find webpagereplay on {self._platform}")

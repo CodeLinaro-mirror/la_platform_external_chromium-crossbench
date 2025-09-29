@@ -331,6 +331,13 @@ class MockPlatformMixin:
     del macos, win, linux
     return self.path(f"/usr/bin/{name}")
 
+  def search_binary(self, app_or_bin: str | pth.AnyPath) -> pth.AnyPath | None:
+    path = self.path(f"/usr/bin/{app_or_bin}")
+    if self.use_fs and self.is_file(path):
+      return path
+    return super().search_binary(app_or_bin)
+
+
   def sh_stdout_bytes(self,
                       *args: CmdArg,
                       shell: bool = False,

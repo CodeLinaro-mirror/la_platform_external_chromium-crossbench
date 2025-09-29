@@ -58,6 +58,7 @@ class ThermalStatusTestCase(unittest.TestCase):
 class TestThermalMonitorProbe(BaseRunnerTestCase):
 
   def test_android_run(self):
+    self.fs.create_file("/usr/bin/adb", contents="adb")
     if self.platform.is_macos:
       self.platform.expect_sh(
           "brew", "--prefix", result=ShResult(success=False))

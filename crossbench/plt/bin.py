@@ -95,16 +95,21 @@ class Binary:
   def __str__(self) -> str:
     return self._name
 
-  @functools.cache
-  def resolve_cached(self, platform: Platform) -> pth.AnyPath:
-    return self.resolve(platform)
-
-  def resolve(self, platform: Platform) -> pth.AnyPath:
+  def search(self, platform: Platform) -> pth.AnyPath | None:
     self._validate_platform(platform)
     for binary in self.platform_path(platform):
       binary_path = platform.path(binary)
       if result := platform.search_binary(binary_path):
         return result
+    return None
+
+  @functools.cache
+  def resolve_cached(self, platform: Platform) -> pth.AnyPath:
+    return self.resolve(platform)
+
+  def resolve(self, platform: Platform) -> pth.AnyPath:
+    if path := self.search(platform):
+      return path
     raise BinaryNotFoundError(self, platform)
 
   def platform_path(self, platform: Platform) -> tuple[pth.AnyPath, ...]:
@@ -201,7 +206,11 @@ class ChromeOSBinary(Binary):
 
 
 class Binaries:
-  ADB: ClassVar = Binary("adb", default="adb", win="adb.exe")
+  ADB: ClassVar = Binary(
+      "adb",
+      macos=["adb", "~/Library/Android/sdk/platform-tools/adb"],
+      linux=["adb"],
+      win=["adb.exe", "Android/sdk/platform-tools/adb.exe"])
   CPIO: ClassVar = LinuxBinary("cpio")
   FFMPEG: ClassVar = Binary("ffmpeg", posix="ffmpeg")
   GCERTSTATUS: ClassVar = Binary("gcertstatus", posix="gcertstatus")

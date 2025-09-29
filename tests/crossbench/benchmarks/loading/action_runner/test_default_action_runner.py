@@ -37,8 +37,8 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
       probe: Probe,
       probe_context_cls: Type[ProbeContext] | None = None,
       probe_context_args: dict[str, Any] | None = None) -> None:
-    pathlib.Path("/usr/bin").mkdir(parents=True, exist_ok=True)
-    pathlib.Path("/usr/bin/google-chrome").write_text("definitely a browser")
+    self.fs.create_file(
+        "/usr/bin/google-chrome", contents="definitely a browser")
 
     self.root_dir = pathlib.Path()
     self.platform = LinuxMockPlatform()

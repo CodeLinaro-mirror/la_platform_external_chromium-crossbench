@@ -14,7 +14,7 @@ from crossbench.helper.path_finder import (ChromiumBuildBinaryFinder,
                                            TraceboxFinder, TraceconvFinder,
                                            TraceProcessorFinder,
                                            V8CheckoutFinder, V8ToolsFinder,
-                                           WprCloudBinary, WprGoToolFinder)
+                                           WprCloudBinary, WprGoFinder)
 from crossbench.plt import PLATFORM
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -88,7 +88,7 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
 class ChromiumBuildBinaryFinderTestCase(BaseCheckoutTestCase):
 
   def test_find_none(self):
-    finder = ChromiumBuildBinaryFinder(self.platform, "custom_binary")
+    finder = ChromiumBuildBinaryFinder(self.platform, "custom_binary", ())
     self.assertIsNone(finder.path)
     self.assertIsNone(finder.path)
     self.assertEqual(finder.binary_name, "custom_binary")
@@ -117,7 +117,7 @@ class ChromiumBuildBinaryFinderTestCase(BaseCheckoutTestCase):
     assert checkout_dir.is_dir()
     self._add_chrome_checkout_files(checkout_dir)
     self.assertEqual(
-        ChromiumBuildBinaryFinder(self.platform, "custom_binary").path,
+        ChromiumBuildBinaryFinder(self.platform, "custom_binary", ()).path,
         candidate)
 
   def test_find_build_dir_from_candite(self):
@@ -127,7 +127,7 @@ class ChromiumBuildBinaryFinderTestCase(BaseCheckoutTestCase):
     assert checkout_dir.is_dir()
     self._add_chrome_checkout_files(checkout_dir)
     self.assertIsNone(
-        ChromiumBuildBinaryFinder(self.platform, "custom_binary").path,)
+        ChromiumBuildBinaryFinder(self.platform, "custom_binary", ()).path,)
     self.assertEqual(
         ChromiumBuildBinaryFinder(self.platform, "custom_binary",
                                   (checkout_dir / "out",)).path, candidate)
@@ -202,11 +202,12 @@ class WprToolsFinderTestCase(BaseCheckoutTestCase):
     return platform
 
   def test_path_exists(self):
-    finder = WprGoToolFinder(PLATFORM)
+    finder = WprGoFinder(PLATFORM)
     self.assertTrue(finder.local_path.exists(),
                     f"{finder.local_path} not found")
 
   def test_cloud_binary(self):
+    self.fs.create_file("/usr/bin/adb", contents="adb")
     for _ in range(3):
       if self.platform.is_macos:
         self.platform.expect_sh(
@@ -238,10 +239,10 @@ class WprToolsFinderTestCase(BaseCheckoutTestCase):
         self._with_arch(WinMockPlatform(), "x64"),
     ]
     self.assertSetEqual({p.key for p in platforms},
-                        set(WprGoToolFinder.WPR_PREBUILT_LOOKUP.keys()),
+                        set(WprGoFinder.WPR_PREBUILT_LOOKUP.keys()),
                         "Please add any new platform(s) to the list above")
     for platform in platforms:
-      cloud_binary: WprCloudBinary = WprGoToolFinder(
+      cloud_binary: WprCloudBinary = WprGoFinder(
           self.platform).cloud_binary(platform)
       self.assertTrue(cloud_binary.file_hash, f"Empty file hash for {platform}")
       self.assertTrue(cloud_binary.url, f"Empty url for {platform}")

@@ -123,6 +123,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
   def setUp(self) -> None:
     super().setUp()
     self.host_platform = LinuxMockPlatform()
+    self.fs.create_file("/usr/bin/adb", contents="adb")
     self.host_platform.expect_sh(
         "/usr/bin/adb",
         "devices",

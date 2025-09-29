@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Final, Iterator, Optional, Self, TypeVar
 
 from typing_extensions import override
 
-from crossbench.helper.path_finder import WprCloudBinary, WprGoToolFinder
+from crossbench.helper.path_finder import WprCloudBinary, WprGoFinder
 from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
 from crossbench.path import check_hash
@@ -133,7 +133,7 @@ class LocalWprReplayNetwork(WprReplayNetwork):
   @override
   def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> LocalPath:
     if not wpr_go_bin:
-      if local_wpr_go := WprGoToolFinder(self.host_platform).local_path:
+      if local_wpr_go := WprGoFinder(self.host_platform).local_path:
         wpr_go_bin = local_wpr_go
     if not wpr_go_bin:
       raise RuntimeError(
@@ -200,7 +200,7 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
                                                       "wpr.go binary")
 
   def _download_prebuilt_wpr(self) -> LocalPath:
-    wpr_cloud_binary: WprCloudBinary = WprGoToolFinder(
+    wpr_cloud_binary: WprCloudBinary = WprGoFinder(
         self.host_platform).cloud_binary(self.browser_platform)
     local_wpr_go_bin = (
         self.host_platform.local_cache_dir("wpr") /
@@ -237,7 +237,7 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
   @override
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
     host_platform = self.host_platform
-    if local_wpr_go := WprGoToolFinder(host_platform).local_path:
+    if local_wpr_go := WprGoFinder(host_platform).local_path:
       wpr_root = local_wpr_go.parents[1]
     else:
       raise RuntimeError(f"Could not fine local wpr.go on {host_platform}")

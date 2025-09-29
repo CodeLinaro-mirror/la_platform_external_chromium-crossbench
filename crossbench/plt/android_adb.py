@@ -24,6 +24,7 @@ from crossbench.helper.path_finder import BuildtoolFinder
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
+from crossbench.plt.bin import Binaries
 from crossbench.plt.device_info import DeviceInfo
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import PosixVersion, RemotePosixPlatform
@@ -54,13 +55,12 @@ class AndroidDeviceInfo(DeviceInfo):
   def serial_id(self) -> str:
     return self.device_id
 
-def _find_adb_bin(platform: Platform) -> pth.AnyPath:
-  adb_bin = platform.search_platform_binary(
-      name="adb",
-      macos=["adb", "~/Library/Android/sdk/platform-tools/adb"],
-      linux=["adb"],
-      win=["adb.exe", "Android/sdk/platform-tools/adb.exe"])
+
+def _find_adb_bin(platform: Platform,
+                  adb_bin: Optional[pth.AnyPath] = None) -> pth.AnyPath:
   if adb_bin:
+    return platform.parse_binary_path(adb_bin)
+  if adb_bin := Binaries.ADB.search(platform):
     return adb_bin
   raise ValueError(
       "Could not find adb binary."
@@ -102,30 +102,33 @@ def _parse_adb_device_info(value: str) -> dict[str, str]:
 
 class Adb:
 
-  _serial_id: str
-  _device_info: AndroidDeviceInfo
-  _adb_bin: pth.AnyPath
-  _bundletool: Optional[pth.AnyPath]
-
   def __init__(self,
                host_platform: Platform,
                device_identifier: Optional[str] = None,
                adb_bin: Optional[pth.AnyPath] = None,
                bundletool: Optional[pth.AnyPath] = None) -> None:
-    self._host_platform = host_platform
-    if adb_bin:
-      self._adb_bin = host_platform.parse_binary_path(adb_bin)
-    else:
-      self._adb_bin = _find_adb_bin(host_platform)
+    self._host_platform: Final[Platform] = host_platform
+    self._adb_bin: Final[pth.AnyPath] = _find_adb_bin(host_platform, adb_bin)
+    self._bundletool: Final[pth.AnyPath
+                            | None] = self._find_bundletool(bundletool)
+    serial_id, device_info = self._start(device_identifier)
+    self._serial_id: Final[str] = serial_id
+    self._device_info: Final[AndroidDeviceInfo] = device_info
+
+  def _find_bundletool(self,
+                       bundletool: Optional[pth.AnyPath]) -> pth.AnyPath | None:
     if bundletool:
-      self._bundletool = host_platform.parse_binary_path(bundletool)
-    else:
-      self._bundletool = BuildtoolFinder(host_platform).local_path
+      return self._host_platform.parse_binary_path(bundletool)
+    return BuildtoolFinder(self._host_platform).path
+
+  def _start(
+      self,
+      device_identifier: Optional[str] = None) -> tuple[str, AndroidDeviceInfo]:
     self.start_server()
-    self._serial_id, self._device_info = self._find_serial_id(device_identifier)
-    logging.debug("ADB Selected device: %s %s", self._serial_id,
-                  self._device_info)
-    assert self._serial_id
+    serial_id, device_info = self._find_serial_id(device_identifier)
+    logging.debug("ADB Selected device: %s %s", serial_id, device_info)
+    assert serial_id
+    return serial_id, device_info
 
   def _find_serial_id(
       self,
@@ -461,7 +464,10 @@ class Adb:
                    modules: Optional[str] = None) -> None:
     if not apks.exists():
       raise ValueError(f"APK {apks} does not exist.")
-    if self._bundletool and self._bundletool.suffix == ".jar":
+    if self._bundletool is None:
+      raise RuntimeError(
+          "Could not find bundletool binary required for install_apks")
+    if self._bundletool.suffix == ".jar":
       binary = ["java", "-jar", str(self._bundletool)]
     else:
       binary = [str(self._bundletool)]
