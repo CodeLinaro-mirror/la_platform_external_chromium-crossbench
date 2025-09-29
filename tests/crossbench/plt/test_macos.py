@@ -29,9 +29,8 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.fs.os = OSType.MACOS
 
   @override
-  def mock_platform_setup(self) -> None:
-    self.mock_platform = MacOsMockPlatform()
-    self.platform = self.mock_platform
+  def setup_host_platform(self) -> None:
+    return MacOsMockPlatform()
 
   def test_name(self):
     self.assertEqual(self.platform.name, "mock.macos")

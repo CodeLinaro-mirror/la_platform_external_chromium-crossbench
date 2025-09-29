@@ -372,6 +372,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     self.assertFalse(env.validate_url("ftp://google.com"))
 
   def test_validate_url_localhost_remote(self):
+    self.mock_platform_default_tmp_dir(RemoteLinuxMockPlatform)
     remote_platform = RemoteLinuxMockPlatform(self.platform)
     env = self.create_env()
     with mock.patch.object(url_helper, "get") as mock_get:

@@ -128,6 +128,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "/opt/google/chrome/chrome --version", result="125.0.6422.60")
 
   def test_parse_remote_browser_config_template(self):
+    self.mock_platform_default_tmp_dir(plt.LinuxSshPlatform)
     self.fs.add_real_file(self.EXAMPLE_REMOTE_CONFIG_PATH)
 
     self._expect_sh_linux_ssh_browser_config()
@@ -168,6 +169,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     args = self.mock_args(remote_driver_path=override_driver_path)
     config = BrowserVariantsConfigDict()
 
+    self.mock_platform_default_tmp_dir(plt.LinuxSshPlatform)
     self._expect_sh_linux_ssh_browser_config()
     self._expect_sh_linux_ssh_browser_config()
     config_dict = {

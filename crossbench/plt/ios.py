@@ -8,7 +8,7 @@ import dataclasses
 import datetime as dt
 import functools
 import re
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import TYPE_CHECKING, Any, Final, Optional, Type
 
 from typing_extensions import override
 
@@ -94,7 +94,8 @@ class IOSPlatform(RemotePlatformMixin, Platform):
     assert not host_platform.is_remote, (
         "ios on remote platform is not supported yet")
     super().__init__(host_platform)
-    self._device: IOSDeviceInfo = self._find_ios_device(device_identifier)
+    self._device: Final[IOSDeviceInfo] = self._find_ios_device(
+        device_identifier)
 
   def _find_ios_device(
       self, device_identifier: Optional[str] = None) -> IOSDeviceInfo:
@@ -125,6 +126,16 @@ class IOSPlatform(RemotePlatformMixin, Platform):
   @override
   def _create_port_manager(self) -> IOSPortManager:
     return IOSPortManager(self)
+
+  @override
+  def _create_default_tmp_dir(self) -> pth.AnyPath:
+    # TODO: temp dir not supported on remote iOS platform
+    return self.path("/var/tmp")  # noqa: S108
+
+  @override
+  def path(self, path: pth.AnyPathLike) -> pth.AnyPath:
+    return pth.AnyPosixPath(path)
+
 
   @property
   @override

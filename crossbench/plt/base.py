@@ -118,10 +118,15 @@ class Platform(abc.ABC):
     self._id: Final[int] = _next_id()
     self._binary_lookup_override: dict[str, pth.AnyPath] = {}
     self._cache_dir_root: pth.AnyPath | None = None
-    self._default_port_manager: PortManager = self._create_port_manager()
+    self._default_port_manager: Final[PortManager] = self._create_port_manager()
+    self._default_tmp_dir: Final[pth.AnyPath] = self._create_default_tmp_dir()
 
   def _create_port_manager(self) -> PortManager:
     return LocalPortManager(self)
+
+  def _create_default_tmp_dir(self) -> pth.AnyPath:
+    self.assert_is_local()
+    return self.path(tempfile.gettempdir())
 
   def assert_is_local(self) -> None:
     if self.is_local:
@@ -599,8 +604,7 @@ class Platform(abc.ABC):
 
   @property
   def default_tmp_dir(self) -> pth.AnyPath:
-    self.assert_is_local()
-    return self.path(tempfile.gettempdir())
+    return self._default_tmp_dir
 
   @property
   def ports(self) -> PortScope:

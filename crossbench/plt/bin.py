@@ -5,7 +5,8 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, ClassVar, Iterable, Optional, TypeAlias
+from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Optional,
+                    TypeAlias)
 
 from typing_extensions import override
 
@@ -20,8 +21,8 @@ if TYPE_CHECKING:
 class BinaryNotFoundError(RuntimeError):
 
   def __init__(self, binary: Binary, platform: Platform) -> None:
-    self.binary = binary
-    self.platform = platform
+    self.binary: Final[Binary] = binary
+    self.platform: Final[Platform] = platform
     super().__init__(self._create_message())
 
   def _create_message(self) -> str:

@@ -71,6 +71,14 @@ class CrossbenchFakeFsTestCase(
     self.fs.create_file(path, contents=contents)
     return path
 
+  def mock_platform_default_tmp_dir(self, platform_cls: Type) -> None:
+    patcher = mock.patch.object(
+        platform_cls,
+        "_create_default_tmp_dir",
+        return_value=pth.AnyPosixPath("/var/tmp"))
+    self.addCleanup(patcher.stop)
+    patcher.start()
+
 
 TEST_WARNING = "Test Warning"
 

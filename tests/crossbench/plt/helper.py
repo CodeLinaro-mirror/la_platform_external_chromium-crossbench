@@ -21,13 +21,18 @@ from tests.crossbench.mock_helper import MockPlatform
 
 class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   __test__ = False
-  platform: plt.Platform
-  mock_platform: MockPlatform
 
   @override
   def setUp(self) -> None:
     super().setUp()
-    self.mock_platform_setup()
+    self.host_platform: MockPlatform = self.setup_host_platform()
+    self.platform: plt.Platform = self.setup_platform()
+
+  def setup_host_platform(self) -> MockPlatform:
+    return MockPlatform()
+
+  def setup_platform(self) -> MockPlatform:
+    return self.host_platform
 
   def mock_platform_str(self, platform, name) -> None:
     # Mock out str(platform) to avoid secondary errors when printing the
@@ -36,12 +41,8 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.addCleanup(patcher.stop)
     patcher.start()
 
-  def mock_platform_setup(self):
-    self.mock_platform = MockPlatform()
-    self.platform = self.mock_platform
-
   def tearDown(self):
-    expected_sh_cmds = self.mock_platform.expected_sh_cmds
+    expected_sh_cmds = self.host_platform.expected_sh_cmds
     if expected_sh_cmds is not None:
       self.assertListEqual(expected_sh_cmds, [],
                            "Got additional unused shell cmds.")
@@ -49,7 +50,7 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     super().tearDown()
 
   def expect_sh(self, *args, result=""):
-    self.mock_platform.expect_sh(*args, result=result)
+    self.platform.expect_sh(*args, result=result)
 
   def test_is_android(self):
     self.assertFalse(self.platform.is_android)

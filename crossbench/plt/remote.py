@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from typing_extensions import override
 
@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 class RemotePlatformMixin:
 
   def __init__(self, host_platform: Platform) -> None:
+    self._host_platform: Final[Platform] = host_platform
     super().__init__()
-    self._host_platform: Platform = host_platform
 
   @property
   def is_remote(self) -> bool:

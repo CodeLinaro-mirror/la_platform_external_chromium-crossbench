@@ -38,9 +38,24 @@ class PosixVersion(PlatformVersion):
 
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):
-  def __init__(self) -> None:
-    super().__init__()
-    self._default_tmp_dir: pth.AnyPath | None = None
+
+  @override
+  def _create_default_tmp_dir(self) -> pth.AnyPath:
+    if self.is_local:
+      return super()._create_default_tmp_dir()
+    env = self.environ
+
+    for tmp_var in ("TMPDIR", "TEMP", "TMP"):
+      if tmp_var not in env:
+        continue
+      tmp_path = self.path(env[tmp_var])
+      if self.is_dir(tmp_path):
+        assert self.is_absolute(tmp_path)
+        return tmp_path
+    tmp_path = self.path("/tmp")  # noqa: S108
+    assert self.is_dir(tmp_path), (
+        f"Fallback tmp dir does not exist: {tmp_path}")
+    return tmp_path
 
   @property
   def signals(self) -> Type[AnyPosixSignals]:
@@ -204,28 +219,6 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       raise ValueError(f"Binary {app_or_bin} does not exist.")
     return self.sh_stdout(app_or_bin, "--version")
 
-  @property
-  @override
-  def default_tmp_dir(self) -> pth.AnyPath:
-    if self._default_tmp_dir and self._default_tmp_dir.parts:
-      return self._default_tmp_dir
-    if self.is_local:
-      self._default_tmp_dir = self.path(super().default_tmp_dir)
-      return self._default_tmp_dir
-    env = self.environ
-
-    for tmp_var in ("TMPDIR", "TEMP", "TMP"):
-      if tmp_var not in env:
-        continue
-      tmp_path = self.path(env[tmp_var])
-      if self.is_dir(tmp_path):
-        self._default_tmp_dir = tmp_path
-        assert self.is_absolute(self._default_tmp_dir)
-        return tmp_path
-    self._default_tmp_dir = self.path("/tmp")  # noqa: S108
-    assert self.is_dir(self._default_tmp_dir), (
-        f"Fallback tmp dir does not exist: {self._default_tmp_dir}")
-    return self._default_tmp_dir
 
   @override
   def path(self, path: pth.AnyPathLike) -> pth.AnyPath:

@@ -566,11 +566,15 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                adb: Optional[Adb] = None) -> None:
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
-    self._adb = adb or Adb(host_platform, device_identifier)
+    self._adb: Final[Adb] = adb or Adb(host_platform, device_identifier)
     super().__init__(host_platform)
 
   def _create_port_manager(self) -> PortManager:
     return AndroidAdbPortManager(self, self._adb)
+
+  @override
+  def _create_default_tmp_dir(self) -> pth.AnyPath:
+    return self.path("/data/local/tmp/")
 
   @property
   @override
@@ -722,11 +726,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     if match_result is None:
       raise ValueError("Could not parse adb display brightness.")
     return int(float(match_result.group("brightness")) * 100)
-
-  @property
-  @override
-  def default_tmp_dir(self) -> pth.AnyPath:
-    return self.path("/data/local/tmp/")
 
   @override
   def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
