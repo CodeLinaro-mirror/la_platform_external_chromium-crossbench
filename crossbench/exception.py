@@ -10,7 +10,7 @@ import logging
 import sys
 import traceback as tb
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Self, Type
+from typing import TYPE_CHECKING, Any, Final, Iterator, Optional, Self, Type
 
 from crossbench.helper import collection_helper, txt_helper
 
@@ -40,7 +40,7 @@ class MultiException(ValueError):
 
   def __init__(self, message: str, exceptions: ExceptionAnnotator) -> None:
     super().__init__(message)
-    self.exceptions: ExceptionAnnotator = exceptions
+    self.exceptions: Final[ExceptionAnnotator] = exceptions
 
   def __len__(self) -> int:
     return len(self.exceptions)
@@ -69,13 +69,13 @@ class ExceptionAnnotationScope:
       throw_cls: Optional[Type[BaseException]] = None,
   ) -> None:
     logging.debug("EAS: %s%s", "  " * annotator.depth, " ".join(entries))
-    self._annotator = annotator
-    self._exception_types = exception_types
-    self._ignore_exception_types = ignore_exception_types + (
-        StopIteration, GeneratorExit, StopAsyncIteration)
-    self._ignore_exception_types = ignore_exception_types
-    self._added_info_stack_entries = entries
-    self._throw_cls: Type[BaseException] | None = throw_cls
+    self._annotator: Final[ExceptionAnnotator] = annotator
+    self._exception_types: Final[TExceptionTypes] = exception_types
+    self._ignore_exception_types: Final[TExceptionTypes] = (
+        *ignore_exception_types, StopIteration, GeneratorExit,
+        StopAsyncIteration)
+    self._added_info_stack_entries: Final[tuple[str, ...]] = entries
+    self._throw_cls: Final[Type[BaseException] | None] = throw_cls
     self._previous_info_stack: TInfoStack = ()
 
   def __enter__(self) -> Self:
@@ -122,8 +122,8 @@ class ExceptionAnnotator:
                throw: bool = False,
                throw_cls: Optional[Type[BaseException]] = None) -> None:
     self._exceptions: list[Entry] = []
-    self.throw: bool = throw
-    self._throw_cls: Type[BaseException] | None = throw_cls
+    self.throw: Final[bool] = throw
+    self._throw_cls: Final[Type[BaseException] | None] = throw_cls
     # The info_stack adds additional meta information to handle exceptions.
     # Unlike the source-based backtrace, this can contain dynamic information
     # for easier debugging.
