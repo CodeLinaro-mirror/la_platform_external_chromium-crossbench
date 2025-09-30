@@ -88,7 +88,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
     http_timeout_should_change = False
 
-    if not self._timeout_set:
+    if not self._timeout_set and self._http_timeout_cache:
       http_timeout_should_change = new_timeout_seconds > \
                                     self._http_timeout_cache
     script_timeout_should_change = new_timeout_seconds > original_script_timeout
