@@ -119,6 +119,7 @@ class GoogleLogin(PresetLoginBlock):
       return
 
     with run.actions("Login", measure=False) as action:
+      logging.info("Logging into Google with account: %s", secret.username)
       action.show_url(
           GOOGLE_LOGIN_URL,
           ready_state=ReadyState.INTERACTIVE,
