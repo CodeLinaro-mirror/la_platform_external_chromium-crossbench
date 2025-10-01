@@ -8,7 +8,7 @@ import abc
 import datetime as dt
 import json
 import pathlib
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Type
+from typing import TYPE_CHECKING, Any, Iterable, NamedTuple, Optional, Type
 
 from typing_extensions import override
 
@@ -250,7 +250,7 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
     self.browsers: list[Browser] = [self.mock_chrome_dev, self.mock_firefox]
 
   def default_runner(self,
-                     browsers: Optional[list[Browser]] = None,
+                     browsers: Optional[Iterable[Browser]] = None,
                      benchmark: Optional[Benchmark] = None,
                      throw: bool = True) -> Runner:
     return Runner(

@@ -12,10 +12,12 @@ from unittest import mock
 
 from typing_extensions import override
 
+from crossbench.browsers.settings import Settings
 from crossbench.browsers.webdriver import RemoteWebDriver
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError
+from crossbench.network.live import LiveNetwork
 from crossbench.probes import all as all_probes
 from crossbench.probes.probe import ProbeIncompatibleBrowser
 from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -24,6 +26,7 @@ from crossbench.runner.runner import Runner, ThreadMode
 from tests import test_helper
 from tests.crossbench.mock_browser import MockChromeDev
 from tests.crossbench.mock_helper import MockBenchmark
+from tests.crossbench.mock_helper import MockPlatform as FullMockPlatform
 from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockBrowser,
                                             MockPlatform, MockProbe,
                                             MockProbeContext, MockRun,
@@ -131,6 +134,14 @@ class FailingMockProbeContext(MockProbeContext):
   @override
   def setup(self):
     raise CustomException("failing setup")
+
+
+class MockNonLiveNetwork(LiveNetwork):
+
+  @property
+  @override
+  def is_live(self) -> bool:
+    return False
 
 
 class RunnerTestCase(BaseRunnerTestCase):
@@ -380,6 +391,83 @@ class RunnerTestCase(BaseRunnerTestCase):
         self.assertIn(probe, browser.probes)
       else:
         self.assertNotIn(probe, browser.probes)
+
+  def test_has_any_live_network(self):
+    runner = self.default_runner()
+    self.assertTrue(runner.has_any_live_network())
+
+  def test_has_any_live_network_false(self):
+    mock_chrome = MockChromeDev(
+        "chrome-dev_non_live",
+        settings=Settings(platform=self.platform, network=MockNonLiveNetwork()))
+    runner = self.default_runner(browsers=(mock_chrome,))
+    self.assertFalse(runner.has_any_live_network())
+
+  def test_has_any_live_network_multi_browser(self):
+    mock_chrome = MockChromeDev(
+        "chrome-dev_non_live",
+        settings=Settings(platform=self.platform, network=MockNonLiveNetwork()))
+    runner = self.default_runner(browsers=(
+        *self.browsers,
+        mock_chrome,
+    ))
+    self.assertTrue(runner.has_any_live_network())
+
+  def test_has_all_live_network(self):
+    runner = self.default_runner()
+    self.assertTrue(runner.has_all_live_network())
+
+  def test_has_all_live_network_false(self):
+    mock_chrome = MockChromeDev(
+        "chrome-dev_non_live",
+        settings=Settings(platform=self.platform, network=MockNonLiveNetwork()))
+    runner = self.default_runner(browsers=(mock_chrome,))
+    self.assertFalse(runner.has_all_live_network())
+
+  def test_has_all_live_network_false_multi_browser(self):
+    mock_chrome = MockChromeDev(
+        "chrome-dev_non_live",
+        settings=Settings(platform=self.platform, network=MockNonLiveNetwork()))
+    runner = self.default_runner(browsers=(
+        *self.browsers,
+        mock_chrome,
+    ))
+    self.assertFalse(runner.has_all_live_network())
+
+  def test_has_only_single_run_platforms_multi_runs(self):
+    runner = self.default_runner()
+    with self.assertRaises(RuntimeError):
+      runner.has_only_single_run_platforms()
+    runner.run()
+    self.assertTrue(runner.runs)
+    self.assertFalse(runner.has_only_single_run_platforms())
+
+  def test_has_only_single_run_platforms_single_runs(self):
+    benchmark = MockBenchmark((self.stories[0],))
+    browsers = (self.browsers[0],)
+    runner = self.default_runner(browsers=browsers, benchmark=benchmark)
+    runner.run()
+    self.assertEqual(len(runner.runs), 1)
+    self.assertTrue(runner.has_only_single_run_platforms())
+
+  def test_has_only_single_run_platforms_multi_platform(self):
+    benchmark = MockBenchmark((self.stories[0],))
+    mock_remote_chrome = MockChromeDev(
+        "chrome-dev_remote", settings=Settings(platform=FullMockPlatform()))
+    browsers = (self.browsers[0], mock_remote_chrome)
+    runner = self.default_runner(browsers=browsers, benchmark=benchmark)
+    runner.run()
+    self.assertEqual(len(runner.runs), 2)
+    self.assertTrue(runner.has_only_single_run_platforms())
+
+  def test_has_only_single_run_platforms_multi_platform_stories(self):
+    mock_remote_chrome = MockChromeDev(
+        "chrome-dev_remote", settings=Settings(platform=FullMockPlatform()))
+    browsers = (self.browsers[0], mock_remote_chrome)
+    runner = self.default_runner(browsers=browsers)
+    runner.run()
+    self.assertEqual(len(runner.runs), 4)
+    self.assertFalse(runner.has_only_single_run_platforms())
 
 
 class CustomException(Exception):
