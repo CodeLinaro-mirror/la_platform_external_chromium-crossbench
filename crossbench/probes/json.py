@@ -109,9 +109,6 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
         f"Cannot override existing Json result: {merged_json_path}")
     with merged_json_path.open("w", encoding="utf-8") as f:
       json.dump(merged_json, f, indent=2)
-      # TODO(375390958): figure out why files aren't fully written to
-      # pyfakefs here.
-      f.write("\n")
     return LocalProbeResult(json=(merged_json_path,))
 
   def merge_browsers_csv_list(self, group: BrowsersRunGroup) -> ProbeResult:
@@ -142,9 +139,6 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
         json.dump(merged_data, f, indent=2)
       else:
         json.dump(merged_data.to_json(sort=self.SORT_KEYS), f, indent=2)
-      # TODO(375390958): figure out why files aren't fully written to
-      # pyfakefs here.
-      f.write("\n")
     if not csv_formatter:
       return LocalProbeResult(json=(merged_json_path,))
     if not isinstance(merged_data, MetricsMerger):
@@ -338,14 +332,8 @@ class JsonResultProbeContext(
         flat_json_data = self.flatten_json_data(json_data)
         with flattened_file.open("w", encoding="utf-8") as f:
           json.dump(flat_json_data, f, indent=2)
-          # TODO(375390958): figure out why files aren't fully written to
-          # pyfakefs here.
-          f.write("\n")
       with raw_file.open("w", encoding="utf-8") as f:
         json.dump(json_data, f, indent=2)
-        # TODO(375390958): figure out why files aren't fully written to
-        # pyfakefs here.
-        f.write("\n")
     if flattened_file:
       return LocalProbeResult(json=(flattened_file,), file=(raw_file,))
     return LocalProbeResult(json=(raw_file,))

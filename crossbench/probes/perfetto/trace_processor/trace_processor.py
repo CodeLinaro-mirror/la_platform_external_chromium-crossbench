@@ -369,9 +369,6 @@ class TraceProcessorProbe(Probe):
       json_file = group_dir / f"{pth.safe_filename(metric)}.json"
       with json_file.open("x") as f:
         json.dump(data, f, indent=4)
-        # TODO(375390958): figure out why files aren't fully written to
-        # pyfakefs here.
-        f.write("\n")
       json_files.append(json_file)
     return LocalProbeResult(csv=csv_files, json=json_files)
 

@@ -7,9 +7,8 @@ from __future__ import annotations
 import argparse
 import pathlib
 from typing import Final
-from unittest import mock, skipIf
+from unittest import mock
 
-import pyfakefs
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
@@ -487,9 +486,6 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     brightness = self.platform.get_main_display_brightness()
     self.assertEqual(brightness, 16)
 
-  @skipIf(
-      tuple(map(int, pyfakefs.__version__.split("."))) < (5, 5),
-      "pth.AnyWindowsPath does not work correctly with older pyfakefs")
   def test_iterdir(self):
     self.expect_sh("'[' -d parent_dir/child_dir ']'")
     self.expect_sh("ls -1 parent_dir/child_dir", result="file1\nfile2\n")

@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import contextlib
 from typing import Iterator
-from unittest import mock, skipIf
+from unittest import mock
 
-import pyfakefs
 from typing_extensions import override
 
 from crossbench import path as pth
@@ -79,9 +78,6 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     # Subsequent calls are cached.
     self.assertEqual(self.platform.version_str, "999")
 
-  @skipIf(
-      tuple(map(int, pyfakefs.__version__.split("."))) < (5, 5),
-      "pth.AnyWindowsPath does not work correctly with older pyfakefs")
   def test_iterdir(self):
     self._expect_sh_ssh("'[' -d parent_dir/child_dir ']'")
     self._expect_sh_ssh("ls -1 parent_dir/child_dir", result="file1\nfile2\n")
