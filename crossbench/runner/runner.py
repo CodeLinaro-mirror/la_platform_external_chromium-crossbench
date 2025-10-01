@@ -22,9 +22,9 @@ from crossbench.helper.wait import WaitRange
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal.summary import ResultsSummaryProbe
-from crossbench.probes.perfetto.trace_processor.trace_processor import \
-    TraceProcessorProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
 from crossbench.results_db.db import ResultsDB
 from crossbench.runner.groups.browsers import BrowsersRunGroup
 from crossbench.runner.groups.cache_temperatures import \

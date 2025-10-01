@@ -13,7 +13,7 @@ from crossbench import plt
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.probes.all import TraceProcessorProbe
-from crossbench.probes.perfetto.trace_processor.trace_processor import \
+from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorQueryConfig
 from tests import test_helper
 from tests.crossbench.base import (BaseCrossbenchTestCase,
@@ -21,8 +21,7 @@ from tests.crossbench.base import (BaseCrossbenchTestCase,
 
 
 def read_query_sql(name: str) -> str:
-  return (test_helper.crossbench_dir() /
-          "probes/perfetto/trace_processor/queries" /
+  return (test_helper.crossbench_dir() / "probes/trace_processor/queries" /
           f"{name}.sql").read_text("utf-8")
 
 

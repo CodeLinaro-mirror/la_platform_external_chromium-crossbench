@@ -14,8 +14,8 @@ from typing_extensions import override
 
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.benchmarks.embedder.config.cujs import CUJsConfig
-from crossbench.benchmarks.embedder.config.setup_commands import (
-    SetupCommandsConfig)
+from crossbench.benchmarks.embedder.config.setup_commands import \
+    SetupCommandsConfig
 from crossbench.cli.ui import timer
 from crossbench.parse import ObjectParser
 from crossbench.stories.story import Story

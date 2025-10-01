@@ -21,8 +21,8 @@ if TYPE_CHECKING:
   from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
   from crossbench import path as pth
-  from crossbench.benchmarks.embedder.embedder_benchmark import (
-      EmbedderBenchmark)
+  from crossbench.benchmarks.embedder.embedder_benchmark import \
+      EmbedderBenchmark
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 EMBEDDER_SHORT_NAME_TO_PACKAGE = {

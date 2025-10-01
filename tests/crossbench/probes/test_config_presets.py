@@ -41,7 +41,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     super().setUp()
     self.setUpPyfakefs(modules_to_reload=[crossbench.path])
     self._add_real_directory(test_helper.crossbench_dir() /
-                             "probes/perfetto/trace_processor/queries")
+                             "probes/trace_processor/queries")
     self.set_up_required_paths()
 
   def set_up_required_paths(self):

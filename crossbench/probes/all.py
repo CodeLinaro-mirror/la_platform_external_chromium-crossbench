@@ -28,8 +28,6 @@ from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.meminfo import MeminfoProbe
 from crossbench.probes.perfetto.perfetto import PerfettoProbe
-from crossbench.probes.perfetto.trace_processor.trace_processor import \
-    TraceProcessorProbe
 from crossbench.probes.perfetto.tracing import TracingProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
 from crossbench.probes.polling import PollingShellProbe
@@ -42,6 +40,8 @@ from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.probes.shell import ShellProbe
 from crossbench.probes.system_stats import SystemStatsProbe
 from crossbench.probes.thermal_monitor import ThermalMonitorProbe
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
 from crossbench.probes.v8.builtins_pgo import V8BuiltinsPGOProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.probes.v8.rcs import V8RCSProbe

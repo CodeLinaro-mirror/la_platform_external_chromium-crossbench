@@ -18,10 +18,10 @@ from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
                                                              LoadingPageFilter)
-from crossbench.probes.perfetto.trace_processor.trace_processor import \
-    TraceProcessorProbe
 from crossbench.probes.probe import Probe
 from crossbench.probes.results import LocalProbeResult
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
 
 if TYPE_CHECKING:
   from crossbench import path as pth

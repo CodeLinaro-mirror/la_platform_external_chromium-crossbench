@@ -7,7 +7,6 @@ from __future__ import annotations
 import hjson
 
 from crossbench.cli.config.driver import DriverConfig
-
 from tests import test_helper
 
 

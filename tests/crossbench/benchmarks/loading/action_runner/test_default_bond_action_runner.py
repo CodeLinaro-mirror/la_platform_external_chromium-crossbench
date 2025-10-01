@@ -12,8 +12,8 @@ from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.meet_create import MeetCreateAction
 from crossbench.action_runner.action.meet_script import MeetScriptAction
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
-from crossbench.action_runner.default_bond_action_runner import (
-    DefaultBondActionRunner)
+from crossbench.action_runner.default_bond_action_runner import \
+    DefaultBondActionRunner
 from crossbench.cli.config.secrets import ServiceAccount
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
