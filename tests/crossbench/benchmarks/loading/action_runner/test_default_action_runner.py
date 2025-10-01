@@ -15,9 +15,9 @@ from crossbench.flags.base import Flags
 from crossbench.probes.downloads import (DownloadsProbe,
                                          FileWatchDownloadsProbeContext)
 from crossbench.probes.dump_html import DumpHtmlProbe
-from crossbench.probes.js import JSProbe
 from crossbench.probes.meminfo import MeminfoProbe
 from crossbench.probes.screenshot import ScreenshotProbe
+from crossbench.probes.shell import ShellProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import \
@@ -68,8 +68,8 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
     self.mock_run.set_probe_context(self.probe_context)
 
   def test_probe_action_unsupported_probe(self):
-    self.set_up_with_probe(JSProbe(""))
-    action_block = ActionBlock(actions=(ProbeAction(probe="js", kwargs={}),))
+    self.set_up_with_probe(ShellProbe(""))
+    action_block = ActionBlock(actions=(ProbeAction(probe="shell", kwargs={}),))
 
     with self.assertRaisesRegex(MultiException,
                                 "Invoke not implemented for probe"):
