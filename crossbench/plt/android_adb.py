@@ -888,6 +888,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
     return meminfo
 
+  def dump_java_heap(self, identifier: str, path: pth.AnyPath) -> None:
+    self.sh("am", "dumpheap", identifier, self.path(path))
 
   @functools.lru_cache(maxsize=1)
   @override

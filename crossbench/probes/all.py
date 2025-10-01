@@ -12,6 +12,7 @@ from crossbench.probes.chromium_pgo import ChromiumPgoProbe
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.downloads import DownloadsProbe
 from crossbench.probes.dtrace import DTraceProbe
+from crossbench.probes.dump_heap import DumpHeapProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.embedder import WebviewEmbedderProbe
 from crossbench.probes.etm import EtmProbe
@@ -96,6 +97,7 @@ GENERAL_PURPOSE_PROBES: tuple[Type[Probe], ...] = (
     DebuggerProbe,
     DownloadsProbe,
     DTraceProbe,
+    DumpHeapProbe,
     DumpHtmlProbe,
     WebviewEmbedderProbe,
     EtmProbe,

@@ -113,6 +113,7 @@ def _next_id() -> int:
 
 DEFAULT_CACHE_DIR: Final = pth.LocalPath(__file__).parents[2] / "cache"
 
+
 class Platform(abc.ABC):
   def __init__(self) -> None:
     self._id: Final[int] = _next_id()
@@ -601,6 +602,10 @@ class Platform(abc.ABC):
 
   def foreground_process(self) -> Optional[dict[str, Any]]:
     return None
+
+  def dump_java_heap(self, identifier: str, path: pth.AnyPath) -> None:
+    del identifier, path
+    raise NotImplementedError(f"dump_java_heap not implemented for {self}.")
 
   @property
   def default_tmp_dir(self) -> pth.AnyPath:

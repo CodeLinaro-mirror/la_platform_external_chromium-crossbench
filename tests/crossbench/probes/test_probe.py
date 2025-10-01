@@ -18,6 +18,7 @@ from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.downloads import DownloadsProbe
 from crossbench.probes.dtrace import DTraceProbe
+from crossbench.probes.dump_heap import DumpHeapProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.embedder import WebviewEmbedderProbe
 from crossbench.probes.env_modifier import EnvModifier
@@ -82,6 +83,7 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
     yield DebuggerProbe(pth.LocalPath("debugger.bin"))
     yield DownloadsProbe()
     yield DumpHtmlProbe()
+    yield DumpHeapProbe()
     yield FrequencyProbe.parse_dict({})
     yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"),
                         pth.LocalPath("tracebox.bin"),
