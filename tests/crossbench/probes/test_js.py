@@ -3,8 +3,10 @@
 # found in the LICENSE file.
 from __future__ import annotations
 
+from typing import Final
 from unittest import mock
 
+from crossbench import path as pth
 from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.js import JSProbe, JSProbeContext
@@ -12,11 +14,14 @@ from crossbench.probes.results import EmptyProbeResult
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
 
+JS_PROBE_EXAMPLE_CONFIG: Final = test_helper.config_dir(
+) / "doc/probe/js.config.hjson"
 
 class JSProbeTestCase(GenericProbeTestCase):
 
   def test_parse_example_config(self):
-    config_file = test_helper.config_dir() / "doc/probe/js.config.hjson"
+    # Wrap in pyfakefs path again
+    config_file = pth.LocalPath(JS_PROBE_EXAMPLE_CONFIG)
     self.fs.add_real_file(config_file)
     self.assertTrue(config_file.is_file())
     probes = ProbeListConfig.parse(config_file).probes
@@ -25,6 +30,14 @@ class JSProbeTestCase(GenericProbeTestCase):
     self.assertIsInstance(probe, JSProbe)
     isinstance(probe, JSProbe)
     self.assertTrue(probe.metric_js)
+
+  def test_help_items(self):
+    self.fs.add_real_file(JS_PROBE_EXAMPLE_CONFIG)
+    help_text_items = JSProbe.config_parser().help_text_items
+    help = "\n".join(map(str, help_text_items))
+    self.assertIn(JSProbe.NAME, help)
+    self.assertIn("example config", help)
+    self.assertIn(str(JS_PROBE_EXAMPLE_CONFIG), help)
 
   def test_parse_config(self):
     config = {

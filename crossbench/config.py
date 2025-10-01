@@ -1332,7 +1332,6 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     return help_items
 
 
-
 def root_dir() -> pth.LocalPath:
   return pth.LocalPath(__file__).parents[1].absolute()
 

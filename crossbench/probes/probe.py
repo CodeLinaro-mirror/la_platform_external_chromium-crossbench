@@ -13,7 +13,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.config import ConfigParser, UnusedPropertiesMode
+from crossbench.config import ConfigParser, UnusedPropertiesMode, config_dir
 # TODO: Keep commonly used classes here.
 from crossbench.probes.probe_context import ProbeContext  # noqa: TC001
 from crossbench.probes.probe_error import ProbeIncompatibleBrowser
@@ -112,6 +112,15 @@ class Probe(ProbeResultKey, abc.ABC):
   @classmethod
   def help_text(cls) -> str:
     return cls.config_parser().help
+
+  @classmethod
+  def help_text_items(cls) -> list[tuple[str, str]]:
+    probe_config_file = config_dir() / f"doc/probe/{cls.NAME}.config.hjson"
+    if probe_config_file.exists():
+      return [
+          ("example config", str(probe_config_file)),
+      ]
+    return []
 
   @classmethod
   def summary_text(cls) -> str:
