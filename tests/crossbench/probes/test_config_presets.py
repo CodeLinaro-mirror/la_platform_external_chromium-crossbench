@@ -92,10 +92,13 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self.assertTrue(probes)
 
   def test_parse_loadline_configs(self):
+    self._add_real_directory(
+        LoadLine1TabletBenchmark.default_probe_config_path().parent)
+    self._add_real_directory(
+        LoadLine2TabletBenchmark.default_probe_config_path().parent)
     for cls in (LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark,
                 LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark):
       probe_config = cls.default_probe_config_path()
-      self.fs.add_real_file(probe_config)
       probes = ProbeListConfig.parse(probe_config).probes
       self.assertTrue(probes)
 if __name__ == "__main__":
