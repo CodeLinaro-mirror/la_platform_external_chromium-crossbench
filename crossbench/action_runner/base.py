@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Iterable, Optional, Sequence
+from typing import TYPE_CHECKING, Iterable, Iterator, Optional, Sequence
 
 from crossbench import exception
 from crossbench.action_runner.action_runner_listener import \
@@ -66,7 +66,7 @@ class ActionRunner:
     self._step_by_step_mode: bool = False
     self._failure_screenshot_annotations: list[ScreenshotAnnotation] = []
 
-  def set_step_by_step_mode(self, step_by_step_mode: bool):
+  def set_step_by_step_mode(self, step_by_step_mode: bool) -> None:
     self._step_by_step_mode = step_by_step_mode
 
   def set_listener(self, listener: ActionRunnerListener) -> None:
@@ -89,11 +89,11 @@ class ActionRunner:
     for block in blocks:
       block.run_with(self, run, page)
 
-  def run_block(self, run, block: ActionBlock) -> None:
+  def run_block(self, run: Run, block: ActionBlock) -> None:
     block_index = block.index
     # TODO: Instead maybe just pass context down.
     # Or pass unique path to every action __init__
-    with exception.annotate(f"Running block {block_index}: {block.label}"):
+    with exception.annotate(f"block {block_index}: {block.label}"):
       with self._info_stack_annotate(f"block_{block_index}"):
         for action_index, action in enumerate(block, start=1):
           if self._step_by_step_mode:
@@ -102,8 +102,9 @@ class ActionRunner:
             logging.critical("[STEP-BY-STEP MODE] Press Enter to continue")
             input()
           with self._info_stack_annotate(f"action_{action_index}"):
-            self._failure_screenshot_annotations = []
-            action.run_with(run, self)
+            with exception.annotate(f"action {action_index}: {str(action)}"):
+              self._failure_screenshot_annotations = []
+              action.run_with(run, self)
 
   def wait(self, run: Run, action: i_action.WaitAction) -> None:
     with run.actions("WaitAction", measure=False) as actions:
@@ -147,6 +148,7 @@ class ActionRunner:
       raise RuntimeError(f"Unsupported input source: '{input_source}'")
 
   def get(self, run: Run, action: i_action.GetAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def text_input(self, run: Run, action: i_action.TextInputAction) -> None:
@@ -159,50 +161,64 @@ class ActionRunner:
       raise RuntimeError(f"Unsupported input source: '{input_source}'")
 
   def click_js(self, run: Run, action: i_action.ClickAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def click_touch(self, run: Run, action: i_action.ClickAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def click_mouse(self, run: Run, action: i_action.ClickAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def scroll_js(self, run: Run, action: i_action.ScrollAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def scroll_mouse(self, run: Run, action: i_action.ScrollAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def text_input_js(self, run: Run, action: i_action.TextInputAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def text_input_keyboard(self, run: Run,
                           action: i_action.TextInputAction) -> None:
+    del run
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def wait_for_condition(self, run: Run,
                          action: i_action.WaitForConditionAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def wait_for_element(self, run: Run,
                        action: i_action.WaitForElementAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def wait_for_ready_state(self, run: Run,
                            action: i_action.WaitForReadyStateAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def invoke_probe(self, run: Run, action: BaseProbeAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
   def screenshot_impl(
@@ -284,13 +300,13 @@ class ActionRunner:
       teardown.run_with(self, run, page)
 
   @contextlib.contextmanager
-  def playback_iteration(self, i: int):
+  def playback_iteration(self, i: int) -> Iterator[None]:
     assert self._info_stack is None
     with self._info_stack_annotate(f"playback_{i}"):
       yield
 
   @contextlib.contextmanager
-  def _info_stack_annotate(self, name: str):
+  def _info_stack_annotate(self, name: str) -> Iterator[None]:
     parent_info_stack = self._info_stack
     try:
       if self._info_stack is not None:
@@ -302,7 +318,8 @@ class ActionRunner:
       self._info_stack = parent_info_stack
 
   @contextlib.contextmanager
-  def _management_block_scope(self, run: Run, page: InteractivePage, name: str):
+  def _management_block_scope(self, run: Run, page: InteractivePage,
+                              name: str) -> Iterator[None]:
     try:
       with exception.annotate(name):
         with self._info_stack_annotate(name):
@@ -311,14 +328,18 @@ class ActionRunner:
       page.create_failure_artifacts(run, "failure")
       raise
 
-  def teardown(self):
+  def teardown(self) -> None:
     pass
 
-  def switch_tab(self, run: Run, action: i_action.SwitchTabAction):
+  def switch_tab(self, run: Run, action: i_action.SwitchTabAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
-  def close_tab(self, run: Run, action: i_action.CloseTabAction):
+  def close_tab(self, run: Run, action: i_action.CloseTabAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)
 
-  def close_all_tabs(self, run: Run, action: i_action.CloseAllTabsAction):
+  def close_all_tabs(self, run: Run,
+                     action: i_action.CloseAllTabsAction) -> None:
+    del run
     raise ActionNotImplementedError(self, action)

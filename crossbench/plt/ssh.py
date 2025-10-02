@@ -14,7 +14,7 @@ if TYPE_CHECKING:
   import subprocess
 
   from crossbench.plt.base import Platform
-  from crossbench.plt.types import CmdArg, ListCmdArgs
+  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo
 
 
 class SshPortManager(PortManager):
@@ -62,7 +62,7 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
                       *args: CmdArg,
                       shell: bool = False,
                       quiet: bool = False,
-                      stdin=None,
+                      stdin: ProcessIo = None,
                       env: Optional[Mapping[str, str]] = None,
                       check: bool = True) -> bytes:
     ssh_cmd: ListCmdArgs = self.build_ssh_cmd(*args, shell=shell)
@@ -73,9 +73,9 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
          *args: CmdArg,
          shell: bool = False,
          capture_output: bool = False,
-         stdout=None,
-         stderr=None,
-         stdin=None,
+         stdout: ProcessIo = None,
+         stderr: ProcessIo = None,
+         stdin: ProcessIo = None,
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
@@ -95,9 +95,9 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
             *args: CmdArg,
             bufsize: int = -1,
             shell: bool = False,
-            stdout=None,
-            stderr=None,
-            stdin=None,
+            stdout: ProcessIo = None,
+            stderr: ProcessIo = None,
+            stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
             quiet: bool = False) -> subprocess.Popen:
     ssh_cmd: ListCmdArgs = self.build_ssh_cmd(*args, shell=shell)

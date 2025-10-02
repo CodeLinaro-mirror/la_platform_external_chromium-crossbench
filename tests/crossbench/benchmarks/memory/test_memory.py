@@ -1,6 +1,7 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import argparse
 import copy
@@ -55,7 +56,7 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
                     "synthetic/memory?alloc=8&blocksize=128&compress=50"
                     "&prefill=8&randomperpage=false")
     self.assertEqual(story.first_url, expected_url)
-    names = set(story.name for story in stories)
+    names = {story.name for story in stories}
     self.assertEqual(len(names), len(stories))
 
   def test_run_throw(self):

@@ -189,6 +189,7 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     """
     Called from the "probe" action in the ActionRunner.
     """
+    del info_stack, timeout, kwargs
     raise RuntimeError(f"Invoke not implemented for probe: {self}")
 
 
@@ -262,7 +263,6 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     This method should have as little overhead as possible. If possible,
     delegate heavy computation to the "teardown" method.
     """
-    return None
 
   @abc.abstractmethod
   @override

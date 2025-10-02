@@ -5,8 +5,11 @@
 from __future__ import annotations
 
 import abc
+import dataclasses
+import json
 import logging
-from typing import TYPE_CHECKING, Final, Iterator, Optional, Sequence
+import subprocess
+from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, Sequence
 
 from typing_extensions import override
 
@@ -20,7 +23,7 @@ class BaseToolFinder(abc.ABC):
 
   def __init__(
       self, platform: Platform, candidates: tuple[pth.AnyPath,
-                                                  ...] = tuple()) -> None:
+                                                  ...] = ()) -> None:
     self._platform = platform
     self._candidates = candidates + self.default_candidates()
     self._path: pth.AnyPath | None = self._find_path()
@@ -46,7 +49,7 @@ class BaseToolFinder(abc.ABC):
     return self._candidates
 
   def default_candidates(self) -> tuple[pth.AnyPath, ...]:
-    return tuple()
+    return ()
 
   def _find_path(self) -> Optional[pth.AnyPath]:
     # Try potential build location
@@ -82,7 +85,7 @@ def default_chromium_candidates(platform: Platform) -> tuple[pth.AnyPath, ...]:
   return tuple(candidates)
 
 
-def chromium_src_relative_local_path():
+def chromium_src_relative_local_path() -> pth.LocalPath:
   """Gets the local relative path of `chromium/src`.
 
   Assuming the cli.py path is `third_party/crossbench/crossbench/cli/cli.py`.
@@ -120,7 +123,7 @@ class ChromiumBuildBinaryFinder(BaseToolFinder):
       self,
       platform: Platform,
       binary_name: str,
-      candidates: tuple[pth.AnyPath, ...] = tuple()) -> None:
+      candidates: tuple[pth.AnyPath, ...] = ()) -> None:
     self._binary_name = binary_name
     super().__init__(platform, candidates)
 
@@ -274,7 +277,7 @@ class V8ToolsFinder:
     return None
 
 
-class BaseChromiumBinaryToolFinder(BaseToolFinder):
+class BaseChromiumToolFinder(BaseToolFinder):
 
   @override
   def is_valid_path(self, candidate: pth.AnyPath) -> bool:
@@ -282,7 +285,7 @@ class BaseChromiumBinaryToolFinder(BaseToolFinder):
 
   @classmethod
   def chrome_path(cls) -> pth.AnyPath:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @override
   def default_candidates(self) -> tuple[pth.AnyPath, ...]:
@@ -292,7 +295,7 @@ class BaseChromiumBinaryToolFinder(BaseToolFinder):
     return (relative_path,)
 
 
-class PerfettoToolFinder(BaseChromiumBinaryToolFinder, metaclass=abc.ABCMeta):
+class PerfettoToolFinder(BaseChromiumToolFinder, metaclass=abc.ABCMeta):
 
   @classmethod
   @abc.abstractmethod
@@ -336,7 +339,7 @@ class TraceProcessorFinder(PerfettoToolFinder):
 CROSSBENCH_DIR: Final = pth.LocalPath(__file__).parents[2]
 
 
-class BaseCrossbenchBinaryToolFinder(BaseChromiumBinaryToolFinder):
+class BaseCrossbenchToolFinder(BaseChromiumToolFinder):
 
   @override
   def default_candidates(self) -> tuple[pth.AnyPath, ...]:
@@ -349,7 +352,30 @@ class BaseCrossbenchBinaryToolFinder(BaseChromiumBinaryToolFinder):
     pass
 
 
-class WprGoToolFinder(BaseCrossbenchBinaryToolFinder):
+@dataclasses.dataclass(frozen=True)
+class WprCloudBinary:
+  file_hash: str
+
+  @property
+  def url(self) -> str:
+    return ("gs://chromium-telemetry/binary_dependencies/wpr_go_"
+            f"{self.file_hash}")
+
+
+class WprGoToolFinder(BaseCrossbenchToolFinder):
+  # See binary_dependencies.json in the WebPageReplay repo.
+  # Public for testing.
+  WPR_PREBUILT_LOOKUP: Final[Mapping[tuple[str, str], str]] = {
+      ("android", "arm64"): "linux_aarch64",
+      ("android", "arm32"): "linux_armv7l",
+      ("android", "x64"): "linux_x86_64",
+      ("chromeos_ssh", "arm64"): "linux_aarch64",
+      ("chromeos_ssh", "x64"): "linux_x86_64",
+      ("linux", "x64"): "linux_x86_64",
+      ("macos", "arm64"): "mac_arm64",
+      ("macos", "x64"): "mac_x86_64",
+      ("win", "x64"): "win_AMD64",
+  }
 
   @classmethod
   @override
@@ -362,7 +388,47 @@ class WprGoToolFinder(BaseCrossbenchBinaryToolFinder):
     return pth.AnyPath("third_party/webpagereplay/src/wpr.go")
 
 
-class TsProxyFinder(BaseCrossbenchBinaryToolFinder):
+  # Info of a prebuilt WPR binary for `browser_platform`, stored in the cloud.
+  def cloud_binary(self, browser_platform: Platform) -> WprCloudBinary:
+    wpr_go_file = self.local_path
+    if not wpr_go_file:
+      raise RuntimeError("Could not find local wpr.go")
+
+    with (wpr_go_file.parents[1] /
+          "scripts/binary_dependencies.json").open() as file:
+      hashes_json = json.load(file)
+    platform_key = self.WPR_PREBUILT_LOOKUP[browser_platform.key]
+    return WprCloudBinary(
+        hashes_json["wpr_go"][platform_key]["cloud_storage_hash"])
+
+
+class BuildtoolFinder(BaseChromiumToolFinder):
+
+  @classmethod
+  @override
+  def chrome_path(cls) -> pth.AnyPath:
+    return pth.AnyPath(
+        "third_party/android_build_tools/bundletool/cipd/bundletool.jar")
+
+  @override
+  def default_candidates(self) -> tuple[pth.AnyPath, ...]:
+    super_candidates: tuple[pth.AnyPath, ...] = super().default_candidates()
+    if not self.platform.is_macos:
+      return super_candidates
+
+    try:
+      brew_path: pth.LocalPath = self.platform.local_path(
+          self.platform.sh_stdout("brew", "--prefix").strip("\n"))
+    except FileNotFoundError:
+      return super_candidates
+    except subprocess.CalledProcessError:
+      return super_candidates
+
+    return super_candidates + (self.platform.local_path(
+        brew_path / "bin/bundletool"),)
+
+
+class TsProxyFinder(BaseCrossbenchToolFinder):
 
   @classmethod
   @override

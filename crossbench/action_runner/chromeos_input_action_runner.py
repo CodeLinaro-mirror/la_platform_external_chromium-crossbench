@@ -540,7 +540,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
     with browser_platform.NamedTemporaryFile() as playback_file:
       browser_platform.write_text(playback_file, touch_event_cmds)
       # Then run evemu-play with the input redirected from the temp file.
-      run.browser_platform.sh(
+      run.browser_platform.sh(  # noqa: S604
           f"evemu-play --insert-slot0 "
           f"{shlex.quote(self._touch_device.device_path)} < "
           f"{playback_file}",

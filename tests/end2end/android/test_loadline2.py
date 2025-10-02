@@ -14,10 +14,6 @@ from tests import test_helper
 if TYPE_CHECKING:
   from tests.test_helper import TestEnv
 
-# pytest.fixtures rely on params having the same name as the fixture function
-# pylint: disable=redefined-outer-name
-
-
 def _browser_config(device_id, adb_path) -> str:
   return json.dumps({
       "browser": "chrome-stable",

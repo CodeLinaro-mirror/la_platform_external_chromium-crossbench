@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, ClassVar, Type
 
-from typing_extensions import ClassVar, override
+from typing_extensions import override
 
 from crossbench.benchmarks.motionmark.motionmark_1 import (
     MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext,

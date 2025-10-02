@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 # Due to laziness we access internal variables in the test here.
 # Adding an accessor would wrongly hint that these variables are public.
-# pylint: disable=protected-access
 
 class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
 

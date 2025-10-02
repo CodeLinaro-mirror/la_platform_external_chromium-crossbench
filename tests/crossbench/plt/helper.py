@@ -57,6 +57,9 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   def test_is_macos(self):
     self.assertFalse(self.platform.is_macos)
 
+  def test_is_ios(self):
+    self.assertFalse(self.platform.is_ios)
+
   def test_is_linux(self):
     self.assertFalse(self.platform.is_linux)
 

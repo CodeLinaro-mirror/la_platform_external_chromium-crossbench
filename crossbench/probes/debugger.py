@@ -69,7 +69,7 @@ class DebuggerProbe(Probe):
     parser.add_argument(
         "args",
         type=str,
-        default=tuple(),
+        default=(),
         is_list=True,
         help="Additional args that are passed to the debugger.")
     return parser

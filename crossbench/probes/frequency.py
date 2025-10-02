@@ -123,7 +123,7 @@ class FrequencyProbeContext(ProbeContext[FrequencyProbe]):
     target_cpu_frequencies: immutabledict[pth.AnyPosixPath, int] = (
         self.probe.cpu_frequency_map.get_target_frequencies(
             self.browser_platform))
-    for cpu_dir in target_cpu_frequencies.keys():
+    for cpu_dir in target_cpu_frequencies:
       self._previous_frequencies.append(
           _FrequencyState(
               dir=cpu_dir,

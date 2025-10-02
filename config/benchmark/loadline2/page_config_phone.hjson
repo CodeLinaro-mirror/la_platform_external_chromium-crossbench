@@ -1,6 +1,12 @@
 {
   pages: {
     amazon_product: [
+      // This will create a spare renderer process before the navigation
+      {
+        action: get
+        url: about:blank
+        target: _new_tab
+      }
       {
         action: js
         script:
@@ -28,6 +34,12 @@
       }
     ]
     cnn_article: [
+      // This will create a spare renderer process before the navigation
+      {
+        action: get
+        url: about:blank
+        target: _new_tab
+      }
       {
         action: js
         script:
@@ -55,6 +67,12 @@
       }
     ]
     wikipedia_article: [
+      // This will create a spare renderer process before the navigation
+      {
+        action: get
+        url: about:blank
+        target: _new_tab
+      }
       {
         action: js
         script:

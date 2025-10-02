@@ -271,6 +271,7 @@ class UnknownBrowserVersion(BrowserVersion):
                parts: tuple[int, ...] = (),
                channel: BrowserVersionChannel = BrowserVersionChannel.ANY,
                version_str: str = "unknown") -> None:
+    del channel
     super().__init__(parts, BrowserVersionChannel.ANY, version_str)
 
   @classmethod

@@ -72,7 +72,7 @@ class Binary:
   def _convert(self,
                paths: Optional[BinaryLookup] = None) -> tuple[pth.AnyPath, ...]:
     if paths is None:
-      return tuple()
+      return ()
     if isinstance(paths, str):
       path: str = paths
       if not path:
@@ -94,7 +94,7 @@ class Binary:
   def __str__(self) -> str:
     return self._name
 
-  @functools.cache  # pylint: disable=method-cache-max-size-none
+  @functools.cache
   def resolve_cached(self, platform: Platform) -> pth.AnyPath:
     return self.resolve(platform)
 

@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# pytype: disable=attribute-error
-
 from __future__ import annotations
 
 import abc
@@ -36,7 +34,7 @@ class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
     self.setup_loadline_configs()
 
   @override
-  def story_filter(  # pylint: disable=arguments-differ
+  def story_filter(
       self,
       patterns: Sequence[str],
       separate: bool = True,

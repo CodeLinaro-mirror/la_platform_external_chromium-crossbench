@@ -92,10 +92,8 @@ class VideoAccelerationProbeContext(
           self._is_hw_accelerated = prop["value"] == "true"
           break
 
-  def _check_acceleration_status(self, timeout: dt.timedelta):
-    client = self._get_devtools_client()
-    with client:
-
+  def _check_acceleration_status(self, timeout: dt.timedelta) -> None:
+    with self._get_devtools_client().open() as client:
       target_id = self._get_page_target_id(client)
       if not target_id:
         raise RuntimeError("Could not find page target")

@@ -1,16 +1,20 @@
 # Copyright 2023 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import datetime as dt
 import unittest
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
 from crossbench.benchmarks.base import PressBenchmarkStoryFilter, RegexFilter
-from crossbench.runner.run import Run
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 from tests import test_helper
+
+if TYPE_CHECKING:
+  from crossbench.runner.run import Run
 
 
 class MockStory(PressBenchmarkStory):

@@ -21,7 +21,7 @@ from crossbench.plt.arch import MachineArch
 from crossbench.plt.port_manager import PortForwardException
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
-from tests.crossbench.mock_helper import WinMockPlatform
+from tests.crossbench.mock_helper import ShResult, WinMockPlatform
 from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
 
 ADB_DEVICE_SAMPLE_OUTPUT = (
@@ -55,11 +55,11 @@ AC_POWERED_OUTPUT = load_pb("battery/ac_powered.pb")
 BATTERY_POWERED_OUTPUT = load_pb("battery/battery_powered.pb")
 DUMPSYS_WINDOW_DISPLAYS_OUTPUT = load_pb("display/1080p.pb")
 
-DUMPSYS_MEMINFO_TIMEOUT_OUTPUT = b'''
+DUMPSYS_MEMINFO_TIMEOUT_OUTPUT = b"""
 *** SERVICE 'meminfo' DUMP TIMEOUT (1ms) EXPIRED ***
-'''
+"""
 
-DUMPSYS_MEMINFO_SYSTEM_OUTPUT = b'''
+DUMPSYS_MEMINFO_SYSTEM_OUTPUT = b"""
           0K: GL mtrack
           0K: Other mtrack
 
@@ -74,9 +74,9 @@ DMA-BUF Heaps pool:         0K
  Lost RAM:   362,207K
      ZRAM:   557,480K physical used for 1,723,064K in swap (11,284K total swap)
    Tuning: 192 (large 512), oom 322,560K, restore limit 107,520K (high-end-gfx)
-'''
+"""
 
-DUMPSYS_MEMINFO_SYSTEM_OUTPUT_NO_DMA_BUF = b'''
+DUMPSYS_MEMINFO_SYSTEM_OUTPUT_NO_DMA_BUF = b"""
         800K: Ashmem
         324K: .ttf mmap
           0K: Cursor
@@ -90,7 +90,7 @@ Total RAM: 3,486,196K (status moderate)
  Lost RAM:   282,400K
      ZRAM:   203,732K physical used for 745,216K in swap (4,194,300K total swap)
    Tuning: 256 (large 512), oom 322,560K, restore limit 107,520K (high-end-gfx)
-'''
+"""
 
 class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   DEVICE_ID = "emulator-5554"
@@ -117,6 +117,9 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.adb = Adb(self.mock_platform, self.DEVICE_ID)
 
   def expect_startup_devices(self, devices: str = ADB_DEVICES_SAMPLE_OUTPUT):
+    if self.mock_platform.is_macos:
+      self.mock_platform.expect_sh(
+          "brew", "--prefix", result=ShResult(success=False))
     self.mock_platform.expect_sh(pathlib.Path("adb"), "start-server")
     self.mock_platform.expect_sh(
         pathlib.Path("adb"), "devices", "-l", result=devices)
@@ -148,6 +151,13 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
         "resolution": (1920, 1080),
         "refresh_rate": -1
     })
+
+  def test_unique_name(self):
+    self.expect_sh("getprop ro.product.cpu.abi", result="arm64-v8a")
+    self.expect_sh("getprop ro.product.cpu.abi", result="arm64-v8a")
+    platform_2 = AndroidAdbPlatform(
+        self.mock_platform, "SomeDeviceId", adb=self.adb)
+    self.assertNotEqual(self.platform.unique_name, platform_2.unique_name)
 
 class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   __test__ = True
@@ -297,9 +307,9 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_device(self):
     self.expect_sh("getprop ro.product.model", result="Pixel 999")
-    self.assertEqual(self.platform.device, "Pixel 999")
+    self.assertEqual(self.platform.model, "Pixel 999")
     # Subsequent calls are cached.
-    self.assertEqual(self.platform.device, "Pixel 999")
+    self.assertEqual(self.platform.model, "Pixel 999")
 
   def test_cpu(self):
     self.expect_sh("getprop dalvik.vm.isa.arm.variant", result="cortex-a999")
@@ -406,7 +416,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_search_binary_empty_path(self):
     with self.assertRaises(ValueError) as cm:
-      self.platform.search_binary(pathlib.Path(""))
+      self.platform.search_binary(pathlib.Path())
     self.assertIn("empty path", str(cm.exception))
     with self.assertRaises(ValueError) as cm:
       self.platform.search_binary("")
@@ -571,11 +581,11 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_adb("reverse", "tcp:0", "tcp:33221", result="666")
     self.expect_adb("reverse", "--remove", "tcp:666")
     self.expect_adb("reverse", "--remove", "tcp:333")
-    with self.platform.ports.nested() as ports:
-      port = ports.reverse_forward(0, 33300)
+    with self.platform.ports.nested() as ports_1:
+      port = ports_1.reverse_forward(0, 33300)
       self.assertEqual(port, 333)
-      with self.platform.ports.nested() as ports:
-        port = ports.reverse_forward(0, 33221)
+      with self.platform.ports.nested() as ports_2:
+        port = ports_2.reverse_forward(0, 33221)
         self.assertEqual(port, 666)
 
   def test_reverse_port_forward_auto_close(self):

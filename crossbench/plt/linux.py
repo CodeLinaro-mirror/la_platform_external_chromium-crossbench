@@ -65,7 +65,7 @@ def parse_display_xrandr(xrandr_str: str) -> Iterator[DisplayInfo]:
   DUMMY1 disconnected
     1600x1200_60  60.00
     ...
-  """
+  """  # noqa: W291
   display_infos: list[XrandrDisplayInfo] = []
   current_info: XrandrDisplayInfo | None = None
   # Group display info and resolution entries:
@@ -113,11 +113,12 @@ class LinuxPlatform(PosixPlatform):
     return LinuxSignals
 
   def check_system_monitoring(self, disable: bool = False) -> bool:
+    del disable
     return True
 
   @functools.cached_property
   @override
-  def device(self) -> str:
+  def model(self) -> str:
     try:
       id_dir = self.path("/sys/devices/virtual/dmi/id")
       vendor = self.cat(id_dir / "sys_vendor").strip()
@@ -171,10 +172,10 @@ class LinuxPlatform(PosixPlatform):
   @functools.lru_cache(maxsize=1)
   def display_details(self) -> tuple[DisplayInfo, ...]:
     if not self.has_display:
-      return tuple()
+      return ()
     if xrandr_str := self.sh_stdout("xrandr"):
       return tuple(parse_display_xrandr(xrandr_str))
-    return tuple()
+    return ()
 
   _MEMINFO_SCRIPT_PROCESS_PATTERN: Final[re.Pattern] = re.compile(
       r"==== process (\d+) ====")

@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import atexit
+import contextlib
 import ctypes
 import ctypes.util
 import functools
@@ -12,6 +14,7 @@ import logging
 import plistlib
 import re
 import socket
+import subprocess
 import traceback as tb
 from subprocess import SubprocessError
 from typing import TYPE_CHECKING, Any, Final, Iterator, Optional, Type
@@ -23,11 +26,11 @@ from crossbench import path as pth
 from crossbench.parse import NumberParser
 from crossbench.plt.posix import PosixPlatform, PosixVersion
 from crossbench.plt.signals import MacOSSignals
-from crossbench.plt.version import PlatformVersion
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CPUFreqInfo
   from crossbench.plt.display_info import DisplayInfo
+  from crossbench.plt.version import PlatformVersion
 
 DISPLAY_NDRV_RE: Final[re.Pattern] = re.compile(
     "(?P<resX>[0-9]+) x (?P<resY>[0-9]+) @ (?P<freq>[0-9.]+)Hz")
@@ -110,7 +113,7 @@ class MacOSPlatform(PosixPlatform):
 
   @functools.cached_property
   @override
-  def device(self) -> str:
+  def model(self) -> str:
     return self.sh_stdout("sysctl", "-n", "hw.model").strip()
 
   @functools.cached_property
@@ -172,7 +175,7 @@ class MacOSPlatform(PosixPlatform):
     if spdisplays_data := display_info.get("SPDisplaysDataType"):
       if spdisplays_ndrvs := spdisplays_data[0].get("spdisplays_ndrvs"):
         return tuple(parse_display_ndrvs(spdisplays_ndrvs))
-    return tuple()
+    return ()
 
   def display_resolution(self) -> tuple[int, int]:
     return self.display_details()[0]["resolution"]
@@ -345,6 +348,16 @@ class MacOSPlatform(PosixPlatform):
 
     return None
 
+  @contextlib.contextmanager
+  def wakelock(self) -> Iterator[None]:
+    process: subprocess.Popen = self.popen("caffeinate", "-imdsu")
+    atexit.register(process.kill)
+    try:
+      yield
+    finally:
+      atexit.unregister(process.kill)
+      process.kill()
+
   def check_system_monitoring(self, disable: bool = False) -> bool:
     return self.check_crowdstrike(disable)
 
@@ -450,13 +463,13 @@ class MacOSPlatform(PosixPlatform):
     """
 
     display_services, main_display = self._get_display_service()
-    display_brightness = ctypes.c_float()  # pylint: disable=no-value-for-parameter
+    display_brightness = ctypes.c_float()
     ret = display_services.DisplayServicesGetBrightness(
         main_display, ctypes.byref(display_brightness))
     assert ret == 0, f"ret={ret}, display_brightness={display_brightness}"
     return round(display_brightness.value * 100)
 
-  def _core_graphics_types(self, core_graphics) -> None:
+  def _core_graphics_types(self, core_graphics) -> None:  # noqa: ANN001
     # https://developer.apple.com/documentation/coregraphics/1455620-cgmaindisplayid?language=objc
     core_graphics.CGMainDisplayID.argtypes = ()
     core_graphics.CGMainDisplayID.restype = ctypes.c_uint32
@@ -481,7 +494,7 @@ class MacOSPlatform(PosixPlatform):
                                                       ctypes.c_void_p)
     core_graphics.CGDisplaySetDisplayMode.restype = ctypes.c_int32
 
-  def _core_foundation_types(self, core_foundation) -> None:
+  def _core_foundation_types(self, core_foundation) -> None:  # noqa: ANN001
     # https://developer.apple.com/documentation/corefoundation/1388772-cfarraygetcount?language=objc
     core_foundation.CFArrayGetCount.argtypes = (ctypes.c_void_p,)
     core_foundation.CFArrayGetCount.restype = ctypes.c_long

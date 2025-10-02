@@ -439,7 +439,7 @@ DEVTOOLS_RECORDER_EXAMPLE = {
                               "div.header__container div:nth-of-type(5) > a"
                           ],
                           [
-                              "xpath///*[@id=\"pageHeader\"]/"
+                              'xpath///*[@id="pageHeader"]/'
                               "div/div/div[1]/div[1]/nav/div/div[5]/a"
                           ],
                           [
@@ -498,14 +498,13 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
                      "[aria-label='Search Google']")
 
     config["selectors"] = [["aria/SIMPLE"], ["#rso > div:nth-of-type(3) h3"],
-                           ["xpath///*[@id=\"rso\"]"],
+                           ['xpath///*[@id="rso"]'],
                            ["pierce/#rso > div:nth-of-type(3) h3"],
                            ["text/SIMPLE"]]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
     assert isinstance(action, ClickAction)
     self.assertIsNotNone(action.position.selector)
-    self.assertEqual(action.position.selector.selector,
-                     "xpath///*[@id=\"rso\"]")
+    self.assertEqual(action.position.selector.selector, 'xpath///*[@id="rso"]')
 
     config["selectors"] = [
         ["aria/SIMPLE"],

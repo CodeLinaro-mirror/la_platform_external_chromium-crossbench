@@ -429,6 +429,6 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
                               ChromeHistogramSample(metric.histogram_name))
       try:
         json[metric.name] = metric.compute(delta, baseline)
-      except Exception as e:  # pylint: disable=broad-exception-caught
+      except Exception as e:  # noqa: BLE001
         logging.warning("Failed to log metric %s: %s", metric.name, e)
     return json

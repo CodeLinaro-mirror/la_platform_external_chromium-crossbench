@@ -17,7 +17,7 @@ class ChromeVersion(ChromiumVersion):
   _PREFIX_RE: Final[re.Pattern] = re.compile(
       r"(?:google )?chr(?:ome(?: for testing)?)?[- ]?"
       r"(?:latest)?[- ]?"
-      rf"(?:{ChromiumVersion._CHANNEL_RE.pattern})?[- ]?m?", re.I)
+      rf"(?:{ChromiumVersion.CHANNEL_RE.pattern})?[- ]?m?", re.I)
 
   @classmethod
   @override

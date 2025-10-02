@@ -15,7 +15,7 @@ from crossbench.browsers.chromium.version import ChromiumVersion
 class EdgeVersion(ChromiumVersion):
 
   _PREFIX_RE: Final[re.Pattern] = re.compile(
-      rf"microsoft edge(?:{ChromiumVersion._CHANNEL_RE.pattern})? ", re.I)
+      rf"microsoft edge(?:{ChromiumVersion.CHANNEL_RE.pattern})? ", re.I)
 
   @classmethod
   @override

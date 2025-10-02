@@ -17,11 +17,13 @@ REPO_DIR = FILE_PATH.absolute().parents[3]
 if REPO_DIR not in sys.path:
   sys.path.insert(0, str(REPO_DIR))
 
+from tests.test_helper import DEFAULT_PYTEST_FLAGS, to_flags  # noqa: E402
+
 if __name__ == "__main__":
   pass_through_args = sys.argv[1:]
   return_code = pytest.main([
-      "--verbose", "--dist=loadgroup", "--log-cli-level=DEBUG", "-o",
-      "log_cli=True", "-rs",
-      str(TEST_DIR), *pass_through_args
+      *to_flags(DEFAULT_PYTEST_FLAGS),
+      str(TEST_DIR),
+      *pass_through_args,
   ])
   sys.exit(return_code)

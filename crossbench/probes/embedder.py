@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Type, cast
+from typing import TYPE_CHECKING, ClassVar, Final, Type, cast
 
 from typing_extensions import override
 
@@ -44,15 +44,16 @@ class WebviewEmbedderProbe(JsonResultProbe):
               "(nested) metric values (numbers)."))
     return parser
 
-  def __init__(self, js):
+  def __init__(self, js: str):
     super().__init__()
-    self._metric_js = js
+    self._metric_js: Final[str] = js
 
   @property
   def metric_js(self) -> str:
     return self._metric_js
 
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
+    del env
     if not isinstance(browser, WebviewEmbedder):
       raise ProbeIncompatibleBrowser(self, browser,
                                      "Only supported for WV embedders")
