@@ -407,6 +407,26 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.port_number_zero(invalid)
 
+  def test_power_of_two_with_unit(self):
+    self.assertEqual(
+        NumberParser.power_of_two_with_unit("4M"), "4M")
+    self.assertEqual(
+        NumberParser.power_of_two_with_unit("256K"), "256K")
+    self.assertEqual(
+        NumberParser.power_of_two_with_unit("1G"), "1G")
+    self.assertEqual(
+        NumberParser.power_of_two_with_unit(1024), "1024")
+
+  def test_power_of_two_with_unit_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("3M")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("0")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("abc")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("1.5M")
+
   def _json_file_test_helper(self, parser) -> Any:
     with self.assertRaises(argparse.ArgumentTypeError):
       parser("file")
@@ -586,7 +606,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_bool_invalid(self):
     invalid: Any
-    for invalid in (1, 0, "1", "0", "", None, [], tuple()):
+    for invalid in (1, 0, "1", "0", "", None, [], ()):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.bool(invalid)
         ObjectParser.bool(invalid, strict=True)
@@ -604,7 +624,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_optional_bool_invalid(self):
     invalid: Any
-    for invalid in (1, 0, "1", "0", "", [], tuple()):
+    for invalid in (1, 0, "1", "0", "", [], ()):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.optional_bool(invalid)
         ObjectParser.optional_bool(invalid, strict=True)
@@ -625,13 +645,13 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_sh_cmd_invalid(self):
     invalid: Any
-    for invalid in (1, "", None, [], "ls -al \"."):
+    for invalid in (1, "", None, [], 'ls -al ".'):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.sh_cmd(invalid)
 
   def test_parse_dict_invalid(self):
     invalid: Any
-    for invalid in (1, 0, "1", "0", "", None, [], tuple()):
+    for invalid in (1, 0, "1", "0", "", None, [], ()):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.dict(invalid)
 
@@ -641,7 +661,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_non_empty_dict_invalid(self):
     invalid: Any
-    for invalid in (1, 0, "1", "0", "", None, [], tuple(), {}):
+    for invalid in (1, 0, "1", "0", "", None, [], (), {}):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.non_empty_dict(invalid)
 
@@ -651,7 +671,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_unique_sequence(self):
     self.assertListEqual(ObjectParser.unique_sequence([]), [])
-    self.assertTupleEqual(ObjectParser.unique_sequence(tuple()), tuple())
+    self.assertTupleEqual(ObjectParser.unique_sequence(()), ())
     self.assertListEqual(ObjectParser.unique_sequence([1, 2, 3]), [1, 2, 3])
     self.assertTupleEqual(ObjectParser.unique_sequence((1, 2, 3)), (1, 2, 3))
 
@@ -677,12 +697,12 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
   def test_parse_sequence(self):
     self.assertListEqual(ObjectParser.sequence([]), [])
     self.assertListEqual(ObjectParser.sequence([1, 2]), [1, 2])
-    self.assertTupleEqual(ObjectParser.sequence(tuple()), tuple())
+    self.assertTupleEqual(ObjectParser.sequence(()), ())
     self.assertTupleEqual(ObjectParser.sequence((1, 2)), (1, 2))
 
   def test_parse_sequence_invalid(self):
     invalid: Any
-    for invalid in ("", "1", 1, {}, {"a": 1}, set(), set((1, 2))):
+    for invalid in ("", "1", 1, {}, {"a": 1}, set(), {(1, 2)}):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
           ObjectParser.sequence(invalid)
@@ -692,12 +712,12 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
       _ = ObjectParser.non_empty_sequence([])
     self.assertListEqual(ObjectParser.non_empty_sequence([1, 2]), [1, 2])
     with self.assertRaises(argparse.ArgumentTypeError):
-      _ = ObjectParser.non_empty_sequence(tuple())
+      _ = ObjectParser.non_empty_sequence(())
     self.assertTupleEqual(ObjectParser.non_empty_sequence((1, 2)), (1, 2))
 
   def test_parse_non_empty_sequence_invalid(self):
     invalid: Any
-    for invalid in ("", "1", 1, {}, {"a": 1}, set(), set((1, 2)), (), []):
+    for invalid in ("", "1", 1, {}, {"a": 1}, set(), {(1, 2)}, (), []):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
           ObjectParser.non_empty_sequence(invalid)

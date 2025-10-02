@@ -34,8 +34,6 @@ if TYPE_CHECKING:
 
 WIN_APP_SUFFIX: Final = (".exe", ".bat")
 
-# pytest.fixtures rely on params having the same name as the fixture function
-# pylint: disable=redefined-outer-name
 ADB_DEVICE_ID_FLAG: Final = "--adb-device-id"
 ADB_PATH_FLAG: Final = "--adb-path"
 BUNDLETOOL_FLAG: Final = "--bundletool"
@@ -151,7 +149,7 @@ def session_patch_chrome_stable(browser_path):
 
 
 @contextlib.contextmanager
-def mock_patch_chrome_stable(browser_path):
+def mock_patch_chrome_stable(browser_path) -> Iterator[None]:
   is_chromium = is_browser_path_chromium(browser_path)
   original_get_browser_cls = BrowserVariantsConfig.get_browser_cls
 

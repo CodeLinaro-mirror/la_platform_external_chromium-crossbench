@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import json
 import pathlib
 
@@ -43,7 +44,7 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
                      pathlib.PurePosixPath("/usr/local/tmp/"))
 
   def test_display_resolution(self):
-    cros_health_tool_out = '''
+    cros_health_tool_out = """
     {
       "embedded_display": {
         "display_height": "140",
@@ -61,7 +62,7 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
         "resolution_horizontal": "1366",
         "resolution_vertical": "768"
       }
-    }'''
+    }"""
     self._expect_sh_ssh(
         "cros-health-tool telem --category=display",
         result=cros_health_tool_out)

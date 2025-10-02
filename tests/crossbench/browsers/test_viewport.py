@@ -1,6 +1,7 @@
 # Copyright 2023 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import unittest
 from argparse import ArgumentTypeError
@@ -137,7 +138,7 @@ class ViewportTestCase(unittest.TestCase):
 
   def test_parse_sized_invalid(self):
     invalid: Any
-    for invalid in (None, 1, tuple()):
+    for invalid in (None, 1, ()):
       with self.assertRaises(ArgumentTypeError):
         Viewport.parse_sized(invalid)
 

@@ -38,6 +38,7 @@ class CustomConfigEnum(ConfigEnum):
   B = ("b", "B Help")
   C = ("c", "C Help")
 
+
 class CustomValueEnum(enum.Enum):
 
   @classmethod
@@ -369,6 +370,49 @@ class ConfigParserTestCase(unittest.TestCase):
     config = CustomBoolConfigObject.parse(False)
     assert isinstance(config, CustomBoolConfigObject)
     self.assertFalse(config.boolean)
+
+  def test_parse_str(self):
+    config_parser = ConfigParser(CustomConfigObject)
+    with self.assertRaisesRegex(ValueError, "empty"):
+      config_parser.parse("")
+    obj = config_parser.parse("custom string")
+    self.assertEqual(obj.name, "custom string")
+
+  def test_default_argument_required_conflict(self):
+    config_parser = ConfigParser(CustomConfigObject)
+    config_parser.add_argument("required_arg", type=int, required=True)
+    with self.assertRaisesRegex(ValueError, "required_arg"):
+      config_parser.add_default_argument("default", type=bool)
+
+  def test_existing_default_argument_required_conflict(self):
+    config_parser = ConfigParser(CustomConfigObject)
+    config_parser.add_default_argument("default_one", type=bool)
+    with self.assertRaisesRegex(ValueError, "default_one"):
+      config_parser.add_argument("required_arg", type=int, required=True)
+
+  def test_default_argument_twice(self):
+    config_parser = ConfigParser(CustomConfigObject)
+    config_parser.add_default_argument("default_one", type=bool)
+    with self.assertRaisesRegex(ValueError, "default_one"):
+      config_parser.add_default_argument("default_two", type=bool)
+
+  def test_default_argument(self):
+
+    @dataclasses.dataclass
+    class CustomObject:
+      str_value: str = ""
+      other: str = ""
+
+    config_parser = ConfigParser(CustomObject)
+    with self.assertRaises(ValueError):
+      config_parser.parse("")
+    config_parser.add_argument("other", type=str)
+    with self.assertRaises(ValueError):
+      config_parser.parse("")
+    config_parser.add_default_argument("str_value", type=str)
+    obj = config_parser.parse("custom string")
+    self.assertEqual(obj.str_value, "custom string")
+
 
 
 class ConfigObjectTestCase(CrossbenchFakeFsTestCase):

@@ -162,6 +162,7 @@ class TracingProbe(ChromiumProbe):
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
+    # TODO: Create separate TraceConfig object for parsing.
     parser.add_argument(
         "preset",
         type=str,
@@ -247,7 +248,7 @@ class TracingProbe(ChromiumProbe):
   @property
   @override
   def result_path_name(self) -> str:
-    return f"trace.{self._record_format.value}"  # pylint: disable=no-member
+    return f"trace.{self._record_format.value}"
 
   @property
   def traceconv(self) -> pth.LocalPath | None:
@@ -280,7 +281,7 @@ class TracingProbe(ChromiumProbe):
     flags.update(self.CHROMIUM_FLAGS)
     # Force proto file so we can convert it to legacy json as well.
     flags["--trace-startup-format"] = str(self._record_format)
-    # pylint: disable=no-member
+
     flags["--trace-startup-duration"] = str(self._startup_duration)
     if self._trace_config:
       # TODO: use ANDROID_TRACE_CONFIG_PATH

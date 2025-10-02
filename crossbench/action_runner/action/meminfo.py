@@ -40,7 +40,7 @@ class MeminfoAction(BaseProbeAction):
 
   def __init__(self,
                browser: bool = True,
-               packages: tuple[str, ...] = tuple(),
+               packages: tuple[str, ...] = (),
                title: Optional[str] = None,
                system: bool = False,
                timeout: dt.timedelta = ACTION_TIMEOUT,

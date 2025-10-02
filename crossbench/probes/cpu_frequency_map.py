@@ -46,12 +46,12 @@ class CPUFrequencyMap(ConfigObject, metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def get_target_frequencies(
       self, platform: Platform) -> immutabledict[pth.AnyPosixPath, int]:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @property
   @abc.abstractmethod
   def key(self) -> Hashable:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @classmethod
   @override
@@ -78,7 +78,7 @@ class CPUFrequencyMap(ConfigObject, metaclass=abc.ABCMeta):
     except argparse.ArgumentTypeError as e:
       raise argparse.ArgumentTypeError(
           f"Invalid value in CPU frequency map: {value}. Should "
-          "have been one of \"max\"|\"min\"|<int>|\"<int>\"") from e
+          'have been one of "max"|"min"|<int>|"<int>"') from e
 
   def _get_target_frequency(self, platform: Platform, cpu_name: str,
                             frequency: FrequencyType) -> int:
@@ -123,7 +123,7 @@ class WildcardCPUFrequencyMap(CPUFrequencyMap):
           f"A wildcard ({_WILDCARD_CONFIG_KEY}) in "
           "the CPU frequency map should be the only key.")
 
-    self._target_frequency = CPUFrequencyMap._parse_frequency(
+    self._target_frequency: Final[FrequencyType] = self._parse_frequency(
         list(frequencies.values())[0])
 
   @override
@@ -148,8 +148,7 @@ class ExplicitCPUFrequencyMap(CPUFrequencyMap):
     typed_map: dict[str, FrequencyType] = {}
     for k, v in frequencies.items():
       with exception.annotate_argparsing(f"Parsing cpu frequency: {k}, {v}"):
-        typed_map[ObjectParser.non_empty_str(k)] = (
-            CPUFrequencyMap._parse_frequency(v))
+        typed_map[ObjectParser.non_empty_str(k)] = self._parse_frequency(v)
     self._frequencies: immutabledict[str,
                                      FrequencyType] = immutabledict(typed_map)
 

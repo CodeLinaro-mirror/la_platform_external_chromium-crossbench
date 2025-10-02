@@ -47,5 +47,5 @@ class InternalJsonResultProbeContext(
 
   @override
   def teardown(self) -> ProbeResult:
-    self._json_data = self.extract_json(self.run)  # pylint: disable=no-member
+    self._json_data = self.extract_json(self.run)
     return super().teardown()

@@ -168,7 +168,7 @@ class GoogleLogin(PresetLoginBlock):
     action.wait_for_ready_state(ReadyState.COMPLETE, timeout)
 
   def _clear_suspicious_activity(self, action: Actions, runner: ActionRunner,
-                                 run: Run):
+                                 run: Run) -> None:
     has_suspicious_activity = action.js(
         "return document.querySelector("
         "\"[aria-label='Check activity']\") != null;")

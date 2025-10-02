@@ -215,7 +215,8 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
           f"Number of JS arguments does not match. "
           f"Expected: {len(expectation.arguments)} Got: {len(arguments)}")
 
-      for expected_argument, argument in zip(expectation.arguments, arguments):
+      for expected_argument, argument in zip(
+          expectation.arguments, arguments, strict=True):
         assert expected_argument == argument, (
             f"Arguments do not match. "
             f"Expected: {expected_argument} Got: {argument}")
@@ -260,6 +261,12 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   @property
   def current_url(self) -> str:
     return self._current_url
+
+  @override
+  def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
+    if self.platform.is_ios:
+      return path
+    return super()._init_resolve_binary(path)
 
 
 def app_root(platform: plt.Platform) -> pathlib.Path:

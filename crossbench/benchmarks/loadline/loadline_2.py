@@ -15,7 +15,6 @@ from crossbench import path as pth
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
                                                      LoadLineProbe)
-from crossbench.flags.base import Flags
 from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
@@ -25,6 +24,7 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
 
@@ -100,6 +100,20 @@ class LoadLine2Benchmark(LoadLineBenchmark):
     pages = super().stories_from_cli_args(args)
     return (CombinedPage(pages, playback=args.playback),)
 
+  @classmethod
+  @override
+  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
+    flags: Flags = super().extra_flags(browser_attributes)
+    if browser_attributes.is_chromium_based:
+      # By design, Loadline2 wants some stories to always use a new renderer
+      # process and some to use an existing renderer, therefore covering both
+      # cases. The flag here forces a navigation to a new website to create a
+      # new renderer, except when navigating from about:blank. So we can
+      # achieve the goal by passing the flag and navigating to about:blank
+      # before stories that must use an existing renderer.
+      flags.set("--site-per-process")
+    return flags
+
 
 class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
   """LoadLine 2 benchmark for phones.
@@ -145,8 +159,10 @@ class LoadLine2TabletBenchmark(LoadLine2Benchmark):
   @classmethod
   @override
   def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
-    assert browser_attributes.is_chromium_based
-    return Flags(["--request-desktop-sites"])
+    flags: Flags = super().extra_flags(browser_attributes)
+    if browser_attributes.is_chromium_based:
+      flags.set("--request-desktop-sites")
+    return flags
 
 
 class LoadLine2PhoneDebugBenchmark(LoadLine2PhoneBenchmark):

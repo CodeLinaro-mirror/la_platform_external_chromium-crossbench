@@ -1,6 +1,7 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 from unittest import mock
 
@@ -28,7 +29,7 @@ class FrequencyProbeTestCase(CrossbenchFakeFsTestCase):
   # Simply tests the communication between FrequencyProbe and CPUFrequencyMap.
   # Details for the latter are tested in CPUFrequencyMapTestCase.
   def test_validate(self):
-    probe = FrequencyProbe.from_config(
+    probe = FrequencyProbe.parse_dict(
         {"cpus": {
             "cpu10": "min",
             "cpu20": 20,

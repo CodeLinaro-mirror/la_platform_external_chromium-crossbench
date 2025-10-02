@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Iterable, Iterator
 from typing_extensions import override
 
 from crossbench.flags.js_flags import JSFlags
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from crossbench.helper.durations import Durations
 from crossbench.helper.state import BaseState, StateMachine
 from crossbench.probes.probe_context import ProbeSessionContext
@@ -253,7 +253,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     with self.exceptions.capture():
       self._setup_session_dir()
       self._setup_browser()
-      with ChangeCWD(self.path):
+      with change_cwd(self.path):
         with self._open(is_dry_run):
           yielded = True
           yield self.is_success
@@ -311,7 +311,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         self.raw_session_dir.symlink_to(self.path)
 
   @contextlib.contextmanager
-  def _start_network(self, is_dry_run: bool = False):
+  def _start_network(self, is_dry_run: bool = False) -> Iterator[None]:
     logging.debug("Starting network: %s", self.network)
     if is_dry_run:
       yield
@@ -321,7 +321,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         yield
 
   @contextlib.contextmanager
-  def _start_probes(self, is_dry_run: bool):
+  def _start_probes(self, is_dry_run: bool) -> Iterator[None]:
     with self._exceptions.annotate("Starting Session Probes"):
       with self._probe_session_context_manager.open(is_dry_run):
         yield
@@ -372,7 +372,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     # This can happen if a browser / probe setup error occurs and we're
     # in a unclean state.
     if self.browser.is_running:
-      self._runs[-1]._teardown_browser(is_dry_run)  # pylint: disable=protected-access
+      self._runs[-1]._teardown_browser(is_dry_run)  # noqa: SLF001
 
   def handle_startup_failure(self) -> None:
     runs = tuple(self.runs)

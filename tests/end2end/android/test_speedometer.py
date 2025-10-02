@@ -1,14 +1,19 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import enum
+from typing import TYPE_CHECKING
+
 import pytest
 
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.parse import NumberParser
 from tests import test_helper
-from tests.test_helper import TestEnv
+
+if TYPE_CHECKING:
+  from tests.test_helper import TestEnv
 
 
 class SpeedometerVersion(enum.StrEnum):

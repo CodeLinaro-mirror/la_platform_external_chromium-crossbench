@@ -1,6 +1,7 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import inspect
 
@@ -20,6 +21,7 @@ from crossbench.probes.dtrace import DTraceProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.embedder import WebviewEmbedderProbe
 from crossbench.probes.env_modifier import EnvModifier
+from crossbench.probes.etm import EtmProbe
 from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
@@ -42,7 +44,8 @@ from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 from tests import test_helper
-from tests.crossbench.base import CrossbenchFakeFsTestCase
+from tests.crossbench.base import (CrossbenchConfigTestMixin,
+                                   CrossbenchFakeFsTestCase)
 
 
 class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
@@ -62,7 +65,7 @@ class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(probe_list.probes, [])
 
 
-class ProbeTestCase(CrossbenchFakeFsTestCase):
+class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
 
   def probe_instances(self):
     yield from self.internal_probe_instances()
@@ -79,7 +82,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield DebuggerProbe(pth.LocalPath("debugger.bin"))
     yield DownloadsProbe()
     yield DumpHtmlProbe()
-    yield FrequencyProbe.from_config({})
+    yield FrequencyProbe.parse_dict({})
     yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"),
                         pth.LocalPath("tracebox.bin"),
                         trace_browser_startup=False)
@@ -151,6 +154,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
             set(OPTIONAL_INTERNAL_PROBES)))
 
   def test_help(self):
+    self.setup_perfetto_config_presets()
     for probe_cls in self.probe_classes():
       help_text = probe_cls.help_text()
       self.assertTrue(help)
@@ -184,6 +188,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
         # TODO: missing wpr, download precompiled wpr from storage
         WebPageReplayProbe,
         WebviewEmbedderProbe,
+        EtmProbe,
     }
     for probe_cls in GENERAL_PURPOSE_PROBES:
       if probe_cls in requires_configuration:

@@ -13,7 +13,6 @@ import pytest
 
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.cli.cli import CrossBenchCLI
-from crossbench.network.replay.wpr import WPR_PREBUILT_LOOKUP
 from crossbench.path import check_hash
 from crossbench.plt import PLATFORM
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
@@ -21,9 +20,6 @@ from tests import test_helper
 
 if TYPE_CHECKING:
   from tests.test_helper import TestEnv
-
-# pytest.fixtures rely on params having the same name as the fixture function
-# pylint: disable=redefined-outer-name
 
 CHROME_APK_URL = "gs://chrome-telemetry/apks/MonochromeCanary.apk"
 CHROME_APK_HASH = "5de59881c02783d2174e1e891d82c9dbbce09c67"
@@ -56,14 +52,6 @@ def adb_test_env(device_id, adb_path, test_env: TestEnv) -> None:
     assert device_id, "Missing device id"
     adb = Adb(PLATFORM, device_id, adb_path)
     adb.install_apk(local_apk)
-
-  # Download prebuilt wprgo binary to run WPR on the host
-  # TODO(crbug/377290309): Make the test work with on-device WPR.
-  local_wpr = tmp_dir / "wprgo"
-  wpr_cloud_binary = WPR_PREBUILT_LOOKUP[PLATFORM.key]
-  PLATFORM.sh("gsutil", "cp", wpr_cloud_binary.url, local_wpr)
-  assert check_hash(local_wpr, wpr_cloud_binary.file_hash)
-  PLATFORM.sh("chmod", "+x", local_wpr)
 
 
 # TODO(crbug/377290309): Remove the custom browser config when the test passes
@@ -158,7 +146,7 @@ def _verify_experimental_metrics(out_dir):
       "loadline_experimental_worker.csv"
   }
   tp_output_files = list(out_dir.rglob("trace_processor/*.csv"))
-  assert set(f.name for f in tp_output_files) == expected_files
+  assert {f.name for f in tp_output_files} == expected_files
 
   # Some metrics for some runs might have no values. But we expect at
   # least one metric to have some values.

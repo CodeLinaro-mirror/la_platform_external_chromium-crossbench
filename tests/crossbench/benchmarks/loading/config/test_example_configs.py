@@ -8,7 +8,7 @@ import datetime as dt
 
 from crossbench import hjson as cb_hjson
 from crossbench.benchmarks.loading.config.pages import PagesConfig
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -88,7 +88,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:
       data = cb_hjson.load_unique_keys(f)
-    with ChangeCWD(test_helper.config_dir() / "benchmark/loadline"):
+    with change_cwd(test_helper.config_dir() / "benchmark/loadline"):
       dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
@@ -107,7 +107,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:
       data = cb_hjson.load_unique_keys(f)
-    with ChangeCWD(test_helper.config_dir() / "benchmark/loadline"):
+    with change_cwd(test_helper.config_dir() / "benchmark/loadline"):
       dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)

@@ -20,6 +20,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData
+from crossbench.helper.path_finder import BuildtoolFinder
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
 
   from crossbench.plt.base import Platform
   from crossbench.plt.display_info import DisplayInfo
-  from crossbench.plt.types import CmdArg, ListCmdArgs
+  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo
   from crossbench.types import JsonDict
 
 # Defines the Android permissions to be granted.
@@ -119,7 +120,7 @@ class Adb:
     if bundletool:
       self._bundletool = host_platform.parse_binary_path(bundletool)
     else:
-      self._bundletool = pth.LocalPath("bundletool")
+      self._bundletool = BuildtoolFinder(host_platform).local_path
     self.start_server()
     self._serial_id, self._device_info = self._find_serial_id(device_identifier)
     logging.debug("ADB Selected device: %s %s", self._serial_id,
@@ -197,9 +198,9 @@ class Adb:
            *args: CmdArg,
            shell: bool = False,
            capture_output: bool = False,
-           stdout=None,
-           stderr=None,
-           stdin=None,
+           stdout: ProcessIo = None,
+           stderr: ProcessIo = None,
+           stdin: ProcessIo = None,
            env: Optional[Mapping[str, str]] = None,
            quiet: bool = False,
            check: bool = True,
@@ -219,7 +220,7 @@ class Adb:
   def _adb_stdout(self,
                   *args: CmdArg,
                   quiet: bool = False,
-                  stdin=None,
+                  stdin: ProcessIo = None,
                   encoding: str = "utf-8",
                   use_serial_id: bool = True,
                   check: bool = True) -> str:
@@ -234,7 +235,7 @@ class Adb:
   def _adb_stdout_bytes(self,
                         *args: CmdArg,
                         quiet: bool = False,
-                        stdin=None,
+                        stdin: ProcessIo = None,
                         use_serial_id: bool = True,
                         check: bool = True) -> bytes:
     adb_cmd = self._build_adb_cmd(*args, use_serial_id=use_serial_id)
@@ -268,7 +269,7 @@ class Adb:
                    shell: bool = False,
                    quiet: bool = False,
                    encoding: str = "utf-8",
-                   stdin=None,
+                   stdin: ProcessIo = None,
                    env: Optional[Mapping[str, str]] = None,
                    check: bool = True) -> str:
     result = self.shell_stdout_bytes(
@@ -279,7 +280,7 @@ class Adb:
                          *args: CmdArg,
                          shell: bool = False,
                          quiet: bool = False,
-                         stdin=None,
+                         stdin: ProcessIo = None,
                          env: Optional[Mapping[str, str]] = None,
                          check: bool = True) -> bytes:
     # -e: choose escape character, or "none"; default '~'
@@ -297,9 +298,9 @@ class Adb:
             *args: CmdArg,
             shell: bool = False,
             capture_output: bool = False,
-            stdout=None,
-            stderr=None,
-            stdin=None,
+            stdout: ProcessIo = None,
+            stderr: ProcessIo = None,
+            stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
             quiet: bool = False,
             check: bool = True) -> subprocess.CompletedProcess:
@@ -481,7 +482,7 @@ class Adb:
       raise ValueError("Got empty package name")
     try:
       self._adb("uninstall", package_name)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # noqa: BLE001
       if missing_ok:
         logging.debug("Could not uninstall %s: %s", package_name, e)
       else:
@@ -490,7 +491,7 @@ class Adb:
   def grant_permissions(self, package_name: str) -> None:
     if self.build_version < 13:
       # Notification permission setting is needed for Android 13 and above.
-      # https://developer.android.com/develop/ui/views/notifications/notification-permission  # pylint: disable=line-too-long
+      # https://developer.android.com/develop/ui/views/notifications/notification-permission
       return
     if not package_name:
       raise ValueError("Got empty package name")
@@ -557,7 +558,7 @@ class AndroidVersion(PosixVersion):
   pass
 
 class AndroidAdbPlatform(RemotePosixPlatform):
-  # pylint: disable=redefined-builtin
+
 
   def __init__(self,
                host_platform: Platform,
@@ -593,11 +594,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @functools.cached_property
   @override
-  def device(self) -> str:
+  def model(self) -> str:
     return self.adb.getprop("ro.product.model")
 
   @property
-  def serial_id(self):
+  def serial_id(self) -> str:
     return self._adb.serial_id
 
   @functools.cached_property
@@ -736,9 +737,9 @@ class AndroidAdbPlatform(RemotePosixPlatform):
          *args: CmdArg,
          shell: bool = False,
          capture_output: bool = False,
-         stdout=None,
-         stderr=None,
-         stdin=None,
+         stdout: ProcessIo = None,
+         stderr: ProcessIo = None,
+         stdin: ProcessIo = None,
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
@@ -758,7 +759,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                       *args: CmdArg,
                       shell: bool = False,
                       quiet: bool = False,
-                      stdin=None,
+                      stdin: ProcessIo = None,
                       env: Optional[Mapping[str, str]] = None,
                       check: bool = True) -> bytes:
     return self.adb.shell_stdout_bytes(

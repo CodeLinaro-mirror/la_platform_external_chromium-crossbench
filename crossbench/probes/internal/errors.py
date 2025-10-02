@@ -74,7 +74,8 @@ class ErrorsProbe(InternalJsonResultProbe):
     return ErrorsProbeContext
 
   @override
-  def create_session_context(self: Self, session: BrowserSessionRunGroup):
+  def create_session_context(
+      self: Self, session: BrowserSessionRunGroup) -> ErrorProbeSessionContext:
     return ErrorProbeSessionContext(self, session)
 
 

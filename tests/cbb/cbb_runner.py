@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 # TODO: remove after landing infra change.
+from __future__ import annotations
 
 import pathlib
 import sys

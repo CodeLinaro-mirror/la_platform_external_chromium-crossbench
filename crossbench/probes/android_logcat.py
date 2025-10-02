@@ -33,7 +33,7 @@ class LogcatAndroidProbe(Probe):
         "filterspec",
         type=str,
         is_list=True,
-        default=tuple(),
+        default=(),
         help="Filter specifications are a series of <tag>[:priority]")
     return parser
 

@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Self, Tuple
 
 import websocket
 
@@ -60,7 +61,7 @@ class DevToolsClient:
     if self._devtools_port:
       try:
         self._platform.ports.stop_forward(self._devtools_port)
-      except Exception as e:  # pylint: disable=broad-except
+      except Exception as e:  # noqa: BLE001
         # Best effort to remove forwarding, log if it fails but don't crash
         logging.warning(
             "Error removing DevTools port forwarding for port %s: %s",
@@ -176,9 +177,10 @@ class DevToolsClient:
       self._ws.settimeout(None)
     return True
 
-  def __enter__(self) -> DevToolsClient:
+  @contextlib.contextmanager
+  def open(self) -> Iterator[Self]:
     self.connect()
-    return self
-
-  def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-    self.disconnect()
+    try:
+      yield self
+    finally:
+      self.disconnect()

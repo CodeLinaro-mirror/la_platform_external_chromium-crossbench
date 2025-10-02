@@ -14,13 +14,13 @@ from crossbench import config
 from crossbench import path as pth
 from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
                                                      LoadLineProbe)
-from crossbench.flags.base import Flags
 from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
   import pandas as pd
 
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
 
@@ -40,7 +40,7 @@ def process_scores(df: pd.DataFrame) -> pd.DataFrame:
   df.index.rename("browser", inplace=True)
   df = df.reindex(
       columns=(["TOTAL_SCORE"] +
-               sorted(list(c for c in df.columns if c != "TOTAL_SCORE"))))
+               sorted(c for c in df.columns if c != "TOTAL_SCORE")))
   return df
 
 
@@ -154,8 +154,10 @@ class LoadLine1TabletBenchmark(LoadLine1Benchmark):
   @classmethod
   @override
   def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
-    assert browser_attributes.is_chromium_based
-    return Flags(["--request-desktop-sites"])
+    flags: Flags = super().extra_flags(browser_attributes)
+    if browser_attributes.is_chromium_based:
+      flags.set("--request-desktop-sites")
+    return flags
 
 
 class LoadLine1PhoneDebugBenchmark(LoadLine1PhoneBenchmark):

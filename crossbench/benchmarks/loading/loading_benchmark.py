@@ -28,6 +28,7 @@ from crossbench.parse import DurationParser, ObjectParser
 if TYPE_CHECKING:
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.stories.story import Story
 
 
@@ -83,10 +84,11 @@ class LoadingPageFilter(StoryFilter[Page]):
         type=PlaybackController.parse,
         default=PlaybackController.default(),
         help="Set limit on looping through/repeating the selected stories. "
-        "Default is once."
+        "Default is once. "
         "Valid values are: 'once', 'forever', number, time. "
         "Cycle 10 times: '--playback=10x'. "
-        "Repeat for 1.5 hours: '--playback=1.5h'.")
+        "Repeat for 1.5 hours: '--playback=1.5h'. "
+        "Run 5 times, once every 10 seconds: '--playback=\"5x every 10s\"'.")
     playback_group.add_argument(
         "--forever",
         dest="playback",
@@ -137,7 +139,7 @@ class LoadingPageFilter(StoryFilter[Page]):
         "possible actions check config/doc/pages.config.hjson")
 
   @classmethod
-  def add_page_config_parser(cls, parser) -> None:
+  def add_page_config_parser(cls, parser: argparse.ArgumentParser) -> None:
     page_config_group = parser.add_mutually_exclusive_group()
     # TODO: move --stories into mutually exclusive group as well
     page_config_group.add_argument(
@@ -193,7 +195,8 @@ class LoadingPageFilter(StoryFilter[Page]):
   @classmethod
   def stories_from_config(cls, args: argparse.Namespace,
                           config: PagesConfig) -> Sequence[Page]:
-    labels = set(page_config.label for page_config in config.pages)
+    labels: set[str
+                | None] = {page_config.label for page_config in config.pages}
     use_labels = len(labels) == len(config.pages)
 
     stories: list[Page] = []
@@ -202,8 +205,7 @@ class LoadingPageFilter(StoryFilter[Page]):
 
     if not use_labels:
       # Double check that the urls are unique
-
-      urls = set(page_config.first_url for page_config in config.pages)
+      urls: set[str] = {page_config.first_url for page_config in config.pages}
       if len(urls) != len(config.pages):
         raise argparse.ArgumentTypeError(
             "Got non-unique story labels and urls.")
@@ -274,8 +276,7 @@ class LoadingBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def add_cli_parser(
-      cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
+  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
     cls.STORY_FILTER_CLS.add_cli_arguments(parser)
     return parser

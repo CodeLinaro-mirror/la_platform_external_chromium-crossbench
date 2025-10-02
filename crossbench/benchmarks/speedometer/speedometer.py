@@ -69,7 +69,8 @@ class SpeedometerProbe(
       if self._is_valid_metric_key(key):
         line_item_scores.append(metric.values)
     total_score = Metric()
-    for iteration_line_items_score_values in zip(*line_item_scores):
+    for iteration_line_items_score_values in zip(
+        *line_item_scores, strict=True):
       iteration_score = Metric(iteration_line_items_score_values).geomean
       total_score.append(iteration_score)
     return total_score

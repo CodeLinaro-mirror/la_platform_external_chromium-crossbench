@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Optional, Sequence
 
 from typing_extensions import override
 
@@ -25,6 +25,7 @@ if TYPE_CHECKING:
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.runner.run import Run
 
 
@@ -32,24 +33,41 @@ UNMUTE_AUDIO_SCRIPT: Final[str] = """
   document.getElementById('unmuteButton').click();
 """
 
+REMUTE_AUDIO_SCRIPT: Final[str] = """
+  document.getElementById('audio').muted = true;
+"""
+
+
 class PowerlineStory(Story):
+  STORY_NAME = "podcast_vorbis_remute"
+  URL_BASE = "https://chromium-workloads.web.app/web-tests/main/synthetic/powerline/"
+  STORY_URLS = {
+      "podcast_vorbis": "podcast-vorbis.html",
+      "podcast_vorbis_muted": "podcast-vorbis.html",
+      "podcast_opus": "podcast-opus.html",
+      "podcast_mp3": "podcast-mp3.html",
+      "podcast_aac": "podcast-aac.html"
+  }
 
-  STORY_NAME: ClassVar = "podcast"
-  URL: ClassVar = "https://chromium-workloads.web.app/web-tests/main/synthetic/powerline/podcast.html"
-
-  def __init__(self, duration: Optional[dt.timedelta] = dt.timedelta()):
+  def __init__(self,
+               story_name: str,
+               duration: Optional[dt.timedelta] = dt.timedelta()):
     duration = (duration or dt.timedelta(seconds=60))
-    super().__init__(self.STORY_NAME, duration)
+    super().__init__(story_name, duration)
 
   def run(self, run: Run) -> None:
     with timer():
       with run.actions("Show URL") as actions:
-        actions.show_url(self.URL)
+        actions.show_url(self.url_from_story(run.story.name))
       with run.actions("Autoplay") as actions:
         actions.wait_for_ready_state(
           ReadyState.COMPLETE, timeout=dt.timedelta(seconds=5)
         )
         actions.js(UNMUTE_AUDIO_SCRIPT)
+      if self.should_remute(run.story.name):
+        with run.actions("Remute") as actions:
+          actions.wait(dt.timedelta(seconds=5))
+          actions.js(REMUTE_AUDIO_SCRIPT)
       with run.actions("Screen") as actions:
         actions.wait(dt.timedelta(seconds=5))
         with actions.platform.low_power_mode():
@@ -58,10 +76,17 @@ class PowerlineStory(Story):
       logging.info("Stopping benchmark...")
 
   @classmethod
-  @override
-  def all_story_names(cls) -> tuple[str, ...]:
-    return (PowerlineStory.STORY_NAME,)
+  def url_from_story(cls, name: str) -> str:
+    return cls.URL_BASE + cls.STORY_URLS[name]
 
+  @classmethod
+  def should_remute(cls, name: str) -> bool:
+    return name.endswith("_muted")
+
+  @classmethod
+  @override
+  def all_story_names(cls) -> Sequence[str]:
+    return sorted(cls.STORY_URLS)
 
 
 class PowerlineBenchmark(Benchmark):
@@ -81,8 +106,10 @@ class PowerlineBenchmark(Benchmark):
   def __init__(self,
                action_runner_config: Optional[ActionRunnerConfig] = None,
                run_for: Optional[dt.timedelta] = None) -> None:
-    powerline_story = PowerlineStory(run_for)
-    super().__init__([powerline_story], action_runner_config)
+    stories = [
+        PowerlineStory(x, run_for) for x in PowerlineStory.all_story_names()
+    ]
+    super().__init__(stories, action_runner_config)
 
   @classmethod
   def _base_dir(cls) -> pth.LocalPath:
@@ -108,8 +135,7 @@ class PowerlineBenchmark(Benchmark):
 
   @classmethod
   @override
-  def add_cli_parser(
-    cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
+  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
     parser.add_argument(
         "--run-for",
