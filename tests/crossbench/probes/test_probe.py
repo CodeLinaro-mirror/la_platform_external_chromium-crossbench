@@ -32,12 +32,14 @@ from crossbench.probes.performance_entries import PerformanceEntriesProbe
 from crossbench.probes.polling import PollingShellProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.powermetrics import PowerMetricsProbe
-from crossbench.probes.probe import Probe, ProbeKeyT
+from crossbench.probes.probe import Probe, ProbeKeyT, ProbePriority
 from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.probes.shell import ShellProbe
 from crossbench.probes.system_stats import SystemStatsProbe
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
 from crossbench.probes.v8.builtins_pgo import V8BuiltinsPGOProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.probes.v8.rcs import V8RCSProbe
@@ -61,9 +63,9 @@ class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_empty(self):
     probe_list = ProbeListConfig.parse({"probes": []})
-    self.assertEqual(probe_list.probes, [])
+    self.assertEqual(probe_list.probes, ())
     probe_list = ProbeListConfig.parse({"probes": {}})
-    self.assertEqual(probe_list.probes, [])
+    self.assertEqual(probe_list.probes, ())
 
 
 class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
@@ -216,6 +218,7 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
     for probe_instance in self.internal_probe_instances():
       with self.subTest(probe_cls=str(type(probe_instance))):
         self.assertTrue(probe_instance.is_internal)
+        self.assertEqual(probe_instance.PRIORITY, ProbePriority.INTERNAL)
 
     for probe_instance in self.general_purpose_probe_instances():
       with self.subTest(probe_cls=str(type(probe_instance))):
@@ -226,6 +229,16 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
       with self.subTest(probe_cls=str(type(probe_instance))):
         self.assertFalse(probe_instance.is_attached)
 
+  def test_probe_priority(self):
+    for probe_cls in INTERNAL_PROBES:
+      self.assertEqual(probe_cls.PRIORITY, ProbePriority.INTERNAL)
+
+    for probe_cls in GENERAL_PURPOSE_PROBES:
+      with self.subTest(probe_cls=str(probe_cls)):
+        if probe_cls == TraceProcessorProbe:
+          self.assertEqual(probe_cls.PRIORITY, ProbePriority.TRACE_PROCESSOR)
+        else:
+          self.assertEqual(probe_cls.PRIORITY, ProbePriority.USER)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -252,11 +252,13 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
   def default_runner(self,
                      browsers: Optional[Iterable[Browser]] = None,
                      benchmark: Optional[Benchmark] = None,
+                     probes: Optional[Iterable[Probe]] = None,
                      throw: bool = True) -> Runner:
     return Runner(
         self.out_dir,
-        browsers or self.browsers,
-        benchmark or self.benchmark,
+        browsers=browsers or self.browsers,
+        benchmark=benchmark or self.benchmark,
+        probes=probes or (),
         platform=self.platform,
         throw=throw,
         in_memory_result_db=True)

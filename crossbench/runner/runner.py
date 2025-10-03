@@ -23,8 +23,6 @@ from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
-from crossbench.probes.trace_processor.trace_processor import \
-    TraceProcessorProbe
 from crossbench.results_db.db import ResultsDB
 from crossbench.runner.groups.browsers import BrowsersRunGroup
 from crossbench.runner.groups.cache_temperatures import \
@@ -237,7 +235,7 @@ class Runner:
                out_dir: pth.LocalPath,
                browsers: Iterable[Browser],
                benchmark: Benchmark,
-               additional_probes: Iterable[Probe] = (),
+               probes: Iterable[Probe] = (),
                platform: Optional[plt.Platform] = None,
                env_config: Optional[EnvConfig] = None,
                env_validation_mode: ValidationMode = ValidationMode.THROW,
@@ -277,8 +275,9 @@ class Runner:
     self._env = RunnerEnv(self.platform, self.out_dir, self.browsers,
                           self.probes, self.repetitions, env_config,
                           env_validation_mode)
-    self._attach_default_probes(additional_probes)
+    self._prepare_probes(probes)
     self._prepare_benchmark()
+    self._sort_probes()
     if in_memory_result_db:
       self._results_db = ResultsDB()
     else:
@@ -305,16 +304,16 @@ class Runner:
     browser_unique_names = [browser.unique_name for browser in self.browsers]
     ObjectParser.unique_sequence(browser_unique_names, "browser names")
 
-  def _attach_default_probes(self, probe_list: Iterable[Probe]) -> None:
+  def _prepare_probes(self, probe_list: Iterable[Probe]) -> None:
     assert len(self._probes) == 0
     assert len(self._default_probes) == 0
     self._attach_internal_probes()
 
-    for index, probe in enumerate(probe_list):
-      assert (not isinstance(probe, TraceProcessorProbe) or index == 0), (
-          f"TraceProcessorProbe must be first in the list to be able "
-          f"to process other probes data. Found it at index: {index}")
+    for probe in probe_list:
       self.attach_probe(probe)
+
+  def _sort_probes(self) -> None:
+    self._probes.sort(key=lambda probe: probe.PRIORITY)
     # Results probe must be first in the list, and thus last to be processed
     # so all other probes have data by the time we write the results summary.
     assert isinstance(self._probes[0], ResultsSummaryProbe)

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import enum
 import logging
 from typing import (TYPE_CHECKING, ClassVar, Hashable, Optional, Self, Set,
                     Type, TypeVar)
@@ -62,6 +63,15 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
 ProbeKeyT = tuple[tuple[str, Hashable], ...]
 
 
+@enum.unique
+class ProbePriority(enum.IntEnum):
+  INTERNAL = enum.auto()
+  PRE_TRACE_PROCESSOR = enum.auto()
+  TRACE_PROCESSOR = enum.auto()
+  PRE_USER = enum.auto()
+  USER = enum.auto()
+
+
 class Probe(ProbeResultKey, abc.ABC):
   """
   Abstract Probe class.
@@ -96,6 +106,9 @@ class Probe(ProbeResultKey, abc.ABC):
   RESULT_LOCATION: ClassVar[ResultLocation] = ResultLocation.LOCAL
   # Set to True if the probe only works on battery power with single runs.
   BATTERY_ONLY: ClassVar[bool] = False
+  # Location within the probe list
+  PRIORITY: ClassVar[ProbePriority] = ProbePriority.USER
+
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser[Self]:

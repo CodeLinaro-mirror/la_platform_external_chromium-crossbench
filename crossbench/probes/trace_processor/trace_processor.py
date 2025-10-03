@@ -27,7 +27,7 @@ from crossbench import plt
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.probe import Probe, ProbeConfigParser
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbePriority
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
                                        ProbeResult)
@@ -146,6 +146,7 @@ class TraceProcessorProbe(Probe):
   """
 
   NAME: ClassVar = "trace_processor"
+  PRIORITY: ClassVar = ProbePriority.TRACE_PROCESSOR
 
   @classmethod
   @override

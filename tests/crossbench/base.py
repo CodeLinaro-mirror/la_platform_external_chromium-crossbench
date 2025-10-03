@@ -269,8 +269,8 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
         BenchmarkSubcommand, "_get_runner", side_effect=self._mock_get_runner):
       yield
 
-  def _mock_get_runner(self, args, benchmark, env_config, env_validation_mode,
-                       timing):
+  def _mock_get_runner(self, args, benchmark, probes, env_config,
+                       env_validation_mode, timing):
     if not args.out_dir:
       # Use stable mock out dir
       args.out_dir = pathlib.Path("/results")
@@ -278,6 +278,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     runner_kwargs = Runner.kwargs_from_cli(args)
     runner = Runner(
         benchmark=benchmark,
+        probes=probes,
         env_config=env_config,
         env_validation_mode=env_validation_mode,
         timing=timing,

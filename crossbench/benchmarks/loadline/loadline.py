@@ -18,7 +18,7 @@ from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
                                                              LoadingPageFilter)
-from crossbench.probes.probe import Probe
+from crossbench.probes.probe import Probe, ProbePriority
 from crossbench.probes.results import LocalProbeResult
 from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
@@ -35,6 +35,7 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
   PRODUCES_DATA: ClassVar = False
   BENCHMARK_NAME: ClassVar[str] = "LoadLine"
   BENCHMARK_VERSION: ClassVar[str] = ""
+  PRIORITY: ClassVar = ProbePriority.PRE_TRACE_PROCESSOR
 
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)

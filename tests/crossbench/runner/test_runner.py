@@ -19,7 +19,10 @@ from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError
 from crossbench.network.live import LiveNetwork
 from crossbench.probes import all as all_probes
+from crossbench.probes.js import JSProbe
 from crossbench.probes.probe import ProbeIncompatibleBrowser
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.groups.thread import RunThreadGroup
 from crossbench.runner.runner import Runner, ThreadMode
@@ -469,6 +472,32 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertEqual(len(runner.runs), 4)
     self.assertFalse(runner.has_only_single_run_platforms())
 
+  def test_trace_processor_probe_single(self):
+    probe = TraceProcessorProbe.parse_dict({})
+    runner = self.default_runner(probes=(probe,))
+    self.assertTrue(list(runner.probes))
+
+  def test_trace_processor_probe_first(self):
+    trace_processor_probe = TraceProcessorProbe.parse_dict({})
+    js_probe = JSProbe(js="return []")
+    runner = self.default_runner(probes=(trace_processor_probe, js_probe))
+    probes = list(runner.probes)
+    self.assertTrue(probes)
+    self.assertEqual(probes[-1], js_probe)
+    self.assertEqual(probes[-2], trace_processor_probe)
+
+  def test_trace_processor_probe_last(self):
+    trace_processor_probe = TraceProcessorProbe.parse_dict({})
+    js_probe = JSProbe(js="return []")
+    runner = self.default_runner(probes=(
+        js_probe,
+        trace_processor_probe,
+    ))
+    probes = list(runner.probes)
+    self.assertTrue(probes)
+    self.assertEqual(probes[-1], js_probe)
+    self.assertEqual(probes[-2], trace_processor_probe)
+
 
 class CustomException(Exception):
   pass
@@ -507,7 +536,6 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         runner.results_db, "teardown_run",
         side_effect=None) as teardown_run_mock:
       yield teardown_run_mock
-
 
   def test_simple_runs(self):
     runner = self.default_runner()

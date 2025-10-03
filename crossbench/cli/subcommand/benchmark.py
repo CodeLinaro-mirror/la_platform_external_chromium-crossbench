@@ -9,7 +9,7 @@ import datetime as dt
 import itertools
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Type
 
 from typing_extensions import override
 
@@ -526,11 +526,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     env_config: EnvConfig = self._get_env_config(args)
     env_validation_mode: ValidationMode = self._get_env_validation_mode(args)
     timing: Timing = self._get_timing(args)
-    self._runner = self._get_runner(args, benchmark, env_config,
+    self._runner = self._get_runner(args, benchmark, probes, env_config,
                                     env_validation_mode, timing)
-    for probe in probes:
-      self.runner.attach_probe(probe, matching_browser_only=True)
-
     self._run_benchmark(args, self.runner)
 
   def _helper(self, args: argparse.Namespace) -> None:
@@ -770,11 +767,13 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
                   args.run_timeout, args.start_delay, args.stop_delay)
 
   def _get_runner(self, args: argparse.Namespace, benchmark: Benchmark,
-                  env_config: EnvConfig, env_validation_mode: ValidationMode,
+                  probes: Iterable[Probe], env_config: EnvConfig,
+                  env_validation_mode: ValidationMode,
                   timing: Timing) -> Runner:
     runner_kwargs = self._runner_cls.kwargs_from_cli(args)
     return self._runner_cls(
         benchmark=benchmark,
+        probes=probes,
         env_config=env_config,
         env_validation_mode=env_validation_mode,
         timing=timing,
