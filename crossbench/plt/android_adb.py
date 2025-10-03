@@ -439,7 +439,7 @@ class Adb:
     self.shell(*cmd)
 
   def install(self,
-              bundle: pth.LocalPath,
+              bundle: pth.AnyPath,
               allow_downgrade: bool = False,
               modules: Optional[str] = None) -> None:
     if bundle.suffix == ".apks":
@@ -448,10 +448,10 @@ class Adb:
       self.install_apk(bundle, allow_downgrade)
 
   def install_apk(self,
-                  apk: pth.LocalPath,
+                  apk: pth.AnyPath,
                   allow_downgrade: bool = False) -> None:
-    if not apk.exists():
-      raise ValueError(f"APK {apk} does not exist.")
+    if not self._host_platform.exists(apk):
+      raise ValueError(f"APK {apk} does not exist {self._host_platform}.")
     args = ["install"]
     if allow_downgrade:
       args.append("-d")
@@ -459,11 +459,11 @@ class Adb:
     self._adb(*args)
 
   def install_apks(self,
-                   apks: pth.LocalPath,
+                   apks: pth.AnyPath,
                    allow_downgrade: bool = False,
                    modules: Optional[str] = None) -> None:
-    if not apks.exists():
-      raise ValueError(f"APK {apks} does not exist.")
+    if not self._host_platform.exists(apks):
+      raise ValueError(f"APK {apks} does not exist on {self._host_platform}.")
     if self._bundletool is None:
       raise RuntimeError(
           "Could not find bundletool binary required for install_apks")

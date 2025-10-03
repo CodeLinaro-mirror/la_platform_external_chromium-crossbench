@@ -7,9 +7,9 @@ from __future__ import annotations
 import logging
 import os
 import shlex
-import sys
-from typing import TYPE_CHECKING, Sequence, cast
+from typing import TYPE_CHECKING, Final, Sequence, cast
 
+from immutabledict import immutabledict
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from typing_extensions import override
@@ -25,10 +25,10 @@ if TYPE_CHECKING:
       EmbedderBenchmark
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
-EMBEDDER_SHORT_NAME_TO_PACKAGE = {
-  "googlequicksearchbox": "com.google.android.googlequicksearchbox",
-  "velvet": "com.google.android.googlequicksearchbox",
-}
+EMBEDDER_SHORT_NAME_TO_PACKAGE: Final[immutabledict[str, str]] = immutabledict({
+    "googlequicksearchbox": "com.google.android.googlequicksearchbox",
+    "velvet": "com.google.android.googlequicksearchbox",
+})
 
 
 class WebviewEmbedder(Webview):
@@ -108,8 +108,7 @@ class WebviewEmbedder(Webview):
   @override
   def _setup_binary(self) -> None:
     if self.path.suffix == ".apk":
-      with ui.spinner():
-        sys.stdout.write(f"   Installing {self.path.name} on {self.platform}\r")
-        local_path = cast("pth.LocalPath", self.path)
-        self.platform.adb.install(local_path)
+      title = f"Installing {self.path.name} on {self.platform}"
+      with ui.spinner(title=title):
+        self.platform.adb.install(self.path)
     super()._setup_binary()
