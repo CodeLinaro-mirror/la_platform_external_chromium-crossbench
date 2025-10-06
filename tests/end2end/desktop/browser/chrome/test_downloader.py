@@ -14,8 +14,8 @@ import pytest
 from crossbench import plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver
-from crossbench.browsers.chromium.driver_finder import (ChromeDriverFinder,
-                                                        DriverNotFoundError)
+from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder, \
+    DriverNotFoundError
 from crossbench.browsers.settings import Settings
 from tests import test_helper
 from tests.end2end.desktop.browser.helper import tmp_platform_cache_dir

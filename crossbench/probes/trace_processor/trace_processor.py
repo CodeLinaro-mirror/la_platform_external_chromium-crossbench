@@ -8,14 +8,14 @@ import collections
 import json
 import logging
 import zipfile
-from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Self,
-                    Type)
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Self, \
+    Type
 
 import pandas as pd
 from google.protobuf import text_format
 from google.protobuf.json_format import MessageToJson
-from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
-                                                BatchTraceProcessorConfig)
+from perfetto.batch_trace_processor.api import BatchTraceProcessor, \
+    BatchTraceProcessorConfig
 from perfetto.trace_processor.api import TraceProcessor, TraceProcessorConfig
 from perfetto.trace_uri_resolver.path import PathUriResolver
 from perfetto.trace_uri_resolver.registry import ResolverRegistry
@@ -29,8 +29,8 @@ from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbePriority
 from crossbench.probes.probe_context import ProbeContext
-from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult)
+from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
+    ProbeResult
 from crossbench.replacements import Replacements
 
 if TYPE_CHECKING:

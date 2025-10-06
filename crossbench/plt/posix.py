@@ -12,8 +12,8 @@ import logging
 import pathlib
 import re
 import shlex
-from typing import (TYPE_CHECKING, Any, Final, Generator, Iterator, Mapping,
-                    Optional, Set, Type)
+from typing import TYPE_CHECKING, Any, Final, Generator, Iterator, Mapping, \
+    Optional, Set, Type
 
 from typing_extensions import override
 

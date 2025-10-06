@@ -18,8 +18,8 @@ from crossbench.helper import wait
 from crossbench.parse import NumberParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe_context import ProbeContext
-from crossbench.probes.probe_error import (ProbeIncompatibleBrowser,
-                                           ProbeValidationError)
+from crossbench.probes.probe_error import ProbeIncompatibleBrowser, \
+    ProbeValidationError
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 

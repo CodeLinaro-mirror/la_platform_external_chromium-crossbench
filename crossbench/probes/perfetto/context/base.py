@@ -14,8 +14,8 @@ from typing import TYPE_CHECKING, Final
 import google.protobuf.text_format as proto_text_format
 
 from crossbench.parse import NumberParser
-from crossbench.probes.perfetto.constants import (PERFETTO_CONFIG_NAME,
-                                                  PERFETTO_TRACE_NAME)
+from crossbench.probes.perfetto.constants import PERFETTO_CONFIG_NAME, \
+    PERFETTO_TRACE_NAME
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 

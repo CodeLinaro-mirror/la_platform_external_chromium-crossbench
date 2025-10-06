@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import (Any, ClassVar, Final, Iterable, Iterator, Optional, Self,
-                    Set, TypeAlias, TypeVar, Union)
+from typing import Any, ClassVar, Final, Iterable, Iterator, Optional, Self, \
+    Set, TypeAlias, TypeVar, Union
 
 from typing_extensions import override
 

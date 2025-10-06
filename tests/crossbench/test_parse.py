@@ -16,8 +16,8 @@ from urllib import parse as urlparse
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.parse import (DurationParseError, DurationParser, NumberParser,
-                              ObjectParser, PathParser, TimeUnit)
+from crossbench.parse import DurationParseError, DurationParser, \
+    NumberParser, ObjectParser, PathParser, TimeUnit
 from protoc import trace_config_pb2
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase

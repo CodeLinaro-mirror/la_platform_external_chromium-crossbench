@@ -13,8 +13,8 @@ import logging
 import math
 import re
 import shlex
-from typing import (TYPE_CHECKING, Any, Callable, Final, Iterable, Optional,
-                    Sequence, Type, TypeVar, cast)
+from typing import TYPE_CHECKING, Any, Callable, Final, Iterable, Optional, \
+    Sequence, Type, TypeVar, cast
 from urllib import parse as urlparse
 
 import google.protobuf.message

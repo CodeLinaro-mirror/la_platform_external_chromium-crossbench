@@ -15,8 +15,8 @@ from crossbench.helper.version import VersionParseError
 from crossbench.plt.macos import MacOsVersion
 from tests import test_helper
 from tests.crossbench.mock_helper import MacOsMockPlatform
-from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
-                                         BasePosixMockPlatformTestCase)
+from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
+    BasePosixMockPlatformTestCase
 
 
 class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,

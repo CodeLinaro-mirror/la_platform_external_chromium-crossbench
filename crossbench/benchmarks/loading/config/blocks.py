@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import datetime as dt
 import functools
-from typing import (TYPE_CHECKING, Any, Final, Iterator, Optional, Self,
-                    Sequence, cast)
+from typing import TYPE_CHECKING, Any, Final, Iterator, Optional, Self, \
+    Sequence, cast
 
 from typing_extensions import override
 

@@ -15,8 +15,8 @@ from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.text_input import TextInputAction
-from crossbench.action_runner.android_input_action_runner import (
-    AndroidInputActionRunner, ViewportInfo)
+from crossbench.action_runner.android_input_action_runner import \
+    AndroidInputActionRunner, ViewportInfo
 from crossbench.action_runner.base import InputSourceNotImplementedError
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
@@ -30,8 +30,8 @@ from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import \
     ActionRunnerTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeAndroidStable
-from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
-                                          LinuxMockPlatform, MockAdb)
+from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
+    LinuxMockPlatform, MockAdb
 from tests.crossbench.runner.helper import MockRun, MockRunner
 
 if TYPE_CHECKING:

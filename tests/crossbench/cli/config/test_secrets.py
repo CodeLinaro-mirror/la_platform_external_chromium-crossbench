@@ -10,9 +10,8 @@ import unittest
 
 import hjson
 
-from crossbench.cli.config.secrets import (CycledUsernamePassword,
-                                           GoogleUsernamePassword, Secrets,
-                                           ServiceAccount, UsernamePassword)
+from crossbench.cli.config.secrets import CycledUsernamePassword, \
+    GoogleUsernamePassword, Secrets, ServiceAccount, UsernamePassword
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 

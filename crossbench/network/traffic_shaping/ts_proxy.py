@@ -15,8 +15,8 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import (IO, TYPE_CHECKING, Final, Iterator, Optional, Self, Type,
-                    TypeVar)
+from typing import IO, TYPE_CHECKING, Final, Iterator, Optional, Self, Type, \
+    TypeVar
 
 from typing_extensions import override
 

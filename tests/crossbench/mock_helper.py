@@ -11,8 +11,8 @@ import functools
 import pathlib
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping,
-                    MutableMapping, Optional, Sequence)
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, \
+    MutableMapping, Optional, Sequence
 
 import psutil
 from typing_extensions import override

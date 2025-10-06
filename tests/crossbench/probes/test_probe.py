@@ -7,11 +7,9 @@ import inspect
 
 import crossbench.path as pth
 from crossbench.cli.config.probe_list import ProbeListConfig
-from crossbench.probes.all import (CONFIGURABLE_INTERNAL_PROBES,
-                                   DEFAULT_INTERNAL_PROBES,
-                                   GENERAL_PURPOSE_PROBES, INTERNAL_PROBES,
-                                   NON_CONFIGURABLE_INTERNAL_PROBES,
-                                   OPTIONAL_INTERNAL_PROBES)
+from crossbench.probes.all import CONFIGURABLE_INTERNAL_PROBES, \
+    DEFAULT_INTERNAL_PROBES, GENERAL_PURPOSE_PROBES, INTERNAL_PROBES, \
+    NON_CONFIGURABLE_INTERNAL_PROBES, OPTIONAL_INTERNAL_PROBES
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
 from crossbench.probes.chromium_pgo import ChromiumPgoProbe
 from crossbench.probes.chromium_probe import ChromiumProbe
@@ -47,8 +45,8 @@ from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 from tests import test_helper
-from tests.crossbench.base import (CrossbenchConfigTestMixin,
-                                   CrossbenchFakeFsTestCase)
+from tests.crossbench.base import CrossbenchConfigTestMixin, \
+    CrossbenchFakeFsTestCase
 
 
 class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):

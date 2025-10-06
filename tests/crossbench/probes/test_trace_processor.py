@@ -16,8 +16,8 @@ from crossbench.probes.all import TraceProcessorProbe
 from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorQueryConfig
 from tests import test_helper
-from tests.crossbench.base import (BaseCrossbenchTestCase,
-                                   CrossbenchFakeFsTestCase)
+from tests.crossbench.base import BaseCrossbenchTestCase, \
+    CrossbenchFakeFsTestCase
 
 
 def read_query_sql(name: str) -> str:

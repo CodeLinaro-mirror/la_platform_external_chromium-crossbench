@@ -13,15 +13,14 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.settings import Settings
-from crossbench.env.runner_env import (EnvConfig, RunnerEnv, ValidationError,
-                                       ValidationMode)
+from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationError, \
+    ValidationMode
 from crossbench.helper import url_helper
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_browser import MockSafari
-from tests.crossbench.mock_helper import (LinuxMockPlatform, MacOsMockPlatform,
-                                          MockPlatform,
-                                          RemoteLinuxMockPlatform)
+from tests.crossbench.mock_helper import LinuxMockPlatform, \
+    MacOsMockPlatform, MockPlatform, RemoteLinuxMockPlatform
 
 
 class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):

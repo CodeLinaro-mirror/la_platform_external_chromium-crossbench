@@ -11,8 +11,8 @@ from unittest import mock
 
 from crossbench import path as pth
 from crossbench.browsers.chromium.base import ChromiumBaseMixin
-from crossbench.browsers.chromium.webdriver import (
-    ChromiumWebDriver, LocalChromiumWebDriverAndroid)
+from crossbench.browsers.chromium.webdriver import ChromiumWebDriver, \
+    LocalChromiumWebDriverAndroid
 from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
 from crossbench.browsers.settings import Settings

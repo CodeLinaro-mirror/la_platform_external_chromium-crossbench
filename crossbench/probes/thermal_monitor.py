@@ -14,8 +14,8 @@ from typing import TYPE_CHECKING, ClassVar, Iterable, Optional
 from typing_extensions import override
 
 from crossbench.helper.wait import WaitRange
-from crossbench.probes.internal.base import (InternalJsonResultProbe,
-                                             InternalJsonResultProbeContext)
+from crossbench.probes.internal.base import InternalJsonResultProbe, \
+    InternalJsonResultProbeContext
 from crossbench.probes.probe import ProbeIncompatibleBrowser
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 

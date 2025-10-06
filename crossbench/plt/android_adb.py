@@ -29,8 +29,8 @@ from crossbench.plt.device_info import DeviceInfo
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import PosixVersion, RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
-from protoc import (activitymanagerservice_pb2, battery_pb2, enums_pb2,
-                    windowmanagerservice_pb2)
+from protoc import activitymanagerservice_pb2, battery_pb2, enums_pb2, \
+    windowmanagerservice_pb2
 
 if TYPE_CHECKING:
   import subprocess

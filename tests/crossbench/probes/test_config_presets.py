@@ -11,10 +11,9 @@ from pyfakefs import fake_filesystem_unittest
 import crossbench.config
 import crossbench.path
 from crossbench import plt
-from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
-                                            LoadLine1TabletDebugBenchmark,
-                                            LoadLine2TabletBenchmark,
-                                            LoadLine2TabletDebugBenchmark)
+from crossbench.benchmarks.loadline import LoadLine1TabletBenchmark, \
+    LoadLine1TabletDebugBenchmark, LoadLine2TabletBenchmark, \
+    LoadLine2TabletDebugBenchmark
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder import default_chromium_candidates

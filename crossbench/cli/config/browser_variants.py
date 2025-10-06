@@ -9,8 +9,8 @@ import argparse
 import contextlib
 import dataclasses
 import logging
-from typing import (TYPE_CHECKING, Any, Final, Iterator, Mapping, Optional,
-                    Self, Sequence, Set, TextIO, Type)
+from typing import TYPE_CHECKING, Any, Final, Iterator, Mapping, Optional, \
+    Self, Sequence, Set, TextIO, Type
 
 from typing_extensions import override
 
@@ -26,8 +26,8 @@ from crossbench.browsers.settings import Settings
 from crossbench.browsers.webkit.downloader import WebKitDownloader
 from crossbench.cli.config.browser import SUPPORTED_EMBEDDER, BrowserConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
-from crossbench.cli.config.flags import (DEFAULT_LABEL, FlagsConfig,
-                                         FlagsGroupConfig, FlagsVariantConfig)
+from crossbench.cli.config.flags import DEFAULT_LABEL, FlagsConfig, \
+    FlagsGroupConfig, FlagsVariantConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError
 from crossbench.flags.base import Flags

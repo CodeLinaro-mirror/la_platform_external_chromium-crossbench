@@ -11,8 +11,8 @@ from typing import Any, Self
 from typing_extensions import override
 
 from crossbench import exception
-from crossbench.benchmarks.loading.config.blocks import (ActionBlock,
-                                                         ActionBlockListConfig)
+from crossbench.benchmarks.loading.config.blocks import ActionBlock, \
+    ActionBlockListConfig
 from crossbench.config import ConfigObject
 from crossbench.parse import ObjectParser
 

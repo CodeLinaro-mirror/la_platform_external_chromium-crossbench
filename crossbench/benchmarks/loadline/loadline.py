@@ -16,8 +16,8 @@ from typing_extensions import override
 from crossbench.benchmarks.base import RegexFilter
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
-from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
-                                                             LoadingPageFilter)
+from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
+    LoadingPageFilter
 from crossbench.probes.probe import Probe, ProbePriority
 from crossbench.probes.results import LocalProbeResult
 from crossbench.probes.trace_processor.trace_processor import \

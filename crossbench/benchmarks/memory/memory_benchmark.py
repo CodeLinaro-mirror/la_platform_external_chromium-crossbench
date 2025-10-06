@@ -7,8 +7,8 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-from typing import (TYPE_CHECKING, Any, ClassVar, Final, MutableMapping,
-                    Optional, Sequence, Type)
+from typing import TYPE_CHECKING, Any, ClassVar, Final, MutableMapping, \
+    Optional, Sequence, Type
 
 import selenium.common.exceptions
 import urllib3.exceptions

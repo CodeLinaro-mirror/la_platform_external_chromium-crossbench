@@ -9,19 +9,16 @@ from unittest import mock
 
 from typing_extensions import override
 
-from crossbench.helper.path_finder import (ChromiumBuildBinaryFinder,
-                                           ChromiumCheckoutFinder,
-                                           TraceboxFinder, TraceconvFinder,
-                                           TraceProcessorFinder,
-                                           V8CheckoutFinder, V8ToolsFinder,
-                                           WprCloudBinary, WprGoFinder)
+from crossbench.helper.path_finder import ChromiumBuildBinaryFinder, \
+    ChromiumCheckoutFinder, TraceboxFinder, TraceconvFinder, \
+    TraceProcessorFinder, V8CheckoutFinder, V8ToolsFinder, WprCloudBinary, \
+    WprGoFinder
 from crossbench.plt import PLATFORM
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
-from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
-                                          ChromeOsSshMockPlatform,
-                                          LinuxMockPlatform, MacOsMockPlatform,
-                                          MockAdb, ShResult, WinMockPlatform)
+from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
+    ChromeOsSshMockPlatform, LinuxMockPlatform, MacOsMockPlatform, MockAdb, \
+    ShResult, WinMockPlatform
 
 
 class BaseCheckoutTestCase(BaseCrossbenchTestCase):

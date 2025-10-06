@@ -30,10 +30,8 @@ from tests import test_helper
 from tests.crossbench.mock_browser import MockChromeDev
 from tests.crossbench.mock_helper import MockBenchmark
 from tests.crossbench.mock_helper import MockPlatform as FullMockPlatform
-from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockBrowser,
-                                            MockPlatform, MockProbe,
-                                            MockProbeContext, MockRun,
-                                            MockRunner)
+from tests.crossbench.runner.helper import BaseRunnerTestCase, MockBrowser, \
+    MockPlatform, MockProbe, MockProbeContext, MockRun, MockRunner
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser

@@ -9,8 +9,8 @@ import pathlib
 
 from typing_extensions import override
 
-from crossbench.browsers.webkit.downloader import (WebKitDownloader,
-                                                   WebKitDownloaderMacOS)
+from crossbench.browsers.webkit.downloader import WebKitDownloader, \
+    WebKitDownloaderMacOS
 from tests import test_helper
 from tests.crossbench.browsers.downloader_helper import \
     AbstractDownloaderTestCase

@@ -18,8 +18,8 @@ from crossbench.helper.version import VersionParseError
 from crossbench.plt.win import WinVersion
 from tests import test_helper
 from tests.crossbench.mock_helper import WinMockPlatform
-from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
-                                         BaseMockPlatformTestCase)
+from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
+    BaseMockPlatformTestCase
 
 if TYPE_CHECKING:
   from crossbench import path as pth

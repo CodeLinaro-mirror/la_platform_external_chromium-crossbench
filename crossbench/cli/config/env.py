@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import datetime as dt
 import enum
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Optional, Self,
-                    TypeAlias)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Self, \
+    TypeAlias
 
 from typing_extensions import override
 

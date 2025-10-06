@@ -20,9 +20,9 @@ from tests.crossbench.benchmarks import helper
 
 if TYPE_CHECKING:
   from crossbench.action_runner.config import ActionRunnerConfig
-  from crossbench.benchmarks.jetstream.jetstream_2 import (
-      JetStream2Benchmark, JetStream2Probe, JetStream2ProbeContext,
-      JetStream2Story)
+  from crossbench.benchmarks.jetstream.jetstream_2 import \
+      JetStream2Benchmark, JetStream2Probe, JetStream2ProbeContext, \
+      JetStream2Story
 
 
 class JetStream2BaseTestCase(

@@ -10,8 +10,8 @@ import unittest
 from typing_extensions import override
 
 from crossbench import plt
-from crossbench.plt.signals import (LinuxSignals, MacOSSignals, PosixBaseSignal,
-                                    PosixSignals, WinSignals)
+from crossbench.plt.signals import LinuxSignals, MacOSSignals, \
+    PosixBaseSignal, PosixSignals, WinSignals
 from tests import test_helper
 
 

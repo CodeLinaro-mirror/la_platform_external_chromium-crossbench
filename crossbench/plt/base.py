@@ -23,8 +23,8 @@ import sys
 import tempfile
 import urllib.error
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Final, Generator, Iterable,
-                    Iterator, Mapping, Optional, Sequence, Type)
+from typing import TYPE_CHECKING, Any, Callable, Final, Generator, Iterable, \
+    Iterator, Mapping, Optional, Sequence, Type
 
 import google.cloud.storage as gcloud_storage
 import psutil
@@ -36,8 +36,8 @@ from crossbench.parse import ObjectParser
 from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
-from crossbench.plt.port_manager import (LocalPortManager, PortManager,
-                                         PortScope)
+from crossbench.plt.port_manager import LocalPortManager, PortManager, \
+    PortScope
 from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:

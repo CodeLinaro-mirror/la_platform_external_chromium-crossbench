@@ -7,12 +7,12 @@ import json
 import unittest
 
 from crossbench.browsers.settings import Settings
-from crossbench.probes.thermal_monitor import (ThermalMonitorProbe,
-                                               ThermalStatus)
+from crossbench.probes.thermal_monitor import ThermalMonitorProbe, \
+    ThermalStatus
 from tests import test_helper
 from tests.crossbench.mock_browser import MockChromeAndroidStable
-from tests.crossbench.mock_helper import (AndroidAdbMockPlatform, MockAdb,
-                                          ShResult)
+from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb, \
+    ShResult
 from tests.crossbench.runner.helper import BaseRunnerTestCase
 
 

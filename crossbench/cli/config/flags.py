@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import functools
 import logging
-from typing import (TYPE_CHECKING, Any, Final, Iterable, Optional, Self,
-                    Sequence, Set, Type)
+from typing import TYPE_CHECKING, Any, Final, Iterable, Optional, Self, \
+    Sequence, Set, Type
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet

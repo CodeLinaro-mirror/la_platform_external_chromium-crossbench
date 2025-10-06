@@ -7,8 +7,8 @@ from __future__ import annotations
 import datetime as dt
 import unittest
 
-from crossbench.action_runner.action.action import (ACTION_TIMEOUT, ACTIONS,
-                                                    Action)
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, ACTIONS, \
+    Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.close_all_tabs import CloseAllTabsAction
@@ -20,9 +20,8 @@ from crossbench.action_runner.action.inject_new_document_script import \
     InjectNewDocumentScriptAction
 from crossbench.action_runner.action.js import JsAction
 from crossbench.action_runner.action.meminfo import MeminfoAction
-from crossbench.action_runner.action.position import (CoordinatesConfig,
-                                                      PositionConfig,
-                                                      SelectorConfig)
+from crossbench.action_runner.action.position import CoordinatesConfig, \
+    PositionConfig, SelectorConfig
 from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.action_runner.action.screenshot import ScreenshotAction
 from crossbench.action_runner.action.scroll import ScrollAction

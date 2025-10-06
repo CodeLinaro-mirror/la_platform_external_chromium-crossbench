@@ -16,8 +16,8 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.safari.safari import Safari
-from crossbench.cli.config.browser import (ENV_PRESETS, NETWORK_PRESETS,
-                                           BrowserConfig)
+from crossbench.cli.config.browser import ENV_PRESETS, NETWORK_PRESETS, \
+    BrowserConfig
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS
@@ -27,11 +27,9 @@ from crossbench.exception import MultiException
 from crossbench.helper.cwd import change_cwd
 from tests import test_helper
 from tests.crossbench import mock_browser
-from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
-                                              ADB_DEVICES_SINGLE_OUTPUT,
-                                              XCTRACE_DEVICES_OUTPUT,
-                                              XCTRACE_DEVICES_SINGLE_OUTPUT,
-                                              BaseConfigTestCase)
+from tests.crossbench.cli.config.base import ADB_DEVICES_OUTPUT, \
+    ADB_DEVICES_SINGLE_OUTPUT, XCTRACE_DEVICES_OUTPUT, \
+    XCTRACE_DEVICES_SINGLE_OUTPUT, BaseConfigTestCase
 from tests.crossbench.mock_helper import ShResult
 
 if TYPE_CHECKING:

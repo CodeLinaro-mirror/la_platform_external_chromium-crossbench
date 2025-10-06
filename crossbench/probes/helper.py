@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import csv
-from typing import (TYPE_CHECKING, Any, Callable, Final, Mapping, Optional,
-                    Sequence, Set)
+from typing import TYPE_CHECKING, Any, Callable, Final, Mapping, Optional, \
+    Sequence, Set
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath

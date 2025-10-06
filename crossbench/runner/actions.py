@@ -9,8 +9,8 @@ import datetime as dt
 import logging
 import sys
 import time as py_time
-from typing import (TYPE_CHECKING, Any, Callable, Iterator, Optional, Self,
-                    Sequence, Type)
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Self, \
+    Sequence, Type
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.cli import ui

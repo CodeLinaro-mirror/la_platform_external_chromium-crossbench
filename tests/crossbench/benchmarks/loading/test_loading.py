@@ -19,12 +19,12 @@ from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.google import GOOGLE_LOGIN_URL
-from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
-                                                             LoadingPageFilter)
+from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
+    LoadingPageFilter
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loading.page.interactive import InteractivePage
-from crossbench.benchmarks.loading.page.live import (PAGE_LIST,
-                                                     PAGE_LIST_SMALL, LivePage)
+from crossbench.benchmarks.loading.page.live import PAGE_LIST, \
+    PAGE_LIST_SMALL, LivePage
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController

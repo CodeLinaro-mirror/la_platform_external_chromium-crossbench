@@ -11,14 +11,13 @@ from typing import ClassVar, cast
 from typing_extensions import override
 
 from crossbench.browsers.chrome.version import ChromeVersion
-from crossbench.browsers.chromium.version import (ChromeDriverVersion,
-                                                  ChromiumVersion)
+from crossbench.browsers.chromium.version import ChromeDriverVersion, \
+    ChromiumVersion
 from crossbench.browsers.d8.version import D8Version
 from crossbench.browsers.firefox.version import FirefoxVersion
 from crossbench.browsers.safari.version import SafariVersion
-from crossbench.browsers.version import (BrowserVersion, BrowserVersionChannel,
-                                         PartialBrowserVersionError,
-                                         UnknownBrowserVersion)
+from crossbench.browsers.version import BrowserVersion, \
+    BrowserVersionChannel, PartialBrowserVersionError, UnknownBrowserVersion
 from crossbench.helper.version import VersionParseError
 from tests import test_helper
 

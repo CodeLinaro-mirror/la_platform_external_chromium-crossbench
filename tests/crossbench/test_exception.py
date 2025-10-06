@@ -9,9 +9,8 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from unittest import mock
 
-from crossbench.exception import (ArgumentTypeMultiException, Entry,
-                                  ExceptionAnnotator, MultiException, annotate,
-                                  annotate_argparsing)
+from crossbench.exception import ArgumentTypeMultiException, Entry, \
+    ExceptionAnnotator, MultiException, annotate, annotate_argparsing
 from tests import test_helper
 
 if TYPE_CHECKING:

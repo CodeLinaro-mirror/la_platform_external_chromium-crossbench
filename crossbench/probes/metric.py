@@ -8,8 +8,8 @@ import json
 import logging
 import statistics
 from math import floor, log10
-from typing import (TYPE_CHECKING, Any, Callable, Iterable, Optional, Sequence,
-                    Set)
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, \
+    Sequence, Set
 
 from crossbench.probes import helper
 

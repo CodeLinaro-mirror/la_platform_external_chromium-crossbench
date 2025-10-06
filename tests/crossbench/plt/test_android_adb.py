@@ -14,8 +14,8 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.helper.version import VersionParseError
-from crossbench.plt.android_adb import (Adb, AndroidAdbPlatform,
-                                        AndroidDeviceInfo, AndroidVersion)
+from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, \
+    AndroidDeviceInfo, AndroidVersion
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.port_manager import PortForwardException
 from crossbench.plt.process_meminfo import ProcessMeminfo

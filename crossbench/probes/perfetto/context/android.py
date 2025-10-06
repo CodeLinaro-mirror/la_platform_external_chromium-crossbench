@@ -10,8 +10,8 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.plt.android_adb import AndroidAdbPlatform
-from crossbench.probes.perfetto.constants import (PERFETTO_CONFIG_NAME,
-                                                  PERFETTO_TRACE_NAME)
+from crossbench.probes.perfetto.constants import PERFETTO_CONFIG_NAME, \
+    PERFETTO_TRACE_NAME
 from crossbench.probes.perfetto.context.base import PerfettoProbeContext
 
 PERFETTO_CONFIG_REMOTE_DIR_ANDROID: Final = pth.AnyPath(

@@ -12,8 +12,8 @@ from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.browsers.settings import Settings
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
-from crossbench.probes.downloads import (DownloadsProbe,
-                                         FileWatchDownloadsProbeContext)
+from crossbench.probes.downloads import DownloadsProbe, \
+    FileWatchDownloadsProbeContext
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.meminfo import MeminfoProbe
 from crossbench.probes.screenshot import ScreenshotProbe

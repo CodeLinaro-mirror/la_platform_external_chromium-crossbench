@@ -9,15 +9,14 @@ import argparse
 import hjson
 
 from crossbench import plt
-from crossbench.cli.config.driver import (AmbiguousDriverIdentifier,
-                                          DriverConfig)
+from crossbench.cli.config.driver import AmbiguousDriverIdentifier, \
+    DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from tests import test_helper
-from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
-                                              XCTRACE_DEVICES_SINGLE_OUTPUT,
-                                              BaseConfigTestCase)
+from tests.crossbench.cli.config.base import ADB_DEVICES_OUTPUT, \
+    XCTRACE_DEVICES_SINGLE_OUTPUT, BaseConfigTestCase
 
 
 class DriverConfigTestCase(BaseConfigTestCase):

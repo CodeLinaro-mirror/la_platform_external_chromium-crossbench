@@ -12,15 +12,15 @@ from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
 from crossbench.helper.version import VersionParseError
-from crossbench.plt.linux import (SCRIPTS_DIR, LinuxPlatform,
-                                  parse_display_xrandr)
+from crossbench.plt.linux import SCRIPTS_DIR, LinuxPlatform, \
+    parse_display_xrandr
 from crossbench.plt.posix import PosixVersion
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
-from tests.crossbench.mock_helper import (LinuxMockPlatform, MockPlatform,
-                                          RemoteLinuxMockPlatform, ShResult)
-from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
-                                         BasePosixMockPlatformTestCase)
+from tests.crossbench.mock_helper import LinuxMockPlatform, MockPlatform, \
+    RemoteLinuxMockPlatform, ShResult
+from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
+    BasePosixMockPlatformTestCase
 
 NOW_EPOCH = dt.datetime.now()
 

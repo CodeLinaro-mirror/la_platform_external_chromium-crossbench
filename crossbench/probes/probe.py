@@ -7,8 +7,8 @@ from __future__ import annotations
 import abc
 import enum
 import logging
-from typing import (TYPE_CHECKING, ClassVar, Hashable, Optional, Self, Set,
-                    Type, TypeVar)
+from typing import TYPE_CHECKING, ClassVar, Hashable, Optional, Self, Set, \
+    Type, TypeVar
 
 from typing_extensions import override
 
@@ -20,8 +20,8 @@ from crossbench.probes.probe_context import ProbeContext  # noqa: TC001
 from crossbench.probes.probe_error import ProbeIncompatibleBrowser
 from crossbench.probes.probe_result_key import ProbeResultKey
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult)
+from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
+    ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes

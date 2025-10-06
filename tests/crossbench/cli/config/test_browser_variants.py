@@ -20,21 +20,17 @@ from crossbench import plt
 from crossbench.browsers.chrome.applescript import ChromeAppleScript
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.chrome.version import ChromeVersion
-from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
-                                                  ChromeWebDriverAndroid,
-                                                  ChromeWebDriverChromeOsSsh,
-                                                  ChromeWebDriverSsh,
-                                                  LocalChromeWebDriverAndroid)
+from crossbench.browsers.chrome.webdriver import ChromeWebDriver, \
+    ChromeWebDriverAndroid, ChromeWebDriverChromeOsSsh, ChromeWebDriverSsh, \
+    LocalChromeWebDriverAndroid
 from crossbench.browsers.chromium.applescript import ChromiumAppleScript
-from crossbench.browsers.chromium.webdriver import (ChromiumWebDriver,
-                                                    ChromiumWebDriverAndroid,
-                                                    ChromiumWebDriverSsh)
+from crossbench.browsers.chromium.webdriver import ChromiumWebDriver, \
+    ChromiumWebDriverAndroid, ChromiumWebDriverSsh
 from crossbench.browsers.safari.safari import Safari
 from crossbench.browsers.webkit.webdriver import WebKitWebDriver
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import (BaseBrowserVariantsConfig,
-                                                    BrowserVariantsConfig,
-                                                    BrowserVariantsConfigDict)
+from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig, \
+    BrowserVariantsConfig, BrowserVariantsConfigDict
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig
@@ -42,10 +38,10 @@ from crossbench.config import ConfigError
 from crossbench.helper.cwd import change_cwd
 from tests import test_helper
 from tests.crossbench import mock_browser
-from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
-                                              BaseConfigTestCase)
-from tests.crossbench.mock_helper import (AndroidAdbMockPlatform, MockAdb,
-                                          ShResult)
+from tests.crossbench.cli.config.base import ADB_DEVICES_SINGLE_OUTPUT, \
+    BaseConfigTestCase
+from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb, \
+    ShResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser

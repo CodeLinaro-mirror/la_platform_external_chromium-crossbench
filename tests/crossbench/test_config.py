@@ -16,8 +16,8 @@ from unittest import mock
 from immutabledict import immutabledict
 from typing_extensions import override
 
-from crossbench.config import (ConfigEnum, ConfigObject, ConfigParser,
-                               UnusedPropertiesMode)
+from crossbench.config import ConfigEnum, ConfigObject, ConfigParser, \
+    UnusedPropertiesMode
 from crossbench.exception import MultiException
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.str_enum_with_help import StrEnumWithHelp

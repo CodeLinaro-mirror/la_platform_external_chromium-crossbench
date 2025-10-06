@@ -13,8 +13,8 @@ from typing_extensions import override
 from crossbench import config
 from crossbench import path as pth
 from crossbench.benchmarks.loading.page.combined import CombinedPage
-from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
-                                                     LoadLineProbe)
+from crossbench.benchmarks.loadline.loadline import LoadLineBenchmark, \
+    LoadLineProbe
 from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:

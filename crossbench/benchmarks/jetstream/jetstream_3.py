@@ -7,9 +7,8 @@ from __future__ import annotations
 import abc
 from typing import ClassVar, Type
 
-from crossbench.benchmarks.jetstream.jetstream_2 import (
-    JetStream2Benchmark, JetStream2Probe, JetStream2ProbeContext,
-    JetStream2Story)
+from crossbench.benchmarks.jetstream.jetstream_2 import JetStream2Benchmark, \
+    JetStream2Probe, JetStream2ProbeContext, JetStream2Story
 
 
 # TODO: introduce JetStreamProbe

@@ -10,8 +10,8 @@ import json
 import logging
 import re
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Generic, Optional,
-                    Type, TypeVar)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Optional, \
+    Type, TypeVar
 
 import xlsxwriter
 from tabulate import tabulate
@@ -19,8 +19,8 @@ from typing_extensions import Final, override
 from xlsxwriter.utility import xl_rowcol_to_cell
 
 from crossbench.probes import helper
-from crossbench.probes.metric import (CSVFormatter, MetricsMerger,
-                                      metric_geomean)
+from crossbench.probes.metric import CSVFormatter, MetricsMerger, \
+    metric_geomean
 from crossbench.probes.probe import Probe
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError

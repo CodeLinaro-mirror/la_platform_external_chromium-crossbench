@@ -16,9 +16,8 @@ import json
 import logging
 import re
 import textwrap
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Optional, Self, Sequence, Set, Type, TypeAlias,
-                    TypeVar, cast)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic, \
+    Iterable, Optional, Self, Sequence, Set, Type, TypeAlias, TypeVar, cast
 
 import tabulate
 from typing_extensions import override

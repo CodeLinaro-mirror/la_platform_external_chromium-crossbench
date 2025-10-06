@@ -9,8 +9,8 @@ import datetime as dt
 import functools
 import os
 import re
-from typing import (TYPE_CHECKING, Any, ClassVar, Final, Iterator, Optional,
-                    Type)
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterator, Optional, \
+    Type
 
 from typing_extensions import override
 

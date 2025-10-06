@@ -11,8 +11,8 @@ import datetime as dt
 import functools
 import logging
 import re
-from typing import (TYPE_CHECKING, Any, ClassVar, Final, Mapping, Optional,
-                    Self, Sequence, Type)
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Optional, \
+    Self, Sequence, Type
 
 from typing_extensions import override
 

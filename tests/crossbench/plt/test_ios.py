@@ -13,9 +13,8 @@ from crossbench import path as pth
 from crossbench.plt.ios import IOSPlatform
 from crossbench.plt.version import PlatformVersion
 from tests import test_helper
-from tests.crossbench.cli.config.base import (XCTRACE_DEVICES_NONE_OUTPUT,
-                                              XCTRACE_DEVICES_OUTPUT,
-                                              XCTRACE_DEVICES_SINGLE_OUTPUT)
+from tests.crossbench.cli.config.base import XCTRACE_DEVICES_NONE_OUTPUT, \
+    XCTRACE_DEVICES_OUTPUT, XCTRACE_DEVICES_SINGLE_OUTPUT
 from tests.crossbench.mock_helper import MacOsMockPlatform, ShResult
 from tests.crossbench.plt.helper import BaseMockPlatformTestCase
 

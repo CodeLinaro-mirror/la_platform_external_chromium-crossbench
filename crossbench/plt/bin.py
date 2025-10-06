@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import functools
-from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Optional,
-                    TypeAlias)
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, \
+    TypeAlias
 
 from typing_extensions import override
 
