@@ -3,6 +3,19 @@
 // found in the LICENSE file.
 
 if (window.location.href === 'https://www.google.com/search?q=cats') {
+  function onFrameRendered(callback) {
+    // The first rAF requests a frame to be rendered. When it's done, the
+    // second rAF is called. So the callback is invoked when the first frame
+    // has been rendered.
+    // This is a poor approximation of when the frame is actually shown on the
+    // device screen, since it ignores all work beyond Renderer process
+    // (GPU process/surfaceflinger). But it's the best we can do using pure
+    // WebAPI.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(callback);
+    });
+  }
+
   const searchbox_observer = new MutationObserver(mutations => {
     const searchbox = document.querySelector('textarea');
 
@@ -20,6 +33,9 @@ if (window.location.href === 'https://www.google.com/search?q=cats') {
               phone_suggestions.childElementCount > 0)) {
         suggestions_observer.disconnect();
         performance.mark('LoadLine2/google_search_result/interactive');
+        onFrameRendered(() => {
+          performance.mark('LoadLine2/google_search_result/interactive_raf');
+        });
       }
     });
     suggestions_observer.observe(document, {childList: true, subtree: true});
@@ -32,6 +48,9 @@ if (window.location.href === 'https://www.google.com/search?q=cats') {
     if (document.querySelector('.a-no-hover-decoration')) {
       performance.mark('LoadLine2/google_search_result/visual');
       overview_observer.disconnect();
+      onFrameRendered(() => {
+        performance.mark('LoadLine2/google_search_result/visual_raf');
+      });
     }
   });
 

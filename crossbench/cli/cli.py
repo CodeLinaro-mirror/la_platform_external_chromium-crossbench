@@ -145,6 +145,8 @@ class CrossBenchCLI:
       benchmarks.LoadLine2PhoneDebugBenchmark,
       benchmarks.LoadLine2TabletBenchmark,
       benchmarks.LoadLine2TabletDebugBenchmark,
+      benchmarks.LoadLine2WebApiPhoneBenchmark,
+      benchmarks.LoadLine2WebApiPhoneDebugBenchmark,
       # Manual:
       benchmarks.ManualBenchmark,
       # Memory:
