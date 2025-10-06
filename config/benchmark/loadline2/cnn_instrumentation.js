@@ -23,7 +23,7 @@ if (window.location.href ===
     });
   }
 
-const button_observer = new MutationObserver(mutations => {
+  const button_observer = new MutationObserver(mutations => {
     const button = document.getElementById(button_id);
 
     if (!button) {
