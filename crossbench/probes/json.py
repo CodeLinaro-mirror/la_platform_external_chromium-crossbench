@@ -48,6 +48,7 @@ LOG_SUMMARY_KEYS: Final[tuple[str, ...]] = (
     "failed runs",
 )
 
+
 class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   """
   Abstract Probe that stores a Json result extracted by the `to_json` method

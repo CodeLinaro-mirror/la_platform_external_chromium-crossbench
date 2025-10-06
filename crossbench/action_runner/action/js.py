@@ -25,6 +25,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
+
 class JsAction(Action):
   TYPE: ClassVar[ActionType] = ActionType.JS
 

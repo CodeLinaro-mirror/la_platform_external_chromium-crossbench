@@ -46,7 +46,6 @@ if TYPE_CHECKING:
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
-
 # Android is high-tech and reads chrome flags from an app-specific file.
 # TODO: extend support to more than just chrome.
 _FLAG_ROOT: pth.AnyPosixPath = pth.AnyPosixPath("/data/local/tmp/")

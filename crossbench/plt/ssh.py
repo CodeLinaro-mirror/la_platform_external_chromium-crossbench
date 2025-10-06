@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 class SshPortManager(PortManager):
   pass
 
+
 class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
 
   def __init__(self, host_platform: Platform, host: str, port: int,

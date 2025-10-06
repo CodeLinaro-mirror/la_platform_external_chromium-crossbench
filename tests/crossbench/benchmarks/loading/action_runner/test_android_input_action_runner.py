@@ -202,7 +202,6 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(text_input_action)
     self.assertFalse(self.runner.mock_waits)
 
-
   def test_text_input_non_zero_duration(self):
     text_input_action = TextInputAction(InputSource.KEYBOARD,
                                         dt.timedelta(seconds=1), "aaa")

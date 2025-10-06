@@ -87,9 +87,11 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
     yield DumpHtmlProbe()
     yield DumpHeapProbe()
     yield FrequencyProbe.parse_dict({})
-    yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"),
-                        pth.LocalPath("tracebox.bin"),
-                        trace_browser_startup=False)
+    yield PerfettoProbe(
+        "textproto",
+        pth.LocalPath("perfetto.bin"),
+        pth.LocalPath("tracebox.bin"),
+        trace_browser_startup=False)
     yield PerformanceEntriesProbe()
     yield PowerMetricsProbe()
     yield PowerSamplerProbe()
@@ -239,6 +241,7 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
           self.assertEqual(probe_cls.PRIORITY, ProbePriority.TRACE_PROCESSOR)
         else:
           self.assertEqual(probe_cls.PRIORITY, ProbePriority.USER)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

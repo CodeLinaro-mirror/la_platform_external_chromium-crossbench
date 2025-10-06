@@ -68,7 +68,6 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(driver_3.path, chromedriver_path)
     self.assertEqual(driver, driver_3)
 
-
   def test_parse_driver_path_unresolved(self):
     chromedriver_path = self.out_dir / "chromedriver"
     expected_chromedriver_path = r".*\/chromedriver"
@@ -256,6 +255,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     assert isinstance(config, DriverConfig)
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.bundletool, bundletool)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

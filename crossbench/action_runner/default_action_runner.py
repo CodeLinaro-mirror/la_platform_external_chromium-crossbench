@@ -238,6 +238,7 @@ class DefaultActionRunner(ActionRunner):
         scroll_into_view=scroll_into_view,
         check_element_rect=check_element_rect,
         return_on_success=True)
+
     # TODO: if check_element_rect, we should wait for the position to be the
     # same
 

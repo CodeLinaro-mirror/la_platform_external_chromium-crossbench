@@ -391,7 +391,6 @@ class MemoryBenchmark(SubStoryBenchmark):
   def intensive_tab_switch_count(self) -> int:
     return self._intensive_tab_switch_count
 
-
   @classmethod
   @override
   def describe(cls) -> dict[str, Any]:

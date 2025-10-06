@@ -219,7 +219,6 @@ class MockProbe(Probe):
     return self.context_cls
 
 
-
 class MockProbeContext(ProbeContext):
 
   def start(self) -> None:

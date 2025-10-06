@@ -32,6 +32,7 @@ EMBEDDER_SHORT_NAME_TO_PACKAGE: Final[immutabledict[str, str]] = immutabledict({
 
 
 class WebviewEmbedder(Webview):
+
   @override
   def start(self, session: BrowserSessionRunGroup) -> None:
     # Start is a no-op. Embedder activity will be started by the Benchmark.
@@ -82,9 +83,8 @@ class WebviewEmbedder(Webview):
     options.add_experimental_option("androidPackage", self.android_package)
     session_benchmark = cast("EmbedderBenchmark", session.benchmark)
     if process_name := session_benchmark.embedder_process_name:
-      options.add_experimental_option(
-          "androidProcess",
-          f"{self.android_package}:{process_name}")
+      options.add_experimental_option("androidProcess",
+                                      f"{self.android_package}:{process_name}")
     options.add_experimental_option("androidUseRunningApp", True)
     return options
 

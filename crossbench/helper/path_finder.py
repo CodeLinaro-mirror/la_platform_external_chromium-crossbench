@@ -287,7 +287,10 @@ class BaseChromiumPathFinder(BasePathFinder, metaclass=abc.ABCMeta):
   def candidates(self) -> tuple[pth.AnyPath, ...]:
     relative_path = chromium_src_relative_local_path() / self.chrome_path()
     if maybe_chrome := ChromiumCheckoutFinder(self._platform).path:
-      return (relative_path, maybe_chrome / self.chrome_path(),)
+      return (
+          relative_path,
+          maybe_chrome / self.chrome_path(),
+      )
     return (relative_path,)
 
 
@@ -382,7 +385,6 @@ class WprGoFinder(BaseCrossbenchPathFinder):
   @override
   def crossbench_path(cls) -> pth.AnyPath:
     return pth.AnyPath("third_party/webpagereplay/src/wpr.go")
-
 
   # Info of a prebuilt WPR binary for `browser_platform`, stored in the cloud.
   def cloud_binary(self, browser_platform: Platform) -> WprCloudBinary:

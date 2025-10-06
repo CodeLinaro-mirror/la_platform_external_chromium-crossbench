@@ -51,6 +51,7 @@ def _run_loading_test_with_probes(browser_config: str, page_config: Any,
     _run_loading_test(browser_config, page_config, test_env,
                       pathlib.Path(probe_config_file.name))
 
+
 @pytest.mark.parametrize("input_source", InputSource)
 def test_click(browser_config, input_source, test_env) -> None:
 
@@ -162,10 +163,12 @@ def test_scroll(browser_config, test_env) -> None:
                       "timeout": "1s"
                   },
                   {
-                      "action": "wait_for_condition",
+                      "action":
+                          "wait_for_condition",
                       "condition":
                           "return !!document.getElementById('yes-scroll')",
-                      "timeout": "1s"
+                      "timeout":
+                          "1s"
                   },
               ]
           }

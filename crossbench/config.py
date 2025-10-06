@@ -293,7 +293,6 @@ class ConfigArgParser:
     assert self.choices
     return [self._choices_help_text(choice.value for choice in self.choices)]
 
-
   def parse(self, config_data: dict[str, object],
             depending_kwargs: dict[str, object]) -> object:
     data = None
@@ -411,7 +410,6 @@ class ConfigArgParser:
     return ObjectParser.enum(self.name, instance_type, data, self.choices)
 
 
-
 class ConfigEnum(StrEnumWithHelp):
 
   @classmethod
@@ -420,6 +418,7 @@ class ConfigEnum(StrEnumWithHelp):
 
 
 HAS_PATH_SEPARATORS_RE: re.Pattern = re.compile(r"\/|\\")
+
 
 class ConfigObject(abc.ABC):
   """A ConfigObject is a placeholder object with parsed values from
@@ -984,8 +983,7 @@ class _TemplatedConfigParser(ConfigObject):
           raise ConfigTemplateError((
               f"Argument {repr(arg_name)} with type {type(arg_value).__name__} "
               f"can not be substituted into {repr(value)}, "
-              f"must be str/int/float"
-          ))
+              f"must be str/int/float"))
 
         value = value[:m.start()] + str(arg_value) + value[m.end():]
 
@@ -1065,6 +1063,7 @@ class UnusedPropertiesMode(enum.StrEnum):
 
 
 ConfigResultObjectT = TypeVar("ConfigResultObjectT", bound="object")
+
 
 class ConfigParser(Generic[ConfigResultObjectT]):
 

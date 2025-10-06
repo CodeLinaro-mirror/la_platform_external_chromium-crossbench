@@ -46,6 +46,7 @@ _DEFAULT_HEADERS: Final[immutabledict[str, str]] = immutabledict({
     "Cross-Origin-Embedder-Policy": "require-corp"
 })
 
+
 class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
 
   @classmethod

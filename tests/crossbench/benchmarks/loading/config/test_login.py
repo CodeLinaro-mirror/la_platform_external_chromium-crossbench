@@ -188,7 +188,6 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
     # Wait 'yes' button not present.
     self.browser.expect_js(result=1)
 
-
     self.mock_run.story_secrets = page[0].secrets
     config.pages[0].login.run_with(self.action_runner, self.mock_run, page[0])
 

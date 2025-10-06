@@ -42,6 +42,7 @@ def _parse_existing_file_path_and_resolve(value: str) -> pth.LocalPath:
   # It would be best to implement this in PathParser, e.g. crrev.com/c/6713595.
   return PathParser.json_file_path(value).resolve()
 
+
 @enum.unique
 class NetworkType(ConfigEnum):
   LIVE = ("live", "Live network.")

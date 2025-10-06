@@ -88,7 +88,6 @@ INTERNAL_PROBES: InternalProbeTuple = (
 assert DEFAULT_INTERNAL_PROBES[0] == ResultsSummaryProbe
 assert DEFAULT_INTERNAL_PROBES[1] == DurationsProbe
 
-
 # Probes that can be used on arbitrary stories and may be user configurable.
 GENERAL_PURPOSE_PROBES: tuple[Type[Probe], ...] = (
     BrowserProfilingProbe,

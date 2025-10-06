@@ -27,9 +27,9 @@ if TYPE_CHECKING:
 
   WprReplayNetworkT = TypeVar("WprReplayNetworkT", bound="WprReplayNetwork")
 
-
 # use value for pylint
 assert GS_PREFIX
+
 
 class WprReplayNetwork(ReplayNetwork):
 

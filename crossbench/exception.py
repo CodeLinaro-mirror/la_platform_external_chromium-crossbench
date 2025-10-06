@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
   from crossbench.types import JsonList
 
-
 TInfoStack = tuple[str, ...]
 
 TExceptionTypes = tuple[Type[BaseException], ...]
@@ -110,6 +109,7 @@ class ExceptionAnnotationScope:
     self._annotator.leave_pending(exception_value, self._previous_info_stack)
     # False => exception not handled
     return False
+
 
 class ExceptionAnnotator:
   """Collects exceptions with full backtraces and user-provided info stacks.
@@ -228,7 +228,8 @@ class ExceptionAnnotator:
       yield self
     self.assert_success()
 
-  def extend(self, annotator: ExceptionAnnotator,
+  def extend(self,
+             annotator: ExceptionAnnotator,
              is_nested: bool = False) -> None:
     if is_nested:
       self._extend_with_prepended_stack_info(annotator)
@@ -325,6 +326,7 @@ class ExceptionAnnotator:
 
 # Expose simpler name
 Annotator = ExceptionAnnotator
+
 
 def annotate(
     *stack_entries: str,

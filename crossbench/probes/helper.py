@@ -31,6 +31,7 @@ class Flatten:
     "b":     12,
   }
   """
+
   def __init__(self,
                *args: Mapping,
                key_fn: Optional[KeyFnType] = None,

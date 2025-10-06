@@ -74,6 +74,7 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
     for browser in self.browsers:
       self.assertFalse(browser.is_local_build)
 
+
 class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
 
   def test_is_apk_helper(self):

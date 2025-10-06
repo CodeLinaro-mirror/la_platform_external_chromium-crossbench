@@ -76,7 +76,6 @@ class LoadLine1Probe(LoadLineProbe):
     return process_breakdown(df)
 
 
-
 class LoadLine1ProbeContext(ProbeContext[LoadLine1Probe]):
 
   def start(self) -> None:

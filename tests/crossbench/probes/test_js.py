@@ -19,6 +19,7 @@ from tests.crossbench.probes.helper import GenericProbeTestCase
 JS_PROBE_EXAMPLE_CONFIG: Final = test_helper.config_dir(
 ) / "doc/probe/js.config.hjson"
 
+
 class JSProbeTestCase(GenericProbeTestCase):
 
   def test_parse_example_config(self):

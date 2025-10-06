@@ -198,8 +198,8 @@ return [
       elif ui_selector := action.position.ui_selector:
         if use_mouse:
           raise InputSourceNotImplementedError(
-            self, action, action.input_source,
-            "Mouse actions not implemented for UiSelectorConfig")
+              self, action, action.input_source,
+              "Mouse actions not implemented for UiSelectorConfig")
         self._click_ui_selector(run, ui_selector, action.timeout)
       elif selector_config := action.position.selector:
         if selector_config.wait:
@@ -288,7 +288,6 @@ return [
     return ViewportInfo(self.raw_chrome_window_bounds, inner_height,
                         inner_width, element_rect)
 
-
   # Returns the name of the browser's main window as reported by android's
   # window manager.
   def _get_browser_window_name(self,
@@ -337,17 +336,15 @@ return [
     characters = characters.replace(" ", "%s")
     run.browser_platform.sh("input", "keyboard", "text", characters)
 
-  def _send_keyevent(self, run: Run, keyevent:str) -> None:
+  def _send_keyevent(self, run: Run, keyevent: str) -> None:
     run.browser_platform.sh("input", "keyevent", keyevent)
 
-  def _click_ui_selector(self,
-                         run: Run,
-                         ui_selector: UiSelectorConfig,
+  def _click_ui_selector(self, run: Run, ui_selector: UiSelectorConfig,
                          timeout: dt.timedelta) -> None:
     ad = cast("AndroidAdbPlatform", run.browser_platform).uiautomator_device
     selector_dict = ui_selector.to_json()
     ui_object = ad.ui(**ui_selector.to_json())
     # This verification step verifies if the element exists.
-    assert ui_object.wait.exists(timeout=timeout), (
-      f"Element with selector {selector_dict} not found")
+    assert ui_object.wait.exists(
+        timeout=timeout), (f"Element with selector {selector_dict} not found")
     ui_object.click()

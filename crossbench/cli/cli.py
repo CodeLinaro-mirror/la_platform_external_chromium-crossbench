@@ -62,6 +62,7 @@ class CrossBenchArgumentError(argparse.ArgumentError):
 
 argparse.ArgumentError = CrossBenchArgumentError  # type: ignore
 
+
 class EnableDebuggingAction(argparse.Action):
   """Custom action to set both --throw and -vvv."""
 
@@ -121,6 +122,7 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
                "--browser=out/release/chrome --probe=profiling\n\n")
     readme_file = pth.AnyPath(__file__).parents[2] / "README.md"
     file.write(f"  See {readme_file} for more details and instructions.\n")
+
 
 class CrossBenchCLI:
   BENCHMARKS: tuple[BenchmarkClass, ...] = (

@@ -136,7 +136,6 @@ class ChromiumBuildBinaryFinderTestCase(BaseCheckoutTestCase):
                                   (candidate.parent,)).path, candidate)
 
 
-
 class PerfettoToolFinderTestCase(BaseCheckoutTestCase):
 
   def test_find_traceconv(self):

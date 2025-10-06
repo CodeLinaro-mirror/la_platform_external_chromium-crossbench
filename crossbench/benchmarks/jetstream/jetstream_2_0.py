@@ -15,6 +15,7 @@ from crossbench.benchmarks.jetstream.jetstream_2 import (
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
 
+
 class JetStream20Probe(JetStream2Probe):
   __doc__ = JetStream2Probe.__doc__
   NAME: ClassVar[str] = "jetstream_2.0"

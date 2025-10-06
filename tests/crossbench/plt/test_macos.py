@@ -107,7 +107,8 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
               "CFBundleShortVersionString": "129.9.6668.103",
               # CFBundleDisplayName is missing but CFBundleName is there.
               "CFBundleName": "Google Chrome",
-          }, f)
+          },
+          f)
     self.assertEqual(
         self.platform.app_version(app_path), "Google Chrome 129.9.6668.103")
 
@@ -186,7 +187,6 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertEqual(version.parts, (15, 6, 7))
     self.assertEqual(version.version_str, "15.6.7")
 
-
   def test_display_details(self):
     system_profiler_output = textwrap.dedent("""{
         "SPDisplaysDataType" : [
@@ -263,7 +263,6 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertEqual(version.version_str, "12.3.4")
     with self.assertRaises(VersionParseError):
       MacOsVersion.parse("foo")
-
 
 
 if __name__ == "__main__":

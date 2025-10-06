@@ -32,7 +32,6 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-
 class WebPageReplayProbe(Probe):
   """
   Probe to collect browser requests to wpr.go archive which then can be

@@ -361,8 +361,7 @@ class ConfigParserTestCase(unittest.TestCase):
   def test_has_any_args(self):
     config_parser = CustomConfigObjectToArgumentValue.config_parser()
     self.assertTrue(config_parser.has_any_args({"name": "a name"}))
-    self.assertTrue(
-        config_parser.has_any_args({"name_alias": "a name"}))
+    self.assertTrue(config_parser.has_any_args({"name_alias": "a name"}))
     self.assertTrue(config_parser.has_any_args({"integer": 1}))
     self.assertFalse(config_parser.has_any_args({"invalid": 1}))
 
@@ -412,7 +411,6 @@ class ConfigParserTestCase(unittest.TestCase):
     config_parser.add_default_argument("str_value", type=str)
     obj = config_parser.parse("custom string")
     self.assertEqual(obj.str_value, "custom string")
-
 
 
 class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
@@ -993,13 +991,13 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_template_full_string_substitute_finishes_substitution(self):
     config = {
-      "template": {
-        "name": "$[ARG]"
-      },
-      "args": {
-        "ARG": "prefix$[ARG2]",
-        "ARG2": "name"
-      }
+        "template": {
+            "name": "$[ARG]"
+        },
+        "args": {
+            "ARG": "prefix$[ARG2]",
+            "ARG2": "name"
+        }
     }
 
     config = CustomConfigObject.parse(config)

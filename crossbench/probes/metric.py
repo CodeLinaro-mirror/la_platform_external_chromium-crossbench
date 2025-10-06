@@ -18,7 +18,6 @@ if TYPE_CHECKING:
   from crossbench.types import Json, JsonDict
 
 
-
 def is_number(value: Any) -> bool:
   return isinstance(value, (int, float))
 

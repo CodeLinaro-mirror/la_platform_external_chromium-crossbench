@@ -91,6 +91,7 @@ Total RAM: 3,486,196K (status moderate)
    Tuning: 256 (large 512), oom 322,560K, restore limit 107,520K (high-end-gfx)
 """
 
+
 class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   DEVICE_ID = "emulator-5554"
   platform: AndroidAdbPlatform
@@ -162,6 +163,7 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     platform_2 = AndroidAdbPlatform(
         self.host_platform, "SomeDeviceId", adb=self.adb)
     self.assertNotEqual(self.platform.unique_name, platform_2.unique_name)
+
 
 class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   __test__ = True
@@ -709,6 +711,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertEqual(version.version_str, "13 (Tiramisu)")
     with self.assertRaises(VersionParseError):
       AndroidVersion.parse("foo")
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

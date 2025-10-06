@@ -132,7 +132,6 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
     mock_probe.validate_env.assert_called_once()
 
-
   def test_request_battery_power_on(self):
     with self.patch_property(self.platform, "is_battery_powered") as mocked:
       env = self.create_env(
@@ -287,6 +286,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     cm.assert_called_once()
 
   def test_check_installed_missing(self):
+
     def which_none(_):
       return None
 

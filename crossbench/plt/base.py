@@ -115,6 +115,7 @@ DEFAULT_CACHE_DIR: Final = pth.LocalPath(__file__).parents[2] / "cache"
 
 
 class Platform(abc.ABC):
+
   def __init__(self) -> None:
     self._id: Final[int] = _next_id()
     self._binary_lookup_override: dict[str, pth.AnyPath] = {}
@@ -287,7 +288,7 @@ class Platform(abc.ABC):
   @property
   def is_battery_powered(self) -> bool:
     self.assert_is_local()
-    if not psutil.sensors_battery: # type: ignore
+    if not psutil.sensors_battery:  # type: ignore
       return False
     status = psutil.sensors_battery()
     if not status:
@@ -320,7 +321,6 @@ class Platform(abc.ABC):
     self.assert_is_local()
     cpu_freq = psutil.cpu_freq()
     return CPUFreqInfo(cpu_freq.min, cpu_freq.max, cpu_freq.current)
-
 
   @functools.lru_cache(maxsize=1)
   def system_details(self) -> dict[str, Any]:
@@ -455,7 +455,6 @@ class Platform(abc.ABC):
     self.assert_is_local()
     # Helper to avoid circular imports.
     return parse.PathParser.local_binary_path(value, self, name)
-
 
   def which(self, binary_name: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     if not binary_name:
@@ -1038,8 +1037,7 @@ class Platform(abc.ABC):
 
   def screenshot(self, result_path: pth.AnyPath) -> None:
     # TODO: support screen coordinates
-    raise NotImplementedError(
-        "'screenshot' is only available on MacOS for now")
+    raise NotImplementedError("'screenshot' is only available on MacOS for now")
 
   def display_resolution(self) -> tuple[int, int]:
     raise NotImplementedError(
@@ -1049,7 +1047,6 @@ class Platform(abc.ABC):
   @contextlib.contextmanager
   def low_power_mode(self) -> Generator[None, Any, None]:
     raise NotImplementedError("'low_power_mode' is only supported on Android")
-
 
   def user_id(self) -> int:
     self.assert_is_local()

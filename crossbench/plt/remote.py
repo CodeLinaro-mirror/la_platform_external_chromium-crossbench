@@ -45,7 +45,6 @@ class RemotePopen(subprocess.Popen):
   termination.
   """
 
-
   def __init__(self,
                platform: Platform,
                args: ListCmdArgs,

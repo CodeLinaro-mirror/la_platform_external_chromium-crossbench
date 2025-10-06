@@ -15,6 +15,7 @@ import websocket
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
+
 class DevToolsClient:
   """Manages communication with the Chrome DevTools Protocol."""
 

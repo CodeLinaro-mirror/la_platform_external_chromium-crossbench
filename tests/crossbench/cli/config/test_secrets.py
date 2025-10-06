@@ -172,6 +172,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
     self.assertTrue(re.match(r"user\d@user.com", cycled_account.username))
     self.assertEqual(cycled_account.password, "password")
 
+
 class UsernamePasswordTestCase(unittest.TestCase):
 
   def test_parse_interactive(self):

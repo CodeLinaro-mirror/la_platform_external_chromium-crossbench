@@ -47,7 +47,6 @@ if TYPE_CHECKING:
   from crossbench.stories.story import Story
 
 
-
 class RunnerException(exception.MultiException):
   pass
 
@@ -98,6 +97,7 @@ class RunnerState(BaseState):
 
 
 _DEFAULT_TIMING: Final[Timing] = Timing()
+
 
 class Runner:
 
@@ -648,9 +648,8 @@ class Runner:
       logging.error("❗ %s", message.upper())
       logging.error("=" * 80)
     # Raise a RunnerException to be handled in the CLI.
-    if (not self.ignore_partial_failures
-        or all_runs == failed_runs
-        or self._exceptions.throw):
+    if (not self.ignore_partial_failures or all_runs == failed_runs or
+        self._exceptions.throw):
       self._exceptions.assert_success(message, RunnerException)
 
   def _get_thread_groups(self) -> list[RunThreadGroup]:

@@ -144,5 +144,6 @@ class TestMeminfoProbe(GenericProbeTestCase):
       ]
       self.assertListEqual(details, mock_json)
 
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

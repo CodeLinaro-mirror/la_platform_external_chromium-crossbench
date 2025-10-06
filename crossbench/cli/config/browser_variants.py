@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 # this is going to get cropped to MAX_PART_LEN.
 MAX_LABEL_LEN: Final[int] = pth.MAX_PART_LEN - 50
 
+
 @contextlib.contextmanager
 def late_argument_type_error_wrapper(flag: str) -> Iterator[None]:
   """Converts raised ValueError and ArgumentTypeError to LateArgumentError
@@ -285,8 +286,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
                             browser_config: BrowserConfig) -> plt.Platform:
     return browser_config.get_platform()
 
-  def _config_for_maybe_downloaded_binary(self,
-                               browser_config: BrowserConfig) -> BrowserConfig:
+  def _config_for_maybe_downloaded_binary(
+      self, browser_config: BrowserConfig) -> BrowserConfig:
     path_or_identifier = browser_config.browser
     if isinstance(path_or_identifier, pth.AnyPath):
       return browser_config
@@ -304,7 +305,6 @@ class BaseBrowserVariantsConfig(abc.ABC):
     if browser_config.driver.is_remote:
       return args.remote_driver_path or browser_config.driver.path
     return args.driver_path or browser_config.driver.path
-
 
   def _append_variant(self, args: argparse.Namespace, label: str,
                       browser_cls: Type[Browser], browser_config: BrowserConfig,

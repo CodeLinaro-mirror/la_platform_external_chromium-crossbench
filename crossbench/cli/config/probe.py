@@ -33,7 +33,6 @@ _PROBE_CONFIG_RE: Final[re.Pattern] = re.compile(
     r"(?P<probe_name>[\w.-]+):?(?P<config>.*)", re.MULTILINE | re.DOTALL)
 
 
-
 @dataclasses.dataclass(frozen=True)
 class ProbeConfig(ConfigObject):
   probe_cls: Type[Probe]

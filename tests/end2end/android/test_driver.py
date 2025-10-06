@@ -11,11 +11,7 @@ from tests import test_helper
 
 
 def test_specific_device_id(device_id, adb_path) -> None:
-  config_dict = {
-      "type": "adb",
-      "device_id": device_id,
-      "adb_bin": adb_path
-  }
+  config_dict = {"type": "adb", "device_id": device_id, "adb_bin": adb_path}
   driver_config = DriverConfig.parse(hjson.dumps(config_dict))
   assert driver_config.device_id == device_id
 

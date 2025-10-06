@@ -17,7 +17,6 @@ if TYPE_CHECKING:
   BinaryLookup: TypeAlias = pth.AnyPathLike | Iterable[pth.AnyPathLike]
 
 
-
 class BinaryNotFoundError(RuntimeError):
 
   def __init__(self, binary: Binary, platform: Platform) -> None:

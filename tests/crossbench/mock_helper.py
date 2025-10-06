@@ -40,7 +40,6 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
-
 GIB = 1014**3
 
 
@@ -211,7 +210,7 @@ class MockPlatformMixin:
     self._sh_results.append(result)
 
   def _convert_sh_args(self, *args: CmdArg | int) -> TupleCmdArgs:
-    converted_args : ListCmdArgs = []
+    converted_args: ListCmdArgs = []
     for arg in args:
       if not isinstance(arg, (str, pathlib.PurePath)):
         arg = str(arg)
@@ -336,7 +335,6 @@ class MockPlatformMixin:
     if self.use_fs and self.is_file(path):
       return path
     return super().search_binary(app_or_bin)
-
 
   def sh_stdout_bytes(self,
                       *args: CmdArg,
@@ -521,6 +519,7 @@ class MacOsMockPlatform(PosixMockPlatformMixin, MacOSPlatform):
 
 class MacIOSMockPlatform(PosixMockPlatformMixin, IOSPlatform):
   pass
+
 
 class WinMockPlatform(WinMockPlatformMixin, WinPlatform):
   pass

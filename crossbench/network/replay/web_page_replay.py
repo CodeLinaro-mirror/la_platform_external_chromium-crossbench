@@ -27,7 +27,6 @@ from crossbench.plt import PLATFORM, Platform
 if TYPE_CHECKING:
   from crossbench.plt.types import TupleCmdArgs
 
-
 _WPR_PORT_RE: re.Pattern[str] = re.compile(r".*Starting server on "
                                            r"(?P<protocol>http|https)://"
                                            r"(?P<host>[^:]+):"
@@ -40,7 +39,6 @@ class WprStartupError(RuntimeError):
 
 class WprBase(abc.ABC):
   NAME: ClassVar[str] = ""
-
 
   def __init__(self,
                archive_path: AnyPath,
@@ -164,7 +162,6 @@ class WprBase(abc.ABC):
       if not self._platform.is_file(script):
         raise ValueError(f"Injected script does not exist: {script}")
     return scripts
-
 
   @abc.abstractmethod
   def _validate_archive_path(self, path: AnyPath) -> AnyPath:

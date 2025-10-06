@@ -563,8 +563,8 @@ class AndroidAdbPortManager(PortManager):
 class AndroidVersion(PosixVersion):
   pass
 
-class AndroidAdbPlatform(RemotePosixPlatform):
 
+class AndroidAdbPlatform(RemotePosixPlatform):
 
   def __init__(self,
                host_platform: Platform,
@@ -614,9 +614,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @functools.cached_property
   def uiautomator_device(self) -> android_device.AndroidDevice:
     ad = android_device.AndroidDevice(self.serial_id)
-    ad.services.register(
-      uiautomator.ANDROID_SERVICE_NAME, uiautomator.UiAutomatorService
-    )
+    ad.services.register(uiautomator.ANDROID_SERVICE_NAME,
+                         uiautomator.UiAutomatorService)
     return ad
 
   @functools.cached_property
@@ -932,8 +931,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def python_details(self) -> JsonDict:
     # TODO: Implement properly (i.e. remove all n/a values)
     return {
-            "version": "n/a",
-            "bits": "n/a",
+        "version": "n/a",
+        "bits": "n/a",
     }
 
   @property

@@ -20,6 +20,7 @@ from crossbench.str_enum_with_help import StrEnumWithHelp
 if TYPE_CHECKING:
   Number: TypeAlias = float | int
 
+
 @enum.unique
 class ValidationMode(StrEnumWithHelp):
   THROW = ("throw", "Strict mode, throw and abort on env issues")

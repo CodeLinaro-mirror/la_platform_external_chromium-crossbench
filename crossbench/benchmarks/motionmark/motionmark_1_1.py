@@ -15,6 +15,7 @@ from crossbench.benchmarks.motionmark.motionmark_1 import (
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
 
+
 class MotionMark11Probe(MotionMark1Probe):
   __doc__ = MotionMark1Probe.__doc__
   NAME: ClassVar = "motionmark_1.1"

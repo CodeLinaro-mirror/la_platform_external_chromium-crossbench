@@ -29,6 +29,7 @@ class CustomException2(Exception):
 class CustomValueError(ValueError):
   pass
 
+
 class ExceptionHandlerTestCase(unittest.TestCase):
 
   def test_invalid_get_item(self):
@@ -330,7 +331,6 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertFalse(annotator.is_success)
     self.assertEqual(len(annotator), 1)
     self.assertIsInstance(annotator[0].exception, RuntimeError)
-
 
 
 if __name__ == "__main__":

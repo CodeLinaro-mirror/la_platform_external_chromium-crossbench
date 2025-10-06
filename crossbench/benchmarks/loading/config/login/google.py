@@ -159,7 +159,6 @@ class GoogleLogin(PresetLoginBlock):
 
       self._clear_suspicious_activity(action, runner, run)
 
-
   def _dismiss_login_page(self, action: Actions, runner: ActionRunner, run: Run,
                           click_action: ClickAction, current_url: str,
                           timeout: dt.timedelta) -> None:

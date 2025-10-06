@@ -14,6 +14,7 @@ from tests import test_helper
 if TYPE_CHECKING:
   from tests.test_helper import TestEnv
 
+
 def _browser_config(device_id, adb_path) -> str:
   return json.dumps({
       "browser": "chrome-stable",
@@ -29,6 +30,7 @@ class BenchmarkType(enum.StrEnum):
   PHONE = "loadline2-phone"
   TABLET = "loadline2-tablet"
   WEBAPI = "loadline2-webapi-phone"
+
 
 def _verify_default_metrics(out_dir, only_total=False):
   result_csv = out_dir / "benchmark_score.csv"

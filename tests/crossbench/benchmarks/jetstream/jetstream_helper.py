@@ -183,6 +183,7 @@ class JetStream2BaseTestCase(
     self.assertEqual(story.iterations, 123)
     self.assertDictEqual(story.url_params, {"iterationCount": "123"})
 
+
 # TODO: introduce JetStreamBaseTestCase
 class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
   pass

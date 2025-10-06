@@ -42,7 +42,6 @@ class Freezable:
     raise FrozenFlagsError(msg)
 
 
-
 FlagsData: TypeAlias = Union[None, dict[str, str], "Flags",
                              Iterable[str | tuple[str, str | None]]]
 
@@ -175,7 +174,6 @@ class BasicFlags(Freezable, collections.UserDict):
     if flag_value != old_value:
       raise ValueError(f"Flag {flag_name}={repr(flag_value)} was already set "
                        f"with a different previous value: {repr(old_value)}")
-
 
   def update(  # type: ignore
       self,

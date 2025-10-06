@@ -33,7 +33,6 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-
 @dataclasses.dataclass
 class TraceConfig(ConfigObject):
   """ See https://perfetto.dev/docs/reference/trace-config-proto for more

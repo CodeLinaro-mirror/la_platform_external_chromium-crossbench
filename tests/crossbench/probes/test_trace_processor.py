@@ -142,6 +142,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     self.assertEqual(query.name, "comment")
     self.assertEqual(query.sql, "'new value'")
 
+
 class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
 
   def test_merge_browsers(self):

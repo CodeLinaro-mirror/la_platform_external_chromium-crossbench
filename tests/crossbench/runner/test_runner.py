@@ -40,6 +40,7 @@ if TYPE_CHECKING:
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.probes.probe import Probe
 
+
 # Skip strict type checks for better mocking
 class TestThreadModeTestCase(unittest.TestCase):
 
@@ -763,9 +764,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       exception_entry = exceptions[0]
       self.assertIsInstance(exception_entry.exception, CustomException)
 
-    with (
-        mock.patch.object(runner, "_ignore_partial_failures", True),
-        mock.patch.object(runner, "_measured_runs", runs)):
+    with (mock.patch.object(runner, "_ignore_partial_failures", True),
+          mock.patch.object(runner, "_measured_runs", runs)):
       runner.assert_successful_sessions_and_runs()
 
 

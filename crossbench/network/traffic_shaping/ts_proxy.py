@@ -371,7 +371,6 @@ class TsProxyProcess:
     return err
 
 
-
 class TsProxyTrafficShaper(TrafficShaper):
 
   def __init__(self,

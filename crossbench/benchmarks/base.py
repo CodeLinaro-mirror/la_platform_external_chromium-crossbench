@@ -33,7 +33,6 @@ if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
 
 
-
 class Benchmark(abc.ABC):
   # TODO: migrate to abstract class methods
   NAME: ClassVar[str]
@@ -446,6 +445,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
 
 
 VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
+
 
 class PressBenchmark(SubStoryBenchmark):
   STORY_FILTER_CLS: ClassVar = PressBenchmarkStoryFilter

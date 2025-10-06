@@ -138,7 +138,6 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return len(logical_cores)
     return 0
 
-
   @functools.lru_cache(maxsize=1)
   @override
   def cpu_details(self) -> dict[str, Any]:
@@ -211,14 +210,12 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     except ValueError:
       return dt.timedelta()
 
-
   @override
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
     app_or_bin = self.path(app_or_bin)
     if not self.exists(app_or_bin):
       raise ValueError(f"Binary {app_or_bin} does not exist.")
     return self.sh_stdout(app_or_bin, "--version")
-
 
   @override
   def path(self, path: pth.AnyPathLike) -> pth.AnyPath:
@@ -572,8 +569,12 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
           shell_cmd, shell=True)
 
       remote_popen = RemotePopen(
-          self, host_platform_cmd, bufsize=bufsize, stdout=stdout,
-          stderr=stderr, stdin=stdin)
+          self,
+          host_platform_cmd,
+          bufsize=bufsize,
+          stdout=stdout,
+          stderr=stderr,
+          stdin=stdin)
       # tmp_pid_file might not have been immediately flushed:
       for _ in WaitRange(0.01, timeout=2).wait_with_backoff():
         if pid_str := self.cat(temp_pid_file):

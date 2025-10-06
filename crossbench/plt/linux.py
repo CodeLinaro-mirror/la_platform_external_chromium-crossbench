@@ -25,8 +25,8 @@ from crossbench.plt.signals import LinuxSignals
 if TYPE_CHECKING:
   from crossbench.plt.display_info import DisplayInfo
 
-
 SCRIPTS_DIR: Final = pth.LocalPath(__file__).parent / "remote_scripts"
+
 
 @dataclasses.dataclass
 class XrandrDisplayInfo:

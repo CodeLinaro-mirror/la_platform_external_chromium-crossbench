@@ -1194,7 +1194,6 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(variants[0].browser_config, chrome_stable)
     self.assertEqual(variants[1].browser_config, chrome_dev)
 
-
   def test_from_cli_args_browser_config_network_override(self):
     ts_proxy_path = pth.LocalPath("/tsproxy/tsproxy.py")
     self.fs.create_file(ts_proxy_path, st_size=100)

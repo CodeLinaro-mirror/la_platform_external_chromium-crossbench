@@ -17,6 +17,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
   from crossbench.types import Json
 
+
 class Speedometer10Probe(SpeedometerProbe):
   NAME: ClassVar[str] = "speedometer_1.0"
 

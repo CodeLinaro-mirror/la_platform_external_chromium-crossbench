@@ -42,6 +42,7 @@ TEST_BROWSER_FLAG: Final = "--test-browser-path"
 TEST_DRIVER_FLAG: Final = "--test-driver-path"
 TEST_GSUTIL_FLAG: Final = "--test-gsutil-path"
 
+
 def pytest_addoption(parser):
   parser.addoption(
       TEST_BROWSER_FLAG, "--browserpath", default=None, type=PathParser.path)

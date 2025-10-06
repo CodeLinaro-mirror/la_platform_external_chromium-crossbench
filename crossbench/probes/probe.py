@@ -38,7 +38,6 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
-
 ProbeT = TypeVar("ProbeT", bound="Probe")
 
 
@@ -108,7 +107,6 @@ class Probe(ProbeResultKey, abc.ABC):
   BATTERY_ONLY: ClassVar[bool] = False
   # Location within the probe list
   PRIORITY: ClassVar[ProbePriority] = ProbePriority.USER
-
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser[Self]:

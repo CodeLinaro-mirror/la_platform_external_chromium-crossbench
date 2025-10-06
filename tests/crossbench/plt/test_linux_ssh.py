@@ -206,5 +206,6 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertEqual(self.host_platform.mkdir_calls, 1)
     self.assertTrue(pth.LocalPath("local/dest/path").exists())
 
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

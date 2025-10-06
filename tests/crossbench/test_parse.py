@@ -408,14 +408,10 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
         _ = NumberParser.port_number_zero(invalid)
 
   def test_power_of_two_with_unit(self):
-    self.assertEqual(
-        NumberParser.power_of_two_with_unit("4M"), "4M")
-    self.assertEqual(
-        NumberParser.power_of_two_with_unit("256K"), "256K")
-    self.assertEqual(
-        NumberParser.power_of_two_with_unit("1G"), "1G")
-    self.assertEqual(
-        NumberParser.power_of_two_with_unit(1024), "1024")
+    self.assertEqual(NumberParser.power_of_two_with_unit("4M"), "4M")
+    self.assertEqual(NumberParser.power_of_two_with_unit("256K"), "256K")
+    self.assertEqual(NumberParser.power_of_two_with_unit("1G"), "1G")
+    self.assertEqual(NumberParser.power_of_two_with_unit(1024), "1024")
 
   def test_power_of_two_with_unit_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError):

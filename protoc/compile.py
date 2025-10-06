@@ -170,7 +170,6 @@ def write_root_module(root_dir: Path) -> None:
     root_module.write(")\n")
 
 
-
 VERSION_RE = re.compile(r".* (\d+)\.(\d+)$")
 
 

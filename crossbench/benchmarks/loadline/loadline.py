@@ -93,6 +93,7 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
 
 class LoadLinePageFilter(LoadingPageFilter):
   """LoadLine benchmark for phone/tablet."""
+
   @classmethod
   def add_page_config_parser(cls, parser: argparse.ArgumentParser) -> None:
     page_config_group = parser.add_mutually_exclusive_group()
@@ -167,8 +168,7 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
           all_names=all_page_labels, default_names=all_page_labels)
       filtered_page_labels = regex_filter.process_all(args.stories.split(","))
       filtered_pages = tuple(
-          page for page in config.pages if page.label in filtered_page_labels
-      )
+          page for page in config.pages if page.label in filtered_page_labels)
       config = PagesConfig(
           pages=filtered_pages, secrets=cls._page_config.secrets)
 

@@ -13,6 +13,7 @@ from tests import test_helper
 
 DEFAULT_LOG_FLAGS_PROF = frozenset(DEFAULT_LOG_FLAGS + ("--prof",))
 
+
 class V8LogProbeTestCase(unittest.TestCase):
 
   def test_invalid_flags(self):

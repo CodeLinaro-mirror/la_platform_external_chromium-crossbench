@@ -390,9 +390,8 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
         histogram = ChromeHistogramSample.from_json(
             ObjectParser.dict(histogram_dict))
         histograms[histogram.name] = histogram
-      logging.debug(
-        "Extracted histograms:\n%s",
-        str.join("\n", histograms.keys()))
+      logging.debug("Extracted histograms:\n%s",
+                    str.join("\n", histograms.keys()))
       return histograms
 
   def start(self) -> None:

@@ -133,7 +133,6 @@ class ChromiumBasedWebDriver(
     if adb_port and adb_port.isdigit():
       service_args += ["--adb-port=" + adb_port]
 
-
     assert self._stdout_log_file is None
     # On desktop platforms service logs contain browser stdout, hence the name.
     self._stdout_log_file = self.log_file.with_stem("browser.stdout").open("w+")

@@ -20,6 +20,7 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 
 NOW_EPOCH = dt.datetime.now()
 
+
 class DefaultBondActionRunnerTestCase(BaseCrossbenchTestCase):
 
   SECRET = ServiceAccount.parse_dict({
@@ -181,6 +182,7 @@ class DefaultBondActionRunnerTestCase(BaseCrossbenchTestCase):
 
     mock_bond_client.run_script.assert_called_once_with(
         "abc-def-ghi", "test script", dt.timedelta(seconds=17))
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

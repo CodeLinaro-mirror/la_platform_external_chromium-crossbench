@@ -217,6 +217,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     self.setup_perfetto_config_presets()
 
   def setup_tabulate_patcher(self) -> None:
+
     def mock_tabulate(table, *args, **kwargs):
       del args, kwargs
       return str(table)
@@ -226,6 +227,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     patcher.start()
 
   def setup_wrap_patcher(self) -> None:
+
     def mock_wrap(text, *args, **kwargs):
       del args, kwargs
       return [text]

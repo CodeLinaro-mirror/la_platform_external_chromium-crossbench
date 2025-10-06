@@ -56,7 +56,6 @@ class SettingsTestCase(unittest.TestCase):
     self.assertTrue(settings.network.is_live)
     self.assertEqual(settings.env_config, EnvConfig(cpu_max_usage_percent=10))
 
-
   def test_js_flags_alone(self):
     js_flags = Flags({"--js-one": "js-1", "--js-two": "js-2"}).freeze()
     settings = Settings(js_flags=js_flags)

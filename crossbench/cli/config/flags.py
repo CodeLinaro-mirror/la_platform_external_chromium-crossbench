@@ -25,7 +25,6 @@ from crossbench.parse import ObjectParser
 if TYPE_CHECKING:
   from crossbench.flags.base import Flags, FlagsData
 
-
 DEFAULT_LABEL: Final[str] = "default"
 
 
@@ -283,7 +282,6 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
         merged_js_flags.append(js_flags)
       args_config["--js-flags"] = list(map(str, merged_js_flags))
     return args_config
-
 
   def product(self, *args: Self) -> Self:
     return functools.reduce(lambda a, b: a.inner_product(b), args, self)

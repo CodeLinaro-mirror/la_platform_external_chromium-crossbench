@@ -16,6 +16,7 @@ from crossbench.benchmarks.speedometer.speedometer_2 import (
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
 
+
 class Speedometer20Probe(Speedometer2Probe):
   NAME: ClassVar[str] = "speedometer_2.0"
 

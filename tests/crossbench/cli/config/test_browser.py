@@ -656,5 +656,6 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     config = BrowserConfig.parse(version_str)
     self.assertEqual(config.browser, version_str)
 
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

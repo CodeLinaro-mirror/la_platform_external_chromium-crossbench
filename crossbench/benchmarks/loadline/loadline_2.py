@@ -28,7 +28,6 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
 
-
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
 VERSION_STRING: Final[str] = "experimental"
