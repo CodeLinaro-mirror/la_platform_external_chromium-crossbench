@@ -6,12 +6,15 @@
 from __future__ import annotations
 
 import contextlib
+from typing import TYPE_CHECKING
 
 import pytest
 
 from crossbench import plt
 from crossbench.probes.perfetto.downloader import PerfettoToolDownloader
-from tests.test_helper import TestEnv
+
+if TYPE_CHECKING:
+  from tests.test_helper import TestEnv
 
 
 @contextlib.contextmanager

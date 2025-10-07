@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import collections
 import dataclasses
-import datetime as dt
 import functools
 import pathlib
 import shlex
@@ -24,16 +23,20 @@ from crossbench.cli.cli import CrossBenchCLI
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.base import MachineArch, Platform, SubprocessError
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
+from crossbench.plt.ios import IOSPlatform
 from crossbench.plt.linux import LinuxPlatform, RemoteLinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 from crossbench.plt.macos import MacOSPlatform
 from crossbench.plt.port_manager import LocalPortManager, PortManager
+from crossbench.plt.process_meminfo import ProcessMeminfo
 from crossbench.plt.win import WinPlatform
-from crossbench.runner.run import Run
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  from crossbench.plt.base import CmdArg, ListCmdArgs, TupleCmdArgs
+  import datetime as dt
+
+  from crossbench.plt.types import CmdArg, ListCmdArgs, TupleCmdArgs
+  from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
 
@@ -190,13 +193,15 @@ class MockPlatformMixin:
       self.touch(path)
     return path
 
-  def expect_sh(self, *args: CmdArg,
-                result: str | ShResult = ShResult()) -> None:
+  def expect_sh(
+      self, *args: CmdArg, result: bytes | str | ShResult = ShResult()) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
       self._expected_sh_cmds.append(self._convert_sh_args(*args))
     if isinstance(result, str):
+      result = ShResult(result)
+    if isinstance(result, bytes):
       result = ShResult(result)
     assert isinstance(result, ShResult)
     self._sh_results.append(result)
@@ -281,14 +286,14 @@ class MockPlatformMixin:
   def cpu_details(self) -> dict[str, Any]:
     return {"physical cores": 2, "logical cores": 4, "info": self.cpu}
 
-  def set_file_contents(self,
-                        file: pth.AnyPathLike,
-                        data: str,
-                        encoding: str = "utf-8") -> None:
+  def write_text(self,
+                 file: pth.AnyPathLike,
+                 data: str,
+                 encoding: str = "utf-8") -> None:
     file_path = self.path(file)
     self.file_contents[file_path].append(data)
     if self.use_fs:
-      super().set_file_contents(file_path, data, encoding)
+      super().write_text(file_path, data, encoding)
 
   @functools.lru_cache(maxsize=1)
   def system_details(self):
@@ -388,6 +393,23 @@ class MockPlatformMixin:
     super().mkdir(path, parents, exist_ok)
     self.mkdir_calls += 1
 
+  def process_meminfo(self, process_name: str,
+                      timeout: dt.timedelta) -> list[ProcessMeminfo]:
+    del timeout
+    return [
+        ProcessMeminfo(1, process_name, 2, 3, 4),
+        ProcessMeminfo(2, process_name, 3, 4, 5),
+    ]
+
+  def system_meminfo(self, timeout: dt.timedelta) -> dict[str, float]:
+    del timeout
+    return {
+        "total_ram_kb": 5,
+        "cached_pss_kb": 4,
+        "cached_kernel_kb": 3,
+        "free_kb": 2,
+    }
+
 
 class MockFd:
 
@@ -473,6 +495,9 @@ class ChromeOsSshMockPlatform(PosixMockPlatformMixin, ChromeOsSshPlatform):
 class MacOsMockPlatform(PosixMockPlatformMixin, MacOSPlatform):
   pass
 
+
+class MacIOSMockPlatform(PosixMockPlatformMixin, IOSPlatform):
+  pass
 
 class WinMockPlatform(WinMockPlatformMixin, WinPlatform):
   pass

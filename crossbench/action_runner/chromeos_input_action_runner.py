@@ -13,7 +13,6 @@ from math import ceil
 from typing import TYPE_CHECKING, Optional, Self
 
 import crossbench.path as pth
-from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
@@ -24,6 +23,7 @@ from crossbench.benchmarks.loading.point import Point
 from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
+  from crossbench.action_runner.action import all as i_action
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
 
@@ -257,6 +257,7 @@ E: <time> 0000 0000 0
 
 
 class ChromeOSInputActionRunner(DefaultActionRunner):
+  """Custom ActionRunner for chromeOS devices."""
 
   def __init__(self) -> None:
     super().__init__()
@@ -389,7 +390,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
     script = (SCRIPTS_DIR / "text_input.py").read_text()
 
     with browser_platform.NamedTemporaryFile() as script_file:
-      browser_platform.set_file_contents(script_file, script)
+      browser_platform.write_text(script_file, script)
       typing_process: subprocess.Popen | None = None
       try:
         typing_process = browser_platform.popen(
@@ -497,7 +498,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
     script = (SCRIPTS_DIR / "mouse.py").read_text()
 
     with browser_platform.NamedTemporaryFile() as script_file:
-      browser_platform.set_file_contents(script_file, script)
+      browser_platform.write_text(script_file, script)
 
       mouse_process = browser_platform.popen(
           "python3",
@@ -536,7 +537,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
     browser_platform = run.browser_platform
 
     with browser_platform.NamedTemporaryFile() as playback_file:
-      browser_platform.set_file_contents(playback_file, touch_event_cmds)
+      browser_platform.write_text(playback_file, touch_event_cmds)
       # Then run evemu-play with the input redirected from the temp file.
       run.browser_platform.sh(
           f"evemu-play --insert-slot0 "

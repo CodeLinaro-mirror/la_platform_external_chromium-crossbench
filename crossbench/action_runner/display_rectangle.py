@@ -5,10 +5,12 @@
 from __future__ import annotations
 
 import dataclasses
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING
 
 from crossbench.benchmarks.loading.point import Point
+
+if TYPE_CHECKING:
+  from typing_extensions import Self
 
 SCROLL_BOUNDS_OFFSET_FACTOR: float = 0.1
 

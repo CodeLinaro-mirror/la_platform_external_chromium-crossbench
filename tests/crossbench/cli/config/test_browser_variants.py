@@ -8,7 +8,7 @@ import argparse
 import contextlib
 import copy
 import json
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 from unittest import mock
 
 import hjson
@@ -16,7 +16,6 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.browsers.browser import Browser
 from crossbench.browsers.chrome.applescript import ChromeAppleScript
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.chrome.version import ChromeVersion
@@ -44,6 +43,9 @@ from tests.crossbench import mock_browser
 from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
                                               BaseConfigTestCase)
 from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
+
+if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
 
 
 class TestBrowserVariantsConfig(BaseConfigTestCase):
@@ -666,6 +668,30 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         ["--no-sandbox", "--enable-features=ConsumeCompileHints"],
         list(browsers[1].flags))
 
+  def test_js_flags_user_data_dir(self):
+    config = BrowserVariantsConfigDict(
+        {
+            "flags": {
+                "custom-js-flags": {
+                    "--js-flags": [None, "--no-opt"]
+                }
+            },
+            "browsers": {
+                "chrome-release": {
+                    "path": "chrome-stable",
+                    "flags": ["--user-data-dir=/tmp/dir", "custom-js-flags"]
+                }
+            }
+        },
+        browser_lookup_override=self.browser_lookup,
+        args=self.mock_args())
+    self.assertEqual(len(config.variants), 2)
+    browser_a = config.variants[0]
+    browser_b = config.variants[1]
+    self.assertEqual(str(browser_a.flags), "--user-data-dir=/tmp/dir")
+    self.assertEqual(
+        str(browser_b.flags), "--user-data-dir=/tmp/dir --js-flags=--no-opt")
+
   def test_conflicting_chrome_features(self):
     with self.assertRaises(ConfigError) as cm:
       _ = BrowserVariantsConfigDict(
@@ -1188,7 +1214,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
     with self._patch_get_browser_cls(mock_browser.MockChromeStable), mock.patch(
         "crossbench.network.traffic_shaping.ts_proxy.TsProxyFinder") as finder:
-      finder.return_value = mock.Mock(path=ts_proxy_path)
+      finder.return_value = mock.Mock(
+          path=ts_proxy_path, local_path=ts_proxy_path)
       config = BrowserVariantsConfig.parse_args(args,)
     browsers = config.browsers
     self.assertEqual(len(browsers), 3)

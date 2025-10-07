@@ -9,7 +9,6 @@ import logging
 import re
 from typing import TYPE_CHECKING, Optional, cast
 
-from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.base import InputSourceNotImplementedError
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
@@ -18,13 +17,14 @@ from crossbench.action_runner.element_not_found_error import \
 from crossbench.action_runner.screenshot_annotation import (
     ScreenshotPointAnnotation, ScreenshotRectAnnotation)
 from crossbench.benchmarks.loading.point import Point
-from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.runner.actions import Actions
-from crossbench.runner.run import Run
 
 if TYPE_CHECKING:
+  from crossbench.action_runner.action import all as i_action
   from crossbench.action_runner.action.position import UiSelectorConfig
+  from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.plt.android_adb import AndroidAdbPlatform
+  from crossbench.runner.actions import Actions
+  from crossbench.runner.run import Run
 
 
 class ViewportInfo:
@@ -88,6 +88,7 @@ class ViewportInfo:
 
 
 class AndroidInputActionRunner(DefaultActionRunner):
+  """Custom ActionRunner for Android."""
 
   # Represents the position of the chrome main window relative to the entire
   # screen as reported by Android window manager.

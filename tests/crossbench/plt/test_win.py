@@ -8,16 +8,19 @@ import datetime as dt
 import os
 import pathlib
 import textwrap
+from typing import TYPE_CHECKING
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
-from crossbench import path as pth
 from tests import test_helper
 from tests.crossbench.mock_helper import WinMockPlatform
 from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
                                          BaseMockPlatformTestCase)
+
+if TYPE_CHECKING:
+  from crossbench import path as pth
 
 
 class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,

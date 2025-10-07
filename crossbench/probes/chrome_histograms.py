@@ -21,12 +21,12 @@ from crossbench.browsers.webview.embedder import WebviewEmbedder
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.probe import ProbeConfigParser
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
+  from crossbench.probes.probe import ProbeConfigParser
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -110,19 +110,21 @@ def parse_histogram_metrics(value: Any,
       metric = ObjectParser.any_str(x)
       if metric == "count":
         result.append(ChromeHistogramCountMetric(histogram_name))
-      elif metric == "mean":
+        continue
+      if metric == "mean":
         result.append(ChromeHistogramMeanMetric(histogram_name))
-      else:
-        m = re.match(PERCENTILE_METRIC_RE, metric)
-        if not m:
-          raise argparse.ArgumentTypeError(
-              f"{name} {histogram_name} {metric} is not a valid metric")
-        percentile = int(m[1])
-        if percentile < 0 or percentile > 100:
-          raise argparse.ArgumentTypeError(
-              f"{name} {histogram_name} {metric} is not a valid percentile")
-        result.append(
-            ChromeHistogramPercentileMetric(histogram_name, percentile))
+        continue
+      m = re.match(PERCENTILE_METRIC_RE, metric)
+      if not m:
+        raise argparse.ArgumentTypeError(
+            f"{name} {repr(histogram_name)} "
+            f"{repr(metric)} is not a valid metric")
+      percentile = int(m[1])
+      if percentile < 0 or percentile > 100:
+        raise argparse.ArgumentTypeError(
+            f"{name} {repr(histogram_name)} "
+            f"{repr(metric)} is not a valid percentile")
+      result.append(ChromeHistogramPercentileMetric(histogram_name, percentile))
   return result
 
 
@@ -143,8 +145,8 @@ class ChromeHistogramsProbe(JsonResultProbe):
         type=parse_histogram_metrics,
         help=("Required dictionary of Chrome UMA histogram metric names. "
               "Histograms are recorded before and after a test and any "
-              "differences logged."
-              "See tools/metrics/histograms/metadata/storage/histograms.xml"
+              "differences logged. "
+              "See tools/metrics/histograms/metadata/storage/histograms.xml "
               "or chrome://histograms for a list of available histograms."))
     parser.add_argument(
         "use_baseline",

@@ -36,6 +36,12 @@ class BaseToolFinder(abc.ABC):
     return self._path
 
   @property
+  def local_path(self) -> Optional[pth.LocalPath]:
+    if path := self.path:
+      return self.platform.local_path(path)
+    return None
+
+  @property
   def candidates(self) -> tuple[pth.AnyPath, ...]:
     return self._candidates
 

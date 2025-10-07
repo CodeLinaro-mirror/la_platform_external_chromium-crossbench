@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import multiprocessing
 import os
@@ -18,7 +19,7 @@ from crossbench.cli import ui
 from crossbench.flags.js_flags import JSFlags
 from crossbench.helper import fs_helper
 from crossbench.helper.path_finder import V8ToolsFinder
-from crossbench.parse import PathParser
+from crossbench.parse import DurationParser, PathParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
@@ -87,6 +88,11 @@ class V8LogProbe(ChromiumProbe):
         help="Path to a V8 checkout for extended log processing."
         "If not specified it is auto inferred from either the provided"
         "d8_binary or standard installation locations.")
+    parser.add_argument(
+        "prof_sampling_interval",
+        aliases=("sampling_interval",),
+        type=DurationParser.positive_duration_ms,
+        help="Set the --prof_sampling_interval in millis.")
     return parser
 
   def __init__(
@@ -95,11 +101,14 @@ class V8LogProbe(ChromiumProbe):
       prof: bool = True,
       profview: bool = True,
       js_flags: Optional[Iterable[str]] = None,
+      prof_sampling_interval: Optional[dt.timedelta] = None,
       # TODO: support remote platform
       d8_binary: Optional[LocalPath] = None,
       v8_checkout: Optional[LocalPath] = None) -> None:
     super().__init__()
     self._profview: bool = profview
+    self._prof_sampling_interval: dt.timedelta = (
+        prof_sampling_interval or dt.timedelta())
     self._js_flags = JSFlags()
     self._d8_binary: LocalPath | None = d8_binary
     self._v8_checkout: LocalPath | None = v8_checkout
@@ -112,6 +121,12 @@ class V8LogProbe(ChromiumProbe):
       self._js_flags.set(_PROF_FLAG)
     elif profview:
       raise ValueError(f"{self}: Need prof:true with profview:true")
+    if self._prof_sampling_interval:
+      if not prof:
+        logging.error("prof_sampling_interval has no effect without prof==True")
+      # The v8 internal unit is microseconds:
+      self._js_flags["--prof-sampling-interval"] = str(
+          round(self._prof_sampling_interval / dt.timedelta(microseconds=1)))
     js_flags = js_flags or []
     for flag in js_flags:
       if self._FLAG_RE.match(flag):
@@ -126,6 +141,7 @@ class V8LogProbe(ChromiumProbe):
   def key(self) -> ProbeKeyT:
     return super().key + (
         ("profview", self._profview),
+        ("prof_sampling_interval", self._prof_sampling_interval),
         ("js_flags", str(self.js_flags)),
         ("d8_binary", str(self._d8_binary)),
         ("v8_checkout", str(self._v8_checkout)),

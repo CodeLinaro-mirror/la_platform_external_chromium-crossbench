@@ -18,6 +18,7 @@ from crossbench.flags.chrome import ChromeFlags
 from crossbench.network.live import LiveNetwork
 
 if TYPE_CHECKING:
+  from crossbench.cli.config.extension import ExtensionConfig
   from crossbench.network.base import Network
 
 
@@ -40,6 +41,7 @@ class Settings:
       wipe_system_user_data: bool = False,
       http_request_timeout: dt.timedelta = dt.timedelta(),
       env_config: Optional[EnvConfig] = None,
+      extensions: Optional[tuple[ExtensionConfig, ...]] = None,
   ) -> None:
     self._flags = self._convert_flags(flags, "flags")
     self._js_flags = self._extract_js_flags(self._flags, js_flags)
@@ -55,6 +57,7 @@ class Settings:
     self._wipe_system_user_data = wipe_system_user_data
     self._http_request_timeout = http_request_timeout
     self._env_config = env_config or EnvConfig.default()
+    self._extensions = extensions or ()
 
   def _extract_js_flags(self, flags: Flags,
                         js_flags: Optional[FlagsData]) -> Flags:
@@ -128,6 +131,10 @@ class Settings:
   @property
   def env_config(self) -> EnvConfig:
     return self._env_config
+
+  @property
+  def extensions(self) -> tuple[ExtensionConfig, ...]:
+    return self._extensions
 
   @property
   def viewport(self) -> Viewport:

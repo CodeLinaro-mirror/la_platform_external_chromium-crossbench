@@ -15,7 +15,6 @@ from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
 from crossbench.cli import ui
 from crossbench.cli.config.env import ValidationMode
-from crossbench.cli.config.secrets import Secrets
 from crossbench.env.run_env import RunEnv
 from crossbench.env.runner_env import ValidationError
 from crossbench.exception import Annotator, TInfoStack
@@ -29,21 +28,22 @@ from crossbench.runner.exception import StopStoryException
 from crossbench.runner.probe_context_manager import ProbeContextManager
 from crossbench.runner.result_origin import ResultOrigin
 from crossbench.runner.run_annotation import RunAnnotation
-from crossbench.runner.timing import Timing
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import ArgOptions
 
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
+  from crossbench.cli.config.secrets import Secrets
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.helper.wait import WaitRange
   from crossbench.probes.probe import Probe, ProbeT
   from crossbench.results_db.db import ResultsDB
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
-  from crossbench.runner.timing import AnyTimeUnit
+  from crossbench.runner.timing import AnyTimeUnit, Timing
   from crossbench.stories.story import Story
   from crossbench.types import JsonDict
 
@@ -62,6 +62,7 @@ class Run(ResultOrigin):
       runner: Runner,
       browser_session: BrowserSessionRunGroup,
       story: Story,
+      action_runner: ActionRunner,
       repetition: int,
       is_warmup: bool,
       temperature: str,
@@ -79,6 +80,7 @@ class Run(ResultOrigin):
     self._env = RunEnv(self, self._browser.settings.env_config,
                        env_validation_mode)
     self._story = story
+    self._action_runner = action_runner
     assert repetition >= 0
     self._repetition = repetition
     self._is_warmup = is_warmup
@@ -211,6 +213,10 @@ class Run(ResultOrigin):
   @override
   def runner(self) -> Runner:
     return self._runner
+
+  @property
+  def action_runner(self) -> ActionRunner:
+    return self._action_runner
 
   @property
   def results_db(self) -> ResultsDB:

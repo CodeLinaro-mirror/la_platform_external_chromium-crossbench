@@ -15,6 +15,7 @@ class MockProbe(Probe):
   """
   Probe DOC Text
   """
+  NAME: str = "mock-probe"
 
 
 class CustomArgType:

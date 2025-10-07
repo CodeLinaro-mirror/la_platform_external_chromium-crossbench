@@ -11,14 +11,12 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, cast
 
 from typing_extensions import override
 
-from crossbench.action_runner.action import all as i_action
 from crossbench.action_runner.base import (ActionRunner,
                                            InputSourceNotImplementedError)
 from crossbench.action_runner.default_bond_action_runner import \
     DefaultBondActionRunner
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
-from crossbench.action_runner.screenshot_annotation import ScreenshotAnnotation
 from crossbench.probes.downloads import DownloadsProbe, DownloadsProbeContext
 from crossbench.probes.dump_html import DumpHtmlProbe, DumpHtmlProbeContext
 from crossbench.probes.meminfo import MeminfoProbe, MeminfoProbeContext
@@ -26,12 +24,17 @@ from crossbench.probes.screenshot import (ScreenshotProbe,
                                           ScreenshotProbeContext)
 
 if TYPE_CHECKING:
+  from crossbench.action_runner.action import all as i_action
   from crossbench.action_runner.bond_base import BondActionRunner
+  from crossbench.action_runner.screenshot_annotation import \
+      ScreenshotAnnotation
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
 
 
 class DefaultActionRunner(ActionRunner):
+  """Default action runner that uses JavaScript for most page interactions."""
+
   XPATH_SELECT_ELEMENT = """
       let elements = [];
       let xpathResult = document.evaluate(arguments[0], document);
@@ -128,8 +131,7 @@ class DefaultActionRunner(ActionRunner):
     return self._bond
 
   @override
-  def teardown(self, run: Run) -> None:
-    del run
+  def teardown(self) -> None:
     if self._bond:
       self._bond.teardown()
 
@@ -211,6 +213,14 @@ class DefaultActionRunner(ActionRunner):
         actions.wait(0.2)
       scroll_y = initial_scroll_y + distance
       actions.js(do_scroll_script, arguments=[selector, scroll_y])
+
+  def text_input_js(self, run: Run, action: i_action.TextInputAction) -> None:
+    with run.actions("TextInput", measure=False) as actions:
+      if text := action.text:
+        actions.js(
+            "document.activeElement.value = arguments[0]", arguments=[text])
+      else:
+        raise InputSourceNotImplementedError(self, action, action.input_source)
 
   def wait_for_element_impl(self,
                             actions: Actions,
@@ -295,6 +305,13 @@ class DefaultActionRunner(ActionRunner):
       run.browser.close_tab(action.title, action.url, action.tab_index,
                             action.relative_tab_index, action.timeout)
 
+  @override
+  def close_all_tabs(self, run: Run,
+                     action: i_action.CloseAllTabsAction) -> None:
+    del action
+    with run.actions("CloseAllTabsAction", measure=False):
+      run.browser.close_all_tabs()
+
   def _get_scroll_field(self, has_selector: bool) -> str:
     if has_selector:
       return "scrollTop"
@@ -368,7 +385,8 @@ class DefaultActionRunner(ActionRunner):
       logging.warning("No meminfo probe for dump on %s", repr(self.info_stack))
       return
     assert isinstance(ctx, MeminfoProbeContext)
-    ctx.dump_meminfo(action.target, action.package)
+    ctx.dump_meminfo(action.timeout, action.browser, action.system,
+                     action.packages, action.title, self.info_stack)
 
   def wait_for_download(self, run: Run,
                         action: i_action.WaitForDownloadAction) -> None:

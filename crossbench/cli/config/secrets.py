@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(frozen=True)
 class Secrets(ConfigObject):
+  """A set of predefined secrets for common logins.
+  """
   google: UsernamePassword | None = None
   bond: ServiceAccount | None = None
 
@@ -33,8 +35,6 @@ class Secrets(ConfigObject):
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
-    if value[0] == "{":
-      return cls.parse_inline_hjson(value)
     raise NotImplementedError("Cannot create secrets from string")
 
   def merge(self, fallback: Secrets) -> Self:
@@ -43,6 +43,7 @@ class Secrets(ConfigObject):
 
 
 class Secret(ConfigObject):
+  """A single username / password combination. """
 
   @property
   def is_interactive(self) -> bool:

@@ -13,7 +13,8 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.config import ConfigParser, UnusedPropertiesMode
-from crossbench.probes.probe_context import ProbeContext, ProbeSessionContext
+# TODO: Keep commonly used classes here.
+from crossbench.probes.probe_context import ProbeContext  # noqa: TC001
 from crossbench.probes.probe_error import ProbeIncompatibleBrowser
 from crossbench.probes.probe_result_key import ProbeResultKey
 from crossbench.probes.result_location import ResultLocation
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
+  from crossbench.probes.probe_context import ProbeSessionContext
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.cache_temperatures import \
@@ -40,9 +42,13 @@ ProbeT = TypeVar("ProbeT", bound="Probe")
 class ProbeConfigParser(ConfigParser[ProbeT]):
 
   def __init__(self, probe_cls: Type[ProbeT]) -> None:
+    probe_name: str = probe_cls.NAME
+    if not probe_name:
+      raise ValueError("Missing probe name.")
     super().__init__(
         probe_cls,
-        f"{probe_cls.NAME} probe parser",
+        key=probe_name,
+        title=f"{probe_name} probe parser",
         unused_properties_mode=UnusedPropertiesMode.ERROR)
     self._probe_cls: Type[ProbeT] = probe_cls
 

@@ -9,8 +9,7 @@ from typing import TYPE_CHECKING, Optional, Self, Type
 
 from typing_extensions import override
 
-from crossbench.probes.probe import Probe, ProbeConfigParser
-from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
@@ -65,7 +64,7 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
     path = self.result_path / f"{label}.html"
     html = self.browser.js("return document.children[0].outerHTML",
                            dt.timedelta(seconds=10))
-    self.host_platform.set_file_contents(path, html)
+    self.host_platform.write_text(path, html)
     self._results.append(path)
 
   @override

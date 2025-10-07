@@ -14,15 +14,18 @@ import stat
 import sys
 import tempfile
 import unittest
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
 from crossbench import plt
 from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
-from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
 from tests.crossbench.mock_helper import MockRemotePortManager
+
+if TYPE_CHECKING:
+  from crossbench.plt.port_manager import PortManager
 
 
 class BaseNativePlatformTestCase(unittest.TestCase):
@@ -95,14 +98,14 @@ class BaseNativePlatformTestCase(unittest.TestCase):
   def test_cat(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
       file = tmp_dir / "test.txt"
-      self.platform.set_file_contents(file, "a b c d e f 11")
+      self.platform.write_text(file, "a b c d e f 11")
       result = self.platform.cat(file)
       self.assertEqual(result, "a b c d e f 11")
 
   def test_cat_bytes(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
       file = tmp_dir / "test.data"
-      self.platform.set_file_contents(file, "a b c d e f 11")
+      self.platform.write_text(file, "a b c d e f 11")
       result = self.platform.cat_bytes(file)
       self.assertEqual(result, b"a b c d e f 11")
 
@@ -208,9 +211,40 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     self.assertTrue(self.platform.is_dir(self.platform.default_tmp_dir))
 
   def test_NamedTemporaryFile(self):
-    with self.platform.NamedTemporaryFile("custom_prefix") as path:
-      self.assertIn("custom_prefix", str(path))
+    with self.platform.NamedTemporaryFile() as path:
       self.assertTrue(self.platform.is_file(path))
+      self.assertTrue(self.platform.exists(path))
+    self.assertFalse(self.platform.exists(path))
+
+    with self.platform.NamedTemporaryFile("custom_suffix") as path:
+      self.assertTrue(path.name.endswith("custom_suffix"), path.name)
+      self.assertTrue(self.platform.is_file(path))
+      self.assertTrue(self.platform.exists(path))
+    self.assertFalse(self.platform.exists(path))
+
+    with self.platform.NamedTemporaryFile("AaA", "BbB") as path:
+      self.assertTrue(path.name.startswith("BbB"))
+      self.assertTrue(path.name.endswith("AaA"))
+      self.assertTrue(self.platform.is_file(path))
+      self.assertTrue(self.platform.exists(path))
+    self.assertFalse(self.platform.exists(path))
+
+  def test_TemporaryDirectory(self):
+    with self.platform.TemporaryDirectory() as path:
+      self.assertTrue(self.platform.is_dir(path))
+      self.assertTrue(self.platform.exists(path))
+    self.assertFalse(self.platform.exists(path))
+
+    with self.platform.TemporaryDirectory("custom_suffix") as path:
+      self.assertTrue(path.name.endswith("custom_suffix"), path.name)
+      self.assertTrue(self.platform.is_dir(path))
+      self.assertTrue(self.platform.exists(path))
+    self.assertFalse(self.platform.exists(path))
+
+    with self.platform.TemporaryDirectory("AaA", "BbB") as path:
+      self.assertTrue(path.name.startswith("BbB"))
+      self.assertTrue(path.name.endswith("AaA"))
+      self.assertTrue(self.platform.is_dir(path))
       self.assertTrue(self.platform.exists(path))
     self.assertFalse(self.platform.exists(path))
 
@@ -225,7 +259,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.assertFalse(self.platform.exists(src_file))
       self.assertFalse(self.platform.exists(dst_file))
 
-      self.platform.set_file_contents(src_file, "some data")
+      self.platform.write_text(src_file, "some data")
       self.assertTrue(self.platform.exists(src_file))
       self.platform.copy(src_file, dst_file)
       self.assertTrue(self.platform.exists(src_file))
@@ -252,7 +286,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.assertFalse(self.platform.exists(dst_dir))
 
       self.platform.mkdir(src_dir)
-      self.platform.set_file_contents(src_file, "some data")
+      self.platform.write_text(src_file, "some data")
       self.assertTrue(self.platform.exists(src_file))
 
       self.platform.copy(src_dir, dst_dir)
@@ -299,7 +333,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.platform.touch(b)
       self.assertListEqual(sorted(self.platform.glob(tmp_dir, "*")), [a, b])
 
-  def test_set_file_contents(self):
+  def test_write_text(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
     with self.platform.TemporaryDirectory() as tmp_dir:
@@ -309,11 +343,11 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.platform.touch(tmp_file)
       self.assertFalse(self.platform.cat(tmp_file))
 
-      self.platform.set_file_contents(tmp_file, "custom data")
+      self.platform.write_text(tmp_file, "こんにちは")
       self.assertTrue(self.platform.exists(tmp_file))
-      self.assertEqual(self.platform.cat(tmp_file), "custom data")
+      self.assertEqual(self.platform.cat(tmp_file), "こんにちは")
 
-  def test_set_file_contents_dir(self):
+  def test_write_text_dir(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
     with self.platform.TemporaryDirectory() as tmp_dirname:
@@ -321,8 +355,22 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       tmp_dir_path = self.platform.path(tmp_dirname)
       self.assertTrue(self.platform.is_dir(tmp_dir_path))
       with self.assertRaises(Exception) as cm:
-        self.platform.set_file_contents(tmp_dirname, "data")
+        self.platform.write_text(tmp_dirname, "data")
       self.assertIn(tmp_dir_path.name, str(cm.exception))
+
+  def test_write_bytes(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      tmp_file = tmp_dir / "test.txt"
+      self.assertFalse(self.platform.exists(tmp_file))
+      self.platform.mkdir(tmp_file.parent)
+      self.platform.touch(tmp_file)
+      self.assertFalse(self.platform.cat_bytes(tmp_file))
+
+      self.platform.write_bytes(tmp_file, b"custom data")
+      self.assertTrue(self.platform.exists(tmp_file))
+      self.assertEqual(self.platform.cat_bytes(tmp_file), b"custom data")
 
   def test_path_tests(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
@@ -354,7 +402,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     with self.platform.TemporaryDirectory() as tmp_dir:
       tmp_file = tmp_dir / "test.txt"
       self.assertFalse(self.platform.exists(tmp_file))
-      self.platform.set_file_contents(tmp_file, "")
+      self.platform.write_text(tmp_file, "")
       mode = 0o400
       self.platform.chmod(tmp_file, mode)
       self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)

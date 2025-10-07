@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import dataclasses
+import datetime as dt
 import functools
-import logging
 import os
 import re
 from typing import TYPE_CHECKING, Any, ClassVar, Iterator, Optional, Type
@@ -24,6 +24,8 @@ from crossbench.plt.signals import LinuxSignals
 if TYPE_CHECKING:
   from crossbench.plt.display_info import DisplayInfo
 
+
+SCRIPTS_DIR = pth.LocalPath(__file__).parent / "remote_scripts"
 
 @dataclasses.dataclass
 class XrandrDisplayInfo:
@@ -173,49 +175,48 @@ class LinuxPlatform(PosixPlatform):
       return tuple(parse_display_xrandr(xrandr_str))
     return tuple()
 
-  @override
-  def meminfo(self, process_name: str) -> dict[str, ProcessMeminfo]:
-    matching_pids = self.sh_stdout("pgrep", "-f", process_name).splitlines()
-
-    meminfos: dict[str, ProcessMeminfo] = {}
-
-    for pid in matching_pids:
-      try:
-        proc_name = self.cat(f"/proc/{pid}/cmdline")
-      except (SubprocessError, OSError):
-        logging.warning("Failed to get cmdline for process: %s", pid)
-        continue
-
-      meminfo = self._get_proc_meminfo(pid)
-
-      if not meminfo:
-        logging.warning("Failed to get meminfo for process: %s", pid)
-        continue
-
-      meminfos[proc_name] = meminfo
-
-    return meminfos
-
+  _MEMINFO_SCRIPT_PROCESS_PATTERN = re.compile(r"==== process (\d+) ====")
+  _MEMINFO_SCRIPT_SMAPS_HEADER_PATTERN = re.compile(r"==== smaps_rollup ====")
   _SMAPS_ROLLUP_PATTERN = re.compile(
       r".*Rss:\s+(?P<rss_total>\d+) kB.*"
       r"Pss:\s+(?P<pss_total>\d+) kB.*"
       r"Swap:\s+(?P<swap_total>\d+)",
       flags=re.DOTALL)
 
-  def _get_proc_meminfo(self, pid_str: str) -> Optional[ProcessMeminfo]:
-    try:
-      smaps_rollup = self.cat(f"/proc/{pid_str}/smaps_rollup")
-    except (SubprocessError, OSError):
-      return None
+  @override
+  def process_meminfo(
+      self, process_name: str, timeout: dt.timedelta = dt.timedelta(seconds=10)
+  ) -> list[ProcessMeminfo]:
+    del timeout
 
-    match = self._SMAPS_ROLLUP_PATTERN.search(smaps_rollup)
+    script = (SCRIPTS_DIR / "meminfo.sh").read_text()
 
-    if not match:
-      return None
-
-    return ProcessMeminfo(
-        int(pid_str), int(match["pss_total"]), int(match["rss_total"]),
-        int(match["swap_total"]))
+    with self.NamedTemporaryFile() as script_file:
+      self.write_text(script_file, script)
+      # Script outputs the following format repeated per process:
+      # ==== process <pid> ====
+      # <proc/cmdline>
+      # ==== smaps_rollup ====
+      # <proc/smaps_rollup>
+      output = self.sh_stdout("bash", str(script_file), process_name)
+      processes = self._MEMINFO_SCRIPT_PROCESS_PATTERN.split(output)[1:]
+      # processes even indices are pids, the odd indices after is the output for
+      # that pid.
+      meminfos: list[ProcessMeminfo] = []
+      for i in range(0, len(processes), 2):
+        pid = int(processes[i])
+        [cmdline, smaps_rollup
+        ] = self._MEMINFO_SCRIPT_SMAPS_HEADER_PATTERN.split(processes[i + 1])
+        match = self._SMAPS_ROLLUP_PATTERN.search(smaps_rollup)
+        assert match
+        meminfos.append(
+            ProcessMeminfo(
+                pid=pid,
+                name=cmdline.strip(),
+                pss_total=int(match["pss_total"]),
+                rss_total=int(match["rss_total"]),
+                swap_total=int(match["swap_total"])))
+      return meminfos
 
 
 class RemoteLinuxPlatform(RemotePlatformMixin, LinuxPlatform):

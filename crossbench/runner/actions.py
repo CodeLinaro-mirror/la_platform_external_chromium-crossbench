@@ -206,6 +206,10 @@ class Actions(TimeScope):
     | wait_until 6s | action 4s | => total time is 6s
     """
     self._assert_is_active()
+    if not timeout:
+      # No wait necessary, don't show a warning.
+      yield
+      return
     delta: dt.timedelta = self.timing.timeout_timedelta(timeout, absolute_time)
     start_time: float = py_time.time()
     end_time: float = start_time + delta.total_seconds()

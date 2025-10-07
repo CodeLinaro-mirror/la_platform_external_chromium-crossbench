@@ -15,7 +15,6 @@ from typing_extensions import override
 
 from crossbench.action_runner.action_runner_listener import \
     ActionRunnerListener
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.page.base import Page
@@ -25,15 +24,15 @@ from crossbench.helper import url_helper
 from crossbench.parse import NumberParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.results import ProbeResult, ProbeResultDict
 from crossbench.runner.exception import StopStoryException
 
 if TYPE_CHECKING:
   import argparse
 
-  from crossbench.action_runner.base import ActionRunner
+  from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.path import LocalPath
+  from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
@@ -104,7 +103,7 @@ class MemoryProbeContext(ActionRunnerListener,
     cur_benchmark = probe.benchmark
     if not isinstance(cur_benchmark, MemoryBenchmark):
       raise TypeError("The probe only works for MemoryBenchmark")
-    cur_benchmark.action_runner.set_listener(self)
+    run.action_runner.set_listener(self)
     self._skippable_tab_count = cur_benchmark._skippable_tab_count
     self._target_tab_count = cur_benchmark.get_target_tab_count()
     self._intensive_tab_switch_count = \
@@ -368,14 +367,13 @@ class MemoryBenchmark(SubStoryBenchmark):
 
   def __init__(self,
                stories: Sequence[Page],
+               action_runner_config: Optional[ActionRunnerConfig] = None,
                skippable_tab_count: int = 0,
                target_tab_count: int = 0,
-               intensive_tab_switch_count: int = 0,
-               action_runner: Optional[ActionRunner] = None) -> None:
-    self._action_runner = action_runner or DefaultActionRunner()
+               intensive_tab_switch_count: int = 0) -> None:
     for story in stories:
       assert isinstance(story, Page)
-    super().__init__(stories)
+    super().__init__(stories, action_runner_config)
     self._skippable_tab_count = skippable_tab_count
     self._target_tab_count = target_tab_count
     self._intensive_tab_switch_count = intensive_tab_switch_count
@@ -392,7 +390,3 @@ class MemoryBenchmark(SubStoryBenchmark):
     data = super().describe()
     data["url"] = cls.STORY_FILTER_CLS.URL
     return data
-
-  @property
-  def action_runner(self) -> ActionRunner:
-    return self._action_runner

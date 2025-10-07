@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import abc
-import datetime as dt
 import functools
-import re
 from typing import TYPE_CHECKING, Optional, Type
 
 from typing_extensions import override
@@ -17,6 +15,9 @@ from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
 from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
+  import datetime as dt
+  import re
+
   from crossbench.config import ConfigParser
   from crossbench.types import JsonDict
 

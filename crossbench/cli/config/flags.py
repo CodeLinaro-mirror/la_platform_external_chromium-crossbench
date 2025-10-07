@@ -18,13 +18,12 @@ from typing_extensions import override
 from crossbench import exception
 from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.config import ConfigError, ConfigObject
-from crossbench.flags.base import Flags
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.flags.js_flags import JSFlags
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench.flags.base import FlagsData
+  from crossbench.flags.base import Flags, FlagsData
 
 
 DEFAULT_LABEL: Final[str] = "default"
@@ -156,16 +155,36 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
     for flag_name, flag_value in data.items():
       with exception.annotate_argparsing(
           f"Parsing flag variant ...[{flag_name}]:"):
-        flags.set(flag_name)
-        if flag_value is None:
+        if flag_value is None or isinstance(flag_value, str):
+          cls._validate_variants_value(flags, flag_name, flag_value)
           continue
-        if not isinstance(flag_value, (str, list, tuple)):
-          raise ConfigError(
-              f"Invalid flag variant value (None, str or sequence): "
-              f"{flag_name}={repr(flag_value)}")
         if isinstance(flag_value, (list, tuple)):
-          ObjectParser.unique_sequence(
-              flag_value, f"flag {repr(flag_name)} variant values", ConfigError)
+          cls._validate_variants_sequence(flags, flag_name, flag_value)
+          continue
+        raise ConfigError(
+            f"Invalid flag variant value (None, str or sequence): "
+            f"{flag_name}={repr(flag_value)}")
+
+  @classmethod
+  def _validate_variants_sequence(cls, flags: ChromeFlags, flag_name: str,
+                                  flag_values: Sequence) -> None:
+    ObjectParser.unique_sequence(flag_values,
+                                 f"flag {repr(flag_name)} variant values",
+                                 ConfigError)
+    for sequence_flag_value in flag_values:
+      cls._validate_variants_value(flags.copy(), flag_name, sequence_flag_value)
+
+  @classmethod
+  def _validate_variants_value(cls, flags: ChromeFlags, flag_name: str,
+                               flag_value: Any) -> None:
+    if flag_value is None:
+      flags.set(flag_name)
+      return
+    if isinstance(flag_value, str):
+      flags.set(flag_name, flag_value)
+      return
+    raise ConfigError(f"Invalid flag variant value: "
+                      f"{flag_name}={repr(flag_value)}")
 
   @classmethod
   def _dict_variant_to_group(cls, flag_name: str, data: Any) -> Self:

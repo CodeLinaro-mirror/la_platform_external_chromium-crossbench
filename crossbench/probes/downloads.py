@@ -12,12 +12,11 @@ from typing import TYPE_CHECKING, Iterable, Set
 
 import crossbench.path as pth
 from crossbench.parse import ObjectParser
-from crossbench.probes.probe import Probe, ProbeConfigParser
-from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import ProbeResult
 
 if TYPE_CHECKING:
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
 

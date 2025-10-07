@@ -11,7 +11,7 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import Final, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Final, Optional, Sequence, Type
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -27,7 +27,6 @@ from crossbench.benchmarks.loading.playback_controller import \
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
                                             LoadLine2TabletBenchmark)
-from crossbench.browsers.browser import Browser
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
 from crossbench.cli.config.env import EnvConfig
@@ -39,6 +38,9 @@ from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import MockCLI, MockPlatform
+
+if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
 
 
 class CrossbenchFakeFsTestCase(
@@ -105,7 +107,8 @@ class CrossbenchMockArgsMixin:
         about_blank_duration=kwargs.pop("about_blank_duration", dt.timedelta()),
         run_login=kwargs.pop("run_login", True),
         run_setup=kwargs.pop("run_setup", True),
-        env=EnvConfig.default())
+        env=EnvConfig.default(),
+        action_runner_config=kwargs.pop("action_runner_config", None))
     assert not kwargs, f"got unused kwargs: {kwargs}"
     return args
 

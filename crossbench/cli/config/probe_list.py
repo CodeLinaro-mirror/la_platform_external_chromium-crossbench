@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import argparse
 import logging
 from typing import TYPE_CHECKING, Any, Iterable, Self, Sequence
 
@@ -16,6 +15,8 @@ from crossbench.config import ConfigObject
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  import argparse
+
   import crossbench.path as pth
   from crossbench.probes.probe import Probe
 
@@ -29,7 +30,7 @@ class ProbeListConfig(ConfigObject):
       if not args.probe_config:
         return config_from_args
       probe_config_path: pth.LocalPath = args.probe_config
-      config_from_file = cls.parse_path(probe_config_path)
+      config_from_file = cls.parse(probe_config_path)
       with exception.annotate(
           f"Merging probe config ({probe_config_path.name}) with cli --probe:"):
         return config_from_file.merge(config_from_args, should_override=True)

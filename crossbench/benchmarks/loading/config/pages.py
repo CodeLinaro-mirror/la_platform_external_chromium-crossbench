@@ -27,6 +27,8 @@ from crossbench.config import ConfigObject
 from crossbench.parse import DurationParseError, DurationParser, ObjectParser
 
 if TYPE_CHECKING:
+  import urllib.parse as urlparse
+
   from crossbench.action_runner.action.action import Action
 
 
@@ -52,9 +54,6 @@ class PagesConfig(ConfigObject):
       value = URL, [DURATION], ...
     """
     value = ObjectParser.non_empty_str(value)
-    if value[0] == "{":
-      return cls.parse_inline_hjson(value)
-
     values: list[str] = []
     previous_part: str | None = None
     for part in value.strip().split(","):
@@ -74,7 +73,12 @@ class PagesConfig(ConfigObject):
     return cls.parse_sequence(values)
 
   @classmethod
-  def parse_unknown_path(cls, path: pth.LocalPath, **kwargs) -> Self:
+  def parse_any_url(cls, url: urlparse.ParseResult, **kwargs) -> Self:
+    # We might get comma-separate URL lists here.
+    return cls.parse_str(url.geturl(), **kwargs)
+
+  @classmethod
+  def parse_any_path(cls, path: pth.LocalPath, **kwargs) -> Self:
     # Make sure we get errors for invalid files.
     return cls.parse_config_path(path, **kwargs)
 

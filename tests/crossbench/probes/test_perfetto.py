@@ -23,14 +23,21 @@ class PerfettoProbeTestCase(unittest.TestCase):
     self.assertIn("config", str(cm.exception))
 
   def test_parse_config(self):
-    probe: PerfettoProbe = PerfettoProbe.from_config({"textproto": "TEXTPROTO"})
-    self.assertEqual("TEXTPROTO", probe.textproto)
+    trace_config = """
+        buffers: {
+            size_kb: 1234
+            fill_policy: DISCARD
+        }
+    """
+    probe: PerfettoProbe = PerfettoProbe.from_config(
+        {"trace_config": trace_config})
+    self.assertEqual(probe.trace_config.buffers[0].size_kb, 1234)
     self.assertEqual(pth.AnyPath("perfetto"), probe.perfetto_bin)
 
   def test_parse_example_config(self):
     config_file = test_helper.config_dir() / "doc/probe/perfetto.config.hjson"
     self.assertTrue(config_file.is_file())
-    probes = ProbeListConfig.parse_path(config_file).probes
+    probes = ProbeListConfig.parse(config_file).probes
     self.assertEqual(len(probes), 1)
     probe = probes[0]
     self.assertIsInstance(probe, PerfettoProbe)
@@ -62,15 +69,15 @@ class PerfettoToolDownloaderTestCase(CrossbenchFakeFsTestCase):
 
   def _download_perfetto_tool(self, platform, key):
     platform.use_mock_name = False
-    download_path = platform.cache_dir("perfetto") / "v49.0/traceconv"
+    download_path = platform.cache_dir("perfetto") / "v51.2/traceconv"
     platform.expect_download(
         "https://commondatastorage.googleapis.com/perfetto-luci-artifacts/"
-        f"v49.0/{key}/traceconv", download_path)
+        f"v51.2/{key}/traceconv", download_path)
     platform.expect_sh(
         download_path,
         "--version",
-        result=("Perfetto v49.0-33a4fd078 "
-                "(33a4fd07897a9a648664926ea27769278a19ff13)"))
+        result=("Perfetto v51.2-7a9a6a0 "
+                "(7a9a6a0587348bffd1796b66a1da33cc1ea421d8)"))
     result = PerfettoToolDownloader("traceconv", platform=platform).download()
     self.assertTrue(platform.exists(result))
     # downloading the same will use the locally cached version

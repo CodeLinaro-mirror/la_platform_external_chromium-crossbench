@@ -2,25 +2,32 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import argparse
+from __future__ import annotations
+
 import datetime as dt
 import logging
-from typing import Any, Optional, Final
+from typing import TYPE_CHECKING, Any, Final, Optional
 
 from typing_extensions import override
 
 from crossbench import config
-from crossbench import path as pth
+from crossbench.action_runner.action.enums import ReadyState
 from crossbench.benchmarks.base import Benchmark
-from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.ui import timer
 from crossbench.flags.base import Flags
 from crossbench.helper import input_helper
 from crossbench.parse import DurationParser
-from crossbench.runner.run import Run
 from crossbench.stories.story import Story
-from crossbench.action_runner.action.enums import ReadyState
+
+if TYPE_CHECKING:
+  import argparse
+
+  from crossbench import path as pth
+  from crossbench.action_runner.config import ActionRunnerConfig
+  from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.runner.run import Run
+
 
 PLAY_AUDIO_SCRIPT: Final[str] = """
   document.getElementById('unmuteButton').click();
@@ -87,9 +94,10 @@ class PowerlineBenchmark(Benchmark):
   # on it without manual intervention.
 
   def __init__(self,
+               action_runner_config: Optional[ActionRunnerConfig] = None,
                run_for: Optional[dt.timedelta] = None) -> None:
     powerline_story = PowerlineStory(run_for)
-    super().__init__([powerline_story])
+    super().__init__([powerline_story], action_runner_config)
 
   @classmethod
   def _base_dir(cls) -> pth.LocalPath:

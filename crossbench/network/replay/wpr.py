@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, TypeVar
 
 from typing_extensions import override
 
-from crossbench.flags.base import Flags
 from crossbench.helper.path_finder import WprGoToolFinder
 from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
@@ -21,6 +20,7 @@ from crossbench.plt import PLATFORM, Platform
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.flags.base import Flags
   from crossbench.network.base import TrafficShaper
   from crossbench.path import AnyPath, LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -44,25 +44,25 @@ class WPRCloudBinary:
 # See third_party/catapult/telemetry/telemetry/binary_dependencies.json
 WPR_PREBUILT_LOOKUP: Final[Mapping[tuple[str, str], WPRCloudBinary]] = {
     ("android", "arm64"):
-        WPRCloudBinary("7ed4026aaef69a46b99f65daeded6f73d1242f13"),
+        WPRCloudBinary("8f422f75ae74113ccc12234bf2d1368074754fcb"),
     ("android", "arm32"):
-        WPRCloudBinary("98365cc4e722f0996b18529e00fd03b3de60bb9a"),
+        WPRCloudBinary("f0aa37ad758ec972816ee65f446b99bdbd74746b"),
     ("android", "x64"):
-        WPRCloudBinary("70e240a199128cd67cc25c6639ca3f785f941aa3"),
+        WPRCloudBinary("864c50726a8cb5637339ccf2a074ec4b5f413753"),
     # On arm64 ChromeOS, use the same binary as arm64 Linux.
     ("chromeos_ssh", "arm64"):
-        WPRCloudBinary("7ed4026aaef69a46b99f65daeded6f73d1242f13"),
+        WPRCloudBinary("8f422f75ae74113ccc12234bf2d1368074754fcb"),
     # On x64 ChromeOS, use the same binary as x64 Linux.
     ("chromeos_ssh", "x64"):
-        WPRCloudBinary("70e240a199128cd67cc25c6639ca3f785f941aa3"),
+        WPRCloudBinary("864c50726a8cb5637339ccf2a074ec4b5f413753"),
     ("linux", "x64"):
-        WPRCloudBinary("70e240a199128cd67cc25c6639ca3f785f941aa3"),
+        WPRCloudBinary("864c50726a8cb5637339ccf2a074ec4b5f413753"),
     ("macos", "arm64"):
-        WPRCloudBinary("5f2b7d7d463c47ea365bf7ea8936bb5ad8a212f0"),
+        WPRCloudBinary("a245938846180631dbc9806e90147e3cfbc927fc"),
     ("macos", "x64"):
-        WPRCloudBinary("fa01d104309b62d9ac10682252c595aad9239789"),
+        WPRCloudBinary("613419bc52b357419e7bd7a1158fe257a1b73e97"),
     ("win", "x64"):
-        WPRCloudBinary("964bff63766054c8c1c1f1c01acedcf0770a8da7"),
+        WPRCloudBinary("6f67a1c2284bfe2c36824ceecb5b0f456cdd191c"),
 }
 
 
@@ -174,8 +174,8 @@ class LocalWprReplayNetwork(WprReplayNetwork):
   @override
   def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> None:
     if not wpr_go_bin:
-      if local_wpr_go := WprGoToolFinder(self.host_platform).path:
-        wpr_go_bin = self.host_platform.local_path(local_wpr_go)
+      if local_wpr_go := WprGoToolFinder(self.host_platform).local_path:
+        wpr_go_bin = local_wpr_go
     if not wpr_go_bin:
       raise RuntimeError(
           f"Could not find wpr.go binary on {self.host_platform}")
@@ -203,7 +203,6 @@ class LocalWprReplayNetwork(WprReplayNetwork):
     logging.info("REMOTE PORT FORWARDING: %s <= %s", self.host_platform,
                  browser_platform)
     # TODO: make ports configurable
-    ports = browser_platform.ports
     with browser_platform.ports.nested() as ports:
       ports.reverse_forward(http_port, http_port)
       ports.reverse_forward(https_port, https_port)
@@ -245,8 +244,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         self.host_platform.local_cache_dir("wpr") /
         str(self.browser_platform.machine) / "wpr_go")
     if not check_hash(local_wpr_go_bin, wpr_cloud_binary.file_hash):
-      self.host_platform.sh("gsutil", "cp", wpr_cloud_binary.url,
-                            local_wpr_go_bin)
+      self.host_platform.download_gcs_file(wpr_cloud_binary.url,
+                                           local_wpr_go_bin)
     assert check_hash(local_wpr_go_bin, wpr_cloud_binary.file_hash)
 
     return local_wpr_go_bin
@@ -274,8 +273,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
 
   def _push_required_files(self) -> list[AnyPath]:
     host_platform = self.host_platform
-    if local_wpr_go := WprGoToolFinder(host_platform).path:
-      wpr_root = self.host_platform.local_path(local_wpr_go.parents[1])
+    if local_wpr_go := WprGoToolFinder(host_platform).local_path:
+      wpr_root = local_wpr_go.parents[1]
     else:
       raise RuntimeError(f"Could not fine local wpr.go on {host_platform}")
 

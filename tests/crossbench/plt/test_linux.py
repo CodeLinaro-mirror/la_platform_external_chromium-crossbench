@@ -4,20 +4,23 @@
 
 from __future__ import annotations
 
-import pathlib
+import datetime as dt
 import textwrap
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
-from crossbench.plt.linux import parse_display_xrandr
+from crossbench.plt.linux import (SCRIPTS_DIR, LinuxPlatform,
+                                  parse_display_xrandr)
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
 from tests.crossbench.mock_helper import (LinuxMockPlatform,
                                           RemoteLinuxMockPlatform, ShResult)
 from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
                                          BasePosixMockPlatformTestCase)
+
+NOW_EPOCH = dt.datetime.now()
 
 
 class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
@@ -69,113 +72,51 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
     })
 
   def test_meminfo_no_proc(self):
+    path = SCRIPTS_DIR / "meminfo.sh"
+    self.fs.create_file(path, contents="meminfo")
 
-    process_name: str = "some_process"
-
-    self.mock_platform.expect_sh("pgrep", "-f", process_name, result="")
-
-    meminfo = self.mock_platform.meminfo(process_name)
-
+    self.mock_platform.sh_results = [ShResult()]
+    meminfo = LinuxPlatform.process_meminfo(self.mock_platform, "some_process")
     self.assertEqual(len(meminfo), 0)
 
-  _SMAPS_ROLLUP_DATA = """
-241800000000-7ffc064d5000 ---p 00000000 00:00 0                          [rollup]
-Rss:               19792 kB
-Pss:                2062 kB
-Pss_Dirty:          1831 kB
-Pss_Anon:           1831 kB
-Pss_File:            231 kB
-Pss_Shmem:             0 kB
-Shared_Clean:       3932 kB
-Shared_Dirty:      15604 kB
-Private_Clean:         0 kB
-Private_Dirty:       256 kB
-Referenced:         4300 kB
-Anonymous:         15860 kB
-KSM:                   0 kB
-LazyFree:              0 kB
-AnonHugePages:      2048 kB
-ShmemPmdMapped:        0 kB
-FilePmdMapped:         0 kB
-Shared_Hugetlb:        0 kB
-Private_Hugetlb:       0 kB
+  _MEMINFO_SCRIPT_OUTPUT = """
+==== process 926961 ====
+/usr/bin/some_process -a
+==== smaps_rollup ====
+00008000-7ffd0f5fe000 ---p 00000000 00:00 0                              [rollup]
+Rss:               80364 kB
+Pss:               17815 kB
+Pss_Dirty:          8715 kB
 Swap:                  0 kB
 SwapPss:               0 kB
+==== process 930293 ====
+/usr/bin/some_process -b
+==== smaps_rollup ====
+85800000000-7ffd0f5fe000 ---p 00000000 00:00 0                           [rollup]
+Rss:               44860 kB
+Pss:                5074 kB
+Private_Hugetlb:       0 kB
+Swap:                  0 kB
 Locked:                0 kB
+==== process 930304 ====
+/usr/bin/some_process -c
+==== smaps_rollup ====
+Rss:                2680 kB
+Pss:                 521 kB
+Swap:                400 kB
 """
 
   def test_meminfo(self):
+    path = SCRIPTS_DIR / "meminfo.sh"
+    self.fs.create_file(path, contents="meminfo")
 
-    process_name: str = "some_process"
-
-    proc_100_cmdline = "/usr/bin/some_process --some-flag"
-    proc_6_cmdline = "/usr/bin/some_process --some-other-flag"
-    proc_20_cmdline = "/usr/bin/some_process --some-third-flag"
-
-    pathlib.Path("/proc/100").mkdir(parents=True)
-    pathlib.Path("/proc/6").mkdir(parents=True)
-    pathlib.Path("/proc/20").mkdir(parents=True)
-
-    pathlib.Path("/proc/100/cmdline").write_text(proc_100_cmdline)
-    pathlib.Path("/proc/100/smaps_rollup").write_text(self._SMAPS_ROLLUP_DATA)
-
-    pathlib.Path("/proc/6/cmdline").write_text(proc_6_cmdline)
-    pathlib.Path("/proc/6/smaps_rollup").write_text(self._SMAPS_ROLLUP_DATA)
-
-    pathlib.Path("/proc/20/cmdline").write_text(proc_20_cmdline)
-    pathlib.Path("/proc/20/smaps_rollup").write_text(self._SMAPS_ROLLUP_DATA)
-
-    self.mock_platform.expect_sh(
-        "pgrep", "-f", process_name, result="100\n6\n20\n")
-
-    meminfo = self.mock_platform.meminfo(process_name)
-
-    self.assertEqual(len(meminfo), 3)
-    self.assertTrue(proc_100_cmdline in meminfo)
-    self.assertEqual(meminfo[proc_100_cmdline],
-                     ProcessMeminfo(100, 2062, 19792, 0))
-    self.assertEqual(meminfo[proc_6_cmdline], ProcessMeminfo(6, 2062, 19792, 0))
-    self.assertEqual(meminfo[proc_20_cmdline],
-                     ProcessMeminfo(20, 2062, 19792, 0))
-
-  def test_meminfo_missing_proc(self):
-    process_name: str = "some_process"
-
-    proc_100_cmdline = "/usr/bin/some_process --some-flag"
-
-    pathlib.Path("/proc/100").mkdir(parents=True)
-    pathlib.Path("/proc/100/cmdline").write_text(proc_100_cmdline)
-    pathlib.Path("/proc/100/smaps_rollup").write_text(self._SMAPS_ROLLUP_DATA)
-
-    self.mock_platform.expect_sh("pgrep", "-f", process_name, result="100\n6\n")
-
-    meminfo = self.mock_platform.meminfo(process_name)
-
-    self.assertEqual(len(meminfo), 1)
-    self.assertTrue(proc_100_cmdline in meminfo)
-    self.assertEqual(meminfo[proc_100_cmdline],
-                     ProcessMeminfo(100, 2062, 19792, 0))
-
-  def test_meminfo_missing_smaps(self):
-    process_name: str = "some_process"
-    proc_100_cmdline = "/usr/bin/some_process --some-flag"
-    proc_6_cmdline = "/usr/bin/some_process --another-flag"
-
-    pathlib.Path("/proc/100").mkdir(parents=True)
-    pathlib.Path("/proc/100/cmdline").write_text(proc_100_cmdline)
-    pathlib.Path("/proc/100/smaps_rollup").write_text(self._SMAPS_ROLLUP_DATA)
-
-    pathlib.Path("/proc/6").mkdir(parents=True)
-    pathlib.Path("/proc/6/cmdline").write_text(proc_6_cmdline)
-
-    self.mock_platform.expect_sh("pgrep", "-f", process_name, result="100\n6\n")
-
-    meminfo = self.mock_platform.meminfo(process_name)
-
-    self.assertEqual(len(meminfo), 1)
-    self.assertTrue(proc_100_cmdline in meminfo)
-    self.assertEqual(meminfo[proc_100_cmdline],
-                     ProcessMeminfo(100, 2062, 19792, 0))
+    self.mock_platform.sh_results = [ShResult(self._MEMINFO_SCRIPT_OUTPUT)]
+    meminfo = LinuxPlatform.process_meminfo(self.mock_platform, "some_process")
+    self.assertListEqual(meminfo, [
+        ProcessMeminfo(926961, "/usr/bin/some_process -a", 17815, 80364, 0),
+        ProcessMeminfo(930293, "/usr/bin/some_process -b", 5074, 44860, 0),
+        ProcessMeminfo(930304, "/usr/bin/some_process -c", 521, 2680, 400),
+    ])
 
 
 class LocalLinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
@@ -261,85 +202,6 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
     self.assertEqual(self.platform.cpu_cores(logical=False), 2)
     self.assertFalse(self.platform.expected_sh_cmds)
     self.assertEqual(self.platform.cpu_cores(logical=False), 2)
-
-  @override
-  def test_meminfo(self):
-    process_name: str = "some_process"
-
-    proc_100_cmdline = "/usr/bin/some_process --some-flag"
-    proc_6_cmdline = "/usr/bin/some_process --some-other-flag"
-    proc_20_cmdline = "/usr/bin/some_process --some-third-flag"
-
-    self.mock_platform.expect_sh(
-        "pgrep", "-f", process_name, result="100\n6\n20\n")
-
-    self.mock_platform.expect_sh(
-        "cat", "/proc/100/cmdline", result=proc_100_cmdline)
-    self.mock_platform.expect_sh(
-        "cat", "/proc/100/smaps_rollup", result=self._SMAPS_ROLLUP_DATA)
-    self.mock_platform.expect_sh(
-        "cat", "/proc/6/cmdline", result=proc_6_cmdline)
-    self.mock_platform.expect_sh(
-        "cat", "/proc/6/smaps_rollup", result=self._SMAPS_ROLLUP_DATA)
-    self.mock_platform.expect_sh(
-        "cat", "/proc/20/cmdline", result=proc_20_cmdline)
-    self.mock_platform.expect_sh(
-        "cat", "/proc/20/smaps_rollup", result=self._SMAPS_ROLLUP_DATA)
-
-    meminfo = self.mock_platform.meminfo(process_name)
-
-    self.assertEqual(len(meminfo), 3)
-    self.assertTrue(proc_100_cmdline in meminfo)
-    self.assertEqual(meminfo[proc_100_cmdline],
-                     ProcessMeminfo(100, 2062, 19792, 0))
-    self.assertEqual(meminfo[proc_6_cmdline], ProcessMeminfo(6, 2062, 19792, 0))
-    self.assertEqual(meminfo[proc_20_cmdline],
-                     ProcessMeminfo(20, 2062, 19792, 0))
-
-  @override
-  def test_meminfo_missing_proc(self):
-    process_name: str = "some_process"
-
-    proc_100_cmdline = "/usr/bin/some_process --some-flag"
-
-    self.mock_platform.expect_sh("pgrep", "-f", process_name, result="100\n6\n")
-    self.mock_platform.expect_sh(
-        "cat", "/proc/100/cmdline", result=proc_100_cmdline)
-    self.mock_platform.expect_sh(
-        "cat", "/proc/100/smaps_rollup", result=self._SMAPS_ROLLUP_DATA)
-
-    self.mock_platform.expect_sh(
-        "cat", "/proc/6/cmdline", result=ShResult("", False))
-
-    meminfo = self.mock_platform.meminfo(process_name)
-
-    self.assertEqual(len(meminfo), 1)
-    self.assertTrue(proc_100_cmdline in meminfo)
-    self.assertEqual(meminfo[proc_100_cmdline],
-                     ProcessMeminfo(100, 2062, 19792, 0))
-
-  @override
-  def test_meminfo_missing_smaps(self):
-    process_name: str = "some_process"
-    proc_100_cmdline = "/usr/bin/some_process --some-flag"
-    proc_6_cmdline = "/usr/bin/some_process --another-flag"
-
-    self.mock_platform.expect_sh("pgrep", "-f", process_name, result="100\n6\n")
-    self.mock_platform.expect_sh(
-        "cat", "/proc/100/cmdline", result=proc_100_cmdline)
-    self.mock_platform.expect_sh(
-        "cat", "/proc/100/smaps_rollup", result=self._SMAPS_ROLLUP_DATA)
-    self.mock_platform.expect_sh(
-        "cat", "/proc/6/cmdline", result=proc_6_cmdline)
-    self.mock_platform.expect_sh(
-        "cat", "/proc/6/smaps_rollup", result=ShResult("", False))
-
-    meminfo = self.mock_platform.meminfo(process_name)
-
-    self.assertEqual(len(meminfo), 1)
-    self.assertTrue(proc_100_cmdline in meminfo)
-    self.assertEqual(meminfo[proc_100_cmdline],
-                     ProcessMeminfo(100, 2062, 19792, 0))
 
   # TODO: implement more mock tests
   def test_local_reverse_port_forward_invalid(self):

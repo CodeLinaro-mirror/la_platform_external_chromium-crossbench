@@ -7,7 +7,8 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Self, Sequence, cast
+from typing import (TYPE_CHECKING, Any, ClassVar, Iterator, Optional, Self,
+                    Sequence, cast)
 
 from typing_extensions import override
 
@@ -30,12 +31,15 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(frozen=True)
 class PageConfig(ConfigObject):
+  VALID_SCHEMES: ClassVar[tuple[str, ...]] = ObjectParser.COMMON_URL_SCHEMES
+
   label: str | None = None
   playback: PlaybackController | None = None
   secrets: Secrets = Secrets()
   login: LoginBlock | None = None
   setup: ActionBlock | None = None
   blocks: tuple[ActionBlock, ...] = tuple()
+  teardown: ActionBlock | None = None
 
   @classmethod
   def parse_other(cls, value: Any, **kwargs) -> Self:
@@ -103,6 +107,7 @@ class PageConfig(ConfigObject):
         "blocks",
         aliases=("actions", "url", "urls"),
         type=ActionBlockListConfig)
+    parser.add_argument("teardown", type=ActionBlock)
     return parser
 
   @classmethod

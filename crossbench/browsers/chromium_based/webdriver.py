@@ -8,7 +8,8 @@ import abc
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Type, cast
+from typing import (TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO,
+                    Type, cast)
 
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
@@ -23,8 +24,8 @@ from crossbench.browsers.chromium.version import (ChromeDriverVersion,
                                                   ChromiumVersion)
 from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
+from crossbench.browsers.chromium_based.devtools_tracer import DevToolsTracer
 from crossbench.browsers.webdriver import WebDriverBrowser
-from crossbench.flags.base import FlagsT
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper import wait
 
@@ -34,6 +35,7 @@ if TYPE_CHECKING:
   from selenium import webdriver
 
   from crossbench.browsers.version import BrowserVersion
+  from crossbench.flags.base import FlagsT
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -47,6 +49,8 @@ class ChromiumBasedWebDriver(
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
     self._script_identifier_kwargs: dict[Any, Any] | None = None
+    self._tracer: DevToolsTracer | None = None
+    self._stdout_log_file: TextIO | None = None
 
   @classmethod
   @override
@@ -131,6 +135,7 @@ class ChromiumBasedWebDriver(
 
     # pytype: disable=wrong-keyword-args
     assert self._stdout_log_file is None
+    # On desktop platforms service logs contain browser stdout, hence the name.
     self._stdout_log_file = self.log_file.with_stem("browser.stdout").open("w+")
     service = self.WEB_DRIVER_SERVICE(
         executable_path=os.fspath(driver_path),
@@ -299,35 +304,44 @@ class ChromiumBasedWebDriver(
       # to switching to the first tab.
       driver.switch_to.window(driver.window_handles[0])
 
+  @override
+  def close_all_tabs(self) -> None:
+    driver = self._private_driver
+    current_handle = driver.current_window_handle
+
+    for handle in driver.window_handles:
+      driver.switch_to.window(handle)
+      if handle != current_handle:
+        driver.close()
+
+    # Closing every tab will cause the browser to exit.
+    # As a workaround navigate the final tab to about:blank.
+    driver.switch_to.window(current_handle)
+    self.show_url("about:blank")
+
   @property
   def current_url(self) -> str:
     return self._private_driver.current_url
 
+  # TODO(crbug.com/428953697): Consider unifying BrowserProfilingProbe with
+  # other similar ones.
   def start_profiling(self) -> None:
     assert isinstance(self._private_driver, ChromiumDriver)
-    # TODO: reuse the TraceProbe categories,
-    self._execute_cdp_cmd(
-        self._private_driver, "Tracing.start", {
-            "transferMode":
-                "ReturnAsStream",
-            "includedCategories": [
-                "devtools.timeline",
-                "v8.execute",
-                "disabled-by-default-devtools.timeline",
-                "disabled-by-default-devtools.timeline.frame",
-                "toplevel",
-                "blink.console",
-                "blink.user_timing",
-                "latencyInfo",
-                "disabled-by-default-devtools.timeline.stack",
-                "disabled-by-default-v8.cpu_profiler",
-            ],
-        })
+    self._tracer = DevToolsTracer(self._private_driver)
+    self._tracer.start()
 
   def stop_profiling(self) -> Any:
     assert isinstance(self._private_driver, ChromiumDriver)
-    data = self._execute_cdp_cmd(self._private_driver,
-                                 "Tracing.tracingComplete", {})
-    # TODO: use webdriver bidi to get the async Tracing.end event.
-    # self._execute_cdp_cmd(self._driver, "Tracing.end", {})
-    return data
+    assert self._tracer is not None
+    output = self._tracer.end()
+    self._tracer = None
+    return output
+
+  @override
+  def force_quit(self) -> None:
+    try:
+      super().force_quit()
+    finally:
+      if self._stdout_log_file:
+        self._stdout_log_file.close()
+        self._stdout_log_file = None

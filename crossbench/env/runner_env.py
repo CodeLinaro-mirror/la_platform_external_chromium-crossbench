@@ -18,7 +18,7 @@ from crossbench.parse import ObjectParser
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.browsers.browser import Browser
-  from crossbench.plt.base import CmdArg, Platform
+  from crossbench.plt.base import Platform
   from crossbench.probes.probe import Probe
 
 STALE_RESULT_ICONS = {
@@ -392,8 +392,8 @@ class RunnerEnv(BaseEnv):
       self.platform.mkdir(test_dir, exist_ok=True, parents=True)
       with self.platform.NamedTemporaryFile(
           prefix="crossbench_file_access_test", dir=test_dir) as test_file:
-        self.platform.set_file_contents(test_file, test_file.name)
-        assert self.platform.get_file_contents(test_file) == test_file.name
+        self.platform.write_text(test_file, test_file.name)
+        assert self.platform.read_text(test_file) == test_file.name
         self.platform.rm(test_file)
         return True
     except Exception as e:  # pylint: disable=broad-except

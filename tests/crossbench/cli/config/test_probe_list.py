@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+from typing import TYPE_CHECKING
 
 import hjson
 
@@ -14,9 +15,11 @@ from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.probes.v8.rcs import V8RCSProbe
-from crossbench.types import JsonDict
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
 
 
 class TestProbeListConfig(BaseConfigTestCase):
@@ -83,7 +86,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.fs.create_file(mock_d8_file, st_size=8 * 1024)
     config_data = {"d8_binary": str(mock_d8_file)}
     args = self.mock_args(probe_config=None, throw=True, wraps=False)
-
+    # without ":" separator:
     args.probe = [
         ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}"),
     ]
@@ -91,7 +94,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
     self.assertTrue(isinstance(probe, V8LogProbe))
-
+    # with ":" separator:
     args.probe = [
         ProbeConfig.parse(f"v8.log:{hjson.dumps(config_data)}"),
     ]
@@ -99,6 +102,52 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
     self.assertTrue(isinstance(probe, V8LogProbe))
+
+  def test_inline_config_path(self):
+    mock_d8_file = pth.LocalPath("out/d8")
+    self.fs.create_file(mock_d8_file, st_size=8 * 1024)
+    config_data = {"d8_binary": str(mock_d8_file)}
+    args = self.mock_args(probe_config=None, throw=True, wraps=False)
+
+    probe_config_path = pth.LocalPath("config/v8.probe.config")
+    probe_config_path.parent.mkdir()
+    with probe_config_path.open("w", encoding="utf-8") as f:
+      hjson.dump(config_data, f)
+    # without ":" separator:
+    args.probe = [
+        ProbeConfig.parse(f"v8.log{probe_config_path.absolute()}"),
+    ]
+    config_without_sep = ProbeListConfig.from_cli_args(args)
+    self.assertEqual(len(config_without_sep.probes), 1)
+    probe_without_sep = config_without_sep.probes[0]
+    self.assertIsInstance(probe_without_sep, V8LogProbe)
+    # with ":" separator:
+    args.probe = [
+        ProbeConfig.parse(f"v8.log:{probe_config_path}"),
+    ]
+    config = ProbeListConfig.from_cli_args(args)
+    self.assertEqual(len(config.probes), 1)
+    probe = config.probes[0]
+    self.assertIsInstance(probe, V8LogProbe)
+
+  def test_inline_config_win_path(self):
+    args = self.mock_args(probe_config=None, throw=True, wraps=False)
+    win_mock_d8_file = "D:/out/d8.exe"
+    self.fs.create_file(win_mock_d8_file, contents=b"d8")
+    win_config_data = {"d8_binary": win_mock_d8_file}
+    probe_config_path = pth.LocalPath("C:/config/v8.probe.config")
+    self.fs.create_file(probe_config_path)
+    with probe_config_path.open("w", encoding="utf-8") as f:
+      hjson.dump(win_config_data, f)
+    probe_config_path = pth.AnyWindowsPath(probe_config_path)
+    # with ":" separator:
+    args.probe = [
+        ProbeConfig.parse(f"v8.log:{probe_config_path}"),
+    ]
+    config = ProbeListConfig.from_cli_args(args)
+    self.assertEqual(len(config.probes), 1)
+    probe = config.probes[0]
+    self.assertIsInstance(probe, V8LogProbe)
 
   def test_inline_config_invalid(self):
     mock_d8_file = pth.LocalPath("out/d8")
@@ -228,7 +277,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.assertIsInstance(probes[1], V8RCSProbe)
 
   def test_empty_config_file(self):
-    with self.platform.NamedTemporaryFile() as config_file:
+    with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": []}, f)
       args = self.mock_args(probe_config=config_file, probe=[])
@@ -236,7 +285,7 @@ class TestProbeListConfig(BaseConfigTestCase):
       self.assertFalse(probe_list.probes)
 
   def test_merge_empty_config_file_with_single_probe(self):
-    with self.platform.NamedTemporaryFile() as config_file:
+    with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": []}, f)
       args = self.mock_args(
@@ -248,7 +297,7 @@ class TestProbeListConfig(BaseConfigTestCase):
       self.assertIsInstance(probe, V8LogProbe)
 
   def test_merge_config_file_single_probe(self):
-    with self.platform.NamedTemporaryFile() as config_file:
+    with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": ["v8.rcs"]}, f)
       args = self.mock_args(
@@ -261,7 +310,7 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_merge_config_file_conflict(self):
     # By default --probe args override --probe-config args
-    with self.platform.NamedTemporaryFile() as config_file:
+    with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump({"probes": ["v8.rcs"]}, f)
       args = self.mock_args(

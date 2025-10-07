@@ -21,6 +21,7 @@ from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
+from crossbench.cli.config.extension import ExtensionConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.config import ConfigObject, ConfigParser
@@ -65,6 +66,7 @@ class BrowserConfig(ConfigObject):
 
   cache_dir: pth.AnyPath | None = None
   clear_cache: bool | None = None
+  extensions: tuple[ExtensionConfig, ...] = tuple()
 
   def __post_init__(self) -> None:
     if not self.browser:
@@ -79,18 +81,10 @@ class BrowserConfig(ConfigObject):
 
   @classmethod
   @override
-  def is_valid_path(cls, path: pth.LocalPath) -> bool:
-    if path.exists() and cls.is_supported_browser_path(path):
-      return True
-    return super().is_valid_path(path)
-
-  @classmethod
-  @override
-  def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
-    has_config_extension = path.suffix in cls.VALID_CONFIG_EXTENSIONS
-    if not has_config_extension and cls.is_supported_browser_path(path):
+  def parse_any_path(cls, path: pth.LocalPath, **kwargs) -> Self:
+    if cls.is_supported_browser_path(path):
       return cls(path)
-    return super().parse_path(path, **kwargs)
+    return super().parse_any_path(path, **kwargs)
 
   @classmethod
   @override
@@ -101,15 +95,12 @@ class BrowserConfig(ConfigObject):
     driver = DriverConfig.default()
     network: NetworkConfig | None = None
     env: EnvConfig | None = None
-    if ":" not in value or cls.value_has_path_prefix(value):
-      # Variant 1: $PATH_OR_IDENTIFIER
+    if ":" not in value or cls.is_path_like(value):
+      # Variant: $PATH_OR_IDENTIFIER
       path = cls._parse_path_or_identifier(value)
-    elif value[0] != "{":
-      # Variant 2: ${DRIVER_TYPE}:${PATH_OR_IDENTIFIER}:${NETWORK}
-      driver, path, network, env = cls._parse_inline_short_form(value)
     else:
-      # Variant 3: Full inline hjson
-      return cls.parse_inline_hjson(value)
+      # Variant: ${DRIVER_TYPE}:${PATH_OR_IDENTIFIER}:${NETWORK}
+      driver, path, network, env = cls._parse_inline_short_form(value)
     assert path, "Invalid path"
     return cls(path, driver, network, env)
 
@@ -179,14 +170,15 @@ class BrowserConfig(ConfigObject):
         driver_type = BrowserDriverType.default()
     identifier = maybe_path_or_identifier.lower()
     path = None
-    if "/" in maybe_path_or_identifier or "\\" in maybe_path_or_identifier:
+    if cls.is_path_like(maybe_path_or_identifier):
       if cls._is_downloadable_identifier(maybe_path_or_identifier):
         return maybe_path_or_identifier
       # Assume a path since short-names never contain back-/slashes.
       if driver_type.is_remote_browser:
         path = PathParser.path(maybe_path_or_identifier)
       else:
-        path = PathParser.existing_path(maybe_path_or_identifier)
+        path = cls.resolve_path(
+            PathParser.existing_path(maybe_path_or_identifier))
     else:
       if ":" in maybe_path_or_identifier:
         raise argparse.ArgumentTypeError(
@@ -334,6 +326,8 @@ class BrowserConfig(ConfigObject):
                  "clear_browser_cache_dir"),
         type=ObjectParser.optional_bool,
         default=None)
+    parser.add_argument(
+        "extensions", type=ExtensionConfig, is_list=True, default=())
     return parser
 
   @property

@@ -13,6 +13,7 @@ from unittest import mock
 
 from typing_extensions import override
 
+from crossbench.action_runner.config import ActionRunnerConfig
 from crossbench.benchmarks.speedometer.speedometer import (
     SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext,
     SpeedometerStory)
@@ -62,7 +63,7 @@ class SpeedometerBaseTestCase(
     iterations: int = 10
     separate: bool = False
     custom_benchmark_url: str | None = None
-
+    action_runner_config: ActionRunnerConfig | None = None
 
   def test_iterations_kwargs(self):
     args = self.Namespace()

@@ -54,8 +54,8 @@ class TextInputAction(InputSourceAction):
                keyevent: Optional[str] = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
-    self._text: Optional[str] = text
-    self._keyevent: Optional[str] = keyevent
+    self._text: str | None = text
+    self._keyevent: str | None = keyevent
     super().__init__(source, duration, timeout, index)
 
   @property

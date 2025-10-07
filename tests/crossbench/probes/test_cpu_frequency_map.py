@@ -145,13 +145,12 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
   def _create_cpu_dir(self, cpu_name: str, available_frequencies: list[int]):
     cpu_dir = pth.AnyPosixPath(f"/sys/devices/system/cpu/{cpu_name}/cpufreq")
     self.platform.mkdir(cpu_dir, parents=True, exist_ok=True)
-    self.platform.set_file_contents(
-        cpu_dir / "scaling_available_frequencies",
-        " ".join(map(str, available_frequencies)) + "\n")
-    self.platform.set_file_contents(cpu_dir / "scaling_min_freq",
-                                    str(min(available_frequencies)) + "\n")
-    self.platform.set_file_contents(cpu_dir / "scaling_max_freq",
-                                    str(max(available_frequencies)) + "\n")
+    self.platform.write_text(cpu_dir / "scaling_available_frequencies",
+                             " ".join(map(str, available_frequencies)) + "\n")
+    self.platform.write_text(cpu_dir / "scaling_min_freq",
+                             str(min(available_frequencies)) + "\n")
+    self.platform.write_text(cpu_dir / "scaling_max_freq",
+                             str(max(available_frequencies)) + "\n")
 
 
 if __name__ == "__main__":

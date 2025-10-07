@@ -33,6 +33,8 @@ from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   from selenium import webdriver
   from selenium.webdriver.chromium.options import ChromiumOptions
   from selenium.webdriver.chromium.service import ChromiumService
@@ -146,8 +148,8 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
       self._restore_chrome_flags()
 
   @override
-  def meminfo(self) -> dict[str, ProcessMeminfo]:
-    return self.platform.meminfo(self.android_package)
+  def meminfo(self, timeout: dt.timedelta) -> list[ProcessMeminfo]:
+    return self.platform.process_meminfo(self.android_package, timeout)
 
   def _restore_chrome_flags(self) -> None:
     atexit.unregister(self._restore_chrome_flags)
@@ -165,8 +167,8 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     else:
       logging.debug("%s: restoring previous flags file contents in %s", self,
                     self._chrome_command_line_path)
-      self.platform.set_file_contents(self._chrome_command_line_path,
-                                      self._previous_command_line_contents)
+      self.platform.write_text(self._chrome_command_line_path,
+                               self._previous_command_line_contents)
     self._needs_restore_chrome_flags = False
     self._previous_command_line_contents = None
 

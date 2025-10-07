@@ -76,6 +76,10 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertIsNone(config.label)
     self.assertEqual(config.any_label, "123.a.com")
 
+  def test_parse_url_numbers_params(self):
+    config = PageConfig.parse("www.123.a.com/foo?bar=1")
+    self.assertEqual(config.first_url, "https://www.123.a.com/foo?bar=1")
+
   def test_parse_with_duration(self):
     config = PageConfig.parse("http://news.b.com,123s")
     self.assertEqual(config.first_url, "http://news.b.com")
@@ -148,6 +152,7 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config.first_url, "http://test.com/click")
     self.assertIsNone(config.login)
     self.assertIsNone(config.setup)
+    self.assertIsNone(config.teardown)
     self.assertEqual(len(tuple(config.actions())), 2)
 
   def test_parse_actions_dict(self):
@@ -163,6 +168,7 @@ class PageConfigTestsCase(unittest.TestCase):
     config_1 = PageConfig.parse(config_data)
     self.assertIsNone(config_1.login)
     self.assertIsNone(config_1.setup)
+    self.assertIsNone(config_1.teardown)
     self.assertEqual(config_1.first_url, "http://test.com/click")
     self.assertEqual(len(tuple(config_1.actions())), 2)
 
@@ -185,6 +191,7 @@ class PageConfigTestsCase(unittest.TestCase):
     login = config.login
     self.assertTrue(login.is_login)
     self.assertIsNone(config.setup)
+    self.assertIsNone(config.teardown)
     self.assertFalse(config.blocks[0].is_login)
     self.assertEqual(config.first_url, "http://test.com/charts")
     self.assertEqual(len(config.blocks), 1)
@@ -207,6 +214,7 @@ class PageConfigTestsCase(unittest.TestCase):
     config = PageConfig.parse(config_data)
     self.assertEqual(len(config.login), 1)
     self.assertEqual(len(config.setup), 2)
+    self.assertIsNone(config.teardown)
     self.assertEqual(len(config.blocks), 1)
     self.assertEqual(config.login.first_url, "http://test.com/login")
     self.assertEqual(config.setup.first_url, "http://test.com/setup")
@@ -223,6 +231,25 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config.first_url, "http://test.com/charts")
     self.assertEqual(len(config.blocks), 1)
     self.assertEqual(len(tuple(config.actions())), 1)
+
+  def test_parse_teardown_block(self):
+    config_data = {
+        "actions": ["http://test.com/charts",],
+        "teardown": [{
+            "action": "get",
+            "url": "http://test.com/teardown"
+        }, {
+            "action": "click",
+            "selector": "#foo"
+        }],
+    }
+
+    config = PageConfig.parse(config_data)
+    self.assertIsNone(config.setup)
+    self.assertEqual(len(config.blocks), 1)
+    self.assertEqual(config.blocks[0].first_url, "http://test.com/charts")
+    self.assertEqual(len(config.teardown), 2)
+    self.assertEqual(config.teardown.first_url, "http://test.com/teardown")
 
 
 if __name__ == "__main__":

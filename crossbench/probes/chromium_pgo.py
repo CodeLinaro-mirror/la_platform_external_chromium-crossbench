@@ -3,24 +3,22 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
-import logging
+
 import functools
-from typing import TYPE_CHECKING, Type, cast, Final
+import logging
+from typing import TYPE_CHECKING, Final, Type, cast
+
 from typing_extensions import override
 
-from crossbench.browsers.chromium.webdriver import ChromiumWebDriverAndroid
+from crossbench import path as pth
 from crossbench.browsers.chromium.devtools import DevToolsClient
-
+from crossbench.browsers.chromium.webdriver import ChromiumWebDriverAndroid
 from crossbench.parse import PathParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
-from crossbench.probes.results import (
-    EmptyProbeResult,
-    LocalProbeResult,
-    ProbeResult,
-)
-from crossbench import path as pth
+from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
+                                       ProbeResult)
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -131,7 +129,7 @@ class ChromiumPgoProbeContextAndroid(ChromiumPgoProbeContext):
     devtools_client = self._get_devtools_client()
     # Ensure devtools_client is connected before sending command
     with devtools_client:
-      success = devtools_client.send_command(request)
+      success, _ = devtools_client.send_command(request)
       if success:
         logging.info("PGO dump triggered successfully.")
       else:

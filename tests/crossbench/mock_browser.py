@@ -18,20 +18,19 @@ from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.version import ChromiumVersion
 from crossbench.browsers.settings import Settings
-from crossbench.browsers.version import BrowserVersion
 from crossbench.flags.chrome import ChromeFeatures, ChromeFlags
-from crossbench.flags.js_flags import JSFlags
 from crossbench.network.base import Network
 from crossbench.plt.android_adb import AndroidAdbPlatform
-from crossbench.plt.process_meminfo import ProcessMeminfo
 
 if TYPE_CHECKING:
   import datetime as dt
   import re
 
   from crossbench import path as pth
+  from crossbench.browsers.version import BrowserVersion
   from crossbench.cli.config.secrets import UsernamePassword
   from crossbench.flags.base import FlagsData
+  from crossbench.flags.js_flags import JSFlags
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -261,13 +260,6 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   @property
   def current_url(self) -> str:
     return self._current_url
-
-  @override
-  def meminfo(self) -> dict[str, ProcessMeminfo]:
-    return {
-        "process_1": ProcessMeminfo(1, 2, 3, 4),
-        "process_2": ProcessMeminfo(2, 3, 4, 5)
-    }
 
 
 def app_root(platform: plt.Platform) -> pathlib.Path:

@@ -9,7 +9,6 @@ import atexit
 import collections.abc
 import contextlib
 import dataclasses
-import datetime as dt
 import functools
 import inspect
 import logging
@@ -24,14 +23,16 @@ import sys
 import tempfile
 import urllib.error
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable, Iterator,
-                    Mapping, Optional, Sequence, Type, TypeAlias)
+from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable,
+                    Iterator, Mapping, Optional, Sequence, Type)
 
+import google.cloud.storage as gcloud_storage
 import psutil
 
 from crossbench import parse
 from crossbench import path as pth
 from crossbench.helper import wait
+from crossbench.parse import ObjectParser
 from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
@@ -40,20 +41,16 @@ from crossbench.plt.port_manager import (LocalPortManager, PortManager,
 from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
-  from asyncio.subprocess import Process
-  from subprocess import Popen
+  import datetime as dt
+
+  import google.cloud.storage.blob as gcloud_blob
 
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
+  from crossbench.plt.types import CmdArg, ProcessLike, TupleCmdArgs
   from crossbench.types import JsonDict
-  ProcessLike: TypeAlias = Popen | Process | int
 
-CmdArg: TypeAlias = pth.AnyPathLike
-SequenceCmdArgs: TypeAlias = Sequence[CmdArg]
-ListCmdArgs: TypeAlias = list[CmdArg]
-TupleCmdArgs: TypeAlias = tuple[CmdArg, ...]
-CmdArgs: TypeAlias = ListCmdArgs | TupleCmdArgs
 
 class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
   pass
@@ -244,7 +241,7 @@ class Platform(abc.ABC):
   @property
   def is_battery_powered(self) -> bool:
     self.assert_is_local()
-    if not psutil.sensors_battery:
+    if not psutil.sensors_battery: # type: ignore
       return False
     status = psutil.sensors_battery()
     if not status:
@@ -563,8 +560,14 @@ class Platform(abc.ABC):
     except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return None
 
-  def meminfo(self, process_name: str) -> dict[str, ProcessMeminfo]:
-    raise NotImplementedError(f"meminfo not implemented for {self}.")
+  def process_meminfo(self, process_name: str,
+                      timeout: dt.timedelta) -> list[ProcessMeminfo]:
+    del process_name, timeout
+    raise NotImplementedError(f"process_meminfo not implemented for {self}.")
+
+  def system_meminfo(self, timeout: dt.timedelta) -> dict[str, float]:
+    del timeout
+    raise NotImplementedError(f"system_meminfo not implemented for {self}.")
 
   def foreground_process(self) -> Optional[dict[str, Any]]:
     return None
@@ -631,16 +634,20 @@ class Platform(abc.ABC):
     """Hiss! I return the file contents as bytes."""
     return self.local_path(file).read_bytes()
 
-  def get_file_contents(self,
-                        file: pth.AnyPathLike,
-                        encoding: str = "utf-8") -> str:
+  def read_text(self, file: pth.AnyPathLike, encoding: str = "utf-8") -> str:
     return self.cat(file, encoding)
 
-  def set_file_contents(self,
-                        file: pth.AnyPathLike,
-                        data: str,
-                        encoding: str = "utf-8") -> None:
+  def write_text(self,
+                 file: pth.AnyPathLike,
+                 data: str,
+                 encoding: str = "utf-8") -> None:
     self.local_path(file).write_text(data, encoding)
+
+  def read_bytes(self, file: pth.AnyPathLike) -> bytes:
+    return self.cat_bytes(file)
+
+  def write_bytes(self, file: pth.AnyPathLike, data: bytes) -> None:
+    self.local_path(file).write_bytes(data)
 
   def pull(self, from_path: pth.AnyPath,
            to_path: pth.LocalPath) -> pth.LocalPath:
@@ -750,37 +757,41 @@ class Platform(abc.ABC):
             exist_ok: bool = True) -> None:
     self.local_path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
+  def mkdtemp(self,
+              suffix: Optional[str] = None,
+              prefix: Optional[str] = None,
+              dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+    self.assert_is_local()
+    return self.path(tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir))
+
+  def mktemp(self,
+             suffix: Optional[str] = None,
+             prefix: Optional[str] = None,
+             dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+    self.assert_is_local()
+    fd, name = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir)
+    os.close(fd)
+    return self.path(name)
+
   @contextlib.contextmanager
   def NamedTemporaryFile(  # pylint: disable=invalid-name
       self,
+      suffix: Optional[str] = None,
       prefix: Optional[str] = None,
       dir: Optional[pth.AnyPathLike] = None):
-    tmp_file: pth.AnyPath = self.mktemp(prefix, dir)
+    tmp_file: pth.AnyPath = self.mktemp(suffix, prefix, dir)
     try:
       yield tmp_file
     finally:
       self.rm(tmp_file, missing_ok=True)
 
-  def mkdtemp(self,
-              prefix: Optional[str] = None,
-              dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
-    self.assert_is_local()
-    return self.path(tempfile.mkdtemp(prefix=prefix, dir=dir))
-
-  def mktemp(self,
-             prefix: Optional[str] = None,
-             dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
-    self.assert_is_local()
-    fd, name = tempfile.mkstemp(prefix=prefix, dir=dir)
-    os.close(fd)
-    return self.path(name)
-
   @contextlib.contextmanager
   def TemporaryDirectory(  # pylint: disable=invalid-name
       self,
+      suffix: Optional[str] = None,
       prefix: Optional[str] = None,
       dir: Optional[pth.AnyPathLike] = None):
-    tmp_dir = self.mkdtemp(prefix, dir)
+    tmp_dir = self.mkdtemp(suffix, prefix, dir)
     try:
       yield tmp_dir
     finally:
@@ -932,6 +943,23 @@ class Platform(abc.ABC):
     assert self.exists(path), (
         f"Downloading {url} failed. Downloaded file {path} doesn't exist.")
     return path
+
+  def download_gcs_file(self, gcs_url: str, local_path: pth.LocalPath) -> None:
+    blob: gcloud_blob.Blob = self.prepare_gcs_request(gcs_url)
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    blob.download_to_filename(str(local_path))
+
+  def prepare_gcs_request(self, gcs_url: str) -> gcloud_blob.Blob:
+    parsed = ObjectParser.url(gcs_url, schemes=("gs",))
+    bucket_name = parsed.netloc
+    object_name = parsed.path.lstrip("/")
+    if not bucket_name:
+      raise ValueError(f"Missing bucket name in URL: {gcs_url}")
+    client = gcloud_storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob: gcloud_blob.Blob = bucket.blob(object_name)
+    blob.reload()
+    return blob
 
   def concat_files(self,
                    inputs: Iterable[pth.LocalPath],

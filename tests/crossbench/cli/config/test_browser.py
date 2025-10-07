@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import json
 import unittest
+from typing import TYPE_CHECKING
 
 import hjson
 from immutabledict import immutabledict
@@ -24,7 +25,6 @@ from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.exception import MultiException
 from crossbench.helper.cwd import ChangeCWD
-from crossbench.types import JsonDict
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
@@ -32,6 +32,9 @@ from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
                                               XCTRACE_DEVICES_OUTPUT,
                                               XCTRACE_DEVICES_SINGLE_OUTPUT,
                                               BaseConfigTestCase)
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
 
 
 class BrowserConfigTestCase(BaseConfigTestCase):
@@ -111,10 +114,11 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     browser_path = Chrome.stable_path(self.platform)
     config: JsonDict = {"browser": str(browser_path)}
     config_a = BrowserConfig.parse(config)
-    with self.platform.NamedTemporaryFile("browser_config.hjson") as path:
-      with path.open("w", encoding="utf-8") as f:
+    with self.platform.NamedTemporaryFile(
+        "browser_config.hjson") as config_file:
+      with config_file.open("w", encoding="utf-8") as f:
         json.dump(config, f)
-      config_b = BrowserConfig.parse(path)
+      config_b = BrowserConfig.parse(config_file)
     self.assertEqual(config_a, config_b)
     config_c = BrowserConfig.parse(browser_path)
     self.assertEqual(config_a, config_c)
@@ -131,9 +135,13 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         self.assertTrue((tmp_dir / "out").is_dir())
         config = BrowserConfig.parse(str(browser_path))
         self.assertEqual(config.path, browser_path.resolve())
+        config = BrowserConfig.parse(browser_path)
+        self.assertEqual(config.path, browser_path.resolve())
       with ChangeCWD(tmp_dir):
         browser_path = pth.LocalPath("out/Release/chrome")
         config = BrowserConfig.parse(str(browser_path))
+        self.assertEqual(config.path, browser_path.resolve())
+        config = BrowserConfig.parse(browser_path)
         self.assertEqual(config.path, browser_path.resolve())
         browser_path = pth.LocalPath("./out/Release/chrome")
         config = BrowserConfig.parse(str(browser_path))
@@ -530,12 +538,13 @@ class BrowserConfigTestCase(BaseConfigTestCase):
       BrowserConfig.parse_dict(config_dict)
 
   def test_parse_inline_driver_browser(self):
-    driver_path = pth.LocalPath("custom/chromedriver")
+    driver_path = pth.LocalPath("/custom/chromedriver")
     config_dict: JsonDict = {
         "browser": "chrome",
         "driver": str(driver_path),
     }
-    with self.assertRaises(ValueError):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "custom/chromedriver"):
       BrowserConfig.parse(hjson.dumps(config_dict))
     self.fs.create_file(driver_path, st_size=100)
     config = BrowserConfig.parse(hjson.dumps(config_dict))

@@ -7,13 +7,15 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import Optional, Self, Sequence
+from typing import TYPE_CHECKING, Optional, Self, Sequence
 
 from typing_extensions import override
 
 from crossbench.parse import ObjectParser
-from crossbench.runner.run import Run
 from crossbench.stories.story import Story
+
+if TYPE_CHECKING:
+  from crossbench.runner.run import Run
 
 
 class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):

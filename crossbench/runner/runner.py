@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import argparse
 import datetime as dt
 import enum
 import logging
@@ -26,7 +25,6 @@ from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.probes.perfetto.trace_processor.trace_processor import \
     TraceProcessorProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
-from crossbench.probes.thermal_monitor import ThermalStatus
 from crossbench.results_db.db import ResultsDB
 from crossbench.runner.groups.browsers import BrowsersRunGroup
 from crossbench.runner.groups.cache_temperatures import \
@@ -40,8 +38,12 @@ from crossbench.runner.timing import Timing
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
+  import argparse
+
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
+  from crossbench.probes.thermal_monitor import ThermalStatus
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.timing import AnyTimeUnit
   from crossbench.stories.story import Story
@@ -147,7 +149,6 @@ class Runner:
         action="store_const",
         help=("Repeat each run with different cache temperatures without "
               "closing the browser in between."))
-
     run_group.add_argument(
         "--thread-mode",
         "--parallel",
@@ -155,6 +156,10 @@ class Runner:
         type=ThreadMode,  # type: ignore
         help=("Change how Runs are executed.\n" +
               ThreadMode.help_text(indent=2)))
+    run_group.add_argument(
+        "--step-by-step-mode",
+        action="store_true",
+        help="Wait for user input before executing each action.")
 
   @classmethod
   def _add_output_arguments(cls, benchmark_cls: Type[Benchmark],
@@ -216,6 +221,7 @@ class Runner:
         "throw": args.throw,
         "create_symlinks": args.create_symlinks,
         "cool_down_threshold": args.cool_down_threshold,
+        "step_by_step_mode": args.step_by_step_mode,
     }
 
   def __init__(self,
@@ -234,7 +240,8 @@ class Runner:
                thread_mode: ThreadMode = ThreadMode.NONE,
                throw: bool = False,
                create_symlinks: bool = True,
-               in_memory_result_db: bool = False) -> None:
+               in_memory_result_db: bool = False,
+               step_by_step_mode: bool = False) -> None:
     self._state = StateMachine(RunnerState.INITIAL)
     self.out_dir = out_dir.absolute()
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
@@ -271,6 +278,7 @@ class Runner:
     self._story_groups: tuple[StoriesRunGroup, ...] = ()
     self._browser_group: BrowsersRunGroup | None = None
     self._create_symlinks: bool = create_symlinks
+    self._step_by_step_mode: bool = step_by_step_mode
 
   def _prepare_benchmark(self) -> None:
     benchmark_validator.validate_cls(type(self._benchmark))
@@ -550,9 +558,12 @@ class Runner:
             if len(self.cache_temperatures) > 1:
               name_parts.append(f"temperature={temperature_icon(temperature)}")
             name_parts.append(f"index={index}")
+            action_runner = self.benchmark.new_action_runner(browser.platform)
+            action_runner.set_step_by_step_mode(self._step_by_step_mode)
             yield self.create_run(
                 browser_session,
                 story,
+                action_runner,
                 repetition,
                 is_warmup,
                 f"{t_index}_{temperature}",
@@ -565,11 +576,12 @@ class Runner:
           browser_session.set_ready()
 
   def create_run(self, browser_session: BrowserSessionRunGroup, story: Story,
-                 repetition: int, is_warmup: bool, temperature: str, index: int,
-                 name: str, timeout: dt.timedelta, throw: bool,
-                 env_validation_mode: ValidationMode) -> Run:
-    return Run(self, browser_session, story, repetition, is_warmup, temperature,
-               index, name, timeout, throw, env_validation_mode)
+                 action_runner: ActionRunner, repetition: int, is_warmup: bool,
+                 temperature: str, index: int, name: str, timeout: dt.timedelta,
+                 throw: bool, env_validation_mode: ValidationMode) -> Run:
+    return Run(self, browser_session, story, action_runner, repetition,
+               is_warmup, temperature, index, name, timeout, throw,
+               env_validation_mode)
 
   def assert_successful_sessions_and_runs(self) -> None:
     if self._exceptions.is_success:

@@ -7,6 +7,7 @@ from __future__ import annotations
 import enum
 import json
 import logging
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -17,7 +18,9 @@ from crossbench.path import check_hash
 from crossbench.plt import PLATFORM
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from tests import test_helper
-from tests.test_helper import TestEnv
+
+if TYPE_CHECKING:
+  from tests.test_helper import TestEnv
 
 # pytest.fixtures rely on params having the same name as the fixture function
 # pylint: disable=redefined-outer-name
