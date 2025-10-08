@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import functools
 import logging
-from typing import TYPE_CHECKING, ClassVar, Iterable, Self
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self
 
 from typing_extensions import override
 
@@ -95,6 +95,16 @@ class TraceConfig(ConfigObject):
     return help_items
 
 
+def has_v8_code_data_source(trace_config: trace_config_pb2.TraceConfig) -> bool:
+  return has_data_source(trace_config, "dev.v8.code")
+
+
+def has_data_source(trace_config: trace_config_pb2.TraceConfig,
+                    name: str) -> bool:
+  return any(data_source.config.name == name
+             for data_source in trace_config.data_sources)
+
+
 class PerfettoProbe(Probe):
   """
   A probe to collect Perfetto system traces that can be viewed on
@@ -151,10 +161,12 @@ class PerfettoProbe(Probe):
     super().__init__()
     if not trace_config:
       raise ValueError("Please specify a tracing config")
-    self._trace_config: trace_config_pb2.TraceConfig = trace_config
-    self._perfetto_bin = perfetto_bin
-    self._tracebox_bin = tracebox_bin
-    self._trace_browser_startup = trace_browser_startup
+    self._trace_config: Final[trace_config_pb2.TraceConfig] = trace_config
+    self._perfetto_bin: Final[pth.AnyPath] = perfetto_bin
+    self._tracebox_bin: Final[pth.AnyPath] = tracebox_bin
+    self._trace_browser_startup: Final[bool] = trace_browser_startup
+    self._needs_v8_code_logger: Final[bool] = has_v8_code_data_source(
+        trace_config)
 
   @property
   @override
@@ -191,6 +203,9 @@ class PerfettoProbe(Probe):
   def attach(self, browser: Browser) -> None:
     assert browser.attributes().is_chromium_based
     browser.features.enable("EnablePerfettoSystemTracing")
+    if self._needs_v8_code_logger:
+      logging.debug("Auto-enabling --perfetto-code-logger on %s", browser)
+      browser.js_flags.set("--perfetto-code-logger")
     super().attach(browser)
 
   @override

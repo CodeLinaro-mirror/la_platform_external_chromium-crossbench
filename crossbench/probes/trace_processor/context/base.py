@@ -22,14 +22,10 @@ if TYPE_CHECKING:
   from crossbench.probes.trace_processor.query_config import \
       TraceProcessorQueryConfig
   from crossbench.probes.trace_processor.trace_processor import \
-      TraceProcessorProbe
-  from crossbench.runner.run import Run
+      TraceProcessorProbe  # noqa: F401
 
 
 class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
-
-  def __init__(self, probe: TraceProcessorProbe, run: Run) -> None:
-    super().__init__(probe, run)
 
   def get_default_result_path(self) -> pth.AnyPath:
     result_dir = super().get_default_result_path()
@@ -125,3 +121,7 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
   @property
   def merged_trace_path(self) -> pth.LocalPath:
     return self.local_result_path / "merged_trace.zip"
+
+  @property
+  def symbolized_trace_path(self) -> pth.LocalPath:
+    return self.local_result_path / "symbolized_trace_path.zip"

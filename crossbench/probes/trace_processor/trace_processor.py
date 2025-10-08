@@ -207,6 +207,10 @@ class TraceProcessorProbe(Probe):
     return self._llvm_symbolizer_bin
 
   @property
+  def symbolize_profile(self) -> bool:
+    return self._symbolize_profile
+
+  @property
   def tp_config(self) -> TraceProcessorConfig:
     extra_flags = []
 

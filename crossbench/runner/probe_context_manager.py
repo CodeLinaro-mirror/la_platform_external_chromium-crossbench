@@ -166,6 +166,9 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
   def _create_probe_context(self, probe: Probe) -> ProbeContextT | None:
     pass
 
+  def has_probe_context(self, probe_cls: Type[ProbeT]) -> bool:
+    return probe_cls in self._probe_contexts
+
   def get_probe_context(self,
                         probe_cls: Type[ProbeT]) -> ProbeContext[ProbeT] | None:
     if probe_context := self._probe_contexts.get(probe_cls):

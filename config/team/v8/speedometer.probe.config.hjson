@@ -1,12 +1,12 @@
 {
-  # Probe config for measuring speedometer and split profiles based on 
+  # Probe config for measuring speedometer and split profiles based on
   # measurement markers.
   probes: {
     perfetto: {
       textproto:
         '''
         buffers {
-        size_kb: 500000
+          size_kb: 500000
           fill_policy: DISCARD
         }
         data_sources {
@@ -15,23 +15,28 @@
           }
         }
         data_sources: {
-          config {
-            name: "track_event"
-            track_event_config {
-              disabled_categories: "*"
-              enabled_categories: "blink.user_timing"
-              enabled_categories: "__metadata"
-              timestamp_unit_multiplier: 1000
-              filter_debug_annotations: false
-              enable_thread_time_sampling: true
-              filter_dynamic_event_names: false
+            config {
+                name: "org.chromium.trace_event"
             }
-          }
         }
         data_sources: {
-          config {
-            name: "org.chromium.trace_metadata2"
-          }
+            config {
+                name: "track_event"
+                track_event_config {
+                    disabled_categories: "*"
+                    enabled_categories: "blink.user_timing"
+                    enabled_categories: "__metadata"
+                    timestamp_unit_multiplier: 1000
+                    filter_debug_annotations: false
+                    enable_thread_time_sampling: true
+                    filter_dynamic_event_names: false
+                }
+            }
+        }
+        data_sources: {
+            config {
+                name: "org.chromium.trace_metadata"
+            }
         }
         '''
     }
