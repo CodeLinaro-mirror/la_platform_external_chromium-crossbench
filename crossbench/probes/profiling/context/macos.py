@@ -81,7 +81,7 @@ class MacOSProfilingContext(PosixProfilingContext):
   def teardown(self) -> ProbeResult:
     self.stop_process()
     trace_xml_path = self._export_trace_xml()
-    return self.browser_result(traces=(
+    return self.browser_result(trace=(
         self.result_path,
         trace_xml_path,
     ))

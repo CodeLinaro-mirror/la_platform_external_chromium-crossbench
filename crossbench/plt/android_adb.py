@@ -20,7 +20,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData
-from crossbench.helper.path_finder import BuildtoolFinder
+from crossbench.helper.path_finder import BundletoolFinder
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
@@ -110,16 +110,11 @@ class Adb:
     self._host_platform: Final[Platform] = host_platform
     self._adb_bin: Final[pth.AnyPath] = _find_adb_bin(host_platform, adb_bin)
     self._bundletool: Final[pth.AnyPath
-                            | None] = self._find_bundletool(bundletool)
+                            | None] = BundletoolFinder.find_binary(
+                                host_platform, bundletool)
     serial_id, device_info = self._start(device_identifier)
     self._serial_id: Final[str] = serial_id
     self._device_info: Final[AndroidDeviceInfo] = device_info
-
-  def _find_bundletool(self,
-                       bundletool: Optional[pth.AnyPath]) -> pth.AnyPath | None:
-    if bundletool:
-      return self._host_platform.parse_binary_path(bundletool)
-    return BuildtoolFinder(self._host_platform).path
 
   def _start(
       self,

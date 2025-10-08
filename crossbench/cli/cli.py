@@ -78,9 +78,9 @@ class EnableDebuggingAction(argparse.Action):
 
 
 class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
-
   @override
-  def print_help(self, file: IO[str] | None = None) -> None:
+  def print_help(self,
+                 file: IO[str] | None = None) -> None:  # type: ignore[override]
     file = file or sys.stdout
     super().print_help(file=file)
     self.print_probes(file=file)

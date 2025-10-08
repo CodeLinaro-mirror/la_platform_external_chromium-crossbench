@@ -14,12 +14,29 @@ from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, Sequence
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench import plt
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 
 class BasePathFinder(abc.ABC):
+
+  @classmethod
+  def find_binary(cls,
+                  platform: Platform,
+                  override: Optional[pth.AnyPath] = None) -> pth.AnyPath | None:
+    if override:
+      return platform.parse_binary_path(override)
+    return cls(platform).path
+
+  @classmethod
+  def local_binary(cls,
+                   override: Optional[pth.AnyPath] = None
+                  ) -> pth.LocalPath | None:
+    if override:
+      return plt.PLATFORM.parse_local_binary_path(override)
+    return cls(plt.PLATFORM).local_path
 
   def __init__(self, platform: Platform) -> None:
     self._platform: Final[Platform] = platform
@@ -400,7 +417,7 @@ class WprGoFinder(BaseCrossbenchPathFinder):
         hashes_json["wpr_go"][platform_key]["cloud_storage_hash"])
 
 
-class BuildtoolFinder(BaseChromiumPathFinder):
+class BundletoolFinder(BaseChromiumPathFinder):
 
   @classmethod
   @override
@@ -424,6 +441,15 @@ class BuildtoolFinder(BaseChromiumPathFinder):
 
     return super_candidates + (self.platform.local_path(
         brew_path / "bin/bundletool"),)
+
+
+class LlvmSymbolizerFinder(BaseChromiumPathFinder):
+
+  @classmethod
+  @override
+  def chrome_path(cls) -> pth.AnyPath:
+    return pth.AnyPath(
+        "third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer")
 
 
 class TsProxyFinder(BaseCrossbenchPathFinder):
