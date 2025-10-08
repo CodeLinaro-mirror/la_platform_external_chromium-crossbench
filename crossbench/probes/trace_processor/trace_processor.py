@@ -119,6 +119,13 @@ class TraceProcessorProbe(Probe):
         aliases=("llvm_symbolizer",),
         type=plt.PLATFORM.parse_local_binary_path,
         help="Path to the llvm-symbolizer binary")
+    parser.add_argument(
+        "dev_features",
+        aliases=("dev",),
+        type=ObjectParser.bool,
+        default=True,
+        help=("Enables trace_processor dev features via the --dev flags. "
+              "Enabled by default."))
     return parser
 
   def __init__(
@@ -133,10 +140,12 @@ class TraceProcessorProbe(Probe):
       trace_processor_bin: Optional[pth.LocalPath] = None,
       traceconv_bin: Optional[pth.LocalPath] = None,
       llvm_symbolizer_bin: Optional[pth.LocalPath] = None,
+      dev_features: bool = True,
   ) -> None:
     super().__init__()
     self._platform: Final[plt.Platform] = plt.PLATFORM
     self._batch: Final[bool] = batch
+    self._dev_features: Final[bool] = dev_features
     self._metrics: Final[tuple[str, ...]] = tuple(metrics)
     self._metric_definitions: Final[tuple[str, ...]] = tuple(metric_definitions)
     self._summary_metrics: Final[tuple[
@@ -212,7 +221,9 @@ class TraceProcessorProbe(Probe):
 
   @property
   def tp_config(self) -> TraceProcessorConfig:
-    extra_flags = []
+    extra_flags: list[str] = []
+    if self._dev_features:
+      extra_flags.append("--dev")
 
     for module_path in self.module_paths:
       extra_flags.append("--add-sql-module")
