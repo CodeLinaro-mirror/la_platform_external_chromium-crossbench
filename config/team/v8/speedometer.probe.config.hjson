@@ -41,7 +41,7 @@
         '''
     }
     profiling: {
-      target: system_wide
+      target: RENDERER_PROCESS_ONLY
     }
     trace_processor: {}
   }

@@ -54,7 +54,7 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
         with zipfile.ZipFile(self.merged_trace_path, "w") as zip_file:
           for f in traces:
             zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
-    return LocalProbeResult(trace=(self.merged_trace_path,))
+    return LocalProbeResult(perfetto=(self.merged_trace_path,))
 
   def _maybe_run_tp(self) -> ProbeResult:
     if not self.probe.needs_tp_run:

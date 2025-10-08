@@ -30,8 +30,8 @@ from crossbench.probes.trace_processor.constants import MODULES_DIR, \
     PROBE_NAME, QUERIES_DIR
 from crossbench.probes.trace_processor.context.base import \
     TraceProcessorProbeContext
-from crossbench.probes.trace_processor.context.macos import \
-    TraceProcessorMacOsProbeContext
+from crossbench.probes.trace_processor.context.symbolizing import \
+    TraceProcessorSymbolizingProbeContext
 from crossbench.probes.trace_processor.query_config import \
     TraceProcessorQueryConfig
 from crossbench.probes.trace_processor.uri_resolver import \
@@ -239,8 +239,9 @@ class TraceProcessorProbe(Probe):
 
   @override
   def get_context_cls(self) -> Type[TraceProcessorProbeContext]:
+    # TODO: enable on linux and android
     if self._platform.is_macos:
-      return TraceProcessorMacOsProbeContext
+      return TraceProcessorSymbolizingProbeContext
     return TraceProcessorProbeContext
 
   @override
@@ -355,7 +356,7 @@ class TraceProcessorProbe(Probe):
     logging.info("-" * 80)
     logging.critical("TraceProcessor merged traces:")
     for run in group.runs:
-      logging.critical("  - %s", run.results[self].trace)
+      logging.critical("  - %s", run.results[self].perfetto)
 
 
 __all__ = [

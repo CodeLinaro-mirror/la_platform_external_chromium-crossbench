@@ -65,7 +65,7 @@ class ChromiumBasedWebDriver(
     return bool(self.local_build_dir())
 
   def local_build_dir(self) -> pth.LocalPath | None:
-    if path := helper.find_build_dir(self.path, self.host_platform):
+    if path := helper.find_build_dir(self.app_path, self.host_platform):
       return self.host_platform.local_path(path)
     return None
 

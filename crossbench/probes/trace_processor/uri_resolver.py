@@ -40,7 +40,7 @@ class CrossbenchTraceUriResolver(TraceUriResolver):
       trace_result = run.results.get_by_name(PROBE_NAME)
       assert trace_result, f"Missing TraceProcessorProbe result in {run}"
       result = TraceUriResolver.Result(
-          trace=str(trace_result.trace.absolute()),
+          trace=str(trace_result.perfetto.absolute()),
           metadata=self._run_metadata(run))
       resolved.append(result)
     return resolved

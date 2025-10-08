@@ -149,7 +149,7 @@ class PerfettoProbeContext(
     assert renamed_result_file.is_file(), (
         f"Could not compress {renamed_result_file}")
 
-    return LocalProbeResult(trace=(renamed_result_file,))
+    return LocalProbeResult(perfetto=(renamed_result_file,))
 
   def _cleanup_remote_perfetto_files(self) -> None:
     # Especially on android, the perfetto files are not in the default tmp dir.

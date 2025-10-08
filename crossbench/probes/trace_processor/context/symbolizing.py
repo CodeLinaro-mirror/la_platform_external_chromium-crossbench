@@ -20,7 +20,7 @@ if TYPE_CHECKING:
   from crossbench.probes.results import LocalProbeResult
 
 
-class TraceProcessorMacOsProbeContext(TraceProcessorProbeContext):
+class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
 
   @property
   def should_symbolize_profile(self) -> bool:
@@ -48,7 +48,7 @@ class TraceProcessorMacOsProbeContext(TraceProcessorProbeContext):
     symbols_result = self.local_result_path / "symbols.pb"
     env = {
         "PERFETTO_SYMBOLIZER_MODE": "index",
-        "PERFETTO_BINARY_PATH": str(self.run.browser.path.parent),
+        "PERFETTO_BINARY_PATH": str(self.run.browser.app_path.parent),
         **self.host_platform.environ,
     }
     env["PATH"] = (os.pathsep).join(
@@ -63,6 +63,6 @@ class TraceProcessorMacOsProbeContext(TraceProcessorProbeContext):
       logging.error("Could not generate symbols file: %s", symbols_result)
       return result
     with zipfile.ZipFile(self.symbolized_trace_path, "w") as zip_file:
-      for f in (*result.trace_list, symbols_result):
+      for f in (*result.perfetto_list, symbols_result):
         zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
-    return self.local_result(trace=(self.symbolized_trace_path,))
+    return self.local_result(perfetto=(self.symbolized_trace_path,))

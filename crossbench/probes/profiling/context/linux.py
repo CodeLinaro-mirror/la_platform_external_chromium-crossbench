@@ -108,7 +108,7 @@ class LinuxProfilingContext(PosixProfilingContext):
                    "for interactive analysis:")
       logging.info("   pprof --http=localhost:1984 %s",
                    " ".join(map(str, perf_files)))
-    return self.browser_result(trace=perf_files)
+    return self.browser_result(perfetto=perf_files)
 
   def _inject_v8_symbols(self, run: Run,
                          perf_files: list[pth.AnyPath]) -> list[pth.AnyPath]:
