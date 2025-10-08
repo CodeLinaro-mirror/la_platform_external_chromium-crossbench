@@ -53,7 +53,7 @@ class RunnerEnv(BaseEnv):
     self._wait_until: dt.datetime = dt.datetime.now()
     self._out_dir: pth.LocalPath = out_dir
     self._browsers: tuple[Browser, ...] = tuple(browsers)
-    self._probes = tuple(probes)
+    self._probes: tuple[Probe, ...] = tuple(probes)
     self._repetitions: int = repetitions
 
   @property
@@ -63,6 +63,9 @@ class RunnerEnv(BaseEnv):
   @property
   def browsers(self) -> tuple[Browser, ...]:
     return self._browsers
+
+  def add_probes(self, probes: Iterable[Probe]) -> None:
+    self._probes += tuple(probes)
 
   def _add_min_delay(self, seconds: float) -> None:
     end_time = dt.datetime.now() + dt.timedelta(seconds=seconds)

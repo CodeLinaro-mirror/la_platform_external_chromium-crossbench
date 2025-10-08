@@ -311,6 +311,7 @@ class Runner:
 
     for probe in probe_list:
       self.attach_probe(probe)
+    self._env.add_probes(self._probes)
 
   def _sort_probes(self) -> None:
     self._probes.sort(key=lambda probe: probe.PRIORITY)

@@ -248,12 +248,10 @@ class TraceProcessorProbe(Probe):
       for query in self.queries:
         tp.query(query.sql)
 
-      metric_ids: Optional[list[str]] = None
       if len(self.summary_metrics):
-        metric_ids = list(self.summary_metrics)
-
-      tp.trace_summary(
-          specs=list(self.metric_definitions), metric_ids=metric_ids)
+        tp.trace_summary(
+            specs=list(self.metric_definitions),
+            metric_ids=list(self.summary_metrics))
 
   def _add_cb_columns(self, df: pd.DataFrame, run: Run) -> pd.DataFrame:
     df["cb_browser"] = run.browser.unique_name
