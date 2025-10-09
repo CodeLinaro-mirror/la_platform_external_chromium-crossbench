@@ -11,8 +11,8 @@ import functools
 import pathlib
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping,
-                    MutableMapping, Optional, Sequence)
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, \
+    MutableMapping, Optional, Sequence
 
 import psutil
 from typing_extensions import override
@@ -39,7 +39,6 @@ if TYPE_CHECKING:
   from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo, TupleCmdArgs
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
-
 
 GIB = 1014**3
 
@@ -211,7 +210,7 @@ class MockPlatformMixin:
     self._sh_results.append(result)
 
   def _convert_sh_args(self, *args: CmdArg | int) -> TupleCmdArgs:
-    converted_args : ListCmdArgs = []
+    converted_args: ListCmdArgs = []
     for arg in args:
       if not isinstance(arg, (str, pathlib.PurePath)):
         arg = str(arg)
@@ -330,6 +329,12 @@ class MockPlatformMixin:
   ) -> pth.AnyPath:
     del macos, win, linux
     return self.path(f"/usr/bin/{name}")
+
+  def search_binary(self, app_or_bin: str | pth.AnyPath) -> pth.AnyPath | None:
+    path = self.path(f"/usr/bin/{app_or_bin}")
+    if self.use_fs and self.is_file(path):
+      return path
+    return super().search_binary(app_or_bin)
 
   def sh_stdout_bytes(self,
                       *args: CmdArg,
@@ -514,6 +519,7 @@ class MacOsMockPlatform(PosixMockPlatformMixin, MacOSPlatform):
 
 class MacIOSMockPlatform(PosixMockPlatformMixin, IOSPlatform):
   pass
+
 
 class WinMockPlatform(WinMockPlatformMixin, WinPlatform):
   pass

@@ -20,21 +20,17 @@ from crossbench import plt
 from crossbench.browsers.chrome.applescript import ChromeAppleScript
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.chrome.version import ChromeVersion
-from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
-                                                  ChromeWebDriverAndroid,
-                                                  ChromeWebDriverChromeOsSsh,
-                                                  ChromeWebDriverSsh,
-                                                  LocalChromeWebDriverAndroid)
+from crossbench.browsers.chrome.webdriver import ChromeWebDriver, \
+    ChromeWebDriverAndroid, ChromeWebDriverChromeOsSsh, ChromeWebDriverSsh, \
+    LocalChromeWebDriverAndroid
 from crossbench.browsers.chromium.applescript import ChromiumAppleScript
-from crossbench.browsers.chromium.webdriver import (ChromiumWebDriver,
-                                                    ChromiumWebDriverAndroid,
-                                                    ChromiumWebDriverSsh)
+from crossbench.browsers.chromium.webdriver import ChromiumWebDriver, \
+    ChromiumWebDriverAndroid, ChromiumWebDriverSsh
 from crossbench.browsers.safari.safari import Safari
 from crossbench.browsers.webkit.webdriver import WebKitWebDriver
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import (BaseBrowserVariantsConfig,
-                                                    BrowserVariantsConfig,
-                                                    BrowserVariantsConfigDict)
+from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig, \
+    BrowserVariantsConfig, BrowserVariantsConfigDict
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig
@@ -42,10 +38,10 @@ from crossbench.config import ConfigError
 from crossbench.helper.cwd import change_cwd
 from tests import test_helper
 from tests.crossbench import mock_browser
-from tests.crossbench.cli.config.base import (ADB_DEVICES_SINGLE_OUTPUT,
-                                              BaseConfigTestCase)
-from tests.crossbench.mock_helper import (AndroidAdbMockPlatform, MockAdb,
-                                          ShResult)
+from tests.crossbench.cli.config.base import ADB_DEVICES_SINGLE_OUTPUT, \
+    BaseConfigTestCase
+from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb, \
+    ShResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -128,6 +124,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "/opt/google/chrome/chrome --version", result="125.0.6422.60")
 
   def test_parse_remote_browser_config_template(self):
+    self.mock_platform_default_tmp_dir(plt.LinuxSshPlatform)
     self.fs.add_real_file(self.EXAMPLE_REMOTE_CONFIG_PATH)
 
     self._expect_sh_linux_ssh_browser_config()
@@ -168,6 +165,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     args = self.mock_args(remote_driver_path=override_driver_path)
     config = BrowserVariantsConfigDict()
 
+    self.mock_platform_default_tmp_dir(plt.LinuxSshPlatform)
     self._expect_sh_linux_ssh_browser_config()
     self._expect_sh_linux_ssh_browser_config()
     config_dict = {
@@ -1191,7 +1189,6 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(len(variants), 2)
     self.assertEqual(variants[0].browser_config, chrome_stable)
     self.assertEqual(variants[1].browser_config, chrome_dev)
-
 
   def test_from_cli_args_browser_config_network_override(self):
     ts_proxy_path = pth.LocalPath("/tsproxy/tsproxy.py")

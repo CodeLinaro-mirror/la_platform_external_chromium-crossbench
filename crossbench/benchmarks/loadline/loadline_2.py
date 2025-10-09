@@ -13,8 +13,8 @@ from typing_extensions import override
 from crossbench import config
 from crossbench import path as pth
 from crossbench.benchmarks.loading.page.combined import CombinedPage
-from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
-                                                     LoadLineProbe)
+from crossbench.benchmarks.loadline.loadline import LoadLineBenchmark, \
+    LoadLineProbe
 from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
@@ -27,7 +27,6 @@ if TYPE_CHECKING:
   from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
-
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.

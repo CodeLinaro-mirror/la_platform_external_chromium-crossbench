@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import unittest
 
-from crossbench.bond.bond import (MAS_ONEPLATFORM_URL, MESI_APIARY_URL,
-                                  AddBotsConfig, MeetLayout)
+from crossbench.bond.bond import MAS_ONEPLATFORM_URL, MESI_APIARY_URL, \
+    AddBotsConfig, MeetLayout
 from tests import test_helper
 
 

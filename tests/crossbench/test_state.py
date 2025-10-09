@@ -6,8 +6,8 @@ from __future__ import annotations
 import enum
 import unittest
 
-from crossbench.helper.state import (BaseState, StateMachine,
-                                     UnexpectedStateError)
+from crossbench.helper.state import BaseState, StateMachine, \
+    UnexpectedStateError
 from tests import test_helper
 
 

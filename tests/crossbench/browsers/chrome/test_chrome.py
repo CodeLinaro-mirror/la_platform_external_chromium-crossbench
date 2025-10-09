@@ -9,8 +9,8 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.chrome.version import ChromeVersion
-from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
-                                                  LocalChromeWebDriverAndroid)
+from crossbench.browsers.chrome.webdriver import ChromeWebDriver, \
+    LocalChromeWebDriverAndroid
 from crossbench.browsers.settings import Settings
 from crossbench.flags.chrome import ChromeFlags
 from tests import test_helper
@@ -73,6 +73,7 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
     self.assertTrue(self.browsers)
     for browser in self.browsers:
       self.assertFalse(browser.is_local_build)
+
 
 class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
 

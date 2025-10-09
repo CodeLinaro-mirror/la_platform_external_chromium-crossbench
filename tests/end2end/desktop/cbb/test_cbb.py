@@ -21,6 +21,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.base import PressBenchmark
   from tests.test_helper import TestEnv
 
+
 def get_benchmark(benchmark_cls) -> PressBenchmark:
   """Returns a benchmark instance for the corresponding benchmark_name"""
   story_class = cbb_adapter.get_pressbenchmark_story_cls(benchmark_cls.NAME)

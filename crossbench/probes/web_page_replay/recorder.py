@@ -14,12 +14,12 @@ from typing_extensions import override
 from crossbench import plt
 from crossbench.helper import fs_helper
 from crossbench.helper.cwd import change_cwd
-from crossbench.helper.path_finder import WprGoToolFinder
+from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
 from crossbench.parse import PathParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
-from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult, ProbeResultDict)
+from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
+    ProbeResult, ProbeResultDict
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -30,7 +30,6 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
-
 
 
 class WebPageReplayProbe(Probe):
@@ -84,7 +83,7 @@ class WebPageReplayProbe(Probe):
     super().__init__()
     host_platform = plt.PLATFORM
     if not wpr_go_bin:
-      wpr_go_bin = WprGoToolFinder(host_platform).local_path
+      wpr_go_bin = WprGoFinder(host_platform).local_path
     if not wpr_go_bin:
       raise RuntimeError(f"Could not find wpr.go on {host_platform}")
     self._wpr_go_bin: LocalPath = host_platform.parse_local_binary_path(

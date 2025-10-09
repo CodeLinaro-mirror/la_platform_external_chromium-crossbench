@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import argparse
 import enum
-from typing import (TYPE_CHECKING, ClassVar, Final, FrozenSet, Optional, Self,
-                    Sequence, Set, Type)
+from typing import TYPE_CHECKING, ClassVar, Final, FrozenSet, Optional, Self, \
+    Sequence, Set, Type
 
 from typing_extensions import override
 

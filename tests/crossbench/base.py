@@ -26,8 +26,8 @@ from crossbench.action_runner.action.wait_for_ready_state import \
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
-from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
-                                            LoadLine2TabletBenchmark)
+from crossbench.benchmarks.loadline import LoadLine1TabletBenchmark, \
+    LoadLine2TabletBenchmark
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
 from crossbench.cli.config.env import EnvConfig
@@ -70,6 +70,14 @@ class CrossbenchFakeFsTestCase(
     path = pathlib.Path(path_str)
     self.fs.create_file(path, contents=contents)
     return path
+
+  def mock_platform_default_tmp_dir(self, platform_cls: Type) -> None:
+    patcher = mock.patch.object(
+        platform_cls,
+        "_create_default_tmp_dir",
+        return_value=pth.AnyPosixPath("/var/tmp"))
+    self.addCleanup(patcher.stop)
+    patcher.start()
 
 
 TEST_WARNING = "Test Warning"
@@ -209,6 +217,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     self.setup_perfetto_config_presets()
 
   def setup_tabulate_patcher(self) -> None:
+
     def mock_tabulate(table, *args, **kwargs):
       del args, kwargs
       return str(table)
@@ -218,6 +227,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     patcher.start()
 
   def setup_wrap_patcher(self) -> None:
+
     def mock_wrap(text, *args, **kwargs):
       del args, kwargs
       return [text]
@@ -261,8 +271,8 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
         BenchmarkSubcommand, "_get_runner", side_effect=self._mock_get_runner):
       yield
 
-  def _mock_get_runner(self, args, benchmark, env_config, env_validation_mode,
-                       timing):
+  def _mock_get_runner(self, args, benchmark, probes, env_config,
+                       env_validation_mode, timing):
     if not args.out_dir:
       # Use stable mock out dir
       args.out_dir = pathlib.Path("/results")
@@ -270,6 +280,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     runner_kwargs = Runner.kwargs_from_cli(args)
     runner = Runner(
         benchmark=benchmark,
+        probes=probes,
         env_config=env_config,
         env_validation_mode=env_validation_mode,
         timing=timing,

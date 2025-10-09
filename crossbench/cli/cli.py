@@ -62,6 +62,7 @@ class CrossBenchArgumentError(argparse.ArgumentError):
 
 argparse.ArgumentError = CrossBenchArgumentError  # type: ignore
 
+
 class EnableDebuggingAction(argparse.Action):
   """Custom action to set both --throw and -vvv."""
 
@@ -122,6 +123,7 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
     readme_file = pth.AnyPath(__file__).parents[2] / "README.md"
     file.write(f"  See {readme_file} for more details and instructions.\n")
 
+
 class CrossBenchCLI:
   BENCHMARKS: tuple[BenchmarkClass, ...] = (
       benchmarks.EmbedderBenchmark,
@@ -145,6 +147,8 @@ class CrossBenchCLI:
       benchmarks.LoadLine2PhoneDebugBenchmark,
       benchmarks.LoadLine2TabletBenchmark,
       benchmarks.LoadLine2TabletDebugBenchmark,
+      benchmarks.LoadLine2WebApiPhoneBenchmark,
+      benchmarks.LoadLine2WebApiPhoneDebugBenchmark,
       # Manual:
       benchmarks.ManualBenchmark,
       # Memory:

@@ -7,14 +7,14 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import enum
-from typing import (TYPE_CHECKING, Any, ClassVar, MutableMapping, Optional,
-                    Sequence, cast)
+from typing import TYPE_CHECKING, Any, ClassVar, MutableMapping, Optional, \
+    Sequence, cast
 
 from typing_extensions import override
 
-from crossbench.benchmarks.speedometer.speedometer import (
-    SpeedometerBenchmark, SpeedometerBenchmarkStoryFilter, SpeedometerProbe,
-    SpeedometerProbeContext, SpeedometerStory)
+from crossbench.benchmarks.speedometer.speedometer import \
+    SpeedometerBenchmark, SpeedometerBenchmarkStoryFilter, SpeedometerProbe, \
+    SpeedometerProbeContext, SpeedometerStory
 from crossbench.browsers import viewport as vp
 from crossbench.helper import url_helper
 from crossbench.parse import DurationParser, NumberParser, ObjectParser

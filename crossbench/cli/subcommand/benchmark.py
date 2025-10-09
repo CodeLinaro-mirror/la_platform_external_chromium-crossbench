@@ -9,7 +9,7 @@ import datetime as dt
 import itertools
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Type
 
 from typing_extensions import override
 
@@ -21,15 +21,15 @@ from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport, ViewportMode
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
-from crossbench.cli.config.env import (ENV_CONFIG_PRESETS, EnvConfig,
-                                       ValidationMode)
+from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig, \
+    ValidationMode
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.probe import PROBE_LOOKUP, ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
-from crossbench.parse import (DurationParser, LateArgumentError, ObjectParser,
-                              PathParser)
+from crossbench.parse import DurationParser, LateArgumentError, ObjectParser, \
+    PathParser
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.internal.errors import ErrorsProbe
 from crossbench.probes.thermal_monitor import ThermalStatus
@@ -526,26 +526,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     env_config: EnvConfig = self._get_env_config(args)
     env_validation_mode: ValidationMode = self._get_env_validation_mode(args)
     timing: Timing = self._get_timing(args)
-    self._runner = self._get_runner(args, benchmark, env_config,
+    self._runner = self._get_runner(args, benchmark, probes, env_config,
                                     env_validation_mode, timing)
-
-    # We prevent running multiple stories in repetition OR if multiple
-    # browsers are open when 'power' probes are used since it might distort
-    # the data.
-    if len(args.browser) > 1 or args.repetitions > 1:
-      probe_names = [probe.name for probe in probes if probe.BATTERY_ONLY]
-      if probe_names:
-        names_str = ",".join(probe_names)
-        raise argparse.ArgumentTypeError(
-            f"Cannot use [{names_str}] probe(s) "
-            "with repeat > 1 and/or with multiple browsers. We need to "
-            "always start at the same battery level, and by running "
-            "stories on multiple browsers or multiples time will create "
-            "erroneous data.")
-
-    for probe in probes:
-      self.runner.attach_probe(probe, matching_browser_only=True)
-
     self._run_benchmark(args, self.runner)
 
   def _helper(self, args: argparse.Namespace) -> None:
@@ -785,11 +767,13 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
                   args.run_timeout, args.start_delay, args.stop_delay)
 
   def _get_runner(self, args: argparse.Namespace, benchmark: Benchmark,
-                  env_config: EnvConfig, env_validation_mode: ValidationMode,
+                  probes: Iterable[Probe], env_config: EnvConfig,
+                  env_validation_mode: ValidationMode,
                   timing: Timing) -> Runner:
     runner_kwargs = self._runner_cls.kwargs_from_cli(args)
     return self._runner_cls(
         benchmark=benchmark,
+        probes=probes,
         env_config=env_config,
         env_validation_mode=env_validation_mode,
         timing=timing,

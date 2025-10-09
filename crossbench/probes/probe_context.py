@@ -7,13 +7,13 @@ from __future__ import annotations
 import abc
 import contextlib
 import datetime as dt
-from typing import (TYPE_CHECKING, Any, Generic, Iterable, Iterator, Optional,
-                    TypeVar)
+from typing import TYPE_CHECKING, Any, Generic, Iterable, Iterator, Optional, \
+    TypeVar
 
 from typing_extensions import override
 
-from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
-                                       LocalProbeResult, ProbeResult)
+from crossbench.probes.results import BrowserProbeResult, EmptyProbeResult, \
+    LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions

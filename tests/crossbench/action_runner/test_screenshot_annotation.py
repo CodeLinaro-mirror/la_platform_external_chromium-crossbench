@@ -8,9 +8,9 @@ import unittest
 import xml.etree.ElementTree as ET
 
 from crossbench.action_runner.display_rectangle import DisplayRectangle
-from crossbench.action_runner.screenshot_annotation import (
-    ScreenshotPointAnnotation, ScreenshotRectAnnotation,
-    annotate_screenshot_svg)
+from crossbench.action_runner.screenshot_annotation import \
+    ScreenshotPointAnnotation, ScreenshotRectAnnotation, \
+    annotate_screenshot_svg
 from crossbench.benchmarks.loading.point import Point
 from tests import test_helper
 

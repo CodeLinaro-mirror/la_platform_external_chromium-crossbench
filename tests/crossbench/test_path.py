@@ -28,6 +28,5 @@ class PlatformHelperTestCase(unittest.TestCase):
     self.assertEqual(len(safe_filename(test_str)), MAX_PART_LEN)
 
 
-
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

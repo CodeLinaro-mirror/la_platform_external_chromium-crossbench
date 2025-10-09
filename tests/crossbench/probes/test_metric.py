@@ -223,7 +223,6 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
         "a/ab/cccB": "cccB"
     })
 
-
   BASIC_NESTED_DATA = {
       "a": {
           "a": {

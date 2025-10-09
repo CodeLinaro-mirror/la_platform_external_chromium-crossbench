@@ -18,6 +18,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.probes.probe import Probe
 
+
 class GenericProbeTestCase(BaseCrossbenchTestCase):
 
   def create_runner(self,

@@ -18,6 +18,7 @@ from tests.crossbench.runner.helper import MockRun
 if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
+
 class RunGroupTestCase(BaseRunGroupTestCase):
 
   def create_groups(self, runs: Iterable[Run], throw: bool = True):
