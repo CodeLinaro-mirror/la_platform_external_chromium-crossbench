@@ -19,9 +19,11 @@ from perfetto.trace_uri_resolver.path import PathUriResolver
 from perfetto.trace_uri_resolver.registry import ResolverRegistry
 from typing_extensions import override
 
+from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.helper.path_finder import LlvmSymbolizerFinder, TraceconvFinder
+from crossbench.helper.path_finder import LlvmSymbolizerFinder, \
+    TraceconvFinder, TraceProcessorFinder
 from crossbench.parse import ObjectParser
 from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbePriority
@@ -156,9 +158,9 @@ class TraceProcessorProbe(Probe):
     self._symbolize_profile: Final[bool] = symbolize_profile
     self._module_paths: Final[tuple[pth.LocalPath,
                                     ...]] = (MODULES_DIR,) + tuple(module_paths)
-    self._trace_processor_bin: Final[pth.LocalPath
-                                     | None] = TraceconvFinder.local_binary(
-                                         trace_processor_bin)
+    self._trace_processor_bin: Final[
+        pth.LocalPath
+        | None] = TraceProcessorFinder.local_binary(trace_processor_bin)
     self._traceconv_bin: Final[pth.LocalPath
                                | None] = TraceconvFinder.local_binary(
                                    traceconv_bin)
@@ -224,6 +226,7 @@ class TraceProcessorProbe(Probe):
     extra_flags: list[str] = []
     if self._dev_features:
       extra_flags.append("--dev")
+    is_debug_logging = logging.getLogger().isEnabledFor(logging.DEBUG)
 
     for module_path in self.module_paths:
       extra_flags.append("--add-sql-module")
@@ -232,6 +235,7 @@ class TraceProcessorProbe(Probe):
     return TraceProcessorConfig(
         bin_path=self.trace_processor_bin,
         ingest_ftrace_in_raw=True,
+        verbose=is_debug_logging,
         resolver_registry=ResolverRegistry(
             resolvers=[CrossbenchTraceUriResolver, PathUriResolver]),
         load_timeout=10,
@@ -247,23 +251,26 @@ class TraceProcessorProbe(Probe):
   @override
   def validate_env(self, env: RunnerEnv) -> None:
     super().validate_env(env)
-    self._check_sql()
+    self._validate_metrics_and_queries()
 
-  def _check_sql(self) -> None:
+  def _validate_metrics_and_queries(self) -> None:
     """
     Runs all metrics and queries on an empty trace. This will ensure that they
     are correctly defined in trace processor.
     """
     with TraceProcessor(trace="/dev/null", config=self.tp_config) as tp:
       for metric in self.metrics:
-        tp.metric([metric])
+        with exception.annotate(f"validating metric: {metric!r}"):
+          tp.metric([metric])
       for query in self.queries:
-        tp.query(query.sql)
+        with exception.annotate(f"validating query: {query.name!r}"):
+          tp.query(query.sql)
 
-      if len(self.summary_metrics):
-        tp.trace_summary(
-            specs=list(self.metric_definitions),
-            metric_ids=list(self.summary_metrics))
+      if summary_metrics := self.summary_metrics:
+        with exception.annotate("validating summary metrics:"):
+          tp.trace_summary(
+              specs=list(self.metric_definitions),
+              metric_ids=list(summary_metrics))
 
   def _add_cb_columns(self, df: pd.DataFrame, run: Run) -> pd.DataFrame:
     df["cb_browser"] = run.browser.unique_name
