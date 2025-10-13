@@ -26,6 +26,7 @@ if TYPE_CHECKING:
   from crossbench.cli.config.browser import BrowserConfig
   from tests.crossbench.mock_helper import MockCLI
 
+
 class CliSlowTestCase(BaseCliTestCase):
   """Collection of slower tests that are not worth running
   as part of the presubmit"""
@@ -222,6 +223,7 @@ class CliSlowTestCase(BaseCliTestCase):
             "--throw", "--browser=chrome", "--browser=chrome-dev", "--",
             "--js-flags=--no-opt"
         ])
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

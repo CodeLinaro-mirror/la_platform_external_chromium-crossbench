@@ -498,9 +498,7 @@ class TestChromeFlags(TestFlags):
     self.assertEqual(
         str(field_trials.field_trial_enable_flags),
         "--enable-field-trial-config")
-    field_trials.set(
-        "--enable-benchmarking",
-        should_override=True)
+    field_trials.set("--enable-benchmarking", should_override=True)
     self.assertEqual(
         str(field_trials.field_trial_enable_flags),
         "--enable-field-trial-config")
@@ -647,6 +645,7 @@ class TestChromeFlags(TestFlags):
         should_override=True)
     flags.validate()
 
+
 class TestChromePreM139Flags(TestChromeFlags):
   CLASS = ChromePreM139Flags
 
@@ -738,6 +737,7 @@ class TestChromePreM139Flags(TestChromeFlags):
         "enable-field-trial-config",
         should_override=True)
     flags.validate()
+
 
 del TestFlags
 

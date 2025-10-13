@@ -9,9 +9,8 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from unittest import mock
 
-from crossbench.exception import (ArgumentTypeMultiException, Entry,
-                                  ExceptionAnnotator, MultiException, annotate,
-                                  annotate_argparsing)
+from crossbench.exception import ArgumentTypeMultiException, Entry, \
+    ExceptionAnnotator, MultiException, annotate, annotate_argparsing
 from tests import test_helper
 
 if TYPE_CHECKING:
@@ -28,6 +27,7 @@ class CustomException2(Exception):
 
 class CustomValueError(ValueError):
   pass
+
 
 class ExceptionHandlerTestCase(unittest.TestCase):
 
@@ -330,7 +330,6 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertFalse(annotator.is_success)
     self.assertEqual(len(annotator), 1)
     self.assertIsInstance(annotator[0].exception, RuntimeError)
-
 
 
 if __name__ == "__main__":

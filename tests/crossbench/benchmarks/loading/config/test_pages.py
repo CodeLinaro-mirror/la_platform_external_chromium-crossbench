@@ -17,8 +17,8 @@ from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
-from crossbench.benchmarks.loading.config.pages import (
-    DevToolsRecorderPagesConfig, ListPagesConfig, PagesConfig)
+from crossbench.benchmarks.loading.config.pages import \
+    DevToolsRecorderPagesConfig, ListPagesConfig, PagesConfig
 from crossbench.cli.config.secrets import GoogleUsernamePassword, Secrets
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase

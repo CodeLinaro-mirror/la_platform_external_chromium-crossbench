@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import contextlib
 from typing import Iterator
-from unittest import mock, skipIf
+from unittest import mock
 
-import pyfakefs
 from typing_extensions import override
 
 from crossbench import path as pth
@@ -24,22 +23,23 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
   PORT = 9515
   SSH_PORT = 22
   SSH_USER = "user"
+
   platform: plt.LinuxSshPlatform
 
   @override
-  def setUp(self) -> None:
-    super().setUp()
-    self.host_platform = self.mock_platform
-    self.platform = plt.LinuxSshPlatform(
-        self.mock_platform,
+  def setup_platform(self) -> plt.LinuxSshPlatform:
+    self.mock_platform_default_tmp_dir(plt.LinuxSshPlatform)
+    platform = plt.LinuxSshPlatform(
+        self.host_platform,
         host=self.HOST,
         port=self.PORT,
         ssh_port=self.SSH_PORT,
         ssh_user=self.SSH_USER)
-    self.mock_platform_str(self.platform, "linux_ssh_mock_platform")
+    self.mock_platform_str(platform, "linux_ssh_mock_platform")
+    return platform
 
   def _expect_sh_ssh(self, *args, result=""):
-    self.mock_platform.expect_sh(
+    self.host_platform.expect_sh(
         "ssh",
         "-p",
         str(self.SSH_PORT),
@@ -49,11 +49,9 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def _expect_sh_ssh_shell(self, *args, result=""):
     cmd_string = f"ssh -p {str(self.SSH_PORT)} {self.SSH_USER}@{self.HOST} "
-
     for arg in args:
       cmd_string += arg + " "
-
-    self.mock_platform.expect_sh(cmd_string, result=result)
+    self.host_platform.expect_sh(cmd_string, result=result)
 
   def expect_sh(self, *args, result="") -> None:
     self._expect_sh_ssh(*args, result=result)
@@ -68,7 +66,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertTrue(self.platform.is_remote)
     self.assertEqual(self.platform.host, self.HOST)
     self.assertEqual(self.platform.port, self.PORT)
-    self.assertIs(self.platform.host_platform, self.mock_platform)
+    self.assertIs(self.platform.host_platform, self.host_platform)
     self.assertTrue(self.platform.is_posix)
 
   def test_name(self):
@@ -80,9 +78,6 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     # Subsequent calls are cached.
     self.assertEqual(self.platform.version_str, "999")
 
-  @skipIf(
-      tuple(map(int, pyfakefs.__version__.split("."))) < (5, 5),
-      "pth.AnyWindowsPath does not work correctly with older pyfakefs")
   def test_iterdir(self):
     self._expect_sh_ssh("'[' -d parent_dir/child_dir ']'")
     self._expect_sh_ssh("ls -1 parent_dir/child_dir", result="file1\nfile2\n")
@@ -183,7 +178,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def test_push_creates_dest_dir(self):
     self._expect_sh_ssh("mkdir -p remote/dest/path")
-    self.mock_platform.expect_sh(
+    self.host_platform.expect_sh(
         "scp", "-P", self.SSH_PORT, "source/path/file",
         f"{self.SSH_USER}@{self.HOST}:remote/dest/path/file")
     self.platform.push(
@@ -192,7 +187,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def test_push_dir(self):
     self._expect_sh_ssh("mkdir -p remote/dest/path")
-    self.mock_platform.expect_sh(
+    self.host_platform.expect_sh(
         "scp", "-P", self.SSH_PORT, "-r", "source/path/dir",
         f"{self.SSH_USER}@{self.HOST}:remote/dest/path/dir")
     source_dir = self.host_platform.path("source/path/dir")
@@ -200,7 +195,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.platform.push(source_dir, self.platform.path("remote/dest/path/dir"))
 
   def test_pull_creates_dest_dir(self):
-    self.mock_platform.expect_sh(
+    self.host_platform.expect_sh(
         "scp", "-P", self.SSH_PORT,
         f"{self.SSH_USER}@{self.HOST}:remote/source/path/file",
         "local/dest/path/file")
@@ -208,8 +203,9 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
         self.platform.path("remote/source/path/file"),
         self.platform.path("local/dest/path/file"))
 
-    self.assertEqual(self.mock_platform.mkdir_calls, 1)
+    self.assertEqual(self.host_platform.mkdir_calls, 1)
     self.assertTrue(pth.LocalPath("local/dest/path").exists())
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

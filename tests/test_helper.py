@@ -87,6 +87,7 @@ def to_flags(flag_dict):
     else:
       yield k
 
+
 def run_pytest(path: str | pathlib.Path, *args):
   sys.excepthook = exception_formatter.excepthook
   extra_args = [*args, *sys.argv[1:]]

@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 # Due to laziness we access internal variables in the test here.
 # Adding an accessor would wrongly hint that these variables are public.
 
+
 class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
 
   def test_basic_properties(self):
@@ -298,6 +299,7 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     self.assertTrue(run.did_setup)
     self.assertFalse(run.did_teardown_browser)
     self.assertIn("Network startup error", str(session.exceptions[0].exception))
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

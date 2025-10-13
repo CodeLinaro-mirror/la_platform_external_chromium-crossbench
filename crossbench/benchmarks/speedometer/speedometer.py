@@ -8,14 +8,14 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import (TYPE_CHECKING, Any, ClassVar, Mapping, MutableMapping,
-                    Optional, Sequence, Type)
+from typing import TYPE_CHECKING, Any, ClassVar, Mapping, MutableMapping, \
+    Optional, Sequence, Type
 
 from immutabledict import immutabledict
 from typing_extensions import override
 
-from crossbench.benchmarks.base import (PressBenchmark,
-                                        PressBenchmarkStoryFilter)
+from crossbench.benchmarks.base import PressBenchmark, \
+    PressBenchmarkStoryFilter
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.helper import url_helper
 from crossbench.parse import NumberParser, ObjectParser

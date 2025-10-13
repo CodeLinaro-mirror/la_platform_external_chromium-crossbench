@@ -16,9 +16,8 @@ from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
-from crossbench.benchmarks.loadline import (LoadLine1PhoneBenchmark,
-                                            LoadLine1TabletBenchmark,
-                                            loadline_1)
+from crossbench.benchmarks.loadline import LoadLine1PhoneBenchmark, \
+    LoadLine1TabletBenchmark, loadline_1
 from crossbench.benchmarks.loadline.loadline import LoadLinePageFilter
 from tests import test_helper
 from tests.crossbench.base import BaseCliTestCase, BaseCrossbenchTestCase

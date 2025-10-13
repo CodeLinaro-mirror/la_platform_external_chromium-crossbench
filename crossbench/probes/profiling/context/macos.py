@@ -21,7 +21,6 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
-
 _MAC_TRACE_TEMPLATE_PATH: Final[pth.LocalPath] = pth.LocalPath(
     __file__).parents[1] / "time-profile.tracetemplate"
 

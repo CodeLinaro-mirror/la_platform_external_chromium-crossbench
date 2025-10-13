@@ -7,16 +7,15 @@ from __future__ import annotations
 import argparse
 import pathlib
 from typing import Final
-from unittest import mock, skipIf
+from unittest import mock
 
-import pyfakefs
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.helper.version import VersionParseError
-from crossbench.plt.android_adb import (Adb, AndroidAdbPlatform,
-                                        AndroidDeviceInfo, AndroidVersion)
+from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, \
+    AndroidDeviceInfo, AndroidVersion
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.port_manager import PortForwardException
 from crossbench.plt.process_meminfo import ProcessMeminfo
@@ -92,17 +91,25 @@ Total RAM: 3,486,196K (status moderate)
    Tuning: 256 (large 512), oom 322,560K, restore limit 107,520K (high-end-gfx)
 """
 
+
 class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   DEVICE_ID = "emulator-5554"
   platform: AndroidAdbPlatform
+  adb: Adb
 
   @override
   def setUp(self) -> None:
-    super().setUp()
     self.adb_setup()
-    self.platform = AndroidAdbPlatform(
-        self.mock_platform, self.DEVICE_ID, adb=self.adb)
-    self.mock_platform_str(self.platform, "adb.mock_platform.arm64")
+    super().setUp()
+
+  @override
+  def setup_platform(self):
+    self.expect_startup_devices()
+    self.adb = Adb(self.host_platform, self.DEVICE_ID)
+    platform = AndroidAdbPlatform(
+        self.host_platform, self.DEVICE_ID, adb=self.adb)
+    self.mock_platform_str(platform, "adb.mock_platform.arm64")
+    return platform
 
   def test_str(self):
     self.assertEqual(str(self.platform), "adb.mock_platform.arm64")
@@ -113,22 +120,20 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
         return_value=pathlib.Path("adb"))
     adb_patcher.start()
     self.addCleanup(adb_patcher.stop)
-    self.expect_startup_devices()
-    self.adb = Adb(self.mock_platform, self.DEVICE_ID)
 
   def expect_startup_devices(self, devices: str = ADB_DEVICES_SAMPLE_OUTPUT):
-    if self.mock_platform.is_macos:
-      self.mock_platform.expect_sh(
+    if self.host_platform.is_macos:
+      self.host_platform.expect_sh(
           "brew", "--prefix", result=ShResult(success=False))
-    self.mock_platform.expect_sh(pathlib.Path("adb"), "start-server")
-    self.mock_platform.expect_sh(
+    self.host_platform.expect_sh(pathlib.Path("adb"), "start-server")
+    self.host_platform.expect_sh(
         pathlib.Path("adb"), "devices", "-l", result=devices)
 
   def expect_sh(self, *args, result=""):
     self.expect_adb("shell", *args, result=result)
 
   def expect_adb(self, *args, result=""):
-    self.mock_platform.expect_sh(
+    self.host_platform.expect_sh(
         pathlib.Path("adb"), "-s", self.DEVICE_ID, *args, result=result)
 
   def test_is_android(self):
@@ -156,8 +161,9 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.expect_sh("getprop ro.product.cpu.abi", result="arm64-v8a")
     self.expect_sh("getprop ro.product.cpu.abi", result="arm64-v8a")
     platform_2 = AndroidAdbPlatform(
-        self.mock_platform, "SomeDeviceId", adb=self.adb)
+        self.host_platform, "SomeDeviceId", adb=self.adb)
     self.assertNotEqual(self.platform.unique_name, platform_2.unique_name)
+
 
 class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   __test__ = True
@@ -168,8 +174,8 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     self.fs.os = OSType.WINDOWS
 
   @override
-  def mock_platform_setup(self):
-    self.mock_platform = WinMockPlatform()
+  def setup_host_platform(self):
+    return WinMockPlatform()
 
   def test_host_platform(self):
     self.assertTrue(self.platform.host_platform.is_win)
@@ -208,7 +214,7 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     self.platform.mkdtemp(".custom_suffix")
 
   def test_push(self):
-    local_path = self.mock_platform.path("C:/foo/push.local.data")
+    local_path = self.host_platform.path("C:/foo/push.local.data")
     remote_path = self.platform.default_tmp_dir / "push.remote.data"
     self.assertIsInstance(local_path, pathlib.PureWindowsPath)
     self.fs.create_file(local_path, contents="some data")
@@ -217,8 +223,8 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     self.platform.push(local_path, remote_path)
 
   def test_push_remote_win_path(self):
-    local_path = self.mock_platform.path("C:/foo/push.local.data")
-    remote_path = self.mock_platform.path("custom/push.remote.data")
+    local_path = self.host_platform.path("C:/foo/push.local.data")
+    remote_path = self.platform.path("custom/push.remote.data")
     self.assertIsInstance(local_path, pathlib.PureWindowsPath)
     self.fs.create_file(local_path, contents="some data")
     self.expect_adb("push", "C:\\foo\\push.local.data",
@@ -232,43 +238,43 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_create_no_devices(self):
     self.expect_startup_devices("List of devices attached")
     with self.assertRaises(ValueError):
-      Adb(self.mock_platform, self.DEVICE_ID)
+      Adb(self.host_platform, self.DEVICE_ID)
 
   def test_create_default_too_many_devices(self):
     self.expect_startup_devices()
     with self.assertRaises(ValueError) as cm:
-      Adb(self.mock_platform)
+      Adb(self.host_platform)
     self.assertIn("too many", str(cm.exception).lower())
 
   def test_create_default_one_device(self):
     self.expect_startup_devices(ADB_DEVICE_SAMPLE_OUTPUT)
-    adb = Adb(self.mock_platform)
+    adb = Adb(self.host_platform)
     self.assertEqual(adb.serial_id, "emulator-5556")
 
   def test_create_default_one_device_invalid(self):
     self.expect_startup_devices(ADB_DEVICE_SAMPLE_OUTPUT)
     with self.assertRaises(ValueError) as cm:
-      Adb(self.mock_platform, "")
+      Adb(self.host_platform, "")
     self.assertIn("invalid device identifier", str(cm.exception).lower())
 
   def test_create_by_name(self):
     self.expect_startup_devices(ADB_DEVICES_SAMPLE_OUTPUT)
-    adb = Adb(self.mock_platform, "Nexus_7")
+    adb = Adb(self.host_platform, "Nexus_7")
     self.assertEqual(adb.serial_id, "0a388e93")
     self.expect_startup_devices(ADB_DEVICES_SAMPLE_OUTPUT)
-    adb = Adb(self.mock_platform, "Nexus 7")
+    adb = Adb(self.host_platform, "Nexus 7")
     self.assertEqual(adb.serial_id, "0a388e93")
 
   def test_create_by_name_duplicate(self):
     self.expect_startup_devices(ADB_DEVICES_SAMPLE_OUTPUT)
     with self.assertRaises(ValueError) as cm:
-      Adb(self.mock_platform, "Android_SDK_built_for_x86")
+      Adb(self.host_platform, "Android_SDK_built_for_x86")
     self.assertIn("devices", str(cm.exception).lower())
 
   def test_basic_properties(self):
     self.assertTrue(self.platform.is_remote)
     self.assertEqual(self.platform.name, "android")
-    self.assertIs(self.platform.host_platform, self.mock_platform)
+    self.assertIs(self.platform.host_platform, self.host_platform)
     self.assertEqual(self.platform.default_tmp_dir,
                      pathlib.PurePosixPath("/data/local/tmp/"))
 
@@ -482,9 +488,6 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     brightness = self.platform.get_main_display_brightness()
     self.assertEqual(brightness, 16)
 
-  @skipIf(
-      tuple(map(int, pyfakefs.__version__.split("."))) < (5, 5),
-      "pth.AnyWindowsPath does not work correctly with older pyfakefs")
   def test_iterdir(self):
     self.expect_sh("'[' -d parent_dir/child_dir ']'")
     self.expect_sh("ls -1 parent_dir/child_dir", result="file1\nfile2\n")
@@ -708,6 +711,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertEqual(version.version_str, "13 (Tiramisu)")
     with self.assertRaises(VersionParseError):
       AndroidVersion.parse("foo")
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

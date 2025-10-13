@@ -12,7 +12,7 @@ from typing import Iterator
 import pytest
 
 from crossbench.cli.cli import CrossBenchCLI
-from crossbench.helper.path_finder import WprGoToolFinder
+from crossbench.helper.path_finder import WprGoFinder
 from crossbench.path import check_hash
 from crossbench.plt import PLATFORM
 from tests import test_helper
@@ -24,7 +24,7 @@ def tmp_dir() -> Iterator[pathlib.Path]:
     tmp_dir = pathlib.Path(tmp_dir_name)
     # Download prebuilt wprgo binary to run WPR on the host
     local_wpr = tmp_dir / "wprgo"
-    wpr_cloud_binary = WprGoToolFinder(PLATFORM).cloud_binary(PLATFORM)
+    wpr_cloud_binary = WprGoFinder(PLATFORM).cloud_binary(PLATFORM)
     PLATFORM.sh("gsutil", "cp", wpr_cloud_binary.url, local_wpr)
     assert check_hash(local_wpr, wpr_cloud_binary.file_hash)
     PLATFORM.sh("chmod", "+x", local_wpr)

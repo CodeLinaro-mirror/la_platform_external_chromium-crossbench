@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 
 class Story(abc.ABC):
+
   @classmethod
   @abc.abstractmethod
   def all_story_names(cls) -> Sequence[str]:

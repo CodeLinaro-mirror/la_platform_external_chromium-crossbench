@@ -23,8 +23,8 @@ import sys
 import tempfile
 import urllib.error
 import urllib.request
-from typing import (TYPE_CHECKING, Any, Callable, Final, Generator, Iterable,
-                    Iterator, Mapping, Optional, Sequence, Type)
+from typing import TYPE_CHECKING, Any, Callable, Final, Generator, Iterable, \
+    Iterator, Mapping, Optional, Sequence, Type
 
 import google.cloud.storage as gcloud_storage
 import psutil
@@ -36,8 +36,8 @@ from crossbench.parse import ObjectParser
 from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
-from crossbench.plt.port_manager import (LocalPortManager, PortManager,
-                                         PortScope)
+from crossbench.plt.port_manager import LocalPortManager, PortManager, \
+    PortScope
 from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
@@ -113,15 +113,22 @@ def _next_id() -> int:
 
 DEFAULT_CACHE_DIR: Final = pth.LocalPath(__file__).parents[2] / "cache"
 
+
 class Platform(abc.ABC):
+
   def __init__(self) -> None:
     self._id: Final[int] = _next_id()
     self._binary_lookup_override: dict[str, pth.AnyPath] = {}
     self._cache_dir_root: pth.AnyPath | None = None
-    self._default_port_manager: PortManager = self._create_port_manager()
+    self._default_port_manager: Final[PortManager] = self._create_port_manager()
+    self._default_tmp_dir: Final[pth.AnyPath] = self._create_default_tmp_dir()
 
   def _create_port_manager(self) -> PortManager:
     return LocalPortManager(self)
+
+  def _create_default_tmp_dir(self) -> pth.AnyPath:
+    self.assert_is_local()
+    return self.path(tempfile.gettempdir())
 
   def assert_is_local(self) -> None:
     if self.is_local:
@@ -281,7 +288,7 @@ class Platform(abc.ABC):
   @property
   def is_battery_powered(self) -> bool:
     self.assert_is_local()
-    if not psutil.sensors_battery: # type: ignore
+    if not psutil.sensors_battery:  # type: ignore
       return False
     status = psutil.sensors_battery()
     if not status:
@@ -314,7 +321,6 @@ class Platform(abc.ABC):
     self.assert_is_local()
     cpu_freq = psutil.cpu_freq()
     return CPUFreqInfo(cpu_freq.min, cpu_freq.max, cpu_freq.current)
-
 
   @functools.lru_cache(maxsize=1)
   def system_details(self) -> dict[str, Any]:
@@ -449,7 +455,6 @@ class Platform(abc.ABC):
     self.assert_is_local()
     # Helper to avoid circular imports.
     return parse.PathParser.local_binary_path(value, self, name)
-
 
   def which(self, binary_name: pth.AnyPathLike) -> Optional[pth.AnyPath]:
     if not binary_name:
@@ -597,10 +602,13 @@ class Platform(abc.ABC):
   def foreground_process(self) -> Optional[dict[str, Any]]:
     return None
 
+  def dump_java_heap(self, identifier: str, path: pth.AnyPath) -> None:
+    del identifier, path
+    raise NotImplementedError(f"dump_java_heap not implemented for {self}.")
+
   @property
   def default_tmp_dir(self) -> pth.AnyPath:
-    self.assert_is_local()
-    return self.path(tempfile.gettempdir())
+    return self._default_tmp_dir
 
   @property
   def ports(self) -> PortScope:
@@ -1029,8 +1037,7 @@ class Platform(abc.ABC):
 
   def screenshot(self, result_path: pth.AnyPath) -> None:
     # TODO: support screen coordinates
-    raise NotImplementedError(
-        "'screenshot' is only available on MacOS for now")
+    raise NotImplementedError("'screenshot' is only available on MacOS for now")
 
   def display_resolution(self) -> tuple[int, int]:
     raise NotImplementedError(
@@ -1040,7 +1047,6 @@ class Platform(abc.ABC):
   @contextlib.contextmanager
   def low_power_mode(self) -> Generator[None, Any, None]:
     raise NotImplementedError("'low_power_mode' is only supported on Android")
-
 
   def user_id(self) -> int:
     self.assert_is_local()

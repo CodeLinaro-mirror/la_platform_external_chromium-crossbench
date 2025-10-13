@@ -10,8 +10,8 @@ from typing import Any, Sequence
 
 import hjson
 
-from crossbench.benchmarks.embedder.config.setup_commands import (
-    SetupCommandConfig, SetupCommandsConfig)
+from crossbench.benchmarks.embedder.config.setup_commands import \
+    SetupCommandConfig, SetupCommandsConfig
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 

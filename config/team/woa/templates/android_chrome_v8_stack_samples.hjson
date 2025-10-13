@@ -4,32 +4,38 @@
 {
   browsers: {
     chrome: {
-      browser: "chrome-stable",
+      browser: chrome-stable
       flags: [
-        "--js-flags=--interpreted_frames_native_stack,--perfetto_code_logger"
+        --js-flags=--interpreted_frames_native_stack,--perfetto_code_logger
       ]
       driver: {
-        type: "adb",
-      }}}
+        type: adb
+      }
+    }
+  }
   env: {}
   probes: {
-    trace_processor: {
-    }
+    trace_processor: {}
     perfetto: {
-      textproto: '''
-buffers {
-  size_kb: 500000
-  fill_policy: DISCARD
-}
-data_sources {
-  config {
-    name: "dev.v8.code"
-  }}
-'''
+      textproto:
+        '''
+          buffers {
+            size_kb: 500000
+            fill_policy: DISCARD
+          }
+          data_sources {
+            config {
+              name: "dev.v8.code"
+            }}
+        '''
     }
     profiling: {
-      target: "renderer_main_only"
+      target: renderer_main_only
       pprof: false
-      events: ['cpu-cycles']
+      events: [
+        cpu-cycles
+      ]
       count: 1000000
-    }}}
+    }
+  }
+}

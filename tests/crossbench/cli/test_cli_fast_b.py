@@ -23,6 +23,7 @@ from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.env.runner_env import ValidationMode
 from crossbench.parse import LateArgumentError
 from crossbench.probes.internal.summary import ResultsSummaryProbe
+from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
@@ -439,9 +440,9 @@ class FastCliTestCasePartB(BaseCliTestCase):
 
   def test_powersampler_invalid_multiple_runs(self):
     powersampler_bin = self.out_dir / "powersampler"
-    self.fs.create_file(powersampler_bin, st_size=1024)
     config_str = json.dumps({"bin_path": str(powersampler_bin)})
-    with self._patch_get_browser_cls():
+    with self._patch_get_browser_cls(), mock.patch.object(
+        PowerSamplerProbe, "validate_browser"):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         self.run_cli("loading", "--browser=chrome",
                      f"--probe=powersampler:{config_str}", "--repeat=10",

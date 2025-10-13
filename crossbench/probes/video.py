@@ -40,6 +40,7 @@ FFMPEG_STACK_DIRECTION: Final[dict[Orientation, str]] = {
     Orientation.VERTICAL: "vstack",
 }
 
+
 class VideoProbe(Probe):
   """
   General-purpose Probe that collects screen-recordings.
@@ -344,8 +345,8 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
   def stop_process(self) -> None:
     if self._record_process:
-      self.browser_platform.terminate_gracefully(self._record_process,
-                                                 timeout=5)
+      self.browser_platform.terminate_gracefully(
+          self._record_process, timeout=5)
       self._record_process = None
 
   def _convert_to_constant_framerate(self) -> None:

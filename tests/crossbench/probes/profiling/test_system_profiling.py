@@ -12,14 +12,11 @@ from typing_extensions import override
 from crossbench.browsers.settings import Settings
 from crossbench.probes.profiling.context.android import \
     generate_simpleperf_command_line
-from crossbench.probes.profiling.system_profiling import (RENDERER_CMD_PATH,
-                                                          CallGraphMode,
-                                                          CleanupMode,
-                                                          ProfilingProbe,
-                                                          TargetMode)
+from crossbench.probes.profiling.system_profiling import RENDERER_CMD_PATH, \
+    CallGraphMode, CleanupMode, ProfilingProbe, TargetMode
 from tests import test_helper
-from tests.crossbench.mock_browser import (MockChromeStable, MockFirefox,
-                                           MockSafari)
+from tests.crossbench.mock_browser import MockChromeStable, MockFirefox, \
+    MockSafari
 from tests.crossbench.mock_helper import LinuxMockPlatform, MacOsMockPlatform
 from tests.crossbench.probes.helper import GenericProbeTestCase
 

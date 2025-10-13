@@ -9,8 +9,8 @@ from typing_extensions import override
 from crossbench.helper.state import UnexpectedStateError
 from crossbench.runner.run import ProbeRunContextManager
 from tests import test_helper
-from tests.crossbench.runner.helper import (BaseRunnerTestCase, MockProbe,
-                                            MockProbeContext)
+from tests.crossbench.runner.helper import BaseRunnerTestCase, MockProbe, \
+    MockProbeContext
 from tests.crossbench.test_exception import CustomException
 
 

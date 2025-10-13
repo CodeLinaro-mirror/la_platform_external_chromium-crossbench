@@ -106,6 +106,7 @@ def try_get_parent_app_name(platform: plt.Platform) -> str:
 SYSTEM_EVENTS_CHECK: Final[str] = (
     'tell application "System Events" to log (count of windows)')
 
+
 class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
   APPLE_SCRIPT_ALLOW_JS_MENU: ClassVar[str] = ""
   APPLE_SCRIPT_JS_COMMAND: ClassVar[str] = ""

@@ -12,13 +12,13 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self
 from typing_extensions import override
 
 from crossbench import exception
-from crossbench.cli.config.network_speed import (NetworkSpeedConfig,
-                                                 NetworkSpeedPreset)
+from crossbench.cli.config.network_speed import NetworkSpeedConfig, \
+    NetworkSpeedPreset
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.network.live import LiveNetwork
 from crossbench.network.local_file_server import LocalFileNetwork
-from crossbench.network.replay.wpr import (LocalWprReplayNetwork,
-                                           RemoteWprReplayNetwork)
+from crossbench.network.replay.wpr import LocalWprReplayNetwork, \
+    RemoteWprReplayNetwork
 from crossbench.network.traffic_shaping import ts_proxy
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
 from crossbench.parse import PathParser
@@ -41,6 +41,7 @@ def _parse_existing_file_path_and_resolve(value: str) -> pth.LocalPath:
   # always looking at the correct file.
   # It would be best to implement this in PathParser, e.g. crrev.com/c/6713595.
   return PathParser.json_file_path(value).resolve()
+
 
 @enum.unique
 class NetworkType(ConfigEnum):

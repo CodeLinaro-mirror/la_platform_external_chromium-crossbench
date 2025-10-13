@@ -41,7 +41,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/pyfakefs-py3"
-  version: "version:5.7.3"
+  version: "version:5.9.2"
 >
 
 wheel: <
@@ -259,7 +259,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/protobuf-py3"
-  version: "version:6.32.0"
+  version: "version:6.32.1"
 >
 
 wheel: <

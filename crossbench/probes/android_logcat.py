@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, ClassVar, Iterable, Self, Type, cast
 
 from typing_extensions import override
 
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeIncompatibleBrowser)
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
+    ProbeIncompatibleBrowser
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
