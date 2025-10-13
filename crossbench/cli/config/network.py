@@ -66,6 +66,8 @@ class NetworkConfig(ConfigObject):
   run_on_device: bool = False
   skip_deterministic_script_injection: bool = False
   response_transformations_file: pth.LocalPath | None = None
+  cross_platform_mode: bool = False
+  host: str | None = None
 
   @classmethod
   def default(cls, type: Optional[NetworkType] = None) -> Self:
@@ -114,6 +116,17 @@ class NetworkConfig(ConfigObject):
         help=("Path to a JSON file specifying transformation rules to apply to "
               "specific responses, e.g. inject a script in google.com. See "
               "WebPageReplay docs for more info on the expected file format."))
+    parser.add_argument(
+        "cross_platform_mode",
+        type=bool,
+        default=False,
+        help=("A special mode when WPR doesn't use ADB port forwarding or any "
+              "Chromium-specific flags to setup network. Instead WPR serves "
+              "requests on standard http/https ports and delegates network "
+              "setup to the user. Requires root privileges on the host. "
+              "Incompatible with 'run_on_device' setting."))
+    parser.add_argument(
+        "host", type=str, help=("A host for WPR server to bind to."))
     return parser
 
   @classmethod
@@ -224,25 +237,18 @@ class NetworkConfig(ConfigObject):
             "NetworkConfig with type=local requires "
             "a valid local dir path to serve files.")
       PathParser.non_empty_dir_path(self.path, "local-serve dir")
-    if self.wpr_go_bin and self.type is not NetworkType.WPR:
+
+    wpr_only_options = ("wpr_go_bin", "persist_server", "run_on_device",
+                        "skip_deterministic_script_injection", "host",
+                        "response_transformations_file", "cross_platform_mode")
+    for option in wpr_only_options:
+      if getattr(self, option) and self.type is not NetworkType.WPR:
+        raise argparse.ArgumentTypeError(
+            f"{option} can only be used for the WPR replay network")
+
+    if self.cross_platform_mode and self.run_on_device:
       raise argparse.ArgumentTypeError(
-          "wpr_go_bin can only be used for the WPR replay network")
-    if self.persist_server and self.type is not NetworkType.WPR:
-      # TODO: support file server as well
-      raise argparse.ArgumentTypeError(
-          "persist_server can only be used for the WPR replay network")
-    if self.run_on_device and self.type is not NetworkType.WPR:
-      raise argparse.ArgumentTypeError(
-          "run_on_device can only be used for the WPR replay network")
-    if (self.skip_deterministic_script_injection and
-        self.type is not NetworkType.WPR):
-      raise argparse.ArgumentTypeError(
-          "skip_deterministic_script_injection can only be used for the WPR "
-          "replay network")
-    if self.response_transformations_file and self.type is not NetworkType.WPR:
-      raise argparse.ArgumentTypeError(
-          "response_transformations_file can only be used for the WPR replay "
-          "network")
+          "cross_platform_mode is incompatible with run_on_device")
 
   def create(self, browser_platform: Platform) -> Network:
     with exception.annotate_argparsing(
@@ -267,7 +273,8 @@ class NetworkConfig(ConfigObject):
               self.persist_server,
               response_transformations_file=self.response_transformations_file,
               inject_deterministic_script=not self
-              .skip_deterministic_script_injection)
+              .skip_deterministic_script_injection,
+              host=self.host)
         return LocalWprReplayNetwork(
             self.url or str(self.path),
             traffic_shaper,
@@ -276,7 +283,9 @@ class NetworkConfig(ConfigObject):
             self.persist_server,
             response_transformations_file=self.response_transformations_file,
             inject_deterministic_script=not self
-            .skip_deterministic_script_injection)
+            .skip_deterministic_script_injection,
+            cross_platform_mode=self.cross_platform_mode,
+            host=self.host)
     raise ValueError(f"Unknown network type {self.type}")
 
   def _create_traffic_shaper(self, browser_platform: Platform) -> TrafficShaper:

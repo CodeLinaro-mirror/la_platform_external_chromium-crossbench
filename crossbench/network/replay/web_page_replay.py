@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 _WPR_PORT_RE: re.Pattern[str] = re.compile(r".*Starting server on "
                                            r"(?P<protocol>http|https)://"
-                                           r"(?P<host>[^:]+):"
+                                           r"(?P<host>[^:]+|\[.+\]):"
                                            r"(?P<port>\d+)")
 
 
@@ -50,18 +50,22 @@ class WprBase(abc.ABC):
                key_file: Optional[AnyPath] = None,
                cert_file: Optional[AnyPath] = None,
                log_path: Optional[LocalPath] = None,
+               run_as_root: bool = False,
                platform: Platform = PLATFORM) -> None:
     self._platform: Final[Platform] = platform
     self._process: subprocess.Popen | None = None
     self._log_path: LocalPath | None = self._validate_log_path(log_path)
     self._log_file: TextIO | None = None
     self._bin_path: Final[AnyPath] = bin_path
+    self._run_as_root: bool = run_as_root
 
     self._num_parsed_ports: int = 0
     self._host_http_port: int = 0
     self._host_https_port: int = 0
 
     (wpr_root, go_cmd) = self._validate_wpr()
+    if run_as_root:
+      go_cmd = ("sudo",) + go_cmd
     self._go_cmd: Final[TupleCmdArgs] = go_cmd
 
     self._archive_path: Final[AnyPath] = self._validate_archive_path(
@@ -191,6 +195,7 @@ class WprBase(abc.ABC):
   @property
   def base_cmd_flags(self) -> TupleCmdArgs:
     cmd: TupleCmdArgs = (
+        f"--host={self._host}",
         f"--http_port={self._device_http_port}",
         f"--https_port={self._device_https_port}",
         f"--https_key_file={self._key_file}",
@@ -336,7 +341,10 @@ class WprBase(abc.ABC):
         self._log_file.close()
         self._log_file = None
       if force_shutdown:
-        self._platform.terminate_gracefully(self._process, timeout=1)
+        if self._run_as_root:
+          self._platform.sh("sudo", "kill", str(self._process.pid))
+        else:
+          self._platform.terminate_gracefully(self._process, timeout=1)
     finally:
       self._process = None
 
@@ -385,9 +393,11 @@ class WprReplayServer(WprBase):
                log_path: Optional[LocalPath] = None,
                fuzzy_url_matching: bool = True,
                serve_chronologically: bool = True,
+               run_as_root: bool = False,
                platform: Platform = PLATFORM) -> None:
     super().__init__(archive_path, bin_path, http_port, https_port, host,
-                     inject_scripts, key_file, cert_file, log_path, platform)
+                     inject_scripts, key_file, cert_file, log_path, run_as_root,
+                     platform)
     self._rules_file: AnyPath | None = rules_file
     self._fuzzy_url_matching: bool = fuzzy_url_matching
     self._serve_chronologically: bool = serve_chronologically
