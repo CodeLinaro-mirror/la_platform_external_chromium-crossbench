@@ -650,9 +650,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     message: str = "SUBCOMMAND"
     if benchmark:
       message = f"{benchmark.NAME.upper()} BENCHMARK"
-    logging.error("%s FAILED WITH %s:", message, e.__class__.__name__)
-    logging.error("-" * 80)
-    self._log_benchmark_subcommand_exception(e)
+    error_message = f"{message} FAILED WITH {e.__class__.__name__}"
+    self._log_benchmark_subcommand_exception(error_message, e)
     logging.error("-" * 80)
     if runner and runner.runs:
       self._log_runner_debug_hints(runner)
@@ -663,7 +662,13 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     logging.error("#" * 80)
     sys.exit(3)
 
-  def _log_benchmark_subcommand_exception(self, e: Exception) -> None:
+  def _log_benchmark_subcommand_exception(self, error_message: str,
+                                          e: Exception) -> None:
+    if isinstance(e, exception.MultiException):
+      e.annotator.log(error_message)
+      return
+    logging.error(error_message)
+    logging.error("-" * 80)
     message = str(e)
     if message:
       logging.error(message)

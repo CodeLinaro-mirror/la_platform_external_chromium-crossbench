@@ -15,7 +15,7 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.browser import Browser
-from crossbench.env.runner_env import ValidationError
+from crossbench.env.base import ValidationError
 
 if TYPE_CHECKING:
   import datetime as dt

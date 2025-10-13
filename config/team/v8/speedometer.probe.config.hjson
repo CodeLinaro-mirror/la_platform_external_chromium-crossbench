@@ -43,6 +43,10 @@
     profiling: {
       target: RENDERER_PROCESS_ONLY
     }
-    trace_processor: {}
+    trace_processor: {
+      queries: [
+        speedometer/perf_sample_span.sql
+      ]
+    }
   }
 }

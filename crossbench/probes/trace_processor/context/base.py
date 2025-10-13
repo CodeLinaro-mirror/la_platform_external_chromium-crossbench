@@ -12,6 +12,8 @@ from google.protobuf.json_format import MessageToJson
 from perfetto.trace_processor.api import TraceProcessor
 
 from crossbench import path as pth
+from crossbench.exception import ExceptionAnnotator
+from crossbench.helper.cwd import change_cwd
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
     ProbeResult
@@ -59,14 +61,18 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
   def _maybe_run_tp(self) -> ProbeResult:
     if not self.probe.needs_tp_run:
       return EmptyProbeResult()
-
-    with TraceProcessor(
+    with change_cwd(self.local_result_path), TraceProcessor(
         trace=CrossbenchTraceUriResolver(self),
         config=self.probe.tp_config) as tp:
-      return self._run_queries(tp).merge(self._run_metrics(tp)).merge(
-          self._summarize_trace(tp))
+      with ExceptionAnnotator().annotate() as exceptions:
+        query_result = self._run_queries(tp, exceptions)
+        metric_result = self._run_metrics(tp, exceptions)
+        summary_result = self._summarize_trace(tp)
+      result = query_result.merge(metric_result).merge(summary_result)
+      return result
 
-  def _run_queries(self, tp: TraceProcessor) -> LocalProbeResult:
+  def _run_queries(self, tp: TraceProcessor,
+                   exceptions: ExceptionAnnotator) -> LocalProbeResult:
 
     def run_query(query: TraceProcessorQueryConfig) -> pth.LocalPath:
       csv_file = self.local_result_path / f"{query.name}.csv"
@@ -75,10 +81,14 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
       return csv_file
 
     with self.run.actions("TRACE_PROCESSOR: Running queries", verbose=True):
-      files = tuple(map(run_query, self.probe.queries))
-      return LocalProbeResult(csv=files)
+      csv_files = []
+      for query in self.probe.queries:
+        with exceptions.capture(f"query: {query}"):
+          csv_files.append(run_query(query))
+      return LocalProbeResult(csv=csv_files)
 
-  def _run_metrics(self, tp: TraceProcessor) -> LocalProbeResult:
+  def _run_metrics(self, tp: TraceProcessor,
+                   exceptions: ExceptionAnnotator) -> LocalProbeResult:
 
     def run_metric(metric: str) -> pth.LocalPath:
       json_file = self.local_result_path / f"{pth.safe_filename(metric)}.json"
@@ -89,8 +99,11 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
       return json_file
 
     with self.run.actions("TRACE_PROCESSOR: Running metrics", verbose=True):
-      files = tuple(map(run_metric, self.probe.metrics))
-      return LocalProbeResult(json=files)
+      json_files = []
+      for metric in self.probe.metrics:
+        with exceptions.capture(f"metric: {metric}"):
+          json_files.append(run_metric(metric))
+      return LocalProbeResult(json=json_files)
 
   def _summarize_trace(self, tp: TraceProcessor) -> ProbeResult:
     if not self.probe.summary_metrics and not self.probe.metric_definitions:
@@ -104,7 +117,7 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
       # When no metric IDs are explicitly given, default to the more
       # sensible option of emitting every metric.
       metric_ids: Optional[list[str]] = None
-      if len(self.probe.summary_metrics):
+      if self.probe.summary_metrics:
         metric_ids = list(self.probe.summary_metrics)
 
       proto_result = tp.trace_summary(

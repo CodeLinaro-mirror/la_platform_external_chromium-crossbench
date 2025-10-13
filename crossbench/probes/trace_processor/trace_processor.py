@@ -19,9 +19,10 @@ from perfetto.trace_uri_resolver.path import PathUriResolver
 from perfetto.trace_uri_resolver.registry import ResolverRegistry
 from typing_extensions import override
 
-from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.exception import ExceptionAnnotator
+from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder import LlvmSymbolizerFinder, \
     TraceconvFinder, TraceProcessorFinder
 from crossbench.parse import ObjectParser
@@ -251,23 +252,26 @@ class TraceProcessorProbe(Probe):
   @override
   def validate_env(self, env: RunnerEnv) -> None:
     super().validate_env(env)
-    self._validate_metrics_and_queries()
+    with ExceptionAnnotator().annotate(
+        "Validating metrics and queries") as exceptions:
+      self._validate_metrics_and_queries(exceptions)
 
-  def _validate_metrics_and_queries(self) -> None:
+  def _validate_metrics_and_queries(self,
+                                    exceptions: ExceptionAnnotator) -> None:
     """
     Runs all metrics and queries on an empty trace. This will ensure that they
     are correctly defined in trace processor.
     """
     with TraceProcessor(trace="/dev/null", config=self.tp_config) as tp:
       for metric in self.metrics:
-        with exception.annotate(f"validating metric: {metric!r}"):
+        with exceptions.capture(f"metric: {metric!r}"):
           tp.metric([metric])
       for query in self.queries:
-        with exception.annotate(f"validating query: {query.name!r}"):
+        with exceptions.capture(f"query: {query.name!r}"):
           tp.query(query.sql)
 
       if summary_metrics := self.summary_metrics:
-        with exception.annotate("validating summary metrics:"):
+        with exceptions.capture("summary metrics:"):
           tp.trace_summary(
               specs=list(self.metric_definitions),
               metric_ids=list(summary_metrics))
@@ -334,29 +338,45 @@ class TraceProcessorProbe(Probe):
     group_dir.mkdir()
     btp_config = BatchTraceProcessorConfig(tp_config=self.tp_config)
 
-    with BatchTraceProcessor(
-        traces=CrossbenchTraceUriResolver(group.runs),
-        config=btp_config) as btp:
-
-      def run_query(query: TraceProcessorQueryConfig) -> pth.LocalPath:
-        csv_file = group_dir / f"{query.name}.csv"
-        btp.query_and_flatten(query.sql).to_csv(
-            path_or_buf=csv_file, index=False)
-        return csv_file
-
-      csv_files = list(map(run_query, self.queries))
-
-      def run_metric(metric: str) -> pth.LocalPath:
-        json_file = group_dir / f"{pth.safe_filename(metric)}.json"
-        protos = btp.metric([metric])
-        with json_file.open("x") as f:
-          for p in protos:
-            f.write(MessageToJson(p))
-        return json_file
-
-      json_files = list(map(run_metric, self.metrics))
-
+    with change_cwd(group_dir), BatchTraceProcessor(
+        traces=CrossbenchTraceUriResolver(group.runs), config=btp_config
+    ) as btp, ExceptionAnnotator().annotate() as exceptions:
+      csv_files = self._run_btp_queries(btp, group_dir, exceptions)
+      json_files = self._run_btp_metrics(btp, group_dir, exceptions)
     return LocalProbeResult(csv=csv_files, json=json_files)
+
+  def _run_btp_queries(self, btp: BatchTraceProcessor, group_dir: pth.LocalPath,
+                       exceptions: ExceptionAnnotator) -> list[pth.LocalPath]:
+
+    def run_query(query: TraceProcessorQueryConfig) -> pth.LocalPath:
+      csv_file = group_dir / f"{query.name}.csv"
+      btp.query_and_flatten(query.sql).to_csv(path_or_buf=csv_file, index=False)
+      return csv_file
+
+    csv_files: list[pth.LocalPath] = []
+    with exceptions.annotate("Running queries"):
+      for query in self.queries:
+        with exceptions.annotate(f"query: {query.name}"):
+          csv_files.append(run_query(query))
+    return csv_files
+
+  def _run_btp_metrics(self, btp: BatchTraceProcessor, group_dir: pth.LocalPath,
+                       exceptions: ExceptionAnnotator) -> list[pth.LocalPath]:
+
+    def run_metric(metric: str) -> pth.LocalPath:
+      json_file = group_dir / f"{pth.safe_filename(metric)}.json"
+      protos = btp.metric([metric])
+      with json_file.open("x") as f:
+        for p in protos:
+          f.write(MessageToJson(p))
+      return json_file
+
+    json_files: list[pth.LocalPath] = []
+    with exceptions.annotate("Running metrics"):
+      for metric in self.metrics:
+        with exceptions.annotate(f"metric: {metric}"):
+          json_files.append(run_metric(metric))
+    return json_files
 
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
@@ -364,7 +384,6 @@ class TraceProcessorProbe(Probe):
     logging.critical("TraceProcessor merged traces:")
     for run in group.runs:
       logging.critical("  - %s", run.results[self].perfetto)
-
 
 __all__ = [
     "TraceProcessorProbe",

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Self
+from typing import TYPE_CHECKING, Final, Optional, Self
 
 from typing_extensions import override
 
@@ -23,8 +23,11 @@ class TraceProcessorQueryConfig(ConfigObject):
   @override
   def parse_str(cls, value: str) -> Self:
     name = ObjectParser.safe_filename(value)
-    sql_path = PathParser.existing_file_path(QUERIES_DIR / f"{value}.sql",
-                                             "sql query")
+    if value.endswith(".sql"):
+      name = name[:-4]
+    else:
+      value = f"{value}.sql"
+    sql_path = PathParser.existing_file_path(QUERIES_DIR / value, "sql query")
     sql = sql_path.read_text(encoding="utf-8")
     return cls(name=name, sql=sql)
 
@@ -48,6 +51,18 @@ class TraceProcessorQueryConfig(ConfigObject):
     parser.add_argument("replacements", aliases=("replace",), type=Replacements)
     return parser
 
+  def __init__(self,
+               name: str,
+               sql: str,
+               replacements: Optional[Replacements] = None) -> None:
+    self._name: Final[str] = name
+    self._sql: Final[str] = self._init_sql(sql, replacements)
+
+  def _init_sql(self, sql: str, replacements: Replacements | None) -> str:
+    if replacements:
+      return replacements.apply(sql)
+    return sql
+
   @property
   def name(self) -> str:
     return self._name
@@ -55,12 +70,3 @@ class TraceProcessorQueryConfig(ConfigObject):
   @property
   def sql(self) -> str:
     return self._sql
-
-  def __init__(self,
-               name: str,
-               sql: str,
-               replacements: Optional[Replacements] = None) -> None:
-    self._name = name
-    self._sql = sql
-    if replacements:
-      self._sql = replacements.apply(self._sql)

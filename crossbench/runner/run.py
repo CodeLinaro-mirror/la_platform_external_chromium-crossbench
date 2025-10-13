@@ -15,8 +15,8 @@ from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
 from crossbench.cli import ui
 from crossbench.cli.config.env import ValidationMode
+from crossbench.env.base import ValidationError
 from crossbench.env.run_env import RunEnv
-from crossbench.env.runner_env import ValidationError
 from crossbench.exception import Annotator, TInfoStack
 from crossbench.helper.cwd import change_cwd
 from crossbench.helper.durations import Durations
