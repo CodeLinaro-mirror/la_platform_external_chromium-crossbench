@@ -5,10 +5,15 @@
 from __future__ import annotations
 
 import abc
-from typing import ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar, MutableMapping, Type
+
+from typing_extensions import override
 
 from crossbench.benchmarks.jetstream.jetstream_2 import JetStream2Benchmark, \
     JetStream2Probe, JetStream2ProbeContext, JetStream2Story
+
+if TYPE_CHECKING:
+  from crossbench.runner.actions import Actions
 
 
 # TODO: introduce JetStreamProbe
@@ -26,6 +31,18 @@ class JetStream3ProbeContext(JetStream2ProbeContext):
 # TODO: introduce JetStreamStory
 class JetStream3Story(JetStream2Story, metaclass=abc.ABCMeta):
   SUBSTORIES: ClassVar[tuple[str, ...]] = ()
+
+  @property
+  @override
+  def url_params(self) -> MutableMapping[str, str]:
+    params: MutableMapping[str, str] = super().url_params
+    if self.substories != self.SUBSTORIES:
+      params["test"] = ",".join(self.substories)
+    return params
+
+  @override
+  def setup_stories(self, actions: Actions) -> None:
+    pass
 
 
 ProbeClsTupleT = tuple[Type[JetStream3Probe], ...]

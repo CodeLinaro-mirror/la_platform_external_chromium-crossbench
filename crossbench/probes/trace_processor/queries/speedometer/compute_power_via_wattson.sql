@@ -1,7 +1,10 @@
+-- Copyright 2025 The Chromium Authors
+-- Use of this source code is governed by a BSD-style license that can be
+-- found in the LICENSE file.
+
 -- For Google Pixel devices, the speedometer_compute_power_via_wattson query
 -- estimates the total power consumed during a speedometer run, by leveraging
 -- go/wattson-userguide (sorry, Googlers only).
-
 SELECT IMPORT('chrome.speedometer');
 SELECT IMPORT('wattson.curves.estimates');
 

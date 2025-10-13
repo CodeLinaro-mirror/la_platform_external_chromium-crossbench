@@ -1,7 +1,9 @@
+-- Copyright 2025 The Chromium Authors
+-- Use of this source code is governed by a BSD-style license that can be
+-- found in the LICENSE file.
+
 -- Perfetto script that exports pprof profiles per story, only including
 -- score-relevant time intervals.
-SELECT
-  IMPORT ('chrome.speedometer');
 
 DROP VIEW IF EXISTS perf_sample_span;
 
@@ -9,16 +11,16 @@ CREATE VIEW
   perf_sample_span AS
 SELECT
   ts,
-  0 as dur,
+  0 AS dur,
   utid,
   cpu,
   callsite_id
 FROM
   perf_sample
-UNION
+UNION ALL
 SELECT
   ts,
-  0 as dur,
+  0 AS dur,
   utid,
   cpu,
   callsite_id
@@ -33,10 +35,10 @@ SELECT
   id,
   ts,
   dur,
-  substr (name, 1, instr (name, '-iteration-') -1) as name,
+  substr (name, 1, instr (name, '-iteration-') -1) AS name,
   cast(
-    substr (name, instr (name, '-iteration-') + 11) as integer
-  ) as iteration
+    substr (name, instr (name, '-iteration-') + 11) AS integer
+  ) AS iteration
 FROM
   slice
 WHERE
@@ -111,8 +113,8 @@ SELECT
   id,
   ts,
   dur,
-  substr (name, 1, instr (name, '-wasm-') + 4) as name,
-  substr (name, instr (name, '-wasm-') + 6) as subtest
+  substr (name, 1, instr (name, '-wasm-') + 4) AS name,
+  substr (name, instr (name, '-wasm-') + 6) AS subtest
 FROM
   slice
 WHERE
@@ -136,7 +138,7 @@ SELECT
   dur,
   name,
   iteration,
-  IIF (rank_within_name <= 4, 'Worst4', 'Average') as subtest
+  IIF (rank_within_name <= 4, 'Worst4', 'Average') AS subtest
 FROM
   (
     SELECT
@@ -150,7 +152,7 @@ FROM
           name
         ORDER BY
           dur DESC
-      ) as rank_within_name
+      ) AS rank_within_name
     FROM
       jetstream_measure_iterations
     WHERE
@@ -163,7 +165,7 @@ SELECT
   dur,
   name,
   iteration,
-  'First' as subtest
+  'First' AS subtest
 FROM
   jetstream_measure_iterations
 WHERE
@@ -174,7 +176,7 @@ SELECT
   ts,
   dur,
   name,
-  0 as iteration,
+  0 AS iteration,
   subtest
 FROM
   jetstream_measure_wasm;
@@ -185,19 +187,20 @@ CREATE VIRTUAL TABLE jetstream_sample USING SPAN_JOIN (jetstream_measure, perf_s
 
 -- WRITE_FILE needs trace_processor's --dev flag.
 SELECT
+  'jetstream.pprof' as file_name,
   WRITE_FILE (
     'jetstream.pprof',
     (
       SELECT
         EXPERIMENTAL_PROFILE (
           CAT_STACKS (
-            s.name,
-            s.subtest,
-            p.name,
+            jetstream_sample.name,
+            jetstream_sample.subtest,
+            process.name,
             IIF (
-              instr (t.name, ' ') > 0,
-              substr (t.name, 1, instr (t.name, ' ') -1),
-              t.name
+              instr (thread.name, ' ') > 0,
+              substr (thread.name, 1, instr (thread.name, ' ') -1),
+              thread.name
             ),
             STACK_FROM_STACK_PROFILE_CALLSITE (callsite_id)
           ),
@@ -206,9 +209,9 @@ SELECT
           1
         ) AS profile
       FROM
-        jetstream_sample s
-        JOIN thread t on s.utid = t.utid
-        JOIN process p on t.upid = p.upid
-        --WHERE t.name LIKE "ThreadPoolForegroundWorker%"
+        jetstream_sample
+        JOIN thread ON jetstream_sample.utid = thread.utid
+        JOIN process ON thread.upid = process.upid
+        --WHERE thread.name LIKE "ThreadPoolForegroundWorker%"
     )
-  )
+  ) as file_size

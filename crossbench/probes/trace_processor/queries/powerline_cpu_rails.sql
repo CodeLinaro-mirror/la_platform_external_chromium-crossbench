@@ -1,8 +1,11 @@
+-- Copyright 2025 The Chromium Authors
+-- Use of this source code is governed by a BSD-style license that can be
+-- found in the LICENSE file.
+
 -- For Google Pixel devices, this query query estimates the power consumed
 -- during a PowerLine run using go/pixel-odpm-rails. It includes all rails
 -- associated with the SoC compute logic (CPU, GPU, memory etc), but excludes
 -- radios, displays etc.
-
 SELECT IMPORT('android.power_rails');
 
 SELECT
