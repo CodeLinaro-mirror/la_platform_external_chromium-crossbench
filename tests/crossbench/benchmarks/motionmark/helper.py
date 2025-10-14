@@ -17,9 +17,9 @@ from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.motionmark.motionmark_1 import (
-      MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext,
-      MotionMark1Story)
+  from crossbench.benchmarks.motionmark.motionmark_1 import \
+      MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext, \
+      MotionMark1Story
 
 
 class MotionMark1BaseTestCase(

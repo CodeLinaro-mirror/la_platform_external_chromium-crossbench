@@ -11,9 +11,8 @@ from unittest import mock
 from typing_extensions import override
 
 from crossbench.network.live import LiveNetwork
-from crossbench.network.traffic_shaping.ts_proxy import (TsProxyProcess,
-                                                         TsProxyServer,
-                                                         TsProxyTrafficShaper)
+from crossbench.network.traffic_shaping.ts_proxy import TsProxyProcess, \
+    TsProxyServer, TsProxyTrafficShaper
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase

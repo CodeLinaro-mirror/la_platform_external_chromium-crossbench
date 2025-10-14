@@ -8,15 +8,14 @@ import json
 import logging
 import statistics
 from math import floor, log10
-from typing import (TYPE_CHECKING, Any, Callable, Iterable, Optional, Sequence,
-                    Set)
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, \
+    Sequence, Set
 
 from crossbench.probes import helper
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath
   from crossbench.types import Json, JsonDict
-
 
 
 def is_number(value: Any) -> bool:

@@ -9,9 +9,9 @@ import datetime as dt
 import unittest
 from unittest import mock
 
-from crossbench.benchmarks.loading.playback_controller import (
-    ForeverPlaybackController, PeriodicPlaybackController, PlaybackController,
-    RepeatPlaybackController, TimeoutPlaybackController)
+from crossbench.benchmarks.loading.playback_controller import \
+    ForeverPlaybackController, PeriodicPlaybackController, \
+    PlaybackController, RepeatPlaybackController, TimeoutPlaybackController
 from tests import test_helper
 
 

@@ -8,8 +8,8 @@ import abc
 import contextlib
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Generic, Iterable, Iterator, Self, Type,
-                    TypeVar)
+from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Self, Type, \
+    TypeVar
 
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import BaseProbeContext, ProbeContext

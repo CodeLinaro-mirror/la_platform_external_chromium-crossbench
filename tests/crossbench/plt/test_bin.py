@@ -15,14 +15,12 @@ from typing_extensions import override
 import crossbench.path as pth
 from crossbench import plt
 from crossbench.plt import PLATFORM
-from crossbench.plt.bin import (Binary, BinaryNotFoundError, ChromeOSBinary,
-                                LinuxBinary, MacOsBinary, PosixBinary,
-                                WinBinary)
+from crossbench.plt.bin import Binary, BinaryNotFoundError, ChromeOSBinary, \
+    LinuxBinary, MacOsBinary, PosixBinary, WinBinary
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
-from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
-                                          LinuxMockPlatform, MacOsMockPlatform,
-                                          WinMockPlatform)
+from tests.crossbench.mock_helper import ChromeOsSshMockPlatform, \
+    LinuxMockPlatform, MacOsMockPlatform, WinMockPlatform
 
 
 class BinaryTestCase(CrossbenchFakeFsTestCase):

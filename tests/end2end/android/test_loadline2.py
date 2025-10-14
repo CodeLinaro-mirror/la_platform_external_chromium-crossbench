@@ -14,6 +14,7 @@ from tests import test_helper
 if TYPE_CHECKING:
   from tests.test_helper import TestEnv
 
+
 def _browser_config(device_id, adb_path) -> str:
   return json.dumps({
       "browser": "chrome-stable",
@@ -28,6 +29,7 @@ def _browser_config(device_id, adb_path) -> str:
 class BenchmarkType(enum.StrEnum):
   PHONE = "loadline2-phone"
   TABLET = "loadline2-tablet"
+  WEBAPI = "loadline2-webapi-phone"
 
 
 def _verify_default_metrics(out_dir, only_total=False):
@@ -61,6 +63,10 @@ def test_loadline2_phone(device_id, adb_path, test_env: TestEnv) -> None:
 
 def test_loadline2_tablet(device_id, adb_path, test_env: TestEnv) -> None:
   _test_loadline2_default(device_id, adb_path, BenchmarkType.TABLET, test_env)
+
+
+def test_loadline2_webapi(device_id, adb_path, test_env: TestEnv) -> None:
+  _test_loadline2_default(device_id, adb_path, BenchmarkType.WEBAPI, test_env)
 
 
 def _test_loadline2_default(device_id, adb_path, benchmark_type,

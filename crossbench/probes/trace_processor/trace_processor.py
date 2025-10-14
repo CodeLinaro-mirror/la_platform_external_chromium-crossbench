@@ -8,14 +8,14 @@ import collections
 import json
 import logging
 import zipfile
-from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Self,
-                    Type)
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Self, \
+    Type
 
 import pandas as pd
 from google.protobuf import text_format
 from google.protobuf.json_format import MessageToJson
-from perfetto.batch_trace_processor.api import (BatchTraceProcessor,
-                                                BatchTraceProcessorConfig)
+from perfetto.batch_trace_processor.api import BatchTraceProcessor, \
+    BatchTraceProcessorConfig
 from perfetto.trace_processor.api import TraceProcessor, TraceProcessorConfig
 from perfetto.trace_uri_resolver.path import PathUriResolver
 from perfetto.trace_uri_resolver.registry import ResolverRegistry
@@ -27,10 +27,10 @@ from crossbench import plt
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.probe import Probe, ProbeConfigParser
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbePriority
 from crossbench.probes.probe_context import ProbeContext
-from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult)
+from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
+    ProbeResult
 from crossbench.replacements import Replacements
 
 if TYPE_CHECKING:
@@ -44,6 +44,7 @@ _MODULES_DIR: Final = pth.LocalPath(__file__).parent / "modules/ext"
 
 
 class TraceProcessorQueryConfig(ConfigObject):
+
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
@@ -146,6 +147,7 @@ class TraceProcessorProbe(Probe):
   """
 
   NAME: ClassVar = "trace_processor"
+  PRIORITY: ClassVar = ProbePriority.TRACE_PROCESSOR
 
   @classmethod
   @override
@@ -211,12 +213,12 @@ class TraceProcessorProbe(Probe):
                summary_metrics: Iterable[str],
                metrics: Iterable[str],
                queries: Iterable[TraceProcessorQueryConfig],
-               symbolize_profile : bool,
+               symbolize_profile: bool,
                module_paths: Iterable[pth.LocalPath],
                trace_processor_bin: Optional[pth.LocalPath] = None) -> None:
     super().__init__()
-    self._batch : bool  = batch
-    self._metrics : tuple[str, ...]  = tuple(metrics)
+    self._batch: bool = batch
+    self._metrics: tuple[str, ...] = tuple(metrics)
     self._metric_definitions: tuple[str, ...] = tuple(metric_definitions)
     self._summary_metrics: tuple[str,
                                  ...] = tuple(metrics) + tuple(summary_metrics)
@@ -369,9 +371,6 @@ class TraceProcessorProbe(Probe):
       json_file = group_dir / f"{pth.safe_filename(metric)}.json"
       with json_file.open("x") as f:
         json.dump(data, f, indent=4)
-        # TODO(375390958): figure out why files aren't fully written to
-        # pyfakefs here.
-        f.write("\n")
       json_files.append(json_file)
     return LocalProbeResult(csv=csv_files, json=json_files)
 

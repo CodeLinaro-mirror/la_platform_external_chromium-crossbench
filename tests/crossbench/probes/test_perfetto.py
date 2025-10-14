@@ -12,8 +12,8 @@ from crossbench.probes.all import PerfettoProbe
 from crossbench.probes.perfetto.downloader import PerfettoToolDownloader
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
-from tests.crossbench.mock_helper import (LinuxMockPlatform, MacOsMockPlatform,
-                                          WinMockPlatform)
+from tests.crossbench.mock_helper import LinuxMockPlatform, \
+    MacOsMockPlatform, WinMockPlatform
 
 
 class PerfettoProbeTestCase(unittest.TestCase):

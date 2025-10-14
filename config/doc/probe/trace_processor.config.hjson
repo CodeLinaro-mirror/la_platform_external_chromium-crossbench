@@ -6,7 +6,7 @@
       // trace_processor_bin: "/optional/path/to/trace_processor_shell"
       queries: [
         // Queries can be specified as a reference to a file in
-        // crossbench/probes/perfetto/trace_processor/queries:
+        // crossbench/probes/trace_processor/queries:
         speedometer_cpu_time
         // Or specified inline:
         {
@@ -26,20 +26,21 @@
       // or as a path:
       metric_definitions: [
         ./metric_def.textproto
-        '''
-          metric_spec: {
-            id: "inline_textproto_metric"
-            value: "metric_column"
-            query {
-              id: "query_id"
-              table {
-                table_name: "metric_table"
-                module_name: "module_name"
-                column_names: "metric_column"
+        
+          '''
+            metric_spec: {
+              id: "inline_textproto_metric"
+              value: "metric_column"
+              query {
+                id: "query_id"
+                table {
+                  table_name: "metric_table"
+                  module_name: "module_name"
+                  column_names: "metric_column"
+                }
               }
             }
-          }
-        '''
+          '''
       ]
       // Metrics to include only in the trace summary can be specified.
       // summary_metrics will include everything in the 'metrics' list as well

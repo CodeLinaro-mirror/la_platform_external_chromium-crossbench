@@ -7,10 +7,9 @@ from __future__ import annotations
 import argparse
 import unittest
 
-from crossbench.benchmarks.loading.tab_controller import (ForeverTabController,
-                                                          RepeatTabController,
-                                                          SingleTabController,
-                                                          TabController)
+from crossbench.benchmarks.loading.tab_controller import \
+    ForeverTabController, RepeatTabController, SingleTabController, \
+    TabController
 from tests import test_helper
 
 

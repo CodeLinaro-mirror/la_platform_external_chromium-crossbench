@@ -42,7 +42,7 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_empty(self):
     config = self.parse_config({"probes": {}})
-    self.assertListEqual(config.probes, [])
+    self.assertTupleEqual(config.probes, ())
 
   def test_single_v8_log(self):
     js_flags = ["--log-maps", "--log-function-events"]

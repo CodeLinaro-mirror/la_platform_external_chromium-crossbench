@@ -9,10 +9,8 @@ import pathlib
 
 from typing_extensions import override
 
-from crossbench.browsers.chrome.downloader import (ChromeDownloader,
-                                                   ChromeDownloaderLinux,
-                                                   ChromeDownloaderMacOS,
-                                                   ChromeDownloaderWin)
+from crossbench.browsers.chrome.downloader import ChromeDownloader, \
+    ChromeDownloaderLinux, ChromeDownloaderMacOS, ChromeDownloaderWin
 from tests import test_helper
 from tests.crossbench.browsers.downloader_helper import \
     AbstractDownloaderTestCase

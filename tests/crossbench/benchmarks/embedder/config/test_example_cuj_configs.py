@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from crossbench.benchmarks.embedder.config.cujs import CUJsConfig
 from crossbench import hjson as cb_hjson
+from crossbench.benchmarks.embedder.config.cujs import CUJsConfig
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 

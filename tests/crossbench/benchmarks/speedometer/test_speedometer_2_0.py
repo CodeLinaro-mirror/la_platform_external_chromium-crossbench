@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from typing_extensions import override
 
-from crossbench.benchmarks.speedometer.speedometer_2_0 import (
-    Speedometer20Benchmark, Speedometer20Probe, Speedometer20ProbeContext,
-    Speedometer20Story)
+from crossbench.benchmarks.speedometer.speedometer_2_0 import \
+    Speedometer20Benchmark, Speedometer20Probe, Speedometer20ProbeContext, \
+    Speedometer20Story
 from tests import test_helper
 from tests.crossbench.benchmarks.speedometer.helper import \
     Speedometer2BaseTestCase

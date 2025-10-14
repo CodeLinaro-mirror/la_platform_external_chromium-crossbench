@@ -11,10 +11,9 @@ from pyfakefs import fake_filesystem_unittest
 import crossbench.config
 import crossbench.path
 from crossbench import plt
-from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
-                                            LoadLine1TabletDebugBenchmark,
-                                            LoadLine2TabletBenchmark,
-                                            LoadLine2TabletDebugBenchmark)
+from crossbench.benchmarks.loadline import LoadLine1TabletBenchmark, \
+    LoadLine1TabletDebugBenchmark, LoadLine2TabletBenchmark, \
+    LoadLine2TabletDebugBenchmark
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder import default_chromium_candidates
@@ -41,7 +40,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     super().setUp()
     self.setUpPyfakefs(modules_to_reload=[crossbench.path])
     self._add_real_directory(test_helper.crossbench_dir() /
-                             "probes/perfetto/trace_processor/queries")
+                             "probes/trace_processor/queries")
     self.set_up_required_paths()
 
   def set_up_required_paths(self):
@@ -92,11 +91,16 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self.assertTrue(probes)
 
   def test_parse_loadline_configs(self):
+    self._add_real_directory(
+        LoadLine1TabletBenchmark.default_probe_config_path().parent)
+    self._add_real_directory(
+        LoadLine2TabletBenchmark.default_probe_config_path().parent)
     for cls in (LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark,
                 LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark):
       probe_config = cls.default_probe_config_path()
-      self.fs.add_real_file(probe_config)
       probes = ProbeListConfig.parse(probe_config).probes
       self.assertTrue(probes)
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -8,9 +8,8 @@ import argparse
 import unittest
 from typing import Any
 
-from crossbench.cli.config.browser_variants import (FlagsConfig,
-                                                    FlagsGroupConfig,
-                                                    FlagsVariantConfig)
+from crossbench.cli.config.browser_variants import FlagsConfig, \
+    FlagsGroupConfig, FlagsVariantConfig
 from crossbench.cli.config.flags import DEFAULT_LABEL
 from crossbench.config import ConfigError
 from crossbench.exception import ArgumentTypeMultiException

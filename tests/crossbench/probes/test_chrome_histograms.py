@@ -10,10 +10,8 @@ import hjson
 import pytest
 
 from crossbench.cli.config.probe_list import ProbeListConfig
-from crossbench.probes.chrome_histograms import (ChromeHistogramMetric,
-                                                 ChromeHistogramSample,
-                                                 ChromeHistogramsProbe,
-                                                 parse_histogram_metrics)
+from crossbench.probes.chrome_histograms import ChromeHistogramMetric, \
+    ChromeHistogramSample, ChromeHistogramsProbe, parse_histogram_metrics
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
 

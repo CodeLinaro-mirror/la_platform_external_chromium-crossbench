@@ -7,9 +7,8 @@ import abc
 import unittest
 
 from crossbench.flags.base import FrozenFlagsError
-from crossbench.flags.chrome_features import (ChromeBaseFeatures,
-                                              ChromeBlinkFeatures,
-                                              ChromeFeatures)
+from crossbench.flags.chrome_features import ChromeBaseFeatures, \
+    ChromeBlinkFeatures, ChromeFeatures
 from tests import test_helper
 
 

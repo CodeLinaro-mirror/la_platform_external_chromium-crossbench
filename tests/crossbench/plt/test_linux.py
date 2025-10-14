@@ -12,29 +12,30 @@ from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
 from crossbench.helper.version import VersionParseError
-from crossbench.plt.linux import (SCRIPTS_DIR, LinuxPlatform,
-                                  parse_display_xrandr)
+from crossbench.plt.linux import SCRIPTS_DIR, LinuxPlatform, \
+    parse_display_xrandr
 from crossbench.plt.posix import PosixVersion
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
-from tests.crossbench.mock_helper import (LinuxMockPlatform,
-                                          RemoteLinuxMockPlatform, ShResult)
-from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
-                                         BasePosixMockPlatformTestCase)
+from tests.crossbench.mock_helper import LinuxMockPlatform, MockPlatform, \
+    RemoteLinuxMockPlatform, ShResult
+from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
+    BasePosixMockPlatformTestCase
 
 NOW_EPOCH = dt.datetime.now()
 
 
 class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
+  platform: LinuxMockPlatform
+
   @override
   def setUp(self) -> None:
     super().setUp()
     self.fs.os = OSType.LINUX
 
   @override
-  def mock_platform_setup(self) -> None:
-    self.mock_platform = LinuxMockPlatform()
-    self.platform = self.mock_platform
+  def setup_host_platform(self) -> LinuxMockPlatform:
+    return LinuxMockPlatform()
 
   def test_name(self):
     self.assertEqual(self.platform.name, "mock.linux")
@@ -43,7 +44,7 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertTrue(self.platform.is_linux)
 
   def test_version(self):
-    self.mock_platform.mock_version_str = None
+    self.platform.mock_version_str = None
     self.expect_sh("uname", "-r", result="5.4.0-104-generic")
     self.assertEqual(self.platform.version_str, "5.4.0-104-generic")
     version = self.platform.version
@@ -85,8 +86,8 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
     path = SCRIPTS_DIR / "meminfo.sh"
     self.fs.create_file(path, contents="meminfo")
 
-    self.mock_platform.sh_results = [ShResult()]
-    meminfo = LinuxPlatform.process_meminfo(self.mock_platform, "some_process")
+    self.platform.sh_results = [ShResult()]
+    meminfo = LinuxPlatform.process_meminfo(self.platform, "some_process")
     self.assertEqual(len(meminfo), 0)
 
   def test_platform_version_cls(self):
@@ -127,8 +128,8 @@ Swap:                400 kB
     path = SCRIPTS_DIR / "meminfo.sh"
     self.fs.create_file(path, contents="meminfo")
 
-    self.mock_platform.sh_results = [ShResult(self._MEMINFO_SCRIPT_OUTPUT)]
-    meminfo = LinuxPlatform.process_meminfo(self.mock_platform, "some_process")
+    self.platform.sh_results = [ShResult(self._MEMINFO_SCRIPT_OUTPUT)]
+    meminfo = LinuxPlatform.process_meminfo(self.platform, "some_process")
     self.assertListEqual(meminfo, [
         ProcessMeminfo(926961, "/usr/bin/some_process -a", 17815, 80364, 0),
         ProcessMeminfo(930293, "/usr/bin/some_process -b", 5074, 44860, 0),
@@ -144,10 +145,12 @@ class LocalLinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
 class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
 
   @override
-  def mock_platform_setup(self) -> None:
-    self.host_platform = LinuxMockPlatform()
-    self.mock_platform = RemoteLinuxMockPlatform(self.host_platform)
-    self.platform = self.mock_platform
+  def setup_host_platform(self) -> LinuxMockPlatform:
+    return LinuxMockPlatform()
+
+  @override
+  def setup_platform(self) -> MockPlatform:
+    return RemoteLinuxMockPlatform(self.host_platform)
 
   def cpu_info(self, processor_id, physical_id, core_id):
     return textwrap.dedent(f"""

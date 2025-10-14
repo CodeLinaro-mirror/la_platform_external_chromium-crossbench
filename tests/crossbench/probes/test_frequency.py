@@ -100,5 +100,6 @@ class FrequencyProbeTestCase(CrossbenchFakeFsTestCase):
     self.platform.write_text(cpu_dir / "scaling_max_freq",
                              str(max(available_frequencies)) + "\n")
 
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

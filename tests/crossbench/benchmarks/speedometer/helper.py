@@ -24,9 +24,9 @@ from tests.crossbench.benchmarks import helper
 
 if TYPE_CHECKING:
   from crossbench.action_runner.config import ActionRunnerConfig
-  from crossbench.benchmarks.speedometer.speedometer import (
-      SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext,
-      SpeedometerStory)
+  from crossbench.benchmarks.speedometer.speedometer import \
+      SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext, \
+      SpeedometerStory
   from crossbench.stories.story import Story
   from crossbench.types import Json
   from tests.crossbench.mock_browser import MockBrowser

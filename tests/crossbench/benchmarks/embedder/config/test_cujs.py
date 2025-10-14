@@ -40,7 +40,7 @@ class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
                     "action": "click",
                     "source": "touch",
                     "position": {
-                      "res": "com.package.name/resourceId"
+                        "res": "com.package.name/resourceId"
                     },
                 },
                 {

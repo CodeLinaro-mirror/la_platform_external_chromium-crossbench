@@ -8,8 +8,8 @@ import abc
 import datetime as dt
 import logging
 import os
-from typing import (TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO,
-                    Type)
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO, \
+    Type
 
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
@@ -18,10 +18,10 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chromium.driver_finder import (ChromeDriverFinder,
-                                                        DriverNotFoundError)
-from crossbench.browsers.chromium.version import (ChromeDriverVersion,
-                                                  ChromiumVersion)
+from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder, \
+    DriverNotFoundError
+from crossbench.browsers.chromium.version import ChromeDriverVersion, \
+    ChromiumVersion
 from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.browsers.chromium_based.devtools_tracer import DevToolsTracer
@@ -132,7 +132,6 @@ class ChromiumBasedWebDriver(
     adb_port = os.environ.get("ANDROID_ADB_SERVER_PORT")
     if adb_port and adb_port.isdigit():
       service_args += ["--adb-port=" + adb_port]
-
 
     assert self._stdout_log_file is None
     # On desktop platforms service logs contain browser stdout, hence the name.

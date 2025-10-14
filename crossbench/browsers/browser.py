@@ -208,6 +208,10 @@ class Browser(abc.ABC):
   def meminfo(self, timeout: dt.timedelta) -> list[ProcessMeminfo]:
     return self.platform.process_meminfo(str(self.path), timeout)
 
+  def dump_java_heap(self, path: pth.AnyPath) -> None:
+    del path
+    raise NotImplementedError(f"dump_java_heap not implemented for {self}.")
+
   @property
   def is_running(self) -> bool:
     return self._is_running

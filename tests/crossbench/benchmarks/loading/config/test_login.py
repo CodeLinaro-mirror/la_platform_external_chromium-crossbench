@@ -9,16 +9,16 @@ from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import LoadingPageFilter
 from crossbench.browsers.settings import Settings
-from crossbench.cli.config.secrets import (GoogleUsernamePassword,
-                                           UsernamePassword)
+from crossbench.cli.config.secrets import GoogleUsernamePassword, \
+    UsernamePassword
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import \
     ActionRunnerTestCase
 from tests.crossbench.mock_browser import MockChromeStable
-from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
-                                          LinuxMockPlatform)
+from tests.crossbench.mock_helper import ChromeOsSshMockPlatform, \
+    LinuxMockPlatform
 from tests.crossbench.runner.helper import MockRun, MockRunner
 
 
@@ -187,7 +187,6 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
     self.browser.expect_js(result=1)
     # Wait 'yes' button not present.
     self.browser.expect_js(result=1)
-
 
     self.mock_run.story_secrets = page[0].secrets
     config.pages[0].login.run_with(self.action_runner, self.mock_run, page[0])

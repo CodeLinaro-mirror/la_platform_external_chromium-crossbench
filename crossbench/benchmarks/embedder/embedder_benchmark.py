@@ -14,8 +14,8 @@ from typing_extensions import override
 
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.benchmarks.embedder.config.cujs import CUJsConfig
-from crossbench.benchmarks.embedder.config.setup_commands import (
-    SetupCommandsConfig)
+from crossbench.benchmarks.embedder.config.setup_commands import \
+    SetupCommandsConfig
 from crossbench.cli.ui import timer
 from crossbench.parse import ObjectParser
 from crossbench.stories.story import Story
@@ -40,8 +40,7 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
     # TODO(zbikowski): Add a way to ensure embedder is installed.
     # Launching the Google Quick Search app
     run_browser = cast("WebviewEmbedder", run.browser)
-    run.browser_platform.sh("am", "start", "-S", "-W",
-                            "-a",
+    run.browser_platform.sh("am", "start", "-S", "-W", "-a",
                             f"{run_browser.android_package}.GOOGLE_SEARCH",
                             "-n",
                             f"{run_browser.android_package}/.SearchActivity")
@@ -127,12 +126,10 @@ class EmbedderBenchmark(SubStoryBenchmark):
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Story]:
     config = cls.get_cujs_config(args)
     cujs = tuple(
-      EmbedderStory(
-        name=cuj_config.label,
-        actions=cuj_config.blocks,
-      )
-      for cuj_config in config.cujs
-    )
+        EmbedderStory(
+            name=cuj_config.label,
+            actions=cuj_config.blocks,
+        ) for cuj_config in config.cujs)
     return cujs
 
   @classmethod
