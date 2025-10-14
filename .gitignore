@@ -7,7 +7,6 @@ dist
 results
 binary_cache
 .DS_Store
-buildtools
-third_party
+third_party/node
 cache
 pytest.out.txt
