@@ -67,7 +67,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling webpagereplay
   # and whatever else without interference from each other.
-  'hjson_js_revision': '5734a70a17b94f12b59081aa6fdf966aac066b23',
+  'hjson_js_revision': '74bfd14e07d6586e3c12e0d2ab9885a97b2d579c',
 }
 
 # Only these hosts are allowed for dependencies in this DEPS file.
