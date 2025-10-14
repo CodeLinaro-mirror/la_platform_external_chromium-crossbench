@@ -111,6 +111,10 @@ class LoadLine2Benchmark(LoadLineBenchmark):
       # achieve the goal by passing the flag and navigating to about:blank
       # before stories that must use an existing renderer.
       flags.set("--site-per-process")
+      # With BFCache on, the web page is kept in memory for some time after
+      # navigating away from it. This can interfere with the next page load,
+      # increasing measurement noise. To reduce noise, we disable BFCache.
+      flags.set("--disable-back-forward-cache")
     return flags
 
 

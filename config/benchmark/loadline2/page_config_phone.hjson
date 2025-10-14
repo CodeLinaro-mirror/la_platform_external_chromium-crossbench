@@ -8,6 +8,10 @@
         target: _new_tab
       }
       {
+        action: wait
+        duration: 1s
+      }
+      {
         action: js
         script:
           '''
@@ -32,6 +36,10 @@
         action: js
         script: performance.mark('LoadLine2/amazon_product/finish')
       }
+      {
+        action: get
+        url: about:blank
+      }
     ]
     cnn_article: [
       // This will create a spare renderer process before the navigation
@@ -39,6 +47,10 @@
         action: get
         url: about:blank
         target: _new_tab
+      }
+      {
+        action: wait
+        duration: 1s
       }
       {
         action: js
@@ -65,6 +77,10 @@
         action: js
         script: performance.mark('LoadLine2/cnn_article/finish')
       }
+      {
+        action: get
+        url: about:blank
+      }
     ]
     wikipedia_article: [
       // This will create a spare renderer process before the navigation
@@ -72,6 +88,10 @@
         action: get
         url: about:blank
         target: _new_tab
+      }
+      {
+        action: wait
+        duration: 1s
       }
       {
         action: js
@@ -98,8 +118,16 @@
         action: js
         script: performance.mark('LoadLine2/wikipedia_article/finish')
       }
+      {
+        action: get
+        url: about:blank
+      }
     ]
     globo_homepage: [
+      {
+        action: wait
+        duration: 1s
+      }
       {
         action: js
         script:
@@ -125,8 +153,16 @@
         action: js
         script: performance.mark('LoadLine2/globo_homepage/finish')
       }
+      {
+        action: get
+        url: about:blank
+      }
     ]
     google_search_result: [
+      {
+        action: wait
+        duration: 1s
+      }
       {
         action: js
         script:
@@ -151,6 +187,10 @@
       {
         action: js
         script: performance.mark('LoadLine2/google_search_result/finish')
+      }
+      {
+        action: get
+        url: about:blank
       }
     ]
   }

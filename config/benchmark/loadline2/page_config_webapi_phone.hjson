@@ -7,6 +7,10 @@
         target: _new_tab
       }
       {
+        action: wait
+        duration: 1s
+      }
+      {
         action: probe
         probe: js
         kwargs: {
@@ -56,6 +60,10 @@
         action: get
         url: about:blank
         target: _new_tab
+      }
+      {
+        action: wait
+        duration: 1s
       }
       {
         action: probe
@@ -109,6 +117,10 @@
         target: _new_tab
       }
       {
+        action: wait
+        duration: 1s
+      }
+      {
         action: probe
         probe: js
         kwargs: {
@@ -160,6 +172,10 @@
         target: _new_tab
       }
       {
+        action: wait
+        duration: 1s
+      }
+      {
         action: probe
         probe: js
         kwargs: {
@@ -209,6 +225,10 @@
         action: get
         url: about:blank
         target: _new_tab
+      }
+      {
+        action: wait
+        duration: 1s
       }
       {
         action: probe
