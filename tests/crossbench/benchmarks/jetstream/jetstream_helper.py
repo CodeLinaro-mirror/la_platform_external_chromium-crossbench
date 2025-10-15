@@ -175,26 +175,27 @@ class JetStream2BaseTestCase(
     benchmark = self.benchmark_cls.from_cli_args(args)
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
-    self.assertIsNone(story.iteration_count)
     self.assertDictEqual(story.url_params, {})
 
     args.iteration_count = 10
     benchmark = self.benchmark_cls.from_cli_args(args)
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
-    self.assertEqual(story.iteration_count, 10)
     self.assertDictEqual(story.url_params, {"iterationCount": "10"})
 
     args.iteration_count = 123
     benchmark = self.benchmark_cls.from_cli_args(args)
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
-    self.assertEqual(story.iteration_count, 123)
     self.assertDictEqual(story.url_params, {"iterationCount": "123"})
 
 
 # TODO: introduce JetStreamBaseTestCase
 class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
+
+  @dataclass
+  class Namespace(JetStream2BaseTestCase.Namespace):
+    prefetch_resources: bool = True
 
   @override
   def _test_run_browser_expectations(self, browser,
@@ -227,6 +228,15 @@ class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
       self.assertNotIn(f"{self.story_cls.URL}?test=WSL", urls)
       self.assertNotIn(f"{self.story_cls.URL_LOCAL}?test=WSL", urls)
 
+  def test_no_prefetch(self):
+    args = self.Namespace()
+    args.stories = "default"
+    args.prefetch_resources = False
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    (story,) = benchmark.stories
+    assert isinstance(story, self.story_cls)
+    self.assertDictEqual(story.url_params, {"prefetchResources": "false"})
+
   def test_worst_case_count_kwargs(self):
     args = self.Namespace()
     args.stories = "default"
@@ -234,7 +244,6 @@ class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
     benchmark = self.benchmark_cls.from_cli_args(args)
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
-    self.assertEqual(story.worst_case_count, 4)
     self.assertDictEqual(story.url_params, {"worstCaseCount": "4"})
 
   def test_single_story_url_param(self):

@@ -7,9 +7,10 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Final, MutableMapping, \
-    Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Optional, \
+    Sequence, Type
 
+from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench.action_runner.action.enums import ReadyState
@@ -107,35 +108,14 @@ class JetStream2Story(JetStreamStory, metaclass=abc.ABCMeta):
 
   def __init__(self,
                substories: Sequence[str] = (),
-               iteration_count: Optional[int] = None,
-               worst_case_count: Optional[int] = None,
-               url: Optional[str] = None) -> None:
-    self._iteration_count: Final[int | None] = self._init_optional_count(
-        iteration_count, "iteration count")
-    self._worst_case_count: Final[int | None] = self._init_optional_count(
-        worst_case_count, "worst case count")
-    super().__init__(url=url, substories=substories)
-
-  def _init_optional_count(self, count: int | None, name: str) -> int | None:
-    if count is None:
-      return None
-    return NumberParser.positive_int(count, name, parse_str=False)
+               url: Optional[str] = None,
+               url_params: Optional[Mapping[str, str]] = None) -> None:
+    self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
+    super().__init__(substories=substories, url=url)
 
   @property
-  def iteration_count(self) -> int | None:
-    return self._iteration_count
-
-  @property
-  def worst_case_count(self) -> int | None:
-    return self._worst_case_count
-
-  @property
-  def url_params(self) -> MutableMapping[str, str]:
-    params: MutableMapping[str, str] = {}
-    if iteration_count := self.iteration_count:
-      params["iterationCount"] = str(iteration_count)
-    if worst_case_count := self.worst_case_count:
-      params["worstCaseCount"] = str(worst_case_count)
+  def url_params(self) -> dict[str, str]:
+    params: dict[str, str] = dict(self._url_params)
     return params
 
   @override
@@ -213,9 +193,17 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
   @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
-    kwargs["iteration_count"] = args.iteration_count
-    kwargs["worst_case_count"] = args.worst_case_count
+    kwargs["url_params"] = cls.url_params_from_cli(args)
     return kwargs
+
+  @classmethod
+  def url_params_from_cli(cls, args: argparse.Namespace) -> dict[str, str]:
+    url_params: dict[str, str] = {}
+    if worst_case_count := args.worst_case_count:
+      url_params["worstCaseCount"] = str(worst_case_count)
+    if iteration_count := args.iteration_count:
+      url_params["iterationCount"] = str(iteration_count)
+    return url_params
 
   def __init__(self,
                story_cls: Type[JetStream2Story],
@@ -223,10 +211,8 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
                args: Optional[argparse.Namespace] = None,
                separate: bool = False,
                url: Optional[str] = None,
-               iteration_count: Optional[int] = None,
-               worst_case_count: Optional[int] = None) -> None:
-    self.iteration_count = iteration_count
-    self.worst_case_count = worst_case_count
+               url_params: Optional[Mapping[str, str]] = None) -> None:
+    self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
     assert issubclass(story_cls, JetStream2Story)
     super().__init__(story_cls, patterns, args, separate, url)
 
@@ -234,11 +220,7 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
   def create_stories_from_names(self, names: list[str],
                                 separate: bool) -> Sequence[JetStream2Story]:
     return self.story_cls.from_names(
-        names,
-        separate=separate,
-        url=self.url,
-        iteration_count=self.iteration_count,
-        worst_case_count=self.worst_case_count)
+        names, separate=separate, url=self.url, url_params=self._url_params)
 
 
 class JetStream2Benchmark(JetStreamBenchmark):
