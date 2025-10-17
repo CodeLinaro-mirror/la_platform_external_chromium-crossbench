@@ -199,7 +199,6 @@ class Adb:
            stdout: ProcessIo = None,
            stderr: ProcessIo = None,
            stdin: ProcessIo = None,
-           env: Optional[Mapping[str, str]] = None,
            quiet: bool = False,
            check: bool = True,
            use_serial_id: bool = True) -> subprocess.CompletedProcess:
@@ -211,7 +210,6 @@ class Adb:
         stdout=stdout,
         stderr=stderr,
         stdin=stdin,
-        env=env,
         quiet=quiet,
         check=check)
 
@@ -249,7 +247,19 @@ class Adb:
           e.returncode, e.stderr, e.stdout)
       return None
 
-  def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
+  def build_shell_cmd(
+      self,
+      *args: CmdArg,
+      shell: bool = False,
+      env: Optional[Mapping[str, str]] = None,
+      cwd: Optional[pth.AnyPath] = None,
+  ) -> ListCmdArgs:
+    if env:
+      # TODO: support env with "export FOO=bar;" prefixes
+      raise ValueError("ADB shell only supports an empty env for now.")
+    if cwd:
+      # TODO: support env with "cd foo/bar &&" prefix
+      raise ValueError("ADB shell does not support custom cwd")
     self._host_platform.validate_shell_args(args, shell)
     shell_cmd: ListCmdArgs = ["shell"]
     if not shell:
@@ -269,9 +279,16 @@ class Adb:
                    encoding: str = "utf-8",
                    stdin: ProcessIo = None,
                    env: Optional[Mapping[str, str]] = None,
+                   cwd: Optional[pth.AnyPath] = None,
                    check: bool = True) -> str:
     result = self.shell_stdout_bytes(
-        *args, shell=shell, quiet=quiet, stdin=stdin, env=env, check=check)
+        *args,
+        shell=shell,
+        quiet=quiet,
+        stdin=stdin,
+        env=env,
+        cwd=cwd,
+        check=check)
     return result.decode(encoding)
 
   def shell_stdout_bytes(self,
@@ -280,15 +297,14 @@ class Adb:
                          quiet: bool = False,
                          stdin: ProcessIo = None,
                          env: Optional[Mapping[str, str]] = None,
+                         cwd: Optional[pth.AnyPath] = None,
                          check: bool = True) -> bytes:
     # -e: choose escape character, or "none"; default '~'
     # -n: don't read from stdin
     # -T: disable pty allocation
     # -t: allocate a pty if on a tty (-tt: force pty allocation)
     # -x: disable remote exit codes and stdout/stderr separation
-    if env:
-      raise ValueError("ADB shell only supports an empty env for now.")
-    shell_cmd = self.build_shell_cmd(*args, shell=shell)
+    shell_cmd = self.build_shell_cmd(*args, shell=shell, env=env, cwd=cwd)
     return self._host_platform.sh_stdout_bytes(
         *shell_cmd, stdin=stdin, quiet=quiet, check=check)
 
@@ -300,19 +316,17 @@ class Adb:
             stderr: ProcessIo = None,
             stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
+            cwd: Optional[pth.AnyPath] = None,
             quiet: bool = False,
             check: bool = True) -> subprocess.CompletedProcess:
-    if env:
-      raise ValueError("ADB shell only supports an empty env for now.")
     # See shell_stdout for more `adb shell` options.
-    shell_cmd = self.build_shell_cmd(*args, shell=shell)
+    shell_cmd = self.build_shell_cmd(*args, shell=shell, env=env, cwd=cwd)
     return self._host_platform.sh(
         *shell_cmd,
         capture_output=capture_output,
         stdout=stdout,
         stderr=stderr,
         stdin=stdin,
-        env=env,
         quiet=quiet,
         check=check)
 
@@ -728,8 +742,14 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return int(float(match_result.group("brightness")) * 100)
 
   @override
-  def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
-    return self.adb.build_shell_cmd(*args, shell=shell)
+  def build_shell_cmd(
+      self,
+      *args: CmdArg,
+      shell: bool = False,
+      env: Optional[Mapping[str, str]] = None,
+      cwd: Optional[pth.AnyPath] = None,
+  ) -> ListCmdArgs:
+    return self.adb.build_shell_cmd(*args, shell=shell, env=env, cwd=cwd)
 
   @override
   def sh(self,
@@ -740,6 +760,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
          env: Optional[Mapping[str, str]] = None,
+         cwd: Optional[pth.AnyPath] = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
     return self.adb.shell(
@@ -750,6 +771,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         stderr=stderr,
         stdin=stdin,
         env=env,
+        cwd=cwd,
         quiet=quiet,
         check=check)
 
@@ -760,9 +782,16 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                       quiet: bool = False,
                       stdin: ProcessIo = None,
                       env: Optional[Mapping[str, str]] = None,
+                      cwd: Optional[pth.AnyPath] = None,
                       check: bool = True) -> bytes:
     return self.adb.shell_stdout_bytes(
-        *args, shell=shell, stdin=stdin, env=env, quiet=quiet, check=check)
+        *args,
+        shell=shell,
+        stdin=stdin,
+        env=env,
+        cwd=cwd,
+        quiet=quiet,
+        check=check)
 
   @override
   def pull(self, from_path: pth.AnyPath,

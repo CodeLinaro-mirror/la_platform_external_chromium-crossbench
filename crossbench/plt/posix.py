@@ -552,6 +552,7 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
             stderr: ProcessIo = None,
             stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
+            cwd: Optional[pth.AnyPath] = None,
             quiet: bool = False) -> subprocess.Popen:
     del shell
     assert not (self.is_android and env), "ADB does not support env vars"
@@ -566,7 +567,7 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
         logging.debug("REMOTE SHELL: %s", shell_cmd)
       # Run with shell=True since we use '>' and use shlex.join.
       host_platform_cmd = self.build_shell_cmd(  # noqa: S604
-          shell_cmd, shell=True)
+          shell_cmd, shell=True, env=env, cwd=cwd)
 
       remote_popen = RemotePopen(
           self,

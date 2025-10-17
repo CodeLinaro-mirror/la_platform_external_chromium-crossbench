@@ -18,7 +18,7 @@ from crossbench.browsers.chromium.version import ChromiumVersion
 from crossbench.cli import ui
 from crossbench.helper import fs_helper
 from crossbench.probes.profiling.context.base import PosixProfilingContext
-from crossbench.probes.profiling.enum import CleanupMode
+from crossbench.probes.profiling.enum import CleanupMode, TargetMode
 
 if TYPE_CHECKING:
   import crossbench.path as pth
@@ -69,6 +69,14 @@ class LinuxProfilingContext(PosixProfilingContext):
     if self._profiling_process.poll():
       raise ValueError("Could not start linux profiler")
     atexit.register(self.stop_process)
+
+  @override
+  def start_story_run(self) -> None:
+    super().start_story_run()
+    if self.probe.target == TargetMode.RENDERER_PROCESS_ONLY:
+      print("%" * 80)
+      print(self.renderer_pid_tid)
+      print("%" * 80)
 
   def stop(self) -> None:
     self.stop_process()

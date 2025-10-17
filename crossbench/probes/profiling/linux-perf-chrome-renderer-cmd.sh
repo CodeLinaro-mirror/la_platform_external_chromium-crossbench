@@ -12,13 +12,14 @@ PERF_FREQ=""
 PERF_COUNT=""
 PERF_RAW_ARGS=""
 RENDERER_ID="0"
+PARENT_PID=$PPID
 
 for i in "$@"; do
   case $i in
     -h|--help)
 cat <<EOF
 Usage: path/to/chrome --renderer-cmd-prefix='$0 [OPTION]' [CHROME OPTIONS]
-This script is mostly used in conjuction with linux_perf.py to run linux-perf
+This script is mostly used in conjunction with linux_perf.py to run linux-perf
 for each renderer process.
 It generates perf.data files that can be read by pprof or linux-perf.
 
@@ -93,7 +94,7 @@ fi
 
 # Make sure `perf record` doesn't create `.debug/` in the home directory.
 export JITDUMPDIR="${PERF_DATA_DIR}";
-PERF_OUTPUT="${PERF_DATA_DIR}/${PERF_DATA_PREFIX}_${PPID}_${RENDERER_ID}.perf.data";
+PERF_OUTPUT="${PERF_DATA_DIR}/${PERF_DATA_PREFIX}_${PARENT_PID}_${RENDERER_ID}.perf.data";
 perf record \
   --call-graph=${PERF_CALL_GRAPH} \
   --clockid=${PERF_CLOCKID} \
