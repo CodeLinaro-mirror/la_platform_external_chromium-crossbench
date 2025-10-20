@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# pytype: disable=attribute-error
-
 from __future__ import annotations
 
 import argparse
@@ -12,7 +10,7 @@ import json
 import pathlib
 import re
 import unittest
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 from unittest import mock
 
 from typing_extensions import override
@@ -21,12 +19,12 @@ from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.google import GOOGLE_LOGIN_URL
-from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
-                                                             LoadingPageFilter)
+from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
+    LoadingPageFilter
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loading.page.interactive import InteractivePage
-from crossbench.benchmarks.loading.page.live import (PAGE_LIST,
-                                                     PAGE_LIST_SMALL, LivePage)
+from crossbench.benchmarks.loading.page.live import PAGE_LIST, \
+    PAGE_LIST_SMALL, LivePage
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
@@ -51,16 +49,15 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     return LoadingBenchmark
 
   @override
-  def story_filter(  # pylint: disable=arguments-differ
-      self,
-      patterns: Sequence[str],
-      separate: bool = True,
-      playback: PlaybackController = PlaybackController.default(),
-      tabs: TabController = TabController.default(),
-      action_runner: ActionRunner = DefaultActionRunner(),
-      about_blank_duration: dt.timedelta = dt.timedelta(),
-      run_login: bool = True,
-      run_setup: bool = True) -> LoadingPageFilter:
+  def story_filter(self,
+                   patterns: Sequence[str],
+                   separate: bool = True,
+                   playback: PlaybackController = PlaybackController.default(),
+                   tabs: TabController = TabController.default(),
+                   action_runner: ActionRunner = DefaultActionRunner(),
+                   about_blank_duration: dt.timedelta = dt.timedelta(),
+                   run_login: bool = True,
+                   run_setup: bool = True) -> LoadingPageFilter:
     args = argparse.Namespace(
         about_blank_duration=about_blank_duration,
         playback=playback,
@@ -85,18 +82,18 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     self.assertGreater(len(stories), 1)
     for story in stories:
       self.assertIsInstance(story, LivePage)
-    names = set(story.name for story in stories)
+    names = {story.name for story in stories}
     self.assertEqual(len(names), len(stories))
-    self.assertEqual(names, set(page.name for page in PAGE_LIST))
+    self.assertSetEqual(names, {page.name for page in PAGE_LIST})
 
   def test_default_stories(self):
     stories = self.story_filter(["default"]).stories
     self.assertGreater(len(stories), 1)
     for story in stories:
       self.assertIsInstance(story, LivePage)
-    names = set(story.name for story in stories)
+    names = {story.name for story in stories}
     self.assertEqual(len(names), len(stories))
-    self.assertEqual(names, set(page.name for page in PAGE_LIST_SMALL))
+    self.assertSetEqual(names, {page.name for page in PAGE_LIST_SMALL})
 
   def test_combined_stories(self):
     stories = self.story_filter(["all"], separate=False).stories
@@ -341,7 +338,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     url_1 = "http://one.test.com"
     url_2 = "http://two.test.com"
     with config.open("w", encoding="utf-8") as f:
-      f.write("\n".join((url_1, url_2)))
+      f.write(f"{url_1}\n{url_2}")
     with self._patch_get_browser():
       self.run_cli("loading", "run", f"--urls-file={config}",
                    "--env-validation=skip", "--throw")
@@ -355,7 +352,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     url_1 = "http://one.test.com"
     url_2 = "http://two.test.com"
     with config.open("w", encoding="utf-8") as f:
-      f.write("\n".join((url_1, url_2)))
+      f.write(f"{url_1}\n{url_2}")
     with self._patch_get_browser():
       self.run_cli("loading", "run", f"--urls-file={config}",
                    "--env-validation=skip", "--separate", "--throw")
@@ -505,6 +502,9 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
 
   def setup_expected_google_login_js(self):
     expected_scripts: list[JsInvocation] = [
+        # Wait for readystate interactive
+        JsInvocation(True),
+
         # Wait for email field
         JsInvocation(True, re.compile(r".*Email or phone.*")),
         # Click submit email
@@ -636,6 +636,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
 class ActionBlockListConfigTestCase(unittest.TestCase):
 
   def test_parse_invalid(self):
+    invalid: Any
     for invalid in ("", (), {}, 1):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):

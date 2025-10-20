@@ -5,12 +5,12 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Iterable, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Iterable, Self, Type
 
 from typing_extensions import override
 
-from crossbench.probes.internal.base import (InternalJsonResultProbe,
-                                             InternalJsonResultProbeContext)
+from crossbench.probes.internal.base import InternalJsonResultProbe, \
+    InternalJsonResultProbeContext
 from crossbench.probes.probe_context import ProbeSessionContext
 from crossbench.probes.results import EmptyProbeResult
 
@@ -30,7 +30,7 @@ class ErrorsProbe(InternalJsonResultProbe):
   Runner-internal meta-probe: Collects all errors from running stories and/or
   from merging probe data.
   """
-  NAME = "cb.errors"
+  NAME: ClassVar = "cb.errors"
 
   @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
@@ -74,7 +74,8 @@ class ErrorsProbe(InternalJsonResultProbe):
     return ErrorsProbeContext
 
   @override
-  def get_session_context(self: Self, session: BrowserSessionRunGroup):
+  def create_session_context(
+      self: Self, session: BrowserSessionRunGroup) -> ErrorProbeSessionContext:
     return ErrorProbeSessionContext(self, session)
 
 

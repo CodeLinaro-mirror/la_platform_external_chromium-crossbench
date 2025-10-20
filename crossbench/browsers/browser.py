@@ -208,6 +208,10 @@ class Browser(abc.ABC):
   def meminfo(self, timeout: dt.timedelta) -> list[ProcessMeminfo]:
     return self.platform.process_meminfo(str(self.path), timeout)
 
+  def dump_java_heap(self, path: pth.AnyPath) -> None:
+    del path
+    raise NotImplementedError(f"dump_java_heap not implemented for {self}.")
+
   @property
   def is_running(self) -> bool:
     return self._is_running
@@ -273,14 +277,14 @@ class Browser(abc.ABC):
         "version": self.version.parts_str,
         "channel": self.version.channel_name,
         "flags": tuple(self.flags),
-        "js_flags": tuple(),
+        "js_flags": (),
         "path": os.fspath(self.path),
         "clear_cache_dir": self.clear_cache_dir,
         "major_version": self.version.major,
         "log": {}
     }
 
-  def validate(self):
+  def validate(self) -> None:
     self.validate_flags()
     self.validate_binary()
 

@@ -15,10 +15,9 @@ from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.base import ChromeBaseMixin
-from crossbench.browsers.chromium.webdriver import (
-    ChromiumBasedWebDriver, ChromiumWebDriverAndroid,
-    ChromiumWebDriverChromeOsSsh, ChromiumWebDriverSsh,
-    LocalChromiumWebDriverAndroid)
+from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver, \
+    ChromiumWebDriverAndroid, ChromiumWebDriverChromeOsSsh, \
+    ChromiumWebDriverSsh, LocalChromiumWebDriverAndroid
 from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.webdriver import DriverException
 
@@ -40,8 +39,7 @@ class ChromeWebDriver(ChromeBaseMixin, ChromiumBasedWebDriver):
             | BrowserAttributes.WEBDRIVER)
 
   @override
-  def _create_driver(self,  # pytype: disable=override-error
-                     options: ChromiumOptions,
+  def _create_driver(self, options: ChromiumOptions,
                      service: ChromiumService) -> ChromiumDriver:
     assert isinstance(options, ChromeOptions)
     assert isinstance(service, ChromeService)

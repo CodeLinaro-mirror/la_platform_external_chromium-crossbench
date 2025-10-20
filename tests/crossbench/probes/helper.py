@@ -18,6 +18,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.probes.probe import Probe
 
+
 class GenericProbeTestCase(BaseCrossbenchTestCase):
 
   def create_runner(self,
@@ -49,7 +50,7 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
     for browser in self.browsers:
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
-    benchmark = LoadingBenchmark(stories)  # pytype: disable=not-instantiable
+    benchmark = LoadingBenchmark(stories)
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
         self.out_dir,

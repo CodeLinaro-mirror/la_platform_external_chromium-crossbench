@@ -1,12 +1,13 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import enum
 import unittest
 
-from crossbench.helper.state import (BaseState, StateMachine,
-                                     UnexpectedStateError)
+from crossbench.helper.state import BaseState, StateMachine, \
+    UnexpectedStateError
 from tests import test_helper
 
 

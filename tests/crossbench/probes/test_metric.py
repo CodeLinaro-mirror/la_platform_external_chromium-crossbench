@@ -1,6 +1,7 @@
 # Copyright 2023 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import json
 import pathlib
@@ -221,7 +222,6 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
         "a/ab/cccA": "cccA",
         "a/ab/cccB": "cccB"
     })
-
 
   BASIC_NESTED_DATA = {
       "a": {

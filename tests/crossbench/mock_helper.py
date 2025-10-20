@@ -5,13 +5,14 @@
 from __future__ import annotations
 
 import collections
+import contextlib
 import dataclasses
 import functools
 import pathlib
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Iterable, Mapping, MutableMapping,
-                    Optional, Sequence)
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, \
+    MutableMapping, Optional, Sequence
 
 import psutil
 from typing_extensions import override
@@ -35,10 +36,9 @@ from crossbench.stories.story import Story
 if TYPE_CHECKING:
   import datetime as dt
 
-  from crossbench.plt.types import CmdArg, ListCmdArgs, TupleCmdArgs
+  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo, TupleCmdArgs
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
-
 
 GIB = 1014**3
 
@@ -147,9 +147,11 @@ class MockPlatformMixin:
     self.use_mock_machine = True
     self.use_mock_name = True
     self.use_fs = False
+    self.mock_version_str: str | None = "1.2.3.4.5"
     self._machine_arch: [MachineArch] = None  # type: ignore
     self.popens: list[MockPopen] = []
     self.mkdir_calls: int = 0
+    self.screenshots: list[pth.AnyPath] = []
     super().__init__(*args, **kwargs)
 
   @property
@@ -194,7 +196,8 @@ class MockPlatformMixin:
     return path
 
   def expect_sh(
-      self, *args: CmdArg, result: bytes | str | ShResult = ShResult()) -> None:
+      self, *args: CmdArg | int,
+      result: bytes | str | ShResult = ShResult()) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
@@ -206,8 +209,8 @@ class MockPlatformMixin:
     assert isinstance(result, ShResult)
     self._sh_results.append(result)
 
-  def _convert_sh_args(self, *args: CmdArg) -> TupleCmdArgs:
-    converted_args : ListCmdArgs = []
+  def _convert_sh_args(self, *args: CmdArg | int) -> TupleCmdArgs:
+    converted_args: ListCmdArgs = []
     for arg in args:
       if not isinstance(arg, (str, pathlib.PurePath)):
         arg = str(arg)
@@ -255,11 +258,13 @@ class MockPlatformMixin:
     self._machine_arch = value
 
   @property
-  def version(self) -> str:
-    return "1.2.3.4.5"
+  def version_str(self) -> str:
+    if self.mock_version_str:
+      return self.mock_version_str
+    return super().version_str
 
   @property
-  def device(self) -> str:
+  def model(self) -> str:
     return "TestBook Pro"
 
   @property
@@ -275,9 +280,11 @@ class MockPlatformMixin:
 
   def disk_usage(self, path: pth.AnyPathLike) -> psutil._common.sdiskusage:
     del path
-    # pylint: disable=protected-access
-    return psutil._common.sdiskusage(
-        total=GIB * 100, used=20 * GIB, free=80 * GIB, percent=20)
+    return psutil._common.sdiskusage(  # noqa: SLF001
+        total=GIB * 100,
+        used=20 * GIB,
+        free=80 * GIB,
+        percent=20)
 
   def cpu_usage(self) -> float:
     return 0.1
@@ -323,11 +330,17 @@ class MockPlatformMixin:
     del macos, win, linux
     return self.path(f"/usr/bin/{name}")
 
+  def search_binary(self, app_or_bin: str | pth.AnyPath) -> pth.AnyPath | None:
+    path = self.path(f"/usr/bin/{app_or_bin}")
+    if self.use_fs and self.is_file(path):
+      return path
+    return super().search_binary(app_or_bin)
+
   def sh_stdout_bytes(self,
                       *args: CmdArg,
                       shell: bool = False,
                       quiet: bool = False,
-                      stdin=None,
+                      stdin: ProcessIo = None,
                       env: Optional[Mapping[str, str]] = None,
                       check: bool = True) -> bytes:
     del shell, quiet, stdin, env, check
@@ -357,9 +370,9 @@ class MockPlatformMixin:
          *args: CmdArg,
          shell: bool = False,
          capture_output: bool = False,
-         stdout=None,
-         stderr=None,
-         stdin=None,
+         stdout: ProcessIo = None,
+         stderr: ProcessIo = None,
+         stdin: ProcessIo = None,
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
          check: bool = True):
@@ -373,9 +386,9 @@ class MockPlatformMixin:
             *args: CmdArg,
             bufsize=-1,
             shell: bool = False,
-            stdout=None,
-            stderr=None,
-            stdin=None,
+            stdout: ProcessIo = None,
+            stderr: ProcessIo = None,
+            stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
             quiet: bool = False) -> MockPopen:
     del bufsize, stdout, stderr, stdin
@@ -409,6 +422,14 @@ class MockPlatformMixin:
         "cached_kernel_kb": 3,
         "free_kb": 2,
     }
+
+  @override
+  def screenshot(self, result_path: pth.AnyPath) -> None:
+    self.screenshots.append(result_path)
+
+  @contextlib.contextmanager
+  def wakelock(self) -> Iterator[None]:
+    yield
 
 
 class MockFd:
@@ -499,6 +520,7 @@ class MacOsMockPlatform(PosixMockPlatformMixin, MacOSPlatform):
 class MacIOSMockPlatform(PosixMockPlatformMixin, IOSPlatform):
   pass
 
+
 class WinMockPlatform(WinMockPlatformMixin, WinPlatform):
   pass
 
@@ -549,13 +571,13 @@ class MockStory(Story):
 
 class MockBenchmark(SubStoryBenchmark):
   NAME = "mock-benchmark"
-  DEFAULT_STORY_CLS = MockStory
+  DEFAULT_STORY_CLS: ClassVar = MockStory
 
 
 class MockCLI(CrossBenchCLI):
   runner: Runner
   platform: Platform
 
-  def __init__(self, *args, **kwargs) -> None:
-    self.platform = kwargs.pop("platform")
-    super().__init__(*args, **kwargs)
+  def __init__(self, platform: Platform, enable_logging: bool = True) -> None:
+    self.platform = platform
+    super().__init__(enable_logging=enable_logging)

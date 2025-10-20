@@ -9,15 +9,14 @@ import argparse
 import hjson
 
 from crossbench import plt
-from crossbench.cli.config.driver import (AmbiguousDriverIdentifier,
-                                          DriverConfig)
+from crossbench.cli.config.driver import AmbiguousDriverIdentifier, \
+    DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from tests import test_helper
-from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
-                                              XCTRACE_DEVICES_SINGLE_OUTPUT,
-                                              BaseConfigTestCase)
+from tests.crossbench.cli.config.base import ADB_DEVICES_OUTPUT, \
+    XCTRACE_DEVICES_SINGLE_OUTPUT, BaseConfigTestCase
 
 
 class DriverConfigTestCase(BaseConfigTestCase):
@@ -67,7 +66,6 @@ class DriverConfigTestCase(BaseConfigTestCase):
     driver_3 = DriverConfig.parse(chromedriver_path)
     self.assertEqual(driver_3.path, chromedriver_path)
     self.assertEqual(driver, driver_3)
-
 
   def test_parse_driver_path_unresolved(self):
     chromedriver_path = self.out_dir / "chromedriver"
@@ -256,6 +254,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     assert isinstance(config, DriverConfig)
     self.assertEqual(config.type, BrowserDriverType.ANDROID)
     self.assertEqual(config.bundletool, bundletool)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

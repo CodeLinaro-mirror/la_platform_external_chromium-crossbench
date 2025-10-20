@@ -1,25 +1,27 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import pathlib
-from typing import Type
+from typing import TYPE_CHECKING, Type
 
 from pyfakefs import fake_filesystem_unittest
 
 import crossbench.config
 import crossbench.path
 from crossbench import plt
-from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
-                                            LoadLine1TabletDebugBenchmark,
-                                            LoadLine2TabletBenchmark,
-                                            LoadLine2TabletDebugBenchmark)
+from crossbench.benchmarks.loadline import LoadLine1TabletBenchmark, \
+    LoadLine1TabletDebugBenchmark, LoadLine2TabletBenchmark, \
+    LoadLine2TabletDebugBenchmark
 from crossbench.cli.config.probe_list import ProbeListConfig
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder import default_chromium_candidates
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
-from crossbench.probes.probe import Probe
 from tests import test_helper
+
+if TYPE_CHECKING:
+  from crossbench.probes.probe import Probe
 
 PROBE_LOOKUP: dict[str, Type[Probe]] = {
     probe_cls.NAME: probe_cls for probe_cls in GENERAL_PURPOSE_PROBES
@@ -38,7 +40,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     super().setUp()
     self.setUpPyfakefs(modules_to_reload=[crossbench.path])
     self._add_real_directory(test_helper.crossbench_dir() /
-                             "probes/perfetto/trace_processor/queries")
+                             "probes/trace_processor/queries")
     self.set_up_required_paths()
 
   def set_up_required_paths(self):
@@ -58,7 +60,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     # make sure we have a fakefs path
     fake_config_dir = pathlib.Path(real_config_dir)
     for probe_config in fake_config_dir.glob("**/*.config.hjson"):
-      with ChangeCWD(probe_config.parent):
+      with change_cwd(probe_config.parent):
         probes += self._parse_config(probe_config)
     return probes
 
@@ -70,32 +72,13 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
 
     probes = ProbeListConfig.parse(config_file).probes
     self.assertTrue(probes)
-    self.assertTrue(
-        any(map(lambda probe: isinstance(probe, probe_cls), probes)))
+    self.assertTrue(any(isinstance(probe, probe_cls) for probe in probes))
     for probe in probes:
       self.assertFalse(probe.is_attached)
     return probes
 
-  def _add_real_directory(self, path: crossbench.path.LocalPathLike) -> None:
-    self.fs.add_real_directory(
-        path, lazy_read=not test_helper.is_google_env())
-    if test_helper.is_google_env():
-      # On google3, all files have been replaced by symlinks. The link targets
-      # must be added in order for these symlinks to resolve.
-      for child in path.glob("**/*"):
-        if child.is_symlink():
-          link_target = child.readlink()
-          if not link_target.exists():
-            self.fs.add_real_file(link_target)
-
-  def _add_real_file(self, path: crossbench.path.LocalPathLike) -> None:
-    self.fs.add_real_file(path)
-    if test_helper.is_google_env() and path.is_symlink():
-      # On google3, all files have been replaced by symlinks. The link targets
-      # must be added in order for these symlinks to resolve.
-      link_target = path.readlink()
-      if not link_target.exists():
-        self.fs.add_real_file(link_target)
+  def _add_real_directory(self, path: crossbench.path.LocalPath) -> None:
+    self.fs.add_real_directory(path, lazy_read=True)
 
   def test_parse_example_configs(self):
     probe_config_presets = self.real_config_dir / "probe"
@@ -108,11 +91,16 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self.assertTrue(probes)
 
   def test_parse_loadline_configs(self):
+    self._add_real_directory(
+        LoadLine1TabletBenchmark.default_probe_config_path().parent)
+    self._add_real_directory(
+        LoadLine2TabletBenchmark.default_probe_config_path().parent)
     for cls in (LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark,
                 LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark):
       probe_config = cls.default_probe_config_path()
-      self._add_real_file(probe_config)
       probes = ProbeListConfig.parse(probe_config).probes
       self.assertTrue(probes)
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -14,10 +14,12 @@ from unittest import mock
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
+from crossbench.helper.version import VersionParseError
+from crossbench.plt.win import WinVersion
 from tests import test_helper
 from tests.crossbench.mock_helper import WinMockPlatform
-from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
-                                         BaseMockPlatformTestCase)
+from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
+    BaseMockPlatformTestCase
 
 if TYPE_CHECKING:
   from crossbench import path as pth
@@ -28,16 +30,28 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
   __test__ = True
 
   @override
-  def mock_platform_setup(self):
-    self.mock_platform = WinMockPlatform()
+  def setUp(self) -> None:
+    super().setUp()
     self.fs.os = OSType.WINDOWS
-    self.platform = self.mock_platform
+
+  @override
+  def setup_host_platform(self):
+    return WinMockPlatform()
 
   def path(self, path: pth.AnyPathLike) -> pathlib.PureWindowsPath:
     return pathlib.PureWindowsPath(path)
 
   def test_is_win(self):
     self.assertTrue(self.platform.is_win)
+
+  def test_version(self):
+    self.platform.mock_version_str = None
+    ver_output = "\nMicrosoft Windows [Version 10.0.22631.3593]\n"
+    self.expect_sh("cmd", "/c", "ver", result=ver_output)
+    self.assertEqual(self.platform.version_str, ver_output.strip())
+    version = self.platform.version
+    self.assertEqual(version.parts, (10, 0, 22631, 3593))
+    self.assertEqual(version.version_str, ver_output.strip())
 
   def test_path_conversion(self):
     self.assertIsInstance(
@@ -150,6 +164,14 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
         uptime,
         dt.timedelta(
             days=14, hours=2, minutes=19, seconds=54, milliseconds=978))
+
+  def test_platform_version_cls(self):
+    ver_output = "\nMicrosoft Windows [Version 10.0.22631.3593]\n"
+    version = WinVersion.parse(ver_output)
+    self.assertEqual(version.parts, (10, 0, 22631, 3593))
+    self.assertEqual(version.version_str, ver_output)
+    with self.assertRaises(VersionParseError):
+      WinVersion.parse("foo")
 
 
 if __name__ == "__main__":

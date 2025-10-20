@@ -16,22 +16,21 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.safari.safari import Safari
-from crossbench.cli.config.browser import (ENV_PRESETS, NETWORK_PRESETS,
-                                           BrowserConfig)
+from crossbench.cli.config.browser import ENV_PRESETS, NETWORK_PRESETS, \
+    BrowserConfig
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from crossbench.exception import MultiException
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from tests import test_helper
 from tests.crossbench import mock_browser
-from tests.crossbench.cli.config.base import (ADB_DEVICES_OUTPUT,
-                                              ADB_DEVICES_SINGLE_OUTPUT,
-                                              XCTRACE_DEVICES_OUTPUT,
-                                              XCTRACE_DEVICES_SINGLE_OUTPUT,
-                                              BaseConfigTestCase)
+from tests.crossbench.cli.config.base import ADB_DEVICES_OUTPUT, \
+    ADB_DEVICES_SINGLE_OUTPUT, XCTRACE_DEVICES_OUTPUT, \
+    XCTRACE_DEVICES_SINGLE_OUTPUT, BaseConfigTestCase
+from tests.crossbench.mock_helper import ShResult
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
@@ -129,7 +128,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     with self.platform.TemporaryDirectory() as tmp_dir:
       cwd = tmp_dir / "crossbench"
       cwd.mkdir()
-      with ChangeCWD(cwd):
+      with change_cwd(cwd):
         browser_path = pth.LocalPath("../out/Release/chrome")
         self.fs.create_file(browser_path, st_size=100)
         self.assertTrue((tmp_dir / "out").is_dir())
@@ -137,7 +136,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         self.assertEqual(config.path, browser_path.resolve())
         config = BrowserConfig.parse(browser_path)
         self.assertEqual(config.path, browser_path.resolve())
-      with ChangeCWD(tmp_dir):
+      with change_cwd(tmp_dir):
         browser_path = pth.LocalPath("out/Release/chrome")
         config = BrowserConfig.parse(str(browser_path))
         self.assertEqual(config.path, browser_path.resolve())
@@ -601,6 +600,32 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertIn("limit", msg)
     self.assertIn("'chr'", msg)
 
+  def test_parse_with_multiple_android_devices(self):
+    adb_devices = ShResult("List of devices attached\n"
+                           "1111 device usb:1 product:p1 model:m1 device:d1\n"
+                           "2222 device usb:2 product:p2 model:m2 device:d2\n"
+                           "3333 device usb:3 product:p3 model:m3 device:d3\n")
+    self.platform.sh_results = [adb_devices] * 13
+    self.assertTupleEqual(
+        BrowserConfig.parse_with_range("adb-all:chrome"),
+        (BrowserConfig.parse("1111:chrome"), BrowserConfig.parse("2222:chrome"),
+         BrowserConfig.parse("3333:chrome")))
+
+  @unittest.skipUnless(plt.PLATFORM.is_macos,
+                       "Running on iOS is only possible in mac hosts")
+  def test_parse_with_multiple_ios_devices(self):
+    adb_devices = ShResult("List of devices attached\n\n")
+    xctrace_devices = ShResult("== Devices ==\n"
+                               "device1 (26.0) (ID-1)\n"
+                               "device2 (26.0) (ID-2)\n"
+                               "device3 (26.0) (ID-3)\n")
+    self.platform.sh_results = (
+        [xctrace_devices] + [adb_devices, xctrace_devices, xctrace_devices] * 6)
+    self.assertTupleEqual(
+        BrowserConfig.parse_with_range("ios-all:safari"),
+        (BrowserConfig.parse("ID-1:safari"), BrowserConfig.parse("ID-2:safari"),
+         BrowserConfig.parse("ID-3:safari")))
+
   def test_parse_safari_variants(self):
     config = BrowserConfig.parse("safari")
     self.assertEqual(config.path, Safari.default_path(self.platform))
@@ -621,6 +646,14 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse(v8_path),
         BrowserConfig(pth.LocalPosixPath(v8_path)))
+
+  def test_parse_webkit_download(self):
+    if not self.platform.is_macos:
+      self.skipTest("Unsupported platform")
+    version_str = "webkit-nightly-299105@main"
+    config = BrowserConfig.parse(version_str)
+    self.assertEqual(config.browser, version_str)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

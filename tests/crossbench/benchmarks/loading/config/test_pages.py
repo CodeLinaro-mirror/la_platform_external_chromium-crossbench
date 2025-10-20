@@ -9,7 +9,7 @@ import datetime as dt
 import json
 import pathlib
 import unittest
-from typing import Sequence
+from typing import Any, Sequence
 
 import hjson
 
@@ -17,8 +17,8 @@ from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
-from crossbench.benchmarks.loading.config.pages import (
-    DevToolsRecorderPagesConfig, ListPagesConfig, PagesConfig)
+from crossbench.benchmarks.loading.config.pages import \
+    DevToolsRecorderPagesConfig, ListPagesConfig, PagesConfig
 from crossbench.cli.config.secrets import GoogleUsernamePassword, Secrets
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -158,7 +158,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(config_list, config_str)
 
   def test_parse_empty_actions(self):
-    config_data = {"pages": {"Google Story": []}}
+    config_data: dict[str, dict] = {"pages": {"Google Story": []}}
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       PagesConfig.parse(config_data)
     self.assertIn("empty", str(cm.exception).lower())
@@ -168,7 +168,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("empty", str(cm.exception).lower())
 
   def test_example(self):
-    config_data = {
+    config_data: dict[str, dict] = {
         "pages": {
             "Google Story": [
                 {
@@ -298,8 +298,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
       PagesConfig.parse_dict({"pages": {}})
 
   def test_scenario_invalid_actions(self):
-    invalid_actions = [None, "", [], {}, "invalid string", 12]
-    invalid_actions = ["invalid string", 12]
+    invalid_actions: list[Any] = [None, "", [], {}, "invalid string", 12]
     for invalid_action in invalid_actions:
       config_dict = {"pages": {"name": invalid_action}}
       with self.subTest(invalid_action=invalid_action):
@@ -318,7 +317,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("Invalid data:", str(cm.exception))
 
   def test_invalid_action(self):
-    invalid_actions = [None, "", [], {}, "unknown action name", 12]
+    invalid_actions: list[Any] = [None, "", [], {}, "unknown action name", 12]
     for invalid_action in invalid_actions:
       config_dict = {
           "pages": {
@@ -384,7 +383,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
         self.assertEqual(actions[1].duration, dt.timedelta(seconds=duration))
 
   def test_action_invalid_duration(self):
-    invalid_durations = [
+    invalid_durations: list[Any] = [
         "1.1.1", None, "", -1, "-1", "-1ms", "1msss", "1ss", "2hh", "asdfasd",
         "---", "1.1.1", "1_123ms", "1'200h", (), [], {}, "-1h"
     ]
@@ -440,7 +439,7 @@ DEVTOOLS_RECORDER_EXAMPLE = {
                               "div.header__container div:nth-of-type(5) > a"
                           ],
                           [
-                              "xpath///*[@id=\"pageHeader\"]/"
+                              'xpath///*[@id="pageHeader"]/'
                               "div/div/div[1]/div[1]/nav/div/div[5]/a"
                           ],
                           [
@@ -499,14 +498,13 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
                      "[aria-label='Search Google']")
 
     config["selectors"] = [["aria/SIMPLE"], ["#rso > div:nth-of-type(3) h3"],
-                           ["xpath///*[@id=\"rso\"]"],
+                           ['xpath///*[@id="rso"]'],
                            ["pierce/#rso > div:nth-of-type(3) h3"],
                            ["text/SIMPLE"]]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
     assert isinstance(action, ClickAction)
     self.assertIsNotNone(action.position.selector)
-    self.assertEqual(action.position.selector.selector,
-                     "xpath///*[@id=\"rso\"]")
+    self.assertEqual(action.position.selector.selector, 'xpath///*[@id="rso"]')
 
     config["selectors"] = [
         ["aria/SIMPLE"],

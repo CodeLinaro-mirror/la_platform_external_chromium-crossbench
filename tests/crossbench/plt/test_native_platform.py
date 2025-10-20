@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from crossbench import plt
+from crossbench.path import LocalPath
 from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
@@ -71,6 +72,14 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     env = self.platform.environ
     self.assertTrue(env)
 
+  def test_version(self):
+    version_a = self.platform.version
+    version_b = self.platform.version
+    self.assertIs(version_a, version_b)
+    self.assertIsInstance(version_a.parts, tuple)
+    self.assertTrue(len(version_a.parts) >= 1)
+    self.assertGreater(version_a.major, 0)
+
   def test_which_none(self):
     with self.assertRaises(ValueError):
       self.platform.which("")
@@ -84,7 +93,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.platform.search_binary(pathlib.Path())
     self.assertIn("empty", str(cm.exception))
     with self.assertRaises(ValueError) as cm:
-      self.platform.search_binary(pathlib.Path(""))
+      self.platform.search_binary(pathlib.Path())
     self.assertIn("empty", str(cm.exception))
 
   def test_search_app_empty_path(self):
@@ -92,7 +101,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.platform.search_app(pathlib.Path())
     self.assertIn("empty", str(cm.exception))
     with self.assertRaises(ValueError) as cm:
-      self.platform.search_app(pathlib.Path(""))
+      self.platform.search_app(pathlib.Path())
     self.assertIn("empty", str(cm.exception))
 
   def test_cat(self):
@@ -135,7 +144,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.assertTrue(self.platform.is_dir(path))
       if self.platform.is_local:
         self.assertTrue(path.is_dir())
-      with self.assertRaises(Exception):
+      with self.assertRaisesRegex(Exception, str(path.parent)):
         self.platform.rm(path.parent)
       self.platform.rm(path.parent, dir=True)
       self.assertFalse(self.platform.exists(path))
@@ -210,7 +219,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
   def test_default_tmp_dir(self):
     self.assertTrue(self.platform.is_dir(self.platform.default_tmp_dir))
 
-  def test_NamedTemporaryFile(self):
+  def test_NamedTemporaryFile(self):  # noqa: N802
     with self.platform.NamedTemporaryFile() as path:
       self.assertTrue(self.platform.is_file(path))
       self.assertTrue(self.platform.exists(path))
@@ -229,7 +238,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.assertTrue(self.platform.exists(path))
     self.assertFalse(self.platform.exists(path))
 
-  def test_TemporaryDirectory(self):
+  def test_TemporaryDirectory(self):  # noqa: N802
     with self.platform.TemporaryDirectory() as path:
       self.assertTrue(self.platform.is_dir(path))
       self.assertTrue(self.platform.exists(path))
@@ -400,19 +409,17 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     if self.platform.is_remote:
       return
     with self.platform.TemporaryDirectory() as tmp_dir:
-      tmp_file = tmp_dir / "test.txt"
+      tmp_file = LocalPath(tmp_dir) / "test.txt"
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.write_text(tmp_file, "")
       mode = 0o400
       self.platform.chmod(tmp_file, mode)
-      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
+      self.assertEqual(tmp_file.stat()[stat.ST_MODE] & mode, mode)
       mode = 0o600
-      self.assertNotEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
+      self.assertNotEqual(tmp_file.stat()[stat.ST_MODE] & mode, mode)
       self.platform.chmod(tmp_file, mode)
-      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & mode, mode)
+      self.assertEqual(tmp_file.stat()[stat.ST_MODE] & mode, mode)
 
-  @unittest.skipIf(
-      test_helper.is_google_env(), "Source directory is readonly")
   def test_cache_dir(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
       try:
@@ -424,8 +431,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
         if self.platform.is_local:
           self.platform.set_cache_dir(DEFAULT_CACHE_DIR)
 
-  @unittest.skipIf(
-      test_helper.is_google_env(), "Source directory is readonly")
   def test_default_local_cache_dir(self):
     if self.platform.is_remote:
       return
@@ -436,8 +441,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     finally:
       self.platform.rm(cache_dir, dir=True, missing_ok=True)
 
-  @unittest.skipIf(
-      test_helper.is_google_env(), "Source directory is readonly")
   def test_local_cache_dir(self):
     if self.platform.is_remote:
       return
@@ -466,8 +469,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.skipTest("Not supported yet on remote platforms.")
     if self.platform.is_win:
       self.skipTest("Too Slow on windows")
-    if test_helper.is_google_env():
-      self.skipTest("Not supported yet in google environment.")
     self.assertFalse(self.platform.process_running([]))
     self.assertFalse(
         self.platform.process_running(["crossbench_invalid_test_bin"]))
@@ -477,8 +478,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
   def test_process_info(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
-    if test_helper.is_google_env():
-      self.skipTest("Not supported yet in google environment.")
     process_info = self.platform.process_info(os.getpid())
     self.assertIn("python", process_info["name"].lower())
 
@@ -580,14 +579,11 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
   def test_which(self):
     ls_bin = self.platform.which("ls")
     self.assertIsNotNone(ls_bin)
-    # self.known_binary is "python3", which does not exist on google3,
-    # as google3 has its own mechanism to start python scripts.
-    if not test_helper.is_google_env():
-      known_binary = self.platform.which(self.known_binary)
-      self.assertIsNotNone(known_binary)
-      self.assertNotEqual(ls_bin, known_binary)
-      self.assertTrue(self.platform.exists(ls_bin))
-      self.assertTrue(self.platform.exists(known_binary))
+    known_binary = self.platform.which(self.known_binary)
+    self.assertIsNotNone(known_binary)
+    self.assertNotEqual(ls_bin, known_binary)
+    self.assertTrue(self.platform.exists(ls_bin))
+    self.assertTrue(self.platform.exists(known_binary))
 
   def test_system_details(self):
     details = self.platform.system_details()
@@ -649,9 +645,9 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     env = self.platform.environ
     custom_key = f"CROSSBENCH_TEST_KEY_{len(env)}"
     self.assertNotIn(custom_key, env)
-    with self.assertRaises(Exception):
+    with self.assertRaises(NotImplementedError):
       env[custom_key] = 1234
-    with self.assertRaises(Exception):
+    with self.assertRaises(NotImplementedError):
       env[custom_key] = "1234"
 
   def test_environ_set_property(self):
@@ -660,7 +656,7 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     env = self.platform.environ
     custom_key = f"CROSSBENCH_TEST_KEY_{len(env)}"
     self.assertNotIn(custom_key, env)
-    with self.assertRaises(Exception):
+    with self.assertRaises(TypeError):
       env[custom_key] = 1234
     env[custom_key] = "1234"
     self.assertEqual(env[custom_key], "1234")
@@ -669,8 +665,6 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     self.assertNotIn(custom_key, env)
 
   def test_app_version(self):
-    if test_helper.is_google_env():
-      self.skipTest("Not supported yet in google environment.")
     python_path = sys.executable
     with self.assertRaises(ValueError):
       self.platform.app_version("path/to/invalid/test/crossbench/bin")
@@ -827,9 +821,9 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
       tmp_file = tmp_dir / "test.txt"
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.touch(tmp_file)
-      self.assertNotEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
+      self.assertNotEqual(tmp_file.stat()[stat.ST_MODE] & 0o755, 0o755)
       self.platform.chmod(tmp_file, 0o755)
-      self.assertEqual(os.stat(tmp_file)[stat.ST_MODE] & 0o755, 0o755)
+      self.assertEqual(tmp_file.stat()[stat.ST_MODE] & 0o755, 0o755)
 
 
 class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
@@ -913,12 +907,12 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertEqual(self.platform.name, "macos")
 
   def test_version(self):
-    self.assertTrue(self.platform.version)
-    self.assertRegex(self.platform.version, r"[0-9]+\.[0-9]")
+    self.assertTrue(self.platform.version_str)
+    self.assertRegex(self.platform.version_str, r"[0-9]+\.[0-9]")
 
   def test_device(self):
-    self.assertTrue(self.platform.device)
-    self.assertRegex(self.platform.device, r"[a-zA-Z]+[0-9]+,[0-9]+")
+    self.assertTrue(self.platform.model)
+    self.assertRegex(self.platform.model, r"[a-zA-Z]+[0-9]+,[0-9]+")
 
   def test_cpu(self):
     self.assertTrue(self.platform.cpu)
@@ -934,8 +928,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertFalse(self.platform.is_remote)
 
   def test_set_main_screen_brightness(self):
-    if test_helper.is_on_swarming():
-      self.skipTest("Skipping this to run in CQ due to crbug.com/396417022.")
+    if "Apple M1" in plt.PLATFORM.cpu or "Apple M2" in plt.PLATFORM.cpu:
+      self.skipTest("Skipping this due to crbug.com/396417022.")
     prev_level = plt.PLATFORM.get_main_display_brightness()
     brightness_level = 32
     plt.PLATFORM.set_main_display_brightness(brightness_level)
@@ -955,11 +949,11 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
         "a value")
 
   def test_exec_apple_script_args(self):
-    result = self.platform.exec_apple_script(  # pylint: disable=assignment-from-no-return
-        "copy item 1 of argv to stdout", "a value", "b")
+    result = self.platform.exec_apple_script("copy item 1 of argv to stdout",
+                                             "a value", "b")
     self.assertEqual(result.strip(), "a value")
-    result = self.platform.exec_apple_script(  # pylint: disable=assignment-from-no-return
-        "copy item 2 of argv to stdout", "a value", "b")
+    result = self.platform.exec_apple_script("copy item 2 of argv to stdout",
+                                             "a value", "b")
     self.assertEqual(result.strip(), "b")
 
   def test_exec_apple_script_invalid(self):
@@ -1007,7 +1001,7 @@ class WinNativePlatformTestCase(BaseNativePlatformTestCase):
     self.assertIn(self.platform.has_display, (True, False))
 
   def test_version(self):
-    self.assertTrue(self.platform.version)
+    self.assertTrue(self.platform.version_str)
 
 
 if __name__ == "__main__":

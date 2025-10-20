@@ -125,7 +125,6 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         high.merge(low).system_min_uptime, dt.timedelta(minutes=10))
 
-
   def test_parse_example_config_file(self):
     example_config_file = test_helper.config_dir() / "doc/env.config.hjson"
     self.fs.add_real_file(example_config_file)

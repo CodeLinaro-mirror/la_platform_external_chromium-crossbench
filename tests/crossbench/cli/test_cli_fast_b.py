@@ -1,13 +1,14 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import argparse
 import datetime as dt
 import json
 import os
 import pathlib
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 from unittest import mock
 
 import hjson
@@ -21,13 +22,16 @@ from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.env.runner_env import ValidationMode
 from crossbench.parse import LateArgumentError
-from crossbench.path import AnyPath
 from crossbench.probes.internal.summary import ResultsSummaryProbe
+from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 from tests.crossbench.cli.config.base import XCTRACE_DEVICES_SINGLE_OUTPUT
+
+if TYPE_CHECKING:
+  from crossbench.path import AnyPath
 
 
 class FastCliTestCasePartB(BaseCliTestCase):
@@ -284,19 +288,26 @@ class FastCliTestCasePartB(BaseCliTestCase):
 
   def test_env_config_inline_hjson(self):
     with self._patch_get_browser():
-      self.run_cli("loading", "--env={\"power_use_battery\":false}",
+      self.run_cli("loading", '--env={"power_use_battery":false}',
                    "--urls=http://test.com", "--env-validation=skip")
 
   def test_env_config_inline_invalid(self):
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", "--env=not a valid name",
-                   "--urls=http://test.com", "--env-validation=skip")
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", "--env={not valid hjson}",
-                   "--urls=http://test.com", "--env-validation=skip")
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", "--env={unknown_property:1}",
-                   "--urls=http://test.com", "--env-validation=skip")
+    with self.cli() as cli:
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", "--env=not a valid name", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", "--env={not valid hjson}", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", "--env={unknown_property:1}", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
 
   def test_conflicting_driver_path(self):
     mock_browsers: list[Type[mock_browser.MockBrowser]] = [
@@ -322,23 +333,30 @@ class FastCliTestCasePartB(BaseCliTestCase):
 
   def test_env_config_invalid_file(self):
     config = pathlib.Path("/test.config.hjson")
-    # No "env" property
-    with config.open("w", encoding="utf-8") as f:
-      hjson.dump({}, f)
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", f"--env-config={config}",
-                   "--urls=http://test.com", "--env-validation=skip")
-    # "env" not a dict
-    with config.open("w", encoding="utf-8") as f:
-      hjson.dump({"env": []}, f)
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", f"--env-config={config}",
-                   "--urls=http://test.com", "--env-validation=skip")
-    with config.open("w", encoding="utf-8") as f:
-      hjson.dump({"env": {"unknown_property_name": 1}}, f)
-    with self.assertRaises(SysExitTestException):
-      self.run_cli("loading", f"--env-config={config}",
-                   "--urls=http://test.com", "--env-validation=skip")
+    with self.cli() as cli:
+      # No "env" property
+      with config.open("w", encoding="utf-8") as f:
+        hjson.dump({}, f)
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", f"--env-config={config}", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
+      # "env" not a dict
+      with config.open("w", encoding="utf-8") as f:
+        hjson.dump({"env": []}, f)
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", f"--env-config={config}", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
+      with config.open("w", encoding="utf-8") as f:
+        hjson.dump({"env": {"unknown_property_name": 1}}, f)
+      with self.assertRaises(SysExitTestException):
+        cli.run([
+            "loading", f"--env-config={config}", "--urls=http://test.com",
+            "--env-validation=skip"
+        ])
 
   def test_parse_env_config_file(self):
     config = pathlib.Path("/test.config.hjson")
@@ -422,9 +440,9 @@ class FastCliTestCasePartB(BaseCliTestCase):
 
   def test_powersampler_invalid_multiple_runs(self):
     powersampler_bin = self.out_dir / "powersampler"
-    self.fs.create_file(powersampler_bin, st_size=1024)
     config_str = json.dumps({"bin_path": str(powersampler_bin)})
-    with self._patch_get_browser_cls():
+    with self._patch_get_browser_cls(), mock.patch.object(
+        PowerSamplerProbe, "validate_browser"):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         self.run_cli("loading", "--browser=chrome",
                      f"--probe=powersampler:{config_str}", "--repeat=10",

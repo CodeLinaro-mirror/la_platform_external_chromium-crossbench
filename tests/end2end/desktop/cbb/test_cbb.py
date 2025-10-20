@@ -1,24 +1,25 @@
 # Copyright 2023 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import json
 import pathlib
+from typing import TYPE_CHECKING
 
 import pytest
 
 from crossbench import plt
 from crossbench.benchmarks import all as benchmarks
-from crossbench.benchmarks.base import PressBenchmark
 from crossbench.browsers.chrome import webdriver as chrome_webdriver
 from crossbench.browsers.chromium import webdriver as chromium_webdriver
 from crossbench.browsers.settings import Settings
 from crossbench.cbb import cbb_adapter
 from tests import test_helper
-from tests.test_helper import TestEnv
 
-# pytest.fixtures rely on params having the same name as the fixture function
-# pylint: disable=redefined-outer-name
+if TYPE_CHECKING:
+  from crossbench.benchmarks.base import PressBenchmark
+  from tests.test_helper import TestEnv
 
 
 def get_benchmark(benchmark_cls) -> PressBenchmark:
@@ -26,13 +27,12 @@ def get_benchmark(benchmark_cls) -> PressBenchmark:
   story_class = cbb_adapter.get_pressbenchmark_story_cls(benchmark_cls.NAME)
   assert story_class
   stories = story_class.default_story_names()[:1]
-  workload = story_class(  # pytype: disable=not-instantiable
-      substories=stories)
+  workload = story_class(substories=stories)
   benchmark_cls_lookup = cbb_adapter.get_pressbenchmark_cls(benchmark_cls.NAME)
   assert benchmark_cls_lookup, (
       f"Could not find benchmark class for '{benchmark_cls.NAME}'")
   assert benchmark_cls_lookup == benchmark_cls
-  benchmark = benchmark_cls_lookup(stories=[workload])  # pytype: disable=not-instantiable
+  benchmark = benchmark_cls_lookup(stories=[workload])
   return benchmark
 
 

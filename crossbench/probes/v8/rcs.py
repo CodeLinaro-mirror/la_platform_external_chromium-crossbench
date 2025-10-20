@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import collections
 import logging
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, ClassVar, Type
 
 from typing_extensions import override
 
@@ -19,8 +19,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.path import LocalPath
   from crossbench.runner.groups.browsers import BrowsersRunGroup
-  from crossbench.runner.groups.repetitions import (
-      CacheTemperatureRepetitionsRunGroup, RepetitionsRunGroup)
+  from crossbench.runner.groups.repetitions import \
+      CacheTemperatureRepetitionsRunGroup, RepetitionsRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
 
 
@@ -30,7 +30,7 @@ class V8RCSProbe(ChromiumProbe):
   to analyze precise counters and time spent in various VM components in V8:
   https://v8.dev/tools/head/callstats.html
   """
-  NAME = "v8.rcs"
+  NAME: ClassVar = "v8.rcs"
 
   @override
   def attach(self, browser: Browser) -> None:

@@ -16,9 +16,8 @@ def test_screenshot(browser_config, test_env) -> None:
   ] + list(test_env.cq_flags))
 
   screenshots = list(test_env.results_dir.rglob("*/screenshot/*.png"))
-  assert set(f.name for f in screenshots) == {
-      "start.png", "start_story.png", "stop.png", "stop_story.png"
-  }
+  assert {f.name for f in screenshots
+         } == {"start.png", "start_story.png", "stop.png", "stop_story.png"}
   for f in screenshots:
     assert f.stat().st_size > 0
 

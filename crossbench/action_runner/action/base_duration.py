@@ -5,12 +5,12 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, ClassVar, Type
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
-                                                    ActionT)
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, \
+    ActionT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.parse import DurationParser
 
@@ -53,7 +53,7 @@ class BaseDurationAction(Action):
 
 
 class DurationAction(BaseDurationAction):
-  TYPE: ActionType = ActionType.WAIT
+  TYPE: ClassVar[ActionType] = ActionType.WAIT
 
   @classmethod
   @override

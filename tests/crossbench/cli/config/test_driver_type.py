@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import unittest
+from typing import Any
 
 from crossbench.cli.config.driver_type import BrowserDriverType
 from tests import test_helper
@@ -17,6 +18,7 @@ class BrowserDriverTypeTestCase(unittest.TestCase):
     self.assertEqual(BrowserDriverType.default(), BrowserDriverType.WEB_DRIVER)
 
   def test_parse_invalid(self):
+    invalid: Any
     for invalid in ["invalid", None, [], (), {}]:
       with self.assertRaises(argparse.ArgumentTypeError):
         BrowserDriverType.parse(invalid)

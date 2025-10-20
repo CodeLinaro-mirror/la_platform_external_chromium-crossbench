@@ -10,7 +10,8 @@ import logging
 import os
 import time
 import traceback
-from typing import TYPE_CHECKING, Any, Optional, Sequence, cast
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Sequence, cast
 
 import selenium.common.exceptions
 import urllib3
@@ -54,6 +55,55 @@ class DriverException(RuntimeError):
 class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   # TODO: properly annotate this lazily initialized instance variable.
   _private_driver: webdriver.Remote
+  _timeout_set = False
+  _http_timeout_cache: float | None = None
+
+  def _get_http_timeout(self) -> int:
+    executor = cast("RemoteConnection", self._private_driver.command_executor)
+    return executor.client_config.timeout
+
+  def _set_http_timeout(self, timeout: float) -> None:
+    logging.debug("Setting http request timeout to %s", timeout)
+    executor = cast("RemoteConnection", self._private_driver.command_executor)
+    executor.client_config.timeout = timeout
+
+  @contextmanager
+  def js_timeout(self, timeout: Optional[dt.timedelta]) -> Iterator[None]:
+    """
+    A context manager method to temporarily adjust timeouts.
+    """
+    if timeout is None:
+      yield
+      return
+
+    new_timeout_seconds = timeout.total_seconds()
+    if new_timeout_seconds <= 0:
+      raise ValueError("Timeout must be a positive duration.")
+
+    original_script_timeout: float = self._private_driver.timeouts.script
+    # The cache value should never change since we always set the driver timeout
+    # back to cache value when exiting the context.
+    if self._http_timeout_cache is None:
+      self._http_timeout_cache = self._get_http_timeout()
+
+    http_timeout_should_change = False
+
+    if not self._timeout_set and self._http_timeout_cache:
+      http_timeout_should_change = new_timeout_seconds > \
+                                    self._http_timeout_cache
+    script_timeout_should_change = new_timeout_seconds > original_script_timeout
+
+    try:
+      if http_timeout_should_change and self._http_timeout_cache is not None:
+        self._set_http_timeout(new_timeout_seconds)
+      if script_timeout_should_change:
+        self._private_driver.set_script_timeout(new_timeout_seconds)
+      yield
+    finally:
+      if http_timeout_should_change and self._http_timeout_cache is not None:
+        self._set_http_timeout(self._http_timeout_cache)
+      if script_timeout_should_change:
+        self._private_driver.set_script_timeout(original_script_timeout)
 
   def __init__(self,
                label: str,
@@ -132,9 +182,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     unit values.
     If timing.has_no_timeout each value is set to SAFE_MAX_TIMEOUT_TIMEDELTA."""
     if http_timeout := self.http_request_timeout:
-      logging.debug("Setting http request timeout to %s", http_timeout)
-      executor = cast("RemoteConnection", self._private_driver.command_executor)
-      executor.client_config.timeout = http_timeout.total_seconds()
+      self._timeout_set = True
+      self._set_http_timeout(http_timeout.total_seconds())
     timing = session.timing
     if not timing.timeout_unit:
       return
@@ -244,14 +293,13 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
                   script)
     assert self._is_running
     try:
-      if timeout is not None:
-        assert timeout.total_seconds() > 0, (
-            f"timeout must be a positive number, got: {timeout}")
-        self._private_driver.set_script_timeout(timeout.total_seconds())
-      return self._private_driver.execute_script(script, *arguments)
+      with self.js_timeout(timeout):
+        return self._private_driver.execute_script(script, *arguments)
     except selenium.common.exceptions.WebDriverException as e:
-      # pylint: disable=raise-missing-from
-      raise ValueError(f"Could not execute JS: {e.msg}")
+      # Do not include the webdriver exception since it adds a lot of noise
+      # with internal stack traces.
+      logging.debug("WebDriverException: %s", e)
+      raise ValueError(f"Could not execute JS: {e.msg}")  # noqa: B904
 
   def close_all_tabs(self) -> None:
     try:
@@ -295,11 +343,11 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       # Sometimes a second quit is needed, ignore any warnings there
       try:
         self._private_driver.quit()
-      except Exception as e:  # pylint: disable=broad-except
+      except Exception as e:  # noqa: BLE001
         logging.debug("Driver raised exception on quit: %s\n%s", e,
                       traceback.format_exc())
       return
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # noqa: BLE001
       logging.debug("Could not quit browser: %s\n%s", e, traceback.format_exc())
     finally:
       self._is_running = False
@@ -334,19 +382,19 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
 
   @override
   def _find_driver(self) -> LocalPath:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: AnyPath) -> webdriver.Remote:
-    raise NotImplementedError()
+    raise NotImplementedError
 
   @override
   def _setup_binary(self) -> None:
     pass
 
   @override
-  def _setup_cache_dir(self):
+  def _setup_cache_dir(self) -> None:
     pass
 
   def validate_binary(self) -> None:

@@ -7,7 +7,7 @@ The goal is to abstract out the crossbench runner interface details and
 provide an integration point for CBB.
 
 Any breaking changes in the function definitions here need to be coordinated
-with corresponding changes in CBB in google3
+with corresponding changes in CBB.
 """
 
 from __future__ import annotations
@@ -91,8 +91,8 @@ def get_pressbenchmark_story_cls(
   return None
 
 
-def create_remote_webdriver(driver: webdriver.Remote
-                           ) -> cb_webdriver.RemoteWebDriver:
+def create_remote_webdriver(
+    driver: webdriver.Remote) -> cb_webdriver.RemoteWebDriver:
   """Creates a remote webdriver instance for the driver.
 
   Args:

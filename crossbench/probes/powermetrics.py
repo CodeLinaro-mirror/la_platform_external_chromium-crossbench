@@ -8,13 +8,13 @@ import atexit
 import datetime as dt
 import enum
 import subprocess
-from typing import TYPE_CHECKING, Self, Sequence, Type
+from typing import TYPE_CHECKING, ClassVar, Self, Sequence, Type
 
 from typing_extensions import override
 
 from crossbench.parse import DurationParser
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeKeyT)
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
+    ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
@@ -45,13 +45,13 @@ class PowerMetricsProbe(Probe):
   Probe to collect data using macOS's powermetrics command-line tool.
   """
 
-  NAME = "powermetrics"
-  RESULT_LOCATION = ResultLocation.BROWSER
-  SAMPLERS: tuple[SamplerType,
-                  ...] = (SamplerType.BATTERY, SamplerType.CPU_POWER,
-                          SamplerType.DISK, SamplerType.GPU_POWER,
-                          SamplerType.INTERRUPTS, SamplerType.NETWORK,
-                          SamplerType.TASKS, SamplerType.THERMAL)
+  NAME: ClassVar = "powermetrics"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
+  SAMPLERS: ClassVar[tuple[SamplerType,
+                           ...]] = (SamplerType.BATTERY, SamplerType.CPU_POWER,
+                                    SamplerType.DISK, SamplerType.GPU_POWER,
+                                    SamplerType.INTERRUPTS, SamplerType.NETWORK,
+                                    SamplerType.TASKS, SamplerType.THERMAL)
 
   @classmethod
   @override

@@ -5,11 +5,10 @@
 from __future__ import annotations
 
 import abc
-import collections
 import datetime as dt
 import json
 import pathlib
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import TYPE_CHECKING, Any, Iterable, NamedTuple, Optional, Type
 
 from typing_extensions import override
 
@@ -19,7 +18,7 @@ from crossbench.cli.config.secrets import Secrets
 from crossbench.env.runner_env import RunnerEnv
 from crossbench.exception import Annotator
 from crossbench.helper.wait import WaitRange
-from crossbench.path import safe_filename
+from crossbench.path import AnyPath, safe_filename
 from crossbench.probes.probe import Probe
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
@@ -34,6 +33,7 @@ if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
+  from crossbench.probes.probe import ProbeT
   from crossbench.runner.run import Run
   from crossbench.runner.timing import AnyTimeUnit
 
@@ -60,7 +60,9 @@ class MockRun:
                is_warmup=False,
                temperature="default",
                index=0,
-               name="run 0") -> None:
+               name="run 0",
+               probe=None,
+               probe_context=None) -> None:
     self.runner = runner
     self.browser_session = browser_session
     self.browser = browser_session.browser
@@ -70,7 +72,8 @@ class MockRun:
     self.is_warmup = is_warmup
     self.temperature = temperature
     self.name = name
-    self.probes: list[Probe] = []
+    self.probes: list[Probe] = [probe]
+    self.probe_context: ProbeContext | None = probe_context
     self.timing = Timing()
     self.is_success = True
     self.index = index
@@ -102,6 +105,9 @@ class MockRun:
               measure: bool = True) -> Actions:
     return Actions(name, self, verbose=verbose, measure=measure)
 
+  def set_probe_context(self, probe_context: ProbeContext) -> None:
+    self.probe_context = probe_context
+
   @property
   def exceptions(self) -> Annotator:
     return self._exceptions
@@ -124,14 +130,23 @@ class MockRun:
     self.did_teardown = True
 
   def wait_range(self,
-                 min_wait: AnyTimeUnit,
+                 min_interval: AnyTimeUnit,
                  timeout: AnyTimeUnit,
                  delay: AnyTimeUnit = 0) -> WaitRange:
     timing = self.timing
     return WaitRange(
-        min=timing.timedelta(min_wait),
+        min=timing.timedelta(min_interval),
         timeout=timing.timeout_timedelta(timeout),
         delay=timing.timedelta(delay))
+
+  def get_probe_context(self,
+                        probe_cls: Type[ProbeT]) -> ProbeContext[ProbeT] | None:
+    del probe_cls
+    return self.probe_context
+
+  def get_default_probe_result_path(self, probe: Probe) -> AnyPath:
+    del probe
+    return AnyPath("/")
 
   def _teardown_browser(self, is_dry_run: bool) -> None:
     assert self.is_dry_run is is_dry_run
@@ -155,18 +170,20 @@ class MockPlatform:
     return self.name
 
 
-MockWait = collections.namedtuple("MockWait", ("time", "absolute_time"))
+class MockWait(NamedTuple):
+  time: AnyTimeUnit
+  absolute_time: bool
 
 
 class MockRunner:
 
-  def __init__(self) -> None:
+  def __init__(self, probes: list[Probe] | None = None) -> None:
     self.benchmark = MockBenchmark(stories=[MockStory("mock_story")])
-    self.runs: tuple[Run, ...] = tuple()
+    self.runs: tuple[Run, ...] = ()
     self.platform = MockPlatform("test-platform")
     self.repetitions = 1
     self.create_symlinks = True
-    self.probes: list[Probe] = []
+    self.probes: list[Probe] = probes if probes else []
     self.browsers: list[Browser] = []
     self.out_dir = pathlib.Path("results/out")
     self.timing = Timing()
@@ -202,7 +219,6 @@ class MockProbe(Probe):
     return self.context_cls
 
 
-
 class MockProbeContext(ProbeContext):
 
   def start(self) -> None:
@@ -233,13 +249,15 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
     self.browsers: list[Browser] = [self.mock_chrome_dev, self.mock_firefox]
 
   def default_runner(self,
-                     browsers: Optional[list[Browser]] = None,
+                     browsers: Optional[Iterable[Browser]] = None,
                      benchmark: Optional[Benchmark] = None,
+                     probes: Optional[Iterable[Probe]] = None,
                      throw: bool = True) -> Runner:
     return Runner(
         self.out_dir,
-        browsers or self.browsers,
-        benchmark or self.benchmark,
+        browsers=browsers or self.browsers,
+        benchmark=benchmark or self.benchmark,
+        probes=probes or (),
         platform=self.platform,
         throw=throw,
         in_memory_result_db=True)

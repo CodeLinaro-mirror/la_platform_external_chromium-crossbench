@@ -7,21 +7,23 @@ from __future__ import annotations
 import datetime as dt
 import unittest
 
-from crossbench.action_runner.action.action import (ACTION_TIMEOUT, ACTIONS,
-                                                    Action)
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, ACTIONS, \
+    Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.close_all_tabs import CloseAllTabsAction
 from crossbench.action_runner.action.close_tab import CloseTabAction
+from crossbench.action_runner.action.dump_html import DumpHtmlAction
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.inject_new_document_script import \
     InjectNewDocumentScriptAction
 from crossbench.action_runner.action.js import JsAction
 from crossbench.action_runner.action.meminfo import MeminfoAction
-from crossbench.action_runner.action.position import (CoordinatesConfig,
-                                                      PositionConfig,
-                                                      SelectorConfig)
+from crossbench.action_runner.action.position import CoordinatesConfig, \
+    PositionConfig, SelectorConfig
+from crossbench.action_runner.action.probe import ProbeAction
+from crossbench.action_runner.action.screenshot import ScreenshotAction
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
@@ -33,12 +35,31 @@ from crossbench.action_runner.action.wait_for_element import \
     WaitForElementAction
 from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
+from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.input_source import InputSource
+from crossbench.config import config_dir
+from crossbench.probes.dump_html import DumpHtmlProbe
+from crossbench.probes.js import JSProbe
+from crossbench.probes.meminfo import MeminfoProbe
+from crossbench.probes.screenshot import ScreenshotProbe
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class ActionTestCase(CrossbenchFakeFsTestCase):
+
+  def test_all_configs(self):
+    actions_config_path = config_dir() / "doc/action/action.config.hjson"
+    self.fs.add_real_directory(actions_config_path.parent)
+    actions_test_config = PagesConfig.parse(actions_config_path)
+    parsed_actions: set[ActionType] = set()
+    for page in actions_test_config.pages:
+      for action in page.actions():
+        parsed_actions.add(action.TYPE)
+    self.assertGreater(len(parsed_actions), 1)
+    self.assertSetEqual(
+        set(ActionType), parsed_actions,
+        f"Missing example action config in {actions_config_path}")
 
   def test_action_type_lookup(self):
     for action_type in ActionType:
@@ -332,7 +353,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
   def test_parse_click_xpath_selector_hjson(self):
     action = ClickAction.parse(
         "{action:'click',selector:'//*[@id=\"rso\"]/div[2]/div[1]'}")
-    self.assertEqual(action.selector.selector, "//*[@id=\"rso\"]/div[2]/div[1]")
+    self.assertEqual(action.selector.selector, '//*[@id="rso"]/div[2]/div[1]')
 
   def test_parse_click_invalid_source(self):
     with self.assertRaises(ValueError) as cm:
@@ -688,7 +709,6 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       JsAction.parse_dict(config_dict)
     self.assertIn("script", str(cm.exception))
 
-
   def test_js_script_invalid_path(self):
     config_dict = {
         "action": "js",
@@ -706,7 +726,6 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       JsAction.parse_dict(config_dict)
     self.assertIn("script_path", str(cm.exception))
 
-
   def test_js_script_invalid_script_xor_path(self):
     path = self.create_file("/foo/bar.js", contents="alert(2)")
     config_dict = {
@@ -717,7 +736,6 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(ValueError) as cm:
       JsAction.parse_dict(config_dict)
     self.assertIn("script_path", str(cm.exception))
-
 
   def test_js_script_invalid_replacements(self):
     path = self.create_file("/foo/bar.js", contents="alert(2)")
@@ -732,7 +750,6 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(ValueError) as cm:
       JsAction.parse_dict(config_dict)
     self.assertIn("replacements", str(cm.exception))
-
 
   def test_inject_new_document_script_script(self):
     config_dict = {
@@ -797,7 +814,6 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertIn("script", str(cm.exception))
 
-
   def test_inject_new_document_script_invalid_path(self):
     config_dict = {
         "action": "inject_new_document_script",
@@ -815,7 +831,6 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertIn("script_path", str(cm.exception))
 
-
   def test_inject_new_document_script_invalid_script_xor_path(self):
     path = self.create_file("/foo/bar.js", contents="alert(2)")
     config_dict = {
@@ -826,7 +841,6 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(ValueError) as cm:
       InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertIn("script_path", str(cm.exception))
-
 
   def test_inject_new_document_script_invalid_replacements(self):
     path = self.create_file("/foo/bar.js", contents="alert(2)")
@@ -841,7 +855,6 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(ValueError) as cm:
       InjectNewDocumentScriptAction.parse_dict(config_dict)
     self.assertIn("replacements", str(cm.exception))
-
 
   def test_parse_switch_tab_all_args(self):
     config_dict = {
@@ -979,40 +992,53 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_meminfo_default(self):
     config_dict = {"action": "meminfo"}
-    action = MeminfoAction.parse_dict(config_dict)
+    action = MeminfoAction.parse(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertTrue(action.browser)
-    self.assertEqual(action.packages, ())
-    self.assertIsNone(action.title)
+    self.assertEqual(action.probe_cls, MeminfoProbe)
+    self.assertDictEqual(
+        dict(action.kwargs), {
+            "browser": True,
+            "system": False,
+            "packages": (),
+            "title": None,
+        })
 
-    action_2 = MeminfoAction.parse_dict(action.to_json())
+    action_2 = ProbeAction.parse(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
   def test_parse_meminfo_browser(self):
     config_dict = {"action": "meminfo", "browser": True}
-    action = MeminfoAction.parse_dict(config_dict)
+    action = MeminfoAction.parse(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertTrue(action.browser)
-    self.assertEqual(action.packages, ())
-    self.assertIsNone(action.title)
+    self.assertDictEqual(
+        dict(action.kwargs), {
+            "browser": True,
+            "system": False,
+            "packages": (),
+            "title": None,
+        })
 
-    action_2 = MeminfoAction.parse_dict(action.to_json())
+    action_2 = ProbeAction.parse(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
   def test_parse_meminfo_title(self):
     config_dict = {"action": "meminfo", "title": "a_title"}
-    action = MeminfoAction.parse_dict(config_dict)
+    action = MeminfoAction.parse(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertTrue(action.browser)
-    self.assertEqual(action.packages, ())
-    self.assertEqual(action.title, "a_title")
+    self.assertDictEqual(
+        dict(action.kwargs), {
+            "browser": True,
+            "system": False,
+            "packages": (),
+            "title": "a_title",
+        })
 
-    action_2 = MeminfoAction.parse_dict(action.to_json())
+    action_2 = ProbeAction.parse(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -1022,24 +1048,63 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "browser": False,
         "packages": ["netflix", "minecraft"],
     }
-    action = MeminfoAction.parse_dict(config_dict)
+    action = MeminfoAction.parse(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertFalse(action.browser)
-    self.assertEqual(action.packages, ("netflix", "minecraft"))
-    self.assertIsNone(action.title)
+    self.assertDictEqual(
+        dict(action.kwargs), {
+            "browser": False,
+            "system": False,
+            "packages": ("netflix", "minecraft"),
+            "title": None
+        })
 
-    action_2 = MeminfoAction.parse_dict(action.to_json())
+    action_2 = ProbeAction.parse(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
-  def test_parse_meminfo_nothing(self):
-    config_dict = {
-        "action": "meminfo",
-        "browser": False,
-    }
-    with self.assertRaisesRegex(ValueError, "must specify at least one of"):
-      MeminfoAction.parse_dict(config_dict)
+  def test_parse_probe_no_probe(self):
+    config_dict = {"action": "probe"}
+
+    with self.assertRaisesRegex(ValueError, "No value"):
+      ProbeAction.parse(config_dict)
+
+  def test_parse_probe_invalid_probe(self):
+    config_dict = {"action": "probe", "probe": "this is not a probe"}
+
+    with self.assertRaisesRegex(ValueError, "Invalid"):
+      ProbeAction.parse(config_dict)
+
+  def test_parse_probe_no_kwargs(self):
+    config_dict = {"action": "probe", "probe": "js"}
+
+    action = ProbeAction.parse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.PROBE)
+    self.assertEqual(action.probe_cls, JSProbe)
+    self.assertFalse(action.kwargs)
+
+  def test_parse_probe_with_kwargs(self):
+    kwargs = {"arg_one": 1, "arg_two": "two"}
+    config_dict = {"action": "probe", "probe": "js", "kwargs": kwargs}
+
+    action = ProbeAction.parse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.PROBE)
+    self.assertEqual(action.probe_cls, JSProbe)
+    self.assertDictEqual(dict(action.kwargs), kwargs)
+
+  def test_parse_screenshot(self):
+    config_dict = {"action": "screenshot"}
+    action = ScreenshotAction.parse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.SCREENSHOT)
+    self.assertEqual(action.probe_cls, ScreenshotProbe)
+    self.assertFalse(action.kwargs)
+
+  def test_parse_dump_html(self):
+    config_dict = {"action": "dump_html"}
+    action = DumpHtmlAction.parse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.DUMP_HTML)
+    self.assertEqual(action.probe_cls, DumpHtmlProbe)
+    self.assertFalse(action.kwargs)
 
 
 class PositionConfigTestCase(unittest.TestCase):

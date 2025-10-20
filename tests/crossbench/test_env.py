@@ -1,6 +1,7 @@
 # Copyright 2022 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import datetime as dt
 import pathlib
@@ -12,15 +13,14 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.settings import Settings
-from crossbench.env.runner_env import (EnvConfig, RunnerEnv, ValidationError,
-                                       ValidationMode)
+from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationError, \
+    ValidationMode
 from crossbench.helper import url_helper
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_browser import MockSafari
-from tests.crossbench.mock_helper import (LinuxMockPlatform, MacOsMockPlatform,
-                                          MockPlatform,
-                                          RemoteLinuxMockPlatform)
+from tests.crossbench.mock_helper import LinuxMockPlatform, \
+    MacOsMockPlatform, MockPlatform, RemoteLinuxMockPlatform
 
 
 class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
@@ -130,7 +130,6 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("mock_probe", str(cm.exception))
 
     mock_probe.validate_env.assert_called_once()
-
 
   def test_request_battery_power_on(self):
     with self.patch_property(self.platform, "is_battery_powered") as mocked:
@@ -286,6 +285,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     cm.assert_called_once()
 
   def test_check_installed_missing(self):
+
     def which_none(_):
       return None
 
@@ -371,6 +371,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     self.assertFalse(env.validate_url("ftp://google.com"))
 
   def test_validate_url_localhost_remote(self):
+    self.mock_platform_default_tmp_dir(RemoteLinuxMockPlatform)
     remote_platform = RemoteLinuxMockPlatform(self.platform)
     env = self.create_env()
     with mock.patch.object(url_helper, "get") as mock_get:

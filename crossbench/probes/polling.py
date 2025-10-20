@@ -9,13 +9,13 @@ import datetime as dt
 import logging
 import threading
 import time
-from typing import TYPE_CHECKING, Iterable, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Iterable, Self, Type
 
 from typing_extensions import override
 
 from crossbench.parse import DurationParser, ObjectParser
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeKeyT)
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
+    ProbeKeyT
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
@@ -30,8 +30,8 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
   """
   Abstract probe to periodically collect the results of any bash cmd.
   """
-  NAME = "polling"
-  IS_GENERAL_PURPOSE = False
+  NAME: ClassVar = "polling"
+  IS_GENERAL_PURPOSE: ClassVar = False
 
   @classmethod
   @override
@@ -86,8 +86,8 @@ class PollingShellProbe(PollingProbe):
   General-purpose probe to periodically collect the stdout of a given bash cmd.
   """
 
-  IS_GENERAL_PURPOSE = True
-  NAME = "poll"
+  NAME: ClassVar = "poll"
+  IS_GENERAL_PURPOSE: ClassVar = True
 
   @classmethod
   @override

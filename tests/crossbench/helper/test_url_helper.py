@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import unittest
-from unittest.mock import patch, Mock, call
+from unittest.mock import Mock, call, patch
 
 from requests import RequestException
 

@@ -1,19 +1,19 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import datetime as dt
 import pathlib
 import unittest
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.scroll import ScrollAction
-from crossbench.action_runner.chromeos_input_action_runner import (
-    SCRIPTS_DIR, ChromeOSInputActionRunner, ChromeOSTouchEvent,
-    ChromeOSViewportInfo, TouchDevice)
+from crossbench.action_runner.chromeos_input_action_runner import \
+    SCRIPTS_DIR, ChromeOSInputActionRunner, ChromeOSTouchEvent, \
+    ChromeOSViewportInfo, TouchDevice
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
@@ -26,9 +26,12 @@ from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import \
     ActionRunnerTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeStable
-from tests.crossbench.mock_helper import (ChromeOsSshMockPlatform,
-                                          LinuxMockPlatform, MockFd, MockPopen)
+from tests.crossbench.mock_helper import ChromeOsSshMockPlatform, \
+    LinuxMockPlatform, MockFd, MockPopen
 from tests.crossbench.runner.helper import MockRun, MockRunner
+
+if TYPE_CHECKING:
+  from crossbench.action_runner.action.action import Action
 
 
 class ChromeOSTouchEventTestCase(unittest.TestCase):

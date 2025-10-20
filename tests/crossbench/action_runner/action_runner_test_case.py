@@ -1,13 +1,14 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import datetime as dt
 import logging
 from unittest import mock
 
-from tests.crossbench.base import (CrossbenchFakeFsTestCase,
-                                   CrossbenchMockArgsMixin)
+from tests.crossbench.base import CrossbenchFakeFsTestCase, \
+    CrossbenchMockArgsMixin
 
 
 class ActionRunnerTestCase(CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase):

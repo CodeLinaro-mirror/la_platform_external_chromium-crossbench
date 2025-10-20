@@ -14,9 +14,6 @@ from tests import test_helper
 if TYPE_CHECKING:
   from tests.test_helper import TestEnv
 
-# pytest.fixtures rely on params having the same name as the fixture function
-# pylint: disable=redefined-outer-name
-
 
 def _browser_config(device_id, adb_path) -> str:
   return json.dumps({
@@ -32,23 +29,30 @@ def _browser_config(device_id, adb_path) -> str:
 class BenchmarkType(enum.StrEnum):
   PHONE = "loadline2-phone"
   TABLET = "loadline2-tablet"
+  WEBAPI = "loadline2-webapi-phone"
 
 
 def _verify_default_metrics(out_dir, only_total=False):
   result_csv = out_dir / "benchmark_score.csv"
   with result_csv.open() as csv:
     lines = csv.readlines()
-    assert len(lines) == 2
+    assert len(lines) == 12
 
     titles = lines[0].split(",")
-    assert len(titles) == 7
-    assert titles[0] == "browser"
-    assert titles[1] == "TOTAL_SCORE"
+    assert len(titles) == 2
+    assert titles[0] == "Metric"
 
-    values = lines[1].split(",")
-    assert len(values) == 7
-    values_to_check = values[1:2] if only_total else values[1:]
-    for value in values_to_check:
+    metrics = dict(line.split(",") for line in lines[1:])
+
+    assert "TOTAL_SCORE" in metrics, f"Total score missing: {lines}"
+    value = metrics["TOTAL_SCORE"]
+    assert value, f"Encountered empty value. CSV contents: {lines}"
+    assert float(value) > 0, f"Expected positive number, but got {value}"
+    if only_total:
+      return
+
+    for metric, value in metrics:
+      assert metric, f"Encountered empty metric name. CSV contents: {lines}"
       assert value, f"Encountered empty value. CSV contents: {lines}"
       assert float(value) > 0, f"Expected positive number, but got {value}"
 
@@ -59,6 +63,10 @@ def test_loadline2_phone(device_id, adb_path, test_env: TestEnv) -> None:
 
 def test_loadline2_tablet(device_id, adb_path, test_env: TestEnv) -> None:
   _test_loadline2_default(device_id, adb_path, BenchmarkType.TABLET, test_env)
+
+
+def test_loadline2_webapi(device_id, adb_path, test_env: TestEnv) -> None:
+  _test_loadline2_default(device_id, adb_path, BenchmarkType.WEBAPI, test_env)
 
 
 def _test_loadline2_default(device_id, adb_path, benchmark_type,

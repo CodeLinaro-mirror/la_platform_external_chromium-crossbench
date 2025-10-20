@@ -1,16 +1,18 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import json
 import unittest
 
 from crossbench.browsers.settings import Settings
-from crossbench.probes.thermal_monitor import (ThermalMonitorProbe,
-                                               ThermalStatus)
+from crossbench.probes.thermal_monitor import ThermalMonitorProbe, \
+    ThermalStatus
 from tests import test_helper
 from tests.crossbench.mock_browser import MockChromeAndroidStable
-from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb
+from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb, \
+    ShResult
 from tests.crossbench.runner.helper import BaseRunnerTestCase
 
 
@@ -56,6 +58,10 @@ class ThermalStatusTestCase(unittest.TestCase):
 class TestThermalMonitorProbe(BaseRunnerTestCase):
 
   def test_android_run(self):
+    self.fs.create_file("/usr/bin/adb", contents="adb")
+    if self.platform.is_macos:
+      self.platform.expect_sh(
+          "brew", "--prefix", result=ShResult(success=False))
     self.platform.expect_sh(
         "/usr/bin/adb",
         "devices",
@@ -93,6 +99,7 @@ class TestThermalMonitorProbe(BaseRunnerTestCase):
     run = runner.runs[0]
     self.assertTrue(run.is_success)
     results = run.results.get_by_name(ThermalMonitorProbe.NAME)
+    assert results
     with results.json.open() as f:
       thermal_data = json.load(f)
       self.assertIn("max_observed_status", thermal_data)
@@ -101,6 +108,7 @@ class TestThermalMonitorProbe(BaseRunnerTestCase):
     run = runner.runs[1]
     self.assertTrue(run.is_success)
     results = run.results.get_by_name(ThermalMonitorProbe.NAME)
+    assert results
     with results.json.open() as f:
       thermal_data = json.load(f)
       self.assertIn("max_observed_status", thermal_data)

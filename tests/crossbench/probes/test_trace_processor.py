@@ -1,6 +1,7 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import json
 import pathlib
@@ -12,16 +13,15 @@ from crossbench import plt
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.probes.all import TraceProcessorProbe
-from crossbench.probes.perfetto.trace_processor.trace_processor import \
+from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorQueryConfig
 from tests import test_helper
-from tests.crossbench.base import (BaseCrossbenchTestCase,
-                                   CrossbenchFakeFsTestCase)
+from tests.crossbench.base import BaseCrossbenchTestCase, \
+    CrossbenchFakeFsTestCase
 
 
 def read_query_sql(name: str) -> str:
-  return (test_helper.crossbench_dir() /
-          "probes/perfetto/trace_processor/queries" /
+  return (test_helper.crossbench_dir() / "probes/trace_processor/queries" /
           f"{name}.sql").read_text("utf-8")
 
 
@@ -69,7 +69,7 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
   def test_query_config_duplicate_name_raises(self):
     with self.assertRaisesRegex(ArgumentTypeError,
                                 "Unexpected duplicates in query names"):
-      TraceProcessorProbe.from_config({
+      TraceProcessorProbe.parse_dict({
           "queries": [
               "loadline/benchmark_score",
               {
@@ -88,7 +88,7 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     trace_processor_dir.mkdir(parents=True)
     trace_processor_path.touch()
 
-    config = TraceProcessorProbe.from_config({
+    config = TraceProcessorProbe.parse_dict({
         "trace_processor_bin": str(trace_processor_path),
         "queries": [],
     })
@@ -142,10 +142,11 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     self.assertEqual(query.name, "comment")
     self.assertEqual(query.sql, "'new value'")
 
+
 class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
 
   def test_merge_browsers(self):
-    probe: TraceProcessorProbe = TraceProcessorProbe.from_config("")
+    probe: TraceProcessorProbe = TraceProcessorProbe.parse_dict({})
 
     browser = unittest.mock.MagicMock()
     browser.label = "browser"

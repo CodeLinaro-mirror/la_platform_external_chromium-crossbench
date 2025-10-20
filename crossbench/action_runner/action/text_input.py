@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, ClassVar, Optional, Type
 
 from typing_extensions import override
 
@@ -24,17 +24,14 @@ if TYPE_CHECKING:
 
 
 class TextInputAction(InputSourceAction):
-  TYPE: ActionType = ActionType.TEXT_INPUT
+  TYPE: ClassVar[ActionType] = ActionType.TEXT_INPUT
 
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
   def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
-    parser.add_argument(
-        "text",
-        type=ObjectParser.non_empty_str,
-        required=False)
+    parser.add_argument("text", type=ObjectParser.non_empty_str, required=False)
     parser.add_argument(
         "keyevent",
         type=ObjectParser.non_empty_str,

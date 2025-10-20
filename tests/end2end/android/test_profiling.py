@@ -40,8 +40,9 @@ def test_profiling_probe(browser_config, test_env, adb_root) -> None:
     perf_sample_count = tp.query(
         "SELECT count(*) AS cnt FROM perf_sample").as_pandas_dataframe()
     assert perf_sample_count["cnt"][0] > 0
-    perf_counters = list(tp.query(
-        "SELECT name FROM perf_counter_track").as_pandas_dataframe()["name"])
+    perf_counters = list(
+        tp.query("SELECT name FROM perf_counter_track").as_pandas_dataframe()
+        ["name"])
     assert "cpu-clock" in perf_counters
     assert "context-switches" in perf_counters
 

@@ -4,12 +4,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, ClassVar, Type
 
 from typing_extensions import override
 
-from crossbench.probes.internal.base import (InternalJsonResultProbe,
-                                             InternalJsonResultProbeContext)
+from crossbench.probes.internal.base import InternalJsonResultProbe, \
+    InternalJsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ class DurationsProbe(InternalJsonResultProbe):
   Runner-internal meta-probe: Collects timing information for various components
   of the runner (and the times spent in individual stories as well).
   """
-  NAME = "cb.durations"
+  NAME: ClassVar = "cb.durations"
 
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:

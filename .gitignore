@@ -1,10 +1,13 @@
 *.pyc
 .*
+!.git-blame-ignore-revs
 !.vpython3
 __pycache__
 dist
 results
 binary_cache
 .DS_Store
+buildtools
 third_party
 cache
+pytest.out.txt

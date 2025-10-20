@@ -1,6 +1,7 @@
 # Copyright 2025 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import unittest
 
@@ -71,10 +72,10 @@ class TestFlags(unittest.TestCase):
   def test_set_invalid(self):
     flags = self.CLASS()
     with self.assertRaises(TypeError) as cm:
-      flags["--foo"] = 123  # pytype: disable=unsupported-operands
+      flags["--foo"] = 123
     self.assertIn("123", str(cm.exception))
     with self.assertRaises(ValueError) as cm:
-      flags["foo"] = 123  # pytype: disable=unsupported-operands
+      flags["foo"] = 123
     self.assertIn("-", str(cm.exception))
 
   def test_set_invalid_flag_name(self):

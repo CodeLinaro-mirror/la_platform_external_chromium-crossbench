@@ -7,10 +7,9 @@ from __future__ import annotations
 import argparse
 import unittest
 
-from crossbench.benchmarks.loading.tab_controller import (TabController,
-                                                          SingleTabController,
-                                                          RepeatTabController,
-                                                          ForeverTabController)
+from crossbench.benchmarks.loading.tab_controller import \
+    ForeverTabController, RepeatTabController, SingleTabController, \
+    TabController
 from tests import test_helper
 
 
@@ -28,14 +27,10 @@ class TabControllerTestCase(unittest.TestCase):
     assert isinstance(tab, RepeatTabController)
     self.assertEqual(tab.count, 3)
     self.assertEqual(len(list(tab)), 3)
-    self.assertTrue(tab.multiple_tabs)
-    self.assertFalse(tab.is_forever)
 
   def test_parse_single(self):
     tab = TabController.parse("single")
     self.assertIsInstance(tab, SingleTabController)
-    self.assertFalse(tab.multiple_tabs)
-    self.assertFalse(tab.is_forever)
     self.assertEqual(len(list(tab)), 1)
 
   def test_parse_inf(self):

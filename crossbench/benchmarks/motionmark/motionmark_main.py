@@ -5,13 +5,13 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, ClassVar, Type
 
 from typing_extensions import override
 
-from crossbench.benchmarks.motionmark.motionmark_1 import (
-    MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext,
-    MotionMark1Story)
+from crossbench.benchmarks.motionmark.motionmark_1 import \
+    MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext, \
+    MotionMark1Story
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 class MotionMarkMainProbe(MotionMark1Probe):
   __doc__ = MotionMark1Probe.__doc__
-  NAME = "motionmark_main"
+  NAME: ClassVar = "motionmark_main"
 
   @override
   def get_context_cls(self) -> Type[MotionMarkMainProbeContext]:
@@ -31,13 +31,15 @@ class MotionMarkMainProbeContext(MotionMark1ProbeContext):
 
 
 class MotionMarkMainStory(MotionMark1Story):
-  NAME = "motionmark_main"
-  URL: str = "https://chromium-workloads.web.app/motionmark/main/MotionMark/"
-  URL_OFFICIAL: str = "https://chromium-workloads.web.app/motionmark/main/MotionMark/"
-  READY_TIMEOUT: dt.timedelta = dt.timedelta(seconds=12)
-  DEVELOPER_READY_JS: str = (
+  NAME: ClassVar = "motionmark_main"
+  URL: ClassVar[
+      str] = "https://chromium-workloads.web.app/motionmark/main/MotionMark/"
+  URL_OFFICIAL: ClassVar[
+      str] = "https://chromium-workloads.web.app/motionmark/main/MotionMark/"
+  READY_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=12)
+  DEVELOPER_READY_JS: ClassVar[str] = (
       "return !(document.querySelector('#frame-rate-detection span'));")
-  READY_JS: str = (
+  READY_JS: ClassVar[str] = (
       "return !!("
       "   document.querySelector('#frame-rate-label')?.textContent?.trim());")
 
@@ -49,9 +51,9 @@ class MotionMarkMainBenchmark(MotionMark1Benchmark):
   See https://browserbench.org/MotionMarkmain/ for more details.
   """
 
-  NAME = "motionmark_main"
-  DEFAULT_STORY_CLS = MotionMarkMainStory
-  PROBES = (MotionMarkMainProbe,)
+  NAME: ClassVar = "motionmark_main"
+  DEFAULT_STORY_CLS: ClassVar = MotionMarkMainStory
+  PROBES: ClassVar = (MotionMarkMainProbe,)
 
   @classmethod
   @override

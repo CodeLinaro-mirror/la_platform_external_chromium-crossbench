@@ -7,7 +7,21 @@ if (window.location.href ===
         '-intl-hnk/index.html') {
   const button_id = 'headerMenuIcon';
   const menu_selector = '.header--active';
+  const headline_text_id = 'maincontent';
   let complete = false;
+
+  function onFrameRendered(callback) {
+    // The first rAF requests a frame to be rendered. When it's done, the
+    // second rAF is called. So the callback is invoked when the first frame
+    // has been rendered.
+    // This is a poor approximation of when the frame is actually shown on the
+    // device screen, since it ignores all work beyond Renderer process
+    // (GPU process/surfaceflinger). But it's the best we can do using pure
+    // WebAPI.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(callback);
+    });
+  }
 
   const button_observer = new MutationObserver(mutations => {
     const button = document.getElementById(button_id);
@@ -32,13 +46,29 @@ if (window.location.href ===
     if (!menu) {
       return;
     }
-    performance.mark('LoadLine2/cnn_article/menu_shown');
+    performance.mark('LoadLine2/cnn_article/interactive');
     menu_observer.disconnect();
     complete = true;
+    onFrameRendered(() => {
+      performance.mark('LoadLine2/cnn_article/interactive_raf');
+    });
+  });
+
+  const headline_observer = new MutationObserver(mutations => {
+    const headline = document.getElementById(headline_text_id);
+    if (!headline) {
+      return;
+    }
+    headline_observer.disconnect();
+    performance.mark('LoadLine2/cnn_article/visual');
+    onFrameRendered(() => {
+      performance.mark('LoadLine2/cnn_article/visual_raf');
+    });
   });
 
   // Make sure the cookie banner doesn't pop up
   document.cookie = 'OptanonAlertBoxClosed=' + new Date().toISOString()
   button_observer.observe(document, {childList: true, subtree: true});
   menu_observer.observe(document, {childList: true, subtree: true});
+  headline_observer.observe(document, {childList: true, subtree: true});
 }

@@ -1,25 +1,26 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import inspect
 
 import crossbench.path as pth
 from crossbench.cli.config.probe_list import ProbeListConfig
-from crossbench.probes.all import (CONFIGURABLE_INTERNAL_PROBES,
-                                   DEFAULT_INTERNAL_PROBES,
-                                   GENERAL_PURPOSE_PROBES, INTERNAL_PROBES,
-                                   NON_CONFIGURABLE_INTERNAL_PROBES,
-                                   OPTIONAL_INTERNAL_PROBES)
+from crossbench.probes.all import CONFIGURABLE_INTERNAL_PROBES, \
+    DEFAULT_INTERNAL_PROBES, GENERAL_PURPOSE_PROBES, INTERNAL_PROBES, \
+    NON_CONFIGURABLE_INTERNAL_PROBES, OPTIONAL_INTERNAL_PROBES
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
 from crossbench.probes.chromium_pgo import ChromiumPgoProbe
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.downloads import DownloadsProbe
 from crossbench.probes.dtrace import DTraceProbe
+from crossbench.probes.dump_heap import DumpHeapProbe
 from crossbench.probes.dump_html import DumpHtmlProbe
 from crossbench.probes.embedder import WebviewEmbedderProbe
 from crossbench.probes.env_modifier import EnvModifier
+from crossbench.probes.etm import EtmProbe
 from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
@@ -29,12 +30,14 @@ from crossbench.probes.performance_entries import PerformanceEntriesProbe
 from crossbench.probes.polling import PollingShellProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.powermetrics import PowerMetricsProbe
-from crossbench.probes.probe import Probe
+from crossbench.probes.probe import Probe, ProbeKeyT, ProbePriority
 from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.probes.shell import ShellProbe
 from crossbench.probes.system_stats import SystemStatsProbe
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
 from crossbench.probes.v8.builtins_pgo import V8BuiltinsPGOProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.probes.v8.rcs import V8RCSProbe
@@ -42,7 +45,8 @@ from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 from tests import test_helper
-from tests.crossbench.base import CrossbenchFakeFsTestCase
+from tests.crossbench.base import CrossbenchConfigTestMixin, \
+    CrossbenchFakeFsTestCase
 
 
 class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
@@ -57,12 +61,12 @@ class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_empty(self):
     probe_list = ProbeListConfig.parse({"probes": []})
-    self.assertEqual(probe_list.probes, [])
+    self.assertEqual(probe_list.probes, ())
     probe_list = ProbeListConfig.parse({"probes": {}})
-    self.assertEqual(probe_list.probes, [])
+    self.assertEqual(probe_list.probes, ())
 
 
-class ProbeTestCase(CrossbenchFakeFsTestCase):
+class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
 
   def probe_instances(self):
     yield from self.internal_probe_instances()
@@ -79,10 +83,13 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     yield DebuggerProbe(pth.LocalPath("debugger.bin"))
     yield DownloadsProbe()
     yield DumpHtmlProbe()
-    yield FrequencyProbe.from_config({})
-    yield PerfettoProbe("textproto", pth.LocalPath("perfetto.bin"),
-                        pth.LocalPath("tracebox.bin"),
-                        trace_browser_startup=False)
+    yield DumpHeapProbe()
+    yield FrequencyProbe.parse_dict({})
+    yield PerfettoProbe(
+        "textproto",
+        pth.LocalPath("perfetto.bin"),
+        pth.LocalPath("tracebox.bin"),
+        trace_browser_startup=False)
     yield PerformanceEntriesProbe()
     yield PowerMetricsProbe()
     yield PowerSamplerProbe()
@@ -151,6 +158,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
             set(OPTIONAL_INTERNAL_PROBES)))
 
   def test_help(self):
+    self.setup_perfetto_config_presets()
     for probe_cls in self.probe_classes():
       help_text = probe_cls.help_text()
       self.assertTrue(help)
@@ -184,6 +192,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
         # TODO: missing wpr, download precompiled wpr from storage
         WebPageReplayProbe,
         WebviewEmbedderProbe,
+        EtmProbe,
     }
     for probe_cls in GENERAL_PURPOSE_PROBES:
       if probe_cls in requires_configuration:
@@ -193,8 +202,8 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
       self.assertIsInstance(probe, probe_cls)
 
   def test_basic_probe_instances(self):
-    keys = set()
-    names = set()
+    keys: set[ProbeKeyT] = set()
+    names: set[str] = set()
     for probe_instance in self.probe_instances():
       _ = hash(probe_instance)
       key = probe_instance.key
@@ -209,6 +218,7 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     for probe_instance in self.internal_probe_instances():
       with self.subTest(probe_cls=str(type(probe_instance))):
         self.assertTrue(probe_instance.is_internal)
+        self.assertEqual(probe_instance.PRIORITY, ProbePriority.INTERNAL)
 
     for probe_instance in self.general_purpose_probe_instances():
       with self.subTest(probe_cls=str(type(probe_instance))):
@@ -218,6 +228,17 @@ class ProbeTestCase(CrossbenchFakeFsTestCase):
     for probe_instance in self.general_purpose_probe_instances():
       with self.subTest(probe_cls=str(type(probe_instance))):
         self.assertFalse(probe_instance.is_attached)
+
+  def test_probe_priority(self):
+    for probe_cls in INTERNAL_PROBES:
+      self.assertEqual(probe_cls.PRIORITY, ProbePriority.INTERNAL)
+
+    for probe_cls in GENERAL_PURPOSE_PROBES:
+      with self.subTest(probe_cls=str(probe_cls)):
+        if probe_cls == TraceProcessorProbe:
+          self.assertEqual(probe_cls.PRIORITY, ProbePriority.TRACE_PROCESSOR)
+        else:
+          self.assertEqual(probe_cls.PRIORITY, ProbePriority.USER)
 
 
 if __name__ == "__main__":

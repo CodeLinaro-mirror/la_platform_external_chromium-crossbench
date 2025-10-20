@@ -1,6 +1,7 @@
 # Copyright 2025 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import argparse
 
@@ -124,7 +125,7 @@ class TestChromeFlags(TestFlags):
     flags["--disable-features"] = "F3,F4"
     self.assertEqual(features.enabled, {"F1": None, "F2": None})
     self.assertEqual(flags["--enable-features"], "F1,F2")
-    self.assertEqual(features.disabled, set(("F3", "F4")))
+    self.assertEqual(features.disabled, {"F3", "F4"})
     self.assertEqual(flags["--disable-features"], "F3,F4")
     self.assertTrue(flags)
     self.assertTrue(flags.features)
@@ -155,7 +156,7 @@ class TestChromeFlags(TestFlags):
     flags["--disable-blink-features"] = "F3,F4"
     self.assertEqual(features.enabled, {"F1": None, "F2": None})
     self.assertEqual(flags["--enable-blink-features"], "F1,F2")
-    self.assertEqual(features.disabled, set(("F3", "F4")))
+    self.assertEqual(features.disabled, {"F3", "F4"})
     self.assertEqual(flags["--disable-blink-features"], "F3,F4")
 
   def test_features_none(self):
@@ -176,11 +177,11 @@ class TestChromeFlags(TestFlags):
     flags["--enable-features"] = "F1,F2"
     flags["--disable-features"] = "F3,F4"
     self.assertEqual(features.enabled, {"F1": None, "F2": None})
-    self.assertEqual(features.disabled, set(("F3", "F4")))
+    self.assertEqual(features.disabled, {"F3", "F4"})
 
     flags["--enable-features"] = None
     self.assertFalse(features.enabled)
-    self.assertEqual(features.disabled, set(("F3", "F4")))
+    self.assertEqual(features.disabled, {"F3", "F4"})
 
     flags["--disable-features"] = None
     self.assertFalse(features)
@@ -215,7 +216,7 @@ class TestChromeFlags(TestFlags):
 
   def test_get_list(self):
     flags = self.CLASS()
-    flags["--user-data-dir"] = "/tmp"
+    flags["--user-data-dir"] = "/test/user-data"
     flags.set("--single-process")
     flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
     flags["--enable-features"] = "F1,F2"
@@ -224,7 +225,7 @@ class TestChromeFlags(TestFlags):
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
     flags_list = list(flags)
     self.assertListEqual(flags_list, [
-        "--user-data-dir=/tmp",
+        "--user-data-dir=/test/user-data",
         "--single-process",
         "--js-flags=--js-foo=v3,--no-js-bar",
         "--enable-features=F1,F2",
@@ -235,7 +236,7 @@ class TestChromeFlags(TestFlags):
 
   def test_to_dict(self):
     flags = self.CLASS()
-    flags["--user-data-dir"] = "/tmp"
+    flags["--user-data-dir"] = "/test/user-data"
     flags.set("--single-process")
     flags["--js-flags"] = "--js-foo=v3, --no-js-bar"
     flags["--enable-features"] = "F1,F2"
@@ -244,7 +245,7 @@ class TestChromeFlags(TestFlags):
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
     self.assertDictEqual(
         flags.to_dict(), {
-            "--user-data-dir": "/tmp",
+            "--user-data-dir": "/test/user-data",
             "--single-process": None,
             "--js-flags": "--js-foo=v3,--no-js-bar",
             "--enable-features": "F1,F2",
@@ -497,9 +498,7 @@ class TestChromeFlags(TestFlags):
     self.assertEqual(
         str(field_trials.field_trial_enable_flags),
         "--enable-field-trial-config")
-    field_trials.set(
-        "--enable-benchmarking",
-        should_override=True)
+    field_trials.set("--enable-benchmarking", should_override=True)
     self.assertEqual(
         str(field_trials.field_trial_enable_flags),
         "--enable-field-trial-config")
@@ -646,6 +645,7 @@ class TestChromeFlags(TestFlags):
         should_override=True)
     flags.validate()
 
+
 class TestChromePreM139Flags(TestChromeFlags):
   CLASS = ChromePreM139Flags
 
@@ -737,6 +737,7 @@ class TestChromePreM139Flags(TestChromeFlags):
         "enable-field-trial-config",
         should_override=True)
     flags.validate()
+
 
 del TestFlags
 

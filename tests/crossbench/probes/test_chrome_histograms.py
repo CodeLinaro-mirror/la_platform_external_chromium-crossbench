@@ -1,6 +1,7 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import argparse
 import unittest
@@ -9,10 +10,8 @@ import hjson
 import pytest
 
 from crossbench.cli.config.probe_list import ProbeListConfig
-from crossbench.probes.chrome_histograms import (ChromeHistogramMetric,
-                                                 ChromeHistogramSample,
-                                                 ChromeHistogramsProbe,
-                                                 parse_histogram_metrics)
+from crossbench.probes.chrome_histograms import ChromeHistogramMetric, \
+    ChromeHistogramSample, ChromeHistogramsProbe, parse_histogram_metrics
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
 
@@ -33,7 +32,7 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
 70 ----O                      (4 = 8.0%) {64.0%}
 80 --O                        (2 = 4.0%) {72.0%}
 90 ------------O              (12 = 24.0%) {76.0%}
-"""
+"""  # noqa: W291
 
   DELTA_HEADER = (
       "Histogram: test recorded 100 samples, mean = 52.11 (flags = 0x41)")
@@ -101,8 +100,8 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
   def test_percentile(self):
     metrics = parse_histogram_metrics(
         {self.HISTOGRAM_NAME: ["p25", "p50", "p75", "p90", "p99"]})
-    values = map(lambda m: m.compute(self._delta(), self._baseline()), metrics)
-    self.assertListEqual([16.875, 43, 75, 90, 90], list(values))
+    values = [m.compute(self._delta(), self._baseline()) for m in metrics]
+    self.assertListEqual([16.875, 43, 75, 90, 90], values)
 
   def test_sample_invalid_header(self):
     with pytest.raises(
@@ -173,7 +172,6 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
     probe = probes[0]
     self.assertIsInstance(probe, ChromeHistogramsProbe)
     isinstance(probe, ChromeHistogramsProbe)
-    probe: ChromeHistogramsProbe = probe
     self.assertListEqual([metric.name for metric in probe.metrics], [
         "WebVitals.FirstContentfulPaint3_count",
         "WebVitals.FirstContentfulPaint3_mean",
@@ -187,7 +185,7 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
     self.assertEqual(probe.use_baseline, True)
 
   def test_parse_config(self):
-    probe: ChromeHistogramsProbe = ChromeHistogramsProbe.from_config({
+    probe: ChromeHistogramsProbe = ChromeHistogramsProbe.parse_dict({
         "metrics": {
             "PageLoad.PaintTiming.NavigationToFirstContentfulPaint": ["mean"]
         },

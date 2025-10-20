@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Self, Type
 
 from typing_extensions import override
 
@@ -64,10 +64,8 @@ class FrequencyProbe(EnvModifier):
   [1] https://docs.kernel.org/admin-guide/pm/cpufreq.html#:~:text=scaling_available_frequencies
   """
 
-  NAME = "frequency"
-
-  IS_GENERAL_PURPOSE = True
-  PRODUCES_DATA = False
+  NAME: ClassVar = "frequency"
+  PRODUCES_DATA: ClassVar = False
 
   def __init__(self, cpus: CPUFrequencyMap) -> None:
     super().__init__()
@@ -116,7 +114,6 @@ class FrequencyProbeContext(ProbeContext[FrequencyProbe]):
   _MIN_FREQUENCY_FILE: str = "scaling_min_freq"
   _MAX_FREQUENCY_FILE: str = "scaling_max_freq"
 
-
   def __init__(self, probe: FrequencyProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._previous_frequencies: list[_FrequencyState] = []
@@ -125,7 +122,7 @@ class FrequencyProbeContext(ProbeContext[FrequencyProbe]):
     target_cpu_frequencies: immutabledict[pth.AnyPosixPath, int] = (
         self.probe.cpu_frequency_map.get_target_frequencies(
             self.browser_platform))
-    for cpu_dir in target_cpu_frequencies.keys():
+    for cpu_dir in target_cpu_frequencies:
       self._previous_frequencies.append(
           _FrequencyState(
               dir=cpu_dir,

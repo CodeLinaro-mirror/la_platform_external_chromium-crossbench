@@ -6,15 +6,15 @@ from __future__ import annotations
 
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, ClassVar, Optional, Type
 
 from typing_extensions import override
 
 from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_input_source import InputSourceAction
-from crossbench.action_runner.action.position import (PositionConfig,
-                                                      SelectorConfig)
+from crossbench.action_runner.action.position import PositionConfig, \
+    SelectorConfig
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.parse import DurationParser, NumberParser, ObjectParser
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 
 class ClickAction(InputSourceAction):
-  TYPE: ActionType = ActionType.CLICK
+  TYPE: ClassVar[ActionType] = ActionType.CLICK
 
   @classmethod
   @override

@@ -1,21 +1,25 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import argparse
 import json
 import pathlib
 import unittest
+from typing import TYPE_CHECKING
 
 import hjson
 
 from crossbench import __version__, plt
 from crossbench.cli.cli import CrossBenchCLI
-from crossbench.cli.config.browser import BrowserConfig
 from crossbench.env.runner_env import EnvConfig
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
+
+if TYPE_CHECKING:
+  from crossbench.cli.config.browser import BrowserConfig
 
 
 class FastCliTestCasePartA(BaseCliTestCase):
@@ -37,65 +41,74 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("unknown subcommand", "--invalid flag")
 
   def test_describe_invalid_empty(self):
-    self.run_cli("describe", "")
-    self.run_cli("describe", "", "--json")
+    with self.cli() as cli:
+      cli.run(["describe", ""])
+      cli.run(["describe", "", "--json"])
 
   def test_describe_invalid_arg_empty(self):
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "--unknown")
-    self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "--unknown", "--json")
-    self.assertEqual(cm.exception.exit_code, 0)
+    with self.cli() as cli:
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "--unknown"])
+      self.assertEqual(cm.exception.exit_code, 0)
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "--unknown", "--json"])
+      self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe_invalid_probe(self):
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "probe", "unknown probe")
-    self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "probe", "unknown probe", "--json")
-    self.assertEqual(cm.exception.exit_code, 0)
+    with self.cli() as cli:
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "probe", "unknown probe"])
+      self.assertEqual(cm.exception.exit_code, 0)
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "probe", "unknown probe", "--json"])
+      self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe_invalid_benchmark(self):
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "benchmark", "unknown benchmark")
-    self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "benchmark", "unknown benchmark", "--json")
-    self.assertEqual(cm.exception.exit_code, 0)
+    with self.cli() as cli:
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "benchmark", "unknown benchmark"])
+      self.assertEqual(cm.exception.exit_code, 0)
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "benchmark", "unknown benchmark", "--json"])
+      self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe_invalid_network(self):
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "network", "unknown network")
-    self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "network", "unknown network", "--json")
-    self.assertEqual(cm.exception.exit_code, 0)
+    with self.cli() as cli:
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "network", "unknown network"])
+      self.assertEqual(cm.exception.exit_code, 0)
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "network", "unknown network", "--json"])
+      self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe_invalid_config_object(self):
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "configs", "unknown config")
-    self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "configs", "unknown config", "--json")
-    self.assertEqual(cm.exception.exit_code, 0)
+    with self.cli() as cli:
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "configs", "unknown config"])
+      self.assertEqual(cm.exception.exit_code, 0)
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "configs", "unknown config", "--json"])
+      self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe_invalid_all(self):
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "all", "unknown probe or benchmark")
-    self.assertEqual(cm.exception.exit_code, 0)
-    with self.assertRaises(SysExitTestException) as cm:
-      self.run_cli("describe", "--json", "all", "unknown probe or benchmark")
-    self.assertEqual(cm.exception.exit_code, 0)
+    with self.cli() as cli:
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "all", "unknown probe or benchmark"])
+      self.assertEqual(cm.exception.exit_code, 0)
+      with self.assertRaises(SysExitTestException) as cm:
+        cli.run(["describe", "--json", "all", "unknown probe or benchmark"])
+      self.assertEqual(cm.exception.exit_code, 0)
 
   def test_describe(self):
-    self.run_cli("describe")
-    self.run_cli("describe", "all")
+    with self.cli() as cli:
+      cli.run(["describe"])
+      cli.run(["describe", "all"])
 
   def test_describe_direct(self):
-    self.run_cli("describe", "loading")
-    self.run_cli("describe", "v8.log")
-    self.run_cli("describe", "Secrets")
+    with self.cli() as cli:
+      cli.run(["describe", "loading"])
+      cli.run(["describe", "v8.log"])
+      cli.run(["describe", "Secrets"])
 
   def test_describe_typo(self):
     with self.assertRaises(SysExitTestException):
@@ -309,7 +322,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
-        self.assertIn("--log-all", browser.js_flags)
+        self.assertIn("--log-deopt", browser.js_flags)
 
   def test_invalid_empty_probe_config_file(self):
     config_file = pathlib.Path("/config.hjson")
@@ -328,7 +341,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_empty_probe_config_file(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {}}
+    config_data: dict[str, dict] = {"probes": {}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
@@ -342,7 +355,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_invalid_probe_config_file(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {"invalid probe name": {}}}
+    config_data: dict[str, dict] = {"probes": {"invalid probe name": {}}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self._patch_get_browser():
@@ -372,7 +385,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_probe_config_file_invalid_probe(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {"invalid probe name": {}}}
+    config_data: dict[str, dict] = {"probes": {"invalid probe name": {}}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
@@ -383,7 +396,12 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_empty_config_file_properties(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {}, "env": {}, "browsers": {}, "network": {}}
+    config_data: dict[str, dict] = {
+        "probes": {},
+        "env": {},
+        "browsers": {},
+        "network": {}
+    }
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
@@ -395,7 +413,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_empty_config_files(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {}
+    config_data: dict[str, dict] = {}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
     with self.assertRaises(
@@ -407,7 +425,12 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_conflicting_config_flags(self):
     config_file = pathlib.Path("/config.hjson")
-    config_data = {"probes": {}, "env": {}, "browsers": {}, "network": {}}
+    config_data: dict[str, dict] = {
+        "probes": {},
+        "env": {},
+        "browsers": {},
+        "network": {}
+    }
     for config_flag in ("--probe-config", "--env-config", "--browser-config",
                         "--network-config"):
       with config_file.open("w", encoding="utf-8") as f:

@@ -14,10 +14,10 @@ from typing_extensions import override
 import crossbench.probes.perfetto.traceconv as cb_traceconv
 from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver
 from crossbench.helper.path_finder import TraceconvFinder
-from crossbench.probes.probe import (Probe, ProbeConfigParser, ProbeContext,
-                                     ProbeKeyT)
-from crossbench.probes.probe_error import (ProbeIncompatibleBrowser,
-                                           ProbeValidationError)
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
+    ProbeKeyT
+from crossbench.probes.probe_error import ProbeIncompatibleBrowser, \
+    ProbeValidationError
 from crossbench.probes.result_location import ResultLocation
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
@@ -153,7 +153,8 @@ class BrowserProfilingProbe(Probe):
         env.handle_warning(f"Probe({self}) conflicts with existing "
                            f"env[{env_var_str}]={browser_env[env_var_str]}")
 
-  def get_context(self, run: Run) -> BrowserProfilingProbeContext:
+  @override
+  def create_context(self, run: Run) -> BrowserProfilingProbeContext:
     attributes = run.browser.attributes()
     if attributes.is_chromium_based:
       return ChromiumWebDriverBrowserProfilingProbeContext(self, run)
@@ -241,7 +242,7 @@ class SafariWebdriverBrowserProfilingProbeContext(BrowserProfilingProbeContext):
   @override
   def setup_selenium_options(self, options: BaseOptions) -> None:
     assert isinstance(options, SafariOptions)
-    cast(SafariOptions, options).automatic_profiling = True
+    options.automatic_profiling = True
 
   @override
   def stop(self) -> None:

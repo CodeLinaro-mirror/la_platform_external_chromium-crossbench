@@ -16,8 +16,8 @@ from urllib import parse as urlparse
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.parse import (DurationParseError, DurationParser, NumberParser,
-                              ObjectParser, PathParser, TimeUnit)
+from crossbench.parse import DurationParseError, DurationParser, \
+    NumberParser, ObjectParser, PathParser, TimeUnit
 from protoc import trace_config_pb2
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -47,6 +47,7 @@ class DurationParserTestCase(unittest.TestCase):
     self.assertEqual(DurationParser.any_duration("0.0").total_seconds(), 0)
     self.assertEqual(
         DurationParser.positive_or_zero_duration("0.0").total_seconds(), 0)
+    invalid: Any
     for invalid in (-1, 0, "-1", "0", "invalid", dt.timedelta(0),
                     dt.timedelta(seconds=-1)):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -180,6 +181,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(ObjectParser.any_str("1234"), "1234")
 
   def test_parse_any_str_invalid(self):
+    invalid: Any
     for invalid in (None, 1, [], {}, [1], ["a"], {"a": "a"}):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         ObjectParser.any_str(invalid)
@@ -214,6 +216,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
   def test_parse_httpx_url_str(self):
     for valid in ("http://foo.com", "https://foo.com", "http://localhost:800"):
       self.assertEqual(ObjectParser.httpx_url_str(valid), valid)
+    invalid: Any
     for invalid in ("", "ftp://localhost:32", "http://///"):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         _ = ObjectParser.httpx_url_str(invalid)
@@ -239,6 +242,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(NumberParser.any_int(1, parse_str=False), 1)
 
   def test_parse_any_int_invalid(self):
+    invalid: Any
     for invalid in ("", "-1.2", -1.2, "1.2", 1.2, "100.001", 100.001, "Nan",
                     math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
                     None):
@@ -246,6 +250,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
         _ = NumberParser.any_int(invalid)
 
   def test_parse_any_int_invalid_strict(self):
+    invalid: Any
     for invalid in ("", "-1.2", -1.2, "1.2", 1.2, "100.001", 100.001, "Nan",
                     math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
                     None):
@@ -259,6 +264,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(NumberParser.positive_int(123), 123)
 
   def test_parse_positive_int_invalid(self):
+    invalid: Any
     for invalid in ("", "0", 0, "-1", -1, "-1.2", -1.2, "1.2", 1.2, "Nan",
                     math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
                     None):
@@ -285,6 +291,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
       NumberParser.int_range(-1, 10)(11)
 
   def test_parse_positive_int_invalid_strict(self):
+    invalid: Any
     for invalid in ("", "0", 0, "1", "-1", -1, float(-1), "-1.2", -1.2, "1.2",
                     1.2, "Nan", math.nan, "inf", math.inf, "-inf", -math.inf,
                     "invalid", None):
@@ -300,6 +307,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(NumberParser.positive_zero_int(0), 0)
 
   def test_parse_positive_zero_int_invalid(self):
+    invalid: Any
     for invalid in ("", "-1", -1, "-1.2", -1.2, "1.2", 1.2, "NaN", math.nan,
                     "inf", math.inf, "-inf", -math.inf, "invalid", None):
       with self.assertRaises(
@@ -319,6 +327,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(NumberParser.any_float(0.1), 0.1)
 
   def test_parse_float_invalid(self):
+    invalid: Any
     for invalid in ("", "abc", "NaN", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.positive_zero_float(invalid)
@@ -330,6 +339,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(NumberParser.positive_zero_float("1.23"), 1.23)
 
   def test_parse_positive_zero_float_invalid(self):
+    invalid: Any
     for invalid in ("", "-1", "-1.2", "NaN", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.positive_zero_float(invalid)
@@ -377,12 +387,14 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(NumberParser.port_number_zero("65535"), 65535)
 
   def test_parse_port_number_invalid(self):
+    invalid: Any
     for invalid in ("", "-1", "-1.2", "6553500", 6553500, "inf", "-inf",
                     "invalid", 0, "0"):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.port_number(invalid)
 
   def test_parse_port_number_invalid_zero(self):
+    invalid: Any
     for invalid in (
         "",
         "-1",
@@ -394,6 +406,22 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     ):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.port_number_zero(invalid)
+
+  def test_power_of_two_with_unit(self):
+    self.assertEqual(NumberParser.power_of_two_with_unit("4M"), "4M")
+    self.assertEqual(NumberParser.power_of_two_with_unit("256K"), "256K")
+    self.assertEqual(NumberParser.power_of_two_with_unit("1G"), "1G")
+    self.assertEqual(NumberParser.power_of_two_with_unit(1024), "1024")
+
+  def test_power_of_two_with_unit_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("3M")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("0")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("abc")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.power_of_two_with_unit("1.5M")
 
   def _json_file_test_helper(self, parser) -> Any:
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -573,12 +601,14 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertIs(ObjectParser.bool(False, strict=True), False)
 
   def test_parse_bool_invalid(self):
-    for invalid in (1, 0, "1", "0", "", None, [], tuple()):
+    invalid: Any
+    for invalid in (1, 0, "1", "0", "", None, [], ()):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.bool(invalid)
         ObjectParser.bool(invalid, strict=True)
 
   def test_parse_bool_invalid_strict(self):
+    invalid: Any
     for invalid in (None, "False", "false", "True", "true"):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.bool(invalid, strict=True)
@@ -589,12 +619,14 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertIs(ObjectParser.optional_bool("false"), False)
 
   def test_parse_optional_bool_invalid(self):
-    for invalid in (1, 0, "1", "0", "", [], tuple()):
+    invalid: Any
+    for invalid in (1, 0, "1", "0", "", [], ()):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.optional_bool(invalid)
         ObjectParser.optional_bool(invalid, strict=True)
 
   def test_parse_optional_bool_invalid_strict(self):
+    invalid: Any
     for invalid in ("False", "false", "True", "true"):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.optional_bool(invalid, strict=True)
@@ -608,12 +640,14 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
         ObjectParser.sh_cmd(("ls", "-al", ".")), ["ls", "-al", "."])
 
   def test_parse_sh_cmd_invalid(self):
-    for invalid in (1, "", None, [], "ls -al \"."):
+    invalid: Any
+    for invalid in (1, "", None, [], 'ls -al ".'):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.sh_cmd(invalid)
 
   def test_parse_dict_invalid(self):
-    for invalid in (1, 0, "1", "0", "", None, [], tuple()):
+    invalid: Any
+    for invalid in (1, 0, "1", "0", "", None, [], ()):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.dict(invalid)
 
@@ -622,7 +656,8 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertDictEqual(ObjectParser.dict({"A": 2}), {"A": 2})
 
   def test_parse_non_empty_dict_invalid(self):
-    for invalid in (1, 0, "1", "0", "", None, [], tuple(), {}):
+    invalid: Any
+    for invalid in (1, 0, "1", "0", "", None, [], (), {}):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.non_empty_dict(invalid)
 
@@ -632,7 +667,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_unique_sequence(self):
     self.assertListEqual(ObjectParser.unique_sequence([]), [])
-    self.assertTupleEqual(ObjectParser.unique_sequence(tuple()), tuple())
+    self.assertTupleEqual(ObjectParser.unique_sequence(()), ())
     self.assertListEqual(ObjectParser.unique_sequence([1, 2, 3]), [1, 2, 3])
     self.assertTupleEqual(ObjectParser.unique_sequence((1, 2, 3)), (1, 2, 3))
 
@@ -658,11 +693,12 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
   def test_parse_sequence(self):
     self.assertListEqual(ObjectParser.sequence([]), [])
     self.assertListEqual(ObjectParser.sequence([1, 2]), [1, 2])
-    self.assertTupleEqual(ObjectParser.sequence(tuple()), tuple())
+    self.assertTupleEqual(ObjectParser.sequence(()), ())
     self.assertTupleEqual(ObjectParser.sequence((1, 2)), (1, 2))
 
   def test_parse_sequence_invalid(self):
-    for invalid in ("", "1", 1, {}, {"a": 1}, set(), set((1, 2))):
+    invalid: Any
+    for invalid in ("", "1", 1, {}, {"a": 1}, set(), {(1, 2)}):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
           ObjectParser.sequence(invalid)
@@ -672,11 +708,12 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
       _ = ObjectParser.non_empty_sequence([])
     self.assertListEqual(ObjectParser.non_empty_sequence([1, 2]), [1, 2])
     with self.assertRaises(argparse.ArgumentTypeError):
-      _ = ObjectParser.non_empty_sequence(tuple())
+      _ = ObjectParser.non_empty_sequence(())
     self.assertTupleEqual(ObjectParser.non_empty_sequence((1, 2)), (1, 2))
 
   def test_parse_non_empty_sequence_invalid(self):
-    for invalid in ("", "1", 1, {}, {"a": 1}, set(), set((1, 2)), (), []):
+    invalid: Any
+    for invalid in ("", "1", 1, {}, {"a": 1}, set(), {(1, 2)}, (), []):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
           ObjectParser.non_empty_sequence(invalid)
@@ -775,6 +812,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
         self.assertEqual(urlparse.urlunparse(parsed_fuzzy), result)
 
   def test_parse_url_invalid(self):
+    invalid: Any
     for invalid in (None, "", {}, "http:// foo .com/bar", "htt p://foo.com",
                     "http://foo.com:-123/bar"):
       with self.subTest(invalid=invalid):
@@ -790,6 +828,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
           _ = ObjectParser.fuzzy_url(invalid)
 
   def test_parse_httpx_url_str_invalid(self):
+    invalid: Any
     for invalid in ("ftp://foo.com:123/bar", "ssh://test.com"):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
@@ -925,6 +964,7 @@ class TimeUnitTestCase(unittest.TestCase):
       self.assertIs(TimeUnit.parse(unit), TimeUnit.WEEK)
 
   def test_parse_invalid(self):
+    invalid: Any
     for invalid in ("months", "yy", "ww", "i"):
       with self.assertRaises(DurationParseError):
         TimeUnit.parse(invalid)

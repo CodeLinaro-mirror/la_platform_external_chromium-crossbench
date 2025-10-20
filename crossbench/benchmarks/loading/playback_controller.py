@@ -8,12 +8,17 @@ import abc
 import argparse
 import dataclasses
 import datetime as dt
-from typing import Iterator
+import logging
+import re
+import time
+from typing import Final, Iterator
 
 from crossbench.parse import DurationParser, NumberParser
 
 
 class PlaybackController(abc.ABC):
+  _PERIODIC_RE: Final[re.Pattern] = re.compile(
+      r"(?P<count>\d+)x every (?P<period>.+)")
 
   @classmethod
   def parse(cls, value: str) -> PlaybackController:
@@ -21,6 +26,10 @@ class PlaybackController(abc.ABC):
       return cls.once()
     if value in ("inf", "infinity", "forever"):
       return cls.forever()
+    if match := cls._PERIODIC_RE.match(value):
+      count = NumberParser.positive_int(match.group("count"), "Repeat-count")
+      period = DurationParser.positive_duration(match.group("period"))
+      return cls.periodic(count, period)
     if value[-1].isnumeric():
       raise argparse.ArgumentTypeError(
           f"Missing unit suffix: '{value}'\n"
@@ -51,6 +60,11 @@ class PlaybackController(abc.ABC):
   def timeout(cls, duration: dt.timedelta) -> TimeoutPlaybackController:
     return TimeoutPlaybackController(duration)
 
+  @classmethod
+  def periodic(cls, count: int,
+               period: dt.timedelta) -> PeriodicPlaybackController:
+    return PeriodicPlaybackController(count, period)
+
   @abc.abstractmethod
   def __iter__(self) -> Iterator[int]:
     pass
@@ -68,7 +82,7 @@ class ForeverPlaybackController(PlaybackController):
 
 @dataclasses.dataclass(frozen=True)
 class TimeoutPlaybackController(PlaybackController):
-  duration : dt.timedelta
+  duration: dt.timedelta
 
   def __iter__(self) -> Iterator[int]:
     end = dt.datetime.now() + self.duration
@@ -83,10 +97,34 @@ class TimeoutPlaybackController(PlaybackController):
 
 @dataclasses.dataclass(frozen=True)
 class RepeatPlaybackController(PlaybackController):
-  count : int
+  count: int
 
   def __post_init__(self) -> None:
     NumberParser.positive_int(self.count, " page playback count")
 
   def __iter__(self) -> Iterator[int]:
     yield from range(self.count)
+
+
+@dataclasses.dataclass(frozen=True)
+class PeriodicPlaybackController(PlaybackController):
+  count: int
+  period: dt.timedelta
+
+  def __post_init__(self) -> None:
+    NumberParser.positive_int(self.count, " page playback count")
+
+  def __iter__(self) -> Iterator[int]:
+    next_run_time = dt.datetime.now() + self.period
+    yield 0
+    i = 1
+    while i < self.count:
+      now = dt.datetime.now()
+      wait_seconds = (next_run_time - now).total_seconds()
+      if wait_seconds > 0:
+        time.sleep(wait_seconds)
+      else:
+        logging.warning("Playback: desired time target missed")
+      yield i
+      next_run_time += self.period
+      i += 1

@@ -9,7 +9,8 @@ import datetime as dt
 import logging
 import sys
 import time as py_time
-from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Self, \
+    Sequence, Type
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.cli import ui
@@ -33,6 +34,7 @@ def _default_success_condition(js_result: Any) -> bool:
     return True
   ObjectParser.bool(js_result, strict=True)
   return False
+
 
 class Actions(TimeScope):
 
@@ -71,7 +73,7 @@ class Actions(TimeScope):
   def platform(self) -> plt.Platform:
     return self._run.browser_platform
 
-  def __enter__(self) -> Actions:
+  def __enter__(self) -> Self:
     self._exception_annotation.__enter__()
     super().__enter__()
     self._is_active = True
@@ -135,7 +137,7 @@ class Actions(TimeScope):
     ...
     N. sleep for `min_interval * 1.01 ** N`, check `js_code`
     """
-    wait_range : WaitRange = self._run.wait_range(min_interval, timeout, delay)
+    wait_range: WaitRange = self._run.wait_range(min_interval, timeout, delay)
     assert "return" in js_code, (
         f"Missing return statement in js-wait code: {js_code}")
     for _, _, time_left in wait_range.wait_with_backoff():
@@ -197,7 +199,7 @@ class Actions(TimeScope):
   @contextlib.contextmanager
   def wait_until(self,
                  timeout: AnyTimeUnit = dt.timedelta(seconds=1),
-                 absolute_time: bool = False):
+                 absolute_time: bool = False) -> Iterator[None]:
     """Wait until the given timeout elapsed.
     Unlike wait(...), this takes into account the time spent in the the
     wrapped block.

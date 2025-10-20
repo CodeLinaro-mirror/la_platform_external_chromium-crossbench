@@ -8,12 +8,13 @@ import datetime as dt
 import enum
 import pathlib
 import unittest
+from typing import Any
 
 from typing_extensions import override
 
 from crossbench import plt
 from crossbench.helper import collection_helper, fs_helper, url_helper
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from crossbench.helper.durations import Durations
 from crossbench.helper.wait import WaitRange
 from crossbench.str_enum_with_help import StrEnumWithHelp
@@ -86,12 +87,10 @@ class WaitTestCase(unittest.TestCase):
   def test_wait_with_backoff(self):
     data: list[tuple[dt.timedelta, dt.timedelta]] = []
     delta = dt.timedelta(seconds=0.0005)
-    expected_i = 0
-    for i, time_spent, time_left in WaitRange(
-        min=0.01, max=0.05).wait_with_backoff():
+    for expected_i, (i, time_spent, time_left) in enumerate(
+        WaitRange(min=0.01, max=0.05).wait_with_backoff()):
       data.append((time_spent, time_left))
       self.assertEqual(expected_i, i)
-      expected_i += 1
       if len(data) == 2:
         break
       plt.PLATFORM.sleep(delta)
@@ -103,20 +102,17 @@ class WaitTestCase(unittest.TestCase):
 
   def test_wait_with_backoff_max_iterations(self):
     i = 0
-    expected_i = 0
-    for i, _, _ in WaitRange(
-        min=0.01, max=0.05, max_iterations=11).wait_with_backoff():
+    for expected_i, (i, _, _) in enumerate(
+        WaitRange(min=0.01, max=0.05, max_iterations=11).wait_with_backoff()):
       self.assertEqual(expected_i, i)
-      expected_i += 1
     self.assertEqual(i, 10)
 
   def test_wait_with_backoff_max_iterations_delay(self):
     i = 0
-    expected_i = 0
-    for i, _, _ in WaitRange(
-        min=0.01, max=0.05, delay=0.1, max_iterations=11).wait_with_backoff():
+    for expected_i, (i, _, _) in enumerate(
+        WaitRange(min=0.01, max=0.05, delay=0.1,
+                  max_iterations=11).wait_with_backoff()):
       self.assertEqual(expected_i, i)
-      expected_i += 1
     self.assertEqual(i, 10)
 
 
@@ -135,9 +131,8 @@ class DurationsTestCase(unittest.TestCase):
     durations = Durations()
     with durations.measure("a"):
       pass
-    with self.assertRaises(AssertionError):
-      with durations.measure("a"):
-        pass
+    with self.assertRaises(AssertionError), durations.measure("a"):
+      pass
     self.assertTrue(len(durations) == 1)
     self.assertListEqual(list(durations.to_json().keys()), ["a"])
 
@@ -156,7 +151,7 @@ class ChangeCWDTestCase(CrossbenchFakeFsTestCase):
     old_cwd = pathlib.Path.cwd()
     new_cwd = pathlib.Path("/foo/bar").absolute()
     new_cwd.mkdir(parents=True)
-    with ChangeCWD(new_cwd):
+    with change_cwd(new_cwd):
       self.assertNotEqual(old_cwd, pathlib.Path.cwd())
       self.assertEqual(new_cwd, pathlib.Path.cwd())
     self.assertEqual(old_cwd, pathlib.Path.cwd())
@@ -207,48 +202,50 @@ class FileSizeTestCase(CrossbenchFakeFsTestCase):
 class GroupByTestCase(unittest.TestCase):
 
   def test_empty(self):
-    grouped = collection_helper.group_by([], key=str)
+    grouped: dict[str, Any] = collection_helper.group_by([], key=str)
     self.assertDictEqual({}, grouped)
 
   def test_basic(self):
-    grouped = collection_helper.group_by([1, 1, 1, 2, 2, 3], key=str)
+    grouped: dict[str,
+                  list[int]] = collection_helper.group_by([1, 1, 1, 2, 2, 3],
+                                                          key=str)
     self.assertListEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_out_of_order(self):
-    grouped = collection_helper.group_by([2, 3, 2, 1, 1, 1], key=str)
+    grouped: dict[str,
+                  list[int]] = collection_helper.group_by([2, 3, 2, 1, 1, 1],
+                                                          key=str)
     self.assertListEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_input_order(self):
-    grouped = collection_helper.group_by([2, 3, 2, 1, 1, 1],
-                                         key=str,
-                                         sort_key=None)
+    grouped: dict[str,
+                  list[int]] = collection_helper.group_by([2, 3, 2, 1, 1, 1],
+                                                          key=str,
+                                                          sort_key=None)
     self.assertListEqual(list(grouped.keys()), ["2", "3", "1"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_custom_order(self):
-    grouped = collection_helper.group_by([2, 3, 2, 1, 1, 1],
-                                         key=str,
-                                         sort_key=lambda item: int(item[0]))
+    grouped: dict[str, list[int]] = collection_helper.group_by(
+        [2, 3, 2, 1, 1, 1], key=str, sort_key=lambda item: int(item[0]))
     self.assertListEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
     # Try reverse sorting
-    grouped = collection_helper.group_by([2, 3, 2, 1, 1, 1],
-                                         key=str,
-                                         sort_key=lambda item: -int(item[0]))
+    grouped: dict[str, list[int]] = collection_helper.group_by(
+        [2, 3, 2, 1, 1, 1], key=str, sort_key=lambda item: -int(item[0]))
     self.assertListEqual(list(grouped.keys()), ["3", "2", "1"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_custom_key(self):
-    grouped = collection_helper.group_by([1.1, 1.2, 1.3, 2.1, 2.2, 3.1],
-                                         key=int)
+    grouped: dict[int, list[int]] = collection_helper.group_by(
+        [1.1, 1.2, 1.3, 2.1, 2.2, 3.1], key=int)
     self.assertDictEqual({1: [1.1, 1.2, 1.3], 2: [2.1, 2.2], 3: [3.1]}, grouped)
 
   def test_custom_value(self):
-    grouped = collection_helper.group_by([1, 1, 1, 2, 2, 3],
-                                         key=str,
-                                         value=lambda x: x * 100)
+    grouped: dict[str, list[int]] = collection_helper.group_by(
+        [1, 1, 1, 2, 2, 3], key=str, value=lambda x: x * 100)
     self.assertDictEqual({
         "1": [100, 100, 100],
         "2": [200, 200],
@@ -256,9 +253,8 @@ class GroupByTestCase(unittest.TestCase):
     }, grouped)
 
   def test_custom_group(self):
-    grouped = collection_helper.group_by([1, 1, 1, 2, 2, 3],
-                                         key=str,
-                                         group=lambda key: ["custom"])
+    grouped: dict[str, list[Any]] = collection_helper.group_by_custom(
+        [1, 1, 1, 2, 2, 3], key=str, group=lambda key: ["custom"])
     self.assertDictEqual(
         {
             "1": ["custom", 1, 1, 1],
@@ -267,9 +263,8 @@ class GroupByTestCase(unittest.TestCase):
         }, grouped)
 
   def test_custom_group_out_of_order(self):
-    grouped = collection_helper.group_by([1, 1, 1, 2, 2, 3],
-                                         key=str,
-                                         group=lambda key: ["custom"])
+    grouped: dict[str, list[Any]] = collection_helper.group_by_custom(
+        [1, 1, 1, 3, 2, 2], key=str, group=lambda key: ["custom"])
     self.assertDictEqual(
         {
             "1": ["custom", 1, 1, 1],
@@ -310,13 +305,13 @@ class StrEnumWithHelpTestCase(unittest.TestCase):
     B = ("b", "help b")
 
   def test_lookup(self):
-    self.assertIs(self.TestEnum("a"), self.TestEnum.A)  # pytype: disable=wrong-arg-types
-    self.assertIs(self.TestEnum("b"), self.TestEnum.B)  # pytype: disable=wrong-arg-types
+    self.assertIs(self.TestEnum("a"), self.TestEnum.A)
+    self.assertIs(self.TestEnum("b"), self.TestEnum.B)
     self.assertIs(self.TestEnum["A"], self.TestEnum.A)
     self.assertIs(self.TestEnum["B"], self.TestEnum.B)
 
   def test_value_help(self):
-    # pylint: disable=no-member
+
     self.assertEqual(self.TestEnum.A.name, "A")
     self.assertEqual(self.TestEnum.B.name, "B")
     self.assertEqual(self.TestEnum.A.value, "a")

@@ -16,7 +16,6 @@ class StrEnumWithHelpData(NamedTuple):
   help: str
 
 
-
 class StrEnumWithHelp(StrEnumWithHelpData, enum.Enum):
 
   @classmethod
@@ -29,9 +28,7 @@ class StrEnumWithHelp(StrEnumWithHelpData, enum.Enum):
 
   @classmethod
   def help_text_items(cls) -> list[tuple[str, str]]:
-    return [
-        (repr(instance.value), instance.help) for instance in cls  # pytype: disable=missing-parameter
-    ]
+    return [(repr(instance.value), instance.help) for instance in cls]
 
   @classmethod
   def help_text(cls, indent: int = 0) -> str:

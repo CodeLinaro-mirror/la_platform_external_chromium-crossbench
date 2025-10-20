@@ -9,10 +9,8 @@ import pathlib
 
 from typing_extensions import override
 
-from crossbench.browsers.firefox.downloader import (FirefoxDownloader,
-                                                    FirefoxDownloaderLinux,
-                                                    FirefoxDownloaderMacOS,
-                                                    FirefoxDownloaderWin)
+from crossbench.browsers.firefox.downloader import FirefoxDownloader, \
+    FirefoxDownloaderLinux, FirefoxDownloaderMacOS, FirefoxDownloaderWin
 from tests import test_helper
 from tests.crossbench.browsers.downloader_helper import \
     AbstractDownloaderTestCase
@@ -21,6 +19,9 @@ from tests.crossbench.browsers.downloader_helper import \
 class AbstractFirefoxDownloaderTestCase(
     AbstractDownloaderTestCase, metaclass=abc.ABCMeta):
   __test__ = False
+
+  def test_name(self) -> None:
+    self.assertEqual(FirefoxDownloader.name(), "Firefox")
 
   def test_wrong_versions(self) -> None:
     with self.assertRaises(ValueError):

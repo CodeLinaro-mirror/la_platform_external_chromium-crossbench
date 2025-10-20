@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 
 class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
 
-
   def __init__(self, host_platform: Platform, host: str, port: int,
                ssh_port: int, ssh_user: str) -> None:
     super().__init__(host_platform, host, port, ssh_port, ssh_user)
@@ -60,6 +59,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
 
   def processes(self,
                 attrs: Optional[list[str]] = None) -> list[dict[str, Any]]:
+    del attrs
     # TODO: Define a more generic method in PosixPlatform, possibly with
     # an overridable function to generate ps command line.
     lines = self.sh_stdout("ps", "-A", "-o", "pid,cmd").splitlines()
