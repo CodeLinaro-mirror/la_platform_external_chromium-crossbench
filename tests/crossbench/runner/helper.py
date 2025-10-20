@@ -252,13 +252,15 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
                      browsers: Optional[Iterable[Browser]] = None,
                      benchmark: Optional[Benchmark] = None,
                      probes: Optional[Iterable[Probe]] = None,
-                     throw: bool = True) -> Runner:
+                     throw: bool = True,
+                     create_symlinks: bool = True) -> Runner:
     return Runner(
         self.out_dir,
         browsers=browsers or self.browsers,
         benchmark=benchmark or self.benchmark,
         probes=probes or (),
         platform=self.platform,
+        create_symlinks=create_symlinks,
         throw=throw,
         in_memory_result_db=True)
 

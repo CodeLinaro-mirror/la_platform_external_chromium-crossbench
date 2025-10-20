@@ -5,6 +5,9 @@
 from __future__ import annotations
 
 import datetime as dt
+from typing import TYPE_CHECKING
+
+from typing_extensions import override
 
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.runner.run import Run
@@ -14,8 +17,14 @@ from tests.crossbench.mock_helper import MockStory
 from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
 from tests.crossbench.runner.helper import MockProbe
 
+if TYPE_CHECKING:
+  from crossbench.runner.runner import Runner
 
 class RunTestCase(BaseRunGroupTestCase):
+
+  @override
+  def default_runner(self) -> Runner:
+    return super().default_runner(create_symlinks=False)
 
   def test_find_probe_context(self):
     self.runner.attach_probe(MockProbe())

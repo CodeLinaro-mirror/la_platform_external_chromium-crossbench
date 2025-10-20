@@ -326,9 +326,9 @@ class Run(ResultOrigin):
     self._start_datetime = dt.datetime.now()
     logging.debug("Creating Run(%s) out dir: %s", self, self._out_dir)
     self._out_dir.mkdir(parents=True, exist_ok=True)
-    if not self.runner.create_symlinks:
-      logging.debug("Symlinks disabled by command line option")
+    if not self.create_symlinks:
       return
+    self.runner.create_run_symlinks(self)
     self._setup_runs_dir()
     self._setup_session_dir()
 
@@ -336,8 +336,6 @@ class Run(ResultOrigin):
     browser_dir = self.browser_session.browser_dir
     runs_dir = browser_dir / "runs"
     runs_dir.mkdir(parents=True, exist_ok=True)
-    if not self.create_symlinks:
-      return
     # Source: BROWSER / "runs" / RUN
     # Target: BROWSER / "stories" / STORY / REPETITION / CACHE_TEMP
     run_dir = runs_dir / str(self.index)
@@ -349,8 +347,6 @@ class Run(ResultOrigin):
     session_run_dir = self._out_dir / "session"
     assert not session_run_dir.exists(), (
         f"Cannot setup session dir twice: {session_run_dir}")
-    if not self.create_symlinks:
-      return
     # Source: BROWSER / "stories" / STORY / REPETITION / CACHE_TEMP / "session"
     # Target: BROWSER / "sessions" / SESSION
     relative_session_dir = (

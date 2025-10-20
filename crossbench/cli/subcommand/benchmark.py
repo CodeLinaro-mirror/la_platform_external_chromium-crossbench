@@ -677,6 +677,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       self.cli.log_assertion_error_statement(e)
 
   def _run_benchmark(self, args: argparse.Namespace, runner: Runner) -> None:
+    self._update_default_results_symlinks(args, runner)
     try:
       runner.run(is_dry_run=args.dry_run)
       logging.info("")
@@ -684,8 +685,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     except:  # noqa: BLE001
       self._log_results(args, runner, is_success=False)
       raise
-    finally:
-      self._update_symlinks(args, runner)
 
   def _log_results(self, args: argparse.Namespace, runner: Runner,
                    is_success: bool) -> None:
@@ -713,16 +712,11 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         itertools.chain.from_iterable(run.annotations for run in runner.runs))
     RunAnnotation.log_all(all_annotations)
 
-  def _update_symlinks(self, args: argparse.Namespace, runner: Runner) -> None:
-    if not args.create_symlinks:
-      return
-    runner.update_symlinks()
-    if not args.out_dir:
-      self._update_default_results_symlinks(args, runner)
 
   def _update_default_results_symlinks(self, args: argparse.Namespace,
                                        runner: Runner) -> None:
-    assert args.create_symlinks
+    if not args.create_symlinks or args.out_dir:
+      return
     results_root = runner.out_dir.parent
     latest_link = results_root / "latest"
     if latest_link.is_symlink():
