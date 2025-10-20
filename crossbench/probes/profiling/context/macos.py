@@ -70,7 +70,8 @@ class MacOSProfilingContext(PosixProfilingContext):
     if self.probe.target == TargetMode.SYSTEM_WIDE:
       self._start_xctrace()
     elif self.probe.target == TargetMode.RENDERER_PROCESS_ONLY:
-      self._start_xctrace(self.renderer_pid_tid[0])
+      renderer_pid, _ = self.renderer_pid_tid
+      self._start_xctrace(renderer_pid)
 
   def stop(self) -> None:
     # Needs to be SIGINT for xctrace, terminate won't work.

@@ -12,7 +12,7 @@ PERF_FREQ=""
 PERF_COUNT=""
 PERF_RAW_ARGS=""
 RENDERER_ID="0"
-PARENT_PID=$PPID
+PARENT_PID="${PPID}"
 
 for i in "$@"; do
   case $i in
@@ -93,9 +93,11 @@ else
 fi
 
 # Make sure `perf record` doesn't create `.debug/` in the home directory.
-export JITDUMPDIR="${PERF_DATA_DIR}";
+export JITDUMPDIR="${PERF_DATA_DIR}/jitdump";
+export PERF_BUILDID_DIR="${PERF_DATA_DIR}/debug";
 PERF_OUTPUT="${PERF_DATA_DIR}/${PERF_DATA_PREFIX}_${PARENT_PID}_${RENDERER_ID}.perf.data";
-perf record \
+perf --buildid-dir "${PERF_BUILDID_DIR}" \
+  record \
   --call-graph=${PERF_CALL_GRAPH} \
   --clockid=${PERF_CLOCKID} \
   ${SAMPLE_TRIGGER} \
