@@ -1,13 +1,13 @@
 {
-  probes: {
-    trace_processor: {
-      queries: [
-        speedometer/compute_power_via_rails
-        speedometer/compute_power_via_wattson
+  "probes": {
+    "trace_processor": {
+      "queries": [
+        "speedometer/compute_power_via_rails"
+        "speedometer/compute_power_via_wattson"
       ]
     }
-    perfetto: {
-      textproto:
+    "perfetto": {
+      "textproto":
         '''
           buffers: {
               size_kb: 63488

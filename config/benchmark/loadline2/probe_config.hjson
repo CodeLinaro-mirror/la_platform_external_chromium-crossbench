@@ -1,13 +1,13 @@
 {
-  probes: {
-    trace_processor: {
-      queries: [
-        loadline2/benchmark_score
-        loadline2/breakdown
+  "probes": {
+    "trace_processor": {
+      "queries": [
+        "loadline2/benchmark_score"
+        "loadline2/breakdown"
       ]
     }
-    perfetto: {
-      textproto: perfetto_basic.pbtxt
+    "perfetto": {
+      "textproto": "perfetto_basic.pbtxt"
     }
   }
 }

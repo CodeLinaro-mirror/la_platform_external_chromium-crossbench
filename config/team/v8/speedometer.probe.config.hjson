@@ -1,9 +1,9 @@
 {
   # Probe config for measuring speedometer and split profiles based on
   # measurement markers.
-  probes: {
-    perfetto: {
-      textproto:
+  "probes": {
+    "perfetto": {
+      "textproto":
         '''
         buffers {
           size_kb: 500000
@@ -40,12 +40,12 @@
         }
         '''
     }
-    profiling: {
-      target: RENDERER_PROCESS_ONLY
+    "profiling": {
+      "target": "RENDERER_PROCESS_ONLY"
     }
-    trace_processor: {
-      queries: [
-        speedometer/perf_sample_span.sql
+    "trace_processor": {
+      "queries": [
+        "speedometer/perf_sample_span.sql"
       ]
     }
   }
