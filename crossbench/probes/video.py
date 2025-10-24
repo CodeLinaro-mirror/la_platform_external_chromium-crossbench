@@ -128,11 +128,12 @@ class VideoProbe(Probe):
         binaries=("ffmpeg",), message="Missing binaries for video probe: {}")
     # Check that ffmpeg can be executed
     env.check_sh_success("ffmpeg", "-version")
-    env.check_installed(
-        binaries=("montage",),
-        message="Missing 'montage' binary, please install imagemagick.")
-    # Check that montage can be executed
-    env.check_sh_success("montage", "--version")
+    if self.generate_timestrip:
+      env.check_installed(
+          binaries=("montage",),
+          message="Missing 'montage' binary, please install imagemagick.")
+      # Check that montage can be executed
+      env.check_sh_success("montage", "--version")
     self._pre_check_viewport_size(env)
 
   def _pre_check_viewport_size(self, env: RunnerEnv) -> None:
