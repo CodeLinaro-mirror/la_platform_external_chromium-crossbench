@@ -10,7 +10,7 @@ import json
 import logging
 import statistics
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Final, Optional, Sequence, Type, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Sequence, Type, cast
 
 from typing_extensions import override
 
@@ -43,8 +43,8 @@ class JetStreamProbe(
   Extracts all JetStream times and scores.
   """
 
-  TOTAL_METRIC_KEY: Final[str] = "Total/score"
-  SORT_KEYS: bool = False
+  TOTAL_METRIC_KEY: ClassVar[str] = "Total/score"
+  SORT_KEYS: ClassVar[bool] = False
 
   @property
   def jetstream(self) -> JetStreamBenchmark:
@@ -133,7 +133,7 @@ class JetStreamProbe(
 
 
 class JetStreamProbeContext(JsonResultProbeContext):
-  JS: str = """
+  JS: ClassVar[str] = """
   let results = Object.create(null);
   let benchmarks = []
   for (let benchmark of JetStream.benchmarks) {
@@ -185,7 +185,7 @@ class JetStreamProbeContext(JsonResultProbeContext):
 
 
 class JetStreamCSVFormatter(CSVFormatter):
-  TOTAL_METRIC_KEY: Final[str] = JetStreamProbe.TOTAL_METRIC_KEY
+  TOTAL_METRIC_KEY: ClassVar[str] = JetStreamProbe.TOTAL_METRIC_KEY
 
   @override
   def format_items(self, data: dict[str, Json],
@@ -203,7 +203,7 @@ class JetStreamCSVFormatter(CSVFormatter):
 
 
 class JetStreamStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
-  URL_LOCAL: str = "http://localhost:8000/"
+  URL_LOCAL: ClassVar[str] = "http://localhost:8000/"
 
   @property
   @override

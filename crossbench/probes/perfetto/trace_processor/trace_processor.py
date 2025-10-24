@@ -8,7 +8,8 @@ import collections
 import json
 import logging
 import zipfile
-from typing import TYPE_CHECKING, Iterable, Optional, Self, Type
+from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Self,
+                    Type)
 
 import pandas as pd
 from google.protobuf import text_format
@@ -38,8 +39,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
-_QUERIES_DIR = pth.LocalPath(__file__).parent / "queries"
-_MODULES_DIR = pth.LocalPath(__file__).parent / "modules/ext"
+_QUERIES_DIR: Final = pth.LocalPath(__file__).parent / "queries"
+_MODULES_DIR: Final = pth.LocalPath(__file__).parent / "modules/ext"
 
 
 class TraceProcessorQueryConfig(ConfigObject):
@@ -91,35 +92,51 @@ class TraceProcessorQueryConfig(ConfigObject):
 
 
 class CrossbenchTraceUriResolver(TraceUriResolver):
-  PREFIX = "crossbench"
+  PREFIX: ClassVar = "crossbench"
 
   def __init__(self,
                traces: Iterable[Run] | TraceProcessorProbeContext) -> None:
+    self._resolved: Final[list[TraceUriResolver.Result]] = self._init_resolved(
+        traces)
 
-    def metadata(run: Run) -> dict[str, str]:
-      return {
-          "cb_browser": run.browser.unique_name,
-          "cb_story": run.story.name,
-          "cb_temperature": run.temperature,
-          "cb_run": str(run.repetition)
-      }
-
+  def _init_resolved(
+      self, traces: Iterable[Run] | TraceProcessorProbeContext
+  ) -> list[TraceUriResolver.Result]:
     if isinstance(traces, TraceProcessorProbeContext):
-      self._resolved = [
-          TraceUriResolver.Result(
-              trace=str(traces.merged_trace_path.absolute()),
-              metadata=metadata(traces.run))
-      ]
-    else:
-      self._resolved = [
-          TraceUriResolver.Result(
-              trace=str(
-                  run.results.get_by_name(
-                      TraceProcessorProbe.NAME).trace.absolute()),
-              metadata=metadata(run)) for run in traces
-      ]
+      return self._init_resolved_from_probe_context(traces)
+    return self._init_resolved_from_runs(traces)
 
-  def resolve(self) -> list["TraceUriResolver.Result"]:
+  def _init_resolved_from_runs(
+      self, traces: Iterable[Run]) -> list[TraceUriResolver.Result]:
+    resolved: list[TraceUriResolver.Result] = []
+    for run in traces:
+      trace_result = run.results.get_by_name(TraceProcessorProbe.NAME)
+      assert trace_result, f"Missing TraceProcessorProbe result in {run}"
+      result = TraceUriResolver.Result(
+          trace=str(trace_result.trace.absolute()),
+          metadata=self._run_metadata(run))
+      resolved.append(result)
+    return resolved
+
+  def _init_resolved_from_probe_context(
+      self, probe_context: TraceProcessorProbeContext
+  ) -> list[TraceUriResolver.Result]:
+    return [
+        TraceUriResolver.Result(
+            trace=str(probe_context.merged_trace_path.absolute()),
+            metadata=self._run_metadata(probe_context.run))
+    ]
+
+  def _run_metadata(self, run: Run) -> dict[str, str]:
+    return {
+        "cb_browser": run.browser.unique_name,
+        "cb_story": run.story.name,
+        "cb_temperature": run.temperature,
+        "cb_run": str(run.repetition)
+    }
+
+  # TODO: add @override once tools support it
+  def resolve(self) -> list[TraceUriResolver.Result]:
     return self._resolved
 
 
@@ -128,7 +145,7 @@ class TraceProcessorProbe(Probe):
   Trace processor probe.
   """
 
-  NAME = "trace_processor"
+  NAME: ClassVar = "trace_processor"
 
   @classmethod
   @override
@@ -171,6 +188,12 @@ class TraceProcessorProbe(Probe):
         help="Name of query to be run (under probes/trace_processor/queries) "
         "or { name: str, sql: str } containing the name and SQL query to run")
     parser.add_argument(
+        "symbolize_profile",
+        type=ObjectParser.bool,
+        default=True,
+        help="Auto symbolize data from system profiles for "
+        "locally compiled browsers.")
+    parser.add_argument(
         "module_paths",
         type=pth.LocalPath,
         is_list=True,
@@ -188,18 +211,21 @@ class TraceProcessorProbe(Probe):
                summary_metrics: Iterable[str],
                metrics: Iterable[str],
                queries: Iterable[TraceProcessorQueryConfig],
+               symbolize_profile : bool,
                module_paths: Iterable[pth.LocalPath],
                trace_processor_bin: Optional[pth.LocalPath] = None) -> None:
     super().__init__()
-    self._batch = batch
-    self._metrics = tuple(metrics)
+    self._batch : bool  = batch
+    self._metrics : tuple[str, ...]  = tuple(metrics)
     self._metric_definitions: tuple[str, ...] = tuple(metric_definitions)
     self._summary_metrics: tuple[str,
                                  ...] = tuple(metrics) + tuple(summary_metrics)
     ObjectParser.unique_sequence([query.name for query in queries],
                                  name="query names")
-    self._queries = tuple(queries)
-    self._module_paths = tuple([_MODULES_DIR]) + tuple(module_paths)
+    self._queries: tuple[TraceProcessorQueryConfig, ...] = tuple(queries)
+    self._symbolize_profile: bool = symbolize_profile
+    self._module_paths: tuple[pth.LocalPath, ...] = (
+        tuple([_MODULES_DIR]) + tuple(module_paths))
     self._trace_processor_bin: pth.LocalPath | None = None
     if trace_processor_bin:
       self._trace_processor_bin = plt.PLATFORM.parse_local_binary_path(
@@ -300,7 +326,7 @@ class TraceProcessorProbe(Probe):
       self, runs: Iterable[Run]) -> dict[str, pd.DataFrame]:
     res: dict[str, pd.DataFrame] = {}
     for run in runs:
-      for file in run.results.get(self).csv_list:
+      for file in run.results[self].csv_list:
         df = pd.read_csv(file)
         df = self._add_cb_columns(df, run)
         if file.stem in res:

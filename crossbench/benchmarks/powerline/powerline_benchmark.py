@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, Final, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Optional
 
 from typing_extensions import override
 
@@ -15,7 +15,6 @@ from crossbench.action_runner.action.enums import ReadyState
 from crossbench.benchmarks.base import Benchmark
 from crossbench.cli.ui import timer
 from crossbench.flags.base import Flags
-from crossbench.helper import input_helper
 from crossbench.parse import DurationParser
 from crossbench.stories.story import Story
 
@@ -29,18 +28,17 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-PLAY_AUDIO_SCRIPT: Final[str] = """
+UNMUTE_AUDIO_SCRIPT: Final[str] = """
   document.getElementById('unmuteButton').click();
 """
 
 class PowerlineStory(Story):
 
-  STORY_NAME="podcast"
-  URL="https://chromium-workloads.web.app/web-tests/main/synthetic/powerline/podcast.html"
+  STORY_NAME: ClassVar = "podcast"
+  URL: ClassVar = "https://chromium-workloads.web.app/web-tests/main/synthetic/powerline/podcast.html"
 
-  def __init__(self, run_for: Optional[dt.timedelta] = dt.timedelta()):
-    duration = (run_for or dt.timedelta(seconds=600))
-    self._run_for = duration
+  def __init__(self, duration: Optional[dt.timedelta] = dt.timedelta()):
+    duration = (duration or dt.timedelta(seconds=60))
     super().__init__(self.STORY_NAME, duration)
 
   def run(self, run: Run) -> None:
@@ -51,24 +49,13 @@ class PowerlineStory(Story):
         actions.wait_for_ready_state(
           ReadyState.COMPLETE, timeout=dt.timedelta(seconds=5)
         )
-        actions.js(PLAY_AUDIO_SCRIPT)
+        actions.js(UNMUTE_AUDIO_SCRIPT)
       with run.actions("Screen") as actions:
         actions.wait(dt.timedelta(seconds=5))
-        if actions.platform.is_android:
-          # On Android, put the screen to sleep to simulate playing a
-          # podcast in the background.
-          actions.platform.sh("input", "keyevent", "26")
-      self._wait_for_input()
+        with actions.platform.low_power_mode():
+          # Put the screen to sleep and enter simulated Doze
+          actions.wait(self.duration)
       logging.info("Stopping benchmark...")
-
-  def _wait_for_input(self) -> None:
-    logging.critical(
-        "Measurement has started. The browser will close in %s" +
-        " (or press enter to close immediately)", self._run_for)
-    try:
-      input_helper.input_with_timeout(timeout=self._run_for)
-    except KeyboardInterrupt:
-      pass
 
   @classmethod
   @override
@@ -85,13 +72,11 @@ class PowerlineBenchmark(Benchmark):
   listening to a podcast with the screen off. The test measures the CPU power
   consumption on the Pixel power rails via Perfetto.
   """
-  NAME="powerline"
-  DEFAULT_STORY_CLS = PowerlineStory
+  NAME: ClassVar = "powerline"
+  DEFAULT_STORY_CLS: ClassVar = PowerlineStory
 
   # TODO: we may want to check somehow that the device is a Pixel and therefore
   # has meaningful power rails we can read.
-  # TODO: we may want to unlock the device so we can run further benchmarks
-  # on it without manual intervention.
 
   def __init__(self,
                action_runner_config: Optional[ActionRunnerConfig] = None,
@@ -115,7 +100,11 @@ class PowerlineBenchmark(Benchmark):
     #  HTML5 tag and b) it will not play from JavaScript if the user does not
     # interact with the page first. https://developer.chrome.com/blog/autoplay
     assert browser_attributes.is_chromium_based
-    return Flags({"--autoplay-policy": "no-user-gesture-required"})
+    return Flags({
+      "--autoplay-policy": "no-user-gesture-required",
+      "--enable-renderer-backgrounding": None,
+      "--enable-background-timer-throttling": None
+    })
 
   @classmethod
   @override

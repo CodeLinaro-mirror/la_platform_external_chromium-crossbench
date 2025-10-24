@@ -22,6 +22,8 @@ from crossbench.action_runner.action.meminfo import MeminfoAction
 from crossbench.action_runner.action.position import (CoordinatesConfig,
                                                       PositionConfig,
                                                       SelectorConfig)
+from crossbench.action_runner.action.probe import ProbeAction
+from crossbench.action_runner.action.screenshot import ScreenshotAction
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
@@ -34,6 +36,8 @@ from crossbench.action_runner.action.wait_for_element import \
 from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
 from crossbench.benchmarks.loading.input_source import InputSource
+from crossbench.probes.js import JSProbe
+from crossbench.probes.screenshot import ScreenshotProbe
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -979,40 +983,49 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_meminfo_default(self):
     config_dict = {"action": "meminfo"}
-    action = MeminfoAction.parse_dict(config_dict)
+    action = MeminfoAction.parse(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertTrue(action.browser)
-    self.assertEqual(action.packages, ())
-    self.assertIsNone(action.title)
+    self.assertDictEqual(action.kwargs, {
+        "browser": True,
+        "system": False,
+        "packages": (),
+        "title": None,
+    })
 
-    action_2 = MeminfoAction.parse_dict(action.to_json())
+    action_2 = ProbeAction.parse(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
   def test_parse_meminfo_browser(self):
     config_dict = {"action": "meminfo", "browser": True}
-    action = MeminfoAction.parse_dict(config_dict)
+    action = MeminfoAction.parse(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertTrue(action.browser)
-    self.assertEqual(action.packages, ())
-    self.assertIsNone(action.title)
+    self.assertDictEqual(action.kwargs, {
+        "browser": True,
+        "system": False,
+        "packages": (),
+        "title": None,
+    })
 
-    action_2 = MeminfoAction.parse_dict(action.to_json())
+    action_2 = ProbeAction.parse(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
   def test_parse_meminfo_title(self):
     config_dict = {"action": "meminfo", "title": "a_title"}
-    action = MeminfoAction.parse_dict(config_dict)
+    action = MeminfoAction.parse(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertTrue(action.browser)
-    self.assertEqual(action.packages, ())
-    self.assertEqual(action.title, "a_title")
+    self.assertDictEqual(action.kwargs, {
+        "browser": True,
+        "system": False,
+        "packages": (),
+        "title": "a_title",
+    })
 
-    action_2 = MeminfoAction.parse_dict(action.to_json())
+    action_2 = ProbeAction.parse(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
@@ -1022,24 +1035,57 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "browser": False,
         "packages": ["netflix", "minecraft"],
     }
-    action = MeminfoAction.parse_dict(config_dict)
+    action = MeminfoAction.parse(config_dict)
     action.validate()
     self.assertEqual(action.TYPE, ActionType.MEMINFO)
-    self.assertFalse(action.browser)
-    self.assertEqual(action.packages, ("netflix", "minecraft"))
-    self.assertIsNone(action.title)
+    self.assertDictEqual(
+        action.kwargs, {
+            "browser": False,
+            "system": False,
+            "packages": ("netflix", "minecraft"),
+            "title": None
+        })
 
-    action_2 = MeminfoAction.parse_dict(action.to_json())
+    action_2 = ProbeAction.parse(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 
-  def test_parse_meminfo_nothing(self):
-    config_dict = {
-        "action": "meminfo",
-        "browser": False,
-    }
-    with self.assertRaisesRegex(ValueError, "must specify at least one of"):
-      MeminfoAction.parse_dict(config_dict)
+  def test_parse_probe_no_probe(self):
+    config_dict = {"action": "probe"}
+
+    with self.assertRaisesRegex(ValueError, "No value"):
+      ProbeAction.parse(config_dict)
+
+  def test_parse_probe_invalid_probe(self):
+    config_dict = {"action": "probe", "probe": "this is not a probe"}
+
+    with self.assertRaisesRegex(ValueError, "Invalid"):
+      ProbeAction.parse(config_dict)
+
+  def test_parse_probe_no_kwargs(self):
+    config_dict = {"action": "probe", "probe": "js"}
+
+    action = ProbeAction.parse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.PROBE)
+    self.assertEqual(action.probe_cls, JSProbe)
+    self.assertFalse(action.kwargs)
+
+  def test_parse_probe_with_kwargs(self):
+    kwargs = {"arg_one": 1, "arg_two": "two"}
+    config_dict = {"action": "probe", "probe": "js", "kwargs": kwargs}
+
+    action = ProbeAction.parse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.PROBE)
+    self.assertEqual(action.probe_cls, JSProbe)
+    self.assertDictEqual(action.kwargs, kwargs)
+
+  def test_parse_screenshot(self):
+    config_dict = {"action": "screenshot"}
+    action = ScreenshotAction.parse(config_dict)
+    self.assertEqual(action.TYPE, ActionType.SCREENSHOT)
+    self.assertEqual(action.probe_cls, ScreenshotProbe)
+    self.assertFalse(action.kwargs)
+
 
 
 class PositionConfigTestCase(unittest.TestCase):

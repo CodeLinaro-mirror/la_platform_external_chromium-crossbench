@@ -13,10 +13,13 @@ from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.get import GetAction
+from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
+from crossbench.runner.probe_context_lookup_error import \
+    ProbeContextLookupError
 
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
@@ -94,12 +97,15 @@ class InteractivePage(Page):
     try:
       action_runner.failure_screenshot(run, message)
     except Exception as e:  # pylint: disable=broad-except
-      logging.error("Failed to take a failure screenshot: %s", str(e))
+      logging.error("Failed to take a failure screenshot: %s", e)
 
     try:
-      action_runner.dump_html_impl(run, message)
+      action_runner.invoke_probe(
+          run, ProbeAction(probe="dump_html", kwargs={"suffix": message}))
+    except ProbeContextLookupError:
+      pass
     except Exception as e:  # pylint: disable=broad-except
-      logging.error("Failed to dump HTML on failure: %s", str(e))
+      logging.error("Failed to dump HTML on failure: %s", e)
 
   @contextlib.contextmanager
   def _performance_mark_scope(self, run: Run, name: str):

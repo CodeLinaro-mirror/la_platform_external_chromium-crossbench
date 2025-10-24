@@ -10,8 +10,8 @@ import functools
 import pathlib
 import shlex
 import subprocess
-from typing import (TYPE_CHECKING, Any, Iterable, Mapping, MutableMapping,
-                    Optional, Sequence)
+from typing import (TYPE_CHECKING, Any, ClassVar, Iterable, Mapping,
+                    MutableMapping, Optional, Sequence)
 
 import psutil
 from typing_extensions import override
@@ -147,9 +147,11 @@ class MockPlatformMixin:
     self.use_mock_machine = True
     self.use_mock_name = True
     self.use_fs = False
+    self.mock_version_str: str | None = "1.2.3.4.5"
     self._machine_arch: [MachineArch] = None  # type: ignore
     self.popens: list[MockPopen] = []
     self.mkdir_calls: int = 0
+    self.screenshots: list[pth.AnyPath] = []
     super().__init__(*args, **kwargs)
 
   @property
@@ -194,7 +196,8 @@ class MockPlatformMixin:
     return path
 
   def expect_sh(
-      self, *args: CmdArg, result: bytes | str | ShResult = ShResult()) -> None:
+      self, *args: CmdArg | int,
+      result: bytes | str | ShResult = ShResult()) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
@@ -206,7 +209,7 @@ class MockPlatformMixin:
     assert isinstance(result, ShResult)
     self._sh_results.append(result)
 
-  def _convert_sh_args(self, *args: CmdArg) -> TupleCmdArgs:
+  def _convert_sh_args(self, *args: CmdArg | int) -> TupleCmdArgs:
     converted_args : ListCmdArgs = []
     for arg in args:
       if not isinstance(arg, (str, pathlib.PurePath)):
@@ -255,8 +258,10 @@ class MockPlatformMixin:
     self._machine_arch = value
 
   @property
-  def version(self) -> str:
-    return "1.2.3.4.5"
+  def version_str(self) -> str:
+    if self.mock_version_str:
+      return self.mock_version_str
+    return super().version_str
 
   @property
   def device(self) -> str:
@@ -410,6 +415,10 @@ class MockPlatformMixin:
         "free_kb": 2,
     }
 
+  @override
+  def screenshot(self, result_path: pth.AnyPath) -> None:
+    self.screenshots.append(result_path)
+
 
 class MockFd:
 
@@ -549,13 +558,13 @@ class MockStory(Story):
 
 class MockBenchmark(SubStoryBenchmark):
   NAME = "mock-benchmark"
-  DEFAULT_STORY_CLS = MockStory
+  DEFAULT_STORY_CLS: ClassVar = MockStory
 
 
 class MockCLI(CrossBenchCLI):
   runner: Runner
   platform: Platform
 
-  def __init__(self, *args, **kwargs) -> None:
-    self.platform = kwargs.pop("platform")
-    super().__init__(*args, **kwargs)
+  def __init__(self, platform: Platform, enable_logging: bool = True) -> None:
+    self.platform = platform
+    super().__init__(enable_logging=enable_logging)

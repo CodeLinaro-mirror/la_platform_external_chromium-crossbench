@@ -9,7 +9,7 @@ import json
 import logging
 import multiprocessing
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Final, Optional
 
 from typing_extensions import override
 
@@ -25,9 +25,9 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
-V8_PERF_PROF_PATH_FLAG_MIN_VERSION = ChromiumVersion((118, 0, 5993, 48))
-PERF_DATA_PATTERN = "*.perf.data"
-JIT_DUMP_PATTERN = "jit-*.dump"
+V8_PERF_PROF_PATH_FLAG_MIN_VERSION: Final = ChromiumVersion((118, 0, 5993, 48))
+PERF_DATA_PATTERN: Final = "*.perf.data"
+JIT_DUMP_PATTERN: Final = "jit-*.dump"
 
 
 class LinuxProfilingContext(PosixProfilingContext):

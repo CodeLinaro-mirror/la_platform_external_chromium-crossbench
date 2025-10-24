@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Optional, Set, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Set, Type
 
 from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
@@ -20,6 +20,7 @@ from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
 from crossbench.cli import ui
 from crossbench.helper.wait import WaitRange
 from crossbench.path import AnyPath, LocalPath
+from crossbench.plt.ios import IOSPlatform
 
 if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
 
 class SafariWebDriver(WebDriverBrowser, Safari):
 
-  MAX_STARTUP_TIMEOUT = dt.timedelta(seconds=10)
+  MAX_STARTUP_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
 
   def __init__(self,
                label: str,
@@ -164,18 +165,19 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
 
 class SafariWebdriverIOS(SafariWebDriver):
-  MAX_STARTUP_TIMEOUT = dt.timedelta(seconds=15)
+  MAX_STARTUP_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=15)
 
   @override
   def _get_driver_options(self,
                           session: BrowserSessionRunGroup) -> SafariOptions:
     options = super()._get_driver_options(session)
+    assert isinstance(self.platform, IOSPlatform)
     desired_cap = {
         # "browserName": "Safari",
         # "browserVersion": "17.0.3", # iOS version
         # "safari:deviceType": "iPhone",
         # "safari:deviceName": "XXX's iPhone",
-        # "safari:deviceUDID": "...",
+        "safari:deviceUDID": self.platform.udid,
         "platformName": "iOS",
         "safari:initialUrl": "about:blank",
         "safari:openLinksInBackground": True,

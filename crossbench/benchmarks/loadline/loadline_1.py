@@ -5,10 +5,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Type
 
 import numpy as np
-import pandas as pd
 from typing_extensions import override
 
 from crossbench import config
@@ -16,18 +15,18 @@ from crossbench import path as pth
 from crossbench.benchmarks.loadline.loadline import (LoadLineBenchmark,
                                                      LoadLineProbe)
 from crossbench.flags.base import Flags
-from crossbench.probes.perfetto.trace_processor.trace_processor import \
-    TraceProcessorProbe
 from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
+  import pandas as pd
+
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING = "1.3.0"
+VERSION_STRING: Final[str] = "1.3.0"
 
 
 def process_scores(df: pd.DataFrame) -> pd.DataFrame:
@@ -55,24 +54,13 @@ def process_breakdown(df: pd.DataFrame) -> pd.DataFrame:
 
 
 class LoadLine1Probe(LoadLineProbe):
-  NAME = "loadline_probe"
-  BENCHMARK_NAME = "LoadLine"
-  BENCHMARK_VERSION = VERSION_STRING
+  NAME: ClassVar = "loadline_probe"
+  BENCHMARK_NAME: ClassVar = "LoadLine"
+  BENCHMARK_VERSION: ClassVar[str] = VERSION_STRING
 
   @override
   def get_context_cls(self,) -> Type[LoadLine1ProbeContext]:
     return LoadLine1ProbeContext
-
-  def _load_query_result(self, group: BrowsersRunGroup,
-                         query: str) -> pd.DataFrame:
-    all_results = group.results.get_by_name(TraceProcessorProbe.NAME).csv_list
-    query_result: pth.LocalPath | None = None
-    for result in all_results:
-      if result.stem == query:
-        query_result = result
-        break
-    assert query_result is not None, f"{self.NAME}: {query} result not found"
-    return pd.read_csv(query_result)
 
   @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
@@ -110,7 +98,7 @@ class LoadLine1ProbeContext(ProbeContext[LoadLine1Probe]):
 
 class LoadLine1Benchmark(LoadLineBenchmark):
   PROBES = (LoadLine1Probe,)
-  DEFAULT_REPETITIONS = 100
+  DEFAULT_REPETITIONS: ClassVar = 100
 
   @classmethod
   def _base_dir(cls) -> pth.LocalPath:
@@ -125,7 +113,7 @@ class LoadLine1Benchmark(LoadLineBenchmark):
 class LoadLine1PhoneBenchmark(LoadLine1Benchmark):
   """LoadLine benchmark for phones.
   """
-  NAME = "loadline-phone"
+  NAME: ClassVar = "loadline-phone"
 
   @classmethod
   @override
@@ -146,7 +134,7 @@ class LoadLine1PhoneBenchmark(LoadLine1Benchmark):
 class LoadLine1TabletBenchmark(LoadLine1Benchmark):
   """LoadLine benchmark for tablets.
   """
-  NAME = "loadline-tablet"
+  NAME: ClassVar = "loadline-tablet"
 
   @classmethod
   @override
@@ -174,8 +162,8 @@ class LoadLine1PhoneDebugBenchmark(LoadLine1PhoneBenchmark):
   """LoadLine benchmark for phones, with more tracing categories, for easier
   performance analysis.
   """
-  NAME = "loadline-phone-debug"
-  DEFAULT_REPETITIONS = 1
+  NAME: ClassVar = "loadline-phone-debug"
+  DEFAULT_REPETITIONS: ClassVar = 1
 
   @classmethod
   @override
@@ -192,8 +180,8 @@ class LoadLine1TabletDebugBenchmark(LoadLine1TabletBenchmark):
   """LoadLine benchmark for tablets, with more tracing categories, for easier
   performance analysis.
   """
-  NAME = "loadline-tablet-debug"
-  DEFAULT_REPETITIONS = 1
+  NAME: ClassVar = "loadline-tablet-debug"
+  DEFAULT_REPETITIONS: ClassVar = 1
 
   @classmethod
   @override
@@ -210,8 +198,8 @@ class LoadLine1PhoneFastBenchmark(LoadLine1PhoneBenchmark):
   """LoadLine benchmark for phones, with less repetitions, for faster local
   experiments.
   """
-  NAME = "loadline-phone-fast"
-  DEFAULT_REPETITIONS = 10
+  NAME: ClassVar = "loadline-phone-fast"
+  DEFAULT_REPETITIONS: ClassVar = 10
 
   @classmethod
   @override
@@ -223,8 +211,8 @@ class LoadLine1TabletFastBenchmark(LoadLine1TabletBenchmark):
   """LoadLine benchmark for tablets, with less repetitions, for faster local
   experiments.
   """
-  NAME = "loadline-tablet-fast"
-  DEFAULT_REPETITIONS = 10
+  NAME: ClassVar = "loadline-tablet-fast"
+  DEFAULT_REPETITIONS: ClassVar = 10
 
   @classmethod
   @override

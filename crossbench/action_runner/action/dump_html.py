@@ -4,21 +4,23 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
-from typing_extensions import override
-
-from crossbench.action_runner.action.action import Action
+from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.probe import ProbeAction
 
 if TYPE_CHECKING:
-  from crossbench.action_runner.base import ActionRunner
-  from crossbench.runner.run import Run
+  import datetime as dt
 
 
-class DumpHtmlAction(Action):
-  TYPE: ActionType = ActionType.DUMP_HTML
+# Left here for backwards compatibility.
+# New probe actions should not have individual class implementations.
+# They should just be used as ProbeActions directly.
+class DumpHtmlAction(ProbeAction):
+  TYPE: ClassVar[ActionType] = ActionType.DUMP_HTML
 
-  @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.dump_html(run, self)
+  def __init__(self,
+               timeout: dt.timedelta = ACTION_TIMEOUT,
+               index: int = 0) -> None:
+    super().__init__(probe="dump_html", kwargs={}, timeout=timeout, index=index)

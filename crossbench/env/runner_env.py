@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Final, Iterable, Optional
 
 from crossbench import plt
 from crossbench.cli.config.env import EnvConfig, ValidationMode
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
   from crossbench.probes.probe import Probe
 
-STALE_RESULT_ICONS = {
+STALE_RESULT_ICONS: Final = {
     75: "👻",
     100: "👾",
     125: "🎃",

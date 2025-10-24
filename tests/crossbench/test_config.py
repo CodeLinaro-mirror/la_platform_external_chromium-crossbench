@@ -221,7 +221,7 @@ class ConfigParserTestCase(unittest.TestCase):
 
   def test_invalid_type(self):
     with self.assertRaises(TypeError):
-      self.parser.add_argument("foo", type="something")  # pytype: disable=wrong-arg-types
+      self.parser.add_argument("foo", type="something")
 
   def test_invalid_alias(self):
     with self.assertRaises(ValueError):
@@ -242,7 +242,7 @@ class ConfigParserTestCase(unittest.TestCase):
       self.parser.add_argument(
           "custom",
           type=CustomConfigObject.parse_depending_nested,
-          depends_on="other")  # pytype: disable=wrong-arg-types
+          depends_on="other")
 
   def test_invalid_depends_on_nof_arguments(self):
     with self.assertRaises(TypeError) as cm:
@@ -328,9 +328,7 @@ class ConfigParserTestCase(unittest.TestCase):
 
   def test_invalid_default(self):
     with self.assertRaises(TypeError) as cm:
-      ConfigParser(  # pytype: disable=wrong-arg-types
-          CustomConfigObject,
-          default="something else")
+      ConfigParser(CustomConfigObject, default="something else")
     self.assertIn("instance", str(cm.exception))
 
   def test_config_object_to_argument_value(self):
@@ -420,6 +418,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
         self.assertFalse(CustomConfigObject.is_hjson_like(value))
 
   def test_parse_invalid_str(self):
+    invalid: Any
     for invalid in ("", None, 1, []):
       with self.assertRaises(argparse.ArgumentTypeError):
         CustomConfigObject.parse(invalid)
@@ -451,6 +450,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = CustomConfigObject.parse(dict(data))
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "foo")
+    assert config.array
     self.assertListEqual(config.array, [1, 2, 3])
     self.assertEqual(config.integer, 153)
     config_2 = CustomConfigObject.parse_dict(dict(data))
@@ -548,6 +548,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       self.assertIs(config.custom_value_enum, result)
 
   def test_parse_dict_custom_value_enum_invalid(self):
+    invalid: Any
     for invalid in (1, 2, {}, "A", "B"):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         CustomConfigObject.parse({
@@ -644,6 +645,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = CustomConfigObject.parse(path)
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
+    assert config.array
     self.assertListEqual(config.array, [1, 3])
     self.assertEqual(config.integer, 166)
     self.assertIsNone(config.nested)
@@ -654,6 +656,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = CustomConfigObject.parse_dict(dict(self.TEST_DICT))
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
+    assert config.array
     self.assertListEqual(config.array, [1, 3])
     self.assertEqual(config.integer, 166)
     self.assertIsNone(config.nested)
@@ -667,6 +670,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = CustomConfigObject.parse_dict(test_dict)
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
+    assert config.array
     self.assertListEqual(config.array, [1, 3])
     self.assertEqual(config.integer, 166)
     self.assertEqual(config.nested,
@@ -773,28 +777,28 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     with self.assertRaisesRegex(MultiException,
                                 "Template args must only contain"):
-      config = CustomConfigObject.parse(config)
+      CustomConfigObject.parse(config)
 
   def test_parse_templated_config_lowercase_arg_name_throws(self):
     config = {"template": {"name": "$[arg]"}, "args": {"arg": "my name"}}
 
     with self.assertRaisesRegex(MultiException,
                                 "Template args must only contain"):
-      config = CustomConfigObject.parse(config)
+      CustomConfigObject.parse(config)
 
   def test_parse_templated_config_space_beginning_arg_name_throws(self):
     config = {"template": {"name": "$[ ARG]"}, "args": {" ARG": "my name"}}
 
     with self.assertRaisesRegex(MultiException,
                                 "Template args must only contain"):
-      config = CustomConfigObject.parse(config)
+      CustomConfigObject.parse(config)
 
   def test_parse_templated_config_space_end_arg_name_throws(self):
     config = {"template": {"name": "$[ARG ]"}, "args": {"ARG ": "my name"}}
 
     with self.assertRaisesRegex(MultiException,
                                 "Template args must only contain"):
-      config = CustomConfigObject.parse(config)
+      CustomConfigObject.parse(config)
 
   def test_parse_templated_config_missing_arg_throws(self):
     config = {
@@ -820,7 +824,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     }
 
     with self.assertRaises(MultiException) as cm:
-      config = CustomConfigObject.parse(config)
+      CustomConfigObject.parse(config)
     self.assertIn("'MISSING_ARG'", str(cm.exception))
     self.assertIn("'MISSING_ARG2'", str(cm.exception))
 
@@ -838,7 +842,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     with self.assertRaisesRegex(argparse.ArgumentTypeError,
                                 "can not be substituted"):
-      config = CustomConfigObject.parse(config)
+      CustomConfigObject.parse(config)
 
   def test_parse_templated_config_dict_arg(self):
     config = {

@@ -13,7 +13,7 @@ import secrets
 import shlex
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Any, Coroutine, Optional
+from typing import TYPE_CHECKING, Any, Coroutine, Final, Optional
 
 from websockets import server as websockets
 
@@ -49,7 +49,7 @@ class AuthenticationError(ValueError):
 
 
 class CrossbenchDevToolsRecorderProxy:
-  DEFAULT_PORT = 44645
+  DEFAULT_PORT: Final = 44645
 
   @classmethod
   def add_cli_parser(cls, subparsers) -> argparse.ArgumentParser:

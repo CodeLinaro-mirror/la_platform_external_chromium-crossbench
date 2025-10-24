@@ -76,7 +76,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
       self.assertFalse(probe.is_attached)
     return probes
 
-  def _add_real_directory(self, path: crossbench.path.LocalPathLike) -> None:
+  def _add_real_directory(self, path: crossbench.path.LocalPath) -> None:
     self.fs.add_real_directory(
         path, lazy_read=not test_helper.is_google_env())
     if test_helper.is_google_env():
@@ -88,7 +88,7 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
           if not link_target.exists():
             self.fs.add_real_file(link_target)
 
-  def _add_real_file(self, path: crossbench.path.LocalPathLike) -> None:
+  def _add_real_file(self, path: crossbench.path.LocalPath) -> None:
     self.fs.add_real_file(path)
     if test_helper.is_google_env() and path.is_symlink():
       # On google3, all files have been replaced by symlinks. The link targets

@@ -5,6 +5,7 @@
 import argparse
 import enum
 import unittest
+from typing import ClassVar
 
 from crossbench.probes.probe import Probe, ProbeConfigParser
 from crossbench.str_enum_with_help import StrEnumWithHelp
@@ -15,7 +16,7 @@ class MockProbe(Probe):
   """
   Probe DOC Text
   """
-  NAME: str = "mock-probe"
+  NAME: ClassVar[str] = "mock-probe"
 
 
 class CustomArgType:
@@ -110,7 +111,7 @@ class ProbeConfigTestCase(unittest.TestCase):
     parser = ProbeConfigParser(MockProbe)
     parser.add_argument("bool_argument_name", type=bool, default=False)
 
-    config_data = {}
+    config_data: dict = {}
     kwargs = parser.kwargs_from_config(config_data)
     self.assertDictEqual(config_data, {})
     self.assertDictEqual(kwargs, {"bool_argument_name": False})

@@ -16,6 +16,12 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.plt.base import Platform
 from crossbench.plt.signals import WinSignals
+from crossbench.plt.version import PlatformVersion
+
+
+class WinVersion(PlatformVersion):
+  pass
+
 
 
 class WinPlatform(Platform):
@@ -59,12 +65,17 @@ class WinPlatform(Platform):
 
   @functools.cached_property
   @override
-  def version(self) -> str:  #pylint: disable=invalid-overridden-method
+  def version_str(self) -> str:
     return self.cmd_stdout("ver").strip()
 
   @functools.cached_property
   @override
-  def cpu(self) -> str:  #pylint: disable=invalid-overridden-method
+  def version(self) -> WinVersion:
+    return WinVersion.parse(self.version_str)
+
+  @functools.cached_property
+  @override
+  def cpu(self) -> str:
     return self.powershell_stdout(
         "Get-CIMInstance -query 'select * from Win32_Processor' | ft Name"
     ).strip().splitlines()[2].strip()

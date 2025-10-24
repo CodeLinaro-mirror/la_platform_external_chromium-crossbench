@@ -8,6 +8,7 @@ import datetime as dt
 import enum
 import pathlib
 import unittest
+from typing import Any
 
 from typing_extensions import override
 
@@ -207,48 +208,50 @@ class FileSizeTestCase(CrossbenchFakeFsTestCase):
 class GroupByTestCase(unittest.TestCase):
 
   def test_empty(self):
-    grouped = collection_helper.group_by([], key=str)
+    grouped: dict[str, Any] = collection_helper.group_by([], key=str)
     self.assertDictEqual({}, grouped)
 
   def test_basic(self):
-    grouped = collection_helper.group_by([1, 1, 1, 2, 2, 3], key=str)
+    grouped: dict[str,
+                  list[int]] = collection_helper.group_by([1, 1, 1, 2, 2, 3],
+                                                          key=str)
     self.assertListEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_out_of_order(self):
-    grouped = collection_helper.group_by([2, 3, 2, 1, 1, 1], key=str)
+    grouped: dict[str,
+                  list[int]] = collection_helper.group_by([2, 3, 2, 1, 1, 1],
+                                                          key=str)
     self.assertListEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_input_order(self):
-    grouped = collection_helper.group_by([2, 3, 2, 1, 1, 1],
-                                         key=str,
-                                         sort_key=None)
+    grouped: dict[str,
+                  list[int]] = collection_helper.group_by([2, 3, 2, 1, 1, 1],
+                                                          key=str,
+                                                          sort_key=None)
     self.assertListEqual(list(grouped.keys()), ["2", "3", "1"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_custom_order(self):
-    grouped = collection_helper.group_by([2, 3, 2, 1, 1, 1],
-                                         key=str,
-                                         sort_key=lambda item: int(item[0]))
+    grouped: dict[str, list[int]] = collection_helper.group_by(
+        [2, 3, 2, 1, 1, 1], key=str, sort_key=lambda item: int(item[0]))
     self.assertListEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
     # Try reverse sorting
-    grouped = collection_helper.group_by([2, 3, 2, 1, 1, 1],
-                                         key=str,
-                                         sort_key=lambda item: -int(item[0]))
+    grouped: dict[str, list[int]] = collection_helper.group_by(
+        [2, 3, 2, 1, 1, 1], key=str, sort_key=lambda item: -int(item[0]))
     self.assertListEqual(list(grouped.keys()), ["3", "2", "1"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_custom_key(self):
-    grouped = collection_helper.group_by([1.1, 1.2, 1.3, 2.1, 2.2, 3.1],
-                                         key=int)
+    grouped: dict[int, list[int]] = collection_helper.group_by(
+        [1.1, 1.2, 1.3, 2.1, 2.2, 3.1], key=int)
     self.assertDictEqual({1: [1.1, 1.2, 1.3], 2: [2.1, 2.2], 3: [3.1]}, grouped)
 
   def test_custom_value(self):
-    grouped = collection_helper.group_by([1, 1, 1, 2, 2, 3],
-                                         key=str,
-                                         value=lambda x: x * 100)
+    grouped: dict[str, list[int]] = collection_helper.group_by(
+        [1, 1, 1, 2, 2, 3], key=str, value=lambda x: x * 100)
     self.assertDictEqual({
         "1": [100, 100, 100],
         "2": [200, 200],
@@ -256,9 +259,8 @@ class GroupByTestCase(unittest.TestCase):
     }, grouped)
 
   def test_custom_group(self):
-    grouped = collection_helper.group_by([1, 1, 1, 2, 2, 3],
-                                         key=str,
-                                         group=lambda key: ["custom"])
+    grouped: dict[str, list[Any]] = collection_helper.group_by_custom(
+        [1, 1, 1, 2, 2, 3], key=str, group=lambda key: ["custom"])
     self.assertDictEqual(
         {
             "1": ["custom", 1, 1, 1],
@@ -267,9 +269,8 @@ class GroupByTestCase(unittest.TestCase):
         }, grouped)
 
   def test_custom_group_out_of_order(self):
-    grouped = collection_helper.group_by([1, 1, 1, 2, 2, 3],
-                                         key=str,
-                                         group=lambda key: ["custom"])
+    grouped: dict[str, list[Any]] = collection_helper.group_by_custom(
+        [1, 1, 1, 3, 2, 2], key=str, group=lambda key: ["custom"])
     self.assertDictEqual(
         {
             "1": ["custom", 1, 1, 1],
@@ -310,8 +311,8 @@ class StrEnumWithHelpTestCase(unittest.TestCase):
     B = ("b", "help b")
 
   def test_lookup(self):
-    self.assertIs(self.TestEnum("a"), self.TestEnum.A)  # pytype: disable=wrong-arg-types
-    self.assertIs(self.TestEnum("b"), self.TestEnum.B)  # pytype: disable=wrong-arg-types
+    self.assertIs(self.TestEnum("a"), self.TestEnum.A)
+    self.assertIs(self.TestEnum("b"), self.TestEnum.B)
     self.assertIs(self.TestEnum["A"], self.TestEnum.A)
     self.assertIs(self.TestEnum["B"], self.TestEnum.B)
 

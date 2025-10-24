@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import logging
 import shlex
-from typing import (TYPE_CHECKING, Any, Final, Iterable, Optional, Self,
-                    Sequence, cast)
+from typing import (TYPE_CHECKING, Any, ClassVar, Final, Iterable, Optional,
+                    Self, Sequence, cast)
 
 from typing_extensions import override
 
@@ -33,9 +33,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-V8_INTERPRETED_FRAMES_FLAG = "--interpreted-frames-native-stack"
-
-RENDERER_CMD_PATH: Final[pth.LocalPath] = pth.LocalPath(
+V8_INTERPRETED_FRAMES_FLAG: Final = "--interpreted-frames-native-stack"
+RENDERER_CMD_PATH: Final = pth.LocalPath(
     __file__).parent / "linux-perf-chrome-renderer-cmd.sh"
 
 
@@ -58,9 +57,8 @@ class ProfilingProbe(Probe):
   from V8. For Googlers it additionally can auto-upload symbolized profiles to
   pprof.
   """
-  NAME = "profiling"
-  RESULT_LOCATION = ResultLocation.BROWSER
-  IS_GENERAL_PURPOSE = True
+  NAME: ClassVar = "profiling"
+  RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
 
   @classmethod
   @override
@@ -525,7 +523,7 @@ class ProfilingProbe(Probe):
     logging.info("    %s/%s: %d more files", largest_perf_file.parent, glob,
                  len(perf_files))
 
-  def get_context(self, run: Run) -> ProfilingContext:
+  def create_context(self, run: Run) -> ProfilingContext:
     if run.browser_platform.is_linux:
       return LinuxProfilingContext(self, run)
     if run.browser_platform.is_macos:

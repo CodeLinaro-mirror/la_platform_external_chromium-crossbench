@@ -76,13 +76,13 @@ class ThreadMode(StrEnumWithHelp):
     groups: dict[Any, list[Run]] = {}
     if self == ThreadMode.SESSION:
       groups = collection_helper.group_by(
-          runs, lambda run: run.browser_session, sort_key=None)
+          runs, key=lambda run: run.browser_session, sort_key=None)
     elif self == ThreadMode.PLATFORM:
       groups = collection_helper.group_by(
-          runs, lambda run: run.browser_platform, sort_key=None)
+          runs, key=lambda run: run.browser_platform, sort_key=None)
     elif self == ThreadMode.BROWSER:
       groups = collection_helper.group_by(
-          runs, lambda run: run.browser, sort_key=None)
+          runs, key=lambda run: run.browser, sort_key=None)
     else:
       raise ValueError(f"Unexpected thread mode: {self}")
     return [
@@ -284,9 +284,9 @@ class Runner:
     benchmark_validator.validate_cls(type(self._benchmark))
     for benchmark_probe_cls in self._benchmark.PROBES:
       probe = benchmark_probe_cls(benchmark=self._benchmark)
-      assert (isinstance(probe, Probe) and
-              isinstance(probe, BenchmarkProbeMixin)), (
-                  f"Expected BenchmarkProbe, got {probe}")
+      assert isinstance(
+          probe, BenchmarkProbeMixin), f"Expected BenchmarkProbe, got {probe}"
+      assert isinstance(probe, Probe), f"Expected Probe, got {probe}"
       self.attach_probe(probe)
 
   def _validate_browser_labels(self) -> None:
@@ -310,7 +310,7 @@ class Runner:
 
   def _attach_internal_probes(self) -> None:
     for probe_cls in all_probes.NON_CONFIGURABLE_INTERNAL_PROBES:
-      default_probe: Probe = probe_cls()  # pytype: disable=not-instantiable
+      default_probe: Probe = probe_cls()
       self._attach_default_probe(default_probe)
 
     thermal_monitor_probe = all_probes.ThermalMonitorProbe(

@@ -312,7 +312,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         help="Shortcut for --splash-screen=none")
 
     viewport_group = browser_group.add_mutually_exclusive_group()
-    # pytype: disable=missing-parameter
+
     viewport_group.add_argument(
         "--viewport",
         default=Viewport.DEFAULT,
