@@ -70,11 +70,30 @@ class WebviewEmbedder(Webview):
     driver = webdriver.Chrome(options=options, service=service)
     return driver
 
-  def start_driver(self, session: BrowserSessionRunGroup) -> ChromiumDriver:
+  def _init_driver(self, session: BrowserSessionRunGroup) -> None:
     assert self._driver_path
     self._private_driver = self._start_driver(session, self._driver_path)
     self._set_driver_timeouts(session)
-    return self._private_driver
+
+  def start_driver(self, session: BrowserSessionRunGroup) -> ChromiumDriver:
+    self._init_driver(session)
+    # Take a snapshot of all handles as we might need to restart driver
+    handles = self._private_driver.window_handles[:]
+    for handle in handles:
+      self._private_driver.switch_to.window(handle)
+      try:
+        # Check tab responsiveness
+        _ = self._private_driver.current_url
+      except Exception:  # noqa: BLE001
+        # This is probably the wrong tab. Restart the driver and try another.
+        self._private_driver.quit()
+        self._init_driver(session)
+        continue
+      else:
+        # This tab works, we can return the driver.
+        return cast("ChromiumDriver", self._private_driver)
+    # We tried all tabs and none worked.
+    raise RuntimeError("Failed to attach driver")
 
   @override
   def _create_options(self, session: BrowserSessionRunGroup,
