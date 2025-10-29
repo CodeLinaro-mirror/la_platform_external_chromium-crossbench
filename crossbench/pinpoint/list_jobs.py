@@ -9,6 +9,7 @@ import datetime
 import itertools
 import json
 import sys
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Final
 
@@ -31,6 +32,8 @@ JOB_SHORTEN_URL_TEMPLATE: Final[str] = "http://go/j_/{job_id}"
 
 def list_jobs(user: UserEnum | str, number: int, truncate: int | None,
               output_format: ListFormatEnum) -> None:
+  # TODO(b/455510346): Figure out how to fix the quota warning properly.
+  warnings.filterwarnings("ignore", module="google.auth._default")
   authed_session = _get_auth_session()
 
   try:
