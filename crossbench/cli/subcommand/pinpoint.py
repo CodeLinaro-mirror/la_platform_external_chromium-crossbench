@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import argparse
 
 from typing_extensions import override
 
@@ -12,9 +12,6 @@ from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.pinpoint import pinpoint
 from crossbench.pinpoint.user import UserEnum, list_user
-
-if TYPE_CHECKING:
-  import argparse
 
 
 class PinpointSubcommand(CrossbenchSubcommand):
@@ -36,8 +33,21 @@ class PinpointSubcommand(CrossbenchSubcommand):
         default=UserEnum.ME,
         help="User to filter jobs by. Can be 'me' (default), 'all', or an email address."
     )
+    pinpoint_parser.add_argument(
+        "-n",
+        "--number",
+        type=_check_positive_int,
+        default=20,
+        help="Number of jobs to display.")
     return pinpoint_parser
 
   @override
   def run(self, args: argparse.Namespace) -> None:
     pinpoint.run(args)
+
+
+def _check_positive_int(value: str) -> int:
+  number = int(value)
+  if number <= 0:
+    raise argparse.ArgumentTypeError(f"'{value}' must be a positive integer.")
+  return number

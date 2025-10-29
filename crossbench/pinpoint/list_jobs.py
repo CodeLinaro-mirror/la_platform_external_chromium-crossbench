@@ -21,7 +21,7 @@ PINPOINT_JOBS_API_URL: Final[
 USERINFO_API_URL: Final[str] = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 
-def list_jobs(user: UserEnum | str) -> None:
+def list_jobs(user: UserEnum | str, number: int) -> None:
   authed_session = _get_auth_session()
 
   params = {}
@@ -31,13 +31,30 @@ def list_jobs(user: UserEnum | str) -> None:
     params["filter"] = f"user={user}"
 
   try:
-    response = authed_session.get(PINPOINT_JOBS_API_URL, params=params)
-    response.raise_for_status()
-    data = response.json()
-    jobs = data.get("jobs", [])
+    jobs = []
+    next_cursor = None
+
+    while True:
+      if next_cursor:
+        params["next_cursor"] = next_cursor
+
+      response = authed_session.get(PINPOINT_JOBS_API_URL, params=params)
+      response.raise_for_status()
+      data = response.json()
+      jobs.extend(data.get("jobs", []))
+
+      if len(jobs) >= number:
+        jobs = jobs[:number]
+        break
+
+      next_cursor = data.get("next_cursor")
+      if not data.get("next") or not next_cursor:
+        break
+
     if not jobs:
       print("No jobs found.")
       return
+
     _display_jobs_table(jobs)
   except requests.exceptions.RequestException as e:
     print(f"An error occurred while fetching jobs: {e}")
