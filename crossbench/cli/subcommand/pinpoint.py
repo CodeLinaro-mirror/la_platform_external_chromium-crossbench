@@ -24,7 +24,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
     pinpoint_parser = self.cli.subparsers.add_parser(
-        "pinpoint", help="Interact with the Pinpoint service.")
+        "pinpoint", aliases=("pp",), help="Interact with the Pinpoint service.")
     assert isinstance(pinpoint_parser, CrossBenchArgumentParser)
     pinpoint_parser.add_argument(
         "action",
