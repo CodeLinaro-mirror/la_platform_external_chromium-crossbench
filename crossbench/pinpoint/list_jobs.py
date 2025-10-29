@@ -121,8 +121,7 @@ def _prepare_job_list_data(
     jobs: list[dict[str, Any]],
     all_users: bool) -> tuple[list[str], list[list[Any]]]:
   headers = [
-      "Job URL", "Job Name", "Benchmark", "Configuration", "Created Time",
-      "Status"
+      "Job URL", "Benchmark", "Configuration", "Type", "Created Time", "Status"
   ]
   if all_users:
     headers.insert(4, "User")
@@ -139,9 +138,9 @@ def _prepare_job_list_data(
     status = job.get("status", "")
     row = [
         JOB_SHORTEN_URL_TEMPLATE.format(job_id=job.get("job_id", "")),
-        job.get("name", ""),
         job.get("arguments", {}).get("benchmark", ""),
         job.get("configuration", ""),
+        job.get("comparison_mode", ""),
         created_time,
         status,
     ]
