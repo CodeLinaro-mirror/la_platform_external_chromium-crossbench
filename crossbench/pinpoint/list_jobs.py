@@ -4,18 +4,23 @@
 
 from __future__ import annotations
 
+import csv
 import datetime
 import itertools
+import json
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Final
 
 import requests
+import yaml
 from google import auth as google_auth
 from google.auth.transport import requests as auth_requests
 from tabulate import tabulate
 
 from crossbench import plt
 from crossbench.cli import ui
+from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.user import UserEnum
 
 PINPOINT_JOBS_API_URL: Final[
@@ -24,7 +29,8 @@ USERINFO_API_URL: Final[str] = "https://www.googleapis.com/oauth2/v3/userinfo"
 JOB_SHORTEN_URL_TEMPLATE: Final[str] = "http://go/j_/{job_id}"
 
 
-def list_jobs(user: UserEnum | str, number: int, truncate: int | None) -> None:
+def list_jobs(user: UserEnum | str, number: int, truncate: int | None,
+              output_format: ListFormatEnum) -> None:
   authed_session = _get_auth_session()
 
   try:
@@ -43,7 +49,8 @@ def list_jobs(user: UserEnum | str, number: int, truncate: int | None) -> None:
       print("No jobs found.")
       return
 
-    _display_jobs_table(jobs[:number], user == UserEnum.ALL, truncate)
+    _display_jobs(jobs[:number], output_format, user == UserEnum.ALL, truncate)
+
   except requests.exceptions.RequestException as e:
     print(f"An error occurred while fetching jobs: {e}")
 
@@ -110,8 +117,9 @@ def _get_user_email(authed_session: auth_requests.AuthorizedSession) -> str:
   return response.json()["email"]
 
 
-def _display_jobs_table(jobs: list[dict[str, Any]], all_users: bool,
-                        truncate: int | None) -> None:
+def _prepare_job_list_data(
+    jobs: list[dict[str, Any]],
+    all_users: bool) -> tuple[list[str], list[list[Any]]]:
   headers = [
       "Job URL", "Job Name", "Benchmark", "Configuration", "Created Time",
       "Status"
@@ -135,14 +143,44 @@ def _display_jobs_table(jobs: list[dict[str, Any]], all_users: bool,
         job.get("arguments", {}).get("benchmark", ""),
         job.get("configuration", ""),
         created_time,
-        f"{_get_emoji_by_status(status)} {status}",
+        status,
     ]
     if all_users:
       row.insert(
           4,
           job.get("user", ""),
       )
-    table_data.append([_truncate(cell, truncate) for cell in row])
+    table_data.append(row)
+  return headers, table_data
+
+
+def _display_jobs(jobs: list[dict[str, Any]], output_format: ListFormatEnum,
+                  all_users: bool, truncate: int | None) -> None:
+  match output_format:
+    case ListFormatEnum.JSON:
+      print(json.dumps(jobs, indent=2))
+    case ListFormatEnum.YAML:
+      print(yaml.dump(jobs))
+    case ListFormatEnum.CSV:
+      headers, rows = _prepare_job_list_data(jobs, all_users)
+      writer = csv.writer(sys.stdout)
+      writer.writerow(headers)
+      writer.writerows(rows)
+    case ListFormatEnum.TSV:
+      headers, rows = _prepare_job_list_data(jobs, all_users)
+      writer = csv.writer(sys.stdout, delimiter="\t")
+      writer.writerow(headers)
+      writer.writerows(rows)
+    case ListFormatEnum.TABLE:
+      headers, rows = _prepare_job_list_data(jobs, all_users)
+      _display_jobs_as_table(headers, rows, truncate)
+
+
+def _display_jobs_as_table(headers: list[str], rows: list,
+                           truncate: int | None) -> None:
+  table_data = [[_truncate(cell, truncate) for cell in row] for row in rows]
+  for row in table_data:
+    row[-1] = _get_emoji_by_status(row[-1]) + row[-1]
   print(tabulate(table_data, headers=headers))
 
 

@@ -12,6 +12,7 @@ from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
 from crossbench.pinpoint import pinpoint
+from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.user import UserEnum, list_user
 
 if TYPE_CHECKING:
@@ -49,6 +50,15 @@ class PinpointSubcommand(CrossbenchSubcommand):
         type=NumberParser.positive_int,
         default=None,
         help="Truncate cell content to the specified maximum length.")
+    pinpoint_parser.add_argument(
+        "-f",
+        "--format",
+        choices=[
+            ListFormatEnum.TABLE, ListFormatEnum.JSON, ListFormatEnum.YAML,
+            ListFormatEnum.CSV, ListFormatEnum.TSV
+        ],
+        default=ListFormatEnum.TABLE,
+        help="Output format for the job list.")
     return pinpoint_parser
 
   @override
