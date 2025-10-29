@@ -43,6 +43,12 @@ class PinpointSubcommand(CrossbenchSubcommand):
         type=NumberParser.positive_int,
         default=20,
         help="Number of jobs to display.")
+    pinpoint_parser.add_argument(
+        "-t",
+        "--truncate",
+        type=NumberParser.positive_int,
+        default=None,
+        help="Truncate cell content to the specified maximum length.")
     return pinpoint_parser
 
   @override

@@ -22,7 +22,7 @@ USERINFO_API_URL: Final[str] = "https://www.googleapis.com/oauth2/v3/userinfo"
 JOB_SHORTEN_URL_TEMPLATE: Final[str] = "http://go/j_/{job_id}"
 
 
-def list_jobs(user: UserEnum | str, number: int) -> None:
+def list_jobs(user: UserEnum | str, number: int, truncate: int | None) -> None:
   authed_session = _get_auth_session()
 
   params = {}
@@ -56,7 +56,7 @@ def list_jobs(user: UserEnum | str, number: int) -> None:
       print("No jobs found.")
       return
 
-    _display_jobs_table(jobs, user == UserEnum.ALL)
+    _display_jobs_table(jobs, user == UserEnum.ALL, truncate)
   except requests.exceptions.RequestException as e:
     print(f"An error occurred while fetching jobs: {e}")
 
@@ -85,7 +85,8 @@ def _get_user_email(authed_session: auth_requests.AuthorizedSession) -> str:
   return response.json()["email"]
 
 
-def _display_jobs_table(jobs: list[dict[str, Any]], all_users: bool) -> None:
+def _display_jobs_table(jobs: list[dict[str, Any]], all_users: bool,
+                        truncate: int | None) -> None:
   headers = [
       "Job URL", "Job Name", "Benchmark", "Configuration", "Created Time",
       "Status"
@@ -116,7 +117,7 @@ def _display_jobs_table(jobs: list[dict[str, Any]], all_users: bool) -> None:
           4,
           job.get("user", ""),
       )
-    table_data.append([_truncate(cell) for cell in row])
+    table_data.append([_truncate(cell, truncate) for cell in row])
   print(tabulate(table_data, headers=headers))
 
 
@@ -132,8 +133,8 @@ def _get_emoji_by_status(status: str) -> str:
   return emoji_by_status.get(status.lower().strip(), " ")
 
 
-def _truncate(text: str, max_length: int = 50) -> str:
+def _truncate(text: str, max_length: int | None = None) -> str:
   text = str(text)
-  if len(text) > max_length:
+  if max_length and len(text) > max_length:
     return text[:max_length - 3] + "..."
   return text

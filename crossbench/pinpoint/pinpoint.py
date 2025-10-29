@@ -14,4 +14,4 @@ if TYPE_CHECKING:
 def run(args: argparse.Namespace) -> None:
   """Runs Pinpoint CLI with the provided arguments."""
   if args.action == "list":
-    list_jobs(args.user, args.number)
+    list_jobs(args.user, args.number, args.truncate)
