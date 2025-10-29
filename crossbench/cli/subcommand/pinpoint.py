@@ -36,8 +36,11 @@ class PinpointSubcommand(CrossbenchSubcommand):
         "--user",
         type=list_user,
         default=UserEnum.ME,
-        help="User to filter jobs by. Can be 'me' (default), 'all', or an email address."
-    )
+        help=("User to filter jobs by. Can be 'me' (default), 'all', or an "
+              "email address. The 'me' value includes jobs for both your "
+              "@google.com and @chromium.org accounts, derived from your "
+              "authenticated username. This may not work if your usernames "
+              "differ across domains."))
     pinpoint_parser.add_argument(
         "-n",
         "--number",
