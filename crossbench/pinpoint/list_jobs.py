@@ -19,6 +19,7 @@ from crossbench.pinpoint.user import UserEnum
 PINPOINT_JOBS_API_URL: Final[
     str] = "https://pinpoint-dot-chromeperf.appspot.com/api/jobs"
 USERINFO_API_URL: Final[str] = "https://www.googleapis.com/oauth2/v3/userinfo"
+JOB_SHORTEN_URL_TEMPLATE: Final[str] = "http://go/j_/{job_id}"
 
 
 def list_jobs(user: UserEnum | str, number: int) -> None:
@@ -55,7 +56,7 @@ def list_jobs(user: UserEnum | str, number: int) -> None:
       print("No jobs found.")
       return
 
-    _display_jobs_table(jobs)
+    _display_jobs_table(jobs, user == UserEnum.ALL)
   except requests.exceptions.RequestException as e:
     print(f"An error occurred while fetching jobs: {e}")
 
@@ -84,11 +85,14 @@ def _get_user_email(authed_session: auth_requests.AuthorizedSession) -> str:
   return response.json()["email"]
 
 
-def _display_jobs_table(jobs: list[dict[str, Any]]) -> None:
+def _display_jobs_table(jobs: list[dict[str, Any]], all_users: bool) -> None:
   headers = [
-      "Job ID", "Job Name", "Benchmark", "Configuration", "User",
-      "Created Time", "Status"
+      "Job URL", "Job Name", "Benchmark", "Configuration", "Created Time",
+      "Status"
   ]
+  if all_users:
+    headers.insert(4, "User")
+
   table_data = []
 
   for job in jobs:
@@ -98,17 +102,34 @@ def _display_jobs_table(jobs: list[dict[str, Any]]) -> None:
           created_time.replace("Z", "+00:00"))
       created_time = dt_object.strftime("%Y-%m-%d %H:%M:%S")
 
+    status = job.get("status", "")
     row = [
-        job.get("job_id", ""),
+        JOB_SHORTEN_URL_TEMPLATE.format(job_id=job.get("job_id", "")),
         job.get("name", ""),
         job.get("arguments", {}).get("benchmark", ""),
         job.get("configuration", ""),
-        job.get("user", ""),
         created_time,
-        job.get("status", ""),
+        f"{_get_emoji_by_status(status)} {status}",
     ]
+    if all_users:
+      row.insert(
+          4,
+          job.get("user", ""),
+      )
     table_data.append([_truncate(cell) for cell in row])
   print(tabulate(table_data, headers=headers))
+
+
+def _get_emoji_by_status(status: str) -> str:
+  emoji_by_status = {
+      "queued": "⌛",
+      "running": "🏃",
+      "completed": "✅",
+      # An extra space is added because this emoji eats a space from the right.
+      "cancelled": "⏹️ ",
+      "failed": "❌",
+  }
+  return emoji_by_status.get(status.lower().strip(), " ")
 
 
 def _truncate(text: str, max_length: int = 50) -> str:

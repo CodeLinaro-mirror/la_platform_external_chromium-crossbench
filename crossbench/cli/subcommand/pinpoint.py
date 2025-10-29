@@ -4,14 +4,18 @@
 
 from __future__ import annotations
 
-import argparse
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
+from crossbench.parse import NumberParser
 from crossbench.pinpoint import pinpoint
 from crossbench.pinpoint.user import UserEnum, list_user
+
+if TYPE_CHECKING:
+  import argparse
 
 
 class PinpointSubcommand(CrossbenchSubcommand):
@@ -36,7 +40,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
     pinpoint_parser.add_argument(
         "-n",
         "--number",
-        type=_check_positive_int,
+        type=NumberParser.positive_int,
         default=20,
         help="Number of jobs to display.")
     return pinpoint_parser
@@ -44,10 +48,3 @@ class PinpointSubcommand(CrossbenchSubcommand):
   @override
   def run(self, args: argparse.Namespace) -> None:
     pinpoint.run(args)
-
-
-def _check_positive_int(value: str) -> int:
-  number = int(value)
-  if number <= 0:
-    raise argparse.ArgumentTypeError(f"'{value}' must be a positive integer.")
-  return number
