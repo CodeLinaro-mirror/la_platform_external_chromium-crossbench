@@ -11,6 +11,7 @@ from typing_extensions import override
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.pinpoint import pinpoint
+from crossbench.pinpoint.user import UserEnum, list_user
 
 if TYPE_CHECKING:
   import argparse
@@ -28,6 +29,13 @@ class PinpointSubcommand(CrossbenchSubcommand):
         "action",
         choices=["list"],
         help="Displays all pinpoint jobs on the first page.")
+    pinpoint_parser.add_argument(
+        "-u",
+        "--user",
+        type=list_user,
+        default=UserEnum.ME,
+        help="User to filter jobs by. Can be 'me' (default), 'all', or an email address."
+    )
     return pinpoint_parser
 
   @override

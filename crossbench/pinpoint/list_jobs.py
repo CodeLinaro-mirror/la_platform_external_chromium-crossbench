@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any
+from typing import Any, Final
 
 import requests
 from google import auth as google_auth
@@ -14,15 +14,24 @@ from tabulate import tabulate
 
 from crossbench import plt
 from crossbench.cli import ui
+from crossbench.pinpoint.user import UserEnum
 
-PINPOINT_JOBS_API_URL = "https://pinpoint-dot-chromeperf.appspot.com/api/jobs"
+PINPOINT_JOBS_API_URL: Final[
+    str] = "https://pinpoint-dot-chromeperf.appspot.com/api/jobs"
+USERINFO_API_URL: Final[str] = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 
-def list_jobs() -> None:
+def list_jobs(user: UserEnum | str) -> None:
   authed_session = _get_auth_session()
 
+  params = {}
+  if user == UserEnum.ME:
+    params["filter"] = f"user={_get_user_email(authed_session)}"
+  elif user != UserEnum.ALL:
+    params["filter"] = f"user={user}"
+
   try:
-    response = authed_session.get(PINPOINT_JOBS_API_URL)
+    response = authed_session.get(PINPOINT_JOBS_API_URL, params=params)
     response.raise_for_status()
     data = response.json()
     jobs = data.get("jobs", [])
@@ -52,9 +61,15 @@ def _get_auth_session() -> auth_requests.AuthorizedSession:
     raise
 
 
+def _get_user_email(authed_session: auth_requests.AuthorizedSession) -> str:
+  response = authed_session.get(USERINFO_API_URL)
+  response.raise_for_status()
+  return response.json()["email"]
+
+
 def _display_jobs_table(jobs: list[dict[str, Any]]) -> None:
   headers = [
-      "Job ID", "Job Name", "Benchmark", "Configuration", "Owner",
+      "Job ID", "Job Name", "Benchmark", "Configuration", "User",
       "Created Time", "Status"
   ]
   table_data = []
