@@ -28,40 +28,39 @@ class PinpointSubcommand(CrossbenchSubcommand):
         "pinpoint", aliases=("pp",), help="Interact with the Pinpoint service.")
     assert isinstance(pinpoint_parser, CrossBenchArgumentParser)
     pinpoint_parser.add_argument(
-        "action",
-        choices=["list"],
-        help="Displays all pinpoint jobs on the first page.")
+        "action", choices=["list"], help="Displays recent Pinpoint jobs.")
     pinpoint_parser.add_argument(
-        "-u",
         "--user",
+        "-u",
         type=list_user,
         default=UserEnum.ME,
-        help=("User to filter jobs by. Can be 'me' (default), 'all', or an "
-              "email address. The 'me' value includes jobs for both your "
+        help=("Filter jobs by user. 'me' (default) shows jobs for your "
               "@google.com and @chromium.org accounts, derived from your "
-              "authenticated username. This may not work if your usernames "
-              "differ across domains."))
+              "authenticated username. 'all' shows jobs from all users. "
+              "An email address can also be specified. Note: 'me' might not "
+              "work correctly if your usernames differ across domains."))
     pinpoint_parser.add_argument(
-        "-n",
         "--number",
+        "-n",
         type=NumberParser.positive_int,
         default=20,
-        help="Number of jobs to display.")
+        help="The maximum number of jobs to fetch and display. (default: 20)")
     pinpoint_parser.add_argument(
-        "-t",
-        "--truncate",
-        type=NumberParser.positive_int,
-        default=None,
-        help="Truncate cell content to the specified maximum length.")
-    pinpoint_parser.add_argument(
-        "-f",
         "--format",
+        "-f",
         choices=[
             ListFormatEnum.TABLE, ListFormatEnum.JSON, ListFormatEnum.YAML,
             ListFormatEnum.CSV, ListFormatEnum.TSV
         ],
         default=ListFormatEnum.TABLE,
-        help="Output format for the job list.")
+        help="The output format for the list of jobs. (default: table)")
+    pinpoint_parser.add_argument(
+        "--truncate",
+        "-t",
+        type=NumberParser.positive_int,
+        default=None,
+        help=("Truncate cell content to the specified maximum length. "
+              "Only applies to the 'table' format."))
     return pinpoint_parser
 
   @override
