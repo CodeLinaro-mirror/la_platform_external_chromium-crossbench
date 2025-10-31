@@ -13,6 +13,7 @@ from typing_extensions import override
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
+from crossbench.pinpoint.cancel_job import cancel_job
 from crossbench.pinpoint.job_config import job_config
 from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.list_jobs import list_jobs
@@ -249,6 +250,27 @@ class PinpointStartSubcommand:
     )
 
 
+class PinpointCancelSubcommand(PinpointBaseSubcommand):
+  """Cancel a specific Pinpoint job."""
+
+  @override
+  def add_cli_parser(self) -> argparse.ArgumentParser:
+    cancel_parser = self._parent.subparsers.add_parser(
+        "cancel", help="Cancel a specific Pinpoint job.")
+    cancel_parser.add_argument(
+        "--id", required=True, help="The ID of the job to cancel.")
+    cancel_parser.add_argument(
+        "--reason",
+        required=False,
+        default="Cancelled via Pinpoint CLI.",
+        help="Reason for cancellation.")
+    return cancel_parser
+
+  @override
+  def run(self, args: argparse.Namespace) -> None:
+    cancel_job(args.id, args.reason)
+
+
 class PinpointSubcommand(CrossbenchSubcommand):
   """A subcommand for interacting with the Pinpoint service."""
 
@@ -262,6 +284,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
     self._list_subcommand = PinpointListSubcommand(self)
     self._config_subcommand = PinpointConfigSubcommand(self)
     self._start_subcommand = PinpointStartSubcommand(self)
+    self._cancel_subcommand = PinpointCancelSubcommand(self)
 
   @property
   def subparsers(self) -> Subparsers:
