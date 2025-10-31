@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import argparse
 from typing import TYPE_CHECKING
 
 from typing_extensions import override
@@ -15,11 +16,10 @@ from crossbench.parse import NumberParser
 from crossbench.pinpoint.job_config import job_config
 from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.list_jobs import list_jobs
+from crossbench.pinpoint.start_job import start_job
 from crossbench.pinpoint.user import UserEnum, list_user
 
 if TYPE_CHECKING:
-  import argparse
-
   from crossbench.cli.cli import CrossBenchCLI
   from crossbench.cli.types import Subparsers
 
@@ -106,6 +106,149 @@ class PinpointConfigSubcommand(PinpointBaseSubcommand):
     job_config(args.id)
 
 
+class PinpointStartSubcommand:
+  """Starts a new Pinpoint job."""
+
+  def __init__(self, parent: PinpointSubcommand) -> None:
+    self._parent = parent
+    self._parser = self.add_cli_parser()
+    self._parser.set_defaults(pinpoint_subcommand=self)
+
+  def add_cli_parser(self) -> argparse.ArgumentParser:
+    start_parser = self._parent.subparsers.add_parser(
+        "start",
+        help="Starts a new Pinpoint A/B job.",
+        description="Starts a new Pinpoint A/B job. "
+        "This command allows you to specify two configurations (base and "
+        "experiment) to compare performance between them.",
+        epilog="""Example:
+  ./cb.py pinpoint start \\
+    --benchmark=speedometer3.crossbench \\
+    --bot=linux-r350-perf \\
+    --story=default \\
+    --story-tags=mobile,desktop \\
+    --repeat=20 \\
+    --bug-id=123456 \\
+    --base-git-hash=HEAD \\
+    --exp-git-hash=HEAD \\
+    --base-patch-url=https://chromium-review.googlesource.com/c/v8/v8/+/12345 \\
+    --exp-patch-url=https://chromium-review.googlesource.com/c/v8/v8/+/67890 \\
+    --base-js-flags=--flag1,--flag2 \\
+    --exp-js-flags=--flag3,--flag4 \\
+    --base-enable-features=feature1,feature2 \\
+    --exp-enable-features=feature3,feature4 \\
+    --base-disable-features=feature5,feature6 \\
+    --exp-disable-features=feature7,feature8
+""",
+        formatter_class=argparse.RawTextHelpFormatter)
+    start_parser.add_argument(
+        "--benchmark", required=True, help="The benchmark to run.")
+    start_parser.add_argument(
+        "--bot",
+        required=True,
+        dest="bot",
+        help="The bot configuration to run on (e.g., 'linux-perf').")
+    start_parser.add_argument(
+        "--story", dest="story", default=None, help="The story to run.")
+    start_parser.add_argument(
+        "--story-tags",
+        dest="story_tags",
+        default=None,
+        help="Story tags to filter stories.")
+    start_parser.add_argument(
+        "--repeat",
+        dest="repeat",
+        type=NumberParser.positive_int,
+        default=100,
+        help="How many times to repeat the experiment.")
+    start_parser.add_argument(
+        "--bug-id",
+        dest="bug_id",
+        default=None,
+        help="The bug ID to associate with the job.")
+    start_parser.add_argument(
+        "--base-git-hash",
+        dest="base_git_hash",
+        default="HEAD",
+        help="Base git hash for the try job. Defaults to HEAD.")
+    start_parser.add_argument(
+        "--exp-git-hash",
+        dest="exp_git_hash",
+        default=None,
+        help="Experiment git hash for A/B testing. "
+        "Defaults to base-git-hash.")
+    start_parser.add_argument(
+        "--base-patch-url",
+        dest="base_patch_url",
+        default=None,
+        help="Gerrit URL of a patch to apply to the base commit.")
+    start_parser.add_argument(
+        "--exp-patch-url",
+        dest="exp_patch_url",
+        default=None,
+        help="Gerrit URL of a patch to apply to the experiment commit.")
+
+    # Extra browser args.
+    start_parser.add_argument(
+        "--base-js-flags",
+        dest="base_js_flags",
+        default=None,
+        help="JavaScript flags to pass to V8 for the base commit. "
+        "Example: --base-js-flags=--turbolev-future")
+    start_parser.add_argument(
+        "--exp-js-flags",
+        dest="exp_js_flags",
+        default=None,
+        help="JavaScript flags to pass to V8 for the experiment commit. "
+        "Example: --exp-js-flags=--turbolev-future")
+    start_parser.add_argument(
+        "--base-enable-features",
+        dest="base_enable_features",
+        default=None,
+        help="Comma-separated list of Chrome features to enable for the base "
+        "commit. Example: --base-enable-features=Feature1,Feature2")
+    start_parser.add_argument(
+        "--exp-enable-features",
+        dest="exp_enable_features",
+        default=None,
+        help="Comma-separated list of Chrome features to enable for the "
+        "experiment commit. Example: --exp-enable-features=FeatureA,FeatureB")
+    start_parser.add_argument(
+        "--base-disable-features",
+        dest="base_disable_features",
+        default=None,
+        help="Comma-separated list of Chrome features to disable for the base "
+        "commit. Example: --base-disable-features=Feature1,Feature2")
+    start_parser.add_argument(
+        "--exp-disable-features",
+        dest="exp_disable_features",
+        default=None,
+        help="Comma-separated list of Chrome features to disable for the "
+        "experiment commit. Example: --exp-disable-features=FeatureA,FeatureB")
+
+    return start_parser
+
+  def run(self, args: argparse.Namespace) -> None:
+    start_job(
+        benchmark=args.benchmark,
+        bot=args.bot,
+        story=args.story,
+        story_tags=args.story_tags,
+        repeat=args.repeat,
+        bug_id=args.bug_id,
+        base_git_hash=args.base_git_hash,
+        exp_git_hash=args.exp_git_hash,
+        base_patch_url=args.base_patch_url,
+        exp_patch_url=args.exp_patch_url,
+        base_js_flags=args.base_js_flags,
+        exp_js_flags=args.exp_js_flags,
+        base_enable_features=args.base_enable_features,
+        exp_enable_features=args.exp_enable_features,
+        base_disable_features=args.base_disable_features,
+        exp_disable_features=args.exp_disable_features,
+    )
+
+
 class PinpointSubcommand(CrossbenchSubcommand):
   """A subcommand for interacting with the Pinpoint service."""
 
@@ -118,6 +261,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
         help="Pinpoint actions")
     self._list_subcommand = PinpointListSubcommand(self)
     self._config_subcommand = PinpointConfigSubcommand(self)
+    self._start_subcommand = PinpointStartSubcommand(self)
 
   @property
   def subparsers(self) -> Subparsers:
