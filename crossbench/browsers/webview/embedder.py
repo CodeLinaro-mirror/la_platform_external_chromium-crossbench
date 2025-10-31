@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Final, Sequence, cast
+from typing import TYPE_CHECKING, Any, Final, Sequence, cast
 
 from immutabledict import immutabledict
 from selenium import webdriver
@@ -131,3 +131,12 @@ class WebviewEmbedder(Webview):
       with ui.spinner(title=title):
         self.platform.adb.install(self.path)
     super()._setup_binary()
+
+  @override
+  def performance_mark(self,
+                       name: str,
+                       detail: Any = None,
+                       prefix: str = "crossbench-") -> None:
+    # The driver, and Webview instance might not exist when this is called
+    # See also comments above on .start()
+    logging.debug("%s: skipping performance_mark: %s%s", self, prefix, name)
