@@ -9,32 +9,26 @@ import datetime
 import itertools
 import json
 import sys
-import warnings
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any
 
 import requests
 import yaml
-from google import auth as google_auth
-from google.auth.transport import requests as auth_requests
 from tabulate import tabulate
 
-from crossbench import plt
-from crossbench.cli import ui
+from crossbench.pinpoint.api import JOB_SHORTEN_URL_TEMPLATE, \
+    PINPOINT_JOBS_API_URL, USERINFO_API_URL
+from crossbench.pinpoint.auth import get_auth_session
 from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.user import UserEnum
 
-PINPOINT_JOBS_API_URL: Final[
-    str] = "https://pinpoint-dot-chromeperf.appspot.com/api/jobs"
-USERINFO_API_URL: Final[str] = "https://www.googleapis.com/oauth2/v3/userinfo"
-JOB_SHORTEN_URL_TEMPLATE: Final[str] = "http://go/j_/{job_id}"
+if TYPE_CHECKING:
+  from google.auth.transport import requests as auth_requests
 
 
 def list_jobs(user: UserEnum | str, number: int, truncate: int | None,
               output_format: ListFormatEnum) -> None:
-  # TODO(b/455510346): Figure out how to fix the quota warning properly.
-  warnings.filterwarnings("ignore", module="google.auth._default")
-  authed_session = _get_auth_session()
+  authed_session = get_auth_session()
 
   try:
     emails_to_query = _fetch_user_emails(authed_session, user)
@@ -69,6 +63,12 @@ def _fetch_user_emails(authed_session: auth_requests.AuthorizedSession,
   return {user}
 
 
+def _get_user_email(authed_session: auth_requests.AuthorizedSession) -> str:
+  response = authed_session.get(USERINFO_API_URL)
+  response.raise_for_status()
+  return response.json()["email"]
+
+
 def _fetch_jobs(authed_session: auth_requests.AuthorizedSession,
                 number: int,
                 email: str | None = None) -> list[dict[str, Any]]:
@@ -94,30 +94,6 @@ def _fetch_jobs(authed_session: auth_requests.AuthorizedSession,
     if not data.get("next") or not next_cursor:
       break
   return jobs
-
-
-def _get_auth_session() -> auth_requests.AuthorizedSession:
-  try:
-    # TODO(b/455510346): Make sure it supports @chromium.org accounts.
-    credentials, _ = google_auth.default(
-        scopes=["https://www.googleapis.com/auth/userinfo.email"])
-    return auth_requests.AuthorizedSession(credentials)
-  except google_auth.exceptions.DefaultCredentialsError:
-    user_input = ui.prompt(
-        "Authentication failed. Please run 'gcloud auth application-default login' "
-        "to configure your credentials.\n"
-        "Would you like to run it now?", "[Y/n] ").lower().strip()
-    if user_input in ["", "y", "yes"]:
-      plt.PLATFORM.sh(
-          "gcloud", "auth", "application-default", "login", check=True)
-      return _get_auth_session()
-    raise
-
-
-def _get_user_email(authed_session: auth_requests.AuthorizedSession) -> str:
-  response = authed_session.get(USERINFO_API_URL)
-  response.raise_for_status()
-  return response.json()["email"]
 
 
 def _prepare_job_list_data(
