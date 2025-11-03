@@ -180,8 +180,8 @@ class LocalWprReplayNetwork(WprReplayNetwork):
   @override
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
     extra_kwargs: dict[str, Any] = {}
-    if self._inject_deterministic_script:
-      extra_kwargs["inject_scripts"] = None
+    if not self._inject_deterministic_script:
+      extra_kwargs["inject_scripts"] = []
     if self._cross_platform_mode:
       extra_kwargs["http_port"] = 80
       extra_kwargs["https_port"] = 443
