@@ -6,10 +6,12 @@ from __future__ import annotations
 import unittest
 
 import crossbench.path as pth
+from crossbench.cli.config.probe import ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.plt.arch import MachineArch
 from crossbench.probes.all import PerfettoProbe
 from crossbench.probes.perfetto.downloader import PerfettoToolDownloader
+from crossbench.probes.perfetto.perfetto import TraceConfig
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_helper import LinuxMockPlatform, \
@@ -51,7 +53,9 @@ class PerfettoProbeTestCase(unittest.TestCase):
       with self.subTest(config_file=str(config_file)):
         probe_a = PerfettoProbe.parse_dict({"trace_config": config_file.stem})
         probe_b = PerfettoProbe.parse_str(config_file.stem)
+        probe_c = PerfettoProbe.parse_str(str(config_file))
         self.assertEqual(probe_a.trace_config, probe_b.trace_config)
+        self.assertEqual(probe_a.trace_config, probe_c.trace_config)
         for data_source in probe_b.trace_config.data_sources:
           config = data_source.config
           self.assertNotEqual(
@@ -63,6 +67,16 @@ class PerfettoProbeTestCase(unittest.TestCase):
               "Please use the org.chromium.trace_metadata2 data source "
               "which does not require the json-serialized trace_config")
     self.assertGreater(preset_count, 0)
+
+  def test_preset_file_from_probe_config(self):
+    trace_config_file = TraceConfig.preset_dir() / "v8.pbtxt"
+    probe = PerfettoProbe.parse_str(str(trace_config_file))
+    probe_a = ProbeConfig.parse("perfetto:v8").new_instance()
+    self.assertTrue(trace_config_file.is_file())
+    src_str = f"perfetto:{trace_config_file}"
+    probe_b = ProbeConfig.parse(src_str).new_instance()
+    self.assertEqual(probe, probe_a)
+    self.assertEqual(probe, probe_b)
 
 
 class PerfettoToolDownloaderTestCase(CrossbenchFakeFsTestCase):
