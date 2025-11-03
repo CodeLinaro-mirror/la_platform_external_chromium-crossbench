@@ -132,6 +132,13 @@ def _prepare_job_list_data(
   return headers, table_data
 
 
+def _to_terminal_link(url: str) -> str:
+  text = url
+  osc8_start = "\x1b]8;;"
+  osc8_end = "\x1b\\"
+  return f"{osc8_start}{url}{osc8_end}{text}{osc8_start}{osc8_end}"
+
+
 def _display_jobs(jobs: list[dict[str, Any]], output_format: ListFormatEnum,
                   all_users: bool, truncate: int | None) -> None:
   match output_format:
@@ -157,8 +164,12 @@ def _display_jobs(jobs: list[dict[str, Any]], output_format: ListFormatEnum,
 def _display_jobs_as_table(headers: list[str], rows: list,
                            truncate: int | None) -> None:
   table_data = [[_truncate(cell, truncate) for cell in row] for row in rows]
+  url_index = headers.index("Job URL")
+  status_index = headers.index("Status")
   for row in table_data:
-    row[-1] = _get_emoji_by_status(row[-1]) + row[-1]
+    row[url_index] = _to_terminal_link(row[url_index])
+    row[status_index] = _get_emoji_by_status(
+        row[status_index]) + row[status_index]
   print(tabulate(table_data, headers=headers))
 
 
