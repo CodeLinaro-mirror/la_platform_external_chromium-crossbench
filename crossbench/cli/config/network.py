@@ -65,6 +65,7 @@ class NetworkConfig(ConfigObject):
   persist_server: bool = False
   run_on_device: bool = False
   skip_deterministic_script_injection: bool = False
+  no_archive_certificates: bool = False
   response_transformations_file: pth.LocalPath | None = None
   cross_platform_mode: bool = False
   host: str | None = None
@@ -110,6 +111,20 @@ class NetworkConfig(ConfigObject):
         default=False,
         help=("Don't inject the deterministic.js script into every response "
               "in WPR replay mode. See crbug.com/428945380"))
+    parser.add_argument(
+        "no_archive_certificates",
+        type=bool,
+        default=False,
+        help=(
+            "For 'wpr' network only. By default, WPR stores certificates in "
+            "the archive during recording (minted from the root ones) and "
+            "reads them during replay. Such certificates will expire "
+            "eventually, so this setup is only suitable when the client "
+            "ignores TLS errors (e.g. due to "
+            "--ignore-certificate-errors-spki-list in a Chromium browser), or "
+            "for short-lived experiments. Otherwise, use this flag to prevent "
+            "WPR from reading/writing archive certificates. New certificates "
+            "will be generated on replay time, with caching by host."))
     parser.add_argument(
         "response_transformations_file",
         type=_parse_existing_file_path_and_resolve,
@@ -240,6 +255,7 @@ class NetworkConfig(ConfigObject):
 
     wpr_only_options = ("wpr_go_bin", "persist_server", "run_on_device",
                         "skip_deterministic_script_injection", "host",
+                        "no_archive_certificates",
                         "response_transformations_file", "cross_platform_mode")
     for option in wpr_only_options:
       if getattr(self, option) and self.type is not NetworkType.WPR:
@@ -271,6 +287,7 @@ class NetworkConfig(ConfigObject):
               self.wpr_go_bin,
               browser_platform,
               self.persist_server,
+              no_archive_certificates=self.no_archive_certificates,
               response_transformations_file=self.response_transformations_file,
               inject_deterministic_script=not self
               .skip_deterministic_script_injection,
@@ -281,6 +298,7 @@ class NetworkConfig(ConfigObject):
             self.wpr_go_bin,
             browser_platform,
             self.persist_server,
+            no_archive_certificates=self.no_archive_certificates,
             response_transformations_file=self.response_transformations_file,
             inject_deterministic_script=not self
             .skip_deterministic_script_injection,

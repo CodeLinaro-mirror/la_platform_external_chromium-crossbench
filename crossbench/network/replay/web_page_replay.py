@@ -389,6 +389,7 @@ class WprReplayServer(WprBase):
                inject_scripts: Optional[Iterable[AnyPath]] = None,
                key_file: Optional[AnyPath] = None,
                cert_file: Optional[AnyPath] = None,
+               no_archive_certificates: bool = False,
                rules_file: Optional[AnyPath] = None,
                log_path: Optional[LocalPath] = None,
                fuzzy_url_matching: bool = True,
@@ -398,6 +399,7 @@ class WprReplayServer(WprBase):
     super().__init__(archive_path, bin_path, http_port, https_port, host,
                      inject_scripts, key_file, cert_file, log_path, run_as_root,
                      platform)
+    self._no_archive_certificates = no_archive_certificates
     self._rules_file: AnyPath | None = rules_file
     self._fuzzy_url_matching: bool = fuzzy_url_matching
     self._serve_chronologically: bool = serve_chronologically
@@ -411,6 +413,8 @@ class WprReplayServer(WprBase):
   @override
   def cmd(self) -> TupleCmdArgs:
     cmd = ("replay",) + super().base_cmd_flags
+    if self._no_archive_certificates:
+      cmd += ("--no_archive_certificates",)
     if self._rules_file:
       cmd += (f"--rules_file={self._rules_file }",)
     if not self._fuzzy_url_matching:

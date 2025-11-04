@@ -37,6 +37,7 @@ class WprReplayNetwork(ReplayNetwork):
                traffic_shaper: Optional[TrafficShaper],
                wpr_go_bin: Optional[LocalPath], browser_platform: Platform,
                persist_server: bool, inject_deterministic_script: bool,
+               no_archive_certificates: bool,
                response_transformations_file: LocalPath | None,
                cross_platform_mode: bool, host: str | None) -> None:
     super().__init__(archive, traffic_shaper, browser_platform)
@@ -44,6 +45,7 @@ class WprReplayNetwork(ReplayNetwork):
     self._tmp_dir: AnyPath | None = None
     self._persist_server: Final[bool] = persist_server
     self._inject_deterministic_script: Final[bool] = inject_deterministic_script
+    self._no_archive_certificates: Final[bool] = no_archive_certificates
     self._response_transformations_file: Final[
         LocalPath | None] = response_transformations_file
     self._cross_platform_mode: Final[bool] = cross_platform_mode
@@ -193,6 +195,7 @@ class LocalWprReplayNetwork(WprReplayNetwork):
         self.archive_path,
         self._wpr_go_bin,
         log_path=log_dir / "network.wpr.log",
+        no_archive_certificates=self._no_archive_certificates,
         rules_file=self._response_transformations_file,
         platform=self.host_platform,
         **extra_kwargs)
@@ -204,6 +207,7 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
                traffic_shaper: Optional[TrafficShaper],
                wpr_go_bin: Optional[LocalPath], browser_platform: Platform,
                persist_server: bool, inject_deterministic_script: bool,
+               no_archive_certificates: bool,
                response_transformations_file: LocalPath | None,
                host: str | None) -> None:
     super().__init__(
@@ -213,6 +217,7 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         browser_platform=browser_platform,
         persist_server=persist_server,
         inject_deterministic_script=inject_deterministic_script,
+        no_archive_certificates=no_archive_certificates,
         response_transformations_file=response_transformations_file,
         cross_platform_mode=False,
         host=host)
