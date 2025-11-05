@@ -30,6 +30,8 @@ def start_job(
     exp_disable_features: str | None,
 ) -> None:
   """Starts a new Pinpoint job."""
+  exp_git_hash = exp_git_hash or base_git_hash
+
   authed_session = get_auth_session()
 
   payload = {
