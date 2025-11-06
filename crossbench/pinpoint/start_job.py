@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import json
 
-from crossbench import exception
 from crossbench.pinpoint.api import PINPOINT_START_JOB_API_URL
 from crossbench.pinpoint.auth import get_auth_session
+from crossbench.pinpoint.helper import annotate
 
 
 def start_job(
@@ -68,7 +68,7 @@ def start_job(
               enable_features=exp_enable_features,
               disable_features=exp_disable_features),
   }
-  with exception.annotate("Creating a Pinpoint job"):
+  with annotate("Starting Pinpoint job"):
     response = authed_session.post(PINPOINT_START_JOB_API_URL, data=payload)
     response.raise_for_status()
     print(json.dumps(response.json(), indent=2))

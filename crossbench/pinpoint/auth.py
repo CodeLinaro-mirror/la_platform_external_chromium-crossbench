@@ -11,6 +11,7 @@ from google.auth.transport import requests as auth_requests
 
 from crossbench import plt
 from crossbench.cli import ui
+from crossbench.pinpoint.helper import annotate
 
 
 def get_auth_session() -> auth_requests.AuthorizedSession:
@@ -18,9 +19,10 @@ def get_auth_session() -> auth_requests.AuthorizedSession:
   warnings.filterwarnings("ignore", module="google.auth._default")
   try:
     # TODO(b/455510346): Make sure it supports @chromium.org accounts.
-    credentials, _ = google_auth.default(
-        scopes=["https://www.googleapis.com/auth/userinfo.email"])
-    return auth_requests.AuthorizedSession(credentials)
+    with annotate("Authenticating"):
+      credentials, _ = google_auth.default(
+          scopes=["https://www.googleapis.com/auth/userinfo.email"])
+      return auth_requests.AuthorizedSession(credentials)
   except google_auth.exceptions.DefaultCredentialsError:
     user_input = ui.prompt(
         "Authentication failed. Please run 'gcloud auth application-default login' "
