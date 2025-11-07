@@ -13,6 +13,7 @@ PINPOINT_JOB_API_URL_TEMPLATE: Final[
     str] = f"{PINPOINT_API_URL_BASE}/job/{{job_id}}"
 PINPOINT_START_JOB_API_URL: Final[str] = f"{PINPOINT_API_URL_BASE}/new"
 PINPOINT_CANCEL_JOB_API_URL: Final[str] = f"{PINPOINT_API_URL_BASE}/job/cancel"
+PINPOINT_CONFIG_API_URL: Final[str] = f"{PINPOINT_API_URL_BASE}/config"
 
 USERINFO_API_URL: Final[str] = "https://www.googleapis.com/oauth2/v3/userinfo"
 JOB_SHORTEN_URL_TEMPLATE: Final[str] = "http://go/j_/{job_id}"
