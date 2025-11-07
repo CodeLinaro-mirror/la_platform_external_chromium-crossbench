@@ -15,6 +15,7 @@ from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
 from crossbench.pinpoint.cancel_job import cancel_job
 from crossbench.pinpoint.job_config import job_config
+from crossbench.pinpoint.list_benchmarks import print_benchmarks
 from crossbench.pinpoint.list_bots import print_bots
 from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.list_jobs import list_jobs
@@ -286,6 +287,20 @@ class PinpointBotsSubcommand(PinpointBaseSubcommand):
     print_bots()
 
 
+class PinpointBenchmarksSubcommand(PinpointBaseSubcommand):
+  """A subcommand for displaying available Pinpoint benchmarks."""
+
+  @override
+  def add_cli_parser(self) -> argparse.ArgumentParser:
+    benchmarks_parser = self._parent.subparsers.add_parser(
+        "benchmarks", help="Displays all available Pinpoint benchmarks.")
+    return benchmarks_parser
+
+  @override
+  def run(self, args: argparse.Namespace) -> None:
+    print_benchmarks()
+
+
 class PinpointSubcommand(CrossbenchSubcommand):
   """A subcommand for interacting with the Pinpoint service."""
 
@@ -301,6 +316,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
     self._start_subcommand = PinpointStartSubcommand(self)
     self._cancel_subcommand = PinpointCancelSubcommand(self)
     self._bots_subcommand = PinpointBotsSubcommand(self)
+    self._benchmarks_subcommand = PinpointBenchmarksSubcommand(self)
 
   @property
   def subparsers(self) -> Subparsers:
