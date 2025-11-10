@@ -341,24 +341,41 @@ class TraceProcessorProbe(Probe):
     with change_cwd(group_dir), BatchTraceProcessor(
         traces=CrossbenchTraceUriResolver(group.runs), config=btp_config
     ) as btp, ExceptionAnnotator().annotate() as exceptions:
-      csv_files = self._run_btp_queries(btp, group_dir, exceptions)
-      json_files = self._run_btp_metrics(btp, group_dir, exceptions)
+      csv_files, json_files = self._run_btp_queries(btp, group_dir, exceptions)
+      json_files += self._run_btp_metrics(btp, group_dir, exceptions)
     return LocalProbeResult(csv=csv_files, json=json_files)
 
   def _run_btp_queries(self, btp: BatchTraceProcessor, group_dir: pth.LocalPath,
-                       exceptions: ExceptionAnnotator) -> list[pth.LocalPath]:
+                       exceptions: ExceptionAnnotator) -> tuple[
+                           list[pth.LocalPath], list[pth.LocalPath]]:
 
-    def run_query(query: TraceProcessorQueryConfig) -> pth.LocalPath:
+    def run_query(query: TraceProcessorQueryConfig) -> tuple[
+        pth.LocalPath, pth.LocalPath]:
       csv_file = group_dir / f"{query.name}.csv"
-      btp.query_and_flatten(query.sql).to_csv(path_or_buf=csv_file, index=False)
-      return csv_file
+      json_file = group_dir / f"{query.name}.json"
+      df = btp.query_and_flatten(query.sql)
+      df.to_csv(path_or_buf=csv_file, index=False)
+      # Remove metadata columns to allow for passing the data for JSON result
+      # through the MetricsMerger.
+      df.drop(
+          columns=["cb_browser", "cb_story", "cb_temperature", "cb_run"],
+          inplace=True)
+      records = df.to_dict(orient="records")
+      merged = MetricsMerger()
+      merged.add(records)
+      with json_file.open("x") as f:
+        json.dump(merged.to_json(), f, indent=4)
+      return csv_file, json_file
 
     csv_files: list[pth.LocalPath] = []
+    json_files: list[pth.LocalPath] = []
     with exceptions.annotate("Running queries"):
       for query in self.queries:
         with exceptions.annotate(f"query: {query.name}"):
-          csv_files.append(run_query(query))
-    return csv_files
+          csv_file, json_file = run_query(query)
+          csv_files.append(csv_file)
+          json_files.append(json_file)
+    return csv_files, json_files
 
   def _run_btp_metrics(self, btp: BatchTraceProcessor, group_dir: pth.LocalPath,
                        exceptions: ExceptionAnnotator) -> list[pth.LocalPath]:

@@ -74,18 +74,24 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
   def _run_queries(self, tp: TraceProcessor,
                    exceptions: ExceptionAnnotator) -> LocalProbeResult:
 
-    def run_query(query: TraceProcessorQueryConfig) -> pth.LocalPath:
+    def run_query(query: TraceProcessorQueryConfig) -> tuple[
+          pth.LocalPath, pth.LocalPath]:
       csv_file = self.local_result_path / f"{query.name}.csv"
-      tp.query(query.sql).as_pandas_dataframe().to_csv(
-          path_or_buf=csv_file, index=False)
-      return csv_file
+      json_file = self.local_result_path / f"{query.name}.json"
+      df = tp.query(query.sql).as_pandas_dataframe()
+      df.to_csv(path_or_buf=csv_file, index=False)
+      df.to_json(path_or_buf=json_file, orient="records")
+      return csv_file, json_file
 
     with self.run.actions("TRACE_PROCESSOR: Running queries", verbose=True):
       csv_files = []
+      json_files = []
       for query in self.probe.queries:
         with exceptions.capture(f"query: {query}"):
-          csv_files.append(run_query(query))
-      return LocalProbeResult(csv=csv_files)
+          csv_file, json_file = run_query(query)
+          csv_files.append(csv_file)
+          json_files.append(json_file)
+      return LocalProbeResult(csv=csv_files, json=json_files)
 
   def _run_metrics(self, tp: TraceProcessor,
                    exceptions: ExceptionAnnotator) -> LocalProbeResult:
