@@ -15,8 +15,8 @@ from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
 from crossbench.pinpoint.cancel_job import cancel_job
 from crossbench.pinpoint.job_config import job_config
-from crossbench.pinpoint.list_benchmarks import print_benchmarks
-from crossbench.pinpoint.list_bots import print_bots
+from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
+from crossbench.pinpoint.list_bots import fetch_bots
 from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.list_jobs import list_jobs
 from crossbench.pinpoint.start_job import start_job
@@ -273,32 +273,62 @@ class PinpointCancelSubcommand(PinpointBaseSubcommand):
     cancel_job(args.id, args.reason)
 
 
-class PinpointBotsSubcommand(PinpointBaseSubcommand):
-  """A subcommand for displaying available Pinpoint bots."""
+class PinpointBaseFilteredListSubcommand(PinpointBaseSubcommand):
+  """Base subcommand class for displaying filtered string lists."""
 
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
+    parser = self.create_parser()
+    parser.add_argument(
+        "--filter",
+        type=str,
+        default=None,
+        help=("Filter results by a case-insensitive substring match. "
+              "Only items containing the filter string will be shown."))
+    return parser
+
+  @override
+  def run(self, args: argparse.Namespace) -> None:
+    items = self.fetch_list(args)
+    filter_str = (args.filter or "").lower().strip()
+    filtered_items = [item for item in items if filter_str in item.lower()]
+    print("\n".join(filtered_items))
+
+  @abc.abstractmethod
+  def create_parser(self) -> argparse.ArgumentParser:
+    pass
+
+  @abc.abstractmethod
+  def fetch_list(self, args: argparse.Namespace) -> list[str]:
+    pass
+
+
+class PinpointBotsSubcommand(PinpointBaseFilteredListSubcommand):
+  """A subcommand for displaying available Pinpoint bots."""
+
+  @override
+  def create_parser(self) -> argparse.ArgumentParser:
     bots_parser = self._parent.subparsers.add_parser(
         "bots", help="Displays all available Pinpoint bots.")
     return bots_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
-    print_bots()
+  def fetch_list(self, args: argparse.Namespace) -> list[str]:
+    return fetch_bots()
 
 
-class PinpointBenchmarksSubcommand(PinpointBaseSubcommand):
+class PinpointBenchmarksSubcommand(PinpointBaseFilteredListSubcommand):
   """A subcommand for displaying available Pinpoint benchmarks."""
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def create_parser(self) -> argparse.ArgumentParser:
     benchmarks_parser = self._parent.subparsers.add_parser(
         "benchmarks", help="Displays all available Pinpoint benchmarks.")
     return benchmarks_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
-    print_benchmarks()
+  def fetch_list(self, args: argparse.Namespace) -> list[str]:
+    return fetch_benchmarks()
 
 
 class PinpointSubcommand(CrossbenchSubcommand):

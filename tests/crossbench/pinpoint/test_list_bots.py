@@ -4,26 +4,24 @@
 
 from __future__ import annotations
 
-import unittest
+from typing import Final
 from unittest import mock
 
 import requests
 
 from crossbench.exception import MultiException
 from crossbench.pinpoint.api import PINPOINT_CONFIG_API_URL
-from crossbench.pinpoint.list_bots import fetch_bots, print_bots
+from crossbench.pinpoint.list_bots import fetch_bots
 from tests import test_helper
+from tests.crossbench.pinpoint.auth_session_mixin import MockAuthSessionMixin
 
 
-class ListBotsTest(unittest.TestCase):
+class ListBotsTest(MockAuthSessionMixin):
+  _get_auth_session_patch_target: Final[
+      str] = "crossbench.pinpoint.list_bots.get_auth_session"
 
   def setUp(self):
-    self.patcher_get_auth_session = mock.patch(
-        "crossbench.pinpoint.list_bots.get_auth_session")
-    self.mock_get_auth_session = self.patcher_get_auth_session.start()
-
-    self.mock_session = mock.Mock(spec=requests.Session)
-    self.mock_get_auth_session.return_value = self.mock_session
+    super().setUp()
 
     def mock_post_side_effect(url, *args, **kwargs):
       self.assertEqual(url, PINPOINT_CONFIG_API_URL,
@@ -37,9 +35,6 @@ class ListBotsTest(unittest.TestCase):
       return mock_response
 
     self.mock_session.post.side_effect = mock_post_side_effect
-
-  def tearDown(self):
-    self.patcher_get_auth_session.stop()
 
   def test_fetch_bots(self):
     bots = fetch_bots()
@@ -57,11 +52,6 @@ class ListBotsTest(unittest.TestCase):
 
     self.mock_get_auth_session.assert_called_once()
     self.mock_session.post.assert_called_once_with(PINPOINT_CONFIG_API_URL)
-
-  @mock.patch("builtins.print")
-  def test_print_bots(self, mock_print):
-    print_bots()
-    mock_print.assert_called_with("bot1\nbot2\nbot3")
 
 
 if __name__ == "__main__":

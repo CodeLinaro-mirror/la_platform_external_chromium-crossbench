@@ -16,9 +16,3 @@ def fetch_benchmarks() -> list[str]:
     response = authed_session.post(CHROMEPERF_TEST_SUITES_API_URL)
     response.raise_for_status()
     return response.json()
-
-
-def print_benchmarks() -> None:
-  """Prints the list of available Pinpoint benchmarks."""
-  benchmarks = fetch_benchmarks()
-  print("\n".join(benchmarks))

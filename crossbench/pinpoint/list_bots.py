@@ -16,7 +16,3 @@ def fetch_bots() -> list[str]:
     response = authed_session.post(PINPOINT_CONFIG_API_URL)
     response.raise_for_status()
     return response.json()["configurations"]
-
-
-def print_bots() -> None:
-  print("\n".join(fetch_bots()))
