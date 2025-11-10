@@ -41,6 +41,14 @@ class PinpointSubcommandTest(unittest.TestCase):
     self.cli.run(["pinpoint", "benchmarks", "--filter", "speedometer"])
     self.mock_print.assert_called_once_with("speedometer2\nspeedometer3")
 
+  @mock.patch("crossbench.cli.subcommand.pinpoint.fetch_stories")
+  def test_pinpoint_benchmarks_prints_filtered_stories(self,
+                                                       mock_fetch_stories):
+    mock_fetch_stories.return_value = ["story1", "story2", "default"]
+    self.cli.run(["pinpoint", "stories", "speedometer3", "--filter", "story"])
+    mock_fetch_stories.assert_called_once_with("speedometer3")
+    self.mock_print.assert_called_once_with("story1\nstory2")
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

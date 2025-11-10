@@ -19,6 +19,7 @@ from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
 from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.list_jobs import list_jobs
+from crossbench.pinpoint.list_stories import fetch_stories
 from crossbench.pinpoint.start_job import start_job
 from crossbench.pinpoint.user import UserEnum, list_user
 
@@ -331,6 +332,23 @@ class PinpointBenchmarksSubcommand(PinpointBaseFilteredListSubcommand):
     return fetch_benchmarks()
 
 
+class PinpointStoriesSubcommand(PinpointBaseFilteredListSubcommand):
+  """A subcommand for displaying available stories for a Pinpoint benchmark."""
+
+  @override
+  def create_parser(self) -> argparse.ArgumentParser:
+    stories_parser = self._parent.subparsers.add_parser(
+        "stories",
+        help="Displays all available stories for a Pinpoint benchmark.")
+    stories_parser.add_argument(
+        "benchmark", help="The benchmark for which to list stories.")
+    return stories_parser
+
+  @override
+  def fetch_list(self, args: argparse.Namespace) -> list[str]:
+    return fetch_stories(args.benchmark)
+
+
 class PinpointSubcommand(CrossbenchSubcommand):
   """A subcommand for interacting with the Pinpoint service."""
 
@@ -347,6 +365,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
     self._cancel_subcommand = PinpointCancelSubcommand(self)
     self._bots_subcommand = PinpointBotsSubcommand(self)
     self._benchmarks_subcommand = PinpointBenchmarksSubcommand(self)
+    self._stories_subcommand = PinpointStoriesSubcommand(self)
 
   @property
   def subparsers(self) -> Subparsers:
