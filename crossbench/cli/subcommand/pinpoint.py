@@ -17,6 +17,7 @@ from crossbench.pinpoint.cancel_job import cancel_job
 from crossbench.pinpoint.job_config import job_config
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
+from crossbench.pinpoint.list_builds import list_builds
 from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.list_jobs import list_jobs
 from crossbench.pinpoint.list_stories import fetch_stories
@@ -349,6 +350,28 @@ class PinpointStoriesSubcommand(PinpointBaseFilteredListSubcommand):
     return fetch_stories(args.benchmark)
 
 
+class PinpointBuildsSubcommand(PinpointBaseSubcommand):
+  """Displays recent successful builds for a given bot."""
+
+  @override
+  def add_cli_parser(self) -> argparse.ArgumentParser:
+    builds_parser = self._parent.subparsers.add_parser(
+        "builds", help="Displays recent successful builds for a given bot.")
+    builds_parser.add_argument(
+        "bot", help="The bot configuration name (e.g., 'linux-r350-perf').")
+    builds_parser.add_argument(
+        "--limit",
+        "-l",
+        type=NumberParser.positive_int,
+        default=10,
+        help="Limits the number of recent builds to display. (default: 10)")
+    return builds_parser
+
+  @override
+  def run(self, args: argparse.Namespace) -> None:
+    list_builds(args.bot, args.limit)
+
+
 class PinpointSubcommand(CrossbenchSubcommand):
   """A subcommand for interacting with the Pinpoint service."""
 
@@ -366,6 +389,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
     self._bots_subcommand = PinpointBotsSubcommand(self)
     self._benchmarks_subcommand = PinpointBenchmarksSubcommand(self)
     self._stories_subcommand = PinpointStoriesSubcommand(self)
+    self._builds_subcommand = PinpointBuildsSubcommand(self)
 
   @property
   def subparsers(self) -> Subparsers:

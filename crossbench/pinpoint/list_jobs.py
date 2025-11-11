@@ -19,6 +19,7 @@ from tabulate import tabulate
 from crossbench.pinpoint.api import JOB_SHORTEN_URL_TEMPLATE, \
     PINPOINT_JOBS_API_URL, USERINFO_API_URL
 from crossbench.pinpoint.auth import get_auth_session
+from crossbench.pinpoint.format_time import DATETIME_FORMAT, format_time
 from crossbench.pinpoint.helper import annotate
 from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.user import UserEnum
@@ -98,8 +99,6 @@ def _fetch_jobs(authed_session: auth_requests.AuthorizedSession,
   return jobs
 
 
-DATETIME_FORMAT: Final[str] = "%Y-%m-%d %H:%M:%S"
-
 def _prepare_job_list_data(
     jobs: list[dict[str, Any]],
     all_users: bool) -> tuple[list[str], list[list[Any]]]:
@@ -134,7 +133,6 @@ def _prepare_job_list_data(
   return headers, table_data
 
 
-
 def _display_jobs(jobs: list[dict[str, Any]], output_format: ListFormatEnum,
                   all_users: bool, truncate: int | None) -> None:
   match output_format:
@@ -167,7 +165,7 @@ def _display_jobs_as_table(headers: list[str], rows: list,
   for row in table_data:
     row[url_index] = _format_link(row[url_index])
     row[type_index] = _format_type(row[type_index])
-    row[time_index] = _format_time(row[time_index])
+    row[time_index] = format_time(row[time_index])
     row[status_index] = _format_status(row[status_index])
   headers[status_index] = "🚦"
   print(tabulate(table_data, headers=headers))
@@ -204,19 +202,6 @@ STATUS_EMOJI_LOOKUP: Final[Mapping[str, str]] = {
 def _format_status(status: str) -> str:
   lookup_str = status.lower().strip()
   return STATUS_EMOJI_LOOKUP.get(lookup_str, status)
-
-
-def _format_time(time_str: str) -> str:
-  try:
-    job_time = dt.datetime.strptime(time_str, DATETIME_FORMAT)
-    now = dt.datetime.now()
-    if job_time.date() == now.date():
-      return f"Today {job_time.strftime('%H:%M')}"
-    if job_time.year == now.year:
-      return job_time.strftime("%b-%d %H:%M")
-    return job_time.strftime("%Y-%b-%d %H:%M")
-  except ValueError:
-    return time_str
 
 
 def _truncate(text: str, max_length: int | None = None) -> str:

@@ -49,6 +49,11 @@ class PinpointSubcommandTest(unittest.TestCase):
     mock_fetch_stories.assert_called_once_with("speedometer3")
     self.mock_print.assert_called_once_with("story1\nstory2")
 
+  @mock.patch("crossbench.cli.subcommand.pinpoint.list_builds")
+  def test_pinpoint_list_builds(self, mock_list_builds):
+    self.cli.run(["pinpoint", "builds", "linux-r350-perf", "--limit", "42"])
+    mock_list_builds.assert_called_once_with("linux-r350-perf", 42)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
