@@ -17,8 +17,10 @@ if TYPE_CHECKING:
   import argparse
 
   from crossbench.action_runner.config import ActionRunnerConfig
+  from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.cli.types import Subparsers
+  from crossbench.flags.base import Flags
   from crossbench.runner.run import Run
 
 
@@ -57,7 +59,7 @@ class DevToolsFrontendBenchmark(Benchmark):
                         "newssite/news-next/dist/index.html",
   }
   PANEL_NAMES: ClassVar[Sequence[str]] = ("elements", "console", "network",
-                                          "sources", "application")
+                                          "sources", "resources")
 
   def __init__(
       self,
@@ -107,3 +109,11 @@ class DevToolsFrontendBenchmark(Benchmark):
     kwargs["sites"] = sites
     kwargs["panels"] = panels
     return kwargs
+
+  @classmethod
+  @override
+  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
+    flags: Flags = super().extra_flags(browser_attributes)
+    if browser_attributes.is_chromium_based:
+      flags.set("--remote-allow-origins", "*")
+    return flags

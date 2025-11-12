@@ -8,9 +8,10 @@ import abc
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO, \
-    Type
+from typing import (TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO,
+                    Type)
 
+import requests
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
@@ -18,16 +19,17 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder, \
-    DriverNotFoundError
-from crossbench.browsers.chromium.version import ChromeDriverVersion, \
-    ChromiumVersion
+from crossbench.browsers.chromium.driver_finder import (ChromeDriverFinder,
+                                                        DriverNotFoundError)
+from crossbench.browsers.chromium.version import (ChromeDriverVersion,
+                                                  ChromiumVersion)
 from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.browsers.chromium_based.devtools_tracer import DevToolsTracer
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper import wait
+from crossbench.helper.url_helper import get
 
 if TYPE_CHECKING:
   import re
@@ -342,3 +344,34 @@ class ChromiumBasedWebDriver(
       if self._stdout_log_file:
         self._stdout_log_file.close()
         self._stdout_log_file = None
+
+  @property
+  def debugger_address(self) -> str:
+    capabilities = self._private_driver.capabilities
+    if "goog:chromeOptions" not in capabilities:
+      raise RuntimeError(
+          f"Browser does not support remote debugging. Capabilities: {capabilities}"
+      )
+    if "debuggerAddress" not in capabilities["goog:chromeOptions"]:
+      raise RuntimeError(
+          f"Browser was not started with remote debugging enabled. Capabilities: {capabilities['goog:chromeOptions']}"
+      )
+
+    return self._private_driver.capabilities["goog:chromeOptions"][
+        "debuggerAddress"]
+
+  @property
+  def ws_endpoint(self) -> str:
+    try:
+      json_response = get(
+          f"http://{self.debugger_address}/json/version", retry=3).json()
+      if "webSocketDebuggerUrl" not in json_response:
+        raise RuntimeError(
+            "Could not find webSocketDebuggerUrl in response. Response: %s" %
+            json_response)
+
+      return json_response["webSocketDebuggerUrl"]
+    except requests.exceptions.RequestException as e:
+      raise RuntimeError(
+          f"Could not get target list from http://{self.debugger_address}/json/version"
+      ) from e

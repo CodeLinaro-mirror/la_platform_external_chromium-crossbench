@@ -496,3 +496,7 @@ class Browser(abc.ABC):
       self.js(
           "performance.mark(arguments[0],{detail: arguments[1]});",
           arguments=[full_name, detail])
+
+  @property
+  def ws_endpoint(self) -> str:
+    raise NotImplementedError(f"ws_endpoint is not implemented by {self}")

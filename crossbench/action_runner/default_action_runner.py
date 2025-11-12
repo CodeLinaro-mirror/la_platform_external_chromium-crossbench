@@ -18,6 +18,8 @@ from crossbench.action_runner.default_bond_action_runner import \
     DefaultBondActionRunner
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
+from crossbench.browsers.chromium.devtools import \
+    DevToolsInBrowserClient as DevToolsClient
 from crossbench.probes.screenshot import (ScreenshotProbe,
                                           ScreenshotProbeContext)
 from crossbench.runner.probe_context_lookup_error import \
@@ -298,6 +300,7 @@ class DefaultActionRunner(ActionRunner):
   def open_devtools(self, _run: Run,
                     action: i_action.OpenDevToolsAction) -> None:
     logging.info("Opening DevTools panel '%s'...", action.panel_name)
+    DevToolsClient().open_frontend(_run.browser, action.panel_name)
 
   @override
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction) -> None:

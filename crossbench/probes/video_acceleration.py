@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, ClassVar, Type
 from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chromium.devtools import DevToolsClient
+from crossbench.browsers.chromium.devtools import \
+    DevToolsRemoteClient as DevToolsClient
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 
