@@ -127,6 +127,7 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
 
 class CrossBenchCLI:
   BENCHMARKS: tuple[BenchmarkClass, ...] = (
+      benchmarks.DevToolsFrontendBenchmark,
       benchmarks.EmbedderBenchmark,
       # JetStream:
       benchmarks.JetStream11Benchmark,

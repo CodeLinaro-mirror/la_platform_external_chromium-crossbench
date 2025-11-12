@@ -223,6 +223,11 @@ class ActionRunner:
     del run
     raise ActionNotImplementedError(self, action)
 
+  def open_devtools(self, _run: Run,
+                    action: i_action.OpenDevToolsAction) -> None:
+    del _run
+    raise ActionNotImplementedError(self, action)
+
   def screenshot_impl(
       self,
       run: Run,

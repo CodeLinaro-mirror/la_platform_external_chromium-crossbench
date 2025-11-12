@@ -186,5 +186,11 @@
         "probe": "js"
       }
     ]
+    "open_devtools": [
+      {
+        "action": "open_devtools"
+        "panel_name": "elements"
+      }
+    ]
   }
 }
