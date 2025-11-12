@@ -134,8 +134,8 @@ class PinpointStartSubcommand:
     --story-tags=mobile,desktop \\
     --repeat=20 \\
     --bug-id=123456 \\
-    --base-git-hash=HEAD \\
-    --exp-git-hash=HEAD \\
+    --base-commit=HEAD \\
+    --exp-commit=recent \\
     --base-patch-url=https://chromium-review.googlesource.com/c/v8/v8/+/12345 \\
     --exp-patch-url=https://chromium-review.googlesource.com/c/v8/v8/+/67890 \\
     --base-js-flags=--flag1,--flag2 \\
@@ -172,16 +172,18 @@ class PinpointStartSubcommand:
         default=None,
         help="The bug ID to associate with the job.")
     start_parser.add_argument(
-        "--base-git-hash",
-        dest="base_git_hash",
+        "--base-commit",
+        dest="base_commit",
         default="HEAD",
-        help="Base git hash for the try job. Defaults to HEAD.")
+        help="Git commit hash for the base build. Accepts a commit hash, "
+        "'HEAD' (latest commit), or 'recent' (the most recent build). "
+        "Defaults to HEAD.")
     start_parser.add_argument(
-        "--exp-git-hash",
-        dest="exp_git_hash",
+        "--exp-commit",
+        dest="exp_commit",
         default=None,
-        help="Experiment git hash for A/B testing. "
-        "Defaults to base-git-hash.")
+        help="Git commit hash for the experiment build. Accepts a commit hash, "
+        "'HEAD' (latest commit), or 'recent' (the most recent build).")
     start_parser.add_argument(
         "--base-patch-url",
         dest="base_patch_url",
@@ -241,8 +243,8 @@ class PinpointStartSubcommand:
         story_tags=args.story_tags,
         repeat=args.repeat,
         bug_id=args.bug_id,
-        base_git_hash=args.base_git_hash,
-        exp_git_hash=args.exp_git_hash,
+        base_commit=args.base_commit,
+        exp_commit=args.exp_commit,
         base_patch_url=args.base_patch_url,
         exp_patch_url=args.exp_patch_url,
         base_js_flags=args.base_js_flags,

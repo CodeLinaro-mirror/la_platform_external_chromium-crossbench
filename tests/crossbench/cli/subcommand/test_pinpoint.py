@@ -54,6 +54,45 @@ class PinpointSubcommandTest(unittest.TestCase):
     self.cli.run(["pinpoint", "builds", "linux-r350-perf", "--limit", "42"])
     mock_list_builds.assert_called_once_with("linux-r350-perf", 42)
 
+  @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
+  def test_pinpoint_start_job(self, mock_start_job):
+    self.cli.run([
+        *["pinpoint", "start"],
+        *["--benchmark", "speedometer3"],
+        *["--bot", "linux-r350-perf"],
+        *["--story", "default"],
+        *["--repeat", "10"],
+        *["--bug-id", "12345"],
+        *["--base-commit", "HEAD"],
+        *["--exp-commit", "recent"],
+        *["--base-patch-url", "http://base.patch"],
+        *["--exp-patch-url", "http://exp.patch"],
+        "--base-js-flags=--flag1",
+        "--exp-js-flags=--flag2",
+        *["--base-enable-features", "base_feat"],
+        *["--exp-enable-features", "exp_feat"],
+        *["--base-disable-features", "base_dis"],
+        *["--exp-disable-features", "exp_dis"],
+    ])
+    mock_start_job.assert_called_with(
+        benchmark="speedometer3",
+        bot="linux-r350-perf",
+        story="default",
+        story_tags=None,
+        repeat=10,
+        bug_id="12345",
+        base_commit="HEAD",
+        exp_commit="recent",
+        base_patch_url="http://base.patch",
+        exp_patch_url="http://exp.patch",
+        base_js_flags="--flag1",
+        exp_js_flags="--flag2",
+        base_enable_features="base_feat",
+        exp_enable_features="exp_feat",
+        base_disable_features="base_dis",
+        exp_disable_features="exp_dis",
+    )
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

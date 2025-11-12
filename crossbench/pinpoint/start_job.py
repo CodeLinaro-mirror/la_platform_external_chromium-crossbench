@@ -5,32 +5,34 @@
 from __future__ import annotations
 
 import json
+from functools import cache
 
 from crossbench.pinpoint.api import PINPOINT_START_JOB_API_URL
 from crossbench.pinpoint.auth import get_auth_session
 from crossbench.pinpoint.helper import annotate
+from crossbench.pinpoint.list_builds import fetch_builds
 
 
 def start_job(
     benchmark: str,
     bot: str,
-    story: str | None,
-    story_tags: str | None,
-    repeat: int,
-    bug_id: str | None,
-    base_git_hash: str,
-    exp_git_hash: str | None,
-    base_patch_url: str | None,
-    exp_patch_url: str | None,
-    base_js_flags: str | None,
-    exp_js_flags: str | None,
-    base_enable_features: str | None,
-    exp_enable_features: str | None,
-    base_disable_features: str | None,
-    exp_disable_features: str | None,
+    story: str | None = None,
+    story_tags: str | None = None,
+    repeat: int = 10,
+    bug_id: str | None = None,
+    base_commit: str = "HEAD",
+    exp_commit: str | None = None,
+    base_patch_url: str | None = None,
+    exp_patch_url: str | None = None,
+    base_js_flags: str | None = None,
+    exp_js_flags: str | None = None,
+    base_enable_features: str | None = None,
+    exp_enable_features: str | None = None,
+    base_disable_features: str | None = None,
+    exp_disable_features: str | None = None,
 ) -> None:
   """Starts a new Pinpoint job."""
-  exp_git_hash = exp_git_hash or base_git_hash
+  exp_commit = exp_commit or base_commit
 
   authed_session = get_auth_session()
 
@@ -50,9 +52,9 @@ def start_job(
       "bug_id":
           bug_id,
       "base_git_hash":
-          base_git_hash,
+          _convert_recent_build_to_hash(base_commit, bot),
       "end_git_hash":
-          exp_git_hash,
+          _convert_recent_build_to_hash(exp_commit, bot),
       "base_patch":
           base_patch_url,
       "experiment_patch":
@@ -72,6 +74,15 @@ def start_job(
     response = authed_session.post(PINPOINT_START_JOB_API_URL, data=payload)
     response.raise_for_status()
     print(json.dumps(response.json(), indent=2))
+
+
+def _convert_recent_build_to_hash(commit: str, bot: str) -> str:
+  return _fetch_recent_build(bot) if commit == "recent" else commit
+
+
+@cache
+def _fetch_recent_build(bot: str) -> str:
+  return fetch_builds(bot)[0].commit
 
 
 def _combine_extra_browser_args(js_flags: str | None,

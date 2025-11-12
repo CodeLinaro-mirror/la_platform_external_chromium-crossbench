@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import warnings
+from functools import cache
 
 from google import auth as google_auth
 from google.auth.transport import requests as auth_requests
@@ -14,6 +15,7 @@ from crossbench.cli import ui
 from crossbench.pinpoint.helper import annotate
 
 
+@cache
 def get_auth_session() -> auth_requests.AuthorizedSession:
   # TODO(b/455510346): Figure out how to fix the quota warning properly.
   warnings.filterwarnings("ignore", module="google.auth._default")
