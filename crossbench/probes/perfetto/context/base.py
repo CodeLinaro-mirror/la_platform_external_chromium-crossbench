@@ -60,8 +60,9 @@ class PerfettoProbeContext(
     self.host_platform.write_text(
         self._host_config_file,
         proto_text_format.MessageToString(self.probe.trace_config))
-    self.browser_platform.push(self._host_config_file,
-                               self.get_browser_config_path())
+    if not self.probe.config_via_stdin:
+      self.browser_platform.push(self._host_config_file,
+                                 self.get_browser_config_path())
 
   @abc.abstractmethod
   def get_browser_config_path(self) -> pth.AnyPath:
@@ -95,13 +96,17 @@ class PerfettoProbeContext(
     cmd: TupleCmdArgs = self.perfetto_cmd + (
         "--background",
         "--config",
-        self.get_browser_config_path(),
+        "-" if self.probe.config_via_stdin else self.get_browser_config_path(),
         "--txt",
         "--out",
         self.result_path,
     )
     try:
-      proc = self.browser_platform.sh(*cmd, capture_output=True)
+      if self.probe.config_via_stdin:
+        with self._host_config_file.open() as f:
+          proc = self.browser_platform.sh(*cmd, stdin=f, capture_output=True)
+      else:
+        proc = self.browser_platform.sh(*cmd, capture_output=True)
     except subprocess.CalledProcessError as e:
       logging.error("perfetto command failed with stderr: %s",
                     e.stderr.decode(encoding="utf-8"))
