@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Sequence
 
@@ -11,17 +12,49 @@ from typing_extensions import override
 
 from crossbench.action_runner.action.open_devtools import OpenDevToolsAction
 from crossbench.benchmarks.base import Benchmark
+from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
+from crossbench.probes.metrics_internals import (
+    ChromeMetricsInternalsProbe, ChromeMetricsInternalsProbeContext)
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
   import argparse
+
+  import Type
 
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.cli.types import Subparsers
   from crossbench.flags.base import Flags
+  from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
+  from crossbench.types import Json
+
+
+class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
+                                    BenchmarkProbeMixin):
+  """
+  Probe that collects DevTools Frontend load time from
+  chrome://metrics-internals/structured.
+  """
+  NAME: ClassVar = "devtools_frontend_load_time"
+
+  def __init__(self, *args, **kwargs) -> None:
+    BenchmarkProbeMixin.__init__(self, *args, **kwargs)
+    ChromeMetricsInternalsProbe.__init__(self, "DevTools", "Impression", -1,
+                                         "TimeSinceSessionStart")
+
+  @override
+  def get_context_cls(self) -> Type[DevToolsFrontendLoadTimeProbeContext]:
+    return DevToolsFrontendLoadTimeProbeContext
+
+
+class DevToolsFrontendLoadTimeProbeContext(ChromeMetricsInternalsProbeContext):
+
+  @override
+  def to_json(self, actions: Actions) -> Json:
+    return json.loads(json.dumps({"load_time": self._metric_value}))
 
 
 class DevToolsFrontendStory(Story):
@@ -33,7 +66,7 @@ class DevToolsFrontendStory(Story):
       actions.show_url(DevToolsFrontendBenchmark.STORY_URLS[site])
       actions.wait(1.0)  # Wait for page load.
       action_runner.open_devtools(run, OpenDevToolsAction(panel_name=panel))
-      actions.wait(1.0)  # Let DevTools settle.
+      actions.wait(1.5)  # Let DevTools settle.
     logging.info("Stopping benchmark...")
 
   @classmethod
@@ -60,6 +93,8 @@ class DevToolsFrontendBenchmark(Benchmark):
   }
   PANEL_NAMES: ClassVar[Sequence[str]] = ("elements", "console", "network",
                                           "sources", "resources")
+  PROBES: ClassVar[tuple[Type[DevToolsFrontendLoadTimeProbe],
+                         ...]] = (DevToolsFrontendLoadTimeProbe,)
 
   def __init__(
       self,
