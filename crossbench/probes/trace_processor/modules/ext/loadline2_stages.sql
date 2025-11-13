@@ -1,6 +1,24 @@
 INCLUDE PERFETTO MODULE ext.first_presentation_time;
 INCLUDE PERFETTO MODULE ext.loadline2_string_functions;
 
+-- User timing trace events can be emitted by either performance.mark() or
+-- performance.measure(). The former appear on the CrRendererMain thread track,
+-- the latter on their own custom track inside the Renderer process.
+-- This query looks for the event track info in both thread_track and
+-- process_track to support both cases.
+DROP VIEW IF EXISTS marks_with_pid;
+CREATE VIEW marks_with_pid AS
+SELECT
+  s.name as name,
+  ts,
+  pid
+FROM slice s
+LEFT JOIN thread_track tt ON s.track_id = tt.id
+LEFT JOIN process_track pt ON s.track_id = pt.id
+LEFT JOIN thread t ON tt.utid = t.utid
+JOIN process p ON p.upid = COALESCE(t.upid, pt.upid)
+WHERE s.category = 'blink.user_timing';
+
 DROP TABLE IF EXISTS story_start;
 CREATE PERFETTO TABLE story_start AS
 SELECT
@@ -14,7 +32,7 @@ CREATE PERFETTO TABLE story_pid AS
 SELECT
   page_name(name) AS page,
   pid
-FROM thread_slice
+FROM marks_with_pid
 WHERE is_loadline2_mark(name) AND mark_name(name) = 'finish';
 
 DROP TABLE IF EXISTS story_start_with_pid;
@@ -54,7 +72,7 @@ SELECT
   page_name(name) AS page,
   ts AS visual_mark,
   pid
-FROM thread_slice
+FROM marks_with_pid
 WHERE is_loadline2_mark(name) AND mark_name(name) = 'visual';
 
 DROP TABLE IF EXISTS interactive_mark;
@@ -63,7 +81,7 @@ SELECT
   page_name(name) AS page,
   ts AS interactive_mark,
   pid
-FROM thread_slice
+FROM marks_with_pid
 WHERE is_loadline2_mark(name) AND mark_name(name) = 'interactive';
 
 DROP TABLE IF EXISTS visual_presentation;
