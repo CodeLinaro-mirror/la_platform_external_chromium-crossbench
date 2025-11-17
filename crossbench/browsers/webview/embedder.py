@@ -26,8 +26,12 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 EMBEDDER_SHORT_NAME_TO_PACKAGE: Final[immutabledict[str, str]] = immutabledict({
-    "googlequicksearchbox": "com.google.android.googlequicksearchbox",
-    "velvet": "com.google.android.googlequicksearchbox",
+    "googlequicksearchbox":
+        "com.google.android.googlequicksearchbox",
+    "velvet":
+        "com.google.android.googlequicksearchbox",
+    "maitier":
+        "com.google.android.libraries.ads.mobile.maitier.testapps.webview",
 })
 
 
