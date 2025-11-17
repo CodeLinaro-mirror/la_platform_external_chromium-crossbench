@@ -1,6 +1,7 @@
 # go/syshealth.pbtx
 # Canonical trace config for Android System Health reviews.
 # See go/android-system-health-faq#instructions-for-taking-a-perfetto-trace.
+# Includes custom changes for backward compatibility down to Android R.
 # Buffer 0: For most continuous data (ftrace, power, sys_stats, frametimeline)
 buffers: {
     size_kb: 260096
@@ -55,10 +56,6 @@ data_sources {
       enabled_categories: "net"
       enabled_categories: "netlog"
       enabled_categories: "__metadata"
-      timestamp_unit_multiplier: 1000
-      filter_debug_annotations: false
-      enable_thread_time_sampling: true
-      filter_dynamic_event_names: false
     }
   }
 }
@@ -121,13 +118,6 @@ data_sources: {
     config {
         name: "android.system_property"
         target_buffer: 3
-        android_system_property_config {
-            # No need to poll often, as boot image profiling properties are set
-            # once during the boot sequence.
-            poll_ms: 30000
-            property_name: "debug.tracing.profile_boot_classpath"
-            property_name: "debug.tracing.profile_system_server"
-        }
     }
 }
 data_sources: {
@@ -186,10 +176,6 @@ data_sources: {
             atrace_apps: "*"
             buffer_size_kb: 16384
             drain_period_ms: 250
-            throttle_rss_stat: true
-            symbolize_ksyms: true
-            ksyms_mem_policy: KSYMS_RETAIN
-            disable_generic_events: true
             compact_sched { enabled: true }
         }
     }
@@ -198,9 +184,6 @@ data_sources: {
     config {
         name: "android.statsd"
         target_buffer: 4
-        statsd_tracing_config {
-            push_atom_id: ATOM_SCHEDULED_JOB_STATE_CHANGED
-        }
     }
 }
 data_sources: {
