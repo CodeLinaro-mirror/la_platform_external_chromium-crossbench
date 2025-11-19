@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Sequence
 
@@ -13,6 +12,7 @@ from typing_extensions import override
 from crossbench.action_runner.action.open_devtools import OpenDevToolsAction
 from crossbench.benchmarks.base import Benchmark
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
+from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.metrics_internals import (
     ChromeMetricsInternalsProbe, ChromeMetricsInternalsProbeContext)
 from crossbench.stories.story import Story
@@ -27,10 +27,12 @@ if TYPE_CHECKING:
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.cli.types import Subparsers
   from crossbench.flags.base import Flags
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
+  from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import Json
-
 
 class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
                                     BenchmarkProbeMixin):
@@ -49,12 +51,34 @@ class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
   def get_context_cls(self) -> Type[DevToolsFrontendLoadTimeProbeContext]:
     return DevToolsFrontendLoadTimeProbeContext
 
+  @override
+  def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
+    merged = MetricsMerger.merge_json_list(
+        (story_group.results[self].json
+         for story_group in group.repetitions_groups),
+        merge_duplicate_paths=True)
+    return self.write_group_result(
+        group,
+        merged,
+    )
+
+  @override
+  def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
+    merged = MetricsMerger.merge_json_list(
+        (browser_group.results[self].json
+         for browser_group in group.repetitions_groups),
+        merge_duplicate_paths=True)
+    return self.write_group_result(
+        group,
+        merged,
+    )
+
 
 class DevToolsFrontendLoadTimeProbeContext(ChromeMetricsInternalsProbeContext):
 
   @override
   def to_json(self, actions: Actions) -> Json:
-    return json.loads(json.dumps({"load_time": self._metric_value}))
+    return {"load_time": self._metric_value}
 
 
 class DevToolsFrontendStory(Story):
