@@ -12,6 +12,14 @@
         "duration": "1s"
       }
       {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "x": 0
+          "y": 0
+        }
+      }
+      {
         "action": "js"
         "script":
           '''
@@ -51,6 +59,14 @@
       {
         "action": "wait"
         "duration": "1s"
+      }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "x": 0
+          "y": 0
+        }
       }
       {
         "action": "js"
@@ -94,6 +110,14 @@
         "duration": "1s"
       }
       {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "x": 0
+          "y": 0
+        }
+      }
+      {
         "action": "js"
         "script":
           '''
@@ -129,6 +153,14 @@
         "duration": "1s"
       }
       {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "x": 0
+          "y": 0
+        }
+      }
+      {
         "action": "js"
         "script":
           '''
@@ -162,6 +194,14 @@
       {
         "action": "wait"
         "duration": "1s"
+      }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "x": 0
+          "y": 0
+        }
       }
       {
         "action": "js"
