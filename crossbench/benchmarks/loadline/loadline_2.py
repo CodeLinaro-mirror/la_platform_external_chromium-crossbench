@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Sequence, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence, Type
 
 import numpy as np
 from typing_extensions import override
@@ -24,6 +24,8 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -83,6 +85,31 @@ class LoadLine2ProbeContext(ProbeContext[LoadLine2Probe]):
 class LoadLine2Benchmark(LoadLineBenchmark):
   PROBES: ClassVar = (LoadLine2Probe,)
   DEFAULT_REPETITIONS: ClassVar = 50
+  DETERMINISTIC: bool = False
+
+  def __init__(self, *args, deterministic: bool = False, **kwargs) -> None:
+    super().__init__(*args, **kwargs)
+    if deterministic:
+      LoadLine2Benchmark.DETERMINISTIC = True
+      LoadLine2Probe.BENCHMARK_VERSION += "-deterministic"
+
+  @classmethod
+  @override
+  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
+    parser = super().add_cli_parser(subparsers)
+    parser.add_argument(
+        "--deterministic",
+        action="store_true",
+        help=("Make Chrome behave more deterministically during loading. Note "
+              "that this can affect scores. For experimental use only."))
+    return parser
+
+  @classmethod
+  @override
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+    kwargs = super().kwargs_from_cli(args)
+    kwargs["deterministic"] = args.deterministic
+    return kwargs
 
   @classmethod
   def _base_dir(cls) -> pth.LocalPath:
@@ -115,6 +142,17 @@ class LoadLine2Benchmark(LoadLineBenchmark):
       # navigating away from it. This can interfere with the next page load,
       # increasing measurement noise. To reduce noise, we disable BFCache.
       flags.set("--disable-back-forward-cache")
+      # Additional flags that make Chrome behavior more deterministic, at the
+      # expense of making it less representative of real-world usage.
+      if cls.DETERMINISTIC:
+        # Prevent parsing javascript in a background thread, because less
+        # concurrency implies more determinism. Note that trace analysis shows
+        # parsing is more relevant for loadline than higher JS compilation
+        # tiers.
+        flags.set("--js-flags", "--no-script-streaming")
+        # Run optimization guide hints fetch consistently on start up, to avoid
+        # it interfering with a page load at some random moment later.
+        flags.set("--optimization-guide-fetch-hints-override-timer")
     return flags
 
 
