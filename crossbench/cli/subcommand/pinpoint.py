@@ -14,6 +14,7 @@ from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
 from crossbench.pinpoint.cancel_job import cancel_job
+from crossbench.pinpoint.config import PinpointTryJobConfig
 from crossbench.pinpoint.job_config import job_config
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
@@ -127,7 +128,7 @@ class PinpointStartSubcommand:
         "This command allows you to specify two configurations (base and "
         "experiment) to compare performance between them.",
         epilog="""Example:
-  ./cb.py pinpoint start \\
+  pinpoint start \\
     --benchmark=speedometer3.crossbench \\
     --bot=linux-r350-perf \\
     --story=default \\
@@ -147,106 +148,89 @@ class PinpointStartSubcommand:
 """,
         formatter_class=argparse.RawTextHelpFormatter)
     start_parser.add_argument(
-        "--benchmark", required=True, help="The benchmark to run.")
+        "--config",
+        help="A try job configuration in the JSON/HJSON format. "
+        "Accepts a path to a configuration file, or configuration string. "
+        "If the same argument is specified in the config and then provided "
+        "as a command line argument, the latter overrides the former. "
+        "Get more information by running `describe PinpointTryJobConfig`")
+    start_parser.add_argument("--benchmark", help="The benchmark to run.")
     start_parser.add_argument(
         "--bot",
-        required=True,
-        dest="bot",
         help="The bot configuration to run on (e.g., 'linux-perf').")
-    start_parser.add_argument(
-        "--story", dest="story", default=None, help="The story to run.")
+    start_parser.add_argument("--story", help="The story to run.")
     start_parser.add_argument(
         "--story-tags",
         dest="story_tags",
-        default=None,
         help="Story tags to filter stories.")
     start_parser.add_argument(
         "--repeat",
-        dest="repeat",
         type=NumberParser.positive_int,
-        default=100,
         help="How many times to repeat the experiment.")
     start_parser.add_argument(
-        "--bug-id",
-        dest="bug_id",
-        default=None,
+        "--bug",
+        type=NumberParser.positive_int,
         help="The bug ID to associate with the job.")
     start_parser.add_argument(
         "--base-commit",
-        dest="base_commit",
-        default="HEAD",
         help="Git commit hash for the base build. Accepts a commit hash, "
         "'HEAD' (latest commit), or 'recent' (the most recent build). "
         "Defaults to HEAD.")
     start_parser.add_argument(
         "--exp-commit",
-        dest="exp_commit",
-        default=None,
         help="Git commit hash for the experiment build. Accepts a commit hash, "
         "'HEAD' (latest commit), or 'recent' (the most recent build).")
     start_parser.add_argument(
-        "--base-patch-url",
-        dest="base_patch_url",
-        default=None,
+        "--base-patch",
         help="Gerrit URL of a patch to apply to the base commit.")
     start_parser.add_argument(
-        "--exp-patch-url",
-        dest="exp_patch_url",
-        default=None,
+        "--exp-patch",
         help="Gerrit URL of a patch to apply to the experiment commit.")
 
     # Extra browser args.
     start_parser.add_argument(
         "--base-js-flags",
-        dest="base_js_flags",
-        default=None,
         help="JavaScript flags to pass to V8 for the base commit. "
         "Example: --base-js-flags=--turbolev-future")
     start_parser.add_argument(
         "--exp-js-flags",
-        dest="exp_js_flags",
-        default=None,
         help="JavaScript flags to pass to V8 for the experiment commit. "
         "Example: --exp-js-flags=--turbolev-future")
     start_parser.add_argument(
         "--base-enable-features",
-        dest="base_enable_features",
-        default=None,
         help="Comma-separated list of Chrome features to enable for the base "
         "commit. Example: --base-enable-features=Feature1,Feature2")
     start_parser.add_argument(
         "--exp-enable-features",
-        dest="exp_enable_features",
-        default=None,
         help="Comma-separated list of Chrome features to enable for the "
         "experiment commit. Example: --exp-enable-features=FeatureA,FeatureB")
     start_parser.add_argument(
         "--base-disable-features",
-        dest="base_disable_features",
-        default=None,
         help="Comma-separated list of Chrome features to disable for the base "
         "commit. Example: --base-disable-features=Feature1,Feature2")
     start_parser.add_argument(
         "--exp-disable-features",
-        dest="exp_disable_features",
-        default=None,
         help="Comma-separated list of Chrome features to disable for the "
         "experiment commit. Example: --exp-disable-features=FeatureA,FeatureB")
 
     return start_parser
 
   def run(self, args: argparse.Namespace) -> None:
-    start_job(
+    config = PinpointTryJobConfig.parse_and_override(
+        config=args.config,
         benchmark=args.benchmark,
         bot=args.bot,
         story=args.story,
         story_tags=args.story_tags,
         repeat=args.repeat,
-        bug_id=args.bug_id,
+        bug=args.bug,
         base_commit=args.base_commit,
         exp_commit=args.exp_commit,
-        base_patch_url=args.base_patch_url,
-        exp_patch_url=args.exp_patch_url,
+        base_patch=args.base_patch,
+        exp_patch=args.exp_patch,
+    )
+    start_job(
+        config=config,
         base_js_flags=args.base_js_flags,
         exp_js_flags=args.exp_js_flags,
         base_enable_features=args.base_enable_features,

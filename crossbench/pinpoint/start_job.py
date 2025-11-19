@@ -5,25 +5,18 @@
 from __future__ import annotations
 
 import json
-from functools import cache
+from typing import TYPE_CHECKING
 
 from crossbench.pinpoint.api import PINPOINT_START_JOB_API_URL
 from crossbench.pinpoint.auth import get_auth_session
 from crossbench.pinpoint.helper import annotate
-from crossbench.pinpoint.list_builds import fetch_builds
+
+if TYPE_CHECKING:
+  from crossbench.pinpoint.config import PinpointTryJobConfig
 
 
 def start_job(
-    benchmark: str,
-    bot: str,
-    story: str | None = None,
-    story_tags: str | None = None,
-    repeat: int = 10,
-    bug_id: str | None = None,
-    base_commit: str = "HEAD",
-    exp_commit: str | None = None,
-    base_patch_url: str | None = None,
-    exp_patch_url: str | None = None,
+    config: PinpointTryJobConfig,
     base_js_flags: str | None = None,
     exp_js_flags: str | None = None,
     base_enable_features: str | None = None,
@@ -32,57 +25,21 @@ def start_job(
     exp_disable_features: str | None = None,
 ) -> None:
   """Starts a new Pinpoint job."""
-  exp_commit = exp_commit or base_commit
-
   authed_session = get_auth_session()
 
-  payload = {
-      "comparison_mode":
-          "try",
-      "benchmark":
-          benchmark,
-      "configuration":
-          bot,
-      "story":
-          story,
-      "story_tags":
-          story_tags,
-      "initial_attempt_count":
-          repeat,
-      "bug_id":
-          bug_id,
-      "base_git_hash":
-          _convert_recent_build_to_hash(base_commit, bot),
-      "end_git_hash":
-          _convert_recent_build_to_hash(exp_commit, bot),
-      "base_patch":
-          base_patch_url,
-      "experiment_patch":
-          exp_patch_url,
-      "base_extra_args":
-          _combine_extra_browser_args(
-              js_flags=base_js_flags,
-              enable_features=base_enable_features,
-              disable_features=base_disable_features),
-      "experiment_extra_args":
-          _combine_extra_browser_args(
-              js_flags=exp_js_flags,
-              enable_features=exp_enable_features,
-              disable_features=exp_disable_features),
-  }
+  payload = config.to_request_json()
+  payload["base_extra_args"] = _combine_extra_browser_args(
+      js_flags=base_js_flags,
+      enable_features=base_enable_features,
+      disable_features=base_disable_features)
+  payload["experiment_extra_args"] = _combine_extra_browser_args(
+      js_flags=exp_js_flags,
+      enable_features=exp_enable_features,
+      disable_features=exp_disable_features)
   with annotate("Starting Pinpoint job"):
     response = authed_session.post(PINPOINT_START_JOB_API_URL, data=payload)
     response.raise_for_status()
-    print(json.dumps(response.json(), indent=2))
-
-
-def _convert_recent_build_to_hash(commit: str, bot: str) -> str:
-  return _fetch_recent_build(bot) if commit == "recent" else commit
-
-
-@cache
-def _fetch_recent_build(bot: str) -> str:
-  return fetch_builds(bot)[0].commit
+  print(json.dumps(response.json(), indent=2))
 
 
 def _combine_extra_browser_args(js_flags: str | None,

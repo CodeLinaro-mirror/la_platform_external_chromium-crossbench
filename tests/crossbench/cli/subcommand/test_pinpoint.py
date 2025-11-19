@@ -8,6 +8,7 @@ import unittest
 from unittest import mock
 
 from crossbench.cli.cli import CrossBenchCLI
+from crossbench.pinpoint.config import PinpointTryJobConfig, VariantConfig
 from tests import test_helper
 
 
@@ -55,18 +56,39 @@ class PinpointSubcommandTest(unittest.TestCase):
     mock_list_builds.assert_called_once_with("linux-r350-perf", 42)
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
-  def test_pinpoint_start_job(self, mock_start_job):
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointTryJobConfig.parse_and_override")
+  def test_pinpoint_start_job(self, mock_parse_and_override, mock_start_job):
+    test_config = PinpointTryJobConfig(
+        benchmark="speedometer3",
+        bot="linux-r350-perf",
+        story="default",
+        story_tags="tag1,tag2",
+        repeat=42,
+        bug="12345",
+        base=VariantConfig(
+            commit="HEAD",
+            patch="https://base.patch",
+        ),
+        experiment=VariantConfig(
+            commit="recent",
+            patch="https://exp.patch",
+        ),
+    )
+    mock_parse_and_override.return_value = test_config
     self.cli.run([
         *["pinpoint", "start"],
+        *["--config", "{benchmark: 'speedometer3', bot: 'linux-r350-perf'}"],
         *["--benchmark", "speedometer3"],
         *["--bot", "linux-r350-perf"],
         *["--story", "default"],
-        *["--repeat", "10"],
-        *["--bug-id", "12345"],
+        *["--story-tags", "tag1,tag2"],
+        *["--repeat", "42"],
+        *["--bug", "12345"],
         *["--base-commit", "HEAD"],
         *["--exp-commit", "recent"],
-        *["--base-patch-url", "http://base.patch"],
-        *["--exp-patch-url", "http://exp.patch"],
+        *["--base-patch", "http://base.patch"],
+        *["--exp-patch", "http://exp.patch"],
         "--base-js-flags=--flag1",
         "--exp-js-flags=--flag2",
         *["--base-enable-features", "base_feat"],
@@ -74,17 +96,21 @@ class PinpointSubcommandTest(unittest.TestCase):
         *["--base-disable-features", "base_dis"],
         *["--exp-disable-features", "exp_dis"],
     ])
-    mock_start_job.assert_called_with(
+    mock_parse_and_override.assert_called_once_with(
+        config="{benchmark: 'speedometer3', bot: 'linux-r350-perf'}",
         benchmark="speedometer3",
         bot="linux-r350-perf",
         story="default",
-        story_tags=None,
-        repeat=10,
-        bug_id="12345",
+        story_tags="tag1,tag2",
+        repeat=42,
+        bug=12345,
         base_commit="HEAD",
         exp_commit="recent",
-        base_patch_url="http://base.patch",
-        exp_patch_url="http://exp.patch",
+        base_patch="http://base.patch",
+        exp_patch="http://exp.patch",
+    )
+    mock_start_job.assert_called_with(
+        config=test_config,
         base_js_flags="--flag1",
         exp_js_flags="--flag2",
         base_enable_features="base_feat",
