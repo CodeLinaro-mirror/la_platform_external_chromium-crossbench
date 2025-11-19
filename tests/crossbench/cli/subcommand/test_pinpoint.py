@@ -108,9 +108,6 @@ class PinpointSubcommandTest(unittest.TestCase):
         exp_commit="recent",
         base_patch="http://base.patch",
         exp_patch="http://exp.patch",
-    )
-    mock_start_job.assert_called_with(
-        config=test_config,
         base_js_flags="--flag1",
         exp_js_flags="--flag2",
         base_enable_features="base_feat",
@@ -118,6 +115,7 @@ class PinpointSubcommandTest(unittest.TestCase):
         base_disable_features="base_dis",
         exp_disable_features="exp_dis",
     )
+    mock_start_job.assert_called_with(test_config)
 
 
 if __name__ == "__main__":

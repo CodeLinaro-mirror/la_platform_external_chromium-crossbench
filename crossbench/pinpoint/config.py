@@ -10,6 +10,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from crossbench.cli import ui
+from crossbench.cli.config.flags import FlagsConfig
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser
 from crossbench.pinpoint.helper import annotate
@@ -25,7 +26,7 @@ class VariantConfig(ConfigObject):
 
   commit: str = "HEAD"
   patch: str | None = None
-  # TODO(b/457682006): Add Chrome flags.
+  flags: FlagsConfig = dataclasses.field(default_factory=FlagsConfig)
 
   @classmethod
   def config_parser(cls) -> ConfigParser[VariantConfig]:
@@ -34,14 +35,19 @@ class VariantConfig(ConfigObject):
         "commit",
         default="HEAD",
         type=cls.parse_commit,
-        help="Git commit hash for the base build. Accepts a full commit hash, "
+        help="Git commit hash for the build. Accepts a full commit hash, "
         "'HEAD' (latest commit), or 'recent' (the most recent build).")
     parser.add_argument(
         "patch",
         type=cls.parse_patch,
-        help="Gerrit patch to apply to the base commit. Accepts a full URL, "
+        help="Gerrit patch to apply to the commit. Accepts a full URL, "
         "a short URL (e.g. https://crrev.com/c/123/4), a CL number, "
         "or a CL number with a patch number (e.g. 123/4)")
+    parser.add_argument(
+        "flags",
+        type=FlagsConfig,
+        default=FlagsConfig(),
+        help="Chrome flags forwarded to the browser.")
     return parser
 
   @classmethod
@@ -74,6 +80,42 @@ class VariantConfig(ConfigObject):
   def override_patch(self, patch: str | None) -> None:
     if patch:
       self.patch = self.parse_patch(patch)
+
+  def override_flags(self,
+                     js_flags: str | None = None,
+                     enable_features: str | None = None,
+                     disable_features: str | None = None) -> None:
+    input_flags = {
+        "--js-flags": js_flags,
+        "--enable-features": enable_features,
+        "--disable-features": disable_features,
+    }
+    filtered_flags = {k: v for k, v in input_flags.items() if v is not None}
+    combined_flags = self.flags_as_dict() | filtered_flags
+    if combined_flags_str := self.flags_dict_to_str(combined_flags):
+      self.flags = FlagsConfig.parse(combined_flags_str)
+
+  def flags_as_dict(self) -> dict[str, str | None]:
+    if not self.flags.get("default"):
+      return {}
+    return dict(self.flags["default"][0].flags.items())
+
+  def flags_as_str(self) -> str:
+    flags = self.flags_as_dict()
+    return self.flags_dict_to_str(flags)
+
+  @classmethod
+  def flags_dict_to_str(cls, flags: dict[str, str | None]) -> str:
+    parts = []
+    for flag, value in flags.items():
+      parts.append(f"{flag}={value}" if value is not None else flag)
+    return " ".join(parts)
+
+  def extra_browser_flags(self) -> str | None:
+    flags = self.flags_as_str()
+    if not flags:
+      return None
+    return f'--extra-browser-args="{flags}"'
 
 
 @dataclasses.dataclass()
@@ -152,6 +194,12 @@ class PinpointTryJobConfig(ConfigObject):
       exp_commit: str | None = None,
       base_patch: str | None = None,
       exp_patch: str | None = None,
+      base_js_flags: str | None = None,
+      exp_js_flags: str | None = None,
+      base_enable_features: str | None = None,
+      exp_enable_features: str | None = None,
+      base_disable_features: str | None = None,
+      exp_disable_features: str | None = None,
   ) -> PinpointTryJobConfig:
     """Create a new valid PinpointTryJobConfig instance for new jobs."""
     with annotate("Parsing job configuration"):
@@ -180,6 +228,17 @@ class PinpointTryJobConfig(ConfigObject):
 
       parsed.experiment.override_commit(exp_commit, bot=parsed.bot)
       parsed.experiment.override_patch(exp_patch)
+
+      parsed.base.override_flags(
+          js_flags=base_js_flags,
+          enable_features=base_enable_features,
+          disable_features=base_disable_features,
+      )
+      parsed.experiment.override_flags(
+          js_flags=exp_js_flags,
+          enable_features=exp_enable_features,
+          disable_features=exp_disable_features,
+      )
 
     show_warnings([w for w in warnings if w])
 
@@ -228,6 +287,8 @@ class PinpointTryJobConfig(ConfigObject):
         "end_git_hash": self.experiment.commit,
         "base_patch": self.base.patch,
         "experiment_patch": self.experiment.patch,
+        "base_extra_args": self.base.extra_browser_flags(),
+        "experiment_extra_args": self.experiment.extra_browser_flags(),
     }
 
 

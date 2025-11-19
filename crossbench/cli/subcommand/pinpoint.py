@@ -228,9 +228,6 @@ class PinpointStartSubcommand:
         exp_commit=args.exp_commit,
         base_patch=args.base_patch,
         exp_patch=args.exp_patch,
-    )
-    start_job(
-        config=config,
         base_js_flags=args.base_js_flags,
         exp_js_flags=args.exp_js_flags,
         base_enable_features=args.base_enable_features,
@@ -238,6 +235,7 @@ class PinpointStartSubcommand:
         base_disable_features=args.base_disable_features,
         exp_disable_features=args.exp_disable_features,
     )
+    start_job(config)
 
 
 class PinpointCancelSubcommand(PinpointBaseSubcommand):

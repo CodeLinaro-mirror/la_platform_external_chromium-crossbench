@@ -8,6 +8,7 @@ import json
 from typing import Final
 from unittest import mock
 
+from crossbench.cli.config.flags import FlagsConfig
 from crossbench.pinpoint.config import PinpointTryJobConfig, VariantConfig
 from crossbench.pinpoint.list_builds import Build
 from tests import test_helper
@@ -34,15 +35,22 @@ class VariantConfigTest(MockAuthSessionMixin):
     variant = VariantConfig.parse(
         json.dumps({
             "commit": "abcd1234",
-            "patch": _TEST_PATCH
+            "patch": _TEST_PATCH,
+            "flags": "--test-flag --js-flags=--base-js-flag",
         }))
     self.assertEqual(variant.commit, "abcd1234")
     self.assertEqual(variant.patch, _TEST_PATCH)
+    self.assertDictEqual(variant.flags_as_dict(), {
+        "--test-flag": None,
+        "--js-flags": "--base-js-flag"
+    })
 
   def test_parse_variant_default(self):
     variant = VariantConfig.parse("{}")
     self.assertEqual(variant.commit, "HEAD")
     self.assertIsNone(variant.patch)
+    self.assertEqual(variant.flags_as_str(), "")
+    self.assertDictEqual(variant.flags_as_dict(), {})
 
   def test_parse_commit(self):
     self.assertEqual(VariantConfig.parse_commit("HEAD"), "HEAD")
@@ -83,6 +91,48 @@ class VariantConfigTest(MockAuthSessionMixin):
 
     config.override_patch(None)
     self.assertEqual(config.patch, _TEST_PATCH)
+
+  def test_override_empty_flags(self):
+    config = VariantConfig()
+    config.override_flags(
+        js_flags="--js-flag1,--js-flag2",
+        enable_features="enablefeature1,enablefeature2",
+        disable_features="disablefeature1,disablefeature2")
+    self.assertDictEqual(
+        config.flags_as_dict(), {
+            "--js-flags": "--js-flag1,--js-flag2",
+            "--enable-features": "enablefeature1,enablefeature2",
+            "--disable-features": "disablefeature1,disablefeature2",
+        })
+
+  def test_override_existing_flags(self):
+    config = VariantConfig.parse(
+        "{flags: '--standalone --js-flags=--js-flag0 "
+        "--enable-features=enablefeature0 --disable-features=disablefeature0'}")
+    config.override_flags(
+        js_flags="--js-flag1,--js-flag2",
+        enable_features="enablefeature1,enablefeature2",
+        disable_features="disablefeature1,disablefeature2")
+    self.assertDictEqual(
+        config.flags_as_dict(), {
+            "--standalone": None,
+            "--js-flags": "--js-flag1,--js-flag2",
+            "--enable-features": "enablefeature1,enablefeature2",
+            "--disable-features": "disablefeature1,disablefeature2",
+        })
+
+  def test_override_with_none_flags(self):
+    config = VariantConfig.parse(
+        "{flags: '--standalone --js-flags=--js-flag0 "
+        "--enable-features=enablefeature0 --disable-features=disablefeature0'}")
+    config.override_flags()
+    self.assertDictEqual(
+        config.flags_as_dict(), {
+            "--standalone": None,
+            "--js-flags": "--js-flag0",
+            "--enable-features": "enablefeature0",
+            "--disable-features": "disablefeature0",
+        })
 
 
 class PinpointTryJobConfigTest(MockAuthSessionMixin):
@@ -135,11 +185,13 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
             "bug": 67890,
             "base": {
                 "commit": "abcdef00",
-                "patch": _TEST_PATCH
+                "patch": _TEST_PATCH,
+                "flags": "--js-flags=--base-js-flag",
             },
             "experiment": {
                 "commit": "aaaabbbb",
-                "patch": _TEST_PATCH2
+                "patch": _TEST_PATCH2,
+                "flags": "--js-flags=--exp-js-flag",
             },
         }))
     self.assertEqual(
@@ -151,8 +203,16 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
             story_tags="tag1,tag2",
             repeat=42,
             bug=67890,
-            base=VariantConfig(commit="abcdef00", patch=_TEST_PATCH),
-            experiment=VariantConfig(commit="aaaabbbb", patch=_TEST_PATCH2)))
+            base=VariantConfig(
+                commit="abcdef00",
+                patch=_TEST_PATCH,
+                flags=FlagsConfig.parse("--js-flags=--base-js-flag"),
+            ),
+            experiment=VariantConfig(
+                commit="aaaabbbb",
+                patch=_TEST_PATCH2,
+                flags=FlagsConfig.parse("--js-flags=--exp-js-flag"),
+            )))
 
   def test_override_all_fields(self):
     config = PinpointTryJobConfig.parse_and_override(
@@ -165,7 +225,14 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
         base_commit="abcdef00",
         exp_commit="12345678",
         base_patch=_TEST_PATCH,
-        exp_patch=_TEST_PATCH2)
+        exp_patch=_TEST_PATCH2,
+        base_js_flags="--base-js-flag",
+        exp_js_flags="--exp-js-flag",
+        base_enable_features="enable1,enable2",
+        exp_enable_features="enable3,enable4",
+        base_disable_features="disable1,disable2",
+        exp_disable_features="disable3,disable4",
+    )
     self.assertEqual(
         config,
         PinpointTryJobConfig(
@@ -175,8 +242,20 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
             story_tags="tag1,tag2",
             repeat=42,
             bug=67890,
-            base=VariantConfig(commit="abcdef00", patch=_TEST_PATCH),
-            experiment=VariantConfig(commit="12345678", patch=_TEST_PATCH2)))
+            base=VariantConfig(
+                commit="abcdef00",
+                patch=_TEST_PATCH,
+                flags=FlagsConfig.parse("--js-flags=--base-js-flag "
+                                        "--enable-features=enable1,enable2 "
+                                        "--disable-features=disable1,disable2"),
+            ),
+            experiment=VariantConfig(
+                commit="12345678",
+                patch=_TEST_PATCH2,
+                flags=FlagsConfig.parse("--js-flags=--exp-js-flag "
+                                        "--enable-features=enable3,enable4 "
+                                        "--disable-features=disable3,disable4"),
+            )))
 
   def test_parse_and_override_missing_benchmark(self):
     with self.assertRaises(ValueError):
@@ -208,7 +287,14 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
         base_commit="abcdef00",
         exp_commit="12345678",
         base_patch=_TEST_PATCH,
-        exp_patch=_TEST_PATCH2)
+        exp_patch=_TEST_PATCH2,
+        base_js_flags="--base-js-flag",
+        exp_js_flags="--exp-js-flag",
+        base_enable_features="enable1,enable2",
+        exp_enable_features="enable3,enable4",
+        base_disable_features="disable1,disable2",
+        exp_disable_features="disable3,disable4",
+    )
     self.assertDictEqual(
         config.to_request_json(), {
             "comparison_mode": "try",
@@ -222,6 +308,37 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
             "end_git_hash": "12345678",
             "base_patch": _TEST_PATCH,
             "experiment_patch": _TEST_PATCH2,
+            "base_extra_args":
+                '--extra-browser-args="--js-flags=--base-js-flag '
+                '--enable-features=enable1,enable2 '
+                '--disable-features=disable1,disable2"',
+            "experiment_extra_args":
+                '--extra-browser-args="--js-flags=--exp-js-flag '
+                '--enable-features=enable3,enable4 '
+                '--disable-features=disable3,disable4"',
+        })
+
+  def test_to_request_json_no_flags(self):
+    config = PinpointTryJobConfig.parse_and_override(
+        benchmark="test_benchmark",
+        bot="test_bot",
+        story="test_story",
+    )
+    self.assertDictEqual(
+        config.to_request_json(), {
+            "comparison_mode": "try",
+            "benchmark": "test_benchmark",
+            "configuration": "test_bot",
+            "story": "test_story",
+            "story_tags": None,
+            "initial_attempt_count": 100,
+            "bug_id": None,
+            "base_git_hash": "HEAD",
+            "end_git_hash": "HEAD",
+            "base_patch": None,
+            "experiment_patch": None,
+            "base_extra_args": None,
+            "experiment_extra_args": None,
         })
 
   def test_parse_and_override_recent_commit(self):
