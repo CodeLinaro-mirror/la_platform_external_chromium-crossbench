@@ -5,7 +5,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Sequence
+from typing import (TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional,
+                    Sequence, cast)
 
 from typing_extensions import override
 
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import Json
@@ -53,24 +55,38 @@ class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
 
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
-    merged = MetricsMerger.merge_json_list(
-        (story_group.results[self].json
-         for story_group in group.repetitions_groups),
+    merger = MetricsMerger.merge_json_list(
+        (repetition_group.results[self].json
+         for repetition_group in group.repetitions_groups),
         merge_duplicate_paths=True)
+    self.preserver_high_resolution_data(merger, group.repetitions_groups)
     return self.write_group_result(
         group,
-        merged,
+        merger,
     )
+
+  def preserver_high_resolution_data(
+      self, merger: MetricsMerger,
+      repetitions_groups: Iterable[RepetitionsRunGroup]) -> None:
+    for repetition_group in repetitions_groups:
+      story: DevToolsFrontendStory = cast(DevToolsFrontendStory,
+                                          repetition_group.story)
+      for prefix_path in story.reporting_prefixes():
+        merger.merge_json_file(
+            repetition_group.results[self].json,
+            prefix_path=prefix_path,
+            merge_duplicate_paths=True)
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    merged = MetricsMerger.merge_json_list(
+    merger = MetricsMerger.merge_json_list(
         (browser_group.results[self].json
          for browser_group in group.repetitions_groups),
         merge_duplicate_paths=True)
+    self.preserver_high_resolution_data(merger, group.repetitions_groups)
     return self.write_group_result(
         group,
-        merged,
+        merger,
     )
 
 
@@ -98,6 +114,10 @@ class DevToolsFrontendStory(Story):
   def all_story_names(cls) -> Sequence[str]:
     return ()
 
+  def reporting_prefixes(self) -> Sequence[tuple[str, ...]]:
+    site, panel = self.name.split("_")
+    return [(site,), (panel,), (site, panel)]
+
 
 class DevToolsFrontendBenchmark(Benchmark):
   """
@@ -119,6 +139,7 @@ class DevToolsFrontendBenchmark(Benchmark):
                                           "sources", "resources")
   PROBES: ClassVar[tuple[Type[DevToolsFrontendLoadTimeProbe],
                          ...]] = (DevToolsFrontendLoadTimeProbe,)
+  DEFAULT_REPETITIONS: ClassVar[int] = 2
 
   def __init__(
       self,
