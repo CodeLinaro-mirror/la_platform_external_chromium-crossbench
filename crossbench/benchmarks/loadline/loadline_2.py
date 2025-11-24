@@ -15,6 +15,7 @@ from crossbench import path as pth
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loadline.loadline import LoadLineBenchmark, \
     LoadLineProbe
+from crossbench.flags.chrome import ChromeFlags
 from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
@@ -131,17 +132,21 @@ class LoadLine2Benchmark(LoadLineBenchmark):
   def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes)
     if browser_attributes.is_chromium_based:
+      chrome_flags = ChromeFlags(flags)
       # By design, Loadline2 wants some stories to always use a new renderer
       # process and some to use an existing renderer, therefore covering both
       # cases. The flag here forces a navigation to a new website to create a
       # new renderer, except when navigating from about:blank. So we can
       # achieve the goal by passing the flag and navigating to about:blank
       # before stories that must use an existing renderer.
-      flags.set("--site-per-process")
+      chrome_flags.set("--site-per-process")
+      # Also make sure Chrome doesn't create renderers in advance, so that sites
+      # that require a new renderer are blocked on new process creation.
+      chrome_flags.features.disable("SpareRendererForSitePerProcess")
       # With BFCache on, the web page is kept in memory for some time after
       # navigating away from it. This can interfere with the next page load,
       # increasing measurement noise. To reduce noise, we disable BFCache.
-      flags.set("--disable-back-forward-cache")
+      chrome_flags.set("--disable-back-forward-cache")
       # Additional flags that make Chrome behavior more deterministic, at the
       # expense of making it less representative of real-world usage.
       if cls.DETERMINISTIC:
@@ -149,10 +154,11 @@ class LoadLine2Benchmark(LoadLineBenchmark):
         # concurrency implies more determinism. Note that trace analysis shows
         # parsing is more relevant for loadline than higher JS compilation
         # tiers.
-        flags.set("--js-flags", "--no-script-streaming")
+        chrome_flags.js_flags.set("--no-script-streaming")
         # Run optimization guide hints fetch consistently on start up, to avoid
         # it interfering with a page load at some random moment later.
-        flags.set("--optimization-guide-fetch-hints-override-timer")
+        chrome_flags.set("--optimization-guide-fetch-hints-override-timer")
+      return chrome_flags
     return flags
 
 
