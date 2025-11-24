@@ -100,12 +100,14 @@ class VariantConfig(ConfigObject):
       return {}
     return dict(self.flags["default"][0].flags.items())
 
-  def flags_as_str(self) -> str:
+  def flags_as_str(self) -> str | None:
     flags = self.flags_as_dict()
     return self.flags_dict_to_str(flags)
 
   @classmethod
-  def flags_dict_to_str(cls, flags: dict[str, str | None]) -> str:
+  def flags_dict_to_str(cls, flags: dict[str, str | None]) -> str | None:
+    if not flags:
+      return None
     parts = []
     for flag, value in flags.items():
       parts.append(f"{flag}={value}" if value is not None else flag)
@@ -274,7 +276,7 @@ class PinpointTryJobConfig(ConfigObject):
       return f"Unknown story: {self.story}"
     return None
 
-  def to_request_json(self) -> dict[str, Any]:
+  def to_request_dict(self) -> dict[str, Any]:
     return {
         "comparison_mode": "try",
         "benchmark": self.benchmark,
@@ -290,6 +292,56 @@ class PinpointTryJobConfig(ConfigObject):
         "base_extra_args": self.base.extra_browser_flags(),
         "experiment_extra_args": self.experiment.extra_browser_flags(),
     }
+
+  @classmethod
+  def from_response_dict(cls, raw_dict: dict[str, Any]) -> PinpointTryJobConfig:
+    """Returns a valid PinpointTryJobConfig if the server response is valid."""
+    comparison_mode = raw_dict.get("comparison_mode")
+    if comparison_mode != "try":
+      raise ValueError(
+          'Invalid comparison mode {comparison_mode} expected "try".')
+    arguments = raw_dict["arguments"]
+
+    def value_or_none(value: Any) -> Any:
+      return value if value else None
+
+    # An empty field created from the Web UI is an empty string. Such empty
+    # fields are replaced with None to make it possible to convert the result
+    # config to JSON and back to PinpointTryJobConfig for creating new jobs.
+    return PinpointTryJobConfig(
+        benchmark=arguments["benchmark"],
+        bot=arguments["configuration"],
+        story=value_or_none(arguments.get("story")),
+        story_tags=value_or_none(arguments.get("story_tags")),
+        repeat=int(arguments["initial_attempt_count"]),
+        bug=value_or_none(arguments.get("bug_id")),
+        base=VariantConfig(
+            commit=arguments.get("base_git_hash"),
+            patch=value_or_none(arguments.get("base_patch")),
+            flags=cls.parse_extra_browser_args(
+                arguments.get("base_extra_args")),
+        ),
+        experiment=VariantConfig(
+            commit=arguments.get("end_git_hash"),
+            patch=value_or_none(arguments.get("experiment_patch")),
+            flags=cls.parse_extra_browser_args(
+                arguments.get("experiment_extra_args")),
+        ),
+    )
+
+  @classmethod
+  def parse_extra_browser_args(cls, extra_browser_args: str) -> FlagsConfig:
+    if not extra_browser_args:
+      return FlagsConfig()
+    if match := re.search(r'--extra-browser-args="(.*?)"', extra_browser_args):
+      return FlagsConfig.parse(match.group(1))
+    return FlagsConfig.parse(extra_browser_args)
+
+  def to_dict(self) -> dict[str, Any]:
+    result = dataclasses.asdict(self)
+    result["base"]["flags"] = self.base.flags_as_str()
+    result["experiment"]["flags"] = self.experiment.flags_as_str()
+    return result
 
 
 def show_warnings(warnings: list[str]) -> None:

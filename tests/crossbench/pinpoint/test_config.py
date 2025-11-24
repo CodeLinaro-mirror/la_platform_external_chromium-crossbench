@@ -49,7 +49,7 @@ class VariantConfigTest(MockAuthSessionMixin):
     variant = VariantConfig.parse("{}")
     self.assertEqual(variant.commit, "HEAD")
     self.assertIsNone(variant.patch)
-    self.assertEqual(variant.flags_as_str(), "")
+    self.assertIsNone(variant.flags_as_str())
     self.assertDictEqual(variant.flags_as_dict(), {})
 
   def test_parse_commit(self):
@@ -156,6 +156,33 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
     ]
     self.mock_show_warnings = self.enterContext(
         mock.patch("crossbench.pinpoint.config.show_warnings"))
+
+    self.response_dict = {
+        "comparison_mode": "try",
+        "job_id": "1234567890",
+        "arguments": {
+            "comparison_mode": "try",
+            "target": "performance_test_suite",
+            "base_git_hash": "HEAD",
+            "end_git_hash": "HEAD",
+            "initial_attempt_count": "20",
+            "configuration": "win-11-perf",
+            "benchmark": "speedometer3",
+            "story": "Speedometer3",
+            "story_tags": "",
+            "chart": "",
+            "extra_test_args": "",
+            "commit": "on,on",
+            "base_patch": "",
+            "experiment_patch": "",
+            "base_extra_args": "",
+            "experiment_extra_args": "",
+            "project": "",
+            "bug_id": "",
+            "batch_id": ""
+        },
+        "name": "Try job on win-11-perf/speedometer3",
+    }
 
   def test_parse_minimal_config(self):
     config = PinpointTryJobConfig.parse_and_override(
@@ -276,7 +303,7 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
       PinpointTryJobConfig.parse_and_override(
           benchmark="test_benchmark", bot="test_bot")
 
-  def test_to_request_json(self):
+  def test_to_request_dict(self):
     config = PinpointTryJobConfig.parse_and_override(
         benchmark="test_benchmark",
         bot="test_bot",
@@ -296,7 +323,7 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
         exp_disable_features="disable3,disable4",
     )
     self.assertDictEqual(
-        config.to_request_json(), {
+        config.to_request_dict(), {
             "comparison_mode": "try",
             "benchmark": "test_benchmark",
             "configuration": "test_bot",
@@ -318,14 +345,14 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
                 '--disable-features=disable3,disable4"',
         })
 
-  def test_to_request_json_no_flags(self):
+  def test_to_request_dict_no_flags(self):
     config = PinpointTryJobConfig.parse_and_override(
         benchmark="test_benchmark",
         bot="test_bot",
         story="test_story",
     )
     self.assertDictEqual(
-        config.to_request_json(), {
+        config.to_request_dict(), {
             "comparison_mode": "try",
             "benchmark": "test_benchmark",
             "configuration": "test_bot",
@@ -401,6 +428,61 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
         benchmark="test_benchmark", bot="test_bot", story="test_story")
     self.mock_show_warnings.assert_called_once_with(
         ["Unknown story: test_story"])
+
+  def test_parser_raw_config_minimal(self):
+    config = PinpointTryJobConfig.from_response_dict(self.response_dict)
+    expectation = PinpointTryJobConfig(
+        benchmark="speedometer3",
+        bot="win-11-perf",
+        story="Speedometer3",
+        story_tags=None,
+        repeat=20,
+        bug=None,
+        base=VariantConfig(),
+        experiment=VariantConfig(),
+    )
+    self.assertEqual(config, expectation)
+    self.assertEqual(config.parse_and_override(config.to_dict()), expectation)
+
+  def test_parser_raw_config(self):
+    arguments = self.response_dict["arguments"]
+    arguments["base_git_hash"] = "abcdef00"
+    arguments["end_git_hash"] = "1234abcd"
+    arguments["story_tags"] = "tag1,tag2"
+    arguments["bug_id"] = 12345
+    arguments["base_patch"] = _TEST_PATCH
+    arguments["experiment_patch"] = _TEST_PATCH2
+    arguments[
+        "base_extra_args"] = '--extra-browser-args="--js-flags=--base-js-flag"'
+    arguments["experiment_extra_args"] = (
+        '--extra-browser-args="--js-flags=--exp-js-flag"')
+
+    config = PinpointTryJobConfig.from_response_dict(self.response_dict)
+    expectation = PinpointTryJobConfig(
+        benchmark="speedometer3",
+        bot="win-11-perf",
+        story="Speedometer3",
+        story_tags="tag1,tag2",
+        repeat=20,
+        bug=12345,
+        base=VariantConfig(
+            commit="abcdef00",
+            patch=_TEST_PATCH,
+            flags=FlagsConfig.parse("--js-flags=--base-js-flag"),
+        ),
+        experiment=VariantConfig(
+            commit="1234abcd",
+            patch=_TEST_PATCH2,
+            flags=FlagsConfig.parse("--js-flags=--exp-js-flag"),
+        ),
+    )
+    self.assertEqual(config, expectation)
+    self.assertEqual(config.parse_and_override(config.to_dict()), expectation)
+
+  def test_parser_raise_if_not_try_job(self):
+    self.response_dict["comparison_mode"] = "bisect"
+    with self.assertRaises(ValueError):
+      PinpointTryJobConfig.from_response_dict(self.response_dict)
 
 
 if __name__ == "__main__":

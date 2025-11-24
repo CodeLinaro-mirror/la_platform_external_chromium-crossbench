@@ -20,6 +20,6 @@ def start_job(config: PinpointTryJobConfig) -> None:
   authed_session = get_auth_session()
   with annotate("Starting Pinpoint job"):
     response = authed_session.post(
-        PINPOINT_START_JOB_API_URL, data=config.to_request_json())
+        PINPOINT_START_JOB_API_URL, data=config.to_request_dict())
     response.raise_for_status()
   print(json.dumps(response.json(), indent=2))

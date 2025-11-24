@@ -15,7 +15,7 @@ from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
 from crossbench.pinpoint.cancel_job import cancel_job
 from crossbench.pinpoint.config import PinpointTryJobConfig
-from crossbench.pinpoint.job_config import job_config
+from crossbench.pinpoint.job_config import print_job_config
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
 from crossbench.pinpoint.list_builds import list_builds
@@ -105,11 +105,21 @@ class PinpointConfigSubcommand(PinpointBaseSubcommand):
         "--id",
         required=True,
         help="The ID of the job to get the configuration for.")
+    config_parser.add_argument(
+        "--raw",
+        action="store_true",
+        help="Display the job configuration as raw JSON response from the "
+        "server.")
+    config_parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Display the full job configuration including all attemps. "
+        "Works only if the `--raw` flag is set.")
     return config_parser
 
   @override
   def run(self, args: argparse.Namespace) -> None:
-    job_config(args.id)
+    print_job_config(job_id=args.id, raw=args.raw, full=args.full)
 
 
 class PinpointStartSubcommand:
@@ -156,13 +166,10 @@ class PinpointStartSubcommand:
         "Get more information by running `describe PinpointTryJobConfig`")
     start_parser.add_argument("--benchmark", help="The benchmark to run.")
     start_parser.add_argument(
-        "--bot",
-        help="The bot configuration to run on (e.g., 'linux-perf').")
+        "--bot", help="The bot configuration to run on (e.g., 'linux-perf').")
     start_parser.add_argument("--story", help="The story to run.")
     start_parser.add_argument(
-        "--story-tags",
-        dest="story_tags",
-        help="Story tags to filter stories.")
+        "--story-tags", dest="story_tags", help="Story tags to filter stories.")
     start_parser.add_argument(
         "--repeat",
         type=NumberParser.positive_int,
