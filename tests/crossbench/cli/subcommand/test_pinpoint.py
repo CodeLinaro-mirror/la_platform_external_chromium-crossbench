@@ -119,19 +119,29 @@ class PinpointSubcommandTest(unittest.TestCase):
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.print_job_config")
   def test_pinpoint_job_config(self, mock_print_job_config):
-    self.cli.run(["pinpoint", "config", "--id", "123abc", "--raw", "--full"])
+    self.cli.run(["pinpoint", "config", "--job", "123abc", "--raw", "--full"])
     mock_print_job_config.assert_called_once_with(
         job_id="123abc", raw=True, full=True)
 
     mock_print_job_config.reset_mock()
-    self.cli.run(["pinpoint", "config", "--id", "123abc"])
+    self.cli.run(["pinpoint", "config", "--job", "123abc"])
     mock_print_job_config.assert_called_once_with(
         job_id="123abc", raw=False, full=False)
 
   def test_pinpoint_job_config_full_without_raw(self):
     with self.assertRaises(ValueError):
-      self.cli.run(["pinpoint", "config", "--id", "123abc", "--full"])
+      self.cli.run(["pinpoint", "config", "--job", "123abc", "--full"])
 
+  @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_job")
+  def test_pinpoint_cancel_job(self, mock_cancel_job):
+    self.cli.run(
+        ["pinpoint", "cancel", "--job", "123abc", "--reason", "test reason"])
+    mock_cancel_job.assert_called_once_with("123abc", "test reason")
+
+    mock_cancel_job.reset_mock()
+    self.cli.run(["pinpoint", "cancel", "--job", "123abc"])
+    mock_cancel_job.assert_called_once_with("123abc",
+                                            "Cancelled via Pinpoint CLI.")
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

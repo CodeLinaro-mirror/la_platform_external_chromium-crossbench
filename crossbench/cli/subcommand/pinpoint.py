@@ -16,6 +16,7 @@ from crossbench.parse import NumberParser
 from crossbench.pinpoint.cancel_job import cancel_job
 from crossbench.pinpoint.config import PinpointTryJobConfig
 from crossbench.pinpoint.job_config import print_job_config
+from crossbench.pinpoint.job_parser import parse_job_id
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
 from crossbench.pinpoint.list_builds import list_builds
@@ -92,19 +93,34 @@ class PinpointListSubcommand(PinpointBaseSubcommand):
     list_jobs(args.user, args.number, args.truncate, args.format)
 
 
-class PinpointConfigSubcommand(PinpointBaseSubcommand):
-  """Get the configuration of a specific Pinpoint job."""
+class PinpointJobSubcommand(PinpointBaseSubcommand):
+  """Base class for subcommands that operate on a Pinpoint job."""
 
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
+    parser = self.create_parser()
+    parser.add_argument(
+        "--job",
+        required=True,
+        type=parse_job_id,
+        help="The ID of the job. Can be a full URL, a part of a URL with a job "
+        "ID, or just the ID.")
+    return parser
+
+  @abc.abstractmethod
+  def create_parser(self) -> argparse.ArgumentParser:
+    raise NotImplementedError
+
+
+class PinpointConfigSubcommand(PinpointJobSubcommand):
+  """Get the configuration of a specific Pinpoint job."""
+
+  @override
+  def create_parser(self) -> argparse.ArgumentParser:
     config_parser = self._parent.subparsers.add_parser(
         "config",
         aliases=("cfg",),
         help="Get the configuration of a specific Pinpoint job.")
-    config_parser.add_argument(
-        "--id",
-        required=True,
-        help="The ID of the job to get the configuration for.")
     config_parser.add_argument(
         "--raw",
         action="store_true",
@@ -119,7 +135,7 @@ class PinpointConfigSubcommand(PinpointBaseSubcommand):
 
   @override
   def run(self, args: argparse.Namespace) -> None:
-    print_job_config(job_id=args.id, raw=args.raw, full=args.full)
+    print_job_config(job_id=args.job, raw=args.raw, full=args.full)
 
 
 class PinpointStartSubcommand:
@@ -245,15 +261,13 @@ class PinpointStartSubcommand:
     start_job(config)
 
 
-class PinpointCancelSubcommand(PinpointBaseSubcommand):
+class PinpointCancelSubcommand(PinpointJobSubcommand):
   """Cancel a specific Pinpoint job."""
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def create_parser(self) -> argparse.ArgumentParser:
     cancel_parser = self._parent.subparsers.add_parser(
         "cancel", help="Cancel a specific Pinpoint job.")
-    cancel_parser.add_argument(
-        "--id", required=True, help="The ID of the job to cancel.")
     cancel_parser.add_argument(
         "--reason",
         required=False,
@@ -263,7 +277,7 @@ class PinpointCancelSubcommand(PinpointBaseSubcommand):
 
   @override
   def run(self, args: argparse.Namespace) -> None:
-    cancel_job(args.id, args.reason)
+    cancel_job(args.job, args.reason)
 
 
 class PinpointBaseFilteredListSubcommand(PinpointBaseSubcommand):
