@@ -329,6 +329,8 @@ def test_loading_playback_urls(test_env: TestEnv, test_chrome_name) -> None:
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_win, reason="Fails on Windows; crbug.com/463323491")
 def test_loading_playback(test_env: TestEnv, test_chrome_name) -> None:
   # - loading using named pages with timeouts
   # - separate pages and --playback controller
