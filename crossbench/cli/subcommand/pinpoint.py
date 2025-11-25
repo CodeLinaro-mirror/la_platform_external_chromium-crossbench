@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
@@ -17,6 +18,7 @@ from crossbench.pinpoint.cancel_job import cancel_job
 from crossbench.pinpoint.config import PinpointTryJobConfig
 from crossbench.pinpoint.job_config import print_job_config
 from crossbench.pinpoint.job_parser import parse_job_id
+from crossbench.pinpoint.job_results import download_results
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
 from crossbench.pinpoint.list_builds import list_builds
@@ -377,6 +379,27 @@ class PinpointBuildsSubcommand(PinpointBaseSubcommand):
     list_builds(args.bot, args.limit)
 
 
+class PinpointResultsSubcommand(PinpointJobSubcommand):
+  """Downloads results of a Pinpoint job."""
+
+  @override
+  def create_parser(self) -> argparse.ArgumentParser:
+    results_parser = self._parent.subparsers.add_parser(
+        "results", help="Downloads results of the given Pinpoint job.")
+    results_parser.add_argument(
+        "--output-directory",
+        "--out-dir",
+        "-o",
+        type=pth.LocalPath,
+        help=("Results will be stored in this directory. "
+              "Uses to the crossbench results directory by default."))
+    return results_parser
+
+  @override
+  def run(self, args: argparse.Namespace) -> None:
+    download_results(job_id=args.job, out_dir=args.output_directory)
+
+
 class PinpointSubcommand(CrossbenchSubcommand):
   """A subcommand for interacting with the Pinpoint service."""
 
@@ -395,6 +418,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
     self._benchmarks_subcommand = PinpointBenchmarksSubcommand(self)
     self._stories_subcommand = PinpointStoriesSubcommand(self)
     self._builds_subcommand = PinpointBuildsSubcommand(self)
+    self._results_subcommand = PinpointResultsSubcommand(self)
 
   @property
   def subparsers(self) -> Subparsers:

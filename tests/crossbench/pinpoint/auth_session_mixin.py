@@ -19,12 +19,7 @@ class MockAuthSessionMixin(unittest.TestCase):
 
   def setUp(self):
     super().setUp()
-    self.patcher_get_auth_session = mock.patch(
-        self._get_auth_session_patch_target)
-    self.mock_get_auth_session = self.patcher_get_auth_session.start()
+    self.mock_get_auth_session = self.enterContext(
+        mock.patch(self._get_auth_session_patch_target))
     self.mock_session = mock.Mock(spec=requests.Session)
     self.mock_get_auth_session.return_value = self.mock_session
-
-  def tearDown(self):
-    super().tearDown()
-    self.patcher_get_auth_session.stop()

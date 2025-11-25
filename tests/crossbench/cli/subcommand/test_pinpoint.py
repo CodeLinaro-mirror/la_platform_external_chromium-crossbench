@@ -7,6 +7,7 @@ from __future__ import annotations
 import unittest
 from unittest import mock
 
+from crossbench import path as pth
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.pinpoint.config import PinpointTryJobConfig, VariantConfig
 from tests import test_helper
@@ -142,6 +143,14 @@ class PinpointSubcommandTest(unittest.TestCase):
     self.cli.run(["pinpoint", "cancel", "--job", "123abc"])
     mock_cancel_job.assert_called_once_with("123abc",
                                             "Cancelled via Pinpoint CLI.")
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.download_results")
+  def test_pinpoint_download_results(self, mock_download_results):
+    self.cli.run(
+        ["pinpoint", "results", "--job", "123abc", "--out-dir", "test_dir"])
+    mock_download_results.assert_called_once_with(
+        job_id="123abc", out_dir=pth.LocalPath("test_dir"))
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
