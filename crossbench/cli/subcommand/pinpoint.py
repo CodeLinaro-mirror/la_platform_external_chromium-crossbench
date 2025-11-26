@@ -231,6 +231,7 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         help="Gerrit URL of a patch to apply to the base commit.")
     start_parser.add_argument(
         "--exp-patch",
+        "--patch",
         help="Gerrit URL of a patch to apply to the experiment commit.")
 
     # Extra browser args.
