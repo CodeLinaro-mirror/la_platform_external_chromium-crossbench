@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import abc
 import argparse
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
+from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench import path as pth
@@ -29,8 +30,48 @@ from crossbench.pinpoint.start_job import start_job
 from crossbench.pinpoint.user import UserEnum, list_user
 
 if TYPE_CHECKING:
-  from crossbench.cli.cli import CrossBenchCLI
+  from crossbench.cli.cli import BenchmarkClass, CrossBenchCLI
   from crossbench.cli.types import Subparsers
+
+# Crossbench benchmarks without corresponding pinpoint benchmarks are None.
+_PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME: Final[immutabledict[
+    str, str | None]] = immutabledict({
+        "devtools_frontend": None,
+        "embedder": "embedder.crossbench",
+        "jetstream_1.1": "jetstream",
+        "jetstream_2.0": "jetstream2.0.crossbench",
+        "jetstream_2.1": "jetstream2.1.crossbench",
+        "jetstream_2.2": "jetstream2.2.crossbench",
+        "jetstream_main": "jetstream-main.crossbench",
+        "loading": "loading.crossbench",
+        "loadline-phone": "loadline_phone.crossbench",
+        "loadline-phone-debug": None,
+        "loadline-phone-fast": None,
+        "loadline-tablet": "loadline_tablet.crossbench",
+        "loadline-tablet-debug": None,
+        "loadline-tablet-fast": None,
+        "loadline2-phone": None,
+        "loadline2-phone-debug": None,
+        "loadline2-tablet": None,
+        "loadline2-tablet-debug": None,
+        "loadline2-webapi-phone": None,
+        "loadline2-webapi-phone-debug": None,
+        "manual": None,
+        "memory": "memory.desktop",
+        "motionmark_1.0": "motionmark1.0.crossbench",
+        "motionmark_1.1": "motionmark1.1.crossbench",
+        "motionmark_1.2": "motionmark1.2.crossbench",
+        "motionmark_1.3": "motionmark1.3.crossbench",
+        "motionmark_1.3.1": "motionmark1.3.1.crossbench",
+        "motionmark_main": None,
+        "powerline": None,
+        "speedometer_1.0": "speedometer",
+        "speedometer_2.0": "speedometer2.0.crossbench",
+        "speedometer_2.1": "speedometer2.1.crossbench",
+        "speedometer_3.0": "speedometer3.0.crossbench",
+        "speedometer_3.1": "speedometer3.1.crossbench",
+        "speedometer_main": "speedometer-main.crossbench",
+    })
 
 
 class PinpointBaseSubcommand(abc.ABC):
@@ -140,49 +181,28 @@ class PinpointConfigSubcommand(PinpointJobSubcommand):
     print_job_config(job_id=args.job, raw=args.raw, full=args.full)
 
 
-class PinpointStartSubcommand:
-  """Starts a new Pinpoint job."""
+class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
+  """Base class for subcommands that start a new Pinpoint job."""
 
-  def __init__(self, parent: PinpointSubcommand) -> None:
-    self._parent = parent
-    self._parser = self.add_cli_parser()
-    self._parser.set_defaults(pinpoint_subcommand=self)
-
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def create_parser(
+      self, command: str, aliases: tuple[str,
+                                         ...] = ()) -> argparse.ArgumentParser:
     start_parser = self._parent.subparsers.add_parser(
-        "start",
+        command,
+        aliases=aliases,
         help="Starts a new Pinpoint A/B job.",
         description="Starts a new Pinpoint A/B job. "
         "This command allows you to specify two configurations (base and "
         "experiment) to compare performance between them.",
-        epilog="""Example:
-  pinpoint start \\
-    --benchmark=speedometer3.crossbench \\
-    --bot=linux-r350-perf \\
-    --story=default \\
-    --story-tags=mobile,desktop \\
-    --repeat=20 \\
-    --bug-id=123456 \\
-    --base-commit=HEAD \\
-    --exp-commit=recent \\
-    --base-patch-url=https://chromium-review.googlesource.com/c/v8/v8/+/12345 \\
-    --exp-patch-url=https://chromium-review.googlesource.com/c/v8/v8/+/67890 \\
-    --base-js-flags=--flag1,--flag2 \\
-    --exp-js-flags=--flag3,--flag4 \\
-    --base-enable-features=feature1,feature2 \\
-    --exp-enable-features=feature3,feature4 \\
-    --base-disable-features=feature5,feature6 \\
-    --exp-disable-features=feature7,feature8
-""",
         formatter_class=argparse.RawTextHelpFormatter)
     start_parser.add_argument(
         "--config",
-        help="A try job configuration in the JSON/HJSON format. "
+        help="A/B job configuration in the JSON/HJSON format. "
         "Accepts a path to a configuration file, or configuration string. "
         "If the same argument is specified in the config and then provided "
         "as a command line argument, the latter overrides the former. "
         "Get more information by running `describe PinpointTryJobConfig`")
-    start_parser.add_argument("--benchmark", help="The benchmark to run.")
+    self.add_benchmark_flag(start_parser)
     start_parser.add_argument(
         "--bot", help="The bot configuration to run on (e.g., 'linux-perf').")
     start_parser.add_argument("--story", help="The story to run.")
@@ -215,35 +235,36 @@ class PinpointStartSubcommand:
     # Extra browser args.
     start_parser.add_argument(
         "--base-js-flags",
-        help="JavaScript flags to pass to V8 for the base commit. "
+        help="JavaScript flags to pass to V8 for the base commit.\n"
         "Example: --base-js-flags=--turbolev-future")
     start_parser.add_argument(
         "--exp-js-flags",
-        help="JavaScript flags to pass to V8 for the experiment commit. "
+        help="JavaScript flags to pass to V8 for the experiment commit.\n"
         "Example: --exp-js-flags=--turbolev-future")
     start_parser.add_argument(
         "--base-enable-features",
         help="Comma-separated list of Chrome features to enable for the base "
-        "commit. Example: --base-enable-features=Feature1,Feature2")
+        "commit.\nExample: --base-enable-features=Feature1,Feature2")
     start_parser.add_argument(
         "--exp-enable-features",
         help="Comma-separated list of Chrome features to enable for the "
-        "experiment commit. Example: --exp-enable-features=FeatureA,FeatureB")
+        "experiment commit.\nExample: --exp-enable-features=FeatureA,FeatureB")
     start_parser.add_argument(
         "--base-disable-features",
         help="Comma-separated list of Chrome features to disable for the base "
-        "commit. Example: --base-disable-features=Feature1,Feature2")
+        "commit.\nExample: --base-disable-features=Feature1,Feature2")
     start_parser.add_argument(
         "--exp-disable-features",
         help="Comma-separated list of Chrome features to disable for the "
-        "experiment commit. Example: --exp-disable-features=FeatureA,FeatureB")
+        "experiment commit.\nExample: --exp-disable-features=FeatureA,FeatureB")
 
     return start_parser
 
+  @override
   def run(self, args: argparse.Namespace) -> None:
     config = PinpointTryJobConfig.parse_and_override(
         config=args.config,
-        benchmark=args.benchmark,
+        benchmark=self.get_benchmark(args),
         bot=args.bot,
         story=args.story,
         story_tags=args.story_tags,
@@ -261,6 +282,74 @@ class PinpointStartSubcommand:
         exp_disable_features=args.exp_disable_features,
     )
     start_job(config)
+
+  def add_benchmark_flag(self, parser: argparse.ArgumentParser) -> None:
+    pass
+
+  @abc.abstractmethod
+  def get_benchmark(self, args: argparse.Namespace) -> str | None:
+    pass
+
+
+class PinpointStartSubcommand(PinpointBaseStartSubcommand):
+  """Starts a new Pinpoint A/B job."""
+
+  @override
+  def add_cli_parser(self) -> argparse.ArgumentParser:
+    start_parser = self.create_parser("start")
+    start_parser.epilog = """Example:
+  pinpoint start \\
+    --config=config.json \\
+    --benchmark=speedometer3.crossbench \\
+    --bot=linux-r350-perf \\
+    --story=default \\
+    --story-tags=mobile,desktop \\
+    --repeat=20 \\
+    --bug-id=123456 \\
+    --base-commit=HEAD \\
+    --exp-commit=recent \\
+    --base-patch-url=https://chromium-review.googlesource.com/c/v8/v8/+/12345 \\
+    --exp-patch-url=https://chromium-review.googlesource.com/c/v8/v8/+/67890 \\
+    --base-js-flags=--flag1,--flag2 \\
+    --exp-js-flags=--flag3,--flag4 \\
+    --base-enable-features=feature1,feature2 \\
+    --exp-enable-features=feature3,feature4 \\
+    --base-disable-features=feature5,feature6 \\
+    --exp-disable-features=feature7,feature8
+"""
+    return start_parser
+
+  @override
+  def add_benchmark_flag(self, parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--benchmark", help="The benchmark to run.")
+
+  @override
+  def get_benchmark(self, args: argparse.Namespace) -> str | None:
+    return args.benchmark
+
+
+class PinpointBenchmarkSubcommand(PinpointBaseStartSubcommand):
+  """Starts a new Pinpoint A/B job for a given benchmark."""
+
+  def __init__(self, parent: PinpointSubcommand,
+               benchmark_cls: BenchmarkClass) -> None:
+    self._benchmark_cls = benchmark_cls
+    super().__init__(parent)
+
+  @override
+  def add_cli_parser(self) -> argparse.ArgumentParser:
+    start_parser = self.create_parser(
+        command=self._benchmark_cls.NAME, aliases=self._benchmark_cls.aliases())
+    start_parser.description = (f"Starts a new Pinpoint A/B job for "
+                                f'"{self._benchmark_cls.NAME}".')
+    start_parser.epilog = (
+        f"Example:\npinpoint {self._benchmark_cls.NAME} --bot win-11-perf\n\n"
+        f"Flag usage example:\npinpoint start --help")
+    return start_parser
+
+  @override
+  def get_benchmark(self, args: argparse.Namespace) -> str | None:
+    return _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME[self._benchmark_cls.NAME]
 
 
 class PinpointCancelSubcommand(PinpointJobSubcommand):
@@ -419,6 +508,11 @@ class PinpointSubcommand(CrossbenchSubcommand):
     self._stories_subcommand = PinpointStoriesSubcommand(self)
     self._builds_subcommand = PinpointBuildsSubcommand(self)
     self._results_subcommand = PinpointResultsSubcommand(self)
+    self._benchmark_subcommands: list[PinpointBenchmarkSubcommand] = []
+    for benchmark_cls in cli.BENCHMARKS:
+      if _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME[benchmark_cls.NAME]:
+        self._benchmark_subcommands.append(
+            PinpointBenchmarkSubcommand(self, benchmark_cls))
 
   @property
   def subparsers(self) -> Subparsers:

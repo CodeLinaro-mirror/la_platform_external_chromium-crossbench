@@ -118,6 +118,36 @@ class PinpointSubcommandTest(unittest.TestCase):
     )
     mock_start_job.assert_called_with(test_config)
 
+  @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointTryJobConfig.parse_and_override")
+  def test_pinpoint_start_job_by_benchmark(self, mock_parse_and_override,
+                                           mock_start_job):
+    test_config = PinpointTryJobConfig(
+        benchmark="speedometer3.1.crossbench", bot="win-11-perf")
+    mock_parse_and_override.return_value = test_config
+    self.cli.run(["pinpoint", "sp3", "--bot", "win-11-perf"])
+    mock_parse_and_override.assert_called_once_with(
+        benchmark="speedometer3.1.crossbench",
+        bot="win-11-perf",
+        config=None,
+        story=None,
+        story_tags=None,
+        repeat=None,
+        bug=None,
+        base_commit=None,
+        exp_commit=None,
+        base_patch=None,
+        exp_patch=None,
+        base_js_flags=None,
+        exp_js_flags=None,
+        base_enable_features=None,
+        exp_enable_features=None,
+        base_disable_features=None,
+        exp_disable_features=None,
+    )
+    mock_start_job.assert_called_with(test_config)
+
   @mock.patch("crossbench.cli.subcommand.pinpoint.print_job_config")
   def test_pinpoint_job_config(self, mock_print_job_config):
     self.cli.run(["pinpoint", "config", "--job", "123abc", "--raw", "--full"])
