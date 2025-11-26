@@ -4,11 +4,13 @@
 
 from __future__ import annotations
 
+import argparse
 import unittest
 from unittest import mock
 
 from crossbench import path as pth
 from crossbench.cli.cli import CrossBenchCLI
+from crossbench.cli.subcommand.pinpoint import PinpointHelpFormatter
 from crossbench.pinpoint.config import PinpointTryJobConfig, VariantConfig
 from tests import test_helper
 
@@ -180,6 +182,16 @@ class PinpointSubcommandTest(unittest.TestCase):
         ["pinpoint", "results", "--job", "123abc", "--out-dir", "test_dir"])
     mock_download_results.assert_called_once_with(
         job_id="123abc", out_dir=pth.LocalPath("test_dir"))
+
+  def test_help_formatter(self):
+    parser = argparse.ArgumentParser(formatter_class=PinpointHelpFormatter)
+    subparsers = parser.add_subparsers(dest="action")
+    subparsers.add_parser("list", help="Command")
+    subparsers.add_parser("speedometer_main", help="Benchmark")
+
+    help_text = parser.format_help()
+
+    self.assertRegex(help_text, r"(?s)list.*Benchmarks:.*speedometer_main")
 
 
 if __name__ == "__main__":

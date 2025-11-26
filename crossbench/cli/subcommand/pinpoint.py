@@ -83,11 +83,11 @@ class PinpointBaseSubcommand(abc.ABC):
 
   @abc.abstractmethod
   def add_cli_parser(self) -> argparse.ArgumentParser:
-    raise NotImplementedError
+    pass
 
   @abc.abstractmethod
   def run(self, args: argparse.Namespace) -> None:
-    raise NotImplementedError
+    pass
 
 
 class PinpointListSubcommand(PinpointBaseSubcommand):
@@ -184,13 +184,14 @@ class PinpointConfigSubcommand(PinpointJobSubcommand):
 class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
   """Base class for subcommands that start a new Pinpoint job."""
 
-  def create_parser(
-      self, command: str, aliases: tuple[str,
-                                         ...] = ()) -> argparse.ArgumentParser:
+  def create_parser(self,
+                    command: str,
+                    aliases: tuple[str, ...] = (),
+                    help_text: str | None = None) -> argparse.ArgumentParser:
     start_parser = self._parent.subparsers.add_parser(
         command,
         aliases=aliases,
-        help="Starts a new Pinpoint A/B job.",
+        help=help_text,
         description="Starts a new Pinpoint A/B job. "
         "This command allows you to specify two configurations (base and "
         "experiment) to compare performance between them.",
@@ -296,7 +297,8 @@ class PinpointStartSubcommand(PinpointBaseStartSubcommand):
 
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
-    start_parser = self.create_parser("start")
+    start_parser = self.create_parser(
+        "start", help_text="Starts a new Pinpoint A/B job.")
     start_parser.epilog = """Example:
   pinpoint start \\
     --config=config.json \\
@@ -338,13 +340,14 @@ class PinpointBenchmarkSubcommand(PinpointBaseStartSubcommand):
 
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
+    pinpoint_benchmark = _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME[
+        self._benchmark_cls.NAME]
     start_parser = self.create_parser(
-        command=self._benchmark_cls.NAME, aliases=self._benchmark_cls.aliases())
-    start_parser.description = (f"Starts a new Pinpoint A/B job for "
-                                f'"{self._benchmark_cls.NAME}".')
+        command=self._benchmark_cls.NAME,
+        aliases=self._benchmark_cls.aliases(),
+        help_text=f'Starts a new "{pinpoint_benchmark}" Pinpoint A/B job.')
     start_parser.epilog = (
-        f"Example:\npinpoint {self._benchmark_cls.NAME} --bot win-11-perf\n\n"
-        f"Flag usage example:\npinpoint start --help")
+        f"Example:\npinpoint {self._benchmark_cls.NAME} --bot win-11-perf\n\n")
     return start_parser
 
   @override
@@ -521,10 +524,42 @@ class PinpointSubcommand(CrossbenchSubcommand):
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
     pinpoint_parser = self.cli.subparsers.add_parser(
-        "pinpoint", aliases=("pp",), help="Interact with the Pinpoint service.")
+        "pinpoint",
+        aliases=("pp",),
+        help="Interact with the Pinpoint service.",
+        formatter_class=PinpointHelpFormatter)
     assert isinstance(pinpoint_parser, CrossBenchArgumentParser)
     return pinpoint_parser
 
   @override
   def run(self, args: argparse.Namespace) -> None:
     args.pinpoint_subcommand.run(args)
+
+
+class PinpointHelpFormatter(argparse.HelpFormatter):
+  """Hacks HelpFormatter for displaying a pretty Pinpoint help message."""
+
+  @override
+  def _format_action(self,
+                     action: argparse.Action,
+                     custom_format: bool = True) -> str:
+    if not custom_format or not hasattr(action, "_get_subactions"):
+      return super()._format_action(action)
+
+    subactions = action._get_subactions()  # noqa: SLF001
+    assert subactions
+
+    pinpoint_parts = []
+    benchmark_parts = []
+    for subaction in subactions:
+      text = self._format_action(subaction, custom_format=False)
+      if subaction.dest in _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME:
+        benchmark_parts.append(text)
+      else:
+        pinpoint_parts.append(text)
+
+    return "\n".join([
+        "".join(pinpoint_parts),
+        "\nBenchmarks:",
+        "".join(benchmark_parts),
+    ])
