@@ -218,6 +218,12 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         type=NumberParser.positive_int,
         help="The bug ID to associate with the job.")
     start_parser.add_argument(
+        "--commit",
+        help="Git commit hash for both base and experiment builds. "
+        "Accepts a commit hash, 'HEAD' (latest commit), or 'recent' "
+        "(the most recent build). Defaults to HEAD. "
+        "Can be overridden by --base-commit or --exp-commit.")
+    start_parser.add_argument(
         "--base-commit",
         help="Git commit hash for the base build. Accepts a commit hash, "
         "'HEAD' (latest commit), or 'recent' (the most recent build). "
@@ -236,6 +242,11 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
 
     # Extra browser args.
     start_parser.add_argument(
+        "--js-flags",
+        help="JavaScript flags to pass to V8 for both base and experiment "
+        "commits. Can be overridden by --base-js-flags or --exp-js-flags.\n"
+        "Example: --js-flags=--turbolev-future")
+    start_parser.add_argument(
         "--base-js-flags",
         help="JavaScript flags to pass to V8 for the base commit.\n"
         "Example: --base-js-flags=--turbolev-future")
@@ -244,6 +255,11 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         help="JavaScript flags to pass to V8 for the experiment commit.\n"
         "Example: --exp-js-flags=--turbolev-future")
     start_parser.add_argument(
+        "--enable-features",
+        help="Chrome features to enable for both base and experiment commits. "
+        "Can be overridden by --base-enable-features or --exp-enable-features."
+        "\nExample: --enable-features=Feature1,Feature2")
+    start_parser.add_argument(
         "--base-enable-features",
         help="Comma-separated list of Chrome features to enable for the base "
         "commit.\nExample: --base-enable-features=Feature1,Feature2")
@@ -251,6 +267,12 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         "--exp-enable-features",
         help="Comma-separated list of Chrome features to enable for the "
         "experiment commit.\nExample: --exp-enable-features=FeatureA,FeatureB")
+    start_parser.add_argument(
+        "--disable-features",
+        help="Chrome features to disable for both base and experiment "
+        "commits. Can be overridden by --base-disable-features or "
+        "--exp-disable-features.\nExample: --disable-features=Feature1,Feature2"
+    )
     start_parser.add_argument(
         "--base-disable-features",
         help="Comma-separated list of Chrome features to disable for the base "
@@ -272,16 +294,17 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         story_tags=args.story_tags,
         repeat=args.repeat,
         bug=args.bug,
-        base_commit=args.base_commit,
-        exp_commit=args.exp_commit,
+        base_commit=args.base_commit or args.commit,
+        exp_commit=args.exp_commit or args.commit,
         base_patch=args.base_patch,
         exp_patch=args.exp_patch,
-        base_js_flags=args.base_js_flags,
-        exp_js_flags=args.exp_js_flags,
-        base_enable_features=args.base_enable_features,
-        exp_enable_features=args.exp_enable_features,
-        base_disable_features=args.base_disable_features,
-        exp_disable_features=args.exp_disable_features,
+        base_js_flags=args.base_js_flags or args.js_flags,
+        exp_js_flags=args.exp_js_flags or args.js_flags,
+        base_enable_features=args.base_enable_features or args.enable_features,
+        exp_enable_features=args.exp_enable_features or args.enable_features,
+        base_disable_features=args.base_disable_features or
+        args.disable_features,
+        exp_disable_features=args.exp_disable_features or args.disable_features,
     )
     start_job(config)
 
