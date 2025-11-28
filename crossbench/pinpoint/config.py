@@ -7,12 +7,12 @@ from __future__ import annotations
 import dataclasses
 import re
 from typing import Any
-from urllib.parse import urlparse
 
 from crossbench.cli import ui
 from crossbench.cli.config.flags import FlagsConfig
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser
+from crossbench.pinpoint import patch_resolver
 from crossbench.pinpoint.helper import annotate
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
@@ -40,9 +40,12 @@ class VariantConfig(ConfigObject):
     parser.add_argument(
         "patch",
         type=cls.parse_patch,
-        help="Gerrit patch to apply to the commit. Accepts a full URL, "
-        "a short URL (e.g. https://crrev.com/c/123/4), a CL number, "
-        "or a CL number with a patch number (e.g. 123/4)")
+        help="Gerrit patch to apply to the commit. Supported formats: "
+        "'12345' (optional patchset: '12345/6'), 'c/12345', "
+        "'crrev/c/12345', 'crrev/12345', 'crrev.com/c/12345' "
+        "'crrev.com/12345', or a full URL. "
+        "Note: All patches must be for chromium-review; "
+        "chrome-internal-review is not supported.")
     parser.add_argument(
         "flags",
         type=FlagsConfig,
@@ -62,11 +65,7 @@ class VariantConfig(ConfigObject):
 
   @classmethod
   def parse_patch(cls, value: str) -> str:
-    # TODO:(b/460433462) Support ccrev.com urls and values like "NUMBER/PATCH".
-    parsed = urlparse(value)
-    if parsed.scheme and parsed.netloc and "googlesource.com" in parsed.netloc:
-      return value
-    raise ValueError(f"Invalid patch value: {value}")
+    return patch_resolver.resolve_patch(value)
 
   @classmethod
   def parse_str(cls, value: str) -> VariantConfig:

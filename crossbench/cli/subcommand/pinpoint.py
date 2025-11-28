@@ -234,11 +234,21 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         "'HEAD' (latest commit), or 'recent' (the most recent build).")
     start_parser.add_argument(
         "--base-patch",
-        help="Gerrit URL of a patch to apply to the base commit.")
+        help="Gerrit patch to apply to the base commit. Supported formats: "
+        "'12345' (optional patchset: '12345/6'), 'c/12345', "
+        "'crrev/c/12345', 'crrev/12345', 'crrev.com/c/12345', "
+        "'crrev.com/12345', or a full URL. "
+        "Note: All patches must be for chromium-review; "
+        "chrome-internal-review is not supported.")
     start_parser.add_argument(
         "--exp-patch",
         "--patch",
-        help="Gerrit URL of a patch to apply to the experiment commit.")
+        help="Gerrit patch to apply to the experiment commit. Supported "
+        "formats: '12345' (optional patchset: '12345/6'), 'c/12345', "
+        "'crrev/c/12345', 'crrev/12345', 'crrev.com/c/12345', "
+        "'crrev.com/12345', or a full URL. "
+        "Note: All patches must be for chromium-review; "
+        "chrome-internal-review is not supported.")
 
     # Extra browser args.
     start_parser.add_argument(
