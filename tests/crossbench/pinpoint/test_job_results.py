@@ -127,6 +127,8 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
                         "details": [{
                             "key":
                                 "trace",
+                            "value":
+                                "trace.pb",
                             "url":
                                 "https://storage.cloud.google.com/res/trace.pb"
                         }]
@@ -230,8 +232,11 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
 class PinpointJobResultsTestCase(unittest.TestCase):
 
-  def test_init_valid(self):
-    data = {
+  def setUp(self):
+    super().setUp()
+    self.mock_fetch = self.enterContext(
+        mock.patch("crossbench.pinpoint.job_results.fetch_job_config"))
+    self.mock_fetch.return_value = {
         "results_url": "https://example.com/results.html",
         "status": "Completed",
         "state": [],
@@ -240,18 +245,20 @@ class PinpointJobResultsTestCase(unittest.TestCase):
             "configuration": "linux-perf",
         }
     }
-    job = PinpointJobResults(data)
+
+  def test_init_valid(self):
+    job = PinpointJobResults(_JOB_ID)
     self.assertEqual(job.name, "pinpoint_speedometer3_linux-perf")
     self.assertEqual(job.benchmark, "speedometer3")
     self.assertEqual(job.bot, "linux-perf")
     self.assertEqual(job.status, "Completed")
     self.assertEqual(job.results_url, "https://example.com/results.html")
-    self.assertEqual(job.attempts_count, 0)
+    self.assertEqual(job.download_count, 1)
 
   def test_init_invalid_status(self):
-    data = {"status": "Running"}
+    self.mock_fetch.return_value = {"status": "Running"}
     with self.assertRaisesRegex(ValueError, "Job is not completed"):
-      PinpointJobResults(data)
+      PinpointJobResults(_JOB_ID)
 
   def test_variant_name_with_label(self):
     data = {"change": {"label": "test-label"}, "attempts": []}
@@ -307,18 +314,44 @@ class PinpointJobResultsTestCase(unittest.TestCase):
             {  # 2: values
                 "details": [{
                     "key": "trace",
+                    "value": "trace.pb",
                     "url": "gs://bucket/trace.pb"
                 }]
             }
         ]
     }
     attempt = PinpointAttemptResults(data, 0)
-    self.assertEqual(attempt.perfetto_traces_url, "gs://bucket/trace.pb")
+    self.assertEqual(attempt.perfetto_trace_url_by_name,
+                     {"trace.pb": "gs://bucket/trace.pb"})
 
   def test_find_trace_missing(self):
     data = {"executions": [{}, {}, {}]}
     attempt = PinpointAttemptResults(data, 0)
-    self.assertIsNone(attempt.perfetto_traces_url)
+    self.assertEqual(attempt.perfetto_trace_url_by_name, {})
+
+  def test_find_multiple_traces(self):
+    data = {
+        "executions": [
+            {},
+            {},
+            {  # 2: values
+                "details": [{
+                    "key": "trace",
+                    "value": "trace1.pb",
+                    "url": "gs://bucket/trace1.pb"
+                }, {
+                    "key": "trace",
+                    "value": "trace2",
+                    "url": "gs://bucket/trace2.pb"
+                }]
+            }
+        ]
+    }
+    attempt = PinpointAttemptResults(data, 0)
+    self.assertEqual(attempt.perfetto_trace_url_by_name, {
+        "trace1.pb": "gs://bucket/trace1.pb",
+        "trace2.pb": "gs://bucket/trace2.pb"
+    })
 
 
 if __name__ == "__main__":
