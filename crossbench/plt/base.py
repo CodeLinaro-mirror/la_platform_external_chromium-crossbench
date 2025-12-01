@@ -602,8 +602,10 @@ class Platform(abc.ABC):
   def foreground_process(self) -> Optional[dict[str, Any]]:
     return None
 
-  def dump_java_heap(self, identifier: str, path: pth.AnyPath) -> None:
-    del identifier, path
+  def dump_java_heap(self, identifier: str, label: str,
+                     trace_buffer_size_kb: int,
+                     timeout: dt.timedelta) -> pth.AnyPath:
+    del identifier, label, trace_buffer_size_kb, timeout
     raise NotImplementedError(f"dump_java_heap not implemented for {self}.")
 
   @property

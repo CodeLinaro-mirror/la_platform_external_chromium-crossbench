@@ -44,6 +44,32 @@ if TYPE_CHECKING:
 # TODO(381985595): make this configurable.
 ANDROID_PERMISSIONS: Final = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
 
+# Template for Perfetto config to capture Java heaps.
+ANDROID_JAVA_HPROF_PERFETTO_CFG = """buffers {{
+  size_kb: {size_kb}
+  fill_policy: DISCARD
+}}
+
+data_sources {{
+  config {{
+    name: "android.java_hprof"
+    java_hprof_config {{
+      process_cmdline: "{process_cmdline}"
+      dump_smaps: true
+    }}
+  }}
+}}
+
+data_sources {{
+  config {{
+    name: "android.packages_list"
+  }}
+}}
+
+data_source_stop_timeout_ms: {data_source_stop_timeout_ms}
+duration_ms: 1000
+"""
+
 
 @dataclasses.dataclass(frozen=True)
 class AndroidDeviceInfo(DeviceInfo):
@@ -911,8 +937,27 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
     return meminfo
 
-  def dump_java_heap(self, identifier: str, path: pth.AnyPath) -> None:
-    self.sh("am", "dumpheap", identifier, self.path(path))
+  def dump_java_heap(self, identifier: str, label: str,
+                     trace_buffer_size_kb: int,
+                     timeout: dt.timedelta) -> pth.AnyPath:
+
+    timeout_ms = timeout / dt.timedelta(milliseconds=1)
+    cfg_path = self.path("/data/misc/perfetto-configs/{}.pbtxt".format(label))
+    dump_path = self.path(
+        "/data/misc/perfetto-traces/{}.trace.pb".format(label))
+    cfg = ANDROID_JAVA_HPROF_PERFETTO_CFG.format(
+        size_kb=trace_buffer_size_kb,
+        process_cmdline=identifier,
+        data_source_stop_timeout_ms=timeout_ms)
+    try:
+      self.write_text(cfg_path, cfg)
+      self.sh("perfetto", "--config", cfg_path, "--txt", "--out", dump_path)
+    except Exception:
+      self.rm(dump_path, missing_ok=True)
+      raise
+
+    self.rm(cfg_path, missing_ok=True)
+    return dump_path
 
   @functools.lru_cache(maxsize=1)
   @override
