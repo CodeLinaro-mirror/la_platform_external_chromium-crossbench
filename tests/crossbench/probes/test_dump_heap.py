@@ -21,66 +21,58 @@ class DumpHeapProbeTestCase(GenericProbeTestCase):
   def test_invoke_basic(self, mock_datetime):
     mock_datetime.now.return_value = datetime(year=1984, month=6, day=14)
 
-    probe = DumpHeapProbe.config_parser().parse({})
-
-    result_path = AnyPath("/results/dump_heap")
     mock_run = MagicMock(spec=Run)
-    mock_run.get_default_probe_result_path.return_value = result_path
+    dump_path = AnyPath("/path/to/dump.trace.pb")
+    mock_run.browser.dump_java_heap.return_value = dump_path
 
+    probe = DumpHeapProbe.config_parser().parse({})
     context = DumpHeapProbeContext(probe, mock_run)
     context.invoke(
         info_stack=("test",), timeout=timedelta(seconds=1), type="java")
 
-    hprof_path = result_path / "test_1984-06-14_000000.prof"
     mock_datetime.now.assert_called_once()
-    mock_run.browser.dump_java_heap.assert_called_once_with(hprof_path)
-    self.assertListEqual(context._results, [hprof_path])
+    mock_run.browser.dump_java_heap.assert_called_once_with(
+        label="test_1984-06-14_000000",
+        trace_buffer_size_kb=256 * 1024,
+        timeout=timedelta(seconds=1))
+    self.assertListEqual(context._results, [dump_path])
 
   def test_invoke_all_args(self):
-    probe = DumpHeapProbe.config_parser().parse({})
-
-    result_path = AnyPath("/results/dump_heap")
     mock_run = MagicMock(spec=Run)
-    mock_run.get_default_probe_result_path.return_value = result_path
+    dump_path = AnyPath("/path/to/dump.trace.pb")
+    mock_run.browser.platform.dump_java_heap.return_value = dump_path
 
+    probe = DumpHeapProbe.config_parser().parse({})
     context = DumpHeapProbeContext(probe, mock_run)
     context.invoke(
         info_stack=("test",),
-        timeout=timedelta(seconds=1),
+        timeout=timedelta(seconds=5),
         type="java",
+        trace_buffer_size_kb=12345,
         identifier="identifier",
         suffix="suffix")
 
-    hprof_path = result_path / "test_suffix.prof"
     mock_run.browser.platform.dump_java_heap.assert_called_once_with(
-        "identifier", hprof_path)
-    self.assertListEqual(context._results, [hprof_path])
+        identifier="identifier",
+        label="test_suffix",
+        trace_buffer_size_kb=12345,
+        timeout=timedelta(seconds=5))
+    self.assertListEqual(context._results, [dump_path])
 
   def test_invoke_invalid_type(self):
-    probe = DumpHeapProbe.config_parser().parse({})
-
-    result_path = AnyPath("/results/dump_heap")
     mock_run = MagicMock(spec=Run)
-    mock_run.get_default_probe_result_path.return_value = result_path
 
+    probe = DumpHeapProbe.config_parser().parse({})
     context = DumpHeapProbeContext(probe, mock_run)
     with self.assertRaises(argparse.ArgumentTypeError):
       context.invoke(
-          info_stack=("test",),
-          timeout=timedelta(seconds=1),
-          type="invalid",
-          identifier="identifier",
-          suffix="suffix")
+          info_stack=("test",), timeout=timedelta(seconds=1), type="invalid")
 
   def test_invoke_invalid_arg(self):
-    probe = DumpHeapProbe.config_parser().parse({})
-
-    result_path = AnyPath("/results/dump_heap")
     mock_run = MagicMock(spec=Run)
-    mock_run.get_default_probe_result_path.return_value = result_path
 
+    probe = DumpHeapProbe.config_parser().parse({})
     context = DumpHeapProbeContext(probe, mock_run)
-
     with self.assertRaisesRegex(RuntimeError,
                                 "Got unexpected keyword arguments"):
       context.invoke(

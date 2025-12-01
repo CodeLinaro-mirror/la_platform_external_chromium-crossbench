@@ -1,5 +1,5 @@
 {
-  probes: {
-    js: {}
+  "probes": {
+    "js": {}
   }
 }

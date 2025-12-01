@@ -602,8 +602,10 @@ class Platform(abc.ABC):
   def foreground_process(self) -> Optional[dict[str, Any]]:
     return None
 
-  def dump_java_heap(self, identifier: str, path: pth.AnyPath) -> None:
-    del identifier, path
+  def dump_java_heap(self, identifier: str, label: str,
+                     trace_buffer_size_kb: int,
+                     timeout: dt.timedelta) -> pth.AnyPath:
+    del identifier, label, trace_buffer_size_kb, timeout
     raise NotImplementedError(f"dump_java_heap not implemented for {self}.")
 
   @property
@@ -865,9 +867,16 @@ class Platform(abc.ABC):
                 encoding: str = "utf-8",
                 stdin: ProcessIo = None,
                 env: Optional[Mapping[str, str]] = None,
+                cwd: Optional[pth.AnyPath] = None,
                 check: bool = True) -> str:
     result = self.sh_stdout_bytes(
-        *args, shell=shell, quiet=quiet, stdin=stdin, env=env, check=check)
+        *args,
+        shell=shell,
+        quiet=quiet,
+        stdin=stdin,
+        env=env,
+        cwd=cwd,
+        check=check)
     return result.decode(encoding)
 
   def sh_stdout_bytes(self,
@@ -876,6 +885,7 @@ class Platform(abc.ABC):
                       quiet: bool = False,
                       stdin: ProcessIo = None,
                       env: Optional[Mapping[str, str]] = None,
+                      cwd: Optional[pth.AnyPath] = None,
                       check: bool = True) -> bytes:
     completed_process = self.sh(
         *args,
@@ -884,6 +894,7 @@ class Platform(abc.ABC):
         quiet=quiet,
         stdin=stdin,
         env=env,
+        cwd=cwd,
         check=check)
     return completed_process.stdout
 
@@ -900,6 +911,7 @@ class Platform(abc.ABC):
             stderr: ProcessIo = None,
             stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
+            cwd: Optional[pth.AnyPath] = None,
             quiet: bool = False) -> subprocess.Popen:
     self.assert_is_local()
     self.validate_shell_args(args, shell)
@@ -913,7 +925,8 @@ class Platform(abc.ABC):
         stdin=stdin,
         stderr=stderr,
         stdout=stdout,
-        env=env)
+        env=env,
+        cwd=cwd)
 
   def sh(self,
          *args: CmdArg,
@@ -923,6 +936,7 @@ class Platform(abc.ABC):
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
          env: Optional[Mapping[str, str]] = None,
+         cwd: Optional[pth.AnyPath] = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
     self.assert_is_local()
@@ -938,7 +952,8 @@ class Platform(abc.ABC):
         stderr=stderr,
         env=env,
         capture_output=capture_output,
-        check=False)
+        check=False,
+        cwd=cwd)
     if check and process.returncode != 0:
       raise SubprocessError(self, process)
     return process

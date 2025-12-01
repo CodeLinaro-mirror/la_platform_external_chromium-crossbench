@@ -300,4 +300,4 @@ class EtmProbeContext(ProbeContext[EtmProbe]):
     if not self.browser_platform.is_file(self.result_path):
       logging.warning("simpleperf ETM data file was not created or is empty.")
       return EmptyProbeResult()
-    return self.browser_result(trace=[self.result_path])
+    return self.browser_result(perfetto=(self.result_path,))

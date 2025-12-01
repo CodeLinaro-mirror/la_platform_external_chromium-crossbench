@@ -8,6 +8,8 @@ import hjson
 
 from crossbench import path as pth
 from crossbench.cli.config.probe import ProbeConfig
+from crossbench.config import config_dir
+from crossbench.probes.perfetto.perfetto import TraceConfig
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 
@@ -32,6 +34,26 @@ class ProbeConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.config_str, "all")
     self.assertIsNone(config.config_dict)
 
+  def test_parse_hjson_inline_file(self):
+    probe_config_file = config_dir() / "probe/perfetto/default.config.hjson"
+    self.fs.add_real_file(str(probe_config_file))
+    self.assertTrue(probe_config_file.is_file())
+    src_str = f"perfetto:{probe_config_file}"
+    config = ProbeConfig.parse(src_str)
+    self.assertEqual(config.src_str, src_str)
+    self.assertIsNone(config.config_str)
+    self.assertDictEqual(config.config_dict,
+                         hjson.loads(probe_config_file.read_text()))
+
+  def test_parse_non_hjson_inline_file(self):
+    trace_config_file = TraceConfig.preset_dir() / "v8.pbtxt"
+    self.fs.add_real_file(str(trace_config_file))
+    self.assertTrue(trace_config_file.is_file())
+    src_str = f"perfetto:{trace_config_file}"
+    config = ProbeConfig.parse(src_str)
+    self.assertEqual(config.src_str, src_str)
+    self.assertEqual(config.config_str, str(trace_config_file))
+    self.assertIsNone(config.config_dict)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

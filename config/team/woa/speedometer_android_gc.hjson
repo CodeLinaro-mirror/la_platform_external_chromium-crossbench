@@ -1,16 +1,16 @@
 {
-  browsers: {
-    chrome: {
-      browser: chrome-dev
-      driver: {
-        type: adb
+  "browsers": {
+    "chrome": {
+      "browser": "chrome-dev"
+      "driver": {
+        "type": "adb"
       }
     }
   }
-  env: {}
-  probes: {
-    perfetto: {
-      textproto:
+  "env": {}
+  "probes": {
+    "perfetto": {
+      "textproto":
         '''
           buffers {
             size_kb: 300000

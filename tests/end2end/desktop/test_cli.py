@@ -329,6 +329,8 @@ def test_loading_playback_urls(test_env: TestEnv, test_chrome_name) -> None:
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
+@pytest.mark.skipif(
+    plt.PLATFORM.is_win, reason="Fails on Windows; crbug.com/463323491")
 def test_loading_playback(test_env: TestEnv, test_chrome_name) -> None:
   # - loading using named pages with timeouts
   # - separate pages and --playback controller
@@ -417,6 +419,42 @@ def test_chrome_stdout_logging(test_env: TestEnv) -> None:
   stdout_file = stdout_files[0]
   test_output = "TestOutput" * 3
   assert test_output in stdout_file.read_text()
+
+
+@pytest.mark.xdist_group("end2end-benchmark")
+def test_devtools_frontend_all(test_env: TestEnv, test_chrome_name,
+                               test_chrome_version) -> None:
+
+  if test_chrome_version < 144:
+    pytest.skip(
+        "Skipping test for Chrome versions below 144; CDP command may not be supported"
+    )
+  _run_cli(
+      "devtools_frontend",
+      f"--browser={test_chrome_name}",
+      test_env=test_env,
+      auto_headless=True)
+  browser_dirs = _get_browser_dirs(test_env.results_dir)
+  assert len(browser_dirs) == 1
+
+
+@pytest.mark.xdist_group("end2end-benchmark")
+def test_devtools_frontend_selection(test_env: TestEnv, test_chrome_name,
+                                     test_chrome_version) -> None:
+  if test_chrome_version < 144:
+    pytest.skip(
+        "Skipping test for Chrome versions below 144; CDP command may not be supported"
+    )
+  _run_cli(
+      "devtools_frontend",
+      f"--browser={test_chrome_name}",
+      "--sites=blank,speedometertests",
+      "--panels=elements,resources",
+      test_env=test_env,
+      auto_headless=True)
+
+  browser_dirs = _get_browser_dirs(test_env.results_dir)
+  assert len(browser_dirs) == 1
 
 
 if __name__ == "__main__":

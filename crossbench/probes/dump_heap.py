@@ -48,12 +48,6 @@ class DumpHeapProbeContext(ProbeContext[DumpHeapProbe]):
     super().__init__(probe, run)
     self._results: list[AnyPath] = []
 
-  @override
-  def get_default_result_path(self) -> AnyPath:
-    dump_dir = super().get_default_result_path()
-    self.browser_platform.mkdir(dump_dir)
-    return dump_dir
-
   def start(self) -> None:
     pass
 
@@ -63,13 +57,13 @@ class DumpHeapProbeContext(ProbeContext[DumpHeapProbe]):
   @override
   def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
              **kwargs) -> None:
-    del timeout
-
-    self._dump(info_stack, **kwargs)
+    self._dump(info_stack, timeout, **kwargs)
 
   def _dump(self,
             info_stack: exception.TInfoStack,
+            timeout: dt.timedelta,
             type: str,
+            trace_buffer_size_kb: int = 256 * 1024,
             identifier: str | None = None,
             suffix: str | None = None,
             **kwargs) -> None:
@@ -82,13 +76,19 @@ class DumpHeapProbeContext(ProbeContext[DumpHeapProbe]):
 
     match HeapType.parse(type):
       case HeapType.JAVA:
-        path = self.result_path / f"{label}.prof"
         if not identifier:
-          self.browser.dump_java_heap(path)
+          path = self.browser.dump_java_heap(
+              label=label,
+              trace_buffer_size_kb=trace_buffer_size_kb,
+              timeout=timeout)
         else:
-          self.browser_platform.dump_java_heap(identifier, path)
+          path = self.browser_platform.dump_java_heap(
+              identifier=identifier,
+              label=label,
+              trace_buffer_size_kb=trace_buffer_size_kb,
+              timeout=timeout)
         self._results.append(path)
 
   @override
   def teardown(self) -> ProbeResult:
-    return self.browser_result(file=tuple(self._results))
+    return self.browser_result(perfetto=tuple(self._results))

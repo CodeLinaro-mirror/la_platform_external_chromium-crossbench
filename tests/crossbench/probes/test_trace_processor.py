@@ -13,6 +13,7 @@ from crossbench import plt
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.probes.all import TraceProcessorProbe
+from crossbench.probes.trace_processor.constants import QUERIES_DIR
 from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorQueryConfig
 from tests import test_helper
@@ -21,8 +22,7 @@ from tests.crossbench.base import BaseCrossbenchTestCase, \
 
 
 def read_query_sql(name: str) -> str:
-  return (test_helper.crossbench_dir() / "probes/trace_processor/queries" /
-          f"{name}.sql").read_text("utf-8")
+  return (QUERIES_DIR / name).read_text("utf-8")
 
 
 class TraceProcessorProbeTestCase(unittest.TestCase):
@@ -40,7 +40,7 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
     assert isinstance(probe, TraceProcessorProbe)
     queries = probe.queries
     self.assertEqual(len(queries), 2)
-    speedometer_cpu_time_sql = read_query_sql("speedometer_cpu_time")
+    speedometer_cpu_time_sql = read_query_sql("speedometer_cpu_time.sql")
     self.assertEqual(queries[0].name, "speedometer_cpu_time")
     self.assertEqual(queries[0].sql, speedometer_cpu_time_sql)
 
@@ -106,12 +106,22 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
   def test_file_query(self):
     query = TraceProcessorQueryConfig.parse("speedometer_cpu_time")
     self.assertEqual(query.name, "speedometer_cpu_time")
-    self.assertEqual(query.sql, read_query_sql("speedometer_cpu_time"))
+    self.assertEqual(query.sql, read_query_sql("speedometer_cpu_time.sql"))
+
+  def test_file_query_sql_suffix(self):
+    query = TraceProcessorQueryConfig.parse("speedometer_cpu_time.sql")
+    self.assertEqual(query.name, "speedometer_cpu_time")
+    self.assertEqual(query.sql, read_query_sql("speedometer_cpu_time.sql"))
 
   def test_file_query_name_escaped(self):
     query = TraceProcessorQueryConfig.parse("loadline/benchmark_score")
     self.assertEqual(query.name, "loadline_benchmark_score")
-    self.assertEqual(query.sql, read_query_sql("loadline/benchmark_score"))
+    self.assertEqual(query.sql, read_query_sql("loadline/benchmark_score.sql"))
+
+  def test_file_query_name_escaped_sql_suffix(self):
+    query = TraceProcessorQueryConfig.parse("loadline/benchmark_score.sql")
+    self.assertEqual(query.name, "loadline_benchmark_score")
+    self.assertEqual(query.sql, read_query_sql("loadline/benchmark_score.sql"))
 
   def test_inline_query(self):
     query = TraceProcessorQueryConfig.parse({
