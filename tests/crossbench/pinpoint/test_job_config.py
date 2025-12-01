@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-from typing import Final
 from unittest import mock
 
 import requests
@@ -15,7 +14,7 @@ from crossbench.pinpoint.config import PinpointTryJobConfig
 from crossbench.pinpoint.job_config import convert_job_config, \
     fetch_job_config, print_job_config
 from tests import test_helper
-from tests.crossbench.pinpoint.auth_session_mixin import MockAuthSessionMixin
+from tests.crossbench.pinpoint.requests_mixin import MockRequestsMixin
 
 _TEST_JOB_ID = "1234567890"
 _TEST_JOB_RESPONSE = {
@@ -40,9 +39,7 @@ _TEST_JOB_RESPONSE = {
 }
 
 
-class JobConfigTest(MockAuthSessionMixin):
-  _get_auth_session_patch_target: Final[
-      str] = "crossbench.pinpoint.job_config.get_auth_session"
+class JobConfigTest(MockRequestsMixin):
 
   def setUp(self):
     super().setUp()
@@ -56,7 +53,7 @@ class JobConfigTest(MockAuthSessionMixin):
       mock_response.raise_for_status.return_value = None
       return mock_response
 
-    self.mock_session.get.side_effect = mock_post_side_effect
+    self.mock_get.side_effect = mock_post_side_effect
 
   def test_fetch_job_config(self):
     config_dict = fetch_job_config(_TEST_JOB_ID)
@@ -64,17 +61,14 @@ class JobConfigTest(MockAuthSessionMixin):
 
   def test_fetch_job_config_full(self):
     fetch_job_config(_TEST_JOB_ID, full=True)
-    _, kwargs = self.mock_session.get.call_args
+    _, kwargs = self.mock_get.call_args
     self.assertEqual(kwargs, {"params": {"o": ["STATE", "ESTIMATE"]}})
 
   def test_fetch_job_config_api_error(self):
-    self.mock_session.get.side_effect = requests.exceptions.HTTPError(
-        "API Error")
+    self.mock_get.side_effect = requests.exceptions.HTTPError("API Error")
 
     with self.assertRaises(MultiException):
       fetch_job_config(_TEST_JOB_ID)
-
-    self.mock_get_auth_session.assert_called_once()
 
   def test_convert_job_config(self):
     config_dict = fetch_job_config(job_id=_TEST_JOB_ID)

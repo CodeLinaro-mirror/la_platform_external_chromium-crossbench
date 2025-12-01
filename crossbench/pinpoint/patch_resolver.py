@@ -8,7 +8,7 @@ import json
 import re
 from urllib.parse import urlparse
 
-from crossbench.pinpoint.auth import get_auth_session
+from crossbench.pinpoint import requests
 
 
 def resolve_patch(patch: str) -> str:
@@ -43,9 +43,7 @@ def _is_url(patch: str) -> bool:
 def _revision_to_url(change_id: str, patchset: str | None = None) -> str:
   chromium_review_url = "https://chromium-review.googlesource.com"
 
-  authed_session = get_auth_session()
-  api_response = authed_session.get(chromium_review_url +
-                                    f"/changes/{change_id}")
+  api_response = requests.get(chromium_review_url + f"/changes/{change_id}")
   api_response.raise_for_status()
 
   # Skip the protective prefix ")]}'"

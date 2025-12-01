@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import json
-from typing import Final
 from unittest import mock
 
 import requests
@@ -15,12 +14,10 @@ from crossbench.pinpoint.api import PINPOINT_START_JOB_API_URL
 from crossbench.pinpoint.config import PinpointTryJobConfig
 from crossbench.pinpoint.start_job import start_job
 from tests import test_helper
-from tests.crossbench.pinpoint.auth_session_mixin import MockAuthSessionMixin
+from tests.crossbench.pinpoint.requests_mixin import MockRequestsMixin
 
 
-class StartJobTest(MockAuthSessionMixin):
-  _get_auth_session_patch_target: Final[
-      str] = "crossbench.pinpoint.start_job.get_auth_session"
+class StartJobTest(MockRequestsMixin):
 
   def setUp(self):
     super().setUp()
@@ -36,7 +33,7 @@ class StartJobTest(MockAuthSessionMixin):
       mock_response.raise_for_status.return_value = None
       return mock_response
 
-    self.mock_session.post.side_effect = mock_post_side_effect
+    self.mock_post.side_effect = mock_post_side_effect
 
   def test_start_job_correct_parameters(self):
     start_job(
@@ -87,12 +84,11 @@ class StartJobTest(MockAuthSessionMixin):
         "experiment_extra_args":
             '--extra-browser-args="--js-flags=--exp-js-flag"',
     }
-    self.mock_session.post.assert_called_with(
+    self.mock_post.assert_called_with(
         PINPOINT_START_JOB_API_URL, data=expected_payload)
 
   def test_start_job_api_error(self):
-    self.mock_session.post.side_effect = requests.exceptions.HTTPError(
-        "API Error")
+    self.mock_post.side_effect = requests.exceptions.HTTPError("API Error")
     with self.assertRaises(MultiException):
       start_job(
           PinpointTryJobConfig(

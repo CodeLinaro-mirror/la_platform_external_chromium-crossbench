@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-from typing import Final
 from unittest import mock
 
 import requests
@@ -13,12 +12,10 @@ from crossbench.exception import MultiException
 from crossbench.pinpoint.api import PINPOINT_BUILDS_API_URL_TEMPLATE
 from crossbench.pinpoint.list_builds import Build, fetch_builds, list_builds
 from tests import test_helper
-from tests.crossbench.pinpoint.auth_session_mixin import MockAuthSessionMixin
+from tests.crossbench.pinpoint.requests_mixin import MockRequestsMixin
 
 
-class ListBuildsTest(MockAuthSessionMixin):
-  _get_auth_session_patch_target: Final[
-      str] = "crossbench.pinpoint.list_builds.get_auth_session"
+class ListBuildsTest(MockRequestsMixin):
 
   def setUp(self):
     super().setUp()
@@ -47,7 +44,7 @@ class ListBuildsTest(MockAuthSessionMixin):
       mock_response.raise_for_status.return_value = None
       return mock_response
 
-    self.mock_session.get.side_effect = mock_get_side_effect
+    self.mock_get.side_effect = mock_get_side_effect
 
   def test_fetch_builds_contain_correct_builds(self):
     builds = fetch_builds("test-bot")
@@ -66,8 +63,7 @@ class ListBuildsTest(MockAuthSessionMixin):
       self.assertIn("commit0", output)
 
   def test_list_builds_api_error(self):
-    self.mock_session.get.side_effect = requests.exceptions.HTTPError(
-        "API Error")
+    self.mock_get.side_effect = requests.exceptions.HTTPError("API Error")
     with self.assertRaises(MultiException):
       list_builds("test-bot", 1)
 

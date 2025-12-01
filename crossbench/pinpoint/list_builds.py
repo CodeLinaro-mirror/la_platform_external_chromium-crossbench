@@ -11,8 +11,8 @@ from typing import Any
 
 from tabulate import tabulate
 
+from crossbench.pinpoint import requests
 from crossbench.pinpoint.api import PINPOINT_BUILDS_API_URL_TEMPLATE
-from crossbench.pinpoint.auth import get_auth_session
 from crossbench.pinpoint.format_time import DATETIME_FORMAT, format_time
 from crossbench.pinpoint.helper import annotate
 
@@ -37,11 +37,10 @@ def list_builds(bot: str, limit: int) -> None:
 
 
 def fetch_builds(bot: str) -> list[Build]:
-  authed_session = get_auth_session()
   url = PINPOINT_BUILDS_API_URL_TEMPLATE.format(bot=bot)
 
   with annotate(f"Fetching recent builds for '{bot}'"):
-    response = authed_session.get(url)
+    response = requests.get(url)
     response.raise_for_status()
     return _convert_json_to_builds(response.json())
 

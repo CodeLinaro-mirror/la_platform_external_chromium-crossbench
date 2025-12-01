@@ -4,15 +4,14 @@
 
 from __future__ import annotations
 
+from crossbench.pinpoint import requests
 from crossbench.pinpoint.api import PINPOINT_CONFIG_API_URL
-from crossbench.pinpoint.auth import get_auth_session
 from crossbench.pinpoint.helper import annotate
 
 
 def fetch_bots() -> list[str]:
   """Fetches the list of available Pinpoint bots from the Pinpoint API."""
-  authed_session = get_auth_session()
   with annotate("Fetching available bots"):
-    response = authed_session.post(PINPOINT_CONFIG_API_URL)
+    response = requests.post(PINPOINT_CONFIG_API_URL)
     response.raise_for_status()
     return response.json()["configurations"]

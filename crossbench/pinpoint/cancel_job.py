@@ -6,19 +6,18 @@ from __future__ import annotations
 
 import json
 
+from crossbench.pinpoint import requests
 from crossbench.pinpoint.api import PINPOINT_CANCEL_JOB_API_URL
-from crossbench.pinpoint.auth import get_auth_session
 from crossbench.pinpoint.helper import annotate
 
 
 def cancel_job(job_id: str, reason: str) -> None:
   """Cancels a Pinpoint job."""
-  authed_session = get_auth_session()
   payload = {
       "job_id": job_id,
       "reason": reason,
   }
   with annotate("Cancelling Pinpoint job"):
-    response = authed_session.post(PINPOINT_CANCEL_JOB_API_URL, data=payload)
+    response = requests.post(PINPOINT_CANCEL_JOB_API_URL, data=payload)
     response.raise_for_status()
-    print(json.dumps(response.json(), indent=2))
+  print(json.dumps(response.json(), indent=2))

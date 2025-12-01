@@ -10,54 +10,42 @@ import itertools
 import json
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Final, Mapping
+from typing import Any, Final, Mapping
 
-import requests
 import yaml
 from tabulate import tabulate
 
+from crossbench.pinpoint import requests
 from crossbench.pinpoint.api import JOB_SHORTEN_URL_TEMPLATE, \
     PINPOINT_JOBS_API_URL, USERINFO_API_URL
-from crossbench.pinpoint.auth import get_auth_session
 from crossbench.pinpoint.format_time import DATETIME_FORMAT, format_time
 from crossbench.pinpoint.helper import annotate
 from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.user import UserEnum
 
-if TYPE_CHECKING:
-  from google.auth.transport import requests as auth_requests
-
 
 def list_jobs(user: UserEnum | str, number: int, truncate: int | None,
               output_format: ListFormatEnum) -> None:
-  authed_session = get_auth_session()
+  emails_to_query = _fetch_user_emails(user)
 
-  try:
-    emails_to_query = _fetch_user_emails(authed_session, user)
+  jobs = []
+  with annotate("Fetching jobs"), ThreadPoolExecutor() as executor:
+    results = executor.map(lambda email: _fetch_jobs(number, email),
+                           emails_to_query)
+    jobs = list(itertools.chain.from_iterable(results))
 
-    jobs = []
-    with annotate("fetching jobs"), ThreadPoolExecutor() as executor:
-      results = executor.map(
-          lambda email: _fetch_jobs(authed_session, number, email),
-          emails_to_query)
-      jobs = list(itertools.chain.from_iterable(results))
+  jobs.sort(key=lambda job: job.get("created", ""), reverse=True)
 
-    jobs.sort(key=lambda job: job.get("created", ""), reverse=True)
+  if not jobs:
+    print("No jobs found.")
+    return
 
-    if not jobs:
-      print("No jobs found.")
-      return
-
-    _display_jobs(jobs[:number], output_format, user == UserEnum.ALL, truncate)
-
-  except requests.exceptions.RequestException as e:
-    print(f"An error occurred while fetching jobs: {e}")
+  _display_jobs(jobs[:number], output_format, user == UserEnum.ALL, truncate)
 
 
-def _fetch_user_emails(authed_session: auth_requests.AuthorizedSession,
-                       user: UserEnum | str) -> set[str | None]:
+def _fetch_user_emails(user: UserEnum | str) -> set[str | None]:
   if user == UserEnum.ME:
-    email = _get_user_email(authed_session)
+    email = _get_user_email()
     username = email.split("@")[0]
     return {email, f"{username}@google.com", f"{username}@chromium.org"}
   if user == UserEnum.ALL:
@@ -65,16 +53,14 @@ def _fetch_user_emails(authed_session: auth_requests.AuthorizedSession,
   return {user}
 
 
-def _get_user_email(authed_session: auth_requests.AuthorizedSession) -> str:
-  with annotate("fetching user-email"):
-    response = authed_session.get(USERINFO_API_URL)
+def _get_user_email() -> str:
+  with annotate("Fetching user-email"):
+    response = requests.get(USERINFO_API_URL)
     response.raise_for_status()
     return response.json()["email"]
 
 
-def _fetch_jobs(authed_session: auth_requests.AuthorizedSession,
-                number: int,
-                email: str | None = None) -> list[dict[str, Any]]:
+def _fetch_jobs(number: int, email: str | None = None) -> list[dict[str, Any]]:
   jobs = []
   next_cursor = None
   params = {}
@@ -85,7 +71,7 @@ def _fetch_jobs(authed_session: auth_requests.AuthorizedSession,
     if next_cursor:
       params["next_cursor"] = next_cursor
 
-    response = authed_session.get(PINPOINT_JOBS_API_URL, params=params)
+    response = requests.get(PINPOINT_JOBS_API_URL, params=params)
     response.raise_for_status()
     data = response.json()
     jobs.extend(data.get("jobs", []))
