@@ -194,8 +194,13 @@ def test_loadline_experimental(device_id, adb_path, test_env: TestEnv) -> None:
       test_env.root_dir /
       "config/benchmark/loadline/probe_config_experimental.hjson")
   cli.run([
-      BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=1",
-      "--throw", f"--out-dir={out_dir}", f"--probe-config={probe_config}"
+      BenchmarkType.PHONE,
+      f"--browser={browser_config}",
+      "--repeat=1",
+      "--throw",
+      f"--out-dir={out_dir}",
+      f"--probe-config={probe_config}",
+      "--env-validation=skip",
   ] + list(test_env.cq_flags))
   _verify_experimental_metrics(out_dir)
   _verify_breakdown(out_dir)

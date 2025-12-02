@@ -259,7 +259,8 @@ def FormatHjsonFile(input_api: Any, hjson_file: pathlib.Path) -> str:
 
   try:
     return subprocess.run([
-        node_bin, hjson_js_bin, "-rt", "-sl", "-nocol", "-cond=0",
+        node_bin, hjson_js_bin, "-rt", "-sl", "-nocol", "-cond=0", "-quote=all",
+        "-ml",
         str(hjson_file)
     ],
                           check=True,

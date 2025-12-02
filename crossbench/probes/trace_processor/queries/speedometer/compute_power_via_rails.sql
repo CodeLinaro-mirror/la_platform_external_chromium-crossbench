@@ -1,9 +1,12 @@
+-- Copyright 2025 The Chromium Authors
+-- Use of this source code is governed by a BSD-style license that can be
+-- found in the LICENSE file.
+
 -- For Google Pixel devices, the speedometer_compute_power_via_rails query
 -- estimates the total power consumed during a speedometer run, by leveraging
 -- go/pixel-odpm-rails counters (sorry, Googlers only). It includes all rails
 -- related to the SoC's compute logic (e.g. CPU, GPU, memory, fabric; but
 -- excluding e.g. display)
-
 SELECT IMPORT('chrome.speedometer');
 SELECT IMPORT('android.power_rails');
 

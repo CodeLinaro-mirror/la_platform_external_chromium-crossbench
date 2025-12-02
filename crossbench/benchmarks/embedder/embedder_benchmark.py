@@ -26,6 +26,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.webview.embedder import WebviewEmbedder
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.cli.types import Subparsers
+  from crossbench.plt.types import TupleCmdArgs
   from crossbench.runner.run import Run
 
 
@@ -39,11 +40,19 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
   def setup(self, run: Run) -> None:
     # TODO(zbikowski): Add a way to ensure embedder is installed.
     # Launching the Google Quick Search app
+    run_benchmark = cast(EmbedderBenchmark, run.benchmark)
+    if run_benchmark.embedder_drop_caches:
+      run.browser_platform.sh("am", "kill-all")
+      run.browser_platform.sh(  # noqa: S604
+          "echo 3 > /proc/sys/vm/drop_caches", shell=True)
     run_browser = cast("WebviewEmbedder", run.browser)
-    run.browser_platform.sh("am", "start", "-S", "-W", "-a",
-                            f"{run_browser.android_package}.GOOGLE_SEARCH",
-                            "-n",
-                            f"{run_browser.android_package}/.SearchActivity")
+    cmd: TupleCmdArgs = (
+        "am", "start", "-S", "-W", "-n",
+        f"{run_browser.android_package}/.{run_benchmark.android_activity}")
+    if run_benchmark.android_action != "":
+      cmd = cmd + (
+          "-a", f"{run_browser.android_package}.{run_benchmark.android_action}")
+    run.browser_platform.sh(*cmd)
     logging.info("Starting Embedder Benchmark...")
 
   def run(self, run: Run) -> None:
@@ -79,13 +88,19 @@ class EmbedderBenchmark(SubStoryBenchmark):
       stories: Sequence[Story],
       action_runner_config: Optional[ActionRunnerConfig] = None,
       embedder_process_name: str = "search",
-      embedder_setup_command_config: Optional[SetupCommandsConfig] = None
+      embedder_setup_command_config: Optional[SetupCommandsConfig] = None,
+      embedder_drop_caches: bool = False,
+      android_action: str = "GOOGLE_SEARCH",
+      android_activity: str = "SearchActivity",
   ) -> None:
     for story in stories:
       assert isinstance(story, self.DEFAULT_STORY_CLS)
     super().__init__(stories, action_runner_config)
     self._embedder_process_name = embedder_process_name
     self._embedder_setup_command_config = embedder_setup_command_config
+    self._embedder_drop_caches = embedder_drop_caches
+    self._android_action = android_action
+    self._android_activity = android_activity
 
   @property
   def embedder_process_name(self) -> str:
@@ -94,6 +109,18 @@ class EmbedderBenchmark(SubStoryBenchmark):
   @property
   def embedder_setup_command_config(self) -> Optional[SetupCommandsConfig]:
     return self._embedder_setup_command_config
+
+  @property
+  def embedder_drop_caches(self) -> bool:
+    return self._embedder_drop_caches
+
+  @property
+  def android_action(self) -> str:
+    return self._android_action
+
+  @property
+  def android_activity(self) -> str:
+    return self._android_activity
 
   @classmethod
   @override
@@ -119,6 +146,23 @@ class EmbedderBenchmark(SubStoryBenchmark):
         "--embedder-setup-command-config",
         type=SetupCommandsConfig.parse,
         help="Setup commands to run before the benchmark.")
+    parser.add_argument(
+        "--embedder-drop-caches",
+        default=False,
+        action="store_true",
+        help="Drop page cache before running each story.")
+    parser.add_argument(
+        "--android-action",
+        default="GOOGLE_SEARCH",
+        type=str,
+        help=("The Android action in setup that is passed to the adb intent\n"
+              "`am start -a` option. Pass empty string if not applicable."))
+    parser.add_argument(
+        "--android-activity",
+        default="SearchActivity",
+        type=str,
+        help=("The Android activity name in setup that is passed to the adb\n"
+              "intent `am start -n` option."))
     return parser
 
   @classmethod
@@ -138,6 +182,9 @@ class EmbedderBenchmark(SubStoryBenchmark):
     kwargs = super().kwargs_from_cli(args)
     kwargs["embedder_process_name"] = args.embedder_process_name
     kwargs["embedder_setup_command_config"] = args.embedder_setup_command_config
+    kwargs["embedder_drop_caches"] = args.embedder_drop_caches
+    kwargs["android_action"] = args.android_action
+    kwargs["android_activity"] = args.android_activity
     return kwargs
 
   @classmethod

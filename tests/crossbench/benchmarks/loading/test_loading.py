@@ -766,6 +766,22 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
       self.assertEqual(action.TYPE, ActionType.GET)
       self.assertEqual(action.url, f"http://test.com/{index}")
 
+  def test_parse_single_block_empty_action_dict(self):
+    config = ActionBlockListConfig.parse({"block 1": {"actions": []}})
+    self.assertEqual(len(config.blocks), 1)
+    block = config.blocks[0]
+    self.assertEqual(block.label, "block 1")
+    self.assertEqual(block.duration, dt.timedelta(seconds=0))
+    self.assertEqual(len(block.actions), 0)
+
+  def test_parse_single_block_empty_action_list(self):
+    config = ActionBlockListConfig.parse({"block 1": []})
+    self.assertEqual(len(config.blocks), 1)
+    block = config.blocks[0]
+    self.assertEqual(block.label, "block 1")
+    self.assertEqual(block.duration, dt.timedelta(seconds=0))
+    self.assertEqual(len(block.actions), 0)
+
   def test_parse_multi_block_actions_dict(self):
     config = ActionBlockListConfig.parse({
         "block 0": {
@@ -822,11 +838,6 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
   def test_parse_invalid_dict_missing_actions(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       ActionBlockListConfig.parse({"block 1": {}})
-    self.assertIn("actions", str(cm.exception))
-
-  def test_parse_invalid_dict_empty_actions(self):
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      ActionBlockListConfig.parse({"block 1": {"actions": []}})
     self.assertIn("actions", str(cm.exception))
 
   def test_parse_logins(self):

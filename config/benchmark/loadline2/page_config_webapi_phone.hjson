@@ -1,16 +1,20 @@
 {
-  pages: {
-    amazon_product: [
+  "pages": {
+    "amazon_product": [
       {
-        action: get
-        url: about:blank
-        target: _new_tab
+        "action": "get"
+        "url": "about:blank"
+        "target": "_new_tab"
       }
       {
-        action: probe
-        probe: js
-        kwargs: {
-          js:
+        "action": "wait"
+        "duration": "1s"
+      }
+      {
+        "action": "probe"
+        "probe": "js"
+        "kwargs": {
+          "js":
             '''
             performance.mark('LoadLine2/amazon_product/start');
             const navigationStart = performance.timeOrigin + performance.now();
@@ -20,23 +24,23 @@
         }
       }
       {
-        action: wait_for_condition
-        condition:
+        "action": "wait_for_condition"
+        "condition":
           '''
           return performance.getEntriesByName('LoadLine2/amazon_product/interactive_raf').length > 0
               && performance.getEntriesByName('LoadLine2/amazon_product/visual_raf').length > 0
           '''
-        timeout: 10s
+        "timeout": "10s"
       }
       {
-        action: wait
-        duration: 100ms
+        "action": "wait"
+        "duration": "100ms"
       }
       {
-        action: probe
-        probe: js
-        kwargs: {
-          js:
+        "action": "probe"
+        "probe": "js"
+        "kwargs": {
+          "js":
             '''
             performance.mark('LoadLine2/amazon_product/finish');
             const visual = performance.timeOrigin +
@@ -51,17 +55,21 @@
         }
       }
     ]
-    cnn_article: [
+    "cnn_article": [
       {
-        action: get
-        url: about:blank
-        target: _new_tab
+        "action": "get"
+        "url": "about:blank"
+        "target": "_new_tab"
       }
       {
-        action: probe
-        probe: js
-        kwargs: {
-          js:
+        "action": "wait"
+        "duration": "1s"
+      }
+      {
+        "action": "probe"
+        "probe": "js"
+        "kwargs": {
+          "js":
             '''
             performance.mark('LoadLine2/cnn_article/start');
             const navigationStart = performance.timeOrigin + performance.now();
@@ -71,23 +79,23 @@
         }
       }
       {
-        action: wait_for_condition
-        condition:
+        "action": "wait_for_condition"
+        "condition":
           '''
           return performance.getEntriesByName('LoadLine2/cnn_article/interactive_raf').length > 0
               && performance.getEntriesByName('LoadLine2/cnn_article/visual_raf').length > 0
           '''
-        timeout: 10s
+        "timeout": "10s"
       }
       {
-        action: wait
-        duration: 100ms
+        "action": "wait"
+        "duration": "100ms"
       }
       {
-        action: probe
-        probe: js
-        kwargs: {
-          js:
+        "action": "probe"
+        "probe": "js"
+        "kwargs": {
+          "js":
             '''
             performance.mark('LoadLine2/cnn_article/finish');
             const visual = performance.timeOrigin +
@@ -102,17 +110,21 @@
         }
       }
     ]
-    wikipedia_article: [
+    "wikipedia_article": [
       {
-        action: get
-        url: about:blank
-        target: _new_tab
+        "action": "get"
+        "url": "about:blank"
+        "target": "_new_tab"
       }
       {
-        action: probe
-        probe: js
-        kwargs: {
-          js:
+        "action": "wait"
+        "duration": "1s"
+      }
+      {
+        "action": "probe"
+        "probe": "js"
+        "kwargs": {
+          "js":
             '''
             performance.mark('LoadLine2/wikipedia_article/start');
             const navigationStart = performance.timeOrigin + performance.now();
@@ -122,23 +134,23 @@
         }
       }
       {
-        action: wait_for_condition
-        condition:
+        "action": "wait_for_condition"
+        "condition":
           '''
           return performance.getEntriesByName('LoadLine2/wikipedia_article/interactive_raf').length > 0
               && performance.getEntriesByName('LoadLine2/wikipedia_article/visual_raf').length > 0
           '''
-        timeout: 10s
+        "timeout": "10s"
       }
       {
-        action: wait
-        duration: 100ms
+        "action": "wait"
+        "duration": "100ms"
       }
       {
-        action: probe
-        probe: js
-        kwargs: {
-          js:
+        "action": "probe"
+        "probe": "js"
+        "kwargs": {
+          "js":
             '''
             performance.mark('LoadLine2/wikipedia_article/finish');
             const visual = performance.timeOrigin +
@@ -153,17 +165,21 @@
         }
       }
     ]
-    globo_homepage: [
+    "globo_homepage": [
       {
-        action: get
-        url: about:blank
-        target: _new_tab
+        "action": "get"
+        "url": "about:blank"
+        "target": "_new_tab"
       }
       {
-        action: probe
-        probe: js
-        kwargs: {
-          js:
+        "action": "wait"
+        "duration": "1s"
+      }
+      {
+        "action": "probe"
+        "probe": "js"
+        "kwargs": {
+          "js":
             '''
             performance.mark('LoadLine2/globo_homepage/start');
             const navigationStart = performance.timeOrigin + performance.now();
@@ -173,23 +189,23 @@
         }
       }
       {
-        action: wait_for_condition
-        condition:
+        "action": "wait_for_condition"
+        "condition":
           '''
           return performance.getEntriesByName('LoadLine2/globo_homepage/interactive_raf').length > 0
               && performance.getEntriesByName('LoadLine2/globo_homepage/visual_raf').length > 0
           '''
-        timeout: 10s
+        "timeout": "10s"
       }
       {
-        action: wait
-        duration: 100ms
+        "action": "wait"
+        "duration": "100ms"
       }
       {
-        action: probe
-        probe: js
-        kwargs: {
-          js:
+        "action": "probe"
+        "probe": "js"
+        "kwargs": {
+          "js":
             '''
             performance.mark('LoadLine2/globo_homepage/finish');
             const visual = performance.timeOrigin +
@@ -204,17 +220,21 @@
         }
       }
     ]
-    google_search_result: [
+    "google_search_result": [
       {
-        action: get
-        url: about:blank
-        target: _new_tab
+        "action": "get"
+        "url": "about:blank"
+        "target": "_new_tab"
       }
       {
-        action: probe
-        probe: js
-        kwargs: {
-          js:
+        "action": "wait"
+        "duration": "1s"
+      }
+      {
+        "action": "probe"
+        "probe": "js"
+        "kwargs": {
+          "js":
             '''
             performance.mark('LoadLine2/google_search_result/start');
             const navigationStart = performance.timeOrigin + performance.now();
@@ -224,23 +244,23 @@
         }
       }
       {
-        action: wait_for_condition
-        condition:
+        "action": "wait_for_condition"
+        "condition":
           '''
           return performance.getEntriesByName('LoadLine2/google_search_result/interactive_raf').length > 0
               && performance.getEntriesByName('LoadLine2/google_search_result/visual_raf').length > 0
           '''
-        timeout: 10s
+        "timeout": "10s"
       }
       {
-        action: wait
-        duration: 100ms
+        "action": "wait"
+        "duration": "100ms"
       }
       {
-        action: probe
-        probe: js
-        kwargs: {
-          js:
+        "action": "probe"
+        "probe": "js"
+        "kwargs": {
+          "js":
             '''
             performance.mark('LoadLine2/google_search_result/finish');
             const visual = performance.timeOrigin +

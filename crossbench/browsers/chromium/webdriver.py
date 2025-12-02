@@ -151,8 +151,10 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     return self.platform.process_meminfo(self.android_package, timeout)
 
   @override
-  def dump_java_heap(self, path: pth.AnyPath) -> None:
-    return self.platform.dump_java_heap(self.android_package, path)
+  def dump_java_heap(self, label: str, trace_buffer_size_kb: int,
+                     timeout: dt.timedelta) -> pth.AnyPath:
+    return self.platform.dump_java_heap(self.android_package, label,
+                                        trace_buffer_size_kb, timeout)
 
   def _restore_chrome_flags(self) -> None:
     atexit.unregister(self._restore_chrome_flags)

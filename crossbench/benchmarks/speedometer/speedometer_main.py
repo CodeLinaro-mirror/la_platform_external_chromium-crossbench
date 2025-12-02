@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, MutableMapping, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Type
 
 from typing_extensions import override
 
@@ -52,9 +52,8 @@ class SpeedometerMainBenchmarkStoryFilter(Speedometer3BenchmarkStoryFilter):
 
   @classmethod
   @override
-  def url_params_from_cli(cls,
-                          args: argparse.Namespace) -> MutableMapping[str, Any]:
-    url_params: MutableMapping[str, str] = super().url_params_from_cli(args)
+  def url_params_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+    url_params: dict[str, str] = super().url_params_from_cli(args)
     if args.measure_prepare:
       url_params["measurePrepare"] = ""
     return url_params

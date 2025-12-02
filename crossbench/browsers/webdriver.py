@@ -289,8 +289,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       timeout: Optional[dt.timedelta] = None,
       arguments: Sequence[object] = ()
   ) -> Any:
-    logging.debug("WebDriverBrowser.js() timeout=%s, script: %s", timeout,
-                  script)
+    logging.debug("WebDriverBrowser.js() timeout=%s, args: %s, script: %s",
+                  timeout, arguments, script)
     assert self._is_running
     try:
       with self.js_timeout(timeout):

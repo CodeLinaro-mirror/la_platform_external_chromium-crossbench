@@ -44,7 +44,7 @@ ADD_RECOVERY_PHONE_REDIRECT: str = "https://gds.google.com/web/recoveryoptions"
 SKIP_RECOVERY_PHONE: ClickAction = ClickAction.parse({
     "action": "click",
     "pos": {
-        "selector": "[aria-label='Cancel']",
+        "selector": "[aria-label='Skip']",
         "required": True,
         "wait": True,
     },

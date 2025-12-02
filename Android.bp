@@ -36,6 +36,7 @@ java_genrule_host {
     srcs: [
         "*.ini",
         "*.py",
+        "buildtools/**/*",
         "chrome-extension-replay/**/*",
         "config/**/*",
         "crossbench/**/*",

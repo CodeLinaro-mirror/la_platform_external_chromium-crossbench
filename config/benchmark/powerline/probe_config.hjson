@@ -1,13 +1,13 @@
 {
-  probes: {
-    trace_processor: {
-      queries: [
-        powerline_cpu_rails
+  "probes": {
+    "trace_processor": {
+      "queries": [
+        "powerline_cpu_rails"
       ]
     }
-    perfetto: {
-      trace_browser_startup: false
-      textproto:
+    "perfetto": {
+      "trace_browser_startup": false
+      "textproto":
         '''
           buffers {
             size_kb: 524288

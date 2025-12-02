@@ -1,12 +1,12 @@
 {
-  probes: {
-    trace_processor: {
-      queries: [
-        search_latency
+  "probes": {
+    "trace_processor": {
+      "queries": [
+        "search_latency"
       ]
     }
-    perfetto: {
-      textproto:
+    "perfetto": {
+      "textproto":
         '''
           buffers {
             size_kb: 300000
