@@ -1,10 +1,10 @@
 {
-  probes: {
-    perfetto: {
-      textproto:
+  "probes": {
+    "perfetto": {
+      "textproto":
         '''
           buffers: {
-              size_kb: 63488
+              size_kb: 131072
               fill_policy: DISCARD
           }
           data_sources {

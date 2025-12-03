@@ -246,6 +246,12 @@ class NetworkConfigTestCase(BaseConfigTestCase):
           "skip_deterministic_script_injection": True
       })
     self.assertIn("can only be used for the WPR", str(cm.exception))
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse({"type": "live", "host": "localhost"})
+    self.assertIn("can only be used for the WPR", str(cm.exception))
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NetworkConfig.parse({"type": "live", "cross_platform_mode": True})
+    self.assertIn("can only be used for the WPR", str(cm.exception))
 
   def test_parse_dict_local(self):
     benchmark_folder = pth.LocalPath("third_party/speedometer/v3.0")

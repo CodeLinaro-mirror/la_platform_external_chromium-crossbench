@@ -11,14 +11,15 @@ from typing import TYPE_CHECKING, ClassVar, Final, Type, cast
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.browsers.chromium.devtools import DevToolsClient
+from crossbench.browsers.chromium.devtools import \
+    DevToolsRemoteClient as DevToolsClient
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriverAndroid
 from crossbench.parse import PathParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
-from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
-    ProbeResult
+from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
+                                       ProbeResult)
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser

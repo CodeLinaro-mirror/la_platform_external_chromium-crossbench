@@ -1,9 +1,9 @@
 {
-  probes: {
-    perfetto: {
+  "probes": {
+    "perfetto": {
       // texproto can be directly copied from https://ui.perfetto.dev/#!/record?p=instructions
       // under the "recording command' settings.
-      textproto:
+      "textproto":
         '''
           buffers: {
               size_kb: 63488

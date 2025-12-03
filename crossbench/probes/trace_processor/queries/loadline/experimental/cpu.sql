@@ -1,8 +1,11 @@
+-- Copyright 2025 The Chromium Authors
+-- Use of this source code is governed by a BSD-style license that can be
+-- found in the LICENSE file.
 INCLUDE PERFETTO MODULE ext.loading_interesting_intervals;
 
-DROP VIEW IF EXISTS sched_slice_type_in;
+DROP TABLE IF EXISTS sched_slice_type_in;
 
-CREATE VIEW sched_slice_type_in
+CREATE PERFETTO TABLE sched_slice_type_in
 AS
 SELECT
   sched_slice.*,
@@ -13,8 +16,8 @@ SELECT
     WHEN thread.name = 'NetworkService' THEN 'NetworkService'
     WHEN thread.name = 'Compositor' THEN 'Compositor'
     WHEN thread.name = 'VizCompositorThread' THEN 'VizCompositorThread'
-    WHEN EXTRACT_ARG(arg_set_id, 'chrome.process_type') IS NOT NULL
-      THEN 'Other_' || EXTRACT_ARG(arg_set_id, 'chrome.process_type')
+    WHEN EXTRACT_ARG(process.arg_set_id, 'chrome.process_type') IS NOT NULL
+      THEN 'Other_' || EXTRACT_ARG(process.arg_set_id, 'chrome.process_type')
     WHEN thread.name GLOB 'binder*' THEN 'binder'
     WHEN thread.name GLOB 'surfaceflinger*' THEN 'surfaceflinger'
     WHEN thread.name = 'HeapTaskDaemon' THEN 'HeapTaskDaemon'

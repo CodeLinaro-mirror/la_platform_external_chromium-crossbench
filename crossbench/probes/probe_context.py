@@ -144,17 +144,20 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
   def browser_result(self,
                      url: Optional[Iterable[str]] = None,
                      file: Optional[Iterable[AnyPath]] = None,
+                     perfetto: Optional[Iterable[AnyPath]] = None,
                      **kwargs: Iterable[AnyPath]) -> BrowserProbeResult:
     """Helper to create BrowserProbeResult that might be stored on a remote
     browser/device and need to be copied over to the local machine."""
-    return BrowserProbeResult(self.result_origin, url=url, file=file, **kwargs)
+    return BrowserProbeResult(
+        self.result_origin, url=url, file=file, perfetto=perfetto, **kwargs)
 
   def local_result(self,
                    url: Optional[Iterable[str]] = None,
                    file: Optional[Iterable[LocalPath]] = None,
+                   perfetto: Optional[Iterable[LocalPath]] = None,
                    **kwargs: Iterable[LocalPath]) -> LocalProbeResult:
     """Helper to create LocalProbeResult."""
-    return LocalProbeResult(url=url, file=file, **kwargs)
+    return LocalProbeResult(url=url, file=file, perfetto=perfetto, **kwargs)
 
   def empty_result(self) -> EmptyProbeResult:
     return EmptyProbeResult()

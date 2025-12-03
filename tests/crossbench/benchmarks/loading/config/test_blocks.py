@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import argparse
 import datetime as dt
 import unittest
 
@@ -17,9 +16,15 @@ from tests import test_helper
 
 class ActionBlockTestCase(unittest.TestCase):
 
-  def test_create_empty_invalid(self):
-    with self.assertRaises(argparse.ArgumentTypeError):
-      ActionBlock()
+  def test_create_empty_valid(self):
+    block = ActionBlock()
+    self.assertFalse(bool(block))
+    self.assertFalse(block.is_login)
+    self.assertEqual(len(block), 0)
+    self.assertTupleEqual(tuple(block), ())
+    self.assertEqual(block.duration, dt.timedelta(seconds=0))
+    self.assertTrue(hash(block))
+    self.assertSetEqual({block}, {block, block})
 
   def test_single_action(self):
     action = GetAction("http://test.com", duration=dt.timedelta(seconds=3))

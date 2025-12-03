@@ -7,19 +7,21 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Callable, Final, Optional, Sequence, \
-    cast
+from typing import (TYPE_CHECKING, Any, Callable, Final, Optional, Sequence,
+                    cast)
 
 from typing_extensions import override
 
-from crossbench.action_runner.base import ActionRunner, \
-    InputSourceNotImplementedError
+from crossbench.action_runner.base import (ActionRunner,
+                                           InputSourceNotImplementedError)
 from crossbench.action_runner.default_bond_action_runner import \
     DefaultBondActionRunner
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
-from crossbench.probes.screenshot import ScreenshotProbe, \
-    ScreenshotProbeContext
+from crossbench.browsers.chromium.devtools import \
+    DevToolsInBrowserClient as DevToolsClient
+from crossbench.probes.screenshot import (ScreenshotProbe,
+                                          ScreenshotProbeContext)
 from crossbench.runner.probe_context_lookup_error import \
     ProbeContextLookupError
 
@@ -294,6 +296,11 @@ class DefaultActionRunner(ActionRunner):
   def inject_new_document_script(
       self, run: Run, action: i_action.InjectNewDocumentScriptAction) -> None:
     run.browser.run_script_on_new_document(action.script)
+
+  def open_devtools(self, _run: Run,
+                    action: i_action.OpenDevToolsAction) -> None:
+    logging.info("Opening DevTools panel '%s'...", action.panel_name)
+    DevToolsClient().open_frontend(_run.browser, action.panel_name)
 
   @override
   def switch_tab(self, run: Run, action: i_action.SwitchTabAction) -> None:

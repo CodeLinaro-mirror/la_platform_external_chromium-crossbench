@@ -29,7 +29,7 @@ class DesktopPerfettoProbeContext(PerfettoProbeContext):
   def __init__(self, probe: PerfettoProbe, run: Run) -> None:
     self._tracebox_proc: subprocess.Popen | None = None
     super().__init__(probe, run)
-    self._tracebox_bin = self.probe.tracebox_bin
+    self._tracebox_bin: pth.AnyPath = self.probe.tracebox_bin
 
   @override
   def get_browser_config_path(self) -> pth.AnyPath:
