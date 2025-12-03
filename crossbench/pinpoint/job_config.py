@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from crossbench.pinpoint import requests
+from crossbench.pinpoint import http_requests
 from crossbench.pinpoint.api import PINPOINT_JOB_API_URL_TEMPLATE
 from crossbench.pinpoint.config import PinpointTryJobConfig
 from crossbench.pinpoint.helper import annotate
@@ -20,7 +20,7 @@ def fetch_job_config(job_id: str, full: bool = False) -> dict[str, Any]:
   if full:
     params["o"] = ["STATE", "ESTIMATE"]
   with annotate("Fetching Job Config"):
-    response = requests.get(url, params=params)
+    response = http_requests.get(url, params=params)
     response.raise_for_status()
     return response.json()
 

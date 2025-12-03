@@ -12,10 +12,10 @@ from crossbench.exception import MultiException
 from crossbench.pinpoint.api import PINPOINT_CONFIG_API_URL
 from crossbench.pinpoint.list_bots import fetch_bots
 from tests import test_helper
-from tests.crossbench.pinpoint.requests_mixin import MockRequestsMixin
+from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 
-class ListBotsTest(MockRequestsMixin):
+class ListBotsTest(MockHttpRequestsMixin):
 
   def setUp(self):
     super().setUp()

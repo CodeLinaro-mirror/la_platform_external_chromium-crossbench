@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from crossbench.pinpoint import requests
+from crossbench.pinpoint import http_requests
 from crossbench.pinpoint.api import CHROMEPERF_TEST_SUITES_API_URL
 from crossbench.pinpoint.helper import annotate
 
@@ -12,6 +12,6 @@ from crossbench.pinpoint.helper import annotate
 def fetch_benchmarks() -> list[str]:
   """Fetches the list of available benchmarks from the Chromeperf API."""
   with annotate("Fetching benchmarks"):
-    response = requests.post(CHROMEPERF_TEST_SUITES_API_URL)
+    response = http_requests.post(CHROMEPERF_TEST_SUITES_API_URL)
     response.raise_for_status()
     return response.json()

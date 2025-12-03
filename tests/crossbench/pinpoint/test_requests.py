@@ -10,7 +10,7 @@ from unittest import mock
 
 import requests
 
-from crossbench.pinpoint import requests as pinpoint_requests
+from crossbench.pinpoint import http_requests as pinpoint_requests
 from tests import test_helper
 
 
@@ -28,7 +28,7 @@ class RequestsTest(unittest.TestCase):
     self.mock_session.request.return_value = self.mock_response
 
     self.mock_get_auth_session = self.enterContext(
-        mock.patch("crossbench.pinpoint.requests.auth.get_auth_session"))
+        mock.patch("crossbench.pinpoint.http_requests.auth.get_auth_session"))
     self.mock_get_auth_session.return_value = self.mock_session
 
   def test_get_success(self):

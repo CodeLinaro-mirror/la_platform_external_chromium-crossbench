@@ -12,10 +12,10 @@ from crossbench.exception import MultiException
 from crossbench.pinpoint.api import CHROMEPERF_TEST_SUITES_API_URL
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from tests import test_helper
-from tests.crossbench.pinpoint.requests_mixin import MockRequestsMixin
+from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 
-class ListBenchmarksTest(MockRequestsMixin):
+class ListBenchmarksTest(MockHttpRequestsMixin):
 
   def setUp(self):
     super().setUp()

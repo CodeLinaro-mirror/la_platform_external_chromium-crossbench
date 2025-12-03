@@ -12,7 +12,7 @@ from crossbench.cli.config.flags import FlagsConfig
 from crossbench.pinpoint.config import PinpointTryJobConfig, VariantConfig
 from crossbench.pinpoint.list_builds import Build
 from tests import test_helper
-from tests.crossbench.pinpoint.requests_mixin import MockRequestsMixin
+from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 _TEST_PATCH: Final[
     str] = "https://chromium-review.googlesource.com/c/crossbench/+/12345"
@@ -20,7 +20,7 @@ _TEST_PATCH2: Final[
     str] = "https://chromium-review.googlesource.com/c/crossbench/+/111/2"
 
 
-class VariantConfigTest(MockRequestsMixin):
+class VariantConfigTest(MockHttpRequestsMixin):
   _get_auth_session_patch_target = "crossbench.pinpoint.auth.get_auth_session"
 
   def setUp(self):
@@ -135,7 +135,7 @@ class VariantConfigTest(MockRequestsMixin):
         })
 
 
-class PinpointTryJobConfigTest(MockRequestsMixin):
+class PinpointTryJobConfigTest(MockHttpRequestsMixin):
   _get_auth_session_patch_target = "crossbench.pinpoint.auth.get_auth_session"
 
   def setUp(self):

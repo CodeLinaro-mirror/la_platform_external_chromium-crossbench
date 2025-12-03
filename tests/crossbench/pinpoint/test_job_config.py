@@ -14,7 +14,7 @@ from crossbench.pinpoint.config import PinpointTryJobConfig
 from crossbench.pinpoint.job_config import convert_job_config, \
     fetch_job_config, print_job_config
 from tests import test_helper
-from tests.crossbench.pinpoint.requests_mixin import MockRequestsMixin
+from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 _TEST_JOB_ID = "1234567890"
 _TEST_JOB_RESPONSE = {
@@ -39,7 +39,7 @@ _TEST_JOB_RESPONSE = {
 }
 
 
-class JobConfigTest(MockRequestsMixin):
+class JobConfigTest(MockHttpRequestsMixin):
 
   def setUp(self):
     super().setUp()

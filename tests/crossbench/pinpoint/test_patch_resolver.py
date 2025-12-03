@@ -9,7 +9,7 @@ from unittest import mock
 
 from crossbench.pinpoint import patch_resolver
 from tests import test_helper
-from tests.crossbench.pinpoint.requests_mixin import MockRequestsMixin
+from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 _TEST_PATCH: Final[
     str] = "https://chromium-review.googlesource.com/c/chromium/src/+/12345"
@@ -17,7 +17,7 @@ _TEST_PATCH: Final[
 _TEST_PATCH_WITH_PATCHSET: Final[str] = _TEST_PATCH + "/6"
 
 
-class PatchResolverTest(MockRequestsMixin):
+class PatchResolverTest(MockHttpRequestsMixin):
 
   def setUp(self):
     super().setUp()

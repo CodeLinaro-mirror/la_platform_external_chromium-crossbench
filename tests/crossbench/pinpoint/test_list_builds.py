@@ -12,10 +12,10 @@ from crossbench.exception import MultiException
 from crossbench.pinpoint.api import PINPOINT_BUILDS_API_URL_TEMPLATE
 from crossbench.pinpoint.list_builds import Build, fetch_builds, list_builds
 from tests import test_helper
-from tests.crossbench.pinpoint.requests_mixin import MockRequestsMixin
+from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 
-class ListBuildsTest(MockRequestsMixin):
+class ListBuildsTest(MockHttpRequestsMixin):
 
   def setUp(self):
     super().setUp()

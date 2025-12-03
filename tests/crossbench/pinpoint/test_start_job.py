@@ -14,10 +14,10 @@ from crossbench.pinpoint.api import PINPOINT_START_JOB_API_URL
 from crossbench.pinpoint.config import PinpointTryJobConfig
 from crossbench.pinpoint.start_job import start_job
 from tests import test_helper
-from tests.crossbench.pinpoint.requests_mixin import MockRequestsMixin
+from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 
-class StartJobTest(MockRequestsMixin):
+class StartJobTest(MockHttpRequestsMixin):
 
   def setUp(self):
     super().setUp()

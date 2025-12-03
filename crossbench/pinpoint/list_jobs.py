@@ -15,7 +15,7 @@ from typing import Any, Final, Mapping
 import yaml
 from tabulate import tabulate
 
-from crossbench.pinpoint import requests
+from crossbench.pinpoint import http_requests
 from crossbench.pinpoint.api import JOB_SHORTEN_URL_TEMPLATE, \
     PINPOINT_JOBS_API_URL, USERINFO_API_URL
 from crossbench.pinpoint.format_time import DATETIME_FORMAT, format_time
@@ -55,7 +55,7 @@ def _fetch_user_emails(user: UserEnum | str) -> set[str | None]:
 
 def _get_user_email() -> str:
   with annotate("Fetching user-email"):
-    response = requests.get(USERINFO_API_URL)
+    response = http_requests.get(USERINFO_API_URL)
     response.raise_for_status()
     return response.json()["email"]
 
@@ -71,7 +71,7 @@ def _fetch_jobs(number: int, email: str | None = None) -> list[dict[str, Any]]:
     if next_cursor:
       params["next_cursor"] = next_cursor
 
-    response = requests.get(PINPOINT_JOBS_API_URL, params=params)
+    response = http_requests.get(PINPOINT_JOBS_API_URL, params=params)
     response.raise_for_status()
     data = response.json()
     jobs.extend(data.get("jobs", []))

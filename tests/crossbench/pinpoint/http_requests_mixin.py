@@ -8,12 +8,12 @@ import unittest
 from unittest import mock
 
 
-class MockRequestsMixin(unittest.TestCase):
-  """Mixin to mock the requests.get and requests.post functions."""
+class MockHttpRequestsMixin(unittest.TestCase):
+  """Mixin to mock the http_requests.get and http_requests.post functions."""
 
   def setUp(self):
     super().setUp()
     self.mock_get = self.enterContext(
-        mock.patch("crossbench.pinpoint.requests.get"))
+        mock.patch("crossbench.pinpoint.http_requests.get"))
     self.mock_post = self.enterContext(
-        mock.patch("crossbench.pinpoint.requests.post"))
+        mock.patch("crossbench.pinpoint.http_requests.post"))
