@@ -8,7 +8,8 @@ import abc
 import contextlib
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Generic, Iterable, Type, TypeVar
+from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Self, Type, \
+    TypeVar
 
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import BaseProbeContext, ProbeContext
@@ -23,7 +24,7 @@ ResultOriginT = TypeVar("ResultOriginT", bound=ResultOrigin)
 ProbeContextT = TypeVar("ProbeContextT", bound=BaseProbeContext)
 
 
-class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
+class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
 
   def __init__(self, result_origin: ResultOriginT,
                probe_results: ProbeResultDict) -> None:
@@ -50,11 +51,13 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
   def is_success(self) -> bool:
     return self._exceptions.is_success
 
-  def _measure(self, name: str):
-    return self._origin.measure(name)
+  @contextlib.contextmanager
+  def _measure(self, name: str) -> Iterator[None]:
+    with self._origin.measure(name):
+      yield
 
   @contextlib.contextmanager
-  def _capture(self, label: str, measure: bool = False):
+  def _capture(self, label: str, measure: bool = False) -> Iterator[None]:
     with self._exceptions.capture(label):
       if not measure:
         yield
@@ -110,7 +113,7 @@ class ProbeContextManager(Generic[ResultOriginT, ProbeContextT], abc.ABC):
           raise
 
   @contextlib.contextmanager
-  def open(self, is_dry_run: bool):
+  def open(self, is_dry_run: bool) -> Iterator[Self]:
     self._state.transition(State.READY, to=State.RUN)
     probe_start_time = dt.datetime.now()
     combined_contexts = contextlib.ExitStack()

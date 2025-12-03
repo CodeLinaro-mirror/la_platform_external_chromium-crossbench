@@ -5,22 +5,23 @@
 from __future__ import annotations
 
 import abc
+import enum
 import logging
-from typing import (TYPE_CHECKING, ClassVar, Hashable, Optional, Self, Set,
-                    Type, TypeVar)
+from typing import TYPE_CHECKING, ClassVar, Hashable, Optional, Self, Set, \
+    Type, TypeVar
 
 from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.config import ConfigParser, UnusedPropertiesMode
+from crossbench.config import ConfigParser, UnusedPropertiesMode, config_dir
 # TODO: Keep commonly used classes here.
 from crossbench.probes.probe_context import ProbeContext  # noqa: TC001
 from crossbench.probes.probe_error import ProbeIncompatibleBrowser
 from crossbench.probes.probe_result_key import ProbeResultKey
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult)
+from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
+    ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
-
+  from crossbench.runner.runner import Runner
 
 ProbeT = TypeVar("ProbeT", bound="Probe")
 
@@ -58,8 +59,16 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
     return self._probe_cls
 
 
-
 ProbeKeyT = tuple[tuple[str, Hashable], ...]
+
+
+@enum.unique
+class ProbePriority(enum.IntEnum):
+  INTERNAL = enum.auto()
+  PRE_TRACE_PROCESSOR = enum.auto()
+  TRACE_PROCESSOR = enum.auto()
+  PRE_USER = enum.auto()
+  USER = enum.auto()
 
 
 class Probe(ProbeResultKey, abc.ABC):
@@ -96,18 +105,33 @@ class Probe(ProbeResultKey, abc.ABC):
   RESULT_LOCATION: ClassVar[ResultLocation] = ResultLocation.LOCAL
   # Set to True if the probe only works on battery power with single runs.
   BATTERY_ONLY: ClassVar[bool] = False
+  # Location within the probe list
+  PRIORITY: ClassVar[ProbePriority] = ProbePriority.USER
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser[Self]:
     return ProbeConfigParser(cls)
 
   @classmethod
-  def from_config(cls: Type[ProbeT], config_data: dict) -> ProbeT:
-    return cls.config_parser().parse(config_data)
+  def parse_str(cls: Type[ProbeT], config_str: str) -> ProbeT:
+    return cls.config_parser().parse_str(config_str)
+
+  @classmethod
+  def parse_dict(cls: Type[ProbeT], config_data: dict) -> ProbeT:
+    return cls.config_parser().parse_dict(config_data)
 
   @classmethod
   def help_text(cls) -> str:
     return cls.config_parser().help
+
+  @classmethod
+  def help_text_items(cls) -> list[tuple[str, str]]:
+    probe_config_file = config_dir() / f"doc/probe/{cls.NAME}.config.hjson"
+    if probe_config_file.exists():
+      return [
+          ("example config", str(probe_config_file)),
+      ]
+    return []
 
   @classmethod
   def summary_text(cls) -> str:
@@ -120,12 +144,12 @@ class Probe(ProbeResultKey, abc.ABC):
   def __str__(self) -> str:
     return type(self).__name__
 
-  def __eq__(self, other) -> bool:
+  def __eq__(self, other: object) -> bool:
     if self is other:
       return True
-    if type(self) is not type(other):
-      return False
-    return self.key == other.key
+    if isinstance(other, type(self)):
+      return self.key == other.key
+    return False
 
   @property
   def is_internal(self) -> bool:
@@ -203,9 +227,9 @@ class Probe(ProbeResultKey, abc.ABC):
     if not browser.platform.is_android:
       raise ProbeIncompatibleBrowser(self, browser, "Only supported on Android")
 
-  def setup(self, runner) -> None:
+  def setup(self, runner: Runner) -> None:
     """Called before any runs or browsers have been started."""
-    pass
+    del runner
 
   def merge_cache_temperatures(self,
                                group: CacheTemperaturesRunGroup) -> ProbeResult:
@@ -261,7 +285,7 @@ class Probe(ProbeResultKey, abc.ABC):
   def get_context_cls(self: Self) -> Type[ProbeContext[Self]]:
     raise NotImplementedError(f"Missing default ProbeContext class for {self}")
 
-  def create_session_context(  # pylint: disable=useless-return
+  def create_session_context(
       self: Self,
       session: BrowserSessionRunGroup) -> ProbeSessionContext[Self] | None:
     del session

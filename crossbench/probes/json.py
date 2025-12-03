@@ -10,17 +10,17 @@ import json
 import logging
 import re
 from collections import defaultdict
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Generic, Optional,
-                    Type, TypeVar)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Optional, \
+    Type, TypeVar
 
 import xlsxwriter
 from tabulate import tabulate
-from typing_extensions import override
+from typing_extensions import Final, override
 from xlsxwriter.utility import xl_rowcol_to_cell
 
 from crossbench.probes import helper
-from crossbench.probes.metric import (CSVFormatter, MetricsMerger,
-                                      metric_geomean)
+from crossbench.probes.metric import CSVFormatter, MetricsMerger, \
+    metric_geomean
 from crossbench.probes.probe import Probe
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
@@ -36,7 +36,18 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.types import Json
 
-IS_NUMERIC_RE = re.compile(r"[0-9.e+\-]+")
+IS_NUMERIC_RE: Final[re.Pattern] = re.compile(r"[0-9.e+\-]+")
+LOG_SUMMARY_KEYS: Final[tuple[str, ...]] = (
+    "label",
+    "browser",
+    "version",
+    "os",
+    "model",
+    "cpu",
+    "runs",
+    "failed runs",
+)
+
 
 class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
   """
@@ -99,9 +110,6 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
         f"Cannot override existing Json result: {merged_json_path}")
     with merged_json_path.open("w", encoding="utf-8") as f:
       json.dump(merged_json, f, indent=2)
-      # TODO(375390958): figure out why files aren't fully written to
-      # pyfakefs here.
-      f.write("\n")
     return LocalProbeResult(json=(merged_json_path,))
 
   def merge_browsers_csv_list(self, group: BrowsersRunGroup) -> ProbeResult:
@@ -132,9 +140,6 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
         json.dump(merged_data, f, indent=2)
       else:
         json.dump(merged_data.to_json(sort=self.SORT_KEYS), f, indent=2)
-      # TODO(375390958): figure out why files aren't fully written to
-      # pyfakefs here.
-      f.write("\n")
     if not csv_formatter:
       return LocalProbeResult(json=(merged_json_path,))
     if not isinstance(merged_data, MetricsMerger):
@@ -167,18 +172,16 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
       writer.writerows(csv_data)
     return LocalProbeResult(json=(merged_json_path,), csv=(merged_csv_path,))
 
-  LOG_SUMMARY_KEYS = ("label", "browser", "version", "os", "device", "cpu",
-                      "runs", "failed runs")
-
   def _log_result_metrics(self, data: dict) -> None:
     table: dict[str, list[str]] = defaultdict(list)
     for browser_result in data.values():
-      for info_key in self.LOG_SUMMARY_KEYS:
+      for info_key in LOG_SUMMARY_KEYS:
         table[info_key].append(browser_result["info"][info_key])
       data = browser_result["data"]
       self._extract_result_metrics_table(data, table)
-    flattened: list[list[str]] = list(
-        [label] + values for label, values in table.items())
+    flattened: list[list[str]] = [
+        [label] + values for label, values in table.items()
+    ]
     logging.critical(tabulate(flattened, tablefmt="plain"))
 
   def _extract_result_metrics_table(self, metrics: dict[str, Any],
@@ -262,12 +265,12 @@ class XLSXWriter:
                                       self._percent_format)
       dst_col_index += 1
 
-  def _write_header_cols(self, row_index, row_data) -> int:
+  def _write_header_cols(self, row_index: int, row_data: list[str]) -> int:
     for col in range(self._nof_header_cols):
       self._worksheet.write(row_index, col, row_data[col])
     return self._nof_header_cols
 
-  def _close_xlsx(self):
+  def _close_xlsx(self) -> None:
     self._worksheet.freeze_panes(self._nof_header_rows, self._nof_header_cols)
     self._worksheet.set_default_row(hide_unused_rows=True)
     self._workbook.close()
@@ -330,14 +333,8 @@ class JsonResultProbeContext(
         flat_json_data = self.flatten_json_data(json_data)
         with flattened_file.open("w", encoding="utf-8") as f:
           json.dump(flat_json_data, f, indent=2)
-          # TODO(375390958): figure out why files aren't fully written to
-          # pyfakefs here.
-          f.write("\n")
       with raw_file.open("w", encoding="utf-8") as f:
         json.dump(json_data, f, indent=2)
-        # TODO(375390958): figure out why files aren't fully written to
-        # pyfakefs here.
-        f.write("\n")
     if flattened_file:
       return LocalProbeResult(json=(flattened_file,), file=(raw_file,))
     return LocalProbeResult(json=(raw_file,))

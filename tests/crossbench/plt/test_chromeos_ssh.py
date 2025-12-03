@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from __future__ import annotations
+
 import json
 import pathlib
 
@@ -18,13 +19,9 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
   platform: ChromeOsSshPlatform
 
   @override
-  def setUp(self) -> None:
-    super().setUp()
-    self._init_platform()
-
-  def _init_platform(self, enable_arc=False):
-    self.platform = ChromeOsSshPlatform(
-        self.mock_platform,
+  def setup_platform(self, enable_arc=False) -> ChromeOsSshPlatform:
+    return ChromeOsSshPlatform(
+        self.host_platform,
         host=self.HOST,
         port=self.PORT,
         ssh_port=self.SSH_PORT,
@@ -43,7 +40,7 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
                      pathlib.PurePosixPath("/usr/local/tmp/"))
 
   def test_display_resolution(self):
-    cros_health_tool_out = '''
+    cros_health_tool_out = """
     {
       "embedded_display": {
         "display_height": "140",
@@ -61,7 +58,7 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
         "resolution_horizontal": "1366",
         "resolution_vertical": "768"
       }
-    }'''
+    }"""
     self._expect_sh_ssh(
         "cros-health-tool telem --category=display",
         result=cros_health_tool_out)
@@ -82,7 +79,7 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
     self.assertEqual(port, expected_port)
 
   def test_create_debugging_session_arc(self):
-    self._init_platform(enable_arc=True)
+    self.platform = self.setup_platform(enable_arc=True)
     expected_port = 80
 
     self._expect_sh_ssh(
@@ -95,7 +92,7 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
     self.assertEqual(port, expected_port)
 
   def test_create_debugging_session_arc_removes_disable_extensions(self):
-    self._init_platform(enable_arc=True)
+    self.platform = self.setup_platform(enable_arc=True)
     expected_port = 80
 
     self._expect_sh_ssh("/usr/local/autotest/bin/autologin.py --arc"
@@ -110,7 +107,7 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
     self.assertEqual(port, expected_port)
 
   def test_system_details(self):
-    self._init_platform()
+    self.platform = self.setup_platform()
 
     self._expect_sh_ssh("uname -m", result="x86_64")
     self._expect_sh_ssh("uname", result="Linux")
@@ -180,6 +177,9 @@ CHROMEOS_RELEASE_UNIBUILD=1
     self.assertEqual(details["ChromeOS"]["CHROMEOS_RELEASE_BOARD"], "dedede")
     self.assertEqual(details["ChromeOS"]["CHROMEOS_RELEASE_BUILD_NUMBER"],
                      "16093")
+
+
+del LinuxSshMockPlatformTestCase
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -7,14 +7,14 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import enum
-from typing import (TYPE_CHECKING, Any, ClassVar, MutableMapping, Optional,
-                    Sequence, cast)
+from typing import TYPE_CHECKING, Any, ClassVar, MutableMapping, Optional, \
+    Sequence, cast
 
 from typing_extensions import override
 
-from crossbench.benchmarks.speedometer.speedometer import (
-    SpeedometerBenchmark, SpeedometerBenchmarkStoryFilter, SpeedometerProbe,
-    SpeedometerProbeContext, SpeedometerStory)
+from crossbench.benchmarks.speedometer.speedometer import \
+    SpeedometerBenchmark, SpeedometerBenchmarkStoryFilter, SpeedometerProbe, \
+    SpeedometerProbeContext, SpeedometerStory
 from crossbench.browsers import viewport as vp
 from crossbench.helper import url_helper
 from crossbench.parse import DurationParser, NumberParser, ObjectParser
@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.runner.actions import Actions
   from crossbench.stories.story import Story
   from crossbench.types import Json
@@ -241,9 +242,8 @@ class Speedometer3Story(SpeedometerStory, metaclass=abc.ABCMeta):
   @classmethod
   @override
   def default_story_names(cls) -> tuple[str, ...]:
-    return tuple(
-        tuple(name for name, data in SPEEDOMETER_3_STORY_DATA.items()
-              if data["enabled"]))
+    return tuple(name for name, data in SPEEDOMETER_3_STORY_DATA.items()
+                 if data["enabled"])
 
   @override
   def _wait_for_ready(self, actions: Actions) -> None:
@@ -353,8 +353,7 @@ class Speedometer3Benchmark(SpeedometerBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def add_cli_parser(
-      cls, subparsers: argparse.ArgumentParser) -> CrossBenchArgumentParser:
+  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
     parser.add_argument(
         "--detailed-metrics",

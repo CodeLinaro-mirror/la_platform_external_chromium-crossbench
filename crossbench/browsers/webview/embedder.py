@@ -7,29 +7,44 @@ from __future__ import annotations
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Final, Sequence, cast
 
+from immutabledict import immutabledict
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from typing_extensions import override
 
 from crossbench.browsers.webview.webview import Webview
+from crossbench.cli import ui
 
 if TYPE_CHECKING:
   from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
   from crossbench import path as pth
+  from crossbench.benchmarks.embedder.embedder_benchmark import \
+      EmbedderBenchmark
   from crossbench.runner.groups.session import BrowserSessionRunGroup
+
+EMBEDDER_SHORT_NAME_TO_PACKAGE: Final[immutabledict[str, str]] = immutabledict({
+    "googlequicksearchbox": "com.google.android.googlequicksearchbox",
+    "velvet": "com.google.android.googlequicksearchbox",
+})
 
 
 class WebviewEmbedder(Webview):
+
   @override
   def start(self, session: BrowserSessionRunGroup) -> None:
     # Start is a no-op. Embedder activity will be started by the Benchmark.
     # Webview will be started by the Embedder. Driver will be started
-    # by the ProbeContext. We do, however, need to set up browser flags
-    # and kill any currently running Embedder app instances to make sure
-    # it picks up the new flags when started by the Benchmark.
+    # by the ProbeContext. We do, however, need to run custom setup commands,
+    # set up browser flags, and kill any currently running Embedder app
+    # instances to make sure it picks up the new flags when started by the
+    # Benchmark.
+    session_benchmark = cast("EmbedderBenchmark", session.benchmark)
+    if setup_command_config := session_benchmark.embedder_setup_command_config:
+      for command in setup_command_config.commands:
+        self.platform.sh(*command.command)
     self._backup_chrome_flags()
     args = self._get_browser_flags_for_session(session)
     logging.debug("%s: setting flags file contents in %s", self,
@@ -65,10 +80,11 @@ class WebviewEmbedder(Webview):
   def _create_options(self, session: BrowserSessionRunGroup,
                       args: Sequence[str]) -> ChromeOptions:
     options = ChromeOptions()
-    # TODO(zbikowski): process name should come from config
     options.add_experimental_option("androidPackage", self.android_package)
-    options.add_experimental_option(
-      "androidProcess", f"{self.android_package}:search")
+    session_benchmark = cast("EmbedderBenchmark", session.benchmark)
+    if process_name := session_benchmark.embedder_process_name:
+      options.add_experimental_option("androidProcess",
+                                      f"{self.android_package}:{process_name}")
     options.add_experimental_option("androidUseRunningApp", True)
     return options
 
@@ -79,3 +95,20 @@ class WebviewEmbedder(Webview):
     super()._log_browser_start(args, driver_path)
     logging.info("📱 STARTING BROWSER Embedder: %s",
                  self.platform.app_version(self.android_package))
+
+  @override
+  def _lookup_android_package(self, path: pth.AnyPath) -> str:
+    if path.suffix == ".apk":
+      path_str = str(path).lower()
+      for short_name, package_name in EMBEDDER_SHORT_NAME_TO_PACKAGE.items():
+        if short_name in path_str:
+          return package_name
+    return super()._lookup_android_package(path)
+
+  @override
+  def _setup_binary(self) -> None:
+    if self.path.suffix == ".apk":
+      title = f"Installing {self.path.name} on {self.platform}"
+      with ui.spinner(title=title):
+        self.platform.adb.install(self.path)
+    super()._setup_binary()

@@ -8,10 +8,10 @@ import abc
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Optional, Sequence
 
 import psutil
-from typing_extensions import Final, override
+from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.browser import Browser
@@ -56,9 +56,12 @@ class AppleScript:
     args_str: str = json.dumps(args)
     script = """JSON.stringify((function exceptionWrapper(){
         try {
-          return [(function(...arguments){%(script)s}).apply(window, %(args_str)s), true]
+          return [
+            (function(...arguments){%(script)s}).apply(window, %(args_str)s),
+            true
+          ];
         } catch(e) {
-          return [e + "", false]
+          return [e + "", false];
         }
       })())""" % {
         "script": script,
@@ -85,7 +88,7 @@ def try_get_parent_app_name(platform: plt.Platform) -> str:
         if len(label_parts) <= 3:
           continue
         launched_apps[pid] = label_parts[3]
-  except Exception as e:  # pylint: disable=broad-except
+  except Exception as e:  # noqa: BLE001
     logging.debug("Could not list all parents: %s", e)
     return ""
   if not launched_apps:
@@ -95,13 +98,14 @@ def try_get_parent_app_name(platform: plt.Platform) -> str:
     for parent in psutil.Process(os.getpid()).parents():
       if label := launched_apps.get(str(parent.pid), ""):
         return label
-  except Exception as e:  # pylint: disable=broad-except
+  except Exception as e:  # noqa: BLE001
     logging.debug("Could not find parent parent app process: %s", e)
   return ""
 
 
 SYSTEM_EVENTS_CHECK: Final[str] = (
     'tell application "System Events" to log (count of windows)')
+
 
 class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
   APPLE_SCRIPT_ALLOW_JS_MENU: ClassVar[str] = ""

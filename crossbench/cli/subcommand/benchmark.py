@@ -9,7 +9,7 @@ import datetime as dt
 import itertools
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Type
 
 from typing_extensions import override
 
@@ -21,16 +21,15 @@ from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport, ViewportMode
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
-from crossbench.cli.config.env import (ENV_CONFIG_PRESETS, EnvConfig,
-                                       ValidationMode)
+from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig, \
+    ValidationMode
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.probe import PROBE_LOOKUP, ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
-from crossbench.helper.wake_lock import WakeLock
-from crossbench.parse import (DurationParser, LateArgumentError, ObjectParser,
-                              PathParser)
+from crossbench.parse import DurationParser, LateArgumentError, ObjectParser, \
+    PathParser
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.internal.errors import ErrorsProbe
 from crossbench.probes.thermal_monitor import ThermalStatus
@@ -52,9 +51,10 @@ class EnableFastAction(argparse.Action):
                namespace: argparse.Namespace,
                values: str | Sequence[Any] | None,
                option_string: Optional[str] = None) -> None:
-    setattr(namespace, "cool_down_time", dt.timedelta())
-    setattr(namespace, "splash_screen", SplashScreen.NONE)
-    setattr(namespace, "env_validation", ValidationMode.SKIP)
+    del parser, values, option_string
+    namespace.cool_down_time = dt.timedelta()
+    namespace.splash_screen = SplashScreen.NONE
+    namespace.env_validation = ValidationMode.SKIP
 
 
 class AppendDebuggerProbeAction(argparse.Action):
@@ -69,15 +69,16 @@ class AppendDebuggerProbeAction(argparse.Action):
                namespace: argparse.Namespace,
                values: str | Sequence[Any] | None,
                option_string: Optional[str] = None) -> None:
+    del parser, values
     probes: list[ProbeConfig] = getattr(namespace, self.dest, [])
-    probe_settings = {"debugger": "gdb"}
+    probe_settings: dict[str, str] = {"debugger": "gdb"}
     if option_string and "lldb" in option_string:
       probe_settings["debugger"] = "lldb"
-    probes.append(ProbeConfig(DebuggerProbe, probe_settings))
+    probes.append(ProbeConfig(DebuggerProbe, config_dict=probe_settings))
     if not getattr(namespace, "timeout_unit", None):
       # Set a very large --timeout-unit to allow for very slow debugging without
       # causing timeouts (for instance when waiting on a breakpoint).
-      setattr(namespace, "timeout_unit", dt.timedelta.max)
+      namespace.timeout_unit = dt.timedelta.max
 
 
 class BenchmarkSubcommand(CrossbenchSubcommand):
@@ -145,7 +146,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         help=(
             "Enable general purpose probes to measure data on all cb.stories. "
             "This argument can be specified multiple times to add more probes. "
-            "Use inline hjson (e.g. --probe=\"$NAME{$CONFIG}\") "
+            'Use inline hjson (e.g. --probe="$NAME{$CONFIG}") '
             "to configure probes. "
             "Individual probe configs can be specified in files as well: "
             "--probe='path/to/config.hjson'. "
@@ -232,7 +233,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
             "* Use --browser=path/to/archive.dmg on macOS or "
             "--browser=path/to/archive.rpm on linux "
             "for locally cached versions (chrome only).\n"
-            "* Use --browser=\"${ADB_SERIAL}:chrome\" "
+            '* Use --browser="${ADB_SERIAL}:chrome" '
             "(e.g. --browser='0a388e93:chrome') for specific "
             "android devices or --browser='adb:chrome' if only once device is "
             "attached.\n"
@@ -322,7 +323,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
               f"{', '.join(str(e) for e in ViewportMode)}. "
               "Examples: --viewport=1550x300 --viewport=fullscreen. "
               f"Default: {Viewport.DEFAULT}"))
-    # pytype: enable=missing-parameter
     viewport_group.add_argument(
         "--headless",
         dest="viewport",
@@ -503,7 +503,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       self._process_args(args)
       benchmark = self._get_benchmark(args)
       with plt.PLATFORM.TemporaryDirectory(
-          prefix="crossbench") as tmp_dirname, WakeLock(plt.PLATFORM):
+          prefix="crossbench") as tmp_dirname, plt.PLATFORM.wakelock():
         self._run(args, benchmark, tmp_dirname)
     except KeyboardInterrupt:
       sys.exit(2)
@@ -511,7 +511,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       if args.throw:
         raise
       self.cli.handle_late_argument_error(e)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # noqa: BLE001
       if args.throw:
         raise
       self._log_benchmark_subcommand_failure(benchmark, self._runner, e)
@@ -526,26 +526,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     env_config: EnvConfig = self._get_env_config(args)
     env_validation_mode: ValidationMode = self._get_env_validation_mode(args)
     timing: Timing = self._get_timing(args)
-    self._runner = self._get_runner(args, benchmark, env_config,
+    self._runner = self._get_runner(args, benchmark, probes, env_config,
                                     env_validation_mode, timing)
-
-    # We prevent running multiple stories in repetition OR if multiple
-    # browsers are open when 'power' probes are used since it might distort
-    # the data.
-    if len(args.browser) > 1 or args.repetitions > 1:
-      probe_names = [probe.name for probe in probes if probe.BATTERY_ONLY]
-      if probe_names:
-        names_str = ",".join(probe_names)
-        raise argparse.ArgumentTypeError(
-            f"Cannot use [{names_str}] probe(s) "
-            "with repeat > 1 and/or with multiple browsers. We need to "
-            "always start at the same battery level, and by running "
-            "stories on multiple browsers or multiples time will create "
-            "erroneous data.")
-
-    for probe in probes:
-      self.runner.attach_probe(probe, matching_browser_only=True)
-
     self._run_benchmark(args, self.runner)
 
   def _helper(self, args: argparse.Namespace) -> None:
@@ -574,7 +556,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       self.cli.describe_subcommand.run(args)
       sys.exit(0)
 
-  def _process_args(self, args) -> None:
+  def _process_args(self, args: argparse.Namespace) -> None:
     if args.config:
       self._process_config_args(args)
     else:
@@ -583,7 +565,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       # copy the args.*_config back.
       self._process_network_args(args)
 
-  def _process_network_args(self, args) -> None:
+  def _process_network_args(self, args: argparse.Namespace) -> None:
     # The order of preference of flags is as follows:
     # Explicitly specified network config > explicitly specified network >
     # benchmark-specific network config > default network.
@@ -596,7 +578,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     else:
       args.network = NetworkConfig.default()
 
-  def _process_env_args(self, args) -> None:
+  def _process_env_args(self, args: argparse.Namespace) -> None:
     if env_config := args.env_config:
       args.env = env_config
     elif args.env:
@@ -604,7 +586,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     else:
       args.env = EnvConfig.default()
 
-  def _process_config_args(self, args) -> None:
+  def _process_config_args(self, args: argparse.Namespace) -> None:
     if args.env_config:
       raise argparse.ArgumentTypeError(
           "--config cannot be used together with --env-config")
@@ -694,7 +676,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       runner.run(is_dry_run=args.dry_run)
       logging.info("")
       self._log_results(args, runner, is_success=runner.is_success)
-    except:  # pylint: disable=broad-except
+    except:  # noqa: BLE001
       self._log_results(args, runner, is_success=False)
       raise
     finally:
@@ -716,7 +698,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     for probe in runner.probes:
       try:
         probe.log_browsers_result(browser_group)
-      except Exception as e:  # pylint: disable=broad-except
+      except Exception as e:  # noqa: BLE001
         if args.throw:
           raise
         logging.warning("log_result_summary failed: %s", e)
@@ -766,7 +748,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     with exception.annotate_argparsing(
         f"Parsing {benchmark_cls.NAME} arguments"):
       return benchmark_cls.from_cli_args(args)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   def _get_benchmark_cls(self, args: argparse.Namespace) -> Type[Benchmark]:
     del args
@@ -785,11 +767,13 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
                   args.run_timeout, args.start_delay, args.stop_delay)
 
   def _get_runner(self, args: argparse.Namespace, benchmark: Benchmark,
-                  env_config: EnvConfig, env_validation_mode: ValidationMode,
+                  probes: Iterable[Probe], env_config: EnvConfig,
+                  env_validation_mode: ValidationMode,
                   timing: Timing) -> Runner:
     runner_kwargs = self._runner_cls.kwargs_from_cli(args)
     return self._runner_cls(
         benchmark=benchmark,
+        probes=probes,
         env_config=env_config,
         env_validation_mode=env_validation_mode,
         timing=timing,
@@ -813,7 +797,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     for log_file in candidates[:limit]:
       try:
         log_file = log_file.relative_to(pth.LocalPath.cwd())
-      except Exception as e:  # pylint: disable=broad-except
+      except Exception as e:  # noqa: BLE001
         logging.debug("Could not create relative log_file: %s", e)
       logging.error("  - %s", log_file)
     if (pending := len(candidates) - limit) > 0:

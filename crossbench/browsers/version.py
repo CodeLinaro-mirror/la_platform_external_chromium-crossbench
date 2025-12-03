@@ -50,8 +50,6 @@ class BrowserVersionChannel(_BrowserVersionChannelMixin, enum.Enum):
     return self == other
 
 
-
-
 class PartialBrowserVersionError(ValueError):
 
   def __init__(self, version: BrowserVersion):
@@ -271,6 +269,7 @@ class UnknownBrowserVersion(BrowserVersion):
                parts: tuple[int, ...] = (),
                channel: BrowserVersionChannel = BrowserVersionChannel.ANY,
                version_str: str = "unknown") -> None:
+    del channel
     super().__init__(parts, BrowserVersionChannel.ANY, version_str)
 
   @classmethod

@@ -7,19 +7,19 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import (TYPE_CHECKING, Any, Callable, Final, Optional, Sequence,
-                    cast)
+from typing import TYPE_CHECKING, Any, Callable, Final, Optional, Sequence, \
+    cast
 
 from typing_extensions import override
 
-from crossbench.action_runner.base import (ActionRunner,
-                                           InputSourceNotImplementedError)
+from crossbench.action_runner.base import ActionRunner, \
+    InputSourceNotImplementedError
 from crossbench.action_runner.default_bond_action_runner import \
     DefaultBondActionRunner
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
-from crossbench.probes.screenshot import (ScreenshotProbe,
-                                          ScreenshotProbeContext)
+from crossbench.probes.screenshot import ScreenshotProbe, \
+    ScreenshotProbeContext
 from crossbench.runner.probe_context_lookup_error import \
     ProbeContextLookupError
 
@@ -238,6 +238,7 @@ class DefaultActionRunner(ActionRunner):
         scroll_into_view=scroll_into_view,
         check_element_rect=check_element_rect,
         return_on_success=True)
+
     # TODO: if check_element_rect, we should wait for the position to be the
     # same
 

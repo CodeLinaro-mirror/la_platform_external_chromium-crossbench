@@ -9,20 +9,19 @@ import pathlib
 import shutil
 import sys
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Final
 
 import pytest
+from immutabledict import immutabledict
 
 from crossbench import config
+from crossbench.cli import exception_formatter
 
-is_google_env = config.is_google_env
 root_dir = config.root_dir
 config_dir = config.config_dir
 
 
 def crossbench_dir() -> pathlib.Path:
-  if is_google_env():
-    return root_dir()
   return root_dir() / "crossbench"
 
 
@@ -72,7 +71,25 @@ class TestEnv():
     assert not tuple(self.output_dir.glob("**/*"))
 
 
+DEFAULT_PYTEST_FLAGS: Final[immutabledict[str, str | None]] = immutabledict({
+    "--verbose": None,
+    "--log-file-level": "DEBUG",
+    "--durations": 5,
+    "--no-fold-skipped": None,
+    "-r": "s",
+})
+
+
+def to_flags(flag_dict):
+  for k, v in flag_dict.items():
+    if v:
+      yield f"{k}={v}"
+    else:
+      yield k
+
+
 def run_pytest(path: str | pathlib.Path, *args):
+  sys.excepthook = exception_formatter.excepthook
   extra_args = [*args, *sys.argv[1:]]
   # Run tests single-threaded by default when running the test file directly.
   if "-n" not in extra_args:

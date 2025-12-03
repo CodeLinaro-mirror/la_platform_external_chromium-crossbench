@@ -43,7 +43,7 @@ class SplashScreen:
       return cls.MINIMAL
     if value == "detailed":
       return cls.DETAILED
-    if value.startswith("http:") or value.startswith("https:"):
+    if value.startswith(("http:", "https:")):
       return URLSplashScreen(value)
     maybe_path = pth.LocalPath(value)
     if maybe_path.exists():
@@ -57,6 +57,7 @@ class SplashScreen:
 _BLANK_PAGE_HTML: Final = "<html></html>"
 _BLANK_PAGE_DATA_URL: Final = (
     f"data:text/html;charset=utf-8,{url_helper.quote(_BLANK_PAGE_HTML)}")
+
 
 class BaseURLSplashScreen(SplashScreen, metaclass=abc.ABCMeta):
 

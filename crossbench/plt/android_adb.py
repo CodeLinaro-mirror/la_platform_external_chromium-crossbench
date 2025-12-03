@@ -20,22 +20,24 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData
+from crossbench.helper.path_finder import BuildtoolFinder
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
+from crossbench.plt.bin import Binaries
 from crossbench.plt.device_info import DeviceInfo
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import PosixVersion, RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
-from protoc import (activitymanagerservice_pb2, battery_pb2, enums_pb2,
-                    windowmanagerservice_pb2)
+from protoc import activitymanagerservice_pb2, battery_pb2, enums_pb2, \
+    windowmanagerservice_pb2
 
 if TYPE_CHECKING:
   import subprocess
 
   from crossbench.plt.base import Platform
   from crossbench.plt.display_info import DisplayInfo
-  from crossbench.plt.types import CmdArg, ListCmdArgs
+  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo
   from crossbench.types import JsonDict
 
 # Defines the Android permissions to be granted.
@@ -53,13 +55,12 @@ class AndroidDeviceInfo(DeviceInfo):
   def serial_id(self) -> str:
     return self.device_id
 
-def _find_adb_bin(platform: Platform) -> pth.AnyPath:
-  adb_bin = platform.search_platform_binary(
-      name="adb",
-      macos=["adb", "~/Library/Android/sdk/platform-tools/adb"],
-      linux=["adb"],
-      win=["adb.exe", "Android/sdk/platform-tools/adb.exe"])
+
+def _find_adb_bin(platform: Platform,
+                  adb_bin: Optional[pth.AnyPath] = None) -> pth.AnyPath:
   if adb_bin:
+    return platform.parse_binary_path(adb_bin)
+  if adb_bin := Binaries.ADB.search(platform):
     return adb_bin
   raise ValueError(
       "Could not find adb binary."
@@ -101,30 +102,33 @@ def _parse_adb_device_info(value: str) -> dict[str, str]:
 
 class Adb:
 
-  _serial_id: str
-  _device_info: AndroidDeviceInfo
-  _adb_bin: pth.AnyPath
-  _bundletool: Optional[pth.AnyPath]
-
   def __init__(self,
                host_platform: Platform,
                device_identifier: Optional[str] = None,
                adb_bin: Optional[pth.AnyPath] = None,
                bundletool: Optional[pth.AnyPath] = None) -> None:
-    self._host_platform = host_platform
-    if adb_bin:
-      self._adb_bin = host_platform.parse_binary_path(adb_bin)
-    else:
-      self._adb_bin = _find_adb_bin(host_platform)
+    self._host_platform: Final[Platform] = host_platform
+    self._adb_bin: Final[pth.AnyPath] = _find_adb_bin(host_platform, adb_bin)
+    self._bundletool: Final[pth.AnyPath
+                            | None] = self._find_bundletool(bundletool)
+    serial_id, device_info = self._start(device_identifier)
+    self._serial_id: Final[str] = serial_id
+    self._device_info: Final[AndroidDeviceInfo] = device_info
+
+  def _find_bundletool(self,
+                       bundletool: Optional[pth.AnyPath]) -> pth.AnyPath | None:
     if bundletool:
-      self._bundletool = host_platform.parse_binary_path(bundletool)
-    else:
-      self._bundletool = pth.LocalPath("bundletool")
+      return self._host_platform.parse_binary_path(bundletool)
+    return BuildtoolFinder(self._host_platform).path
+
+  def _start(
+      self,
+      device_identifier: Optional[str] = None) -> tuple[str, AndroidDeviceInfo]:
     self.start_server()
-    self._serial_id, self._device_info = self._find_serial_id(device_identifier)
-    logging.debug("ADB Selected device: %s %s", self._serial_id,
-                  self._device_info)
-    assert self._serial_id
+    serial_id, device_info = self._find_serial_id(device_identifier)
+    logging.debug("ADB Selected device: %s %s", serial_id, device_info)
+    assert serial_id
+    return serial_id, device_info
 
   def _find_serial_id(
       self,
@@ -197,9 +201,9 @@ class Adb:
            *args: CmdArg,
            shell: bool = False,
            capture_output: bool = False,
-           stdout=None,
-           stderr=None,
-           stdin=None,
+           stdout: ProcessIo = None,
+           stderr: ProcessIo = None,
+           stdin: ProcessIo = None,
            env: Optional[Mapping[str, str]] = None,
            quiet: bool = False,
            check: bool = True,
@@ -219,7 +223,7 @@ class Adb:
   def _adb_stdout(self,
                   *args: CmdArg,
                   quiet: bool = False,
-                  stdin=None,
+                  stdin: ProcessIo = None,
                   encoding: str = "utf-8",
                   use_serial_id: bool = True,
                   check: bool = True) -> str:
@@ -234,7 +238,7 @@ class Adb:
   def _adb_stdout_bytes(self,
                         *args: CmdArg,
                         quiet: bool = False,
-                        stdin=None,
+                        stdin: ProcessIo = None,
                         use_serial_id: bool = True,
                         check: bool = True) -> bytes:
     adb_cmd = self._build_adb_cmd(*args, use_serial_id=use_serial_id)
@@ -268,7 +272,7 @@ class Adb:
                    shell: bool = False,
                    quiet: bool = False,
                    encoding: str = "utf-8",
-                   stdin=None,
+                   stdin: ProcessIo = None,
                    env: Optional[Mapping[str, str]] = None,
                    check: bool = True) -> str:
     result = self.shell_stdout_bytes(
@@ -279,7 +283,7 @@ class Adb:
                          *args: CmdArg,
                          shell: bool = False,
                          quiet: bool = False,
-                         stdin=None,
+                         stdin: ProcessIo = None,
                          env: Optional[Mapping[str, str]] = None,
                          check: bool = True) -> bytes:
     # -e: choose escape character, or "none"; default '~'
@@ -297,9 +301,9 @@ class Adb:
             *args: CmdArg,
             shell: bool = False,
             capture_output: bool = False,
-            stdout=None,
-            stderr=None,
-            stdin=None,
+            stdout: ProcessIo = None,
+            stderr: ProcessIo = None,
+            stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
             quiet: bool = False,
             check: bool = True) -> subprocess.CompletedProcess:
@@ -435,7 +439,7 @@ class Adb:
     self.shell(*cmd)
 
   def install(self,
-              bundle: pth.LocalPath,
+              bundle: pth.AnyPath,
               allow_downgrade: bool = False,
               modules: Optional[str] = None) -> None:
     if bundle.suffix == ".apks":
@@ -444,10 +448,10 @@ class Adb:
       self.install_apk(bundle, allow_downgrade)
 
   def install_apk(self,
-                  apk: pth.LocalPath,
+                  apk: pth.AnyPath,
                   allow_downgrade: bool = False) -> None:
-    if not apk.exists():
-      raise ValueError(f"APK {apk} does not exist.")
+    if not self._host_platform.exists(apk):
+      raise ValueError(f"APK {apk} does not exist {self._host_platform}.")
     args = ["install"]
     if allow_downgrade:
       args.append("-d")
@@ -455,12 +459,15 @@ class Adb:
     self._adb(*args)
 
   def install_apks(self,
-                   apks: pth.LocalPath,
+                   apks: pth.AnyPath,
                    allow_downgrade: bool = False,
                    modules: Optional[str] = None) -> None:
-    if not apks.exists():
-      raise ValueError(f"APK {apks} does not exist.")
-    if self._bundletool and self._bundletool.suffix == ".jar":
+    if not self._host_platform.exists(apks):
+      raise ValueError(f"APK {apks} does not exist on {self._host_platform}.")
+    if self._bundletool is None:
+      raise RuntimeError(
+          "Could not find bundletool binary required for install_apks")
+    if self._bundletool.suffix == ".jar":
       binary = ["java", "-jar", str(self._bundletool)]
     else:
       binary = [str(self._bundletool)]
@@ -481,7 +488,7 @@ class Adb:
       raise ValueError("Got empty package name")
     try:
       self._adb("uninstall", package_name)
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as e:  # noqa: BLE001
       if missing_ok:
         logging.debug("Could not uninstall %s: %s", package_name, e)
       else:
@@ -490,7 +497,7 @@ class Adb:
   def grant_permissions(self, package_name: str) -> None:
     if self.build_version < 13:
       # Notification permission setting is needed for Android 13 and above.
-      # https://developer.android.com/develop/ui/views/notifications/notification-permission  # pylint: disable=line-too-long
+      # https://developer.android.com/develop/ui/views/notifications/notification-permission
       return
     if not package_name:
       raise ValueError("Got empty package name")
@@ -556,8 +563,8 @@ class AndroidAdbPortManager(PortManager):
 class AndroidVersion(PosixVersion):
   pass
 
+
 class AndroidAdbPlatform(RemotePosixPlatform):
-  # pylint: disable=redefined-builtin
 
   def __init__(self,
                host_platform: Platform,
@@ -565,11 +572,15 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                adb: Optional[Adb] = None) -> None:
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
-    self._adb = adb or Adb(host_platform, device_identifier)
+    self._adb: Final[Adb] = adb or Adb(host_platform, device_identifier)
     super().__init__(host_platform)
 
   def _create_port_manager(self) -> PortManager:
     return AndroidAdbPortManager(self, self._adb)
+
+  @override
+  def _create_default_tmp_dir(self) -> pth.AnyPath:
+    return self.path("/data/local/tmp/")
 
   @property
   @override
@@ -593,19 +604,18 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @functools.cached_property
   @override
-  def device(self) -> str:
+  def model(self) -> str:
     return self.adb.getprop("ro.product.model")
 
   @property
-  def serial_id(self):
+  def serial_id(self) -> str:
     return self._adb.serial_id
 
   @functools.cached_property
   def uiautomator_device(self) -> android_device.AndroidDevice:
     ad = android_device.AndroidDevice(self.serial_id)
-    ad.services.register(
-      uiautomator.ANDROID_SERVICE_NAME, uiautomator.UiAutomatorService
-    )
+    ad.services.register(uiautomator.ANDROID_SERVICE_NAME,
+                         uiautomator.UiAutomatorService)
     return ad
 
   @functools.cached_property
@@ -722,11 +732,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       raise ValueError("Could not parse adb display brightness.")
     return int(float(match_result.group("brightness")) * 100)
 
-  @property
-  @override
-  def default_tmp_dir(self) -> pth.AnyPath:
-    return self.path("/data/local/tmp/")
-
   @override
   def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
     return self.adb.build_shell_cmd(*args, shell=shell)
@@ -736,9 +741,9 @@ class AndroidAdbPlatform(RemotePosixPlatform):
          *args: CmdArg,
          shell: bool = False,
          capture_output: bool = False,
-         stdout=None,
-         stderr=None,
-         stdin=None,
+         stdout: ProcessIo = None,
+         stderr: ProcessIo = None,
+         stdin: ProcessIo = None,
          env: Optional[Mapping[str, str]] = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
@@ -758,7 +763,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                       *args: CmdArg,
                       shell: bool = False,
                       quiet: bool = False,
-                      stdin=None,
+                      stdin: ProcessIo = None,
                       env: Optional[Mapping[str, str]] = None,
                       check: bool = True) -> bytes:
     return self.adb.shell_stdout_bytes(
@@ -882,6 +887,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
     return meminfo
 
+  def dump_java_heap(self, identifier: str, path: pth.AnyPath) -> None:
+    self.sh("am", "dumpheap", identifier, self.path(path))
 
   @functools.lru_cache(maxsize=1)
   @override
@@ -924,8 +931,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def python_details(self) -> JsonDict:
     # TODO: Implement properly (i.e. remove all n/a values)
     return {
-            "version": "n/a",
-            "bits": "n/a",
+        "version": "n/a",
+        "bits": "n/a",
     }
 
   @property

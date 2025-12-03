@@ -114,7 +114,6 @@ class FrequencyProbeContext(ProbeContext[FrequencyProbe]):
   _MIN_FREQUENCY_FILE: str = "scaling_min_freq"
   _MAX_FREQUENCY_FILE: str = "scaling_max_freq"
 
-
   def __init__(self, probe: FrequencyProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._previous_frequencies: list[_FrequencyState] = []
@@ -123,7 +122,7 @@ class FrequencyProbeContext(ProbeContext[FrequencyProbe]):
     target_cpu_frequencies: immutabledict[pth.AnyPosixPath, int] = (
         self.probe.cpu_frequency_map.get_target_frequencies(
             self.browser_platform))
-    for cpu_dir in target_cpu_frequencies.keys():
+    for cpu_dir in target_cpu_frequencies:
       self._previous_frequencies.append(
           _FrequencyState(
               dir=cpu_dir,

@@ -17,9 +17,9 @@ from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.motionmark.motionmark_1 import (
-      MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext,
-      MotionMark1Story)
+  from crossbench.benchmarks.motionmark.motionmark_1 import \
+      MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext, \
+      MotionMark1Story
 
 
 class MotionMark1BaseTestCase(
@@ -90,7 +90,7 @@ class MotionMark1BaseTestCase(
     self.assertGreater(len(stories), 1)
     for story in stories:
       self.assertIsInstance(story, self.story_cls)
-    names = set(story.name for story in stories)
+    names = {story.name for story in stories}
     self.assertEqual(len(names), len(stories))
     self.assertEqual(len(names), len(self.story_cls.SUBSTORIES))
 
@@ -99,7 +99,7 @@ class MotionMark1BaseTestCase(
     self.assertGreater(len(stories), 1)
     for story in stories:
       self.assertIsInstance(story, self.story_cls)
-    names = set(story.name for story in stories)
+    names = {story.name for story in stories}
     self.assertEqual(len(names), len(stories))
     self.assertEqual(len(names), len(self.story_cls.ALL_STORIES["MotionMark"]))
 

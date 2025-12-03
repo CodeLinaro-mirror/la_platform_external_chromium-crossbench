@@ -7,16 +7,16 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import logging
-from typing import (TYPE_CHECKING, Any, ClassVar, Iterator, Optional, Self,
-                    Sequence, cast)
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator, Optional, Self, \
+    Sequence, cast
 
 from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.get import GetAction
-from crossbench.benchmarks.loading.config.blocks import (ActionBlock,
-                                                         ActionBlockListConfig)
+from crossbench.benchmarks.loading.config.blocks import ActionBlock, \
+    ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.custom import LoginBlock
 from crossbench.benchmarks.loading.page.live import PAGES
 from crossbench.benchmarks.loading.playback_controller import \
@@ -38,7 +38,7 @@ class PageConfig(ConfigObject):
   secrets: Secrets = Secrets()
   login: LoginBlock | None = None
   setup: ActionBlock | None = None
-  blocks: tuple[ActionBlock, ...] = tuple()
+  blocks: tuple[ActionBlock, ...] = ()
   teardown: ActionBlock | None = None
 
   @classmethod
@@ -49,10 +49,7 @@ class PageConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(  # pylint: disable=arguments-differ
-      cls,
-      value: str,
-      label: Optional[str] = None) -> Self:
+  def parse_str(cls, value: str, label: Optional[str] = None) -> Self:
     """
     Simple comma-separated string with optional duration:
       value = URL,[DURATION]
@@ -83,12 +80,11 @@ class PageConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(  # pylint: disable=arguments-differ
-      cls,
-      config: dict[str, Any],
-      label: Optional[str] = None,
-      secrets: Optional[Secrets] = None,
-      **kwargs) -> Self:
+  def parse_dict(cls,
+                 config: dict[str, Any],
+                 label: Optional[str] = None,
+                 secrets: Optional[Secrets] = None,
+                 **kwargs) -> Self:
     config = ObjectParser.non_empty_dict(config, "story actions or blocks")
     page_config = cls.config_parser().parse(
         config, label=label, secrets=secrets, **kwargs)

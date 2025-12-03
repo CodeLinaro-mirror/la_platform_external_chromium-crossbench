@@ -8,14 +8,14 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import (TYPE_CHECKING, Any, ClassVar, Mapping, MutableMapping,
-                    Optional, Sequence, Type)
+from typing import TYPE_CHECKING, Any, ClassVar, Mapping, MutableMapping, \
+    Optional, Sequence, Type
 
 from immutabledict import immutabledict
 from typing_extensions import override
 
-from crossbench.benchmarks.base import (PressBenchmark,
-                                        PressBenchmarkStoryFilter)
+from crossbench.benchmarks.base import PressBenchmark, \
+    PressBenchmarkStoryFilter
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.helper import url_helper
 from crossbench.parse import NumberParser, ObjectParser
@@ -69,7 +69,8 @@ class SpeedometerProbe(
       if self._is_valid_metric_key(key):
         line_item_scores.append(metric.values)
     total_score = Metric()
-    for iteration_line_items_score_values in zip(*line_item_scores):
+    for iteration_line_items_score_values in zip(
+        *line_item_scores, strict=True):
       iteration_score = Metric(iteration_line_items_score_values).geomean
       total_score.append(iteration_score)
     return total_score

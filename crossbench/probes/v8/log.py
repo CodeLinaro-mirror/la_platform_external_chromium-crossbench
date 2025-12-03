@@ -10,8 +10,8 @@ import multiprocessing
 import os
 import re
 import subprocess
-from typing import (TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Self,
-                    Type, cast)
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Self, \
+    Type, cast
 
 from typing_extensions import override
 
@@ -226,7 +226,7 @@ class V8LogProbe(ChromiumProbe):
 
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
-    runs: list[Run] = list(run for run in group.runs if self in run.results)
+    runs: list[Run] = [run for run in group.runs if self in run.results]
     if not runs:
       return
     logging.info("-" * 80)

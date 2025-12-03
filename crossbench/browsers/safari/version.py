@@ -25,6 +25,7 @@ _COMPLEX_VERSION_RE: Final[re.Pattern] = re.compile(
     r"(?P<parts>[\d.]+))"
     r"\).*")
 
+
 class SafariVersion(BrowserVersion):
   _MIN_MAJOR_PARTS_LEN: Final[int] = 3
   _MIN_PARTS_LEN: Final[int] = 3
@@ -42,7 +43,7 @@ class SafariVersion(BrowserVersion):
 
   @classmethod
   def _parse_complex_version(cls, full_version: str,
-                             matches) -> VersionParseResult:
+                             matches: re.Match[str]) -> VersionParseResult:
     version_str = matches["version"]
     parts_str = matches["parts"]
     major_parts_str = matches["major_parts"]
@@ -61,7 +62,7 @@ class SafariVersion(BrowserVersion):
 
   @classmethod
   def _parse_simple_version(cls, full_version: str,
-                            matches) -> VersionParseResult:
+                            matches: re.Match[str]) -> VersionParseResult:
     channel: BrowserVersionChannel = cls._parse_channel(full_version)
     parts = cls._parse_parts(full_version, matches["parts"])
     parts += (0,)

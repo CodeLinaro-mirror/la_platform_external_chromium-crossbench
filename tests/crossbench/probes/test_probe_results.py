@@ -1,21 +1,24 @@
 # Copyright 2022 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import pathlib
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from typing_extensions import override
 
-from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.probes.probe import Probe
-from crossbench.probes.results import (BrowserProbeResult,
-                                       DuplicateProbeResult, EmptyProbeResult,
-                                       LocalProbeResult, ProbeResultDict)
+from crossbench.probes.results import BrowserProbeResult, \
+    DuplicateProbeResult, EmptyProbeResult, LocalProbeResult, \
+    ProbeResultDict
 from tests import test_helper
-from tests.crossbench.base import (BaseCrossbenchTestCase,
-                                   CrossbenchFakeFsTestCase)
+from tests.crossbench.base import BaseCrossbenchTestCase, \
+    CrossbenchFakeFsTestCase
+
+if TYPE_CHECKING:
+  from crossbench.action_runner.base import ActionRunner
 
 
 class ProbeResultTestCase(CrossbenchFakeFsTestCase):
@@ -329,7 +332,6 @@ class BrowserProbeResultTestCase(BaseCrossbenchTestCase):
     self.assertEqual(local_kwargs, browser_kwargs)
 
   def test_copy_remote_files(self):
-    # pylint: disable=attribute-defined-outside-init
     out_dir_local = pathlib.Path("local/results")
     out_dir_remote = pathlib.Path("remote/results")
     out_dir_local.mkdir(parents=True)

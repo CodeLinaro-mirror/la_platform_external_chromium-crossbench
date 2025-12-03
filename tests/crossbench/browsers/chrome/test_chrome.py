@@ -1,6 +1,7 @@
 # Copyright 2023 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import argparse
 
@@ -8,8 +9,8 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.chrome.version import ChromeVersion
-from crossbench.browsers.chrome.webdriver import (ChromeWebDriver,
-                                                  LocalChromeWebDriverAndroid)
+from crossbench.browsers.chrome.webdriver import ChromeWebDriver, \
+    LocalChromeWebDriverAndroid
 from crossbench.browsers.settings import Settings
 from crossbench.flags.chrome import ChromeFlags
 from tests import test_helper
@@ -72,6 +73,7 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
     self.assertTrue(self.browsers)
     for browser in self.browsers:
       self.assertFalse(browser.is_local_build)
+
 
 class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
 

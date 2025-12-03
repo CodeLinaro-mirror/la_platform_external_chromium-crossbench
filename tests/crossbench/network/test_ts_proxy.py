@@ -1,6 +1,7 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import argparse
 import contextlib
@@ -9,10 +10,9 @@ from unittest import mock
 
 from typing_extensions import override
 
-from crossbench.network.base import Network
-from crossbench.network.traffic_shaping.ts_proxy import (TsProxyProcess,
-                                                         TsProxyServer,
-                                                         TsProxyTrafficShaper)
+from crossbench.network.live import LiveNetwork
+from crossbench.network.traffic_shaping.ts_proxy import TsProxyProcess, \
+    TsProxyServer, TsProxyTrafficShaper
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -75,7 +75,7 @@ class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
 
   def test_ts_proxy_open(self):
     ts_proxy = TsProxyTrafficShaper(self.platform, self.ts_proxy_path)
-    network = Network(ts_proxy, self.platform)
+    network = LiveNetwork(ts_proxy, self.platform)
     session = self.create_session()
 
     with self.startup_process_mock() as proc:
@@ -88,7 +88,7 @@ class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
 
   def test_ts_proxy_pause(self):
     ts_proxy = TsProxyTrafficShaper(self.platform, self.ts_proxy_path)
-    network = Network(ts_proxy, self.platform)
+    network = LiveNetwork(ts_proxy, self.platform)
     session = self.create_session()
 
     with self.startup_process_mock() as proc:
@@ -113,7 +113,7 @@ class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
         rtt_ms=101,
         in_kbps=102,
         out_kbps=103)
-    network = Network(ts_proxy, self.platform)
+    network = LiveNetwork(ts_proxy, self.platform)
     session = self.create_session()
 
     with self.startup_process_mock() as proc:

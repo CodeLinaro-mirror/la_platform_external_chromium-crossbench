@@ -12,7 +12,7 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Final, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Final, Iterator, Optional, Sequence, Type
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -26,21 +26,22 @@ from crossbench.action_runner.action.wait_for_ready_state import \
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
-from crossbench.benchmarks.loadline import (LoadLine1TabletBenchmark,
-                                            LoadLine2TabletBenchmark)
+from crossbench.benchmarks.loadline import LoadLine1TabletBenchmark, \
+    LoadLine2TabletBenchmark
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
 from crossbench.cli.config.env import EnvConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
-from crossbench.helper.wake_lock import WakeLock
+from crossbench.probes.perfetto.perfetto import TraceConfig
 from crossbench.runner.runner import Runner
-from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import MockCLI, MockPlatform
 
 if TYPE_CHECKING:
+  from pyfakefs import fake_filesystem
+
   from crossbench.browsers.browser import Browser
 
 
@@ -59,16 +60,24 @@ class CrossbenchFakeFsTestCase(
     sleep_patcher = mock.patch("time.sleep", return_value=None)
     self.sleep_mock = sleep_patcher.start()
     self.addCleanup(sleep_patcher.stop)
-    # This is platform specific and causes issues pending sh commands
-    self.sleep_preventer_patcher = mock.patch.object(WakeLock, "__enter__")
-    self.addCleanup(self.sleep_preventer_patcher.stop)
-    self.sleep_preventer_patcher.start()
 
+    # This is platform specific and causes issues pending sh commands
+    self.wakelock_patcher = mock.patch.object(plt.PLATFORM, "wakelock")
+    self.addCleanup(self.wakelock_patcher.stop)
+    self.wakelock_patcher.start()
 
   def create_file(self, path_str: str, contents: str = "") -> pathlib.Path:
     path = pathlib.Path(path_str)
     self.fs.create_file(path, contents=contents)
     return path
+
+  def mock_platform_default_tmp_dir(self, platform_cls: Type) -> None:
+    patcher = mock.patch.object(
+        platform_cls,
+        "_create_default_tmp_dir",
+        return_value=pth.AnyPosixPath("/var/tmp"))
+    self.addCleanup(patcher.stop)
+    patcher.start()
 
 
 TEST_WARNING = "Test Warning"
@@ -114,8 +123,27 @@ class CrossbenchMockArgsMixin:
     return args
 
 
+class CrossbenchConfigTestMixin:
+  fs: fake_filesystem.FakeFilesystem
+
+  def setup_loadline_configs(self):
+    self.setup_config_dir(
+        LoadLine1TabletBenchmark.default_network_config_path().parent)
+    self.setup_config_dir(
+        LoadLine2TabletBenchmark.default_network_config_path().parent)
+
+  def setup_perfetto_config_presets(self):
+    self.setup_config_dir(TraceConfig.preset_dir())
+
+  def setup_config_dir(self, config_dir):
+    self.fs.add_real_directory(config_dir, lazy_read=True)
+
+
 class BaseCrossbenchTestCase(
-    CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
+    CrossbenchConfigTestMixin,
+    CrossbenchMockArgsMixin,
+    CrossbenchFakeFsTestCase,
+    metaclass=abc.ABCMeta):
 
   def filter_splashscreen_urls(self, urls: Sequence[str]) -> list[str]:
     return [url for url in urls if not url.startswith("data:")]
@@ -128,12 +156,20 @@ class BaseCrossbenchTestCase(
     self.platform = MockPlatform()
     self.platform.use_fs = True
     super().setUp()
+    # Reset the platform ID counter for each test
+    # The PLATFORM singleton is created at import time, so we need to patch
+    # the counter in the base module.
+    self.platform_id_patcher = mock.patch(
+        "crossbench.plt.base._NEXT_PLATFORM_ID", 777)
+    self.platform_id_patcher.start()
+    self.addCleanup(self.platform_id_patcher.stop)
+
     self._default_log_level = logging.getLogger().getEffectiveLevel()
     logging.getLogger().setLevel(logging.CRITICAL)
     for mock_browser_cls in mock_browser.ALL:
       mock_browser_cls.setup_fs(self.fs)
       self.assertTrue(mock_browser_cls.mock_app_path(self.platform).exists())
-    self.out_dir = pathlib.Path("/tmp/results/test")
+    self.out_dir = pathlib.Path("/crossbench-test/results/test")
     self.out_dir.parent.mkdir(parents=True)
     self.browsers: list[mock_browser.MockBrowser] = [
         mock_browser.MockChromeDev(
@@ -146,25 +182,6 @@ class BaseCrossbenchTestCase(
     self.addCleanup(mock_platform_patcher.stop)
     for browser in self.browsers:
       self.assertListEqual(browser.expected_js, [])
-
-  def setup_loadline_configs(self):
-    self.setup_config_dir(
-        LoadLine1TabletBenchmark.default_network_config_path().parent)
-    self.setup_config_dir(
-        LoadLine2TabletBenchmark.default_network_config_path().parent)
-
-  def setup_config_dir(self, config_dir):
-    self.fs.add_real_directory(
-        config_dir,
-        lazy_read=not test_helper.is_google_env())
-    if test_helper.is_google_env():
-      # On google3, all files have been replaced by symlinks. The link targets
-      # must be added in order for these symlinks to resolve.
-      for child in config_dir.glob("**/*"):
-        if child.is_symlink():
-          link_target = child.readlink()
-          if not link_target.exists():
-            self.fs.add_real_file(link_target)
 
   def tearDown(self) -> None:
     logging.getLogger().setLevel(self._default_log_level)
@@ -197,8 +214,10 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     self.setup_wrap_patcher()
     self.setup_wait_for_ready_state_patcher()
     self.setup_loadline_configs()
+    self.setup_perfetto_config_presets()
 
   def setup_tabulate_patcher(self) -> None:
+
     def mock_tabulate(table, *args, **kwargs):
       del args, kwargs
       return str(table)
@@ -208,6 +227,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     patcher.start()
 
   def setup_wrap_patcher(self) -> None:
+
     def mock_wrap(text, *args, **kwargs):
       del args, kwargs
       return [text]
@@ -223,17 +243,19 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     patcher.start()
 
   @contextlib.contextmanager
-  def capture_io(self):
+  def capture_io(self) -> Iterator[IoCapture]:
     io_capture = IoCapture()
     with mock.patch(
         "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
             "sys.stderr", new_callable=io.StringIO) as mock_stderr:
-      yield io_capture
-      # Make sure we don't accidentally reuse the buffers across run_cli calls.
-      io_capture.stdout = mock_stdout.getvalue()
-      io_capture.stderr = mock_stderr.getvalue()
-      mock_stdout.close()
-      mock_stderr.close()
+      try:
+        yield io_capture
+      finally:
+        # Ensure we don't accidentally reuse the buffers across run_cli calls.
+        io_capture.stdout = mock_stdout.getvalue()
+        io_capture.stderr = mock_stderr.getvalue()
+        mock_stdout.close()
+        mock_stderr.close()
 
   def run_cli_output(self,
                      *args,
@@ -244,13 +266,13 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     return cli, io_capture.stdout, io_capture.stderr
 
   @contextlib.contextmanager
-  def _patch_get_runner(self):
+  def _patch_get_runner(self) -> Iterator[None]:
     with mock.patch.object(
         BenchmarkSubcommand, "_get_runner", side_effect=self._mock_get_runner):
       yield
 
-  def _mock_get_runner(self, args, benchmark, env_config, env_validation_mode,
-                       timing):
+  def _mock_get_runner(self, args, benchmark, probes, env_config,
+                       env_validation_mode, timing):
     if not args.out_dir:
       # Use stable mock out dir
       args.out_dir = pathlib.Path("/results")
@@ -258,6 +280,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     runner_kwargs = Runner.kwargs_from_cli(args)
     runner = Runner(
         benchmark=benchmark,
+        probes=probes,
         env_config=env_config,
         env_validation_mode=env_validation_mode,
         timing=timing,
@@ -268,7 +291,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     return runner
 
   @contextlib.contextmanager
-  def _patch_sys_exit(self):
+  def _patch_sys_exit(self) -> Iterator[None]:
     with mock.patch(
         "sys.exit", side_effect=SysExitTestException), mock.patch.object(
             plt, "PLATFORM", self.platform):
@@ -277,7 +300,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
   @contextlib.contextmanager
   def _patch_get_browser_cls(self,
                              return_value: Optional[Type[Browser]] = None,
-                             **kwargs):
+                             **kwargs) -> Iterator[mock.MagicMock]:
     if not kwargs:
       kwargs["return_value"] = return_value or mock_browser.MockChromeStable
     with mock.patch.object(BaseBrowserVariantsConfig, "get_browser_cls",
@@ -285,7 +308,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
       yield patcher
 
   @contextlib.contextmanager
-  def cli(self, enable_logging: bool = False):
+  def cli(self, enable_logging: bool = False) -> Iterator[MockCLI]:
     cli = MockCLI(platform=self.platform, enable_logging=enable_logging)
     with self._patch_sys_exit(), self._patch_get_runner():
       yield cli
@@ -304,7 +327,8 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
 
   @contextlib.contextmanager
   def _patch_get_browser(self,
-                         return_value: Optional[Sequence[Browser]] = None):
+                         return_value: Optional[Sequence[Browser]] = None
+                        ) -> Iterator[None]:
     if not return_value:
       return_value = self.browsers
     with mock.patch.object(

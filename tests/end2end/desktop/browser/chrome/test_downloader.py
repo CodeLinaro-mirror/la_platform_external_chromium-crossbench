@@ -14,8 +14,8 @@ import pytest
 from crossbench import plt
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver
-from crossbench.browsers.chromium.driver_finder import (ChromeDriverFinder,
-                                                        DriverNotFoundError)
+from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder, \
+    DriverNotFoundError
 from crossbench.browsers.settings import Settings
 from tests import test_helper
 from tests.end2end.desktop.browser.helper import tmp_platform_cache_dir
@@ -155,7 +155,6 @@ def test_download_any_channel_milestone(test_env: TestEnv) -> None:
   )
 
 
-
 def test_download_major_version_chrome_for_testing(test_env: TestEnv) -> None:
   # Post M114 we're relying on the new chrome-for-testing download
   test_env.assert_empty_output_dir()
@@ -216,7 +215,6 @@ def test_download_old_major_version(test_env: TestEnv) -> None:
   test_env.assert_empty_output_dir()
   _load_and_check_version(test_env.output_dir, test_env.archive_dir,
                           "chrome-M68", "68")
-
 
 
 if __name__ == "__main__":

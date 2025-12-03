@@ -12,13 +12,13 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self
 from typing_extensions import override
 
 from crossbench import exception
-from crossbench.cli.config.network_speed import (NetworkSpeedConfig,
-                                                 NetworkSpeedPreset)
+from crossbench.cli.config.network_speed import NetworkSpeedConfig, \
+    NetworkSpeedPreset
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.network.live import LiveNetwork
 from crossbench.network.local_file_server import LocalFileNetwork
-from crossbench.network.replay.wpr import (LocalWprReplayNetwork,
-                                           RemoteWprReplayNetwork)
+from crossbench.network.replay.wpr import LocalWprReplayNetwork, \
+    RemoteWprReplayNetwork
 from crossbench.network.traffic_shaping import ts_proxy
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
 from crossbench.parse import PathParser
@@ -32,16 +32,16 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 # We're using 'type' here a lot, let's skip the warnings from pylint.
-# pylint: disable=redefined-builtin
 
 
-def _parse_existing_file_path_and_resolve(value: str):
+def _parse_existing_file_path_and_resolve(value: str) -> pth.LocalPath:
   # During config parsing, a ChangePWD call ensures that config paths can be
   # specified as relative to the config directory. But the PWD is later reverted
   # to the original one. Resolving to an absolute path upfront ensures we're
   # always looking at the correct file.
   # It would be best to implement this in PathParser, e.g. crrev.com/c/6713595.
-  return PathParser.existing_file_path(value).resolve()
+  return PathParser.json_file_path(value).resolve()
+
 
 @enum.unique
 class NetworkType(ConfigEnum):
@@ -76,7 +76,7 @@ class NetworkConfig(ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls, default=cls.default())
     parser.add_argument("type", type=NetworkType, default=NetworkType.LIVE)
-    preset_choices = tuple(str(preset) for preset in NetworkSpeedPreset) # pytype: disable=missing-parameter
+    preset_choices = tuple(str(preset) for preset in NetworkSpeedPreset)
     parser.add_argument(
         "speed",
         type=NetworkSpeedConfig,
@@ -129,7 +129,7 @@ class NetworkConfig(ConfigObject):
 
   @classmethod
   def parse_local(cls, value: Any) -> Self:
-    config = cls.parse(value, type=NetworkType.LOCAL)
+    config: Self = cls.parse(value, type=NetworkType.LOCAL)
     if config.type != NetworkType.LOCAL:
       raise argparse.ArgumentTypeError(
           f"Expected local file server, but got {config.type}. ")
@@ -137,10 +137,7 @@ class NetworkConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(  # pylint: disable=arguments-differ
-      cls,
-      value: str,
-      type: Optional[NetworkType] = None) -> Self:
+  def parse_str(cls, value: str, type: Optional[NetworkType] = None) -> Self:
     if not value:
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
     if value == "default":
@@ -155,7 +152,7 @@ class NetworkConfig(ConfigObject):
     with exception.annotate_argparsing("Live network with speed config"):
       speed = NetworkSpeedConfig.parse(value)
       return cls(NetworkType.LIVE, speed)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   @classmethod
   def parse_url(cls,

@@ -16,12 +16,12 @@ from typing_extensions import override
 from crossbench.benchmarks.base import RegexFilter
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
-from crossbench.benchmarks.loading.loading_benchmark import (LoadingBenchmark,
-                                                             LoadingPageFilter)
-from crossbench.probes.perfetto.trace_processor.trace_processor import \
-    TraceProcessorProbe
-from crossbench.probes.probe import Probe
+from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
+    LoadingPageFilter
+from crossbench.probes.probe import Probe, ProbePriority
 from crossbench.probes.results import LocalProbeResult
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
 
 if TYPE_CHECKING:
   from crossbench import path as pth
@@ -32,8 +32,10 @@ if TYPE_CHECKING:
 
 class LoadLineProbe(BenchmarkProbeMixin, Probe):
   IS_GENERAL_PURPOSE: ClassVar = False
+  PRODUCES_DATA: ClassVar = False
   BENCHMARK_NAME: ClassVar[str] = "LoadLine"
   BENCHMARK_VERSION: ClassVar[str] = ""
+  PRIORITY: ClassVar = ProbePriority.PRE_TRACE_PROCESSOR
 
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
@@ -91,6 +93,7 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
 
 class LoadLinePageFilter(LoadingPageFilter):
   """LoadLine benchmark for phone/tablet."""
+
   @classmethod
   def add_page_config_parser(cls, parser: argparse.ArgumentParser) -> None:
     page_config_group = parser.add_mutually_exclusive_group()
@@ -114,7 +117,7 @@ class LoadLinePageFilter(LoadingPageFilter):
   @classmethod
   @override
   def all_stories(cls) -> tuple[Page, ...]:
-    return tuple()
+    return ()
 
 
 class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
@@ -165,8 +168,7 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
           all_names=all_page_labels, default_names=all_page_labels)
       filtered_page_labels = regex_filter.process_all(args.stories.split(","))
       filtered_pages = tuple(
-          page for page in config.pages if page.label in filtered_page_labels
-      )
+          page for page in config.pages if page.label in filtered_page_labels)
       config = PagesConfig(
           pages=filtered_pages, secrets=cls._page_config.secrets)
 

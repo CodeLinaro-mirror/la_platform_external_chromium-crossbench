@@ -1,22 +1,22 @@
 # Copyright 2024 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import datetime as dt
 import pathlib
 import unittest
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.text_input import TextInputAction
-from crossbench.action_runner.android_input_action_runner import (
-    AndroidInputActionRunner, ViewportInfo)
+from crossbench.action_runner.android_input_action_runner import \
+    AndroidInputActionRunner, ViewportInfo
 from crossbench.action_runner.base import InputSourceNotImplementedError
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
@@ -30,9 +30,12 @@ from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import \
     ActionRunnerTestCase
 from tests.crossbench.mock_browser import JsInvocation, MockChromeAndroidStable
-from tests.crossbench.mock_helper import (AndroidAdbMockPlatform,
-                                          LinuxMockPlatform, MockAdb)
+from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
+    LinuxMockPlatform, MockAdb
 from tests.crossbench.runner.helper import MockRun, MockRunner
+
+if TYPE_CHECKING:
+  from crossbench.action_runner.action.action import Action
 
 
 class ViewportInfoTestCase(unittest.TestCase):
@@ -120,6 +123,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
   def setUp(self) -> None:
     super().setUp()
     self.host_platform = LinuxMockPlatform()
+    self.fs.create_file("/usr/bin/adb", contents="adb")
     self.host_platform.expect_sh(
         "/usr/bin/adb",
         "devices",
@@ -197,7 +201,6 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.assertFalse(self.runner.mock_waits)
     self.run_action(text_input_action)
     self.assertFalse(self.runner.mock_waits)
-
 
   def test_text_input_non_zero_duration(self):
     text_input_action = TextInputAction(InputSource.KEYBOARD,

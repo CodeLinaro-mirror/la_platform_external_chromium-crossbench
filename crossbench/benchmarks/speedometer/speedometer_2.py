@@ -4,14 +4,17 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, MutableMapping
+from typing import TYPE_CHECKING, Any, ClassVar, MutableMapping
 
 from typing_extensions import override
 
-from crossbench.benchmarks.speedometer.speedometer import (
-    SpeedometerProbe, SpeedometerProbeContext, SpeedometerStory)
+from crossbench.benchmarks.speedometer.speedometer import SpeedometerProbe, \
+    SpeedometerProbeContext, SpeedometerStory
 from crossbench.helper import url_helper
 from crossbench.parse import ObjectParser
+
+if TYPE_CHECKING:
+  from crossbench.types import Json
 
 
 class Speedometer2Probe(SpeedometerProbe):
@@ -21,7 +24,7 @@ class Speedometer2Probe(SpeedometerProbe):
 class Speedometer2ProbeContext(SpeedometerProbeContext):
 
   @override
-  def process_json_data(self, json_data) -> Any:
+  def process_json_data(self, json_data: Json) -> Any:
     json_data = ObjectParser.non_empty_sequence(json_data,
                                                 f"{self.probe.name} metrics")
     # Move aggregate scores to the end

@@ -1,6 +1,7 @@
 # Copyright 2025 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import json
 from typing import Any
@@ -53,23 +54,19 @@ def mock_meminfo(info_stack: list[str],
 class TestMeminfoProbe(GenericProbeTestCase):
 
   def test_meminfo_dumped(self):
-
     probe = MeminfoProbe.config_parser().parse({})
-
     setup = ActionBlock.parse_sequence([{
         "action": "meminfo",
         "title": "test",
     }])
-    blocks = tuple([
-        ActionBlock.parse_sequence([{
-            "action": "get",
-            "url": "https://google.com"
-        }, {
-            "action": "meminfo",
-            "title": "test",
-            "system": True,
-        }])
-    ])
+    blocks = (ActionBlock.parse_sequence([{
+        "action": "get",
+        "url": "https://google.com"
+    }, {
+        "action": "meminfo",
+        "title": "test",
+        "system": True,
+    }]),)
     teardown = ActionBlock.parse_sequence([{
         "action": "meminfo",
         "system": True,
@@ -146,6 +143,7 @@ class TestMeminfoProbe(GenericProbeTestCase):
           if mark == "crossbench-meminfo"
       ]
       self.assertListEqual(details, mock_json)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

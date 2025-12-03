@@ -113,7 +113,6 @@ class DownloadsProbeContext(ProbeContext[DownloadsProbe]):
     pass
 
 
-
 class FileWatchDownloadsProbeContext(DownloadsProbeContext):
 
   def __init__(self, probe: DownloadsProbe, run: Run,
@@ -225,7 +224,8 @@ class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
       cmd = (
           shlex.join(read_downloads_cmd) + ">" +
           shlex.quote(self.browser_platform.path(to_path).as_posix()))
-      self.browser_platform.sh(cmd, shell=True)
+      # We need shell=True since we pipe to a file.
+      self.browser_platform.sh(cmd, shell=True)  # noqa: S604
       self._results.append(to_path)
 
   def teardown(self) -> ProbeResult:

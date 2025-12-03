@@ -7,13 +7,13 @@ from __future__ import annotations
 import abc
 import contextlib
 import datetime as dt
-from typing import (TYPE_CHECKING, Any, Generic, Iterable, Iterator, Optional,
-                    TypeVar)
+from typing import TYPE_CHECKING, Any, Generic, Iterable, Iterator, Optional, \
+    TypeVar
 
 from typing_extensions import override
 
-from crossbench.probes.results import (BrowserProbeResult, EmptyProbeResult,
-                                       LocalProbeResult, ProbeResult)
+from crossbench.probes.results import BrowserProbeResult, EmptyProbeResult, \
+    LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
@@ -189,6 +189,7 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     """
     Called from the "probe" action in the ActionRunner.
     """
+    del info_stack, timeout, kwargs
     raise RuntimeError(f"Invoke not implemented for probe: {self}")
 
 
@@ -262,7 +263,6 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     This method should have as little overhead as possible. If possible,
     delegate heavy computation to the "teardown" method.
     """
-    return None
 
   @abc.abstractmethod
   @override

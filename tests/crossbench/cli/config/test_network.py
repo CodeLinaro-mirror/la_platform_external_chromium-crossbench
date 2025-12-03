@@ -8,8 +8,8 @@ import argparse
 import json
 
 from crossbench import path as pth
-from crossbench.cli.config.network import (NetworkConfig, NetworkSpeedConfig,
-                                           NetworkType)
+from crossbench.cli.config.network import NetworkConfig, NetworkSpeedConfig, \
+    NetworkType
 from crossbench.cli.config.network_speed import NetworkSpeedPreset
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase

@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from typing_extensions import override
 
-from crossbench.benchmarks.motionmark.motionmark_main import (
-    MotionMarkMainBenchmark, MotionMarkMainProbe, MotionMarkMainProbeContext,
-    MotionMarkMainStory)
+from crossbench.benchmarks.motionmark.motionmark_main import \
+    MotionMarkMainBenchmark, MotionMarkMainProbe, MotionMarkMainProbeContext, \
+    MotionMarkMainStory
 from tests import test_helper
 from tests.crossbench.benchmarks.motionmark.helper import \
     MotionMark1BaseTestCase

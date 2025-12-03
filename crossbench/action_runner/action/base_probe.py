@@ -7,10 +7,11 @@ from __future__ import annotations
 import functools
 from typing import TYPE_CHECKING, Any, Type
 
+from immutabledict import immutabledict
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import (ACTION_TIMEOUT, Action,
-                                                    ActionT)
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, \
+    ActionT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.cli.config.probe import PROBE_LOOKUP
 
@@ -39,7 +40,7 @@ class BaseProbeAction(Action):
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._probe_cls = PROBE_LOOKUP[probe]
-    self._kwargs = kwargs
+    self._kwargs: immutabledict[str, Any] = immutabledict(kwargs)
     super().__init__(timeout, index)
 
   @property
@@ -47,7 +48,7 @@ class BaseProbeAction(Action):
     return self._probe_cls
 
   @property
-  def kwargs(self) -> dict[str, Any]:
+  def kwargs(self) -> immutabledict[str, Any]:
     return self._kwargs
 
   @override
@@ -55,7 +56,7 @@ class BaseProbeAction(Action):
     action_runner.invoke_probe(run, self)
 
   def kwargs_to_json(self) -> JsonDict:
-    return self.kwargs
+    return dict(self.kwargs)
 
   @override
   def to_json(self) -> JsonDict:

@@ -1,6 +1,7 @@
 # Copyright 2022 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import abc
 from typing import Sequence, Type
@@ -68,7 +69,7 @@ class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):
     any_story_name = self.story_cls.all_story_names()[0]
     any_story = self.story_filter([any_story_name]).stories[0]
     # Instantiate with single story,
-    with self.assertRaises(Exception):
+    with self.assertRaises(TypeError):
       self.benchmark_cls(any_story)
     # with single story array
     self.benchmark_cls([any_story])
@@ -85,13 +86,13 @@ class PressBaseBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
 
   def test_invalid_story_names(self):
     # Only StoryFilter can filter stories by regexp
-    with self.assertRaises(Exception):
+    with self.assertRaises(ValueError):
       self.story_cls.from_names(".*", separate=True)
-    with self.assertRaises(Exception):
+    with self.assertRaises(ValueError):
       self.story_cls.from_names([".*"], separate=True)
-    with self.assertRaises(Exception):
+    with self.assertRaises(ValueError):
       self.story_cls.from_names([".*", "name does not exist"], separate=True)
-    with self.assertRaises(Exception):
+    with self.assertRaises(ValueError):
       self.story_cls.from_names([""], separate=True)
 
   def test_all(self):

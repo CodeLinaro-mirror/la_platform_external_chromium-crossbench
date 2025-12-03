@@ -12,13 +12,14 @@ from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.meet_create import MeetCreateAction
 from crossbench.action_runner.action.meet_script import MeetScriptAction
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
-from crossbench.action_runner.default_bond_action_runner import (
-    DefaultBondActionRunner)
+from crossbench.action_runner.default_bond_action_runner import \
+    DefaultBondActionRunner
 from crossbench.cli.config.secrets import ServiceAccount
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 
 NOW_EPOCH = dt.datetime.now()
+
 
 class DefaultBondActionRunnerTestCase(BaseCrossbenchTestCase):
 
@@ -181,6 +182,7 @@ class DefaultBondActionRunnerTestCase(BaseCrossbenchTestCase):
 
     mock_bond_client.run_script.assert_called_once_with(
         "abc-def-ghi", "test script", dt.timedelta(seconds=17))
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

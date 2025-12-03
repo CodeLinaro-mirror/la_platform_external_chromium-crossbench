@@ -1,6 +1,7 @@
 # Copyright 2022 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import abc
 import argparse
@@ -8,18 +9,20 @@ import copy
 import csv
 import json
 from dataclasses import dataclass
-from typing import Optional, Type
+from typing import TYPE_CHECKING, Optional, Type
 from unittest import mock
 
 from typing_extensions import override
 
-from crossbench.action_runner.config import ActionRunnerConfig
-from crossbench.benchmarks.jetstream.jetstream_2 import (
-    JetStream2Benchmark, JetStream2Probe, JetStream2ProbeContext,
-    JetStream2Story)
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
+
+if TYPE_CHECKING:
+  from crossbench.action_runner.config import ActionRunnerConfig
+  from crossbench.benchmarks.jetstream.jetstream_2 import \
+      JetStream2Benchmark, JetStream2Probe, JetStream2ProbeContext, \
+      JetStream2Story
 
 
 class JetStream2BaseTestCase(
@@ -179,6 +182,7 @@ class JetStream2BaseTestCase(
     assert isinstance(story, self.story_cls)
     self.assertEqual(story.iterations, 123)
     self.assertDictEqual(story.url_params, {"iterationCount": "123"})
+
 
 # TODO: introduce JetStreamBaseTestCase
 class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):

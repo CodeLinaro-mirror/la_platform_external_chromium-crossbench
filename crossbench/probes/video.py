@@ -9,9 +9,9 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, Self, TextIO, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Self, TextIO, Type
 
-from typing_extensions import ClassVar, Final, override
+from typing_extensions import override
 
 from crossbench.config import ConfigEnum
 from crossbench.helper import collection_helper
@@ -39,6 +39,7 @@ FFMPEG_STACK_DIRECTION: Final[dict[Orientation, str]] = {
     Orientation.HORIZONTAL: "hstack",
     Orientation.VERTICAL: "vstack",
 }
+
 
 class VideoProbe(Probe):
   """
@@ -103,11 +104,11 @@ class VideoProbe(Probe):
     return self._generate_timestrip
 
   @property
-  def primary_orientation(self):
+  def primary_orientation(self) -> Orientation:
     return self._orientation
 
   @property
-  def secondary_orientation(self):
+  def secondary_orientation(self) -> Orientation:
     if self._orientation == Orientation.VERTICAL:
       return Orientation.HORIZONTAL
     return Orientation.VERTICAL
@@ -168,7 +169,7 @@ class VideoProbe(Probe):
       # In the simple case just copy the files
       run_files = runs[0].results[self].file_list
       group_files = [group.path / f.name for f in run_files]
-      for src, dest in zip(run_files, group_files):
+      for src, dest in zip(run_files, group_files, strict=True):
         self.host_platform.copy(src, dest)
       return LocalProbeResult(file=group_files)
 
@@ -344,8 +345,8 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
   def stop_process(self) -> None:
     if self._record_process:
-      self.browser_platform.terminate_gracefully(self._record_process,
-                                                 timeout=5)
+      self.browser_platform.terminate_gracefully(
+          self._record_process, timeout=5)
       self._record_process = None
 
   def _convert_to_constant_framerate(self) -> None:

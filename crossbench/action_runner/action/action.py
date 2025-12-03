@@ -54,6 +54,7 @@ ACTIONS: dict[ActionType, Type[Action]] = {}
 # annotations on classmethods with decorators.
 ActionT = TypeVar("ActionT", bound="Action")
 
+
 class Action(ConfigObject, metaclass=abc.ABCMeta):
   TYPE: ClassVar[ActionType] = ActionType.GET
 
@@ -79,7 +80,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
     config.pop("type", None)
 
     with exception.annotate_argparsing(
-        f"Parsing Action details  ...{{ action: \"{action_type}\", ...}}:"):
+        f'Parsing Action details  ...{{ action: "{action_type}", ...}}:'):
       action = action_cls.config_parser().parse(config, **kwargs)
     assert isinstance(action, cls), f"Expected {cls} but got {type(action)}"
     return action

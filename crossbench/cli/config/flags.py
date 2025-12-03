@@ -8,8 +8,8 @@ import argparse
 import dataclasses
 import functools
 import logging
-from typing import (TYPE_CHECKING, Any, Final, Iterable, Optional, Self,
-                    Sequence, Set, Type)
+from typing import TYPE_CHECKING, Any, Final, Iterable, Optional, Self, \
+    Sequence, Set, Type
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -24,7 +24,6 @@ from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.flags.base import Flags, FlagsData
-
 
 DEFAULT_LABEL: Final[str] = "default"
 
@@ -67,7 +66,7 @@ class FlagsVariantConfig:
   def __hash__(self) -> int:
     return hash(self.flags)
 
-  def __eq__(self, other: Any) -> bool:
+  def __eq__(self, other: object) -> bool:
     if not isinstance(other, FlagsVariantConfig):
       return False
     return self.flags == other.flags
@@ -102,7 +101,7 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
   def parse_dict(cls, config: dict) -> Self:
     if not config:
       return cls()
-    all_flag_keys = all(key.startswith("-") for key in config.keys())
+    all_flag_keys = all(key.startswith("-") for key in config)
     all_str_values = all(isinstance(value, str) for value in config.values())
     if not all_flag_keys:
       return cls.parse_dict_with_labels(config)
@@ -283,7 +282,6 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
         merged_js_flags.append(js_flags)
       args_config["--js-flags"] = list(map(str, merged_js_flags))
     return args_config
-
 
   def product(self, *args: Self) -> Self:
     return functools.reduce(lambda a, b: a.inner_product(b), args, self)

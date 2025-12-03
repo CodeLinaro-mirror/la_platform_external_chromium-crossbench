@@ -9,8 +9,8 @@ from typing import cast
 
 from crossbench.plt.port_manager import PortForwardException, PortManager
 from tests import test_helper
-from tests.crossbench.mock_helper import (LinuxMockPlatform,
-                                          MockRemotePortManager)
+from tests.crossbench.mock_helper import LinuxMockPlatform, \
+    MockRemotePortManager
 
 
 class FakePortLinuxMockPlatform(LinuxMockPlatform):

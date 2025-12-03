@@ -1,6 +1,7 @@
 # Copyright 2025 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import unittest
 from unittest.mock import MagicMock, call
@@ -59,13 +60,16 @@ class BaseActionRunnerTestCase(unittest.TestCase):
     config_dict = {"action": "click", "selector": "#button", "attempts": 3}
     action = ClickAction.config_parser().parse(config_dict)
 
+    class TestException(Exception):
+      pass
+
     mock_action_runner.click_js.side_effect = [
-        Exception("fail first"),
-        Exception("and second"),
-        Exception("and third")
+        TestException("fail first"),
+        TestException("and second"),
+        TestException("and third")
     ]
 
-    with self.assertRaises(Exception):
+    with self.assertRaises(TestException):
       mock_action_runner.click(mock_run, action)
 
     mock_action_runner.click_js.assert_has_calls([

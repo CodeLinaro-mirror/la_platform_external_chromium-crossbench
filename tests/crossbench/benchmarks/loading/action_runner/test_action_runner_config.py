@@ -12,8 +12,8 @@ from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
 from crossbench.action_runner.chromeos_input_action_runner import \
     ChromeOSInputActionRunner
-from crossbench.action_runner.config import (ActionRunnerConfig,
-                                             ActionRunnerType)
+from crossbench.action_runner.config import ActionRunnerConfig, \
+    ActionRunnerType
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from tests import test_helper
 

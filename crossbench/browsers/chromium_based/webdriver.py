@@ -8,8 +8,8 @@ import abc
 import datetime as dt
 import logging
 import os
-from typing import (TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO,
-                    Type)
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO, \
+    Type
 
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
@@ -18,10 +18,10 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chromium.driver_finder import (ChromeDriverFinder,
-                                                        DriverNotFoundError)
-from crossbench.browsers.chromium.version import (ChromeDriverVersion,
-                                                  ChromiumVersion)
+from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder, \
+    DriverNotFoundError
+from crossbench.browsers.chromium.version import ChromeDriverVersion, \
+    ChromiumVersion
 from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.browsers.chromium_based.devtools_tracer import DevToolsTracer
@@ -70,7 +70,7 @@ class ChromiumBasedWebDriver(
     return None
 
   def _execute_cdp_cmd(self, driver: webdriver.Remote, cmd: str,
-                       cmd_args: dict):
+                       cmd_args: dict) -> Any:
     return driver.execute("executeCdpCommand", {
         "cmd": cmd,
         "params": cmd_args
@@ -133,7 +133,6 @@ class ChromiumBasedWebDriver(
     if adb_port and adb_port.isdigit():
       service_args += ["--adb-port=" + adb_port]
 
-
     assert self._stdout_log_file is None
     # On desktop platforms service logs contain browser stdout, hence the name.
     self._stdout_log_file = self.log_file.with_stem("browser.stdout").open("w+")
@@ -145,11 +144,10 @@ class ChromiumBasedWebDriver(
     if hasattr(service, "log_file"):
       # TODO: remove once we upgrade the min selenium version
       # Workaround for older selenium versions which ignore the log_file kwarg.
-      setattr(service, "log_file", self._stdout_log_file)
+      service.log_file = self._stdout_log_file
 
     # TODO: support remote platforms
     driver = self._create_driver(options, service)
-    # pytype: enable=wrong-keyword-args
     # Prevent debugging overhead.
     self._execute_cdp_cmd(driver, "Runtime.setMaxCallStackSizeToCapture",
                           {"size": 0})
@@ -261,12 +259,10 @@ class ChromiumBasedWebDriver(
 
       for handle in handles:
         driver.switch_to.window(handle)
-        if title is not None:
-          if title.search(driver.title) is None:
-            continue
-        if url is not None:
-          if url.search(driver.current_url) is None:
-            continue
+        if title is not None and title.search(driver.title) is None:
+          continue
+        if url is not None and url.search(driver.current_url) is None:
+          continue
         return handle
     error = "No new tab found"
     if title is not None:

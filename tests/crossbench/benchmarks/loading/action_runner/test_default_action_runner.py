@@ -1,8 +1,10 @@
 # Copyright 2025 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
+
 import pathlib
-from typing import Any, Type
+from typing import TYPE_CHECKING, Any, Type
 
 from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
@@ -10,13 +12,12 @@ from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.browsers.settings import Settings
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
-from crossbench.probes.downloads import (DownloadsProbe,
-                                         FileWatchDownloadsProbeContext)
+from crossbench.probes.downloads import DownloadsProbe, \
+    FileWatchDownloadsProbeContext
 from crossbench.probes.dump_html import DumpHtmlProbe
-from crossbench.probes.js import JSProbe
 from crossbench.probes.meminfo import MeminfoProbe
-from crossbench.probes.probe import Probe, ProbeContext
 from crossbench.probes.screenshot import ScreenshotProbe
+from crossbench.probes.shell import ShellProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import \
@@ -24,6 +25,9 @@ from tests.crossbench.action_runner.action_runner_test_case import \
 from tests.crossbench.mock_browser import MockChromeStable
 from tests.crossbench.mock_helper import LinuxMockPlatform
 from tests.crossbench.runner.helper import MockRun, MockRunner
+
+if TYPE_CHECKING:
+  from crossbench.probes.probe import Probe, ProbeContext
 
 
 class DefaultActionRunnerTestCase(ActionRunnerTestCase):
@@ -33,8 +37,8 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
       probe: Probe,
       probe_context_cls: Type[ProbeContext] | None = None,
       probe_context_args: dict[str, Any] | None = None) -> None:
-    pathlib.Path("/usr/bin").mkdir(parents=True, exist_ok=True)
-    pathlib.Path("/usr/bin/google-chrome").write_text("definitely a browser")
+    self.fs.create_file(
+        "/usr/bin/google-chrome", contents="definitely a browser")
 
     self.root_dir = pathlib.Path()
     self.platform = LinuxMockPlatform()
@@ -64,8 +68,8 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
     self.mock_run.set_probe_context(self.probe_context)
 
   def test_probe_action_unsupported_probe(self):
-    self.set_up_with_probe(JSProbe(""))
-    action_block = ActionBlock(actions=(ProbeAction(probe="js", kwargs={}),))
+    self.set_up_with_probe(ShellProbe(""))
+    action_block = ActionBlock(actions=(ProbeAction(probe="shell", kwargs={}),))
 
     with self.assertRaisesRegex(MultiException,
                                 "Invoke not implemented for probe"):

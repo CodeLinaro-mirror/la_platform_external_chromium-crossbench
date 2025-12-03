@@ -9,8 +9,8 @@ import argparse
 import contextlib
 import dataclasses
 import logging
-from typing import (TYPE_CHECKING, Any, Final, Iterator, Mapping, Optional,
-                    Self, Sequence, Set, TextIO, Type)
+from typing import TYPE_CHECKING, Any, Final, Iterator, Mapping, Optional, \
+    Self, Sequence, Set, TextIO, Type
 
 from typing_extensions import override
 
@@ -26,12 +26,12 @@ from crossbench.browsers.settings import Settings
 from crossbench.browsers.webkit.downloader import WebKitDownloader
 from crossbench.cli.config.browser import SUPPORTED_EMBEDDER, BrowserConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
-from crossbench.cli.config.flags import (DEFAULT_LABEL, FlagsConfig,
-                                         FlagsGroupConfig, FlagsVariantConfig)
+from crossbench.cli.config.flags import DEFAULT_LABEL, FlagsConfig, \
+    FlagsGroupConfig, FlagsVariantConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError
 from crossbench.flags.base import Flags
-from crossbench.helper.cwd import ChangeCWD
+from crossbench.helper.cwd import change_cwd
 from crossbench.parse import LateArgumentError, ObjectParser
 
 if TYPE_CHECKING:
@@ -45,6 +45,7 @@ if TYPE_CHECKING:
 # Add some slack for buffer for browser + platform names. Note that ultimately
 # this is going to get cropped to MAX_PART_LEN.
 MAX_LABEL_LEN: Final[int] = pth.MAX_PART_LEN - 50
+
 
 @contextlib.contextmanager
 def late_argument_type_error_wrapper(flag: str) -> Iterator[None]:
@@ -159,7 +160,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
       self, name: str, raw_browser_data: str | dict[str, Any],
       flag_variants: FlagsGroupConfig) -> dict[FlagsVariantConfig, str]:
     labels_lookup: dict[FlagsVariantConfig, str] = {}
-    group_labels = set(variant.label for variant in flag_variants)
+    group_labels: set[str] = {variant.label for variant in flag_variants}
     use_unique_variant_label = len(group_labels) == len(flag_variants)
 
     for variant in flag_variants:
@@ -209,6 +210,12 @@ class BaseBrowserVariantsConfig(abc.ABC):
       return all_browsers.WebKitWebDriver
     if "safari" in path_str:
       return cls.get_safari_browser_cls(browser_config)
+    # Embedder needs to be checked before Webview, as production embedder
+    # APKs might also contain "webview" in the path.
+    if any(embedder in path_str for embedder in SUPPORTED_EMBEDDER):
+      return all_browsers.WebviewEmbedder
+    # Webview needs to be checked before Chromium, as WebviewShell package name
+    # contains "chromium".
     if "webview" in path_str:
       return all_browsers.WebviewBrowser
     if "chrome" in path_str:
@@ -220,8 +227,6 @@ class BaseBrowserVariantsConfig(abc.ABC):
         return all_browsers.FirefoxWebDriver
     if "edge" in path_str:
       return all_browsers.EdgeWebDriver
-    if any(embedder in path_str for embedder in SUPPORTED_EMBEDDER):
-      return all_browsers.WebviewEmbedder
     if "d8" in path_str:
       return all_browsers.D8
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
@@ -281,8 +286,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
                             browser_config: BrowserConfig) -> plt.Platform:
     return browser_config.get_platform()
 
-  def _config_for_maybe_downloaded_binary(self,
-                               browser_config: BrowserConfig) -> BrowserConfig:
+  def _config_for_maybe_downloaded_binary(
+      self, browser_config: BrowserConfig) -> BrowserConfig:
     path_or_identifier = browser_config.browser
     if isinstance(path_or_identifier, pth.AnyPath):
       return browser_config
@@ -300,7 +305,6 @@ class BaseBrowserVariantsConfig(abc.ABC):
     if browser_config.driver.is_remote:
       return args.remote_driver_path or browser_config.driver.path
     return args.driver_path or browser_config.driver.path
-
 
   def _append_variant(self, args: argparse.Namespace, label: str,
                       browser_cls: Type[Browser], browser_config: BrowserConfig,
@@ -346,7 +350,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
       if not isinstance(network_config, NetworkConfig):
         network_config = NetworkConfig.parse(network_config)
       return network_config.create(browser_platform)
-    raise exception.UnreachableError()
+    raise exception.UnreachableError
 
   def _get_browser_env_config(self, args: argparse.Namespace,
                               browser_config: BrowserConfig) -> EnvConfig:
@@ -399,7 +403,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
 
   def parse_config_path(self, path: pth.LocalPath,
                         args: argparse.Namespace) -> None:
-    with ChangeCWD(path.parent):
+    with change_cwd(path.parent):
       with path.open(encoding="utf-8") as f:
         self.parse_text_io(f, args)
 
@@ -576,8 +580,9 @@ class BrowserVariantConfigArgs(BaseBrowserVariantsConfig):
                 f"Used chrome/chromium-specific flags {flag_name} "
                 f"for non-chrome {browser_cls.type_name()}.\n"
                 "Use --browser-config for complex variants.")
-    browser_types = set(
-        variant.browser_cls.type_name() for variant in self._variants)
+    browser_types: set[str] = {
+        variant.browser_cls.type_name() for variant in self._variants
+    }
     if len(browser_types) == 1:
       return
     if args.driver_path:

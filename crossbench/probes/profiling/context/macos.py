@@ -21,14 +21,13 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
-
 _MAC_TRACE_TEMPLATE_PATH: Final[pth.LocalPath] = pth.LocalPath(
     __file__).parents[1] / "time-profile.tracetemplate"
 
 _XPATH_EXPRESSION: Final[str] = (
     "//trace-toc/run/data/table["
-    "@category=\"PointsOfInterest\" and @schema=\"os-signpost\"]|"
-    "//trace-toc/run/data/table[@schema=\"cpu-profile\"]")
+    '@category="PointsOfInterest" and @schema="os-signpost"]|'
+    '//trace-toc/run/data/table[@schema="cpu-profile"]')
 
 
 class MacOSProfilingContext(PosixProfilingContext):

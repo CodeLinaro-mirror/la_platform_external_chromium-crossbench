@@ -92,10 +92,8 @@ class VideoAccelerationProbeContext(
           self._is_hw_accelerated = prop["value"] == "true"
           break
 
-  def _check_acceleration_status(self, timeout: dt.timedelta):
-    client = self._get_devtools_client()
-    with client:
-
+  def _check_acceleration_status(self, timeout: dt.timedelta) -> None:
+    with self._get_devtools_client().open() as client:
       target_id = self._get_page_target_id(client)
       if not target_id:
         raise RuntimeError("Could not find page target")
@@ -135,17 +133,15 @@ class VideoAccelerationProbeContext(
       })
 
   @override
-  def invoke(self,
-             info_stack: exception.TInfoStack,
-             timeout: dt.timedelta,
+  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
              **kwargs) -> None:
     del info_stack
     self._verify_hw_accel(timeout, **kwargs)
 
   def _verify_hw_accel(self,
-             timeout: dt.timedelta,
-             expect_hw_accel: bool = True,
-             **kwargs) -> None:
+                       timeout: dt.timedelta,
+                       expect_hw_accel: bool = True,
+                       **kwargs) -> None:
     """
     Called from the "probe" action in the ActionRunner.
     Checks for hardware or software video acceleration.
@@ -167,7 +163,7 @@ class VideoAccelerationProbeContext(
   @override
   def stop(self) -> None:
     if not self._is_hw_acceleration_determined():
-      self._check_acceleration_status(timeout = dt.timedelta(seconds=10))
+      self._check_acceleration_status(timeout=dt.timedelta(seconds=10))
     super().stop()
 
   @override

@@ -5,14 +5,15 @@
 from __future__ import annotations
 
 import abc
+import contextlib
 import datetime as dt
 import functools
 import logging
 import pathlib
 import re
 import shlex
-from typing import (TYPE_CHECKING, Any, Final, Generator, Iterator, Mapping,
-                    Optional, Set, Type)
+from typing import TYPE_CHECKING, Any, Final, Generator, Iterator, Mapping, \
+    Optional, Set, Type
 
 from typing_extensions import override
 
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
   import subprocess
 
   from crossbench.plt.signals import AnyPosixSignals, Signals
-  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessLike
+  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo, ProcessLike
   from crossbench.types import JsonDict
 
 
@@ -37,11 +38,24 @@ class PosixVersion(PlatformVersion):
 
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):
-  # pylint: disable=locally-disabled, redefined-builtin
 
-  def __init__(self) -> None:
-    super().__init__()
-    self._default_tmp_dir: pth.AnyPath | None = None
+  @override
+  def _create_default_tmp_dir(self) -> pth.AnyPath:
+    if self.is_local:
+      return super()._create_default_tmp_dir()
+    env = self.environ
+
+    for tmp_var in ("TMPDIR", "TEMP", "TMP"):
+      if tmp_var not in env:
+        continue
+      tmp_path = self.path(env[tmp_var])
+      if self.is_dir(tmp_path):
+        assert self.is_absolute(tmp_path)
+        return tmp_path
+    tmp_path = self.path("/tmp")  # noqa: S108
+    assert self.is_dir(tmp_path), (
+        f"Fallback tmp dir does not exist: {tmp_path}")
+    return tmp_path
 
   @property
   def signals(self) -> Type[AnyPosixSignals]:
@@ -114,7 +128,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
     if core_ids:
       if len(core_ids) == len(physical_ids):
-        pairs = set(zip(core_ids, physical_ids))
+        pairs = set(zip(core_ids, physical_ids, strict=True))
         return len(pairs)
       logging.debug("Invalid cpuinfo data: Cannot determine core counts.")
 
@@ -123,7 +137,6 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if self.is_android:
       return len(logical_cores)
     return 0
-
 
   @functools.lru_cache(maxsize=1)
   @override
@@ -197,36 +210,12 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     except ValueError:
       return dt.timedelta()
 
-
   @override
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
     app_or_bin = self.path(app_or_bin)
     if not self.exists(app_or_bin):
       raise ValueError(f"Binary {app_or_bin} does not exist.")
     return self.sh_stdout(app_or_bin, "--version")
-
-  @property
-  @override
-  def default_tmp_dir(self) -> pth.AnyPath:
-    if self._default_tmp_dir and self._default_tmp_dir.parts:
-      return self._default_tmp_dir
-    if self.is_local:
-      self._default_tmp_dir = self.path(super().default_tmp_dir)
-      return self._default_tmp_dir
-    env = self.environ
-
-    for tmp_var in ("TMPDIR", "TEMP", "TMP"):
-      if tmp_var not in env:
-        continue
-      tmp_path = self.path(env[tmp_var])
-      if self.is_dir(tmp_path):
-        self._default_tmp_dir = tmp_path
-        assert self.is_absolute(self._default_tmp_dir)
-        return tmp_path
-    self._default_tmp_dir = self.path("/tmp")
-    assert self.is_dir(self._default_tmp_dir), (
-        f"Fallback tmp dir does not exist: {self._default_tmp_dir}")
-    return self._default_tmp_dir
 
   @override
   def path(self, path: pth.AnyPathLike) -> pth.AnyPath:
@@ -393,6 +382,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     # TODO: implement stdin bypass for small content
     dest_file = self.path(file)
     with self.host_platform.NamedTemporaryFile("push.data") as tmp_file:
+      tmp_file = self.host_platform.local_path(tmp_file)
       self.host_platform.write_text(tmp_file, data, encoding=encoding)
       self.push(tmp_file, dest_file)
 
@@ -404,6 +394,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     # TODO: implement stdin bypass for small content
     dest_file = self.path(file)
     with self.host_platform.NamedTemporaryFile("push.data") as tmp_file:
+      tmp_file = self.host_platform.local_path(tmp_file)
       self.host_platform.write_bytes(tmp_file, data)
       self.push(tmp_file, dest_file)
 
@@ -468,20 +459,16 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if self.is_local:
       super().terminate(process)
     else:
-      try:
+      with contextlib.suppress(*proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS):
         self.send_signal(process, self.signals.SIGTERM)
-      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
-        pass
 
   @override
   def kill(self, process: ProcessLike) -> None:
     if self.is_local:
       super().kill(process)
     else:
-      try:
+      with contextlib.suppress(*proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS):
         self.send_signal(process, self.signals.SIGKILL)
-      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
-        pass
 
   @override
   def process_info(self, process: ProcessLike) -> Optional[dict[str, Any]]:
@@ -561,9 +548,9 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
             *args: CmdArg,
             bufsize: int = -1,
             shell: bool = False,
-            stdout=None,
-            stderr=None,
-            stdin=None,
+            stdout: ProcessIo = None,
+            stderr: ProcessIo = None,
+            stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
             quiet: bool = False) -> subprocess.Popen:
     del shell
@@ -577,12 +564,17 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
       shell_cmd += f" & PID=$! && echo $PID >{temp_pid_file} && wait $PID"
       if not quiet:
         logging.debug("REMOTE SHELL: %s", shell_cmd)
-
-      host_platform_cmd = self.build_shell_cmd(shell_cmd, shell=True)
+      # Run with shell=True since we use '>' and use shlex.join.
+      host_platform_cmd = self.build_shell_cmd(  # noqa: S604
+          shell_cmd, shell=True)
 
       remote_popen = RemotePopen(
-          self, host_platform_cmd, bufsize=bufsize, stdout=stdout,
-          stderr=stderr, stdin=stdin)
+          self,
+          host_platform_cmd,
+          bufsize=bufsize,
+          stdout=stdout,
+          stderr=stderr,
+          stdin=stdin)
       # tmp_pid_file might not have been immediately flushed:
       for _ in WaitRange(0.01, timeout=2).wait_with_backoff():
         if pid_str := self.cat(temp_pid_file):

@@ -17,12 +17,12 @@ from crossbench.parse import PathParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
-from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult)
+from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
+    ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.env.env import HostEnvironment
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.runner.run import Run
 
 DEFAULT_REMOTE_PGO_ROOT_PATH: pth.AnyPath = (
@@ -66,7 +66,7 @@ class ChromiumPgoProbe(ChromiumProbe):
     flags["--remote-allow-origins"] = "*"
 
   @override
-  def validate_browser(self, env: HostEnvironment, browser: Browser) -> None:
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     super().validate_browser(env, browser)
     self.expect_android(browser)
 
@@ -126,9 +126,7 @@ class ChromiumPgoProbeContextAndroid(ChromiumPgoProbeContext):
         "id": self.PGO_CMD_ID
     }
     logging.debug("Triggering PGO dump.")
-    devtools_client = self._get_devtools_client()
-    # Ensure devtools_client is connected before sending command
-    with devtools_client:
+    with self._get_devtools_client().open() as devtools_client:
       success, _ = devtools_client.send_command(request)
       if success:
         logging.info("PGO dump triggered successfully.")

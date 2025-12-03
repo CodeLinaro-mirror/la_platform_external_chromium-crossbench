@@ -8,6 +8,7 @@ import contextlib
 import pathlib
 import tempfile
 import unittest
+from typing import Iterator
 from unittest import mock
 
 from sqlalchemy.exc import IntegrityError
@@ -24,7 +25,7 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 class OpenResultDBMixin:
 
   @contextlib.contextmanager
-  def open_results_db(self, in_memory: bool = False):
+  def open_results_db(self, in_memory: bool = False) -> Iterator[ResultsDB]:
     with tempfile.TemporaryDirectory() as tmp_dir:
       if in_memory:
         db = ResultsDB()
@@ -59,6 +60,15 @@ class ResultsDBTestCase(OpenResultDBMixin, unittest.TestCase):
       with db.session() as session:
         self.assertEqual(session.query(PlatformRecord).count(), 0)
       db.add_platforms([plt.PLATFORM])
+      with db.session() as session:
+        self.assertEqual(session.query(PlatformRecord).count(), 1)
+
+  def test_add_duplicate_platforms(self):
+    with self.open_results_db() as db:
+      with db.session() as session:
+        self.assertEqual(session.query(PlatformRecord).count(), 0)
+      # Auto deduped.
+      db.add_platforms([plt.PLATFORM, plt.PLATFORM])
       with db.session() as session:
         self.assertEqual(session.query(PlatformRecord).count(), 1)
 

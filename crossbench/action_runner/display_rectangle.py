@@ -5,14 +5,12 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING
+from typing import Self
 
 from crossbench.benchmarks.loading.point import Point
 
-if TYPE_CHECKING:
-  from typing_extensions import Self
-
 SCROLL_BOUNDS_OFFSET_FACTOR: float = 0.1
+
 
 @dataclasses.dataclass(frozen=False)
 # Represents a rectangular section of the device's display.

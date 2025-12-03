@@ -36,15 +36,15 @@ def _run_cli(*args: str,
              auto_headless: bool = False) -> tuple[CrossBenchCLI, io.StringIO]:
   if test_env is not None:
     args += (f"--out-dir={test_env.results_dir}",) + test_env.cq_flags
-  if auto_headless and not plt.PLATFORM.has_display:
-    if "--headless" not in args:
-      args += ("--headless",)
-      args = tuple(arg for arg in args if not arg.startswith("--viewport="))
+  if auto_headless and not plt.PLATFORM.has_display and ("--headless"
+                                                         not in args):
+    args += ("--headless",)
+    args = tuple(arg for arg in args if not arg.startswith("--viewport="))
   args += extra_flags
   cli = CrossBenchCLI()
-  with contextlib.redirect_stdout(io.StringIO()) as stdout:
-    with mock.patch("sys.exit", side_effect=SysExitException):
-      cli.run(args)
+  with contextlib.redirect_stdout(io.StringIO()) as stdout, mock.patch(
+      "sys.exit", side_effect=SysExitException):
+    cli.run(args)
   return cli, stdout
 
 
@@ -363,7 +363,7 @@ def test_loading_playback_firefox(test_env: TestEnv, test_chrome_name) -> None:
   try:
     if not platform.exists(all_browsers.Firefox.default_path(platform)):
       pytest.skip("Test requires Firefox.")
-  except Exception:  # pylint: disable=broad-exception-caught
+  except Exception:  # noqa: BLE001
     pytest.skip("Test requires Firefox.")
   _run_cli(
       "loading",

@@ -15,8 +15,8 @@ from crossbench.helper.version import VersionParseError
 from crossbench.plt.macos import MacOsVersion
 from tests import test_helper
 from tests.crossbench.mock_helper import MacOsMockPlatform
-from tests.crossbench.plt.helper import (BaseLocalMockPlatformTestMixin,
-                                         BasePosixMockPlatformTestCase)
+from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
+    BasePosixMockPlatformTestCase
 
 
 class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
@@ -29,15 +29,17 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.fs.os = OSType.MACOS
 
   @override
-  def mock_platform_setup(self) -> None:
-    self.mock_platform = MacOsMockPlatform()
-    self.platform = self.mock_platform
+  def setup_host_platform(self) -> None:
+    return MacOsMockPlatform()
 
   def test_name(self):
     self.assertEqual(self.platform.name, "mock.macos")
 
   def test_is_macos(self):
     self.assertTrue(self.platform.is_macos)
+
+  def test_is_apple(self):
+    self.assertTrue(self.platform.is_apple)
 
   def test_app_version_non_existing(self):
     app_path = pth.AnyPosixPath("/Applications/Google Chrome.app")
@@ -105,7 +107,8 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
               "CFBundleShortVersionString": "129.9.6668.103",
               # CFBundleDisplayName is missing but CFBundleName is there.
               "CFBundleName": "Google Chrome",
-          }, f)
+          },
+          f)
     self.assertEqual(
         self.platform.app_version(app_path), "Google Chrome 129.9.6668.103")
 
@@ -184,7 +187,6 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertEqual(version.parts, (15, 6, 7))
     self.assertEqual(version.version_str, "15.6.7")
 
-
   def test_display_details(self):
     system_profiler_output = textwrap.dedent("""{
         "SPDisplaysDataType" : [
@@ -261,7 +263,6 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertEqual(version.version_str, "12.3.4")
     with self.assertRaises(VersionParseError):
       MacOsVersion.parse("foo")
-
 
 
 if __name__ == "__main__":

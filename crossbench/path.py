@@ -56,6 +56,6 @@ def try_resolve_existing_path(value: str) -> Optional[LocalPath]:
 def check_hash(file_path: LocalPath, file_hash: str) -> bool:
   if not file_path.exists():
     return False
-  sha1 = hashlib.sha1()
+  sha1 = hashlib.sha1(usedforsecurity=False)
   sha1.update(file_path.read_bytes())
   return sha1.hexdigest() == file_hash

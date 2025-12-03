@@ -52,7 +52,7 @@ class Downloader(abc.ABC):
 
   @classmethod
   @abc.abstractmethod
-  def is_valid_version(cls, path_or_identifier: str):
+  def is_valid_version(cls, path_or_identifier: str) -> bool:
     pass
 
   @classmethod
@@ -85,8 +85,8 @@ class Downloader(abc.ABC):
     self._archive_dir.mkdir(parents=True, exist_ok=True)
     self._app_path: pth.LocalPath = pth.LocalPath()
     self._requested_version: BrowserVersion = UnknownBrowserVersion()
-    self._spinner = ui.spinner(title="BROWSER: ")
-    with self._spinner:
+    with ui.spinner(title="BROWSER: ") as spinner:
+      self._spinner = spinner
       self._app_path = self.find(archive_path_or_version_identifier)
     self._validate()
 

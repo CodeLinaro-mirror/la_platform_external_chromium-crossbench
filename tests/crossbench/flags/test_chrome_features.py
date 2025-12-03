@@ -1,14 +1,14 @@
 # Copyright 2025 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import annotations
 
 import abc
 import unittest
 
 from crossbench.flags.base import FrozenFlagsError
-from crossbench.flags.chrome_features import (ChromeBaseFeatures,
-                                              ChromeBlinkFeatures,
-                                              ChromeFeatures)
+from crossbench.flags.chrome_features import ChromeBaseFeatures, \
+    ChromeBlinkFeatures, ChromeFeatures
 from tests import test_helper
 
 
