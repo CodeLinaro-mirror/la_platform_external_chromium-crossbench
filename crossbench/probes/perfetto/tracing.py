@@ -82,6 +82,7 @@ V8_TRACE_CONFIG: Final[FrozenSet[str]] = frozenset((
     "toplevel",
     "toplevel.flow",
     "v8",
+    "v8.memory",
     "v8.execute",
     "wayland",
 ))

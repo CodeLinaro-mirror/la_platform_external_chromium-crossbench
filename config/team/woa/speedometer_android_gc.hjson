@@ -23,6 +23,7 @@
                       disabled_categories: "*"
                       enabled_categories: "disabled-by-default-v8.gc"
                       enabled_categories: "v8.gc"
+                      enabled_categories: "v8.memory"
                       enabled_categories: "disabled-by-default-cppgc"
                       enabled_categories: "cppgc"
                       enabled_categories: "blink.user_timing"
