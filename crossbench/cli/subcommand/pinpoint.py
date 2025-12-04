@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import abc
 import argparse
-from typing import TYPE_CHECKING, Final
+from concurrent.futures import ThreadPoolExecutor
+from typing import TYPE_CHECKING, Final, final
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -28,6 +29,7 @@ from crossbench.pinpoint.list_jobs import list_jobs
 from crossbench.pinpoint.list_stories import fetch_stories
 from crossbench.pinpoint.start_job import start_job
 from crossbench.pinpoint.user import UserEnum, list_user
+from crossbench.pinpoint.user_metrics import collect_metrics, init_metrics
 
 if TYPE_CHECKING:
   from crossbench.cli.cli import BenchmarkClass, CrossBenchCLI
@@ -85,8 +87,19 @@ class PinpointBaseSubcommand(abc.ABC):
   def add_cli_parser(self) -> argparse.ArgumentParser:
     pass
 
-  @abc.abstractmethod
+  @final
   def run(self, args: argparse.Namespace) -> None:
+    init_metrics()
+    with ThreadPoolExecutor() as executor:
+      [
+          f.result() for f in [
+              executor.submit(self.subcommand_run, args),
+              executor.submit(collect_metrics, args.action)
+          ]
+      ]
+
+  @abc.abstractmethod
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     pass
 
 
@@ -132,7 +145,7 @@ class PinpointListSubcommand(PinpointBaseSubcommand):
     return list_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     list_jobs(args.user, args.number, args.truncate, args.format)
 
 
@@ -177,7 +190,7 @@ class PinpointConfigSubcommand(PinpointJobSubcommand):
     return config_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     print_job_config(job_id=args.job, raw=args.raw, full=args.full)
 
 
@@ -295,7 +308,7 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
     return start_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     config = PinpointTryJobConfig.parse_and_override(
         config=args.config,
         benchmark=self.get_benchmark(args),
@@ -404,7 +417,7 @@ class PinpointCancelSubcommand(PinpointJobSubcommand):
     return cancel_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     cancel_job(args.job, args.reason)
 
 
@@ -423,7 +436,7 @@ class PinpointBaseFilteredListSubcommand(PinpointBaseSubcommand):
     return parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     items = self.fetch_list(args)
     filter_str = (args.filter or "").lower().strip()
     filtered_items = [item for item in items if filter_str in item.lower()]
@@ -501,7 +514,7 @@ class PinpointBuildsSubcommand(PinpointBaseSubcommand):
     return builds_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     list_builds(args.bot, args.limit)
 
 
@@ -522,7 +535,7 @@ class PinpointResultsSubcommand(PinpointJobSubcommand):
     return results_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     download_results(job_id=args.job, out_dir=args.output_directory)
 
 

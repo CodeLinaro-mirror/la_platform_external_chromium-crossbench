@@ -21,12 +21,17 @@ class PinpointSubcommandTest(unittest.TestCase):
   def setUp(self):
     super().setUp()
     self.cli = CrossBenchCLI()
-    self.patcher_print = mock.patch("builtins.print")
-    self.mock_print = self.patcher_print.start()
+    self.mock_print = self.enterContext(mock.patch("builtins.print"))
+    self.mock_init_metrics = self.enterContext(
+        mock.patch("crossbench.cli.subcommand.pinpoint.init_metrics"))
+    self.mock_collect_metrics = self.enterContext(
+        mock.patch("crossbench.cli.subcommand.pinpoint.collect_metrics"))
 
-  def tearDown(self):
-    super().tearDown()
-    self.patcher_print.stop()
+  @mock.patch("crossbench.cli.subcommand.pinpoint.list_jobs")
+  def test_pinpoint_user_metrics(self, _mock_list_job):
+    self.cli.run(["pinpoint", "list", "-n", "100"])
+    self.mock_init_metrics.assert_called_once_with()
+    self.mock_collect_metrics.assert_called_once_with("list")
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.fetch_bots")
   def test_pinpoint_bots_prints_filtered_bots(self, mock_fetch_bots):
