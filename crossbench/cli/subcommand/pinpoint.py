@@ -234,17 +234,18 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         "--commit",
         help="Git commit hash for both base and experiment builds. "
         "Accepts a commit hash, 'HEAD' (latest commit), or 'recent' "
-        "(the most recent build). Defaults to HEAD. "
+        "(the most recent build). Defaults to 'recent'. "
         "Can be overridden by --base-commit or --exp-commit.")
     start_parser.add_argument(
         "--base-commit",
         help="Git commit hash for the base build. Accepts a commit hash, "
         "'HEAD' (latest commit), or 'recent' (the most recent build). "
-        "Defaults to HEAD.")
+        "Overrides '--commit' for the base build.")
     start_parser.add_argument(
         "--exp-commit",
         help="Git commit hash for the experiment build. Accepts a commit hash, "
-        "'HEAD' (latest commit), or 'recent' (the most recent build).")
+        "'HEAD' (latest commit), or 'recent' (the most recent build)."
+        "Overrides '--commit' for the experiment build.")
     start_parser.add_argument(
         "--base-patch",
         help="Gerrit patch to apply to the base commit. Supported formats: "
