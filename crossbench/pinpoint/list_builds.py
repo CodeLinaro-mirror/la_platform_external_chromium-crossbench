@@ -27,6 +27,7 @@ class Build:
       "%Y-%m-%d %H:%M:%S".
   """
   commit: str
+  number: int
   date: str
 
 
@@ -51,6 +52,7 @@ def _convert_json_to_builds(builds_json: dict[str, Any]) -> list[Build]:
     if build.get("status") != "SUCCESS":
       continue
 
+    number = build.get("number", 0)
     commit = build.get("input", {}).get("gitilesCommit", {}).get("id")
     if not commit:
       continue
@@ -64,13 +66,14 @@ def _convert_json_to_builds(builds_json: dict[str, Any]) -> list[Build]:
       logging.warning("Invalid date format: %s", end_time)
       continue
 
-    builds.append(Build(commit, date))
+    builds.append(Build(commit=commit, number=number, date=date))
 
-  builds.sort(key=lambda build: build.date, reverse=True)
+  builds.sort(key=lambda build: build.number, reverse=True)
   return builds
 
 
 def _display_builds(builds: list[Build]) -> None:
-  headers = ["Commit", "Date"]
-  table_data = [[build.commit, format_time(build.date)] for build in builds]
-  print(tabulate(table_data, headers=headers))
+  headers = ["Commit", "Number", "Date"]
+  table_data = [[build.commit, build.number,
+                 format_time(build.date)] for build in builds]
+  print(tabulate(table_data, headers=headers, numalign="left"))

@@ -29,7 +29,7 @@ class VariantConfigTest(MockHttpRequestsMixin):
     self.mock_fetch_builds = self.enterContext(
         mock.patch("crossbench.pinpoint.config.fetch_builds"))
     self.mock_fetch_builds.return_value = [
-        Build(commit=_TEST_RECENT_COMMIT, date="2025-11-01 00:00:00"),
+        Build(commit=_TEST_RECENT_COMMIT, number=1, date="2025-11-01 00:00:00"),
     ]
 
   def test_parse_variant(self):
@@ -153,7 +153,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
     self.mock_fetch_builds = self.enterContext(
         mock.patch("crossbench.pinpoint.config.fetch_builds"))
     self.mock_fetch_builds.return_value = [
-        Build(commit=_TEST_RECENT_COMMIT, date="2025-11-02 00:00:00"),
+        Build(commit=_TEST_RECENT_COMMIT, number=1, date="2025-11-02 00:00:00"),
     ]
     self.mock_show_warnings = self.enterContext(
         mock.patch("crossbench.pinpoint.config.show_warnings"))
