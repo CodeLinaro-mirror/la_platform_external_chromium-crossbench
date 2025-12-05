@@ -129,7 +129,7 @@ class PinpointTryJobConfig(ConfigObject):
   story_tags: str | None = None
   base: VariantConfig = dataclasses.field(default_factory=VariantConfig)
   experiment: VariantConfig = dataclasses.field(default_factory=VariantConfig)
-  repeat: int = 100
+  repeat: int = 30
   bug: int | None = None
 
   @classmethod
@@ -169,7 +169,7 @@ class PinpointTryJobConfig(ConfigObject):
     parser.add_argument(
         "repeat",
         type=NumberParser.positive_int,
-        default=100,
+        default=30,
         help="The number of times to repeat the experiment.")
     parser.add_argument(
         "bug",

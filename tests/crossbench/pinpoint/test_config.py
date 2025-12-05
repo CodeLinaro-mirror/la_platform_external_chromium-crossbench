@@ -358,7 +358,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
             "configuration": "test_bot",
             "story": "test_story",
             "story_tags": None,
-            "initial_attempt_count": 100,
+            "initial_attempt_count": 30,
             "bug_id": None,
             "base_git_hash": "HEAD",
             "end_git_hash": "HEAD",
