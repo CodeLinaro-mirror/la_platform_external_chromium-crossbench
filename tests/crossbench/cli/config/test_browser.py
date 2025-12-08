@@ -371,6 +371,19 @@ class BrowserConfigTestCase(BaseConfigTestCase):
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+    ]
+    self.assertEqual(
+        BrowserConfig.parse(
+            "adb:com.google.android.libraries.ads.mobile.maitier.testapps.webview"
+        ),
+        BrowserConfig(
+            pth.AnyPosixPath(
+                "com.google.android.libraries.ads.mobile.maitier.testapps.webview"
+            ), DriverConfig(BrowserDriverType.ANDROID)))
+    self.assertListEqual(self.platform.sh_results, [])
+
   def test_parse_simple_with_local_apk(self):
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT

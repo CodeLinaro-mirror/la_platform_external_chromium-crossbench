@@ -20,7 +20,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData
-from crossbench.helper.path_finder import BuildtoolFinder
+from crossbench.helper.path_finder import BundletoolFinder
 from crossbench.parse import NumberParser
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
@@ -43,6 +43,32 @@ if TYPE_CHECKING:
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
 ANDROID_PERMISSIONS: Final = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
+
+# Template for Perfetto config to capture Java heaps.
+ANDROID_JAVA_HPROF_PERFETTO_CFG = """buffers {{
+  size_kb: {size_kb}
+  fill_policy: DISCARD
+}}
+
+data_sources {{
+  config {{
+    name: "android.java_hprof"
+    java_hprof_config {{
+      process_cmdline: "{process_cmdline}"
+      dump_smaps: true
+    }}
+  }}
+}}
+
+data_sources {{
+  config {{
+    name: "android.packages_list"
+  }}
+}}
+
+data_source_stop_timeout_ms: {data_source_stop_timeout_ms}
+duration_ms: 1000
+"""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -110,16 +136,11 @@ class Adb:
     self._host_platform: Final[Platform] = host_platform
     self._adb_bin: Final[pth.AnyPath] = _find_adb_bin(host_platform, adb_bin)
     self._bundletool: Final[pth.AnyPath
-                            | None] = self._find_bundletool(bundletool)
+                            | None] = BundletoolFinder.find_binary(
+                                host_platform, bundletool)
     serial_id, device_info = self._start(device_identifier)
     self._serial_id: Final[str] = serial_id
     self._device_info: Final[AndroidDeviceInfo] = device_info
-
-  def _find_bundletool(self,
-                       bundletool: Optional[pth.AnyPath]) -> pth.AnyPath | None:
-    if bundletool:
-      return self._host_platform.parse_binary_path(bundletool)
-    return BuildtoolFinder(self._host_platform).path
 
   def _start(
       self,
@@ -204,7 +225,6 @@ class Adb:
            stdout: ProcessIo = None,
            stderr: ProcessIo = None,
            stdin: ProcessIo = None,
-           env: Optional[Mapping[str, str]] = None,
            quiet: bool = False,
            check: bool = True,
            use_serial_id: bool = True) -> subprocess.CompletedProcess:
@@ -216,7 +236,6 @@ class Adb:
         stdout=stdout,
         stderr=stderr,
         stdin=stdin,
-        env=env,
         quiet=quiet,
         check=check)
 
@@ -254,7 +273,19 @@ class Adb:
           e.returncode, e.stderr, e.stdout)
       return None
 
-  def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
+  def build_shell_cmd(
+      self,
+      *args: CmdArg,
+      shell: bool = False,
+      env: Optional[Mapping[str, str]] = None,
+      cwd: Optional[pth.AnyPath] = None,
+  ) -> ListCmdArgs:
+    if env:
+      # TODO: support env with "export FOO=bar;" prefixes
+      raise ValueError("ADB shell only supports an empty env for now.")
+    if cwd:
+      # TODO: support env with "cd foo/bar &&" prefix
+      raise ValueError("ADB shell does not support custom cwd")
     self._host_platform.validate_shell_args(args, shell)
     shell_cmd: ListCmdArgs = ["shell"]
     if not shell:
@@ -274,9 +305,16 @@ class Adb:
                    encoding: str = "utf-8",
                    stdin: ProcessIo = None,
                    env: Optional[Mapping[str, str]] = None,
+                   cwd: Optional[pth.AnyPath] = None,
                    check: bool = True) -> str:
     result = self.shell_stdout_bytes(
-        *args, shell=shell, quiet=quiet, stdin=stdin, env=env, check=check)
+        *args,
+        shell=shell,
+        quiet=quiet,
+        stdin=stdin,
+        env=env,
+        cwd=cwd,
+        check=check)
     return result.decode(encoding)
 
   def shell_stdout_bytes(self,
@@ -285,15 +323,14 @@ class Adb:
                          quiet: bool = False,
                          stdin: ProcessIo = None,
                          env: Optional[Mapping[str, str]] = None,
+                         cwd: Optional[pth.AnyPath] = None,
                          check: bool = True) -> bytes:
     # -e: choose escape character, or "none"; default '~'
     # -n: don't read from stdin
     # -T: disable pty allocation
     # -t: allocate a pty if on a tty (-tt: force pty allocation)
     # -x: disable remote exit codes and stdout/stderr separation
-    if env:
-      raise ValueError("ADB shell only supports an empty env for now.")
-    shell_cmd = self.build_shell_cmd(*args, shell=shell)
+    shell_cmd = self.build_shell_cmd(*args, shell=shell, env=env, cwd=cwd)
     return self._host_platform.sh_stdout_bytes(
         *shell_cmd, stdin=stdin, quiet=quiet, check=check)
 
@@ -305,19 +342,17 @@ class Adb:
             stderr: ProcessIo = None,
             stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
+            cwd: Optional[pth.AnyPath] = None,
             quiet: bool = False,
             check: bool = True) -> subprocess.CompletedProcess:
-    if env:
-      raise ValueError("ADB shell only supports an empty env for now.")
     # See shell_stdout for more `adb shell` options.
-    shell_cmd = self.build_shell_cmd(*args, shell=shell)
+    shell_cmd = self.build_shell_cmd(*args, shell=shell, env=env, cwd=cwd)
     return self._host_platform.sh(
         *shell_cmd,
         capture_output=capture_output,
         stdout=stdout,
         stderr=stderr,
         stdin=stdin,
-        env=env,
         quiet=quiet,
         check=check)
 
@@ -733,8 +768,14 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return int(float(match_result.group("brightness")) * 100)
 
   @override
-  def build_shell_cmd(self, *args: CmdArg, shell: bool = False) -> ListCmdArgs:
-    return self.adb.build_shell_cmd(*args, shell=shell)
+  def build_shell_cmd(
+      self,
+      *args: CmdArg,
+      shell: bool = False,
+      env: Optional[Mapping[str, str]] = None,
+      cwd: Optional[pth.AnyPath] = None,
+  ) -> ListCmdArgs:
+    return self.adb.build_shell_cmd(*args, shell=shell, env=env, cwd=cwd)
 
   @override
   def sh(self,
@@ -745,6 +786,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
          env: Optional[Mapping[str, str]] = None,
+         cwd: Optional[pth.AnyPath] = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
     return self.adb.shell(
@@ -755,6 +797,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         stderr=stderr,
         stdin=stdin,
         env=env,
+        cwd=cwd,
         quiet=quiet,
         check=check)
 
@@ -765,9 +808,16 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                       quiet: bool = False,
                       stdin: ProcessIo = None,
                       env: Optional[Mapping[str, str]] = None,
+                      cwd: Optional[pth.AnyPath] = None,
                       check: bool = True) -> bytes:
     return self.adb.shell_stdout_bytes(
-        *args, shell=shell, stdin=stdin, env=env, quiet=quiet, check=check)
+        *args,
+        shell=shell,
+        stdin=stdin,
+        env=env,
+        cwd=cwd,
+        quiet=quiet,
+        check=check)
 
   @override
   def pull(self, from_path: pth.AnyPath,
@@ -887,8 +937,27 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
     return meminfo
 
-  def dump_java_heap(self, identifier: str, path: pth.AnyPath) -> None:
-    self.sh("am", "dumpheap", identifier, self.path(path))
+  def dump_java_heap(self, identifier: str, label: str,
+                     trace_buffer_size_kb: int,
+                     timeout: dt.timedelta) -> pth.AnyPath:
+
+    timeout_ms = timeout / dt.timedelta(milliseconds=1)
+    cfg_path = self.path("/data/misc/perfetto-configs/{}.pbtxt".format(label))
+    dump_path = self.path(
+        "/data/misc/perfetto-traces/{}.trace.pb".format(label))
+    cfg = ANDROID_JAVA_HPROF_PERFETTO_CFG.format(
+        size_kb=trace_buffer_size_kb,
+        process_cmdline=identifier,
+        data_source_stop_timeout_ms=timeout_ms)
+    try:
+      self.write_text(cfg_path, cfg)
+      self.sh("perfetto", "--config", cfg_path, "--txt", "--out", dump_path)
+    except Exception:
+      self.rm(dump_path, missing_ok=True)
+      raise
+
+    self.rm(cfg_path, missing_ok=True)
+    return dump_path
 
   @functools.lru_cache(maxsize=1)
   @override

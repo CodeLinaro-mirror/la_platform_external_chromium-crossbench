@@ -90,15 +90,6 @@ class ViewportInfo:
 class AndroidInputActionRunner(DefaultActionRunner):
   """Custom ActionRunner for Android."""
 
-  # Represents the position of the chrome main window relative to the entire
-  # screen as reported by Android window manager.
-  _raw_chrome_window_bounds: DisplayRectangle | None = None
-
-  @property
-  def raw_chrome_window_bounds(self) -> DisplayRectangle:
-    assert self._raw_chrome_window_bounds, "Uninitialized chrome window bounds"
-    return self._raw_chrome_window_bounds
-
   _BOUNDS_RE: Final[re.Pattern] = re.compile(
       r"mAppBounds=Rect\((?P<left>\d+), (?P<top>\d+) - (?P<right>\d+),"
       r" (?P<bottom>\d+)\)")
@@ -274,37 +265,34 @@ return [
      height) = actions.js(
          script, arguments=[selector, scroll_into_view])
 
-    # If the chrome window position has not yet been found,
-    # initialize it now.
-    # Note: this assumes the chrome app will not be moved or resized during
-    # the test.
-    if not self._raw_chrome_window_bounds:
-      self._raw_chrome_window_bounds = self._find_chrome_window_size(run)
+    raw_chrome_window_bounds: DisplayRectangle = self._find_chrome_window_size(
+        run)
 
     element_rect: DisplayRectangle | None = None
     if found_element:
       element_rect = DisplayRectangle(Point(left, top), width, height)
 
-    return ViewportInfo(self.raw_chrome_window_bounds, inner_height,
-                        inner_width, element_rect)
+    return ViewportInfo(raw_chrome_window_bounds, inner_height, inner_width,
+                        element_rect)
 
   # Returns the name of the browser's main window as reported by android's
   # window manager.
   def _get_browser_window_name(self,
                                browser_attributes: BrowserAttributes) -> str:
     if browser_attributes.is_chrome:
-      return "chrome.Main"
+      return "chrome"
 
     raise RuntimeError("Unsupported browser for android action runner.")
 
   def _find_chrome_window_size(self, run: Run) -> DisplayRectangle:
     # Find the chrome app window position by dumping the android app window
-    # list.
+    # list. The list is sorted from highest to lowest z-order, so the first
+    # Chrome window is the focused window.
     #
-    # Chrome's main view is always called 'chrome.Main' and is followed by the
+    # Chrome's main view always contains 'chrome' and is followed by the
     # configuration for that window.
     #
-    # The mAppBounds config of the chrome.Main window contains the dimensions
+    # The mAppBounds config of the chrome window contains the dimensions
     # for the visible part of the current chrome window formatted like this for
     # a 800 height by 480 width window:
     #

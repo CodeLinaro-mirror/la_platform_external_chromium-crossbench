@@ -515,7 +515,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       RunThreadGroup([])
 
   def test_different_runners(self):
-    runs_a = list(self.default_runner().get_runs())
+    runs_a = list(self.default_runner()._get_runs())
     self.out_dir = self.out_dir.parent / "second_out_dir"
     runner_b = Runner(
         self.out_dir, [MockChromeDev("chrome-dev-2")],
@@ -523,7 +523,7 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         platform=self.platform,
         throw=True,
         in_memory_result_db=True)
-    runs_b = list(runner_b.get_runs())
+    runs_b = list(runner_b._get_runs())
     self.assertNotEqual(runs_a[0].runner, runs_b[0].runner)
     with self.assertRaises(AssertionError) as cm:
       RunThreadGroup(runs_a + runs_b)
@@ -538,7 +538,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
 
   def test_simple_runs(self):
     runner = self.default_runner()
-    runs = tuple(runner.get_runs())
+    runner._setup_runs()
+    runs = tuple(runner.all_runs)
     thread = RunThreadGroup(runs)
     self.assertEqual(thread.index, 0)
     self.assertEqual(thread.runner, runner)
@@ -570,7 +571,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     probe = MockProbe("custom_probe_data")
     runner.attach_probe(probe)
     self.assertTrue(probe.is_attached)
-    runs = tuple(runner.get_runs())
+    runner._setup_runs()
+    runs = tuple(runner.all_runs)
     thread = RunThreadGroup(runs)
     failing_session, successful_session = thread.browser_sessions
     failing_run, successful_run = runs
@@ -609,7 +611,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     probe = MockProbe("custom_probe_data")
     runner.attach_probe(probe)
     self.assertTrue(probe.is_attached)
-    runs = tuple(runner.get_runs())
+    runner._setup_runs()
+    runs = tuple(runner.all_runs)
     thread = RunThreadGroup(runs)
     failing_session, successful_session = thread.browser_sessions
     failing_run, successful_run = runs
@@ -655,7 +658,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         benchmark,
         platform=self.platform,
         in_memory_result_db=True)
-    runs = tuple(runner.get_runs())
+    runner._setup_runs()
+    runs = tuple(runner.all_runs)
     thread = RunThreadGroup(runs)
     failing_session, successful_session = thread.browser_sessions
     failing_run, successful_run = runs
@@ -691,7 +695,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
   def test_run_fail_run(self):
     # 4 runs = (2 browser) x (2 stories)
     runner = self.default_runner(throw=False)
-    runs = tuple(runner.get_runs())
+    runner._setup_runs()
+    runs = tuple(runner.all_runs)
     thread = RunThreadGroup(runs)
     failing_run = runs[0]
     failing_session = failing_run.browser_session
@@ -728,7 +733,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
   def test_run_ignore_partial_failures(self):
     # 4 runs = (2 browser) x (2 stories)
     runner = self.default_runner(throw=False)
-    runs = tuple(runner.get_runs())
+    runner._setup_runs()
+    runs = tuple(runner.all_runs)
     thread = RunThreadGroup(runs)
     failing_run = runs[0]
     failing_session = failing_run.browser_session

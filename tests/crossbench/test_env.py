@@ -13,8 +13,8 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.settings import Settings
-from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationError, \
-    ValidationMode
+from crossbench.env.base import ValidationError
+from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import url_helper
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -117,7 +117,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
   def test_failing_probe_validation(self):
 
     def mock_validate_env(env):
-      env.handle_warning("invalid probe")
+      env.handle_warning("invalid mock probe")
 
     mock_probe = mock.Mock()
     mock_probe.configure_mock(NAME="mock_probe")
@@ -127,7 +127,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
 
     with self.assertRaises(ValidationError) as cm:
       env.validate()
-    self.assertIn("mock_probe", str(cm.exception))
+    self.assertIn("invalid mock probe", str(cm.exception))
 
     mock_probe.validate_env.assert_called_once()
 

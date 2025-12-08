@@ -723,6 +723,10 @@ class _PrimitiveConfigObject(ConfigObject):
     if path.is_file() or path.is_dir():
       return cls(str(path.resolve()))
 
+    logging.warning(
+        "The following value was detected as path-like but does not point "
+        "to a valid path. If parsing is failing, perhaps the path is "
+        "incorrect: %s", original_value)
     return cls(original_value)
 
 
