@@ -1,6 +1,16 @@
-alexschulze@google.com
-cbruni@google.com
+alexschulze@chromium.org
+cbruni@chromium.org
+johnchen@chromium.org
 kalutes@google.com
 khokhlov@google.com
-machenbach@google.com
-include platform/system/core:/janitors/OWNERS #{LAST_RESORT_SUGGESTION}
+machenbach@chromium.org
+pthier@chromium.org
+vahl@chromium.org
+
+# Dependency rolls.
+per-file DEPS=chromium-autoroll@skia-public.iam.gserviceaccount.com
+per-file buildtools=chromium-autoroll@skia-public.iam.gserviceaccount.com
+per-file third_party/clang-format/script=chromium-autoroll@skia-public.iam.gserviceaccount.com
+per-file third_party/hjson_js=chromium-autoroll@skia-public.iam.gserviceaccount.com
+per-file third_party/tsproxy=chromium-autoroll@skia-public.iam.gserviceaccount.com
+per-file third_party/webpagereplay=chromium-autoroll@skia-public.iam.gserviceaccount.com
