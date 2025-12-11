@@ -52,7 +52,7 @@ _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME: Final[immutabledict[
         "loadline-tablet": "loadline_tablet.crossbench",
         "loadline-tablet-debug": None,
         "loadline-tablet-fast": None,
-        "loadline2-phone": None,
+        "loadline2-phone": "loadline_phone2.crossbench",
         "loadline2-phone-debug": None,
         "loadline2-tablet": None,
         "loadline2-tablet-debug": None,
