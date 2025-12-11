@@ -8,7 +8,7 @@ import pathlib
 from typing import Any
 from urllib.parse import urlparse
 
-from google.cloud import storage
+import google.cloud.storage as gcloud_storage
 from typing_extensions import override
 
 from crossbench import path as pth
@@ -101,7 +101,7 @@ class PinpointJobResults:
       bucket_name = path_segments[0]
       blob_name = path_segments[1]
 
-      client = storage.Client()
+      client = gcloud_storage.Client()
       bucket = client.bucket(bucket_name)
       blob = bucket.blob(blob_name)
 
