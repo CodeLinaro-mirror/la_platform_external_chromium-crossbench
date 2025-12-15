@@ -646,6 +646,23 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action, action_2)
     action_2.validate()
 
+  def test_parse_wait_for_element_check_rect(self):
+    config_dict = {
+        "action": "wait_for_element",
+        "selector": "#button",
+        "check_rect": True
+    }
+    action = WaitForElementAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.WAIT_FOR_ELEMENT)
+    self.assertEqual(action.selector, "#button")
+    self.assertTrue(action.check_rect)
+    action.validate()
+
+    action_2 = WaitForElementAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
   def test_js_script(self):
     config_dict = {
         "action": "js",

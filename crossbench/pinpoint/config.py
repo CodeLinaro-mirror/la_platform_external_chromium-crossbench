@@ -24,7 +24,7 @@ from crossbench.pinpoint.list_stories import fetch_stories
 class VariantConfig(ConfigObject):
   """Represents one arm of an A/B test (e.g., base or experiment)."""
 
-  commit: str = "HEAD"
+  commit: str = "recent"
   patch: str | None = None
   flags: FlagsConfig = dataclasses.field(default_factory=FlagsConfig)
 
@@ -33,7 +33,7 @@ class VariantConfig(ConfigObject):
     parser = ConfigParser(cls)
     parser.add_argument(
         "commit",
-        default="HEAD",
+        default="recent",
         type=cls.parse_commit,
         help="Git commit hash for the build. Accepts a full commit hash, "
         "'HEAD' (latest commit), or 'recent' (the most recent build).")
@@ -129,7 +129,7 @@ class PinpointTryJobConfig(ConfigObject):
   story_tags: str | None = None
   base: VariantConfig = dataclasses.field(default_factory=VariantConfig)
   experiment: VariantConfig = dataclasses.field(default_factory=VariantConfig)
-  repeat: int = 100
+  repeat: int = 30
   bug: int | None = None
 
   @classmethod
@@ -169,7 +169,7 @@ class PinpointTryJobConfig(ConfigObject):
     parser.add_argument(
         "repeat",
         type=NumberParser.positive_int,
-        default=100,
+        default=30,
         help="The number of times to repeat the experiment.")
     parser.add_argument(
         "bug",

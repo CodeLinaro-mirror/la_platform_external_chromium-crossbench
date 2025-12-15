@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-from typing import Final
 from unittest import mock
 
 import requests
@@ -13,12 +12,10 @@ from crossbench.exception import MultiException
 from crossbench.pinpoint.api import CHROMEPERF_TEST_SUITES_API_URL
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from tests import test_helper
-from tests.crossbench.pinpoint.auth_session_mixin import MockAuthSessionMixin
+from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 
-class ListBenchmarksTest(MockAuthSessionMixin):
-  _get_auth_session_patch_target: Final[
-      str] = "crossbench.pinpoint.list_benchmarks.get_auth_session"
+class ListBenchmarksTest(MockHttpRequestsMixin):
 
   def setUp(self):
     super().setUp()
@@ -34,26 +31,21 @@ class ListBenchmarksTest(MockAuthSessionMixin):
       mock_response.raise_for_status.return_value = None
       return mock_response
 
-    self.mock_session.post.side_effect = mock_post_side_effect
+    self.mock_post.side_effect = mock_post_side_effect
 
   def test_fetch_benchmarks(self):
     benchmarks = fetch_benchmarks()
 
     self.assertEqual(benchmarks, ["benchmark1", "benchmark2", "benchmark3"])
-    self.mock_get_auth_session.assert_called_once()
-    self.mock_session.post.assert_called_once_with(
-        CHROMEPERF_TEST_SUITES_API_URL)
+    self.mock_post.assert_called_once_with(CHROMEPERF_TEST_SUITES_API_URL)
 
   def test_fetch_benchmarks_api_error(self):
-    self.mock_session.post.side_effect = requests.exceptions.HTTPError(
-        "API Error")
+    self.mock_post.side_effect = requests.exceptions.HTTPError("API Error")
 
     with self.assertRaises(MultiException):
       fetch_benchmarks()
 
-    self.mock_get_auth_session.assert_called_once()
-    self.mock_session.post.assert_called_once_with(
-        CHROMEPERF_TEST_SUITES_API_URL)
+    self.mock_post.assert_called_once_with(CHROMEPERF_TEST_SUITES_API_URL)
 
 
 if __name__ == "__main__":

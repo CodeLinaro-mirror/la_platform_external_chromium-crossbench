@@ -38,6 +38,7 @@ class WaitForElementAction(Action):
         type=NumberParser.positive_int,
         required=False,
         default=1)
+    parser.add_argument("check_rect", type=bool, required=False, default=False)
     parser.add_argument("or_more", type=bool, required=False, default=False)
     return parser
 
@@ -45,11 +46,13 @@ class WaitForElementAction(Action):
                selector: str,
                expected_count: int,
                or_more: bool,
+               check_rect: bool,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._selector = selector
     self._expected_count = expected_count
     self._or_more = or_more
+    self._check_rect = check_rect
     super().__init__(timeout, index)
 
   @property
@@ -63,6 +66,10 @@ class WaitForElementAction(Action):
   @property
   def or_more(self) -> bool:
     return self._or_more
+
+  @property
+  def check_rect(self) -> bool:
+    return self._check_rect
 
   @override
   def run_with(self, run: Run, action_runner: ActionRunner) -> None:
@@ -81,4 +88,5 @@ class WaitForElementAction(Action):
     details["selector"] = self.selector
     details["expected_count"] = self.expected_count
     details["or_more"] = self.or_more
+    details["check_rect"] = self.check_rect
     return details
