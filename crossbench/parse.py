@@ -841,6 +841,16 @@ class DurationParser:
     return duration
 
   @classmethod
+  def duration_or_user_input(
+      cls,
+      time_value: Any,
+      name: str = "duration",
+      default_time_unit: TimeUnit = TimeUnit.SECOND) -> dt.timedelta:
+    if time_value == "input":
+      return dt.timedelta.max
+    return cls.positive_or_zero_duration(time_value, name, default_time_unit)
+
+  @classmethod
   def any_duration(
       cls,
       time_value: Any,
