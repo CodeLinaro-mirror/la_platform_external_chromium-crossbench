@@ -100,8 +100,8 @@ class JetStreamProbe(
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        story_group.results[self].json
-        for story_group in group.repetitions_groups)
+        repetition_group.results[self].json
+        for repetition_group in group.repetitions_groups)
     # We discard the score when merging separate line item runs, recompute it!
     if self.TOTAL_METRIC_KEY not in merged.data:
       merged.data[self.TOTAL_METRIC_KEY] = self._compute_total_score(merged)

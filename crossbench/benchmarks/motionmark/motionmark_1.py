@@ -55,8 +55,8 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        story_group.results[self].json
-        for story_group in group.repetitions_groups)
+        repetition_group.results[self].json
+        for repetition_group in group.repetitions_groups)
     return self.write_group_result(group, merged)
 
   @override
