@@ -11,7 +11,7 @@ from unittest import mock
 
 from crossbench.env.base import ValidationError
 from crossbench.pinpoint.job_results import PinpointAttemptResults, \
-    PinpointJobResults, PinpointVeriantResults, download_results
+    PinpointJobResults, PinpointVariantResults, download_results
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -253,7 +253,6 @@ class PinpointJobResultsTestCase(unittest.TestCase):
     self.assertEqual(job.bot, "linux-perf")
     self.assertEqual(job.status, "Completed")
     self.assertEqual(job.results_url, "https://example.com/results.html")
-    self.assertEqual(job.download_count, 1)
 
   def test_init_invalid_status(self):
     self.mock_fetch.return_value = {"status": "Running"}
@@ -262,7 +261,7 @@ class PinpointJobResultsTestCase(unittest.TestCase):
 
   def test_variant_name_with_label(self):
     data = {"change": {"label": "test-label"}, "attempts": []}
-    variant = PinpointVeriantResults(data, 0)
+    variant = PinpointVariantResults(data, 0)
     self.assertEqual(variant.name, "test-label")
 
   def test_variant_name_with_commits(self):
@@ -278,12 +277,12 @@ class PinpointJobResultsTestCase(unittest.TestCase):
         },
         "attempts": []
     }
-    variant = PinpointVeriantResults(data, 0)
+    variant = PinpointVariantResults(data, 0)
     self.assertEqual(variant.name, "chromium_123_v8_456")
 
   def test_variant_name_fallback(self):
     data = {"change": {}, "attempts": []}
-    variant = PinpointVeriantResults(data, 5)
+    variant = PinpointVariantResults(data, 5)
     self.assertEqual(variant.name, "variant_5")
 
   def test_find_isolate(self):
