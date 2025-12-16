@@ -16,6 +16,7 @@ data_sources {
       enabled_categories: "toplevel"
       enabled_categories: "disabled-by-default-v8"
       enabled_categories: "v8"
+      enabled_categories: "v8.memory"
       enabled_categories: "disabled-by-default-v8.compile"
       enabled_categories: "v8.console"
       enabled_categories: "v8.execute"

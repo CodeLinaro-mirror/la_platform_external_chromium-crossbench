@@ -7,21 +7,21 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import time
-from typing import (TYPE_CHECKING, Any, Callable, Final, Optional, Sequence,
-                    cast)
+from typing import TYPE_CHECKING, Any, Callable, Final, Optional, Sequence, \
+    cast
 
 from typing_extensions import override
 
-from crossbench.action_runner.base import (ActionRunner,
-                                           InputSourceNotImplementedError)
+from crossbench.action_runner.base import ActionRunner, \
+    InputSourceNotImplementedError
 from crossbench.action_runner.default_bond_action_runner import \
     DefaultBondActionRunner
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
 from crossbench.browsers.chromium.devtools import \
     DevToolsInBrowserClient as DevToolsClient
-from crossbench.probes.screenshot import (ScreenshotProbe,
-                                          ScreenshotProbeContext)
+from crossbench.probes.screenshot import ScreenshotProbe, \
+    ScreenshotProbeContext
 from crossbench.runner.probe_context_lookup_error import \
     ProbeContextLookupError
 
@@ -276,7 +276,8 @@ class DefaultActionRunner(ActionRunner):
           selector=action.selector,
           expected_count=action.expected_count,
           or_more=action.or_more,
-          timeout=action.timeout)
+          timeout=action.timeout,
+          check_element_rect=action.check_rect)
 
   @override
   def wait_for_condition(self, run: Run,
