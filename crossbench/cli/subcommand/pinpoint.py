@@ -155,13 +155,27 @@ class PinpointJobSubcommand(PinpointBaseSubcommand):
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
     parser = self.create_parser()
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "job_pos",
+        nargs="?",
+        type=parse_job_id,
+        help="The ID of the job as a positinal argument. Can be a full URL, a "
+        "part of a URL with a job ID, or just the ID.")
+    group.add_argument(
         "--job",
-        required=True,
         type=parse_job_id,
         help="The ID of the job. Can be a full URL, a part of a URL with a job "
         "ID, or just the ID.")
     return parser
+
+  @override
+  def subcommand_run(self, args: argparse.Namespace) -> None:
+    self.job_subcommand_run(args.job_pos or args.job, args)
+
+  @abc.abstractmethod
+  def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
+    pass
 
   @abc.abstractmethod
   def create_parser(self) -> argparse.ArgumentParser:
@@ -190,8 +204,8 @@ class PinpointConfigSubcommand(PinpointJobSubcommand):
     return config_parser
 
   @override
-  def subcommand_run(self, args: argparse.Namespace) -> None:
-    print_job_config(job_id=args.job, raw=args.raw, full=args.full)
+  def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
+    print_job_config(job_id=job_id, raw=args.raw, full=args.full)
 
 
 class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
@@ -418,8 +432,8 @@ class PinpointCancelSubcommand(PinpointJobSubcommand):
     return cancel_parser
 
   @override
-  def subcommand_run(self, args: argparse.Namespace) -> None:
-    cancel_job(args.job, args.reason)
+  def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
+    cancel_job(job_id=job_id, reason=args.reason)
 
 
 class PinpointBaseFilteredListSubcommand(PinpointBaseSubcommand):
@@ -536,8 +550,8 @@ class PinpointResultsSubcommand(PinpointJobSubcommand):
     return results_parser
 
   @override
-  def subcommand_run(self, args: argparse.Namespace) -> None:
-    download_results(job_id=args.job, out_dir=args.output_directory)
+  def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
+    download_results(job_id=job_id, out_dir=args.output_directory)
 
 
 class PinpointSubcommand(CrossbenchSubcommand):
