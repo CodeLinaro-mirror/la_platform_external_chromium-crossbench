@@ -24,7 +24,6 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
   def get_tmp_dir(self):
     path = pathlib.Path("/tmp/test_results")
-    path.mkdir(parents=True, exist_ok=True)
     return path
 
   def setUp(self):
@@ -229,6 +228,42 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
     with self.assertRaisesRegex(ValidationError, "Missing binaries.*cas"):
       download_results(_JOB_ID, out_dir)
 
+  def test_download_results_file_exists_no_force(self):
+    self.mock_fetch.return_value = {
+        "configuration": "linux-perf",
+        "results_url": _RESULTS_URL,
+        "status": "Completed",
+        "state": [],
+        "arguments": {
+            "benchmark": "speedometer3",
+            "configuration": "linux-perf",
+        }
+    }
+    out_dir = self.get_tmp_dir()
+    out_dir.mkdir(parents=True)
+
+    with self.assertRaises(FileExistsError):
+      download_results(_JOB_ID, out_dir)
+
+  def test_download_results_file_exists_with_force(self):
+    self.mock_fetch.return_value = {
+        "configuration": "linux-perf",
+        "results_url": _RESULTS_URL,
+        "status": "Completed",
+        "state": [],
+        "arguments": {
+            "benchmark": "speedometer3",
+            "configuration": "linux-perf",
+        }
+    }
+    out_dir = self.get_tmp_dir()
+    out_dir.mkdir(parents=True)
+
+    download_results(_JOB_ID, out_dir, force=True)
+
+    self.mock_fetch.assert_called_once_with(_JOB_ID, full=True)
+    self.assertTrue((out_dir / f"{_JOB_ID}.html").exists())
+
 
 class PinpointJobResultsTestCase(unittest.TestCase):
 
@@ -239,12 +274,24 @@ class PinpointJobResultsTestCase(unittest.TestCase):
     self.mock_fetch.return_value = {
         "results_url": "https://example.com/results.html",
         "status": "Completed",
+        "created": "2024-01-01T12:00:00Z",
         "state": [],
         "arguments": {
             "benchmark": "speedometer3",
             "configuration": "linux-perf",
         }
     }
+
+  def test_created_date_valid(self):
+    job = PinpointJobResults(_JOB_ID)
+    self.assertEqual(job.created_date, "2024-01-01_120000")
+
+  def test_created_date_invalid(self):
+    self.mock_fetch.return_value["created"] = "invalid-date"
+    job = PinpointJobResults(_JOB_ID)
+    with self.assertLogs(level="WARNING") as cm:
+      self.assertEqual(job.created_date, "invalid-date")
+    self.assertIn("Invalid created time", cm.output[0])
 
   def test_init_valid(self):
     job = PinpointJobResults(_JOB_ID)

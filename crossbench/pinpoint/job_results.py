@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import pathlib
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
+from functools import cache, partial
 from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import urlparse
 
@@ -65,6 +66,17 @@ class PinpointJobResults:
   def status(self) -> str:
     return self.data["status"]
 
+  @property
+  @cache
+  def created_date(self) -> str:
+    time_str = self.data.get("created", "")
+    try:
+      dt_object = dt.datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+      return dt_object.strftime("%Y-%m-%d_%H%M%S")
+    except ValueError:
+      logging.warning("Invalid created time: %s", time_str)
+      return time_str
+
   def download(self, out_dir: pth.LocalPath) -> None:
     self.download_index = 0
     with ui.spinner(title="Downloading") as spinner:
@@ -96,8 +108,6 @@ class PinpointJobResults:
               partial(self._download_from_storage, spinner, trace_url,
                       attempt_dir / trace_name))
     return tasks
-
-
 
   def _next_progress_message(self) -> str:
     self.download_index += 1
@@ -211,13 +221,18 @@ class Environment(BaseEnv):
     pass
 
 
-def download_results(job_id: str, out_dir: pth.LocalPath | None = None) -> None:
+def download_results(job_id: str,
+                     out_dir: pth.LocalPath | None = None,
+                     force: bool = False) -> None:
   """Downloads results of a Pinpoint job."""
   Environment(plt.PLATFORM).check_installed(["cas"])
   job_results = PinpointJobResults(job_id)
 
-  out_dir = out_dir or Runner.get_out_dir(
-      pathlib.Path.cwd(), suffix=job_results.name)
+  out_dir = out_dir or Runner.get_out_dir(pathlib.Path.cwd(
+  )) / ".." / f"{job_results.created_date}_pinpoint_{job_results.job_id}"
+  if out_dir.exists() and not force:
+    raise FileExistsError(
+        f"Output directory {out_dir} already exists. Use --force to overwrite.")
   out_dir.mkdir(parents=True, exist_ok=True)
 
   logging.info("RESULT DIR: %s", out_dir.resolve())

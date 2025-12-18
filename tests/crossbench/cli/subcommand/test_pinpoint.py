@@ -302,9 +302,10 @@ class PinpointSubcommandTest(unittest.TestCase):
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.download_results")
   def test_pinpoint_download_results(self, mock_download_results):
-    self.cli.run(["pinpoint", "results", "123abc", "--out-dir", "test_dir"])
+    self.cli.run(
+        ["pinpoint", "results", "123abc", "--out-dir", "test_dir", "--force"])
     mock_download_results.assert_called_once_with(
-        job_id="123abc", out_dir=pth.LocalPath("test_dir"))
+        job_id="123abc", out_dir=pth.LocalPath("test_dir"), force=True)
 
   def test_help_formatter(self):
     parser = argparse.ArgumentParser(formatter_class=PinpointHelpFormatter)

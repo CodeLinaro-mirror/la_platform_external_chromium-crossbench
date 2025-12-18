@@ -547,11 +547,17 @@ class PinpointResultsSubcommand(PinpointJobSubcommand):
         type=pth.LocalPath,
         help=("Results will be stored in this directory. "
               "Uses to the crossbench results directory by default."))
+    results_parser.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help=("Force download even if the output directory already exists."))
     return results_parser
 
   @override
   def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
-    download_results(job_id=job_id, out_dir=args.output_directory)
+    download_results(
+        job_id=job_id, out_dir=args.output_directory, force=args.force)
 
 
 class PinpointSubcommand(CrossbenchSubcommand):
