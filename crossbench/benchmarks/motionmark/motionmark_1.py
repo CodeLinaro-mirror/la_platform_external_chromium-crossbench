@@ -46,6 +46,7 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
   MotionMark-specific Probe.
   Extracts all MotionMark times and scores.
   """
+  SORT_KEYS: ClassVar[bool] = False
 
   @abc.abstractmethod
   @override
@@ -122,7 +123,9 @@ class MotionMark1ProbeContext(JsonResultProbeContext):
   def flatten_json_data(self, json_data: list) -> Json:
     assert isinstance(json_data, list) and len(json_data) == 1, (
         "Motion12MarkProbe requires a results list.")
-    return Flatten(json_data[0], key_fn=_clean_up_path_segments).data
+    return Flatten(
+        json_data[0], key_fn=_clean_up_path_segments,
+        sort=self.probe.SORT_KEYS).data
 
 
 class MotionMark1Story(PressBenchmarkStory):
