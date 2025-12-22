@@ -11,8 +11,8 @@ from typing import Any
 
 from tabulate import tabulate
 
+from crossbench.pinpoint import http_requests
 from crossbench.pinpoint.api import PINPOINT_BUILDS_API_URL_TEMPLATE
-from crossbench.pinpoint.auth import get_auth_session
 from crossbench.pinpoint.format_time import DATETIME_FORMAT, format_time
 from crossbench.pinpoint.helper import annotate
 
@@ -27,6 +27,7 @@ class Build:
       "%Y-%m-%d %H:%M:%S".
   """
   commit: str
+  number: int
   date: str
 
 
@@ -37,11 +38,10 @@ def list_builds(bot: str, limit: int) -> None:
 
 
 def fetch_builds(bot: str) -> list[Build]:
-  authed_session = get_auth_session()
   url = PINPOINT_BUILDS_API_URL_TEMPLATE.format(bot=bot)
 
   with annotate(f"Fetching recent builds for '{bot}'"):
-    response = authed_session.get(url)
+    response = http_requests.get(url)
     response.raise_for_status()
     return _convert_json_to_builds(response.json())
 
@@ -52,6 +52,7 @@ def _convert_json_to_builds(builds_json: dict[str, Any]) -> list[Build]:
     if build.get("status") != "SUCCESS":
       continue
 
+    number = build.get("number", 0)
     commit = build.get("input", {}).get("gitilesCommit", {}).get("id")
     if not commit:
       continue
@@ -65,13 +66,14 @@ def _convert_json_to_builds(builds_json: dict[str, Any]) -> list[Build]:
       logging.warning("Invalid date format: %s", end_time)
       continue
 
-    builds.append(Build(commit, date))
+    builds.append(Build(commit=commit, number=number, date=date))
 
-  builds.sort(key=lambda build: build.date, reverse=True)
+  builds.sort(key=lambda build: build.number, reverse=True)
   return builds
 
 
 def _display_builds(builds: list[Build]) -> None:
-  headers = ["Commit", "Date"]
-  table_data = [[build.commit, format_time(build.date)] for build in builds]
-  print(tabulate(table_data, headers=headers))
+  headers = ["Commit", "Number", "Date"]
+  table_data = [[build.commit, build.number,
+                 format_time(build.date)] for build in builds]
+  print(tabulate(table_data, headers=headers, numalign="left"))

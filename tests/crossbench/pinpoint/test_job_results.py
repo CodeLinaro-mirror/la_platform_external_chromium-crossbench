@@ -36,7 +36,7 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
         mock.patch("crossbench.plt.PLATFORM.which"))
     self.mock_which.return_value = "/usr/bin/cas"
     self.mock_storage_client = self.enterContext(
-        mock.patch("crossbench.pinpoint.job_results.storage.Client"))
+        mock.patch("crossbench.pinpoint.job_results.gcloud_storage.Client"))
 
     # Setup mock bucket and blob
     self.mock_bucket = mock.MagicMock()
