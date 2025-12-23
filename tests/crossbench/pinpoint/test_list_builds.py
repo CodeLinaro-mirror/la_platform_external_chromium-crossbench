@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-from typing import Final
 from unittest import mock
 
 import requests
@@ -13,12 +12,10 @@ from crossbench.exception import MultiException
 from crossbench.pinpoint.api import PINPOINT_BUILDS_API_URL_TEMPLATE
 from crossbench.pinpoint.list_builds import Build, fetch_builds, list_builds
 from tests import test_helper
-from tests.crossbench.pinpoint.auth_session_mixin import MockAuthSessionMixin
+from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 
-class ListBuildsTest(MockAuthSessionMixin):
-  _get_auth_session_patch_target: Final[
-      str] = "crossbench.pinpoint.list_builds.get_auth_session"
+class ListBuildsTest(MockHttpRequestsMixin):
 
   def setUp(self):
     super().setUp()
@@ -38,6 +35,7 @@ class ListBuildsTest(MockAuthSessionMixin):
                     }
                 },
                 "endTime": F"2025-11-1{i}T00:00:00Z",
+                "number": i,
                 "status": "SUCCESS"
             } for i in range(3)]
         }
@@ -47,14 +45,14 @@ class ListBuildsTest(MockAuthSessionMixin):
       mock_response.raise_for_status.return_value = None
       return mock_response
 
-    self.mock_session.get.side_effect = mock_get_side_effect
+    self.mock_get.side_effect = mock_get_side_effect
 
   def test_fetch_builds_contain_correct_builds(self):
     builds = fetch_builds("test-bot")
     self.assertEqual(builds, [
-        Build(commit="commit2", date="2025-11-12 00:00:00"),
-        Build(commit="commit1", date="2025-11-11 00:00:00"),
-        Build(commit="commit0", date="2025-11-10 00:00:00"),
+        Build(commit="commit2", number=2, date="2025-11-12 00:00:00"),
+        Build(commit="commit1", number=1, date="2025-11-11 00:00:00"),
+        Build(commit="commit0", number=0, date="2025-11-10 00:00:00"),
     ])
 
   def test_list_builds_prints_correct_commit_hashes(self):
@@ -66,8 +64,7 @@ class ListBuildsTest(MockAuthSessionMixin):
       self.assertIn("commit0", output)
 
   def test_list_builds_api_error(self):
-    self.mock_session.get.side_effect = requests.exceptions.HTTPError(
-        "API Error")
+    self.mock_get.side_effect = requests.exceptions.HTTPError("API Error")
     with self.assertRaises(MultiException):
       list_builds("test-bot", 1)
 

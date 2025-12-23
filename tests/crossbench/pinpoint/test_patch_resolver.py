@@ -9,7 +9,7 @@ from unittest import mock
 
 from crossbench.pinpoint import patch_resolver
 from tests import test_helper
-from tests.crossbench.pinpoint.auth_session_mixin import MockAuthSessionMixin
+from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 _TEST_PATCH: Final[
     str] = "https://chromium-review.googlesource.com/c/chromium/src/+/12345"
@@ -17,10 +17,7 @@ _TEST_PATCH: Final[
 _TEST_PATCH_WITH_PATCHSET: Final[str] = _TEST_PATCH + "/6"
 
 
-class PatchResolverTest(MockAuthSessionMixin):
-
-  _get_auth_session_patch_target = (
-      "crossbench.pinpoint.patch_resolver.get_auth_session")
+class PatchResolverTest(MockHttpRequestsMixin):
 
   def setUp(self):
     super().setUp()
@@ -35,7 +32,7 @@ class PatchResolverTest(MockAuthSessionMixin):
       mock_response.raise_for_status.return_value = None
       return mock_response
 
-    self.mock_session.get.side_effect = mock_get_side_effect
+    self.mock_get.side_effect = mock_get_side_effect
 
   def test_resolve_patch(self):
     for protocol in ["", "https://"]:
