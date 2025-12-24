@@ -343,4 +343,4 @@ class JsonResultProbeContext(
     return json_data
 
   def flatten_json_data(self, json_data: Any) -> Json:
-    return helper.Flatten(json_data).data
+    return helper.Flatten(json_data, sort=self.probe.SORT_KEYS).data

@@ -4,8 +4,12 @@
 
 from __future__ import annotations
 
+import datetime as dt
+import logging
 import pathlib
-from typing import Any
+from concurrent.futures import ThreadPoolExecutor
+from functools import cache, partial
+from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import urlparse
 
 import google.cloud.storage as gcloud_storage
@@ -13,10 +17,14 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.cli import ui
 from crossbench.env.base import BaseEnv
 from crossbench.pinpoint.helper import annotate
 from crossbench.pinpoint.job_config import fetch_job_config
 from crossbench.runner.runner import Runner
+
+if TYPE_CHECKING:
+  from crossbench.helper.spinner import Spinner
 
 
 class PinpointJobResults:
@@ -25,16 +33,16 @@ class PinpointJobResults:
       self,
       job_id: str,
   ) -> None:
-    self.job_id = job_id
-    self.data = fetch_job_config(job_id, full=True)
+    self.job_id: str = job_id
+    self.data: dict[str, Any] = fetch_job_config(job_id, full=True)
     with annotate("Parsing job results"):
       if self.status.lower() != "completed":
         raise ValueError(f"Job is not completed. Status: {self.status}")
 
-      self.name = f"pinpoint_{self.benchmark}_{self.bot}"
-      self.results_url = self.data.get("results_url")
-      self.variants = [
-          PinpointVeriantResults(v, i)
+      self.name: str = f"pinpoint_{self.benchmark}_{self.bot}"
+      self.results_url: str | None = self.data.get("results_url")
+      self.variants: list[PinpointVariantResults] = [
+          PinpointVariantResults(v, i)
           for i, v in enumerate(self.data.get("state", []))
       ]
 
@@ -58,11 +66,31 @@ class PinpointJobResults:
   def status(self) -> str:
     return self.data["status"]
 
+  @property
+  @cache
+  def created_date(self) -> str:
+    time_str = self.data.get("created", "")
+    try:
+      dt_object = dt.datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+      return dt_object.strftime("%Y-%m-%d_%H%M%S")
+    except ValueError:
+      logging.warning("Invalid created time: %s", time_str)
+      return time_str
+
   def download(self, out_dir: pth.LocalPath) -> None:
     self.download_index = 0
+    with ui.spinner(title="Downloading") as spinner:
+      tasks = self._prepare_tasks(spinner, out_dir)
+      with ThreadPoolExecutor(max_workers=10) as executor:
+        executor.map(lambda f: f(), tasks)
+
+  def _prepare_tasks(self, spinner: Spinner,
+                     out_dir: pth.LocalPath) -> list[Callable[[], None]]:
+    tasks: list[Callable[[], None]] = []
     if self.results_url:
-      self._download_from_storage(self.results_url,
-                                  out_dir / f"{self.job_id}.html")
+      tasks.append(
+          partial(self._download_from_storage, spinner, self.results_url,
+                  out_dir / f"{self.job_id}.html"))
 
     for variant in self.variants:
       variant_dir = out_dir / variant.name
@@ -71,45 +99,50 @@ class PinpointJobResults:
         attempt_dir.mkdir(parents=True, exist_ok=True)
 
         if attempt.cas_isolate:
-          self._download_cas_isolate(attempt.cas_isolate, attempt_dir)
+          tasks.append(
+              partial(self._download_cas_isolate, spinner, attempt.cas_isolate,
+                      attempt_dir))
 
         for trace_name, trace_url in attempt.perfetto_trace_url_by_name.items():
-          self._download_from_storage(trace_url, attempt_dir / trace_name)
+          tasks.append(
+              partial(self._download_from_storage, spinner, trace_url,
+                      attempt_dir / trace_name))
+    return tasks
 
   def _next_progress_message(self) -> str:
     self.download_index += 1
-    return f"Downloading {self.download_index}/{self.download_count}"
+    return f" {self.download_index}/{self.download_count}"
 
-  def _download_cas_isolate(self, isolate: str, out_dir: pth.LocalPath) -> None:
-    with annotate(self._next_progress_message()):
-      cmd = [
-          "cas", "download", "-cas-instance",
-          "projects/chrome-swarming/instances/default_instance", "-digest",
-          isolate, "-dir",
-          str(out_dir)
-      ]
-      plt.PLATFORM.sh(*cmd)
+  def _download_cas_isolate(self, spinner: Spinner, isolate: str,
+                            out_dir: pth.LocalPath) -> None:
+    spinner.write(self._next_progress_message())
+    cmd = [
+        "cas", "download", "-cas-instance",
+        "projects/chrome-swarming/instances/default_instance", "-digest",
+        isolate, "-dir",
+        str(out_dir)
+    ]
+    plt.PLATFORM.sh(*cmd)
 
-  def _download_from_storage(self, url: str,
+  def _download_from_storage(self, spinner: Spinner, url: str,
                              output_file: pth.LocalPath) -> None:
-    with annotate(self._next_progress_message()):
-      parsed_url = urlparse(url)
-      path_segments = parsed_url.path.strip("/").split("/", 1)
-      if len(path_segments) < 2:
-        raise ValueError(f"Invalid GCS URL: {url}")
+    spinner.write(self._next_progress_message())
+    parsed_url = urlparse(url)
+    path_segments = parsed_url.path.strip("/").split("/", 1)
+    if len(path_segments) < 2:
+      raise ValueError(f"Invalid GCS URL: {url}")
 
-      bucket_name = path_segments[0]
-      blob_name = path_segments[1]
+    bucket_name = path_segments[0]
+    blob_name = path_segments[1]
 
-      client = gcloud_storage.Client()
-      bucket = client.bucket(bucket_name)
-      blob = bucket.blob(blob_name)
+    client = gcloud_storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
 
-      blob.download_to_filename(str(output_file))
+    blob.download_to_filename(str(output_file))
 
 
-
-class PinpointVeriantResults:
+class PinpointVariantResults:
 
   def __init__(self, data: dict[str, Any], index: int) -> None:
     self.data = data
@@ -188,13 +221,19 @@ class Environment(BaseEnv):
     pass
 
 
-def download_results(job_id: str, out_dir: pth.LocalPath | None = None) -> None:
+def download_results(job_id: str,
+                     out_dir: pth.LocalPath | None = None,
+                     force: bool = False) -> None:
   """Downloads results of a Pinpoint job."""
   Environment(plt.PLATFORM).check_installed(["cas"])
   job_results = PinpointJobResults(job_id)
 
-  out_dir = out_dir or Runner.get_out_dir(
-      pathlib.Path.cwd(), suffix=job_results.name)
+  out_dir = out_dir or Runner.get_out_dir(pathlib.Path.cwd(
+  )) / ".." / f"{job_results.created_date}_pinpoint_{job_results.job_id}"
+  if out_dir.exists() and not force:
+    raise FileExistsError(
+        f"Output directory {out_dir} already exists. Use --force to overwrite.")
   out_dir.mkdir(parents=True, exist_ok=True)
 
+  logging.info("RESULT DIR: %s", out_dir.resolve())
   job_results.download(out_dir)

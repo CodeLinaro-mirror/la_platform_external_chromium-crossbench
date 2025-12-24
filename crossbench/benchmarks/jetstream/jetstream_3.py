@@ -29,8 +29,17 @@ class JetStream3Probe(JetStream2Probe, metaclass=abc.ABCMeta):
 
 
 class JetStream3ProbeContext(JetStream2ProbeContext):
-  pass
+  JS: ClassVar[str] = "return JetStream.resultsJSON('simple');"
 
+  @override
+  def to_json(self, actions: Actions) -> dict[str, float]:
+    result = super().to_json(actions)
+    lowercase_results = {}
+
+    for key, value in result.items():
+      lowercase_results[key.lower()] = value
+
+    return lowercase_results
 
 # TODO: introduce JetStreamStory
 class JetStream3Story(JetStream2Story, metaclass=abc.ABCMeta):
