@@ -51,7 +51,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
-  'buildtools_revision': '993d5b23cd8e2319bab0ad9939bef2a6c3f23faa',
+  'buildtools_revision': 'c603d823d75e866247fb1c69094fda3dc4c34dbe',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
