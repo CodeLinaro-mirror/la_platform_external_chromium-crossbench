@@ -1,0 +1,9 @@
+alexschulze@google.com
+cbruni@google.com
+kalutes@google.com
+khokhlov@google.com
+machenbach@google.com
+pthier@google.com
+vahl@google.com
+
+include platform/system/core:/janitors/OWNERS #{LAST_RESORT_SUGGESTION}

@@ -51,11 +51,11 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
-  'buildtools_revision': 'a9da2cb478f2d1ea0abbb4148226b5b97621f4ec',
+  'buildtools_revision': 'aec4f3c79e5af648386819cbe7f6e67206385ece',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
-  'clang_format_revision': 'c2725e0622e1a86d55f14514f2177a39efea4a0e',
+  'clang_format_revision': '58c72c9ffbc23be0ac9c69439e6b4fbdca81055c',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
@@ -63,11 +63,11 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling webpagereplay
   # and whatever else without interference from each other.
-  'webpagereplay_revision': '9057e5d942f2bfcee71cc20415a7f86c966241f8',
+  'webpagereplay_revision': '052833a44dd2f538b85936092bad545b6062e193',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling webpagereplay
   # and whatever else without interference from each other.
-  'hjson_js_revision': '5734a70a17b94f12b59081aa6fdf966aac066b23',
+  'hjson_js_revision': '74bfd14e07d6586e3c12e0d2ab9885a97b2d579c',
 }
 
 # Only these hosts are allowed for dependencies in this DEPS file.

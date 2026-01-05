@@ -650,9 +650,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     message: str = "SUBCOMMAND"
     if benchmark:
       message = f"{benchmark.NAME.upper()} BENCHMARK"
-    logging.error("%s FAILED WITH %s:", message, e.__class__.__name__)
-    logging.error("-" * 80)
-    self._log_benchmark_subcommand_exception(e)
+    error_message = f"{message} FAILED WITH {e.__class__.__name__}"
+    self._log_benchmark_subcommand_exception(error_message, e)
     logging.error("-" * 80)
     if runner and runner.runs:
       self._log_runner_debug_hints(runner)
@@ -663,7 +662,13 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     logging.error("#" * 80)
     sys.exit(3)
 
-  def _log_benchmark_subcommand_exception(self, e: Exception) -> None:
+  def _log_benchmark_subcommand_exception(self, error_message: str,
+                                          e: Exception) -> None:
+    if isinstance(e, exception.MultiException):
+      e.annotator.log(error_message)
+      return
+    logging.error(error_message)
+    logging.error("-" * 80)
     message = str(e)
     if message:
       logging.error(message)
@@ -672,6 +677,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       self.cli.log_assertion_error_statement(e)
 
   def _run_benchmark(self, args: argparse.Namespace, runner: Runner) -> None:
+    self._update_default_results_symlinks(args, runner)
     try:
       runner.run(is_dry_run=args.dry_run)
       logging.info("")
@@ -679,8 +685,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     except:  # noqa: BLE001
       self._log_results(args, runner, is_success=False)
       raise
-    finally:
-      self._update_symlinks(args, runner)
 
   def _log_results(self, args: argparse.Namespace, runner: Runner,
                    is_success: bool) -> None:
@@ -708,16 +712,11 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         itertools.chain.from_iterable(run.annotations for run in runner.runs))
     RunAnnotation.log_all(all_annotations)
 
-  def _update_symlinks(self, args: argparse.Namespace, runner: Runner) -> None:
-    if not args.create_symlinks:
-      return
-    runner.update_symlinks()
-    if not args.out_dir:
-      self._update_default_results_symlinks(args, runner)
 
   def _update_default_results_symlinks(self, args: argparse.Namespace,
                                        runner: Runner) -> None:
-    assert args.create_symlinks
+    if not args.create_symlinks or args.out_dir:
+      return
     results_root = runner.out_dir.parent
     latest_link = results_root / "latest"
     if latest_link.is_symlink():

@@ -205,8 +205,8 @@ class ChromiumWebDriverBrowserProfilingProbeContext(BrowserProfilingProbeContext
     if legacy_json_file := cb_traceconv.convert_to_json(self.host_platform,
                                                         self.probe.traceconv,
                                                         trace_file):
-      return self.local_result(trace=(trace_file,), json=(legacy_json_file,))
-    return self.local_result(trace=(trace_file,))
+      return self.local_result(perfetto=(trace_file,), json=(legacy_json_file,))
+    return self.local_result(perfetto=(trace_file,))
 
 
 class FirefoxBrowserProfilingProbeContext(BrowserProfilingProbeContext):

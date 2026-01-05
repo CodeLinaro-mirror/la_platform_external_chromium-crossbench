@@ -65,13 +65,16 @@ class JetStream2BaseTestCase(
     self._test_run(custom_url)
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
-      self.assertIn(custom_url, urls)
+      self.assertTrue(urls)
       self.assertNotIn(self.story_cls.URL, urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
-  def _test_run(self, custom_url: Optional[str] = None, throw: bool = False):
+  def _test_run(self,
+                custom_url: Optional[str] = None,
+                story_names=("WSL",),
+                throw: bool = True):
     repetitions = 3
-    stories = self.story_cls.from_names(["WSL"], url=custom_url)
+    stories = self.story_cls.from_names(story_names, url=custom_url)
     example_story_data = {
         "firstIteration": 1,
         "average": 0.1,
@@ -85,19 +88,8 @@ class JetStream2BaseTestCase(
             story.name: example_story_data for story in stories
         }
         for browser in self.browsers:
-          # Ready state complete
-          browser.expect_js(result=True)
-          # Page is ready
-          browser.expect_js(result=True)
-          # filter benchmarks
-          browser.expect_js()
-          # UI is updated and ready,
-          browser.expect_js(result=True)
-          # Start running benchmark
-          browser.expect_js()
-          # Wait until done
-          browser.expect_js(result=True)
-          browser.expect_js(result=json.dumps(jetstream_probe_results))
+          self._test_run_browser_expectations(browser, jetstream_probe_results)
+
     for browser in self.browsers:
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
@@ -151,10 +143,27 @@ class JetStream2BaseTestCase(
     self.assertIn("102.22.33.44", output)
     self.assertIn("100.22.33.44", output)
 
+  def _test_run_browser_expectations(self, browser,
+                                     jetstream_probe_results) -> None:
+    # Ready state complete
+    browser.expect_js(result=True)
+    # Page is ready
+    browser.expect_js(result=True)
+    # filter benchmarks
+    browser.expect_js()
+    # UI is updated and ready,
+    browser.expect_js(result=True)
+    # Start running benchmark
+    browser.expect_js()
+    # Wait until done
+    browser.expect_js(result=True)
+    browser.expect_js(result=json.dumps(jetstream_probe_results))
+
   @dataclass
   class Namespace(argparse.Namespace):
     stories = "default"
-    iterations: int | None = None
+    iteration_count: int | None = None
+    worst_case_count: int | None = None
     separate: bool = False
     custom_benchmark_url: str | None = None
     detailed_metrics: bool = False
@@ -166,24 +175,89 @@ class JetStream2BaseTestCase(
     benchmark = self.benchmark_cls.from_cli_args(args)
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
-    self.assertIsNone(story.iterations)
     self.assertDictEqual(story.url_params, {})
 
-    args.iterations = 10
+    args.iteration_count = 10
     benchmark = self.benchmark_cls.from_cli_args(args)
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
-    self.assertEqual(story.iterations, 10)
     self.assertDictEqual(story.url_params, {"iterationCount": "10"})
 
-    args.iterations = 123
+    args.iteration_count = 123
     benchmark = self.benchmark_cls.from_cli_args(args)
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
-    self.assertEqual(story.iterations, 123)
     self.assertDictEqual(story.url_params, {"iterationCount": "123"})
 
 
 # TODO: introduce JetStreamBaseTestCase
 class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
-  pass
+
+  @dataclass
+  class Namespace(JetStream2BaseTestCase.Namespace):
+    prefetch_resources: bool = True
+
+  @override
+  def _test_run_browser_expectations(self, browser,
+                                     jetstream_probe_results) -> None:
+    # Ready state complete
+    browser.expect_js(result=True)
+    # UI is updated and ready,
+    browser.expect_js(result=True)
+    # Start running benchmark
+    browser.expect_js()
+    # Wait until done
+    browser.expect_js(result=True)
+    browser.expect_js(result=json.dumps(jetstream_probe_results))
+
+  @override
+  def test_run_default(self):
+    self._test_run()
+    for browser in self.browsers:
+      urls = self.filter_splashscreen_urls(browser.url_list)
+      self.assertIn(f"{self.story_cls.URL}?test=WSL", urls)
+      self.assertNotIn(f"{self.story_cls.URL_LOCAL}?test=WSL", urls)
+
+  @override
+  def test_run_custom_url(self):
+    custom_url = "http://test.example.com/jetstream"
+    self._test_run(custom_url)
+    for browser in self.browsers:
+      urls = self.filter_splashscreen_urls(browser.url_list)
+      self.assertIn(f"{custom_url}?test=WSL", urls)
+      self.assertNotIn(f"{self.story_cls.URL}?test=WSL", urls)
+      self.assertNotIn(f"{self.story_cls.URL_LOCAL}?test=WSL", urls)
+
+  def test_no_prefetch(self):
+    args = self.Namespace()
+    args.stories = "default"
+    args.prefetch_resources = False
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    (story,) = benchmark.stories
+    assert isinstance(story, self.story_cls)
+    self.assertDictEqual(story.url_params, {"prefetchResources": "false"})
+
+  def test_worst_case_count_kwargs(self):
+    args = self.Namespace()
+    args.stories = "default"
+    args.worst_case_count = 4
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    (story,) = benchmark.stories
+    assert isinstance(story, self.story_cls)
+    self.assertDictEqual(story.url_params, {"worstCaseCount": "4"})
+
+  def test_single_story_url_param(self):
+    args = self.Namespace()
+    args.stories = "lebab-wtb"
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    (story,) = benchmark.stories
+    assert isinstance(story, self.story_cls)
+    self.assertDictEqual(story.url_params, {"test": "lebab-wtb"})
+
+  def test_multiple_story_url_param(self):
+    args = self.Namespace()
+    args.stories = "lebab-wtb|espree-wtb"
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    (story,) = benchmark.stories
+    assert isinstance(story, self.story_cls)
+    self.assertDictEqual(story.url_params, {"test": "lebab-wtb,espree-wtb"})

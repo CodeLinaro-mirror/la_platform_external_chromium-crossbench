@@ -206,17 +206,17 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     trace = self.create_file("trace.pb")
 
     result = LocalProbeResult(
-        url=(url,), file=(file,), json=(json,), csv=(csv,), trace=(trace,))
+        url=(url,), file=(file,), json=(json,), csv=(csv,), perfetto=(trace,))
     self.assertFalse(result.is_empty)
     self.assertListEqual(list(result.all_files()), [file, json, csv, trace])
     self.assertListEqual(result.url_list, [url])
-    self.assertListEqual(result.trace_list, [trace])
+    self.assertListEqual(result.perfetto_list, [trace])
 
     merged = result.merge(EmptyProbeResult())
     self.assertFalse(merged.is_empty)
     self.assertListEqual(list(merged.all_files()), [file, json, csv, trace])
     self.assertListEqual(merged.url_list, [url])
-    self.assertListEqual(merged.trace_list, [trace])
+    self.assertListEqual(merged.perfetto_list, [trace])
 
     file_2 = self.create_file("result.2.custom")
     json_2 = self.create_file("result.2.json")
@@ -228,7 +228,7 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
         file=(file_2,),
         json=(json_2,),
         csv=(csv_2,),
-        trace=(trace_2,))
+        perfetto=(trace_2,))
     merged = result.merge(other)
     self.assertFalse(merged.is_empty)
     self.assertListEqual(
@@ -239,13 +239,13 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertFalse(result.is_empty)
     self.assertListEqual(list(result.all_files()), [file, json, csv, trace])
     self.assertListEqual(result.url_list, [url])
-    self.assertListEqual(result.trace_list, [trace])
+    self.assertListEqual(result.perfetto_list, [trace])
     # other is unchanged:
     self.assertFalse(other.is_empty)
     self.assertListEqual(
         list(other.all_files()), [file_2, json_2, csv_2, trace_2])
     self.assertListEqual(other.url_list, [url_2])
-    self.assertListEqual(other.trace_list, [trace_2])
+    self.assertListEqual(other.perfetto_list, [trace_2])
 
   def test_merge_duplicate_files(self):
     path = self.create_file("result.custom")
@@ -258,21 +258,21 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(DuplicateProbeResult):
       result_2.merge(result_1)
 
-  def test_traces_are_files(self):
+  def test_perfetto_list_are_files(self):
     trace = self.create_file("trace.pb")
 
-    result = LocalProbeResult(trace=(trace,))
+    result = LocalProbeResult(perfetto=(trace,))
     self.assertFalse(result.is_empty)
     self.assertListEqual(list(result.all_files()), [trace])
-    self.assertListEqual(list(result.trace_list), [trace])
+    self.assertListEqual(list(result.perfetto_list), [trace])
 
-  def test_traces_can_be_duplicate(self):
+  def test_perfetto_list_can_be_duplicate(self):
     trace = self.create_file("trace.pb")
 
-    result = LocalProbeResult(trace=(trace,), file=(trace,))
+    result = LocalProbeResult(perfetto=(trace,), file=(trace,))
     self.assertFalse(result.is_empty)
     self.assertListEqual(list(result.all_files()), [trace])
-    self.assertListEqual(list(result.trace_list), [trace])
+    self.assertListEqual(list(result.perfetto_list), [trace])
 
 
 class MockRun:

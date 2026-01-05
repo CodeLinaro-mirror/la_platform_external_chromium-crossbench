@@ -49,8 +49,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def _expect_sh_ssh_shell(self, *args, result=""):
     cmd_string = f"ssh -p {str(self.SSH_PORT)} {self.SSH_USER}@{self.HOST} "
-    for arg in args:
-      cmd_string += arg + " "
+    cmd_string += " ".join(map(str, args))
     self.host_platform.expect_sh(cmd_string, result=result)
 
   def expect_sh(self, *args, result="") -> None:

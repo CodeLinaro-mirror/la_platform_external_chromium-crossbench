@@ -1,16 +1,16 @@
 // trace_processor probe example
 {
-  probes: {
-    trace_processor: {
-      queries: [
-        speedometer_cpu_time
+  "probes": {
+    "trace_processor": {
+      "queries": [
+        "speedometer_cpu_time"
       ]
-      metrics: [
-        trace_stats
+      "metrics": [
+        "trace_stats"
       ]
     }
-    perfetto: {
-      textproto:
+    "perfetto": {
+      "textproto":
         '''
           buffers {
             size_kb: 300000

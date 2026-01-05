@@ -342,6 +342,7 @@ class MockPlatformMixin:
                       quiet: bool = False,
                       stdin: ProcessIo = None,
                       env: Optional[Mapping[str, str]] = None,
+                      cwd: Optional[pth.AnyPath] = None,
                       check: bool = True) -> bytes:
     del shell, quiet, stdin, env, check
     if self._expected_sh_cmds is not None:
@@ -374,11 +375,12 @@ class MockPlatformMixin:
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
          env: Optional[Mapping[str, str]] = None,
+         cwd: Optional[pth.AnyPath] = None,
          quiet: bool = False,
          check: bool = True):
     del capture_output, stderr, stdin, stdout
     result = self.sh_stdout(
-        *args, shell=shell, quiet=quiet, env=env, check=check)
+        *args, shell=shell, quiet=quiet, env=env, cwd=cwd, check=check)
     # TODO: Generalize this in the future, to mimic failing `sh` calls.
     return subprocess.CompletedProcess(args, 0, stdout=result.encode("utf-8"))
 
@@ -390,9 +392,10 @@ class MockPlatformMixin:
             stderr: ProcessIo = None,
             stdin: ProcessIo = None,
             env: Optional[Mapping[str, str]] = None,
+            cwd: Optional[pth.AnyPath] = None,
             quiet: bool = False) -> MockPopen:
     del bufsize, stdout, stderr, stdin
-    self.sh_stdout(*args, shell=shell, quiet=quiet, env=env)
+    self.sh_stdout(*args, shell=shell, quiet=quiet, env=env, cwd=cwd)
 
     if not self.popens:
       raise ValueError("No valid mock popen.")

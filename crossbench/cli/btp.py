@@ -18,8 +18,8 @@ from crossbench import path as pth
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.parse import PathParser
-from crossbench.probes.trace_processor.trace_processor import _MODULES_DIR, \
-    _QUERIES_DIR, TraceProcessorProbe
+from crossbench.probes.trace_processor.trace_processor import MODULES_DIR, \
+    QUERIES_DIR, TraceProcessorProbe
 
 ROOT_DIR: Final = pth.LocalPath(__file__).parents[2]
 DEFAULT_RESULT_DIR: Final = ROOT_DIR / "results" / "latest"
@@ -94,7 +94,7 @@ class BTPUtil:
 
     tp_config = TraceProcessorConfig(
         bin_path=str(tp.trace_processor_bin),
-        extra_flags=["--add-sql-module", _MODULES_DIR])
+        extra_flags=["--add-sql-module", MODULES_DIR])
     btp_conf = BatchTraceProcessorConfig(
         tp_config=tp_config,
         load_failure_handling=FailureHandling.INCREMENT_STAT,
@@ -104,7 +104,7 @@ class BTPUtil:
         traces=MergedTraceUriResolver(args.result_dir), config=btp_conf) as btp:
       queries = list(tp.queries) + args.extra_query
       for query in queries:
-        query_path = _QUERIES_DIR / f"{query}.sql"
+        query_path = QUERIES_DIR / f"{query}.sql"
         csv_file = args.output_dir / f"{pth.safe_filename(query)}.csv"
         btp.query_and_flatten(query_path.read_text()).to_csv(
             path_or_buf=csv_file, index=False)

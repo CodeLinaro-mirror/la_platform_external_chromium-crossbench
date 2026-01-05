@@ -1,14 +1,14 @@
 {
-  probes: {
-    trace_processor: {
-      queries: [
-        loadline/benchmark_score
-        loadline/breakdown
+  "probes": {
+    "trace_processor": {
+      "queries": [
+        "loadline/benchmark_score"
+        "loadline/breakdown"
       ]
     }
-    perfetto: {
-      trace_browser_startup: true
-      textproto:
+    "perfetto": {
+      "trace_browser_startup": true
+      "textproto":
         '''
           buffers {
             size_kb: 300000

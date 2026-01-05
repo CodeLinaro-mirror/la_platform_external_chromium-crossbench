@@ -359,6 +359,7 @@ class Runner:
         raise
     if probe_was_used:
       self._probes.append(probe)
+    self._env.add_probes([probe])
     return probe
 
   @property
@@ -432,6 +433,14 @@ class Runner:
   @property
   def all_runs(self) -> tuple[Run, ...]:
     return tuple(self._all_runs)
+
+  @property
+  def first_run(self) -> Run:
+    return self._all_runs[0]
+
+  @property
+  def last_run(self) -> Run:
+    return self._all_runs[-1]
 
   @property
   def runs(self) -> tuple[Run, ...]:
@@ -534,10 +543,11 @@ class Runner:
           "Use Runner.attach_probe()")
 
   def _setup_runs(self) -> None:
-    self._all_runs = list(self.get_runs())
+    self._all_runs = list(self._get_runs())
     assert self._all_runs, f"{type(self)}.get_runs() produced no runs"
     logging.info("🏃 SETUP %d RUN(S)", len(self._all_runs))
     self._measured_runs = [run for run in self._all_runs if not run.is_warmup]
+    self._setup_runs_dirs()
 
   def _setup_probes(self) -> None:
     self._validate_probes()
@@ -578,7 +588,7 @@ class Runner:
         self.runs, key=lambda run: run.browser_platform)
     return all(len(runs) <= 1 for runs in platform_runs.values())
 
-  def get_runs(self) -> Iterable[Run]:
+  def _get_runs(self) -> Iterable[Run]:
     index = 0
     session_index = 0
     throw = self._exceptions.throw
@@ -727,55 +737,69 @@ class Runner:
             f"❗ MERGED {group_name.upper()} PROBE DATA WITH ERRORS",
             separator="-")
 
-  def update_symlinks(self) -> None:
+  @property
+  def runs_dir(self) -> pth.LocalPath:
+    return self.out_dir / "runs"
+
+  @property
+  def sessions_dir(self) -> pth.LocalPath:
+    return self.out_dir / "sessions"
+
+  def _setup_runs_dirs(self) -> None:
     if not self.create_symlinks:
       logging.debug("Symlink disabled by command line option")
       return
-    if self.out_dir.exists():
-      self._create_runs_results_symlinks()
-
-  def _create_runs_results_symlinks(self) -> None:
-    assert self.create_symlinks
+    if not self.out_dir.exists():
+      return
     results_root = self.out_dir.parent
     runs: tuple[Run, ...] = self.all_runs
     if not runs:
       logging.debug("Skip creating result symlinks in '%s': no runs produced.",
                     results_root)
       return
-    self._create_first_last_run_symlinks(runs)
-    self._create_runs_symlinks(runs)
-    self._create_sessions_symlinks(runs)
+    self.runs_dir.mkdir()
+    self.sessions_dir.mkdir()
 
-  def _create_first_last_run_symlinks(self, runs: tuple[Run, ...]) -> None:
+  def create_run_symlinks(self, run: Run) -> None:
+    if not self.create_symlinks or not run.out_dir.exists():
+      return
+    if run is self.first_run:
+      self._create_first_run_symlink(run)
+    if run is self.last_run:
+      self._create_last_run_symlink(run)
+    self._create_runs_symlink(run)
+    self._create_sessions_symlink(run)
+
+  def _create_first_run_symlink(self, first_run: Run) -> None:
     out_dir = self.out_dir
     first_run_dir = out_dir / "first_run"
     if first_run_dir.exists():
       logging.error("Cannot create first_run symlink: %s", first_run_dir)
     else:
-      first_run_dir.symlink_to(runs[0].out_dir.relative_to(out_dir))
+      first_run_dir.symlink_to(
+          first_run.out_dir.relative_to(out_dir), target_is_directory=True)
+
+  def _create_last_run_symlink(self, last_run: Run) -> None:
+    out_dir = self.out_dir
     last_run_dir = out_dir / "last_run"
     if last_run_dir.exists():
       logging.error("Cannot create last_run symlink: %s", last_run_dir)
     else:
-      last_run_dir.symlink_to(runs[-1].out_dir.relative_to(out_dir))
+      last_run_dir.symlink_to(
+          last_run.out_dir.relative_to(out_dir), target_is_directory=True)
 
-  def _create_runs_symlinks(self, runs: tuple[Run, ...]) -> None:
+  def _create_runs_symlink(self, run: Run) -> None:
     out_dir = self.out_dir
-    runs_dir = out_dir / "runs"
-    runs_dir.mkdir()
-    for run in runs:
-      if not run.out_dir.exists():
-        continue
-      relative = pth.LocalPath("..") / run.out_dir.relative_to(out_dir)
-      (runs_dir / str(run.index)).symlink_to(relative)
+    relative = pth.LocalPath("..") / run.out_dir.relative_to(out_dir)
+    (self.runs_dir / str(run.index)).symlink_to(relative)
 
-  def _create_sessions_symlinks(self, runs: tuple[Run, ...]) -> None:
+  def _create_sessions_symlink(self, run: Run) -> None:
     out_dir = self.out_dir
-    sessions_dir = out_dir / "sessions"
-    sessions_dir.mkdir()
-    for session in {run.browser_session for run in runs}:
-      relative = pth.LocalPath("..") / session.path.relative_to(out_dir)
-      (sessions_dir / str(session.index)).symlink_to(relative)
+    session = run.browser_session
+    relative_dir = pth.LocalPath("..") / session.path.relative_to(out_dir)
+    absolute_dir = self.sessions_dir / str(session.index)
+    if not absolute_dir.exists():
+      absolute_dir.symlink_to(relative_dir, target_is_directory=True)
 
 
 TEMPERATURE_ICONS = {

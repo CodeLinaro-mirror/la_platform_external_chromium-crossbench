@@ -1,29 +1,29 @@
 {
-  probes: {
-    trace_processor: {
-      queries: [
-        loadline/benchmark_score
-        loadline/breakdown
-        loadline/experimental/cpu
-        loadline/experimental/dom
-        loadline/experimental/interaction_latency
-        loadline/experimental/mojo
-        loadline/experimental/resources
-        loadline/experimental/sequence_manager
-        loadline/experimental/tlp
-        loadline/experimental/v8
-        loadline/experimental/v8_rcs
-        loadline/experimental/web_features
-        loadline/experimental/worker
+  "probes": {
+    "trace_processor": {
+      "queries": [
+        "loadline/benchmark_score"
+        "loadline/breakdown"
+        "loadline/experimental/cpu"
+        "loadline/experimental/dom"
+        "loadline/experimental/interaction_latency"
+        "loadline/experimental/mojo"
+        "loadline/experimental/resources"
+        "loadline/experimental/sequence_manager"
+        "loadline/experimental/tlp"
+        "loadline/experimental/v8"
+        "loadline/experimental/v8_rcs"
+        "loadline/experimental/web_features"
+        "loadline/experimental/worker"
       ]
     }
-    video: {
-      generate_timestrip: false
-      merge_runs: false
+    "video": {
+      "generate_timestrip": false
+      "merge_runs": false
     }
-    perfetto: {
-      trace_browser_startup: true
-      textproto:
+    "perfetto": {
+      "trace_browser_startup": true
+      "textproto":
         '''
           buffers {
             size_kb: 300000

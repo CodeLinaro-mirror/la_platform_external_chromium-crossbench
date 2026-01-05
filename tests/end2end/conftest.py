@@ -118,6 +118,15 @@ def test_chrome_name(browser_path) -> str:
   return "chrome-stable"
 
 
+@pytest.fixture(scope="session")
+def test_chrome_version(browser_path) -> int:
+  if not browser_path:
+    return "unknown"
+  # extract the first number from the version string
+  version_str = plt.PLATFORM.app_version(browser_path)
+  return int(version_str.split(".")[0].split(" ")[-1])
+
+
 def session_patch_chrome_driver_finder(driver_path, browser_path):
   if not driver_path:
     yield
