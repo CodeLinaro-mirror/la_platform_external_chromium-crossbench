@@ -59,7 +59,7 @@ class DefaultActionRunner(ActionRunner):
   """
 
   ELEMENT_SCROLL_INTO_VIEW: Final[str] = """
-      element.scrollIntoView();
+      element.scrollIntoView({ block: 'nearest' });
   """
 
   CHECK_ELEMENT_RECT: Final[str] = """
