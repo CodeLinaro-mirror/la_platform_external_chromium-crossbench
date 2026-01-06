@@ -7,14 +7,14 @@ description: "Crossbench is a cross-browser/cross-benchmark runner to extract pe
 third_party {
   license_type: NOTICE
   last_upgrade_date {
-    year: 2025
-    month: 12
-    day: 23
+    year: 2026
+    month: 1
+    day: 6
   }
   identifier {
     type: "Git"
     value: "https://chromium.googlesource.com/crossbench"
-    version: "d9edfb43f839e7469c9bc0ff5b03cf5908314f59"
+    version: "56c15b0cd98e24b3dbfde17c90e7b10c5a947c30"
     primary_source: true
   }
 }
