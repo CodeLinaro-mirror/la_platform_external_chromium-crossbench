@@ -404,6 +404,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     cooldown_group = timing_group.add_mutually_exclusive_group()
     cooldown_group.add_argument(
         "--cool-down-threshold",
+        "--cooldown-threshold",
         type=ThermalStatus.parse,
         help=("Pause execution when the device reaches this thermal status. "
               "Execution resumes once the status drops below the threshold. "
@@ -411,7 +412,9 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     cooldown_group.add_argument(
         "--cool-down-time",
         "--cool-down",
-        type=DurationParser.positive_or_zero_duration,
+        "--cooldown-time",
+        "--cooldown",
+        type=DurationParser.duration_or_user_input,
         default=dt.timedelta(seconds=2),
         help=("Wait between repetitions for a fixed amount of time. "
               f"Format: {DurationParser.help()}"))
@@ -455,14 +458,15 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     timing_group.add_argument(
         "--start-delay",
         "--startup-delay",
-        type=DurationParser.positive_or_zero_duration,
+        type=DurationParser.duration_or_user_input,
         default=dt.timedelta(),
         help=("Delay before running the core workload, "
               "after a story's/workload's setup, "
-              "and after starting the browser."))
+              "and after starting the browser. Use 'input' to wait for user "
+              "input."))
     timing_group.add_argument(
         "--stop-delay",
-        type=DurationParser.positive_or_zero_duration,
+        type=DurationParser.duration_or_user_input,
         default=dt.timedelta(),
         help=("Delay after running the core workload, "
               "before story's/workload's teardown, "

@@ -34,7 +34,7 @@ class JetStream11ProbeContext(JetStreamProbeContext):
   for (let name in JetStream.results) {{
     const benchmark = JetStream.results[name];
     if (name == "geomean") name = "{JetStreamProbe.TOTAL_METRIC_KEY}";
-    const data = {{ score: benchmark.statistics.mean }};
+    const data = {{ Score: benchmark.statistics.mean }};
     results[name] = data;
   }};
   return JSON.stringify(results);

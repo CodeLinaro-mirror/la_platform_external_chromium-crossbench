@@ -463,6 +463,34 @@ class FastCliTestCasePartB(BaseCliTestCase):
         self.assertListEqual(browser.url_list, [url])
         self.assertEqual(len(browser.js_flags), 0)
 
+  def test_fast_startup_delay_input(self):
+    with self._patch_get_browser_cls():
+      url = "http://test.com"
+      with mock.patch("builtins.input", return_value="") as mock_input:
+        cli = self.run_cli("loading", "--startup-delay=input", f"--urls={url}",
+                           "--throw", "--fast")
+        self.assertEqual(len(mock_input.call_args_list), 1)
+        self.assertIn("Press enter to continue...", mock_input.call_args[0][0])
+      self.assertEqual(cli.args.cool_down_time, dt.timedelta(0))
+      self.assertEqual(cli.args.start_delay, dt.timedelta.max)
+      self.assertEqual(cli.args.stop_delay, dt.timedelta(0))
+
+  def test_fast_custom_input_delays(self):
+    with self._patch_get_browser_cls():
+      url = "http://test.com"
+      with mock.patch("builtins.input", return_value="") as mock_input:
+        cli = self.run_cli("loading", "--startup-delay=input",
+                           "--stop-delay=input", f"--urls={url}", "--throw",
+                           "--fast")
+        self.assertEqual(len(mock_input.call_args_list), 2)
+        self.assertIn("Press enter to continue...",
+                      mock_input.call_args_list[0].args[0])
+        self.assertIn("Press enter to continue...",
+                      mock_input.call_args_list[1].args[0])
+      self.assertEqual(cli.args.cool_down_time, dt.timedelta(0))
+      self.assertEqual(cli.args.start_delay, dt.timedelta.max)
+      self.assertEqual(cli.args.stop_delay, dt.timedelta.max)
+
   def test_create_symlinks(self):
     with self._patch_get_browser_cls():
       out_dir = self.out_dir / "create_symlinks"

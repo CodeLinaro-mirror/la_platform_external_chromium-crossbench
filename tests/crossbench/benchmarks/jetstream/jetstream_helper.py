@@ -76,10 +76,10 @@ class JetStream2BaseTestCase(
     repetitions = 3
     stories = self.story_cls.from_names(story_names, url=custom_url)
     example_story_data = {
-        "firstIteration": 1,
-        "average": 0.1,
-        "worst4": 1.1,
-        "score": 1
+        "FirstIteration": 1,
+        "Average": 0.1,
+        "Worst4": 1.1,
+        "Score": 1
     }
     # The order should match Runner.get_runs
     for _ in range(repetitions):

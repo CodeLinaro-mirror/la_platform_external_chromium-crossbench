@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
+import math
 from typing import Final, TypeAlias
 
 # Arbitrary very large number that doesn't break any browser driver protocol.
@@ -49,6 +50,8 @@ class Timing:
   def units(self, time: AnyTime, absolute_time: bool = False) -> int | float:
     """Convert absolute time (seconds, timedelta) to relative time units."""
     if isinstance(time, dt.timedelta):
+      if time == dt.timedelta.max:
+        return math.inf
       seconds = time.total_seconds()
     else:
       seconds = time
@@ -62,7 +65,8 @@ class Timing:
                 time_units: AnyTimeUnit,
                 absolute_time: bool = False) -> dt.timedelta:
     """Converts relative time units to absolute time."""
-    return self._to_timedelta(time_units, self.unit, absolute_time)
+    return self._to_timedelta(
+        time_units, self.unit, absolute_time, allow_max=True)
 
   def timeout_timedelta(self,
                         time_units: AnyTimeUnit,
@@ -77,8 +81,11 @@ class Timing:
   def _to_timedelta(self,
                     time_units: AnyTimeUnit,
                     time_unit_duration: dt.timedelta,
-                    absolute_time: bool = False) -> dt.timedelta:
+                    absolute_time: bool = False,
+                    allow_max: bool = False) -> dt.timedelta:
     time_units_f: float | int = self._to_units_f(time_units)
+    if allow_max and time_units_f == math.inf:
+      return dt.timedelta.max
     if absolute_time:
       absolute_time_f = dt.timedelta(seconds=time_units_f)
     else:
@@ -87,6 +94,8 @@ class Timing:
 
   def _to_units_f(self, time_units: AnyTimeUnit) -> float | int:
     if isinstance(time_units, dt.timedelta):
+      if time_units == dt.timedelta.max:
+        return math.inf
       seconds = time_units.total_seconds()
     else:
       seconds = time_units

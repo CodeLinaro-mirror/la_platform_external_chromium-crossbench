@@ -44,7 +44,7 @@ class JetStreamProbe(
   Extracts all JetStream times and scores.
   """
 
-  TOTAL_METRIC_KEY: ClassVar[str] = "Total/score"
+  TOTAL_METRIC_KEY: ClassVar[str] = "Total/Score"
   SORT_KEYS: ClassVar[bool] = False
 
   @property
@@ -100,8 +100,8 @@ class JetStreamProbe(
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        story_group.results[self].json
-        for story_group in group.repetitions_groups)
+        repetition_group.results[self].json
+        for repetition_group in group.repetitions_groups)
     # We discard the score when merging separate line item runs, recompute it!
     if self.TOTAL_METRIC_KEY not in merged.data:
       merged.data[self.TOTAL_METRIC_KEY] = self._compute_total_score(merged)
@@ -130,7 +130,7 @@ class JetStreamProbe(
       return False
     if self.jetstream.detailed_metrics:
       return True
-    return parts[0] != "Total" and parts[1] == "score"
+    return parts[0] != "Total" and parts[1] == "Score"
 
 
 class JetStreamProbeContext(JsonResultProbeContext):
@@ -138,17 +138,17 @@ class JetStreamProbeContext(JsonResultProbeContext):
   let results = Object.create(null);
   let benchmarks = []
   for (let benchmark of JetStream.benchmarks) {
-    const data = { score: benchmark.score };
+    const data = { Score: benchmark.score };
     if ("worst4" in benchmark) {
-      data.firstIteration = benchmark.firstIteration;
-      data.average = benchmark.average;
-      data.worst4 = benchmark.worst4;
+      data.FirstIteration = benchmark.firstIteration;
+      data.Average = benchmark.average;
+      data.Worst4 = benchmark.worst4;
     } else if ("runTime" in benchmark) {
-      data.runTime = benchmark.runTime;
-      data.startupTime = benchmark.startupTime;
+      data.RunTime = benchmark.runTime;
+      data.StartupTime = benchmark.startupTime;
     } else if ("mainRun" in benchmark) {
-      data.mainRun = benchmark.mainRun;
-      data.stdlib = benchmark.stdlib;
+      data.MainRun = benchmark.mainRun;
+      data.Stdlib = benchmark.stdlib;
     }
     results[benchmark.plan.name] = data;
     benchmarks.push(benchmark);
@@ -194,10 +194,10 @@ class JetStreamCSVFormatter(CSVFormatter):
     items = list(data.items())
     if sort:
       items.sort()
-    # Copy all /score items to the top:
+    # Copy all /Score items to the top:
     score_items = []
     for key, value in items:
-      if key != self.TOTAL_METRIC_KEY and key.endswith("/score"):
+      if key != self.TOTAL_METRIC_KEY and key.endswith("/Score"):
         score_items.append((key, value))
     total_item = [(self.TOTAL_METRIC_KEY, data[self.TOTAL_METRIC_KEY])]
     return total_item + score_items + items

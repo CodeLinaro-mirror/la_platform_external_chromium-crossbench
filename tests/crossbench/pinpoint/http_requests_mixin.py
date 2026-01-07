@@ -4,16 +4,18 @@
 
 from __future__ import annotations
 
-import unittest
 from unittest import mock
+from tests.crossbench.base import BaseCrossbenchTestCase
 
 
-class MockHttpRequestsMixin(unittest.TestCase):
+class MockHttpRequestsMixin(BaseCrossbenchTestCase):
   """Mixin to mock the http_requests.get and http_requests.post functions."""
 
   def setUp(self):
     super().setUp()
     self.mock_get = self.enterContext(
         mock.patch("crossbench.pinpoint.http_requests.get"))
+    self.mock_get.return_value.raise_for_status.return_value = None
     self.mock_post = self.enterContext(
         mock.patch("crossbench.pinpoint.http_requests.post"))
+    self.mock_post.return_value.raise_for_status.return_value = None
