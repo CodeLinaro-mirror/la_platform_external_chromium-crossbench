@@ -96,7 +96,7 @@ class AndroidInputActionRunner(DefaultActionRunner):
 
   _GET_JS_VALUES: Final[str] = """
 const found_element = arguments[0] && element;
-if(found_element && arguments[1]) element.scrollIntoView();
+if(found_element && arguments[1]) element.scrollIntoView({ block: 'nearest' });
 rect = found_element ? element.getBoundingClientRect() : new DOMRect();
 return [
   found_element,

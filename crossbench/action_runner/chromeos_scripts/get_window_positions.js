@@ -5,7 +5,7 @@
 // <INSERT SELECTOR LOGIC HERE>
 
 if (arguments[0] && element && arguments[1]) {
-  element.scrollIntoView();
+  element.scrollIntoView({ block: 'nearest' });
 }
 
 if (arguments[0] && element) {
