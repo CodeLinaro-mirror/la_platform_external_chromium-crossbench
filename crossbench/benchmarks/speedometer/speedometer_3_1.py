@@ -66,7 +66,7 @@ class Speedometer31Benchmark(Speedometer3Benchmark):
         "sp3",
         "sp3-latest",
         "speedometer3",
-        "speedometer3-latest"
+        "speedometer3-latest",
         "speedometer_3",
         "speedometer_3-latest",
     ) + super().aliases()
