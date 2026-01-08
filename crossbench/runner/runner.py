@@ -15,6 +15,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
+from crossbench.cli import ui
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import collection_helper
 from crossbench.helper.state import BaseState, StateMachine
@@ -484,8 +485,11 @@ class Runner:
   def wait(self, time: AnyTimeUnit, absolute_time: bool = False) -> None:
     if not time:
       return
-    delta = self.timing.timedelta(time, absolute_time)
-    self._platform.sleep(delta)
+    delta: dt.timedelta = self.timing.timedelta(time, absolute_time)
+    if delta == dt.timedelta.max:
+      ui.prompt("Press enter to continue...")
+    else:
+      self._platform.sleep(delta)
 
   def run(self, is_dry_run: bool = False) -> None:
     self._state.expect(RunnerState.INITIAL)

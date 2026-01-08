@@ -130,6 +130,14 @@ class DurationParserTestCase(unittest.TestCase):
         DurationParser.positive_duration("27.5 minutes"),
         dt.timedelta(minutes=27.5))
 
+  def test_duration_or_user_input(self):
+    self.assertEqual(
+        DurationParser.duration_or_user_input("input"), dt.timedelta.max)
+    self.assertEqual(
+        DurationParser.duration_or_user_input("10s"), dt.timedelta(seconds=10))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_or_user_input("-1s")
+
   def test_hours(self):
     self.assertEqual(
         DurationParser.positive_duration("27.5h"), dt.timedelta(hours=27.5))

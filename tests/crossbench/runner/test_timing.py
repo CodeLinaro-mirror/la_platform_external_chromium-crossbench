@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import math
 import unittest
 
 from crossbench.runner.timing import SAFE_MAX_TIMEOUT_TIMEDELTA, Timing
@@ -83,6 +84,10 @@ class TimingTestCase(unittest.TestCase):
     with self.assertRaises(ValueError):
       _ = t.timedelta(-1)
 
+  def test_to_units_max(self):
+    t = Timing()
+    self.assertEqual(t.units(dt.timedelta.max), math.inf)
+
   def test_to_units_absolute(self):
     t = Timing()
     self.assertEqual(t.units(100, absolute_time=True), 100)
@@ -132,6 +137,12 @@ class TimingTestCase(unittest.TestCase):
                     absolute_time=True).total_seconds(), 90)
     with self.assertRaises(ValueError):
       _ = t.timedelta(-1)
+
+  def test_to_timedelta_max(self):
+    t = Timing()
+    self.assertEqual(t.timedelta(dt.timedelta.max), dt.timedelta.max)
+    self.assertEqual(
+        t.timedelta(dt.timedelta.max, absolute_time=True), dt.timedelta.max)
 
   def test_timeout_timing(self):
     t = Timing(
