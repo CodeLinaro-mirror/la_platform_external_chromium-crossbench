@@ -26,6 +26,8 @@ from crossbench.cli.subcommand.devtools_recorder_proxy.subcommand import \
     DevtoolsRecorderProxySubcommand
 from crossbench.cli.subcommand.help import HelpSubcommand
 from crossbench.cli.subcommand.pinpoint import PinpointSubcommand
+from crossbench.cli.subcommand.setup_cross_platform_mode import \
+    SetupCrossPlatformModeSubcommand
 from crossbench.cli.subcommand.version import VersionSubcommand
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
@@ -189,6 +191,7 @@ class CrossBenchCLI:
     self._version_subcommand = VersionSubcommand(self)
     self._recorder_proxy_subcommand = DevtoolsRecorderProxySubcommand(self)
     self._pinpoint_subcommand = PinpointSubcommand(self)
+    self._cross_plaform_mode_subcommand = SetupCrossPlatformModeSubcommand(self)
     self._last_subcommand: CrossbenchSubcommand | None = None
     self.args = argparse.Namespace()
     self._setup_subcommands()
