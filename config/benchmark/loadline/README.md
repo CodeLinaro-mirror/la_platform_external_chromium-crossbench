@@ -178,7 +178,7 @@ mechanism. Archives of the web pages are stored in the
 `chrome-partner-telemetry` cloud bucket, so you'll need access to that bucket to
 run the benchmark on recorded pages.
 
-### Repetitions {#repetitions}
+### Repetitions
 
 By default, the benchmark runs **100** repetitions, as we have found that this
 brings the noise to an acceptable level. For quicker experiments, it's possible
@@ -209,7 +209,7 @@ addition, the WPR server will run on device, rather than on the host, to reduce
 the noise caused by the latency introduced by the host to device connection.
 
 Both these settings can be overridden if needed / desirable.
-([Repetitions](#repetitions), [WPR on host](#host_wpr))
+([Repetitions](#repetitions), [WPR on host](#running-wpr-on-the-host))
 
 ### Record a new WPR archive
 
@@ -227,7 +227,7 @@ scores, which will not be comparable with the default benchmark configuration.
 Some metrics might break completely. Only use this option if you are ready to
 debug and modify metrics as well.
 
-### Running WPR on the host {#host_wpr}
+### Running WPR on the host
 
 If you care about running as little overhead as possible on the device, e.g. for
 power measurements, you might consider running the WPR server on the host
@@ -272,13 +272,17 @@ to check out code and run crossbench standalone. Make sure to `fetch` using
 depot\_tools instead of cloning the git repository, this ensures that third
 party dependencies are set up correctly.
 
-### Problems accessing the cloud bucket
+### Cloud bucket access
 
-In some cases, you might need to download the web page archive manually. In this
-case, save the archive file corresponding to the version you are running
-(`gs://chrome-partner-telemetry/loading_benchmark/archive_*.wprgo`) locally and
-run the benchmark as follows:
+Web page archives are stored in the `chrome-partner-telemetry` GCP bucket.
+To run the benchmark, you need to have read access to this bucket.
+
+New partners, please submit a ticket using
+[this template](https://g-issues.chromium.org/issues/new?component=1457258&template=1923270).
+After the ticket is resolved, run
 
 ```
-./cb.py loadline-phone --browser <browser> --network <path to archive.wprgo>
+gcloud auth application-default login
 ```
+
+on your workstation (has to be done only once).

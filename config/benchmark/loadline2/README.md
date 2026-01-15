@@ -27,6 +27,14 @@ Run "tablet" workload:
 The browser can be `android:chrome-canary`, `android:chrome-stable` etc. See
 [crossbench docs](/README.md#browsers) for the full list of options.
 
+*** note
+Note: the benchmark requires read access to the `chrome-partner-telemetry`
+GCP bucket. If you are a new partner, please refer to the
+[LoadLine page](/config/benchmark/loadline/README.md#cloud-bucket-access)
+for instructions on getting access.
+***
+
+
 ## Running LoadLine 2 on iOS devices
 
 To ensure metric stability and reduce noise, LoadLine 2 uses some Chrome-only
