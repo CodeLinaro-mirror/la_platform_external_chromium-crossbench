@@ -544,6 +544,16 @@ class Adb:
       cmd.extend([package_name, f"android.permission.{perm}"])
       self.shell(*cmd)
 
+  FOCUSED_WINDOW_RE: Final[re.Pattern] = re.compile(
+      r"mCurrentFocus=(Window\{.*\})")
+
+  def focused_window(self) -> Optional[str]:
+    activity_dump = self.dumpsys("activity", "activities")
+    match = re.search(self.FOCUSED_WINDOW_RE, activity_dump)
+    if match:
+      return match.group(1)
+    return None
+
 
 class AndroidAdbPortManager(PortManager):
 

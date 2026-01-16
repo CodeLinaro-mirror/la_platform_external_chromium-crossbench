@@ -117,7 +117,31 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
       self.adb_force_clear()
       self._setup_binary_permissions()
     self._backup_chrome_flags()
-    return self._start_chromedriver(session, driver_path)
+    driver = self._start_chromedriver(session, driver_path)
+    self._dismiss_any_os_permission_prompts()
+    return driver
+
+  # Some Android OEMs display permission prompts that we cannot turn off via adb
+  # (e.g. because the permissions can't be granted in advance) or device
+  # settings. However, these prompts interfere with UI automation, so we attempt
+  # to dismiss these here instead.
+  def _dismiss_any_os_permission_prompts(self) -> None:
+    focused_window = None
+    try:
+      for _ in wait.wait_with_backoff(10):
+        try:
+          for _ in wait.wait_with_backoff(1):
+            focused_window = self.platform.adb.focused_window()
+            if focused_window and self.android_package in focused_window:
+              return
+        except TimeoutError:
+          if focused_window:
+            logging.debug("Attempting to dismiss unexpected focused window %s",
+                          focused_window or "None")
+            self.platform.adb.shell("input", "keyevent", "KEYCODE_ESCAPE")
+    except TimeoutError:
+      logging.warning("Couldn't validate app focus, focused window: %s",
+                      focused_window or "None")
 
   def _backup_chrome_flags(self) -> None:
     assert self._previous_command_line_contents is None
