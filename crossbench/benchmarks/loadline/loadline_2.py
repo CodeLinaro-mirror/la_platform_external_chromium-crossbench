@@ -103,6 +103,8 @@ class LoadLine2Benchmark(LoadLineBenchmark):
         action="store_true",
         help=("Make Chrome behave more deterministically during loading. Note "
               "that this can affect scores. For experimental use only."))
+    parser.add_argument(
+        "--benchmark-version", action="version", version=f"{VERSION_STRING}")
     return parser
 
   @classmethod
