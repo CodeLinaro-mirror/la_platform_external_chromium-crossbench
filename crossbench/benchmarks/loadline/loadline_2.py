@@ -182,7 +182,7 @@ class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return ("ld2-phone",)
+    return ("ld2-phone", "ll2-phone")
 
 
 class LoadLine2TabletBenchmark(LoadLine2Benchmark):
@@ -203,7 +203,7 @@ class LoadLine2TabletBenchmark(LoadLine2Benchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return ("ld2-tablet",)
+    return ("ld2-tablet", "ll2-tablet")
 
   @classmethod
   @override
