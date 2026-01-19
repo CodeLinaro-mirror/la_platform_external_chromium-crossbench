@@ -28,6 +28,8 @@ from crossbench.browsers.chromium.webdriver import ChromiumWebDriver, \
     ChromiumWebDriverAndroid, ChromiumWebDriverSsh
 from crossbench.browsers.safari.safari import Safari
 from crossbench.browsers.webkit.webdriver import WebKitWebDriver
+from crossbench.browsers.webview.browser import WebviewBrowser
+from crossbench.browsers.webview.embedder import WebviewEmbedder
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig, \
     BrowserVariantsConfig, BrowserVariantsConfigDict
@@ -1317,6 +1319,28 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   def test_get_browser_cls_chromium_android_local_helper(self):
     """Currently there is no nice way to distinguish a local build between
     chrome/chromium."""
+
+  def test_get_browser_cls_webview_shell(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT,
+    ]
+    variants = BrowserVariantsConfig()
+    config = BrowserConfig(
+        browser=pth.AnyPath("org.chromium.webview_shell"),
+        driver=DriverConfig(type=BrowserDriverType.ANDROID))
+    # "webview" in package name should take precedence over "chromium"
+    self.assertIs(variants.get_browser_cls(config), WebviewBrowser)
+
+  def test_get_browser_cls_webview_embedder(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT,
+    ]
+    variants = BrowserVariantsConfig()
+    config = BrowserConfig(
+        browser=pth.AnyPath("webview/velvet.apk"),
+        driver=DriverConfig(type=BrowserDriverType.ANDROID))
+    # valid embedder short name should take precedence over "webview" in path
+    self.assertIs(variants.get_browser_cls(config), WebviewEmbedder)
 
   def test_get_browser_cls_chromeos_ssh_default(self):
     self.platform.sh_results = []
