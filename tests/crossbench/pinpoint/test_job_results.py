@@ -9,7 +9,6 @@ import unittest
 from typing import Final
 from unittest import mock
 
-from crossbench.env.base import ValidationError
 from crossbench.pinpoint.job_results import PinpointAttemptResults, \
     PinpointJobResults, PinpointVariantResults, download_results
 from tests import test_helper
@@ -24,7 +23,7 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
   def get_tmp_dir(self):
     path = pathlib.Path("/tmp/test_results")
-    return path
+    return path.resolve()
 
   def setUp(self):
     super().setUp()
@@ -142,11 +141,11 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
     self.mock_sh.assert_called_once()
     cmd = self.mock_sh.call_args[0]
-    self.assertEqual(cmd[0], "cas")
+    self.assertEqual(str(cmd[0]), "/usr/bin/cas")
     self.assertEqual(cmd[1], "download")
     self.assertIn("123abc", cmd)
     self.assertIn("-dir", cmd)
-    self.assertEqual(cmd[cmd.index("-dir") + 1], str(out_dir / "base" / "1"))
+    self.assertEqual(cmd[cmd.index("-dir") + 1], out_dir / "base" / "1")
 
     # Verify trace download
     self.mock_storage_client.return_value.bucket.assert_any_call("res")
@@ -225,8 +224,98 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
     }
     out_dir = self.get_tmp_dir()
 
-    with self.assertRaisesRegex(ValidationError, "Missing binaries.*cas"):
+    with self.assertRaisesRegex(FileNotFoundError, "Missing binaries.*cas"):
       download_results(_JOB_ID, out_dir)
+
+  def test_download_results_install_cas(self):
+
+    def which_side_effect(binary):
+      if binary == "cas":
+        return None
+      if binary == "cipd":
+        return pathlib.Path("/usr/bin/cipd")
+      return None
+
+    self.mock_which.side_effect = which_side_effect
+
+    self.mock_fetch.return_value = {
+        "configuration": "linux-perf",
+        "results_url": _RESULTS_URL,
+        "status": "Completed",
+        "arguments": {
+            "benchmark": "speedometer3",
+            "configuration": "linux-perf",
+        },
+        "state": []
+    }
+    out_dir = self.get_tmp_dir()
+
+    download_results(_JOB_ID, out_dir)
+
+    args = self.mock_sh.call_args[0]
+    self.assertIn("cipd", args)
+    self.assertIn("install", args)
+
+  def test_download_results_no_cipd(self):
+    self.mock_which.return_value = None
+
+    self.mock_fetch.return_value = {
+        "configuration": "linux-perf",
+        "results_url": _RESULTS_URL,
+        "status": "Completed",
+        "arguments": {
+            "benchmark": "speedometer3",
+            "configuration": "linux-perf",
+        },
+        "state": []
+    }
+    out_dir = self.get_tmp_dir()
+
+    with self.assertRaises(FileNotFoundError):
+      download_results(_JOB_ID, out_dir)
+
+  def test_download_results_use_cas_from_cache(self):
+    self.mock_which.return_value = None
+    cache_dir = self.get_tmp_dir() / "cache" / "cipd"
+    (cache_dir / "cas").mkdir(parents=True)
+    # Fake cas executable file.
+    (cache_dir / "cas" / "cas").open("a").close()
+
+    with mock.patch(
+        "crossbench.plt.PLATFORM.local_cache_dir", return_value=cache_dir):
+      self.mock_fetch.return_value = {
+          "configuration":
+              "linux-perf",
+          "results_url":
+              _RESULTS_URL,
+          "status":
+              "Completed",
+          "arguments": {
+              "benchmark": "speedometer3",
+              "configuration": "linux-perf",
+          },
+          "state": [{
+              "change": {},
+              "attempts": [{
+                  "executions": [
+                      {  # 0: build
+                      },
+                      {  # 1: test
+                          "details": [{
+                              "key": "isolate",
+                              "value": "123abc_cached",
+                          }]
+                      },
+                  ]
+              }]
+          }]
+      }
+      out_dir = self.get_tmp_dir() / "out"
+      download_results(_JOB_ID, out_dir)
+
+    args = self.mock_sh.call_args[0]
+    self.assertEqual(args[0], cache_dir / "cas" / "cas")
+    self.assertIn("123abc_cached", args)
 
   def test_download_results_file_exists_no_force(self):
     self.mock_fetch.return_value = {
