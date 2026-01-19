@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Optional, Sequence
 
 from typing_extensions import override
@@ -41,11 +40,31 @@ class PowerlineStory(Story):
   STORY_NAME = "podcast_vorbis_remute"
   URL_BASE = "https://chromium-workloads.web.app/web-tests/main/synthetic/powerline/"
   STORY_URLS = {
-      "podcast_vorbis": "podcast-vorbis.html",
-      "podcast_vorbis_muted": "podcast-vorbis.html",
-      "podcast_opus": "podcast-opus.html",
-      "podcast_mp3": "podcast-mp3.html",
-      "podcast_aac": "podcast-aac.html"
+    # No activity except for the browser
+    "scenario_idle": "index.html",
+    # Media playback cases (screen on)
+    "media_vp9_720p": "media-vp9-720p.html",
+    "media_vp9_480p": "media-vp9-480p.html",
+    "media_vp9_360p": "media-vp9-360p.html",
+    "media_vp9_240p": "media-vp9-240p.html",
+    "media_av1_1080p": "media-av1-1080p.html",
+    "media_av1_720p": "media-av1-720p.html",
+    "media_av1_480p": "media-av1-480p.html",
+    "media_av1_360p": "media-av1-360p.html",
+    "media_av1_240p": "media-av1-240p.html",
+    "media_h264_1080p": "media-h264-1080p.html",
+    "media_h264_720p": "media-h264-720p.html",
+    "media_h265_1080p": "media-h265-1080p.html",
+    "media_h265_720p": "media-h265-720p.html",
+    "media_multistream_2up": "media-multistream-2up.html",
+    "media_multistream_3up": "media-multistream-3up.html",
+    "media_multistream_6up": "media-multistream-6up.html",
+    # Media playback cases (screen off)
+    "podcast_vorbis": "podcast-vorbis.html",
+    "podcast_vorbis_muted": "podcast-vorbis.html",
+    "podcast_opus": "podcast-opus.html",
+    "podcast_mp3": "podcast-mp3.html",
+    "podcast_aac": "podcast-aac.html"
   }
 
   def __init__(self,
@@ -55,6 +74,22 @@ class PowerlineStory(Story):
     super().__init__(story_name, duration)
 
   def run(self, run: Run) -> None:
+    if self.is_podcast_story(run.story.name):
+      self.run_podcast(run)
+    else:
+      self.run_media(run)
+
+  def run_media(self, run: Run) -> None:
+    with timer():
+      with run.actions("Show URL") as actions:
+        actions.show_url(self.url_from_story(run.story.name))
+      with run.actions("Autoplay") as actions:
+        actions.wait_for_ready_state(
+            ReadyState.COMPLETE, timeout=dt.timedelta(seconds=5))
+      with run.actions("Screen") as actions:
+        actions.wait(self.duration)
+
+  def run_podcast(self, run: Run) -> None:
     with timer():
       with run.actions("Show URL") as actions:
         actions.show_url(self.url_from_story(run.story.name))
@@ -71,7 +106,6 @@ class PowerlineStory(Story):
         with actions.platform.low_power_mode():
           # Put the screen to sleep and enter simulated Doze
           actions.wait(self.duration)
-      logging.info("Stopping benchmark...")
 
   @classmethod
   def url_from_story(cls, name: str) -> str:
@@ -80,6 +114,10 @@ class PowerlineStory(Story):
   @classmethod
   def should_remute(cls, name: str) -> bool:
     return name.endswith("_muted")
+
+  @classmethod
+  def is_podcast_story(cls, name: str) -> bool:
+    return name.startswith("podcast_")
 
   @classmethod
   @override
