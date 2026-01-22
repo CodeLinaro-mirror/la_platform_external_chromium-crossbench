@@ -28,7 +28,7 @@ The browser can be `android:chrome-canary`, `android:chrome-stable` etc. See
 [crossbench docs](/README.md#browsers) for the full list of options.
 
 *** note
-Note: the benchmark requires read access to the `chrome-partner-telemetry`
+Note: the benchmark requires read access to the `chrome-partner-loadline`
 GCP bucket. If you are a new partner, please refer to the
 [LoadLine page](/config/benchmark/loadline/README.md#cloud-bucket-access)
 for instructions on getting access.

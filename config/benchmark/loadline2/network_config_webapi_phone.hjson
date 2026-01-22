@@ -1,6 +1,6 @@
 {
   "type": "wpr"
-  "url": "gs://chrome-partner-telemetry/loading_benchmark/archive_phone_20250918.wprgo"
+  "url": "gs://chrome-partner-loadline/archive_phone_20250918.wprgo"
   "persist_server": true
   "cross_platform_mode": true
   "host": "192.168.1.1"

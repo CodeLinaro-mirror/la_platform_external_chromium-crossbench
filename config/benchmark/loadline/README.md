@@ -175,7 +175,7 @@ benchmark score reflects the actual user-observable loading speed.
 To maintain reproducibility, the benchmark uses the
 [web page replay](https://chromium.googlesource.com/webpagereplay/+/HEAD/README.md)
 mechanism. Archives of the web pages are stored in the
-`chrome-partner-telemetry` cloud bucket, so you'll need access to that bucket to
+`chrome-partner-loadline` cloud bucket, so you'll need access to that bucket to
 run the benchmark on recorded pages.
 
 ### Repetitions
@@ -274,12 +274,13 @@ party dependencies are set up correctly.
 
 ### Cloud bucket access
 
-Web page archives are stored in the `chrome-partner-telemetry` GCP bucket.
+Web page archives are stored in the `chrome-partner-loadline` GCP bucket.
 To run the benchmark, you need to have read access to this bucket.
 
-New partners, please submit a ticket using
-[this template](https://g-issues.chromium.org/issues/new?component=1457258&template=1923270).
-After the ticket is resolved, run
+TODO(https://crbug.com/338049855): There is a plan is to streamline permissions,
+but for now reach out to woa-performance-team@google.com.
+
+After getting access, run
 
 ```
 gcloud auth application-default login

@@ -129,6 +129,15 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
   _page_config: PagesConfig | None = None
 
   @classmethod
+  @override
+  def cli_epilog(cls) -> str:
+    return (
+        "IMPORTANT: This benchmark requires access to a special Google Cloud "
+        "Storage bucket. Please refer to https://chromium.googlesource.com/"
+        "crossbench/+/main/config/benchmark/loadline/README.md#cloud-bucket-"
+        "access for how to get access.")
+
+  @classmethod
   @abc.abstractmethod
   @override
   def default_probe_config_path(cls) -> pth.LocalPath:
