@@ -112,10 +112,12 @@ class VariantConfig(ConfigObject):
       parts.append(f"{flag}={value}" if value is not None else flag)
     return " ".join(parts)
 
-  def extra_browser_flags(self) -> str | None:
+  def extra_browser_flags(self, is_crossbench: bool) -> str | None:
     flags = self.flags_as_str()
     if not flags:
       return None
+    if is_crossbench:
+      return flags
     return f'--extra-browser-args="{flags}"'
 
 
@@ -276,20 +278,34 @@ class PinpointTryJobConfig(ConfigObject):
     return None
 
   def to_request_dict(self) -> dict[str, Any]:
+    is_crossbench = ".crossbench" in self.benchmark
     return {
-        "comparison_mode": "try",
-        "benchmark": self.benchmark,
-        "configuration": self.bot,
-        "story": self.story,
-        "story_tags": self.story_tags,
-        "initial_attempt_count": self.repeat,
-        "bug_id": self.bug,
-        "base_git_hash": self.base.commit,
-        "end_git_hash": self.experiment.commit,
-        "base_patch": self.base.patch,
-        "experiment_patch": self.experiment.patch,
-        "base_extra_args": self.base.extra_browser_flags(),
-        "experiment_extra_args": self.experiment.extra_browser_flags(),
+        "comparison_mode":
+            "try",
+        "benchmark":
+            self.benchmark,
+        "configuration":
+            self.bot,
+        "story":
+            self.story,
+        "story_tags":
+            self.story_tags,
+        "initial_attempt_count":
+            self.repeat,
+        "bug_id":
+            self.bug,
+        "base_git_hash":
+            self.base.commit,
+        "end_git_hash":
+            self.experiment.commit,
+        "base_patch":
+            self.base.patch,
+        "experiment_patch":
+            self.experiment.patch,
+        "base_extra_args":
+            self.base.extra_browser_flags(is_crossbench),
+        "experiment_extra_args":
+            self.experiment.extra_browser_flags(is_crossbench),
     }
 
   @classmethod
