@@ -21,12 +21,17 @@ class PinpointSubcommandTest(unittest.TestCase):
   def setUp(self):
     super().setUp()
     self.cli = CrossBenchCLI()
-    self.patcher_print = mock.patch("builtins.print")
-    self.mock_print = self.patcher_print.start()
+    self.mock_print = self.enterContext(mock.patch("builtins.print"))
+    self.mock_init_metrics = self.enterContext(
+        mock.patch("crossbench.cli.subcommand.pinpoint.init_metrics"))
+    self.mock_collect_metrics = self.enterContext(
+        mock.patch("crossbench.cli.subcommand.pinpoint.collect_metrics"))
 
-  def tearDown(self):
-    super().tearDown()
-    self.patcher_print.stop()
+  @mock.patch("crossbench.cli.subcommand.pinpoint.list_jobs")
+  def test_pinpoint_user_metrics(self, _mock_list_job):
+    self.cli.run(["pinpoint", "list", "-n", "100"])
+    self.mock_init_metrics.assert_called_once_with()
+    self.mock_collect_metrics.assert_called_once_with("list")
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.fetch_bots")
   def test_pinpoint_bots_prints_filtered_bots(self, mock_fetch_bots):
@@ -256,36 +261,51 @@ class PinpointSubcommandTest(unittest.TestCase):
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.print_job_config")
   def test_pinpoint_job_config(self, mock_print_job_config):
-    self.cli.run(["pinpoint", "config", "--job", "123abc", "--raw", "--full"])
+    self.cli.run(["pinpoint", "config", "123abc", "--raw", "--full"])
     mock_print_job_config.assert_called_once_with(
         job_id="123abc", raw=True, full=True)
 
     mock_print_job_config.reset_mock()
-    self.cli.run(["pinpoint", "config", "--job", "123abc"])
+    self.cli.run(["pinpoint", "config", "123abc"])
     mock_print_job_config.assert_called_once_with(
         job_id="123abc", raw=False, full=False)
 
   def test_pinpoint_job_config_full_without_raw(self):
     with self.assertRaises(ValueError):
-      self.cli.run(["pinpoint", "config", "--job", "123abc", "--full"])
+      self.cli.run(["pinpoint", "config", "123abc", "--full"])
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_job")
   def test_pinpoint_cancel_job(self, mock_cancel_job):
     self.cli.run(
         ["pinpoint", "cancel", "--job", "123abc", "--reason", "test reason"])
-    mock_cancel_job.assert_called_once_with("123abc", "test reason")
+    mock_cancel_job.assert_called_once_with(
+        job_id="123abc", reason="test reason")
 
-    mock_cancel_job.reset_mock()
-    self.cli.run(["pinpoint", "cancel", "--job", "123abc"])
-    mock_cancel_job.assert_called_once_with("123abc",
-                                            "Cancelled via Pinpoint CLI.")
+  @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_job")
+  def test_pinpoint_cancel_job_positional_job_id(self, mock_cancel_job):
+    self.cli.run(["pinpoint", "cancel", "123abc", "--reason", "test reason"])
+    mock_cancel_job.assert_called_once_with(
+        job_id="123abc", reason="test reason")
+
+  def test_pinpoint_cancel_job_positional_and_explicit_job_id(self):
+    with self.assertRaises(SystemExit) as cm:
+      self.cli.run([
+          "pinpoint", "cancel", "123abc", "--job", "123abc", "--reason",
+          "test reason"
+      ])
+    self.assertEqual(cm.exception.code, 2)
+
+  def test_pinpoint_cancel_without_job(self):
+    with self.assertRaises(SystemExit) as cm:
+      self.cli.run(["pinpoint", "cancel", "--reason", "test reason"])
+    self.assertEqual(cm.exception.code, 2)
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.download_results")
   def test_pinpoint_download_results(self, mock_download_results):
     self.cli.run(
-        ["pinpoint", "results", "--job", "123abc", "--out-dir", "test_dir"])
+        ["pinpoint", "results", "123abc", "--out-dir", "test_dir", "--force"])
     mock_download_results.assert_called_once_with(
-        job_id="123abc", out_dir=pth.LocalPath("test_dir"))
+        job_id="123abc", out_dir=pth.LocalPath("test_dir"), force=True)
 
   def test_help_formatter(self):
     parser = argparse.ArgumentParser(formatter_class=PinpointHelpFormatter)

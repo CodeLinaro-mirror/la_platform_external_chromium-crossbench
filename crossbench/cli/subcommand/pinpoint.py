@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import abc
 import argparse
-from typing import TYPE_CHECKING, Final
+from concurrent.futures import ThreadPoolExecutor
+from typing import TYPE_CHECKING, Final, final
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -28,6 +29,7 @@ from crossbench.pinpoint.list_jobs import list_jobs
 from crossbench.pinpoint.list_stories import fetch_stories
 from crossbench.pinpoint.start_job import start_job
 from crossbench.pinpoint.user import UserEnum, list_user
+from crossbench.pinpoint.user_metrics import collect_metrics, init_metrics
 
 if TYPE_CHECKING:
   from crossbench.cli.cli import BenchmarkClass, CrossBenchCLI
@@ -50,7 +52,7 @@ _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME: Final[immutabledict[
         "loadline-tablet": "loadline_tablet.crossbench",
         "loadline-tablet-debug": None,
         "loadline-tablet-fast": None,
-        "loadline2-phone": None,
+        "loadline2-phone": "loadline_phone2.crossbench",
         "loadline2-phone-debug": None,
         "loadline2-tablet": None,
         "loadline2-tablet-debug": None,
@@ -85,8 +87,19 @@ class PinpointBaseSubcommand(abc.ABC):
   def add_cli_parser(self) -> argparse.ArgumentParser:
     pass
 
-  @abc.abstractmethod
+  @final
   def run(self, args: argparse.Namespace) -> None:
+    init_metrics()
+    with ThreadPoolExecutor() as executor:
+      [
+          f.result() for f in [
+              executor.submit(self.subcommand_run, args),
+              executor.submit(collect_metrics, args.action)
+          ]
+      ]
+
+  @abc.abstractmethod
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     pass
 
 
@@ -132,7 +145,7 @@ class PinpointListSubcommand(PinpointBaseSubcommand):
     return list_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     list_jobs(args.user, args.number, args.truncate, args.format)
 
 
@@ -142,13 +155,27 @@ class PinpointJobSubcommand(PinpointBaseSubcommand):
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
     parser = self.create_parser()
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "job_pos",
+        nargs="?",
+        type=parse_job_id,
+        help="The ID of the job as a positinal argument. Can be a full URL, a "
+        "part of a URL with a job ID, or just the ID.")
+    group.add_argument(
         "--job",
-        required=True,
         type=parse_job_id,
         help="The ID of the job. Can be a full URL, a part of a URL with a job "
         "ID, or just the ID.")
     return parser
+
+  @override
+  def subcommand_run(self, args: argparse.Namespace) -> None:
+    self.job_subcommand_run(args.job_pos or args.job, args)
+
+  @abc.abstractmethod
+  def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
+    pass
 
   @abc.abstractmethod
   def create_parser(self) -> argparse.ArgumentParser:
@@ -177,8 +204,8 @@ class PinpointConfigSubcommand(PinpointJobSubcommand):
     return config_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
-    print_job_config(job_id=args.job, raw=args.raw, full=args.full)
+  def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
+    print_job_config(job_id=job_id, raw=args.raw, full=args.full)
 
 
 class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
@@ -221,17 +248,18 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         "--commit",
         help="Git commit hash for both base and experiment builds. "
         "Accepts a commit hash, 'HEAD' (latest commit), or 'recent' "
-        "(the most recent build). Defaults to HEAD. "
+        "(the most recent build). Defaults to 'recent'. "
         "Can be overridden by --base-commit or --exp-commit.")
     start_parser.add_argument(
         "--base-commit",
         help="Git commit hash for the base build. Accepts a commit hash, "
         "'HEAD' (latest commit), or 'recent' (the most recent build). "
-        "Defaults to HEAD.")
+        "Overrides '--commit' for the base build.")
     start_parser.add_argument(
         "--exp-commit",
         help="Git commit hash for the experiment build. Accepts a commit hash, "
-        "'HEAD' (latest commit), or 'recent' (the most recent build).")
+        "'HEAD' (latest commit), or 'recent' (the most recent build)."
+        "Overrides '--commit' for the experiment build.")
     start_parser.add_argument(
         "--base-patch",
         help="Gerrit patch to apply to the base commit. Supported formats: "
@@ -295,7 +323,7 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
     return start_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     config = PinpointTryJobConfig.parse_and_override(
         config=args.config,
         benchmark=self.get_benchmark(args),
@@ -404,8 +432,8 @@ class PinpointCancelSubcommand(PinpointJobSubcommand):
     return cancel_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
-    cancel_job(args.job, args.reason)
+  def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
+    cancel_job(job_id=job_id, reason=args.reason)
 
 
 class PinpointBaseFilteredListSubcommand(PinpointBaseSubcommand):
@@ -423,7 +451,7 @@ class PinpointBaseFilteredListSubcommand(PinpointBaseSubcommand):
     return parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     items = self.fetch_list(args)
     filter_str = (args.filter or "").lower().strip()
     filtered_items = [item for item in items if filter_str in item.lower()]
@@ -501,7 +529,7 @@ class PinpointBuildsSubcommand(PinpointBaseSubcommand):
     return builds_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def subcommand_run(self, args: argparse.Namespace) -> None:
     list_builds(args.bot, args.limit)
 
 
@@ -519,11 +547,17 @@ class PinpointResultsSubcommand(PinpointJobSubcommand):
         type=pth.LocalPath,
         help=("Results will be stored in this directory. "
               "Uses to the crossbench results directory by default."))
+    results_parser.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help=("Force download even if the output directory already exists."))
     return results_parser
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
-    download_results(job_id=args.job, out_dir=args.output_directory)
+  def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
+    download_results(
+        job_id=job_id, out_dir=args.output_directory, force=args.force)
 
 
 class PinpointSubcommand(CrossbenchSubcommand):

@@ -46,6 +46,7 @@ data_sources {
       enabled_categories: "loading"
       enabled_categories: "navigation"
       enabled_categories: "net"
+      enabled_categories: "startup"
       enabled_categories: "toplevel"
       enabled_categories: "toplevel.flow"
       enabled_categories: "v8"

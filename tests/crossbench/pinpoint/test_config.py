@@ -12,15 +12,16 @@ from crossbench.cli.config.flags import FlagsConfig
 from crossbench.pinpoint.config import PinpointTryJobConfig, VariantConfig
 from crossbench.pinpoint.list_builds import Build
 from tests import test_helper
-from tests.crossbench.pinpoint.auth_session_mixin import MockAuthSessionMixin
+from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 _TEST_PATCH: Final[
     str] = "https://chromium-review.googlesource.com/c/crossbench/+/12345"
 _TEST_PATCH2: Final[
     str] = "https://chromium-review.googlesource.com/c/crossbench/+/111/2"
+_TEST_RECENT_COMMIT: Final[str] = "aaaabbbb"
 
 
-class VariantConfigTest(MockAuthSessionMixin):
+class VariantConfigTest(MockHttpRequestsMixin):
   _get_auth_session_patch_target = "crossbench.pinpoint.auth.get_auth_session"
 
   def setUp(self):
@@ -28,7 +29,7 @@ class VariantConfigTest(MockAuthSessionMixin):
     self.mock_fetch_builds = self.enterContext(
         mock.patch("crossbench.pinpoint.config.fetch_builds"))
     self.mock_fetch_builds.return_value = [
-        Build(commit="aaaabbbb", date="2025-11-01 00:00:00"),
+        Build(commit=_TEST_RECENT_COMMIT, number=1, date="2025-11-01 00:00:00"),
     ]
 
   def test_parse_variant(self):
@@ -47,7 +48,7 @@ class VariantConfigTest(MockAuthSessionMixin):
 
   def test_parse_variant_default(self):
     variant = VariantConfig.parse("{}")
-    self.assertEqual(variant.commit, "HEAD")
+    self.assertEqual(variant.commit, "recent")
     self.assertIsNone(variant.patch)
     self.assertIsNone(variant.flags_as_str())
     self.assertDictEqual(variant.flags_as_dict(), {})
@@ -81,7 +82,7 @@ class VariantConfigTest(MockAuthSessionMixin):
     self.assertEqual(config.commit, "abcdef00")
 
     config.override_commit("recent", bot="test_bot")
-    self.assertEqual(config.commit, "aaaabbbb")
+    self.assertEqual(config.commit, _TEST_RECENT_COMMIT)
     self.mock_fetch_builds.assert_called_once_with("test_bot")
 
   def test_override_patch(self):
@@ -135,7 +136,7 @@ class VariantConfigTest(MockAuthSessionMixin):
         })
 
 
-class PinpointTryJobConfigTest(MockAuthSessionMixin):
+class PinpointTryJobConfigTest(MockHttpRequestsMixin):
   _get_auth_session_patch_target = "crossbench.pinpoint.auth.get_auth_session"
 
   def setUp(self):
@@ -152,7 +153,7 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
     self.mock_fetch_builds = self.enterContext(
         mock.patch("crossbench.pinpoint.config.fetch_builds"))
     self.mock_fetch_builds.return_value = [
-        Build(commit="aaaabbbb", date="2025-11-02 00:00:00"),
+        Build(commit=_TEST_RECENT_COMMIT, number=1, date="2025-11-02 00:00:00"),
     ]
     self.mock_show_warnings = self.enterContext(
         mock.patch("crossbench.pinpoint.config.show_warnings"))
@@ -197,8 +198,8 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
             benchmark="test_benchmark",
             bot="test_bot",
             story="test_story",
-            base=VariantConfig(),
-            experiment=VariantConfig(),
+            base=VariantConfig(commit=_TEST_RECENT_COMMIT),
+            experiment=VariantConfig(commit=_TEST_RECENT_COMMIT),
         ))
 
   def test_parse_all_fields(self):
@@ -216,7 +217,7 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
                 "flags": "--js-flags=--base-js-flag",
             },
             "experiment": {
-                "commit": "aaaabbbb",
+                "commit": _TEST_RECENT_COMMIT,
                 "patch": _TEST_PATCH2,
                 "flags": "--js-flags=--exp-js-flag",
             },
@@ -236,7 +237,7 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
                 flags=FlagsConfig.parse("--js-flags=--base-js-flag"),
             ),
             experiment=VariantConfig(
-                commit="aaaabbbb",
+                commit=_TEST_RECENT_COMMIT,
                 patch=_TEST_PATCH2,
                 flags=FlagsConfig.parse("--js-flags=--exp-js-flag"),
             )))
@@ -358,10 +359,10 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
             "configuration": "test_bot",
             "story": "test_story",
             "story_tags": None,
-            "initial_attempt_count": 100,
+            "initial_attempt_count": 30,
             "bug_id": None,
-            "base_git_hash": "HEAD",
-            "end_git_hash": "HEAD",
+            "base_git_hash": _TEST_RECENT_COMMIT,
+            "end_git_hash": _TEST_RECENT_COMMIT,
             "base_patch": None,
             "experiment_patch": None,
             "base_extra_args": None,
@@ -375,19 +376,19 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
         story="test_story",
         base_commit="recent",
         exp_commit="recent")
-    self.assertEqual(config.base.commit, "aaaabbbb")
-    self.assertEqual(config.experiment.commit, "aaaabbbb")
+    self.assertEqual(config.base.commit, _TEST_RECENT_COMMIT)
+    self.assertEqual(config.experiment.commit, _TEST_RECENT_COMMIT)
     self.mock_fetch_builds.assert_called_with("test_bot")
 
-  def test_parse_and_override_empty_commit_to_head(self):
+  def test_parse_and_override_empty_commit_to_recent_hash(self):
     config = PinpointTryJobConfig.parse_and_override(
         benchmark="test_benchmark",
         bot="test_bot",
         story="test_story",
         base_commit="",
         exp_commit="")
-    self.assertEqual(config.base.commit, "HEAD")
-    self.assertEqual(config.experiment.commit, "HEAD")
+    self.assertEqual(config.base.commit, _TEST_RECENT_COMMIT)
+    self.assertEqual(config.experiment.commit, _TEST_RECENT_COMMIT)
 
   def test_parse_and_override_story_auto_fetch_signle_story(self):
     config = PinpointTryJobConfig.parse_and_override(
@@ -438,8 +439,8 @@ class PinpointTryJobConfigTest(MockAuthSessionMixin):
         story_tags=None,
         repeat=20,
         bug=None,
-        base=VariantConfig(),
-        experiment=VariantConfig(),
+        base=VariantConfig(commit="HEAD"),
+        experiment=VariantConfig(commit="HEAD"),
     )
     self.assertEqual(config, expectation)
     self.assertEqual(config.parse_and_override(config.to_dict()), expectation)

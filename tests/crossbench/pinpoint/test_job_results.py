@@ -11,7 +11,7 @@ from unittest import mock
 
 from crossbench.env.base import ValidationError
 from crossbench.pinpoint.job_results import PinpointAttemptResults, \
-    PinpointJobResults, PinpointVeriantResults, download_results
+    PinpointJobResults, PinpointVariantResults, download_results
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -24,7 +24,6 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
   def get_tmp_dir(self):
     path = pathlib.Path("/tmp/test_results")
-    path.mkdir(parents=True, exist_ok=True)
     return path
 
   def setUp(self):
@@ -36,7 +35,7 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
         mock.patch("crossbench.plt.PLATFORM.which"))
     self.mock_which.return_value = "/usr/bin/cas"
     self.mock_storage_client = self.enterContext(
-        mock.patch("crossbench.pinpoint.job_results.storage.Client"))
+        mock.patch("crossbench.pinpoint.job_results.gcloud_storage.Client"))
 
     # Setup mock bucket and blob
     self.mock_bucket = mock.MagicMock()
@@ -229,6 +228,42 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
     with self.assertRaisesRegex(ValidationError, "Missing binaries.*cas"):
       download_results(_JOB_ID, out_dir)
 
+  def test_download_results_file_exists_no_force(self):
+    self.mock_fetch.return_value = {
+        "configuration": "linux-perf",
+        "results_url": _RESULTS_URL,
+        "status": "Completed",
+        "state": [],
+        "arguments": {
+            "benchmark": "speedometer3",
+            "configuration": "linux-perf",
+        }
+    }
+    out_dir = self.get_tmp_dir()
+    out_dir.mkdir(parents=True)
+
+    with self.assertRaises(FileExistsError):
+      download_results(_JOB_ID, out_dir)
+
+  def test_download_results_file_exists_with_force(self):
+    self.mock_fetch.return_value = {
+        "configuration": "linux-perf",
+        "results_url": _RESULTS_URL,
+        "status": "Completed",
+        "state": [],
+        "arguments": {
+            "benchmark": "speedometer3",
+            "configuration": "linux-perf",
+        }
+    }
+    out_dir = self.get_tmp_dir()
+    out_dir.mkdir(parents=True)
+
+    download_results(_JOB_ID, out_dir, force=True)
+
+    self.mock_fetch.assert_called_once_with(_JOB_ID, full=True)
+    self.assertTrue((out_dir / f"{_JOB_ID}.html").exists())
+
 
 class PinpointJobResultsTestCase(unittest.TestCase):
 
@@ -239,12 +274,24 @@ class PinpointJobResultsTestCase(unittest.TestCase):
     self.mock_fetch.return_value = {
         "results_url": "https://example.com/results.html",
         "status": "Completed",
+        "created": "2024-01-01T12:00:00Z",
         "state": [],
         "arguments": {
             "benchmark": "speedometer3",
             "configuration": "linux-perf",
         }
     }
+
+  def test_created_date_valid(self):
+    job = PinpointJobResults(_JOB_ID)
+    self.assertEqual(job.created_date, "2024-01-01_120000")
+
+  def test_created_date_invalid(self):
+    self.mock_fetch.return_value["created"] = "invalid-date"
+    job = PinpointJobResults(_JOB_ID)
+    with self.assertLogs(level="WARNING") as cm:
+      self.assertEqual(job.created_date, "invalid-date")
+    self.assertIn("Invalid created time", cm.output[0])
 
   def test_init_valid(self):
     job = PinpointJobResults(_JOB_ID)
@@ -253,7 +300,6 @@ class PinpointJobResultsTestCase(unittest.TestCase):
     self.assertEqual(job.bot, "linux-perf")
     self.assertEqual(job.status, "Completed")
     self.assertEqual(job.results_url, "https://example.com/results.html")
-    self.assertEqual(job.download_count, 1)
 
   def test_init_invalid_status(self):
     self.mock_fetch.return_value = {"status": "Running"}
@@ -262,7 +308,7 @@ class PinpointJobResultsTestCase(unittest.TestCase):
 
   def test_variant_name_with_label(self):
     data = {"change": {"label": "test-label"}, "attempts": []}
-    variant = PinpointVeriantResults(data, 0)
+    variant = PinpointVariantResults(data, 0)
     self.assertEqual(variant.name, "test-label")
 
   def test_variant_name_with_commits(self):
@@ -278,12 +324,12 @@ class PinpointJobResultsTestCase(unittest.TestCase):
         },
         "attempts": []
     }
-    variant = PinpointVeriantResults(data, 0)
+    variant = PinpointVariantResults(data, 0)
     self.assertEqual(variant.name, "chromium_123_v8_456")
 
   def test_variant_name_fallback(self):
     data = {"change": {}, "attempts": []}
-    variant = PinpointVeriantResults(data, 5)
+    variant = PinpointVariantResults(data, 5)
     self.assertEqual(variant.name, "variant_5")
 
   def test_find_isolate(self):
