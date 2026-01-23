@@ -275,10 +275,9 @@ party dependencies are set up correctly.
 ### Cloud bucket access
 
 Web page archives are stored in the `chrome-partner-loadline` GCP bucket.
-To run the benchmark, you need to have read access to this bucket.
-
-TODO(https://crbug.com/338049855): There is a plan is to streamline permissions,
-but for now reach out to woa-performance-team@google.com.
+To run the benchmark, you need to have read access to this bucket. Please
+request access
+[here](https://docs.google.com/forms/d/e/1FAIpQLSdCb1LYPlDEKuOd1lP21yZ9YDEvjq-9W0a5X9k7QxM_YjskzA/viewform?usp=header).
 
 After getting access, run
 
