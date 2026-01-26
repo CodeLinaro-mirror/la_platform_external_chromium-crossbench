@@ -12,7 +12,7 @@ from functools import cache, partial
 from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import urlparse
 
-import google.cloud.storage as gcloud_storage
+import google.cloud.storage as gcloud_storage  # type: ignore
 
 from crossbench import path as pth
 from crossbench import plt

@@ -43,7 +43,7 @@ from crossbench.plt.remote import RemotePopen
 if TYPE_CHECKING:
   import datetime as dt
 
-  import google.cloud.storage.blob as gcloud_blob
+  import google.cloud.storage.blob as gcloud_blob  # type: ignore
 
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.process_meminfo import ProcessMeminfo
