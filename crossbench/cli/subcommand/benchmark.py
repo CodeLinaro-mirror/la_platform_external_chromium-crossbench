@@ -111,8 +111,21 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     self._add_probe_arguments(parser)
     self._add_debugging_arguments(parser)
     self.cli.add_base_arguments(parser)
-    parser.add_argument("other_browser_args", nargs="*")
+    self._add_extra_browser_args(parser)
     return parser
+
+  def _add_extra_browser_args(self, parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--extra-browser-args",
+        help=("Legacy flag, prefer using '-- --browser-flag=...' to avoid "
+              "quote escaping issues. Forwards extra flags to the browser."),
+        nargs="*")
+    # Parser for raw flags after "--"L
+    #   cb.py benchmark ... -- -browser-flag1=... --flag2
+    parser.add_argument(
+        "other_browser_args",
+        nargs="*",
+        help="Forwards extra flags to the browser.")
 
   def _add_browser_cache_arguments(self,
                                    parser: argparse.ArgumentParser) -> None:
