@@ -308,7 +308,8 @@ class PinpointSubcommandTest(unittest.TestCase):
         job_id="123abc", out_dir=pth.LocalPath("test_dir"), force=True)
 
   def test_help_formatter(self):
-    parser = argparse.ArgumentParser(formatter_class=PinpointHelpFormatter)
+    parser = argparse.ArgumentParser(
+        formatter_class=PinpointHelpFormatter, allow_abbrev=False)
     subparsers = parser.add_subparsers(dest="action")
     subparsers.add_parser("list", help="Command")
     subparsers.add_parser("speedometer_main", help="Benchmark")

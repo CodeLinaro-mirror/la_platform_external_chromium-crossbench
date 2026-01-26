@@ -27,7 +27,7 @@ from tests.test_helper import DEFAULT_PYTEST_FLAGS, to_flags  # noqa: E402
 if __name__ == "__main__":
   pass_through_args = sys.argv[1:]
   more_flags = []
-  parser = argparse.ArgumentParser()
+  parser = argparse.ArgumentParser(allow_abbrev=False)
   parser.add_argument("--ignore-tests", required=False)
   parser.add_argument("--adb-device-id", required=False)
   parser.add_argument("--test-gsutil-path", required=False)
