@@ -542,12 +542,6 @@ class ConfigObject(abc.ABC):
     if path.suffix in cls.VALID_EXTENSIONS and path.is_file():
       return path
 
-    if path.is_file() and cls.VALID_EXTENSIONS:
-      logging.warning(
-          "Path exists but does not have a valid extension for %s: %s", cls,
-          path)
-      logging.warning("Valid extensions: %s", cls.VALID_EXTENSIONS)
-
     return None
 
   @classmethod
@@ -597,11 +591,11 @@ class ConfigObject(abc.ABC):
   @classmethod
   def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
     """Default method called for paths with VALID_EXTENSIONS suffix."""
-    return cls.parse_any_path(path, **kwargs)
+    raise NotImplementedError
 
   @classmethod
   def parse_any_path(cls, path: pth.LocalPath, **kwargs) -> Self:
-    """Called for paths that do exist, but don't have VALID_EXTENSIONS."""
+    """Called for paths that either don't exist, or have unknown extensions."""
     # _PrimitiveConfigObject will always parse paths as strings
     # directly and end up calling parse_unknown_path unless they
     # point to a .hjson config file. In these cases the paths
@@ -610,11 +604,17 @@ class ConfigObject(abc.ABC):
     # indication of a bad path.
     if cls is _PrimitiveConfigObject:
       return cls.parse_str(str(path), **kwargs)
-    if path.suffix in cls.VALID_EXTENSIONS:
-      msg = f"Path does not exist: {path}"
-    else:
-      msg = f"Cannot parse unsupported path: {path}"
-    raise argparse.ArgumentTypeError(msg)
+
+    if not path.is_file():
+      raise argparse.ArgumentTypeError(f"Path does not exist: {path}")
+
+    known_extentions = cls.VALID_EXTENSIONS + cls.HJSON_EXTENSIONS
+    assert path.suffix not in known_extentions, "Known extension unexpected"
+    logging.warning(
+        "Path exists but does not have a valid extension for %s: %s", cls, path)
+    logging.warning("Valid extensions: %s", known_extentions)
+
+    raise argparse.ArgumentTypeError(f"Cannot parse unsupported path: {path}")
 
   @classmethod
   def parse_inline_hjson(cls, value: str, **kwargs) -> Self:
