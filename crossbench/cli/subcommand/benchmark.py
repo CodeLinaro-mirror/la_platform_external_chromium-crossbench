@@ -490,6 +490,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     debug_group.add_argument(
         "--driver-logging",
         "--verbose-driver",
+        "--verbose-driver-logging",
         action="store_true",
         default=False,
         help=("Enable verbose webdriver logging. "

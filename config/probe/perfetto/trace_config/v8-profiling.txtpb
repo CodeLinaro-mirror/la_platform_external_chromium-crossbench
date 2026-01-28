@@ -16,7 +16,6 @@ data_sources {
 data_sources: {
     config {
         name: "org.chromium.trace_event"
-
     }
 }
 
@@ -52,6 +51,5 @@ data_sources {
 data_sources: {
     config {
         name: "org.chromium.trace_metadata"
-
     }
 }
