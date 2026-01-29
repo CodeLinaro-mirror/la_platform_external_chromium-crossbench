@@ -1,6 +1,6 @@
 {
   "type": "wpr"
-  "url": "gs://chrome-partner-loadline/archive_phone_20250918.wprgo"
+  "url": "gs://chrome-partner-loadline/archive_phone_20260129.wprgo"
   "persist_server": true
   "run_on_device": true
   "response_transformations_file": "webpagereplay_script_injections_phone.json"

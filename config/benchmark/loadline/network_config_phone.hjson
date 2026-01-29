@@ -1,6 +1,6 @@
 {
   "type": "wpr"
-  "url": "gs://chrome-partner-loadline/archive_phone_deterministic.wprgo"
+  "url": "gs://chrome-partner-loadline/archive_phone_deterministic_20260129.wprgo"
   "persist_server": true
   "run_on_device": true
   // deterministic.js is already injected into archived responses

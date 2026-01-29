@@ -18,7 +18,6 @@ from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
     LoadingPageFilter
-from crossbench.flags.chrome import ChromeFlags
 from crossbench.probes.probe import Probe, ProbePriority
 from crossbench.probes.results import LocalProbeResult
 from crossbench.probes.trace_processor.trace_processor import \
@@ -27,8 +26,6 @@ from crossbench.probes.trace_processor.trace_processor import \
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.benchmarks.loading.page.base import Page
-  from crossbench.browsers.attributes import BrowserAttributes
-  from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
 
@@ -167,18 +164,6 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
       raise argparse.ArgumentTypeError(
           "--config is not supported with loadline.")
     return args.pages_config
-
-  @classmethod
-  @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
-    flags: Flags = super().extra_flags(browser_attributes)
-    if browser_attributes.is_chromium_based:
-      chrome_flags = ChromeFlags(flags)
-      # This is a workaround for crbug.com/475746054.
-      # TODO(crbug/475746054): Remove when the issue is resolved.
-      chrome_flags.features.disable("LowPriorityAsyncScriptExecution")
-      return chrome_flags
-    return flags
 
   @classmethod
   @override
