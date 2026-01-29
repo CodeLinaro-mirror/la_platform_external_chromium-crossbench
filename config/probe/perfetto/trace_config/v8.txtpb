@@ -4,6 +4,11 @@ buffers {
 }
 data_sources {
   config {
+    name: "org.chromium.trace_metadata2"
+  }
+}
+data_sources {
+  config {
     name: "track_event"
     track_event_config {
       disabled_categories: "*"

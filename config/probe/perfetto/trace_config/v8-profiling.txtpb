@@ -2,7 +2,6 @@ buffers {
   size_kb: 524288
   fill_policy: DISCARD
 }
-
 data_sources {
   config {
     name: "dev.v8.code"
@@ -12,13 +11,16 @@ data_sources {
     }
   }
 }
-
 data_sources: {
     config {
         name: "org.chromium.trace_event"
     }
 }
-
+data_sources {
+  config {
+    name: "org.chromium.trace_metadata2"
+  }
+}
 data_sources {
   config {
     name: "track_event"
@@ -46,10 +48,4 @@ data_sources {
       filter_dynamic_event_names: false
     }
   }
-}
-
-data_sources: {
-    config {
-        name: "org.chromium.trace_metadata"
-    }
 }

@@ -15,7 +15,7 @@ from crossbench import path as pth
 from crossbench.config import ConfigObject, config_dir
 from crossbench.helper import fs_helper
 from crossbench.helper.collection_helper import close_matches_message
-from crossbench.parse import ObjectParser, PathParser
+from crossbench.parse import PROTOBUF_ALL_SUFFIX, ObjectParser, PathParser
 from crossbench.probes.perfetto.context.android import \
     AndroidPerfettoProbeContext
 from crossbench.probes.perfetto.context.chromeos import \
@@ -37,8 +37,7 @@ if TYPE_CHECKING:
 class TraceConfig(ConfigObject):
   """ See https://perfetto.dev/docs/reference/trace-config-proto for more
   details."""
-  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = (".pbtxt", ".proto",
-                                                 ".textproto", ".txtpb")
+  VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = PROTOBUF_ALL_SUFFIX
   trace_config: trace_config_pb2.TraceConfig
 
   @classmethod
@@ -78,9 +77,9 @@ class TraceConfig(ConfigObject):
   @functools.cache
   def presets(cls) -> dict[str, pth.LocalPath]:
     result: dict[str, pth.LocalPath] = {}
-    for preset_config in cls.preset_dir().glob("*.pbtxt"):
+    for preset_config in cls.preset_dir().glob("*.txtpb"):
       result[preset_config.stem] = preset_config
-    assert result, f"No trace_config presets found {cls.preset_dir()}"
+    assert result, f"No trace_config presets found in {cls.preset_dir()}"
     return result
 
   @override

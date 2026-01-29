@@ -53,6 +53,11 @@ class MetaTestCase(unittest.TestCase):
           continue
         self.fail(f"{py_file} is missing future annotation")
 
+  def protobug_text_file_names(self):
+    trace_config_dir = test_helper.config_dir()
+    for config_file in trace_config_dir.glob("*.pbtxt"):
+      self.fail(f"Invalid file extension, use .textpb: {config_file}")
+
   @pytest.mark.xfail
   def test_vpython_poetry_version_match(self):
     vpython_content = (ROOT_DIR / ".vpython3").read_text()

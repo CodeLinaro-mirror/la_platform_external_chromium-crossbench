@@ -45,10 +45,15 @@ class PerfettoProbeTestCase(unittest.TestCase):
     probe = probes[0]
     self.assertIsInstance(probe, PerfettoProbe)
 
+  def test_trace_config_preset_invalid_file(self):
+    trace_config_dir = test_helper.config_dir() / "probe/perfetto/trace_config"
+    for config_file in trace_config_dir.glob("*.pbtxt"):
+      self.fail(f"Invalid preset file extension, use .textpb: {config_file}")
+
   def test_trace_config_preset(self):
     trace_config_dir = test_helper.config_dir() / "probe/perfetto/trace_config"
     preset_count = 0
-    for config_file in trace_config_dir.glob("*.pbtxt"):
+    for config_file in trace_config_dir.glob("*.txtpb"):
       preset_count += 1
       with self.subTest(config_file=str(config_file)):
         probe_a = PerfettoProbe.parse_dict({"trace_config": config_file.stem})
@@ -69,7 +74,8 @@ class PerfettoProbeTestCase(unittest.TestCase):
     self.assertGreater(preset_count, 0)
 
   def test_preset_file_from_probe_config(self):
-    trace_config_file = TraceConfig.preset_dir() / "v8.pbtxt"
+    trace_config_file = TraceConfig.preset_dir() / "v8.txtpb"
+    self.assertTrue(trace_config_file.is_file())
     probe = PerfettoProbe.parse_str(str(trace_config_file))
     probe_a = ProbeConfig.parse("perfetto:v8").new_instance()
     self.assertTrue(trace_config_file.is_file())

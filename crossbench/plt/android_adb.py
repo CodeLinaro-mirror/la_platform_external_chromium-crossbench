@@ -952,7 +952,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                      timeout: dt.timedelta) -> pth.AnyPath:
 
     timeout_ms = timeout / dt.timedelta(milliseconds=1)
-    cfg_path = self.path("/data/misc/perfetto-configs/{}.pbtxt".format(label))
+    cfg_path = self.path("/data/misc/perfetto-configs/{}.txtpb".format(label))
     dump_path = self.path(
         "/data/misc/perfetto-traces/{}.trace.pb".format(label))
     cfg = ANDROID_JAVA_HPROF_PERFETTO_CFG.format(
