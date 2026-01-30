@@ -92,9 +92,11 @@ def default_chromium_candidates(platform: Platform) -> tuple[pth.AnyPath, ...]:
   candidates += [
       # Guessing default locations
       home_dir / "Documents/chromium/src",
+      home_dir / "workspace/chromium/src",
       home_dir / "chromium/src",
       platform.path("C:/src/chromium/src"),
       home_dir / "Documents/chrome/src",
+      home_dir / "workspace/chrome/src",
       home_dir / "chrome/src",
       platform.path("C:/src/chrome/src"),
   ]
