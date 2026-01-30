@@ -344,6 +344,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
                 '--extra-browser-args="--js-flags=--exp-js-flag '
                 '--enable-features=enable3,enable4 '
                 '--disable-features=disable3,disable4"',
+            "tags": '{"origin": "pinpoint_cli"}',
         })
 
   def test_to_request_dict_no_flags(self):
@@ -367,6 +368,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
             "experiment_patch": None,
             "base_extra_args": None,
             "experiment_extra_args": None,
+            "tags": '{"origin": "pinpoint_cli"}',
         })
 
   def test_parse_and_override_recent_commit(self):
@@ -518,6 +520,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
                 "--js-flags=--exp-js-flag "
                 "--enable-features=--exp-enabled-feature "
                 "--disable-features=--exp-disabled-feature",
+            "tags": '{"origin": "pinpoint_cli"}'
         })
 
 

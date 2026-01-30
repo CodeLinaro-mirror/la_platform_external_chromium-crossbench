@@ -306,6 +306,8 @@ class PinpointTryJobConfig(ConfigObject):
             self.base.extra_browser_flags(is_crossbench),
         "experiment_extra_args":
             self.experiment.extra_browser_flags(is_crossbench),
+        "tags":
+            '{"origin": "pinpoint_cli"}',
     }
 
   @classmethod
