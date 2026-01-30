@@ -28,6 +28,7 @@ _XPATH_EXPRESSION: Final[str] = (
     "//trace-toc/run/data/table["
     '@category="PointsOfInterest" and @schema="os-signpost"]|'
     '//trace-toc/run/data/table[@schema="cpu-profile"]')
+KB = 1024
 
 
 class MacOSProfilingContext(PosixProfilingContext):
@@ -93,6 +94,8 @@ class MacOSProfilingContext(PosixProfilingContext):
       self.browser_platform.sh("xctrace", "export", "--input", self.result_path,
                                "--output", trace_xml_path, "--xpath",
                                _XPATH_EXPRESSION)
+      if self.browser_platform.file_size(trace_xml_path) < 100 * KB:
+        logging.error("Got empty %s file", trace_xml_path)
       return trace_xml_path
 
   def stop_process(self) -> None:
