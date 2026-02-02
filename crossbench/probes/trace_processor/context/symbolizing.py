@@ -17,6 +17,7 @@ from crossbench.probes.trace_processor.context.base import \
     TraceProcessorProbeContext
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.probes.results import LocalProbeResult
 
 KB = 1024
@@ -67,15 +68,23 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
       logging.error("Could not generate valid symbols file: %s", symbols_result)
       return result
 
-    with zipfile.ZipFile(self.symbolized_trace_path, "w") as zip_file:
+    return self._maybe_symbolized_result(result, symbols_result)
+
+  def _maybe_symbolized_result(
+      self, result: LocalProbeResult,
+      symbols_result: pth.LocalPath) -> LocalProbeResult:
+    with zipfile.ZipFile(self._symbolized_trace_path, "w") as zip_file:
       for f in (*result.perfetto_list, symbols_result):
         zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
-    self._cleanup()
-    return self.local_result(perfetto=(self.symbolized_trace_path,))
 
-  def _cleanup(self) -> None:
-    # If we have a successfully symbolized trace file we don't need the merged
-    # one anymore.
-    if (self.host_platform.file_size(self.symbolized_trace_path)
-        > self.host_platform.file_size(self.merged_trace_path)):
-      self.host_platform.rm(self.merged_trace_path)
+    if (self.host_platform.file_size(self._symbolized_trace_path)
+        < self.host_platform.file_size(self.merged_trace_path)):
+      logging.error("Failed to generated symbolized trace file")
+      return result
+
+    # If we have a successfully symbolized trace file we can replace
+    # the original merged_trace.zip.
+    self.host_platform.rm(self.merged_trace_path)
+    self.host_platform.rename(self._symbolized_trace_path,
+                              self.merged_trace_path)
+    return self.local_result(perfetto=(self.merged_trace_path,))

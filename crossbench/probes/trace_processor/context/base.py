@@ -142,5 +142,5 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
     return self.local_result_path / "merged_trace.zip"
 
   @property
-  def symbolized_trace_path(self) -> pth.LocalPath:
+  def _symbolized_trace_path(self) -> pth.LocalPath:
     return self.local_result_path / "symbolized_trace.zip"
