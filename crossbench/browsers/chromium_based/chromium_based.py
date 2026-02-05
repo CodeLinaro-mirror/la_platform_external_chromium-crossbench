@@ -39,6 +39,8 @@ class ChromiumBased(Browser):
       "--no-first-run",
       # This could be enabled via feature-flags as well.
       "--disable-search-engine-choice-screen",
+      # We do not need cashpad metrics
+      "--disable-crashpad-metrics",
   )
   FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS: tuple[str, ...] = (
       "--disable-background-timer-throttling",
