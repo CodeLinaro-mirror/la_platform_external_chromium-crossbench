@@ -64,8 +64,10 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
 
     if not self.host_platform.exists(symbols_result) or (
         self.host_platform.file_size(symbols_result) < 100 * KB):
-      # Figure out why this regularly fails
-      logging.error("Could not generate valid symbols file: %s", symbols_result)
+      logging.error(
+          "Could not generate valid symbols file: %s. Make sure you have "
+          "traceconv version at least 'Perfetto v53.0-4fa2ae872' due to"
+          "http://crbug.com/481290800.", symbols_result)
       return result
 
     return self._maybe_symbolized_result(result, symbols_result)
