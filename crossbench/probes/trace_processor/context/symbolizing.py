@@ -50,8 +50,16 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
     merged_file = result.get("zip")
     symbols_result = self.local_result_path / "symbols.pb"
     env = {
-        "PERFETTO_SYMBOLIZER_MODE": "index",
-        "PERFETTO_BINARY_PATH": str(self.run.browser.app_path.parent),
+        "PERFETTO_SYMBOLIZER_MODE":
+            "index",
+        # If the user provided no perfetto_binary_path, the default value is
+        # a guess that works for some dev-built binaries. Worst-case scenario,
+        # symbolization fails but the unsymbolized trace is still available. For
+        # official builds, an even better alternative would be to download from
+        # the official archive.
+        "PERFETTO_BINARY_PATH":
+            str(self.probe.perfetto_binary_path if self.probe
+                .perfetto_binary_path else self.run.browser.app_path.parent),
         **self.host_platform.environ,
     }
     env["PATH"] = (os.pathsep).join(
