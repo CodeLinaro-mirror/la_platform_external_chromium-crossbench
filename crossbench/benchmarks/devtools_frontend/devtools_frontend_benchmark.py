@@ -207,4 +207,5 @@ class DevToolsFrontendBenchmark(Benchmark):
     if browser_attributes.is_chromium_based:
       flags.set("--remote-allow-origins", "*")
       flags.set("--force-enable-metrics-reporting")
+      flags.set("--disable-gpu")
     return flags
