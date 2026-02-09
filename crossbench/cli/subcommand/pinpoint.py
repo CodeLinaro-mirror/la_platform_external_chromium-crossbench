@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 # Crossbench benchmarks without corresponding pinpoint benchmarks are None.
 _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME: Final[immutabledict[
     str, str | None]] = immutabledict({
-        "devtools_frontend": None,
+        "devtools_frontend": "devtools_frontend.crossbench",
         "embedder": "embedder.crossbench",
         "jetstream_1.1": "jetstream",
         "jetstream_2.0": "jetstream2.0.crossbench",
