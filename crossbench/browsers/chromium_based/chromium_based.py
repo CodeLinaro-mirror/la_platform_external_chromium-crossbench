@@ -34,6 +34,7 @@ class ChromiumBased(Browser):
   MIN_BENCHMARKING_EXTENSION_FLAG_MILESTONE: Final[int] = 139
   DEFAULT_FLAGS: tuple[str, ...] = (
       "--no-default-browser-check",
+      "--disable-optimization-guide-model-downloads-for-benchmarking",
       "--disable-component-update",
       "--disable-sync",
       "--no-first-run",
