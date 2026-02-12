@@ -22,6 +22,7 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.exception import ExceptionAnnotator
+from crossbench.helper import fs_helper
 from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder import LlvmSymbolizerFinder, \
     TraceconvFinder, TraceProcessorFinder
@@ -327,7 +328,6 @@ class TraceProcessorProbe(Probe):
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     if self.needs_btp_run:
       return self._run_btp(group)
-
     return self._merge_browser_files(group)
 
   def _merge_browser_files(self, group: BrowsersRunGroup) -> LocalProbeResult:
@@ -411,9 +411,12 @@ class TraceProcessorProbe(Probe):
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     logging.info("-" * 80)
-    logging.critical("TraceProcessor merged traces:")
+    logging.critical("TraceProcessor results:")
     for run in group.runs:
-      logging.critical("  - %s", run.results[self].perfetto)
+      results = run.results[self]
+      for result_file in [*results.get_all("pprof"), *results.perfetto_list]:
+        logging.critical("  - %s : %s", result_file,
+                         fs_helper.get_file_size(result_file))
 
 __all__ = [
     "TraceProcessorProbe",

@@ -18,9 +18,9 @@ def build_chromedriver_instructions(build_dir: pth.AnyPath) -> str:
 
 def find_build_dir(path: pth.AnyPath,
                    platform: Platform,
-                   limit: int = 3) -> pth.AnyPath | None:
+                   limit: int = 5) -> pth.AnyPath | None:
   for parent in path.parents[:limit]:
-    if platform.exists(parent / "args.gn"):
+    if is_build_dir(parent, platform):
       return parent
   return None
 
@@ -33,4 +33,4 @@ def is_in_build_dir(path: pth.AnyPath, platform: Platform) -> bool:
   # bypass potentially expensive checks
   if "src" not in path.parts:
     return False
-  return any(is_build_dir(parent, platform) for parent in path.parents)
+  return bool(find_build_dir(path, platform))
