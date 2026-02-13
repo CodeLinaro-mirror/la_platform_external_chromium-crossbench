@@ -205,7 +205,12 @@ class DevToolsFrontendBenchmark(Benchmark):
   def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes)
     if browser_attributes.is_chromium_based:
+      # Allows us to establish a CDP session with the browser
       flags.set("--remote-allow-origins", "*")
+      # Ensures we get event data at chrome://metrics-internals/structured
       flags.set("--force-enable-metrics-reporting")
+      # Align with DevTools e2e tests
       flags.set("--disable-gpu")
+      # Avoids Windows crash (see b/40182504)
+      flags.set("--disable-crashpad-metrics")
     return flags
