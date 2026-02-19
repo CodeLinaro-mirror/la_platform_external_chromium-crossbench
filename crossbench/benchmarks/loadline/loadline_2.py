@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence, Type
 
 import numpy as np
@@ -30,6 +29,7 @@ if TYPE_CHECKING:
   from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.runner import Runner
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
@@ -46,6 +46,11 @@ class LoadLine2Probe(LoadLineProbe):
     return LoadLine2ProbeContext
 
   @override
+  def setup(self, runner: Runner) -> None:
+    super().setup(runner)
+    self._check_connectivity(runner)
+
+  @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
     df = self._load_query_result(group, "loadline2_benchmark_score")
     total = df.drop(columns=["cb_story", "cb_temperature", "cb_run"]).groupby(
@@ -58,10 +63,6 @@ class LoadLine2Probe(LoadLineProbe):
   @override
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
     df = self._load_query_result(group, "loadline2_breakdown")
-    if any(df["network"] > df["process_launch"]):
-      logging.warning("Some runs were affected by network latency. "
-                      "Results can be non-representative.")
-
     df["os"] = df[["network", "process_launch"]].max(axis=1)
     df = df.groupby(["cb_browser", "page"])[[
         "os", "renderer_visual", "renderer_interactive", "gpu_visual",

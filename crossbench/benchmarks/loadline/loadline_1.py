@@ -26,6 +26,7 @@ if TYPE_CHECKING:
   from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.runner import Runner
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
@@ -66,6 +67,11 @@ class LoadLine1Probe(LoadLineProbe):
     return LoadLine1ProbeContext
 
   @override
+  def setup(self, runner: Runner) -> None:
+    super().setup(runner)
+    self._check_connectivity(runner)
+
+  @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
     df = self._load_query_result(group, "loadline_benchmark_score")
     return process_scores(df)
@@ -74,8 +80,7 @@ class LoadLine1Probe(LoadLineProbe):
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
     df = self._load_query_result(group, "loadline_breakdown")
     if any(df["network"] > df["process_launch"]):
-      logging.warning("Some runs were affected by network latency. "
-                      "Results can be non-representative.")
+      self._warnings.append("Some runs were affected by network latency.")
     return process_breakdown(df)
 
 
