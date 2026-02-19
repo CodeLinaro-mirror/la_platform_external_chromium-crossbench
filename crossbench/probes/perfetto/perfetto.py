@@ -24,6 +24,7 @@ from crossbench.probes.perfetto.context.desktop import \
     DesktopPerfettoProbeContext
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
+from crossbench.probes.trace_processor import profile_helper
 from protoc import trace_config_pb2
 
 if TYPE_CHECKING:
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
   from crossbench.probes.perfetto.context.base import PerfettoProbeContext
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
 
 
 @dataclasses.dataclass
@@ -243,3 +245,7 @@ class PerfettoProbe(Probe):
     if run.browser_platform.is_android:
       return AndroidPerfettoProbeContext(self, run)
     return DesktopPerfettoProbeContext(self, run)
+
+  @override
+  def get_extra_probes(self, runner: Runner) -> Iterable[Probe]:
+    return profile_helper.get_extra_trace_processor(runner)

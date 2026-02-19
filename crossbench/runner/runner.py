@@ -265,7 +265,7 @@ class Runner:
     self._warmup_repetitions = NumberParser.positive_zero_int(
         warmup_repetitions, "warmup repetitions")
     self._cache_temperatures: tuple[str, ...] = tuple(cache_temperatures)
-    self._probes: list[Probe] = []
+    self._probes: dict[str, Probe] = {}
     self._default_probes: list[Probe] = []
     # Contains both measure and warmup runs:
     self._all_runs: list[Run] = []
@@ -276,8 +276,8 @@ class Runner:
     self._env = RunnerEnv(self.platform, self.out_dir, self.browsers,
                           self.probes, self.repetitions, env_config,
                           env_validation_mode)
-    self._prepare_probes(probes)
     self._prepare_benchmark()
+    self._prepare_probes(probes)
     self._sort_probes()
     if in_memory_result_db:
       self._results_db = ResultsDB()
@@ -293,12 +293,6 @@ class Runner:
 
   def _prepare_benchmark(self) -> None:
     benchmark_validator.validate_cls(type(self._benchmark))
-    for benchmark_probe_cls in self._benchmark.PROBES:
-      probe = benchmark_probe_cls(benchmark=self._benchmark)
-      assert isinstance(
-          probe, BenchmarkProbeMixin), f"Expected BenchmarkProbe, got {probe}"
-      assert isinstance(probe, Probe), f"Expected Probe, got {probe}"
-      self.attach_probe(probe)
 
   def _validate_browser_labels(self) -> None:
     assert self.browsers, "No browsers provided"
@@ -308,16 +302,29 @@ class Runner:
   def _prepare_probes(self, probe_list: Iterable[Probe]) -> None:
     assert len(self._probes) == 0
     assert len(self._default_probes) == 0
-    self._attach_internal_probes()
 
+    self._attach_internal_probes()
     for probe in probe_list:
       self.attach_probe(probe)
+    self._attach_benchmark_probes()
+    self._attach_extra_probes()
+
+  def _attach_benchmark_probes(self) -> None:
+    for benchmark_probe_cls in self._benchmark.PROBES:
+      benchmark_probe = benchmark_probe_cls(benchmark=self._benchmark)
+      assert isinstance(benchmark_probe, BenchmarkProbeMixin
+                       ), f"Expected BenchmarkProbe, got {benchmark_probe}"
+      assert isinstance(benchmark_probe,
+                        Probe), f"Expected Probe, got {benchmark_probe}"
+      self.attach_probe(benchmark_probe)
 
   def _sort_probes(self) -> None:
-    self._probes.sort(key=lambda probe: probe.PRIORITY)
+    self._probes = dict(
+        sorted(self._probes.items(), key=lambda item: item[1].PRIORITY))
     # Results probe must be first in the list, and thus last to be processed
     # so all other probes have data by the time we write the results summary.
-    assert isinstance(self._probes[0], ResultsSummaryProbe)
+    probes_list = list(self._probes.values())
+    assert isinstance(probes_list[0], ResultsSummaryProbe)
 
   def _attach_internal_probes(self) -> None:
     for probe_cls in all_probes.NON_CONFIGURABLE_INTERNAL_PROBES:
@@ -343,25 +350,49 @@ class Runner:
   def attach_probe(self,
                    probe: Probe,
                    matching_browser_only: bool = False) -> Probe:
-    if probe in self._probes:
-      raise ValueError(f"Cannot add the same probe twice: {probe.NAME}")
+    if self.has_probe(probe.name):
+      raise ValueError(f"Cannot add the same probe twice: {probe.name}")
     probe_was_used = False
-    for browser in self.browsers:
-      try:
-        probe.validate_browser(self.env, browser)
-        browser.attach_probe(probe)
-        probe_was_used = True
-      except ProbeIncompatibleBrowser as e:
-        if matching_browser_only:
-          logging.error("Skipping incompatible probe=%s for browser=%s:",
-                        probe.name, browser.unique_name)
-          logging.error("    %s", e)
-          continue
-        raise
+    with exception.annotate(f"Attaching {probe.name}"):
+      for browser in self.browsers:
+        with exception.annotate(f"... to {browser.label}"):
+          probe_was_used |= self._attach_probe_to_browser(
+              browser, probe, matching_browser_only)
     if probe_was_used:
-      self._probes.append(probe)
-    self._env.add_probes([probe])
+      self._probes[probe.name] = probe
+    self._env.add_probes((probe,))
     return probe
+
+  def _attach_probe_to_browser(self,
+                               browser: Browser,
+                               probe: Probe,
+                               matching_browser_only: bool = False) -> bool:
+    try:
+      probe.validate_browser(self.env, browser)
+      browser.attach_probe(probe)
+    except ProbeIncompatibleBrowser as e:
+      if matching_browser_only:
+        logging.error("Skipping incompatible probe=%s for browser=%s:",
+                      probe.name, browser.unique_name)
+        logging.error("    %s", e)
+        return False
+      raise
+    return True
+
+  def has_probe(self, name: str) -> bool:
+    return name in self._probes
+
+  def _attach_extra_probes(self) -> None:
+    # We use a queue to allow additional probes to also add more probes.
+    # self._probes might grow during this process.
+    pending_probes = list(self._probes.values())
+    while pending_probes:
+      probe = pending_probes.pop(0)
+      with self.exceptions.annotate(f"Attaching extra probes for {probe.name}"):
+        for extra_probe in probe.get_extra_probes(self):
+          self.attach_probe(extra_probe)
+          pending_probes.append(extra_probe)
+          logging.warning("🩺 Auto-adding '%s' probe.", extra_probe.name)
 
   @property
   def timing(self) -> Timing:
@@ -380,8 +411,8 @@ class Runner:
     return self._stories
 
   @property
-  def probes(self) -> Iterable[Probe]:
-    return iter(self._probes)
+  def probes(self) -> tuple[Probe, ...]:
+    return tuple(self._probes.values())
 
   @property
   def default_probes(self) -> Iterable[Probe]:
@@ -542,7 +573,7 @@ class Runner:
   def _setup_validate_browser(self, browser: Browser) -> None:
     browser.validate()
     for probe in browser.probes:
-      assert probe in self._probes, (
+      assert self.has_probe(probe.name), (
           f"Browser {browser} probe {probe} not in Runner.probes. "
           "Use Runner.attach_probe()")
 

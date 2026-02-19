@@ -10,6 +10,7 @@ import unittest
 from typing_extensions import override
 
 from crossbench.browsers.settings import Settings
+from crossbench.probes import all as all_probes
 from crossbench.probes.profiling.context.android import \
     generate_simpleperf_command_line
 from crossbench.probes.profiling.system_profiling import RENDERER_CMD_PATH, \
@@ -242,6 +243,14 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
                 "cpu-cycles,instructions", "--no-inherit", "-o", output_path
             ])
 
+  def test_parse_target_preset(self):
+    probe = ProfilingProbe()
+    self.assertEqual(probe.target, TargetMode.BROWSER_APP_ONLY)
+    probe = ProfilingProbe.parse_str("renderer_process_only")
+    self.assertEqual(probe.target, TargetMode.RENDERER_PROCESS_ONLY)
+    probe = ProfilingProbe.parse_str("renderer_main_only")
+    self.assertEqual(probe.target, TargetMode.RENDERER_MAIN_ONLY)
+
   def test_create_non_defaults(self):
     probe = ProfilingProbe.parse_dict({
         "js": False,
@@ -344,6 +353,8 @@ class EnumTestCase(unittest.TestCase):
     self.assertIs(CallGraphMode("fp"), CallGraphMode.FRAME_POINTER)
     self.assertIs(CallGraphMode("FP"), CallGraphMode.FRAME_POINTER)
 
+# Remove import that's used to avoid circular import issues.
+del all_probes
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

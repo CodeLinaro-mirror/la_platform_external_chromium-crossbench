@@ -356,7 +356,7 @@ class RunnerTestCase(BaseRunnerTestCase):
       raise ProbeIncompatibleBrowser(probe, browser, "mock invalid")
 
     probe.validate_browser = mock_validate_browser
-    with self.assertRaises(ProbeIncompatibleBrowser) as cm:
+    with self.assertRaises(MultiException) as cm:
       runner.attach_probe(probe)
     self.assertIn("mock invalid", str(cm.exception))
     # matching_browser_only = True silence the error
@@ -381,7 +381,7 @@ class RunnerTestCase(BaseRunnerTestCase):
 
     # Attaching incompatible probes raises errors by default.
     probe.validate_browser = mock_validate_browser
-    with self.assertRaises(ProbeIncompatibleBrowser) as cm:
+    with self.assertRaises(MultiException) as cm:
       runner.attach_probe(probe)
     self.assertIn("mock invalid", str(cm.exception))
     # matching_browser_only = True silences the error

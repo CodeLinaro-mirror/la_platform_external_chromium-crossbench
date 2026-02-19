@@ -24,6 +24,7 @@ from crossbench.probes.profiling.context.macos import MacOSProfilingContext
 from crossbench.probes.profiling.enum import CallGraphMode, CleanupMode, \
     TargetMode
 from crossbench.probes.result_location import ResultLocation
+from crossbench.probes.trace_processor import profile_helper
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
   from crossbench.probes.profiling.context.base import ProfilingContext
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
 
 V8_INTERPRETED_FRAMES_FLAG: Final = "--interpreted-frames-native-stack"
 RENDERER_CMD_PATH: Final = pth.LocalPath(
@@ -105,7 +107,7 @@ class ProfilingProbe(Probe):
         "(perf.data.jitted and temporary .so files on linux "
         "cleaned up automatically if pprof is set to True)")
     # Android/simpleperf-specific arguments.
-    parser.add_argument(
+    parser.add_default_argument(
         "target",
         type=TargetMode,
         default=TargetMode.BROWSER_APP_ONLY,
@@ -530,3 +532,7 @@ class ProfilingProbe(Probe):
     if run.browser_platform.is_android:
       return AndroidProfilingContext(self, run)
     raise NotImplementedError("Invalid platform")
+
+  @override
+  def get_extra_probes(self, runner: Runner) -> Iterable[Probe]:
+    return profile_helper.get_extra_trace_processor(runner)
