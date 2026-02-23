@@ -7,12 +7,13 @@ from __future__ import annotations
 import abc
 import logging
 from functools import cached_property
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from typing_extensions import override
 
 from crossbench.plt.posix import PosixPlatform
 from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.profiling.enum import TargetMode
 from crossbench.probes.v8.log import V8LogProbe
 
 if TYPE_CHECKING:
@@ -30,6 +31,16 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
     self._story_ready: bool = False
     self._renderer_pid: int | None = None
     self._renderer_tid: int | None = None
+    self._target: Final[TargetMode] = self.probe.resolve_target_mode(
+        run.browser)
+    assert self._target is not TargetMode.AUTO, "unexpected target mode"
+
+  @property
+  def target(self) -> TargetMode:
+    return self._target
+
+  def start_profiling_after_setup(self) -> bool:
+    return self.probe.start_profiling_after_setup(self._target)
 
   def setup_v8_log_path(self) -> None:
     if any(isinstance(probe, V8LogProbe) for probe in self.run.probes):

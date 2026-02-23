@@ -110,7 +110,7 @@ class ProfilingProbe(Probe):
     parser.add_default_argument(
         "target",
         type=TargetMode,
-        default=TargetMode.BROWSER_APP_ONLY,
+        default=TargetMode.AUTO,
         help=("Chrome-on-Android/Chrome-on-Mac: "
               "Profile either Renderer main/process only, "
               "or all processes of the Browser App, or system-wide. "
@@ -203,7 +203,7 @@ class ProfilingProbe(Probe):
       cleanup: CleanupMode = CleanupMode.AUTO,
       browser_process: bool = False,
       spare_renderer_process: bool = False,
-      target: TargetMode = TargetMode.BROWSER_APP_ONLY,
+      target: TargetMode = TargetMode.AUTO,
       pin_renderer_main_core: Optional[int] = None,
       call_graph_mode: CallGraphMode = CallGraphMode.FRAME_POINTER,
       frequency: Optional[int | str] = None,
@@ -226,9 +226,6 @@ class ProfilingProbe(Probe):
     self._target: TargetMode = target
     self._pin_renderer_main_core: int | None = pin_renderer_main_core
     self._call_graph_mode: CallGraphMode = call_graph_mode
-    self._start_profiling_after_setup: bool = target in (
-        TargetMode.RENDERER_MAIN_ONLY,
-        TargetMode.RENDERER_PROCESS_ONLY) or pin_renderer_main_core is not None
     self._frequency: int | str | None = frequency
     self._clockid: str | None = clockid
     self._count: int | None = count
@@ -250,7 +247,7 @@ class ProfilingProbe(Probe):
         ("target", str(self._target)),
         ("pin_renderer_main_core", self._pin_renderer_main_core),
         ("call_graph_mode", str(self._call_graph_mode)),
-        ("start_profiling_after_setup", self._start_profiling_after_setup),
+        ("target", str(self.target)),
         ("frequency", self._frequency),
         ("count", self._count),
         ("cpu", self._cpu),
@@ -288,10 +285,6 @@ class ProfilingProbe(Probe):
     return self._call_graph_mode
 
   @property
-  def start_profiling_after_setup(self) -> bool:
-    return self._start_profiling_after_setup
-
-  @property
   def frequency(self) -> Optional[int | str]:
     return self._frequency
 
@@ -319,6 +312,18 @@ class ProfilingProbe(Probe):
   def add_counters(self) -> tuple[str, ...]:
     return self._add_counters
 
+  def resolve_target_mode(self, browser: Browser) -> TargetMode:
+    if self.target is not TargetMode.AUTO:
+      return self.target
+    if browser.platform.is_macos:
+      return TargetMode.RENDERER_PROCESS_ONLY
+    return TargetMode.BROWSER_APP_ONLY
+
+  def start_profiling_after_setup(self, target: TargetMode) -> bool:
+    return target in (TargetMode.RENDERER_MAIN_ONLY,
+                      TargetMode.RENDERER_PROCESS_ONLY
+                     ) or self.pin_renderer_main_core is not None
+
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     browser_platform = browser.platform
@@ -343,7 +348,8 @@ class ProfilingProbe(Probe):
       self._validate_non_android_perf_settings(browser)
 
   def _validate_chromium_based(self, browser: ChromiumBased) -> None:
-    if self._start_profiling_after_setup:
+    browser_target_mode = self.resolve_target_mode(browser)
+    if self.start_profiling_after_setup(browser_target_mode):
       self._validate_benchmarking_extension_version(browser)
 
   def _validate_perf_settings(self, browser: Browser) -> None:
@@ -386,7 +392,7 @@ class ProfilingProbe(Probe):
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
                          f"repetitions={env.repetitions}.")
 
-    supported_mac_targets = (TargetMode.SYSTEM_WIDE,
+    supported_mac_targets = (TargetMode.AUTO, TargetMode.SYSTEM_WIDE,
                              TargetMode.RENDERER_PROCESS_ONLY)
     assert self._target in supported_mac_targets, (
         f"Unsupported profile target for Mac: {self._target}. "
@@ -436,7 +442,8 @@ class ProfilingProbe(Probe):
   def _attach_chromium(self, browser: ChromiumBased) -> None:
     if not self._spare_renderer_process:
       browser.features.disable("SpareRendererForSitePerProcess")
-    if self._start_profiling_after_setup:
+    browser_target = self.resolve_target_mode(browser)
+    if self.start_profiling_after_setup(browser_target):
       browser.flags.enable_benchmarking_api()
     if self._sample_js:
       if browser.platform.is_linux:

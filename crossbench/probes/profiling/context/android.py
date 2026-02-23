@@ -28,8 +28,8 @@ class AndroidProfilingContext(PosixProfilingContext):
   def _generate_command_line(self) -> ListCmdArgs:
     renderer_pid: int | None = None
     renderer_main_tid: int | None = None
-    if self.probe.target in (TargetMode.RENDERER_MAIN_ONLY,
-                             TargetMode.RENDERER_PROCESS_ONLY):
+    if self.target in (TargetMode.RENDERER_MAIN_ONLY,
+                       TargetMode.RENDERER_PROCESS_ONLY):
       renderer_pid, renderer_main_tid = self.renderer_pid_tid
     return generate_simpleperf_command_line(
         self.probe.target,
@@ -105,7 +105,7 @@ class AndroidProfilingContext(PosixProfilingContext):
     self._stop_existing_simpleperf()
 
   def start(self) -> None:
-    if not self.probe.start_profiling_after_setup:
+    if not self.start_profiling_after_setup():
       self._start_simpleperf()
 
   @override
@@ -114,7 +114,7 @@ class AndroidProfilingContext(PosixProfilingContext):
     if self.probe.pin_renderer_main_core is not None:
       self._pin_renderer_main_core(self.probe.pin_renderer_main_core)
 
-    if self.probe.start_profiling_after_setup:
+    if self.start_profiling_after_setup():
       self._start_simpleperf()
 
   def stop(self) -> None:

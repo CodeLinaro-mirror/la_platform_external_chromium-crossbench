@@ -75,7 +75,7 @@ class LinuxProfilingContext(PosixProfilingContext):
   @override
   def start_story_run(self) -> None:
     super().start_story_run()
-    if self.probe.start_profiling_after_setup:
+    if self.start_profiling_after_setup():
       (self._renderer_pid, self._renderer_tid) = self.renderer_pid_tid
 
   def stop(self) -> None:
@@ -121,7 +121,7 @@ class LinuxProfilingContext(PosixProfilingContext):
 
   def _filter_perf_files(self,
                          perf_files: list[pth.AnyPath]) -> list[pth.AnyPath]:
-    if not self.probe.start_profiling_after_setup:
+    if not self.start_profiling_after_setup():
       return perf_files
     renderer_pid = self._renderer_pid
     if not renderer_pid:

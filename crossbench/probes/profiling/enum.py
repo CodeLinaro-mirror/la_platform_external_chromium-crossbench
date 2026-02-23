@@ -28,6 +28,7 @@ class CleanupMode(StrEnumWithHelp):
 
 @enum.unique
 class TargetMode(StrEnumWithHelp):
+  AUTO = ("auto", "Automatically chose the best option based on the platform")
   RENDERER_MAIN_ONLY = ("renderer_main_only",
                         "Profile Renderer Main thread only")
   RENDERER_PROCESS_ONLY = ("renderer_process_only",
