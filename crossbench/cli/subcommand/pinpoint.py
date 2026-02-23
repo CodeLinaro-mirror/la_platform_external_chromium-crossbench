@@ -25,7 +25,7 @@ from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
 from crossbench.pinpoint.list_builds import list_builds
 from crossbench.pinpoint.list_format import ListFormatEnum
-from crossbench.pinpoint.list_jobs import list_jobs
+from crossbench.pinpoint.list_jobs import EXTRA_COLUMNS, list_jobs
 from crossbench.pinpoint.list_stories import fetch_stories
 from crossbench.pinpoint.start_job import start_job
 from crossbench.pinpoint.user import UserEnum, list_user
@@ -109,7 +109,10 @@ class PinpointListSubcommand(PinpointBaseSubcommand):
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
     list_parser = self._parent.subparsers.add_parser(
-        "list", aliases=("ls",), help="Displays recent Pinpoint jobs.")
+        "list",
+        aliases=("ls",),
+        help="Displays recent Pinpoint jobs.",
+        formatter_class=argparse.RawTextHelpFormatter)
     list_parser.add_argument(
         "--user",
         "-u",
@@ -142,11 +145,36 @@ class PinpointListSubcommand(PinpointBaseSubcommand):
         default=None,
         help=("Truncate cell content to the specified maximum length. "
               "Only applies to the 'table' format."))
+    extra_columns_help = (
+        "Additional columns to display in the list of jobs. Can be specified "
+        "multiple times. Example:\n"
+        "./cb.py pp ls -c=story -c=bug\n"
+        "Supported columns:\n" +
+        "\n".join(f"  {c.name}: {c.description}" for c in EXTRA_COLUMNS))
+    list_parser.add_argument(
+        "--extra-columns",
+        "-c",
+        nargs="*",
+        action="extend",
+        choices=[c.name for c in EXTRA_COLUMNS],
+        help=extra_columns_help)
+    list_parser.add_argument(
+        "--details",
+        dest="extra_columns",
+        action="store_const",
+        const=(column.name for column in EXTRA_COLUMNS),
+        help="Shortcut to include all extra columns in the output")
     return list_parser
 
   @override
   def subcommand_run(self, args: argparse.Namespace) -> None:
-    list_jobs(args.user, args.number, args.truncate, args.format)
+    list_jobs(
+        user=args.user,
+        number=args.number,
+        truncate=args.truncate,
+        output_format=args.format,
+        extra_columns=args.extra_columns,
+    )
 
 
 class PinpointJobSubcommand(PinpointBaseSubcommand):

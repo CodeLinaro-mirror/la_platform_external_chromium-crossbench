@@ -12,6 +12,7 @@ from crossbench import path as pth
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.subcommand.pinpoint import PinpointHelpFormatter
 from crossbench.pinpoint.config import PinpointTryJobConfig, VariantConfig
+from crossbench.pinpoint.user import UserEnum
 from tests import test_helper
 
 
@@ -32,6 +33,31 @@ class PinpointSubcommandTest(unittest.TestCase):
     self.cli.run(["pinpoint", "list", "-n", "100"])
     self.mock_init_metrics.assert_called_once_with()
     self.mock_collect_metrics.assert_called_once_with("list")
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.list_jobs")
+  def test_pinpoint_list(self, mock_list_job):
+    self.cli.run([
+        "pinpoint",
+        "list",
+        "--user",
+        "all",
+        "--number",
+        "100",
+        "--format",
+        "csv",
+        "--truncate",
+        "50",
+        "--extra-columns",
+        "bug",
+        "--extra-columns",
+        "story",
+    ])
+    mock_list_job.assert_called_once_with(
+        user=UserEnum.ALL,
+        number=100,
+        truncate=50,
+        output_format="csv",
+        extra_columns=["bug", "story"])
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.fetch_bots")
   def test_pinpoint_bots_prints_filtered_bots(self, mock_fetch_bots):
