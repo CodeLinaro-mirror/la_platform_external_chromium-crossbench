@@ -14,6 +14,7 @@ from typing import Any, Final, Mapping
 
 import yaml
 from immutabledict import immutabledict
+from ordered_set import OrderedSet
 from tabulate import tabulate
 
 from crossbench.pinpoint import http_requests
@@ -107,7 +108,7 @@ def list_jobs(user: UserEnum | str,
     return
 
   _display_jobs(jobs[:number], output_format, user == UserEnum.ALL, truncate,
-                list(dict.fromkeys(extra_columns)))
+                OrderedSet(extra_columns))
 
 
 def _fetch_user_emails(user: UserEnum | str) -> set[str | None]:
@@ -154,9 +155,9 @@ def _fetch_jobs(number: int, email: str | None = None) -> list[dict[str, Any]]:
 
 def _prepare_job_list_data(
     jobs: list[dict[str, Any]], all_users: bool,
-    extra_columns: list[str]) -> tuple[list[str], list[list[Any]]]:
+    extra_columns: OrderedSet[str]) -> tuple[list[str], list[list[Any]]]:
   if all_users and "user" not in extra_columns:
-    extra_columns.insert(0, "user")
+    extra_columns = OrderedSet(["user", *extra_columns])
   headers = [
       "Benchmark", "Config", "Type",
       *[c.replace("_", " ").title() for c in extra_columns], "Start Time",
@@ -198,7 +199,7 @@ def _extract_field(job: dict[str, Any], field_name: str) -> str:
 
 def _display_jobs(jobs: list[dict[str, Any]], output_format: ListFormatEnum,
                   all_users: bool, truncate: int | None,
-                  extra_columns: list[str]) -> None:
+                  extra_columns: OrderedSet[str]) -> None:
   match output_format:
     case ListFormatEnum.JSON:
       print(json.dumps(jobs, indent=2))
