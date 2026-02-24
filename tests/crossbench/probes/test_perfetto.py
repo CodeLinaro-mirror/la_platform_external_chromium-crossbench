@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 from __future__ import annotations
 
+import argparse
 import unittest
 
 import crossbench.path as pth
@@ -12,18 +13,116 @@ from crossbench.plt.arch import MachineArch
 from crossbench.probes.all import PerfettoProbe
 from crossbench.probes.perfetto.downloader import PerfettoToolDownloader
 from crossbench.probes.perfetto.perfetto import TraceConfig
+from protoc import trace_config_pb2
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_helper import LinuxMockPlatform, \
     MacOsMockPlatform, WinMockPlatform
 
 
+class TraceConfigTestCase(unittest.TestCase):
+
+  def test_parse_preset(self):
+    config = TraceConfig.parse("v8")
+    self.assertIsInstance(config, TraceConfig)
+    # v8 preset has some data sources
+    self.assertTrue(len(config.trace_config.data_sources) > 0)
+
+  def test_parse_dict_raw_proto(self):
+    config = TraceConfig.parse({
+        "buffers": [{
+            "size_kb": 1024
+        }],
+        "data_sources": [{
+            "config": {
+                "name": "linux.process_stats"
+            }
+        }]
+    })
+    self.assertIsInstance(config, TraceConfig)
+    self.assertEqual(len(config.trace_config.buffers), 1)
+    self.assertEqual(config.trace_config.buffers[0].size_kb, 1024)
+    self.assertEqual(len(config.trace_config.data_sources), 1)
+    self.assertEqual(config.trace_config.data_sources[0].config.name,
+                     "linux.process_stats")
+
+
 class PerfettoProbeTestCase(unittest.TestCase):
 
-  def test_missing_config(self):
-    with self.assertRaises(ValueError) as cm:
+  def test_parse_empty(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
+      PerfettoProbe.parse_str("")
+
+  def test_create_empty(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
+      _ = PerfettoProbe()
+
+  def test_merged_simple(self):
+    probe = PerfettoProbe.parse_str("v8")
+    merged = probe.trace_config
+    self.assertIsInstance(merged, trace_config_pb2.TraceConfig)
+
+  def test_merged_tags(self):
+    probe = PerfettoProbe.parse_str("tag1,-tag2")
+    merged = probe.trace_config
+    track_event_configs = [
+        ds.config.track_event_config
+        for ds in merged.data_sources
+        if ds.config.name == "track_event"
+    ]
+    self.assertEqual(len(track_event_configs), 1)
+    te_config = track_event_configs[0]
+    self.assertIn("tag1", te_config.enabled_tags)
+    self.assertIn("tag2", te_config.disabled_tags)
+
+  def test_merged_categories(self):
+    probe = PerfettoProbe.parse_dict({
+        "enabled_categories": ["cat1"],
+        "disabled_categories": ["cat2"],
+        "enabled_tags": ["cat4"]
+    })
+    merged = probe.trace_config
+    self.assertIsInstance(merged, trace_config_pb2.TraceConfig)
+    track_event_configs = [
+        ds.config.track_event_config
+        for ds in merged.data_sources
+        if ds.config.name == "track_event"
+    ]
+    self.assertEqual(len(track_event_configs), 1)
+    te_config = track_event_configs[0]
+    self.assertIn("cat1", te_config.enabled_categories)
+    self.assertIn("cat2", te_config.disabled_categories)
+    self.assertIn("cat4", te_config.enabled_tags)
+
+  def test_parse_dict_combined(self):
+    probe = PerfettoProbe.parse_dict({
+        "trace_config": "v8",
+        "tags": ["tag1"],
+        "categories": ["cat1"]
+    })
+    self.assertIsInstance(probe, PerfettoProbe)
+    # v8 preset has some data sources
+    self.assertTrue(len(probe.trace_config.data_sources) > 0)
+    merged = probe.trace_config
+    track_event_configs = [
+        ds.config.track_event_config
+        for ds in merged.data_sources
+        if ds.config.name == "track_event"
+    ]
+    self.assertEqual(len(track_event_configs), 1)
+    te_config = track_event_configs[0]
+    self.assertIn("tag1", te_config.enabled_tags)
+    self.assertIn("cat1", te_config.enabled_categories)
+
+  def test_empty_dict_config(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
       PerfettoProbe.parse_dict({})
-    self.assertIn("config", str(cm.exception))
+
+  def test_missing_config(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "unknown 1"):
+      PerfettoProbe.parse_dict({"preset": "unknown 1"})
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "unknown 1"):
+      PerfettoProbe.parse_str("unknown 1")
 
   def test_parse_config(self):
     trace_config = """

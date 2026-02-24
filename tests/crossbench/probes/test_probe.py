@@ -44,7 +44,6 @@ from crossbench.probes.v8.rcs import V8RCSProbe
 from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
-from protoc import trace_config_pb2
 from tests import test_helper
 from tests.crossbench.base import CrossbenchConfigTestMixin, \
     CrossbenchFakeFsTestCase
@@ -86,11 +85,7 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
     yield DumpHtmlProbe()
     yield DumpHeapProbe()
     yield FrequencyProbe.parse_dict({})
-    yield PerfettoProbe(
-        trace_config_pb2.TraceConfig(),
-        pth.LocalPath("perfetto.bin"),
-        pth.LocalPath("tracebox.bin"),
-        trace_browser_startup=False)
+    yield PerfettoProbe(enabled_tags=["v8"])
     yield PerformanceEntriesProbe()
     yield PowerMetricsProbe()
     yield PowerSamplerProbe()
