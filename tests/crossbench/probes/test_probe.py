@@ -238,6 +238,8 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
       with self.subTest(probe_cls=str(probe_cls)):
         if probe_cls == TraceProcessorProbe:
           self.assertEqual(probe_cls.PRIORITY, ProbePriority.TRACE_PROCESSOR)
+        elif probe_cls == ChromeHistogramsProbe:
+          self.assertEqual(probe_cls.PRIORITY, ProbePriority.PRE_USER)
         else:
           self.assertEqual(probe_cls.PRIORITY, ProbePriority.USER)
 
