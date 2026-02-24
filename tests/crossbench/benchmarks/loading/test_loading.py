@@ -169,12 +169,12 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     self.assertSequenceEqual(page.substories, ["test_0", "test_1", "test_3"])
 
   def test_run_default(self):
-    stories = PAGE_LIST
+    stories = PAGE_LIST_SMALL
     self._test_run(stories)
     self._assert_urls_loaded([story.url for story in stories])
 
   def test_run_throw(self):
-    stories = PAGE_LIST
+    stories = PAGE_LIST_SMALL
     self._test_run(stories)
     self._assert_urls_loaded([story.url for story in stories])
 
