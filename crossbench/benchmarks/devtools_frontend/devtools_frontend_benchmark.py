@@ -117,6 +117,14 @@ class DevToolsFrontendStory(Story):
       actions.wait(1.0)  # Wait for page load.
       action_runner.open_devtools(run, OpenDevToolsAction(panel_name=panel))
       actions.wait(1.5)  # Let DevTools settle.
+    logging.info("Benchmark actions complete.")
+
+  def teardown(self, run: Run) -> None:
+    """Close open tabs to avoid browser close hangs on Windows. Work around
+    suggested in https://github.com/puppeteer/puppeteer/issues/6563.
+    """
+    logging.info("Closing all tabs...")
+    run.browser.close_all_tabs()
     logging.info("Stopping benchmark...")
 
   @classmethod
