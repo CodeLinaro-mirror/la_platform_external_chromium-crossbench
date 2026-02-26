@@ -280,6 +280,7 @@ def linux_perf_probe_pprof(
   try:
     url = platform.sh_stdout(
         "pprof",
+        "-symbolize=force",
         "-flame",
         f"-add_comment={run_details}",
         perf_data_file,
@@ -314,9 +315,11 @@ def _linux_perf_probe_pprof_fallback(
       "pprof best-effort: falling back to standard perf data "
       "without js symbols: %s \n"
       "Got failures for %s: %s", raw_perf_data_file, perf_data_file.name, e)
+  url = None
   try:
     url = platform.sh_stdout(
         "pprof",
+        "-symbolize=force",
         "-flame",
         f"-add_comment={run_details}",
         raw_perf_data_file,

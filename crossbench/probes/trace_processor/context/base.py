@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import zipfile
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Iterator, Optional
 
 from google.protobuf import text_format
 from google.protobuf.json_format import MessageToJson
@@ -51,6 +52,13 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
   def needs_tp_run(self) -> bool:
     return self.probe.needs_tp_run
 
+  @contextlib.contextmanager
+  def write_zip_file(self, path: pth.LocalPath) -> Iterator[zipfile.ZipFile]:
+    with zipfile.ZipFile(
+        path, "w", compression=zipfile.ZIP_DEFLATED,
+        compresslevel=1) as zip_file:
+      yield zip_file
+
   def _merge_trace_files(self) -> LocalProbeResult:
     with self.run.actions("TRACE_PROCESSOR: Merging trace files", verbose=True):
       traces = list(self.run.results.all_traces())
@@ -58,7 +66,7 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
         # Symlink the existing trace to save time and space
         self.host_platform.symlink_or_copy(traces[0], self.merged_trace_path)
       else:
-        with zipfile.ZipFile(self.merged_trace_path, "w") as zip_file:
+        with self.write_zip_file(self.merged_trace_path,) as zip_file:
           for f in traces:
             zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
     return LocalProbeResult(perfetto=(self.merged_trace_path,))

@@ -17,6 +17,7 @@ from crossbench.helper import collection_helper, txt_helper
 if TYPE_CHECKING:
   from types import TracebackType
 
+  from crossbench import path as pth
   from crossbench.types import JsonList
 
 TInfoStack = tuple[str, ...]
@@ -278,23 +279,51 @@ class ExceptionAnnotator:
       logging.debug("\n".join(entry.traceback))
       logging.debug("-" * 80)
     is_first_entry = True
-    grouped_entries: dict[TInfoStack, list[Entry]] = collection_helper.group_by(
-        self._exceptions, key=lambda entry: entry.info_stack, sort_key=None)
-    for info_stack, entries in grouped_entries.items():
+    for info_stack, entries in self.grouped_entries().items():
       logging_level = logging.ERROR if is_first_entry else logging.DEBUG
       is_first_entry = False
       if info_stack:
-        info = "Info: "
-        joiner = "\n" + (" " * (len(info) - 2)) + "> "
-        message = f"{info}{joiner.join(info_stack)}"
-        logging.log(logging_level, message)
+        logging.log(logging_level, self.format_info_stack(info_stack))
       for entry in entries:
-        logging.log(logging_level, "- " * 40)
-        logging.log(logging_level, "Type: %s:",
-                    txt_helper.type_name(type(entry.exception)))
-        logging.log(logging_level, "      %s", self.format_exception(entry))
+        for log_line in self.format_log_entry(entry):
+          logging.log(logging_level, log_line)
         logging_level = logging.DEBUG
       logging.log(logging_level, "-" * 80)
+
+  def grouped_entries(self) -> dict[TInfoStack, list[Entry]]:
+    return collection_helper.group_by(
+        self._exceptions, key=lambda entry: entry.info_stack, sort_key=None)
+
+  def write_txt(self, txt_path: pth.LocalPath) -> pth.LocalPath | None:
+    if self.is_success:
+      return None
+    with txt_path.open("w", encoding="utf-8") as f:
+      f.write("=" * 80 + "\n")
+      f.write(f"ERRORS: {len(self._exceptions)}\n")
+      f.write("=" * 80 + "\n")
+      for info_stack, entries in self.grouped_entries().items():
+        if info_stack:
+          f.write(self.format_info_stack(info_stack) + "\n")
+        for entry in entries:
+          for log_line in self.format_log_entry(entry):
+            f.write(log_line)
+            f.write("\n")
+          f.write("Traceback:\n")
+          f.write("\n".join(entry.traceback) + "\n")
+        f.write("-" * 80 + "\n")
+    return txt_path
+
+  def format_log_entry(self, entry: Entry) -> tuple[str, ...]:
+    return (
+        "- " * 40,
+        f"Type: {txt_helper.type_name(type(entry.exception))}:",
+        f"      {self.format_exception(entry)}",
+    )
+
+  def format_info_stack(self, info_stack: TInfoStack) -> str:
+    info = "Info: "
+    joiner = "\n" + (" " * (len(info) - 2)) + "> "
+    return f"{info}{joiner.join(info_stack)}"
 
   def error_messages(self) -> list[str]:
     return [self.format_exception(entry) for entry in self._exceptions]

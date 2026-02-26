@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import logging
 import os
-import zipfile
 from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import override
@@ -136,7 +135,7 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
   def _maybe_symbolized_result(
       self, result: LocalProbeResult,
       symbols_result: pth.LocalPath) -> LocalProbeResult:
-    with zipfile.ZipFile(self._symbolized_trace_path, "w") as zip_file:
+    with self.write_zip_file(self.merged_trace_path,) as zip_file:
       for f in (*result.perfetto_list, symbols_result):
         zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
 
