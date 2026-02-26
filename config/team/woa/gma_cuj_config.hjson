@@ -3,7 +3,7 @@
     "gma-test-app-init-and-load-interstitial": [
       {
         "action": "wait"
-        "duration": "5s"
+        "duration": "2s"
       }
       {
         "action": "click"
@@ -20,7 +20,7 @@
     "gma-test-app-init-and-load-interstitial-again": [
       {
         "action": "wait"
-        "duration": "5s"
+        "duration": "2s"
       }
       {
         "action": "click"
@@ -48,7 +48,7 @@
     "gma-test-app-init-and-load-rewarded": [
       {
         "action": "wait"
-        "duration": "5s"
+        "duration": "2s"
       }
       {
         "action": "click"
@@ -65,7 +65,7 @@
     "gma-test-app-init-and-load-rewarded-again": [
       {
         "action": "wait"
-        "duration": "5s"
+        "duration": "2s"
       }
       {
         "action": "click"
