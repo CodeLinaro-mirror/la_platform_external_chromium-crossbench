@@ -328,6 +328,7 @@ class CrossBenchCLI:
         break
       choices.update(benchmark_cls.aliases())
 
+    message: str = ""
     if not alternative:
       message, alternative = close_matches_message(subcommand, set(choices),
                                                    "subcommand")
