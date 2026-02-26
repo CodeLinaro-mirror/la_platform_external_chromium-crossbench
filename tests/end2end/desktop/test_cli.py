@@ -429,6 +429,7 @@ def test_devtools_frontend_all(test_env: TestEnv, test_chrome_name,
     pytest.skip(
         "Skipping test for Chrome versions below 144; CDP command may not be supported"
     )
+  pytest.skip("Skip until b/487909749 is addressed")
   _run_cli(
       "devtools_frontend",
       f"--browser={test_chrome_name}",
@@ -445,6 +446,7 @@ def test_devtools_frontend_selection(test_env: TestEnv, test_chrome_name,
     pytest.skip(
         "Skipping test for Chrome versions below 144; CDP command may not be supported"
     )
+  pytest.skip("Skip until b/487909749 is addressed")
   _run_cli(
       "devtools_frontend",
       f"--browser={test_chrome_name}",
