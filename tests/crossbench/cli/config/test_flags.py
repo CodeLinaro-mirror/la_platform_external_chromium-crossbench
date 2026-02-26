@@ -504,6 +504,37 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     group_b = FlagsGroupConfig.parse(raw_flags)
     self.assertEqual(group_inline, group_a)
     self.assertEqual(group_inline, group_b)
+    args = self.mock_args(extra_browser_args=(raw_flags))
+    group_space = FlagsGroupConfig.parse_args(args)
+    self.assertEqual(group_inline, group_space)
+
+  def test_parse_args_extra_browser_args_js_flags(self):
+    args = self.mock_args(extra_browser_args=("--js-flags=--foo", "--bar"))
+    group_inline = FlagsGroupConfig.parse_args(args)
+    self.assertEqual(len(group_inline), 1)
+    raw_flags = "--js-flags=--foo --bar"
+    group_a = FlagsGroupConfig.parse((raw_flags,))
+    group_b = FlagsGroupConfig.parse(raw_flags)
+    self.assertEqual(group_inline, group_a)
+    self.assertEqual(group_inline, group_b)
+    args = self.mock_args(extra_browser_args=(raw_flags))
+    group_space = FlagsGroupConfig.parse_args(args)
+    self.assertEqual(group_inline, group_space)
+    args = self.mock_args(
+        extra_browser_args=("--bar",),
+        js_flags=("--foo",),
+    )
+    group_separate = FlagsGroupConfig.parse_args(args)
+    self.assertEqual(group_inline, group_separate)
+
+  def test_parse_args_extra_browser_args_mixed(self):
+    args = self.mock_args(
+        extra_browser_args=("--js-flags=--no-turbofan --enable-features=FOO",))
+    group = FlagsGroupConfig.parse_args(args)
+    self.assertEqual(len(group), 1)
+    flags = group[0].flags
+    self.assertEqual(str(flags.js_flags), "--no-turbofan")
+    self.assertIn("FOO", flags.features.enabled)
 
   def test_parse_args_extra_and_other_browser_args(self):
     args = self.mock_args(
@@ -523,8 +554,10 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(len(group_args), 1)
     group_a = FlagsGroupConfig.parse(("--js-flags='--bar=2 --foo=1'"))
     group_b = FlagsGroupConfig.parse("--js-flags='--bar=2 --foo=1'")
+    group_c = FlagsGroupConfig.parse(("--js-flags='--bar=2,--foo=1'"))
     self.assertEqual(group_args, group_a)
     self.assertEqual(group_args, group_b)
+    self.assertEqual(group_args, group_c)
 
   def test_parse_args_extra_and_other_browser_args_conflict(self):
     args = self.mock_args(

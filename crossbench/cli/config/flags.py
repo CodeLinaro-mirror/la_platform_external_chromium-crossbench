@@ -39,8 +39,13 @@ def _parse_flags(flag_data: str | list | tuple | FlagsData | None) -> Flags:
 
 
 def _parse_flags_sequence(flag_data: Iterable) -> Flags:
-  split_flags = (ChromeFlags.split(flag) for flag in flag_data)
-  return ChromeFlags(split_flags).freeze()
+  flags = ChromeFlags()
+  for flag in flag_data:
+    if isinstance(flag, str):
+      flags.update(ChromeFlags.parse_str(flag))
+    else:
+      flags.set(*flag)
+  return flags.freeze()
 
 
 @dataclasses.dataclass(frozen=True)
