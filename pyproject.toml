@@ -130,7 +130,6 @@ extend-select = [
     "PLE",  # pylint error
     "PLC",  # pylint refactor
     "PLW",  # pylint warnings
-    # TODO: Add more categories
 ]
 ignore = [
     "TC006", # Allow non-string type in casts
@@ -156,6 +155,7 @@ ignore = [
     "I001",   # Imports sorting and formatting (conflicts if git cl format)
     "N818",   # Exceptions subclass names must end in "Error"
     "PERF401", # force list comprehensions
+    "UP035",  # Deprecated import aliases (like typing.Tuple)
 ]
 
 [tool.ruff.lint.per-file-ignores]
