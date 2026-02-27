@@ -50,7 +50,15 @@ def _run_cli(*args: str,
 
 def _get_browser_dirs(results_dir: pathlib.Path) -> list[pathlib.Path]:
   assert results_dir.is_dir()
-  browser_dirs = [path for path in results_dir.iterdir() if path.is_dir()]
+  browser_dirs = []
+  for path in results_dir.iterdir():
+    if not path.is_dir():
+      continue
+    if path.is_symlink():
+      continue
+    if path.name in ("runs", "sessions"):
+      continue
+    browser_dirs.append(path)
   return browser_dirs
 
 
@@ -424,7 +432,6 @@ def test_chrome_stdout_logging(test_env: TestEnv) -> None:
 @pytest.mark.xdist_group("end2end-benchmark")
 def test_devtools_frontend_all(test_env: TestEnv, test_chrome_name,
                                test_chrome_version) -> None:
-
   if test_chrome_version < 144:
     pytest.skip(
         "Skipping test for Chrome versions below 144; CDP command may not be supported"
