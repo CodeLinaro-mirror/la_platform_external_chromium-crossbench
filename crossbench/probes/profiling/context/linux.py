@@ -76,7 +76,7 @@ class LinuxProfilingContext(PosixProfilingContext):
   def start_story_run(self) -> None:
     super().start_story_run()
     if self.start_profiling_after_setup():
-      (self._renderer_pid, self._renderer_tid) = self.renderer_pid_tid
+      (self._renderer_pid, self._renderer_tid) = self.cached_renderer_pid_tid
 
   def stop(self) -> None:
     self.stop_process()

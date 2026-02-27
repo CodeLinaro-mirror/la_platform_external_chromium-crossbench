@@ -29,8 +29,6 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
     super().__init__(probe, run)
     self._profiling_process: subprocess.Popen | None = None
     self._story_ready: bool = False
-    self._renderer_pid: int | None = None
-    self._renderer_tid: int | None = None
     self._target: Final[TargetMode] = self.probe.resolve_target_mode(
         run.browser)
     assert self._target is not TargetMode.AUTO, "unexpected target mode"
@@ -55,14 +53,32 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
   def start_story_run(self) -> None:
     self._story_ready = True
 
+  @override
+  def stop_story_run(self) -> None:
+    if self.start_profiling_after_setup():
+      self._verify_current_renderer_pid()
+
+  def _verify_current_renderer_pid(self) -> None:
+    original_render_pid, _ = self.cached_renderer_pid_tid
+    current_renderer_pid, _ = self._get_renderer_pid_tid()
+    if current_renderer_pid != original_render_pid:
+      logging.error(
+          "Renderer PID changed from %d to %d during the run. "
+          "This can happen when navigating URLs during profiling.",
+          original_render_pid, current_renderer_pid)
+
   @cached_property
-  def renderer_pid_tid(self) -> tuple[int, int]:
+  def cached_renderer_pid_tid(self) -> tuple[int, int]:
+    """Cached renderer PID / TID"""
+    return self._get_renderer_pid_tid()
+
+  def _get_renderer_pid_tid(self) -> tuple[int, int]:
     assert self._story_ready, (
         "Fetching renderer PID/TID before the story is loaded could lead to "
         "the wrong PID/TID being used. This should never happen TM!")
     renderer_pid: int | None = None
     renderer_main_tid: int | None = None
-    with self.run.actions("Get Renderer PID/TID") as actions:
+    with self.run.actions("Get Renderer PID/TID", measure=False) as actions:
       renderer_pid_tid = actions.js(
           "return ["
           "chrome?.benchmarking?.getRendererPid?.(),"

@@ -28,9 +28,8 @@ class AndroidProfilingContext(PosixProfilingContext):
   def _generate_command_line(self) -> ListCmdArgs:
     renderer_pid: int | None = None
     renderer_main_tid: int | None = None
-    if self.target in (TargetMode.RENDERER_MAIN_ONLY,
-                       TargetMode.RENDERER_PROCESS_ONLY):
-      renderer_pid, renderer_main_tid = self.renderer_pid_tid
+    if self.start_profiling_after_setup():
+      renderer_pid, renderer_main_tid = self.cached_renderer_pid_tid
     return generate_simpleperf_command_line(
         self.probe.target,
         str(self.run.browser.path),
@@ -84,7 +83,7 @@ class AndroidProfilingContext(PosixProfilingContext):
     return f"{mask:x}"
 
   def _pin_renderer_main_core(self, cpu: int) -> None:
-    _, renderer_main_tid = self.renderer_pid_tid
+    _, renderer_main_tid = self.cached_renderer_pid_tid
     self.browser_platform.sh("taskset", "-p", self._cpu_mask([cpu]),
                              str(renderer_main_tid))
 
