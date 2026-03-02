@@ -25,6 +25,8 @@ from crossbench.probes.perfetto.context.chromeos import \
     ChromeOsPerfettoProbeContext
 from crossbench.probes.perfetto.context.desktop import \
     DesktopPerfettoProbeContext
+from crossbench.probes.perfetto.context.windows import \
+    WindowsPerfettoProbeContext
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.trace_processor import profile_helper
@@ -373,6 +375,8 @@ class PerfettoProbe(Probe):
       return ChromeOsPerfettoProbeContext(self, run)
     if run.browser_platform.is_android:
       return AndroidPerfettoProbeContext(self, run)
+    if run.browser_platform.is_win:
+      return WindowsPerfettoProbeContext(self, run)
     return DesktopPerfettoProbeContext(self, run)
 
   @override
