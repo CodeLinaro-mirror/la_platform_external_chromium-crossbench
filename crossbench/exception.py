@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import logging
+import re
 import sys
 import traceback as tb
 from dataclasses import dataclass
@@ -23,6 +24,8 @@ if TYPE_CHECKING:
 TInfoStack = tuple[str, ...]
 
 TExceptionTypes = tuple[Type[BaseException], ...]
+
+_TRACEBACK_SOURCE_POSITION_RE = re.compile(r'  File "([^"]+)", line (\d+)')
 
 
 @dataclass
@@ -337,10 +340,23 @@ class ExceptionAnnotator:
     } for entry in self._exceptions]
 
   def format_exception(self, entry: Entry) -> str:
+    if isinstance(entry.exception, AssertionError):
+      return self.format_assertion_error(entry)
+    if msg := str(entry.exception).strip():
+      return msg
+    return entry.traceback[-2].strip()
+
+  def format_assertion_error(self, entry: Entry) -> str:
     msg = str(entry.exception).strip()
-    # Try to print the source line for empty AssertionError
-    if not msg and isinstance(entry.exception, AssertionError):
-      return entry.traceback[-2].strip()
+    source_position = ""
+    for line in reversed(entry.traceback):
+      if match := _TRACEBACK_SOURCE_POSITION_RE.search(line):
+        file_path, line_no = match.groups()
+        file_name = file_path.split("/")[-1]
+        source_position = f"{file_name}:{line_no}"
+        break
+    if source_position:
+      return f"{msg} in {source_position}"
     return msg
 
   def __str__(self) -> str:
