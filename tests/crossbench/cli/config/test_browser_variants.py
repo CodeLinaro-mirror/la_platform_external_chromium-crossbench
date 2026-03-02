@@ -241,7 +241,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     sh_results = [ADB_DEVICES_SINGLE_OUTPUT] * 2
     if self.platform.is_macos:
       # For `brew --prefix`.
-      sh_results.insert(0, ShResult(success=False))
+      sh_results.insert(0, ShResult(returncode=1))
     # Note: insert() on self.platform.sh_results fails, that returns a copy.
     self.platform.sh_results = sh_results
 
@@ -296,8 +296,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     sh_results = [ADB_DEVICES_SINGLE_OUTPUT] * 4
     if self.platform.is_macos:
       # For `brew --prefix`.
-      sh_results.insert(1, ShResult(success=False))
-      sh_results.insert(4, ShResult(success=False))
+      sh_results.insert(1, ShResult(returncode=1))
+      sh_results.insert(4, ShResult(returncode=1))
     # Note: insert() on self.platform.sh_results fails, that returns a copy.
     self.platform.sh_results = sh_results
 

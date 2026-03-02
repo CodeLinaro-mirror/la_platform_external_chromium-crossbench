@@ -281,6 +281,10 @@ class Platform(abc.ABC):
     return False
 
   @property
+  def is_remote_desktop(self) -> bool:
+    return False
+
+  @property
   def environ(self) -> Environ:
     self.assert_is_local()
     return LocalEnviron()

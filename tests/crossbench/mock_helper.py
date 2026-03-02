@@ -52,14 +52,12 @@ class DownloadMockData:
 
 class ShResult:
 
-  def __init__(self, result: str | bytes = "", success: bool = True) -> None:
+  def __init__(self, result: str | bytes = "", returncode: int = 0) -> None:
     if isinstance(result, str):
       result = result.encode("utf-8")
-
     assert isinstance(result, bytes)
-
     self._result = result
-    self._success = success
+    self._returncode = returncode
 
   @property
   def result(self) -> bytes:
@@ -70,8 +68,8 @@ class ShResult:
     return self.result
 
   @property
-  def success(self) -> bool:
-    return self._success
+  def returncode(self) -> int:
+    return self._returncode
 
 
 class TrackingPortManagerMixin:
@@ -195,17 +193,18 @@ class MockPlatformMixin:
       self.touch(path)
     return path
 
-  def expect_sh(
-      self, *args: CmdArg | int,
-      result: bytes | str | ShResult = ShResult()) -> None:
+  def expect_sh(self,
+                *args: CmdArg | int,
+                result: bytes | str | ShResult = "",
+                returncode: int = 0) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
       self._expected_sh_cmds.append(self._convert_sh_args(*args))
-    if isinstance(result, str):
-      result = ShResult(result)
-    if isinstance(result, bytes):
-      result = ShResult(result)
+    if isinstance(result, (str, bytes)):
+      result = ShResult(result, returncode)
+    else:
+      assert returncode == 0, "Cannot have ShResult and custom returncode"
     assert isinstance(result, ShResult)
     self._sh_results.append(result)
 
@@ -344,7 +343,28 @@ class MockPlatformMixin:
                       env: Optional[Mapping[str, str]] = None,
                       cwd: Optional[pth.AnyPath] = None,
                       check: bool = True) -> bytes:
-    del shell, quiet, stdin, env, check
+    return self.sh(
+        *args,
+        shell=shell,
+        quiet=quiet,
+        stdin=stdin,
+        env=env,
+        cwd=cwd,
+        check=check,
+        capture_output=True).stdout
+
+  def sh(self,
+         *args: CmdArg,
+         shell: bool = False,
+         capture_output: bool = False,
+         stdout: ProcessIo = None,
+         stderr: ProcessIo = None,
+         stdin: ProcessIo = None,
+         env: Optional[Mapping[str, str]] = None,
+         cwd: Optional[pth.AnyPath] = None,
+         quiet: bool = False,
+         check: bool = True) -> subprocess.CompletedProcess:
+    del capture_output, stderr, stdin, stdout, shell, quiet, env, cwd
     if self._expected_sh_cmds is not None:
       assert self._expected_sh_cmds, (
           f"Missing expected sh_cmds, but got: {args}")
@@ -361,28 +381,13 @@ class MockPlatformMixin:
       raise ValueError(f"After {len(self._sh_cmds)} cmds: "
                        f"MockPlatform has no more sh outputs for cmd: {cmd}")
 
-    sh_result = self._sh_results.pop(0)
-    if not sh_result.success:
-      raise SubprocessError(self, subprocess.CompletedProcess(args, -1))
+    sh_result: ShResult = self._sh_results.pop(0)
+    process = subprocess.CompletedProcess(
+        args, sh_result.returncode, stdout=sh_result.result)
+    if check and process.returncode != 0:
+      raise SubprocessError(self, process)
 
-    return sh_result.result
-
-  def sh(self,
-         *args: CmdArg,
-         shell: bool = False,
-         capture_output: bool = False,
-         stdout: ProcessIo = None,
-         stderr: ProcessIo = None,
-         stdin: ProcessIo = None,
-         env: Optional[Mapping[str, str]] = None,
-         cwd: Optional[pth.AnyPath] = None,
-         quiet: bool = False,
-         check: bool = True):
-    del capture_output, stderr, stdin, stdout
-    result = self.sh_stdout(
-        *args, shell=shell, quiet=quiet, env=env, cwd=cwd, check=check)
-    # TODO: Generalize this in the future, to mimic failing `sh` calls.
-    return subprocess.CompletedProcess(args, 0, stdout=result.encode("utf-8"))
+    return process
 
   def popen(self,
             *args: CmdArg,

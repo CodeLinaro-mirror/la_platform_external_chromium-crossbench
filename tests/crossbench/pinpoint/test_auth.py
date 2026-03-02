@@ -39,7 +39,7 @@ class AuthTestCase(BaseCrossbenchTestCase):
     self.assertNotIn("gcloud", self.platform.sh_cmds)
 
   def test_get_auth_session_gcloud_present(self):
-    self.platform.sh_results = [ShResult("logged in", success=True)]
+    self.platform.sh_results = [ShResult("logged in")]
     # User says "yes" to running gcloud
     self.ui_prompt.return_value = "y"
 
