@@ -4,20 +4,36 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import unittest
+from unittest import mock
+
+from typing_extensions import override
 
 import crossbench.path as pth
+from crossbench.browsers.settings import Settings
 from crossbench.cli.config.probe import ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
+from crossbench.plt.android_adb import Adb
 from crossbench.plt.arch import MachineArch
 from crossbench.probes.all import PerfettoProbe
+from crossbench.probes.perfetto.context.android import \
+    AndroidPerfettoProbeContext
+from crossbench.probes.perfetto.context.chromeos import \
+    ChromeOsPerfettoProbeContext
+from crossbench.probes.perfetto.context.desktop import \
+    DesktopPerfettoProbeContext
 from crossbench.probes.perfetto.downloader import PerfettoToolDownloader
 from crossbench.probes.perfetto.perfetto import TraceConfig
 from protoc import trace_config_pb2
 from tests import test_helper
-from tests.crossbench.base import CrossbenchFakeFsTestCase
-from tests.crossbench.mock_helper import LinuxMockPlatform, \
-    MacOsMockPlatform, WinMockPlatform
+from tests.crossbench.base import CrossbenchConfigTestMixin, \
+    CrossbenchFakeFsTestCase
+from tests.crossbench.mock_browser import MockChromeStable
+from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
+    ChromeOsSshMockPlatform, LinuxMockPlatform, MacOsMockPlatform, MockPopen, \
+    MockPopenState, WinMockPlatform
+from tests.crossbench.runner.helper import MockRun
 
 
 class TraceConfigTestCase(unittest.TestCase):
@@ -46,6 +62,15 @@ class TraceConfigTestCase(unittest.TestCase):
     self.assertEqual(config.trace_config.data_sources[0].config.name,
                      "linux.process_stats")
 
+  def test_parse_str_close_match(self):
+    with self.assertLogs(level="ERROR") as cm:
+      # "v8-profiling" is a valid preset, "v8-profiler" is close.
+      config = TraceConfig.parse_str("v8-profiler")
+      self.assertIsInstance(config, TraceConfig)
+      # It should have picked "v8-profiling"
+      self.assertEqual(config, TraceConfig.parse_str("v8-profiling"))
+    self.assertIn("v8-profiling", cm.output[0])
+
 
 class PerfettoProbeTestCase(unittest.TestCase):
 
@@ -56,6 +81,11 @@ class PerfettoProbeTestCase(unittest.TestCase):
   def test_create_empty(self):
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
       _ = PerfettoProbe()
+
+  def test_parse_tags_mixed(self):
+    probe = PerfettoProbe.parse_tags("tag1,+tag2,-tag3")
+    self.assertEqual(probe.enabled_tags, ("tag1", "tag2"))
+    self.assertEqual(probe.disabled_tags, ("tag3",))
 
   def test_merged_simple(self):
     probe = PerfettoProbe.parse_str("v8")
@@ -224,6 +254,172 @@ class PerfettoToolDownloaderTestCase(CrossbenchFakeFsTestCase):
     # downloading the same will use the locally cached version
     result = PerfettoToolDownloader("traceconv", platform=platform).download()
     self.assertTrue(platform.exists(result))
+
+
+class PerfettoProbeFunctionalTestCase(CrossbenchConfigTestMixin,
+                                      CrossbenchFakeFsTestCase):
+
+  @override
+  def setUp(self) -> None:
+    super().setUp()
+    self.setup_perfetto_config_presets()
+
+  def test_attach_v8_code_logger(self):
+    trace_config = trace_config_pb2.TraceConfig()
+    data_source = trace_config.data_sources.add()
+    data_source.config.name = "dev.v8.code"
+    probe = PerfettoProbe(trace_config=trace_config)
+
+    platform = LinuxMockPlatform()
+    MockChromeStable.setup_fs(self.fs, platform)
+    browser = MockChromeStable(
+        "mock browser", settings=Settings(platform=platform))
+
+    probe.attach(browser)
+    self.assertIn("--perfetto-code-logger", browser.js_flags)
+
+  def test_log_results(self):
+    probe = PerfettoProbe.parse_str("v8")
+    run = mock.Mock()
+    run.results = {probe: mock.Mock(file=self.create_file("perfetto.trace.pb"))}
+
+    with self.assertLogs(level=logging.INFO) as cm:
+      probe.log_run_result(run)
+    self.assertIn("Perfetto trace results", cm.output[1])
+
+    group = mock.Mock()
+    group.runs = [run]
+    with self.assertLogs(level=logging.INFO) as cm:
+      probe.log_browsers_result(group)
+    self.assertIn("Perfetto trace results", cm.output[1])
+
+  def test_help_text_items(self):
+    TraceConfig.presets.cache_clear()
+    # Ensure there is at least one preset in the fake FS
+    dummy_preset = TraceConfig.preset_dir() / "dummy_preset.txtpb"
+    self.fs.create_file(dummy_preset)
+    help_items = TraceConfig.help_text_items()
+    self.assertTrue(any(k == "presets" for k, v in help_items))
+    presets_str = dict(help_items)["presets"]
+    self.assertIn("dummy_preset", presets_str)
+
+  def test_create_context_desktop(self):
+    probe = PerfettoProbe.parse_str("v8")
+    host_platform = LinuxMockPlatform()
+
+    run_linux = mock.Mock()
+    run_linux.out_dir = pth.LocalPath("/tmp")
+    run_linux.browser_platform = host_platform
+    context = probe.create_context(run_linux)
+    self.assertIsInstance(context, DesktopPerfettoProbeContext)
+
+  def test_create_context_android(self):
+    probe = PerfettoProbe.parse_str("v8")
+    host_platform = LinuxMockPlatform()
+
+    adb_bin = host_platform.path("/usr/bin/adb")
+    self.fs.create_file(adb_bin)
+
+    adb = mock.Mock(spec=Adb)
+    adb.host_platform = host_platform
+    adb.serial_id = "777"
+    run_android = mock.Mock()
+    run_android.out_dir = pth.LocalPath("/tmp")
+    run_android.browser_platform = AndroidAdbMockPlatform(
+        host_platform=host_platform, adb=adb)
+    context = probe.create_context(run_android)
+    self.assertIsInstance(context, AndroidPerfettoProbeContext)
+
+  def test_create_context_chrome_os(self):
+    probe = PerfettoProbe.parse_str("v8")
+    host_platform = LinuxMockPlatform()
+
+    run_chromeos = mock.Mock()
+    run_chromeos.out_dir = pth.LocalPath("/tmp")
+    run_chromeos.browser_platform = ChromeOsSshMockPlatform(
+        host_platform=host_platform,
+        host="host",
+        port=22,
+        ssh_port=22,
+        ssh_user="user")
+    context = probe.create_context(run_chromeos)
+    self.assertIsInstance(context, ChromeOsPerfettoProbeContext)
+
+  def test_get_extra_probes(self):
+    probe = PerfettoProbe.parse_str("v8")
+    runner = mock.Mock()
+    extra_probes = list(probe.get_extra_probes(runner))
+    self.assertIsInstance(extra_probes, list)
+
+
+class PerfettoProbeContextTestCase(CrossbenchConfigTestMixin,
+                                   CrossbenchFakeFsTestCase):
+
+  @override
+  def setUp(self) -> None:
+    super().setUp()
+    self.setup_perfetto_config_presets()
+
+  def test_desktop_context_lifecycle(self):
+    probe = PerfettoProbe.parse_str("v8")
+    platform = LinuxMockPlatform(fake_fs=self.fs)
+    platform.install_mock_binary("tracebox", "/usr/bin/tracebox")
+    platform.install_mock_binary("perfetto", "/usr/bin/perfetto")
+
+    tracebox_proc = MockPopen()
+    platform.popens.append(tracebox_proc)
+
+    MockChromeStable.setup_fs(self.fs, platform)
+    browser = MockChromeStable(
+        "mock browser", settings=Settings(platform=platform))
+    browser.performance_mark = mock.Mock()
+    browser_session = mock.Mock()
+    browser_session.browser = browser
+    browser_session.root_dir = pth.LocalPath("/tmp/results")
+    self.fs.create_dir(browser_session.root_dir)
+    run = MockRun(
+        runner=mock.Mock(), browser_session=browser_session, story=mock.Mock())
+    # MockRun calculates out_dir from browser_session.root_dir
+    self.fs.create_dir(run.out_dir)
+    run.get_default_probe_result_path = mock.Mock(return_value=run.out_dir /
+                                                  "perfetto")
+
+    context = DesktopPerfettoProbeContext(probe, run)
+
+    # setup
+    platform.expect_sh("tracebox", "traced", "traced_probes", result="")
+    self.assertEqual(tracebox_proc.state, MockPopenState.UNUSED)
+    context.setup()
+    self.assertTrue(self.fs.exists(run.out_dir / "perfetto_config.textproto"))
+    self.assertEqual(tracebox_proc.state, MockPopenState.RUNNING)
+
+    # start
+    platform.expect_sh(
+        "tracebox",
+        "perfetto",
+        "--background",
+        "--config",
+        str(run.out_dir / "perfetto_config.textproto"),
+        "--txt",
+        "--out",
+        str(run.out_dir / "perfetto.trace.pb"),
+        result="123")
+    context.start()
+    run.browser.performance_mark.assert_called_with("probe-perfetto-start")
+    self.assertEqual(tracebox_proc.state, MockPopenState.RUNNING)
+
+    context.stop()
+    self.assertEqual(tracebox_proc.state, MockPopenState.RUNNING)
+    run.browser.performance_mark.assert_called_with("probe-perfetto-stop")
+
+    # teardown
+    trace_file = run.browser_platform.local_path(context.result_path)
+    self.fs.create_file(trace_file)
+    platform.expect_sh("gzip", str(trace_file))
+    self.fs.create_file(trace_file.with_suffix(".pb.gz"))
+
+    context.teardown()
+    self.assertEqual(tracebox_proc.state, MockPopenState.TERMINATED)
 
 
 if __name__ == "__main__":

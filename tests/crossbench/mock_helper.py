@@ -7,6 +7,7 @@ from __future__ import annotations
 import collections
 import contextlib
 import dataclasses
+import enum
 import functools
 import pathlib
 import shlex
@@ -132,7 +133,7 @@ class MockRemotePortManager(TrackingPortManagerMixin,
 
 class MockPlatformMixin:
 
-  def __init__(self, *args, is_battery_powered=False, **kwargs):
+  def __init__(self, *args, is_battery_powered=False, fake_fs=None, **kwargs):
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
     self._sh_cmds: list[TupleCmdArgs] = []
@@ -144,13 +145,21 @@ class MockPlatformMixin:
     self.sleeps: list[dt.timedelta] = []
     self.use_mock_machine = True
     self.use_mock_name = True
-    self.use_fs = False
     self.mock_version_str: str | None = "1.2.3.4.5"
     self._machine_arch: [MachineArch] = None  # type: ignore
     self.popens: list[MockPopen] = []
     self.mkdir_calls: int = 0
     self.screenshots: list[pth.AnyPath] = []
+    self.fake_fs = fake_fs
+    self.use_fs = bool(fake_fs)
     super().__init__(*args, **kwargs)
+
+  def install_mock_binary(self, name, path: pth.AnyPathLike) -> pth.AnyPath:
+    binary = self.path(path)
+    assert self.fake_fs, "missing fake fs"
+    self.fake_fs.create_file(binary)
+    self.set_binary_lookup_override(name, binary)
+    return binary
 
   @property
   def has_display(self) -> bool:
@@ -405,7 +414,9 @@ class MockPlatformMixin:
     if not self.popens:
       raise ValueError("No valid mock popen.")
 
-    return self.popens.pop(0)
+    mock_popen = self.popens.pop(0)
+    mock_popen.start()
+    return mock_popen
 
   def mkdir(self,
             path: pth.AnyPathLike,
@@ -469,19 +480,38 @@ class MockFd:
     return
 
 
+class MockPopenState(enum.StrEnum):
+  UNUSED = "unused"
+  RUNNING = "running"
+  TERMINATED = "terminated"
+  KILLED = "killed"
+
+
 class MockPopen:
 
-  def __init__(self, stdout: MockFd, stdin: MockFd):
-    self._stdout: MockFd = stdout
-    self._stdin: MockFd = stdin
+  def __init__(self, stdout: MockFd | None = None, stdin: MockFd | None = None):
+    self._stdout: MockFd = stdout or MockFd()
+    self._stdin: MockFd = stdin or MockFd()
+    self.state = MockPopenState.UNUSED
+
+  def start(self):
+    assert self.state == MockPopenState.UNUSED
+    self.state = MockPopenState.RUNNING
 
   def poll(self):
+    assert self.state != MockPopenState.UNUSED
     return
+
+  def terminate(self):
+    assert self.state != MockPopenState.UNUSED
+    self.state = MockPopenState.TERMINATED
 
   def kill(self):
-    return
+    assert self.state != MockPopenState.UNUSED
+    self.state = MockPopenState.KILLED
 
   def wait(self):
+    assert self.state != MockPopenState.UNUSED
     return
 
   @property
