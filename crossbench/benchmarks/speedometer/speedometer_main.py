@@ -81,5 +81,16 @@ class SpeedometerMainBenchmark(Speedometer3Benchmark):
   @classmethod
   @override
   def version(cls) -> VersionParts:
-    # Using fake next version as a hack.
     return ("main",)
+
+  @classmethod
+  @override
+  def aliases(cls) -> tuple[str, ...]:
+    return (
+        "sp4",
+        "sp4-latest",
+        "speedometer4",
+        "speedometer4-latest",
+        "speedometer_4",
+        "speedometer_4-latest",
+    ) + super().aliases()

@@ -51,7 +51,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
-  'buildtools_revision': '0a7c86630a705f4e8ded8339f2e743242f54d281',
+  'buildtools_revision': '451e71432ac9f6a91d4d5604c29e0a5078e8c2e8',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
@@ -63,7 +63,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling webpagereplay
   # and whatever else without interference from each other.
-  'webpagereplay_revision': '2bfcbbe006bc877b35fe6bf5eb2fea96a0b0e33f',
+  'webpagereplay_revision': '22be07d7809409644d7e292d9495fa8a251d5f29',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling webpagereplay
   # and whatever else without interference from each other.

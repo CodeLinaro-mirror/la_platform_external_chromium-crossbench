@@ -116,6 +116,8 @@ class RecordMode(ConfigEnum):
 class RecordFormat(ConfigEnum):
   JSON = ("json", "Old about://tracing compatible file format.")
   PROTO = ("proto", "New https://ui.perfetto.dev/ compatible format")
+  PROTO_JSON = ("proto-json",
+                "Same as 'proto' but also converts the result to legacy JSON.")
 
 
 def parse_trace_config_file_path(value: str) -> pth.LocalPath:
@@ -202,9 +204,9 @@ class TracingProbe(ChromiumProbe):
         "record_format",
         default=RecordFormat.PROTO,
         type=RecordFormat,
-        help=("Choose between 'json' or the default 'proto' format. "
-              "Perfetto proto output is converted automatically to the "
-              "legacy json format."))
+        help=("Choose between 'json', 'proto' or 'proto-json' format. "
+              "With 'proto-json' the proto result file is converted "
+              "automatically to the legacy json format."))
     cb_traceconv.add_argument(parser)
     return parser
 
@@ -233,7 +235,7 @@ class TracingProbe(ChromiumProbe):
     self._record_mode: RecordMode = record_mode
     self._record_format: RecordFormat = record_format
     self._traceconv: pth.LocalPath | None = traceconv
-    if not traceconv and self._record_format == RecordFormat.PROTO:
+    if not traceconv and self._record_format == RecordFormat.PROTO_JSON:
       self._traceconv = TraceconvFinder(self.host_platform).local_path
 
   @property
@@ -281,7 +283,10 @@ class TracingProbe(ChromiumProbe):
     flags = browser.flags
     flags.update(self.CHROMIUM_FLAGS)
     # Force proto file so we can convert it to legacy json as well.
-    flags["--trace-startup-format"] = str(self._record_format)
+    if self._record_format in (RecordFormat.PROTO, RecordFormat.PROTO_JSON):
+      flags["--trace-startup-format"] = "proto"
+    else:
+      flags["--trace-startup-format"] = str(self._record_format)
 
     flags["--trace-startup-duration"] = str(self._startup_duration)
     if self._trace_config:
@@ -318,6 +323,8 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
       return self.browser_result(json=(self.result_path,))
     # Use intermediate browser result to copy over remote files.
     result = self.browser_result(perfetto=(self.result_path,))
+    if self._record_format == RecordFormat.PROTO:
+      return result
     trace_file = result.get("proto")
     if legacy_json_file := cb_traceconv.convert_to_json(self.host_platform,
                                                         self.probe.traceconv,

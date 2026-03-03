@@ -207,7 +207,7 @@ class WprToolsFinderTestCase(BaseCheckoutTestCase):
     for _ in range(3):
       if self.platform.is_macos:
         self.platform.expect_sh(
-            "brew", "--prefix", result=ShResult(success=False))
+            "brew", "--prefix", result=ShResult(returncode=1))
       self.platform.expect_sh(
           "/usr/bin/adb",
           "devices",

@@ -38,22 +38,23 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.mock_platform_str(platform, "linux_ssh_mock_platform")
     return platform
 
-  def _expect_sh_ssh(self, *args, result=""):
+  def _expect_sh_ssh(self, *args, result="", returncode: int = 0):
     self.host_platform.expect_sh(
         "ssh",
         "-p",
         str(self.SSH_PORT),
         f"{self.SSH_USER}@{self.HOST}",
         *args,
-        result=result)
+        result=result,
+        returncode=returncode)
 
   def _expect_sh_ssh_shell(self, *args, result=""):
     cmd_string = f"ssh -p {str(self.SSH_PORT)} {self.SSH_USER}@{self.HOST} "
     cmd_string += " ".join(map(str, args))
     self.host_platform.expect_sh(cmd_string, result=result)
 
-  def expect_sh(self, *args, result="") -> None:
-    self._expect_sh_ssh(*args, result=result)
+  def expect_sh(self, *args, result="", returncode: int = 0) -> None:
+    self._expect_sh_ssh(*args, result=result, returncode=returncode)
 
   def test_is_linux(self):
     self.assertTrue(self.platform.is_linux)

@@ -1,6 +1,7 @@
 {
-  # Probe config for measuring speedometer and split profiles based on
-  # measurement markers.
+  # Probe config for measuring Speedometer and split profiles based on
+  # measurement markers. Config should stay minimal and only add
+  # categories necessary to generate pprof profiles.
   "probes": {
     "perfetto": {
       "textproto":

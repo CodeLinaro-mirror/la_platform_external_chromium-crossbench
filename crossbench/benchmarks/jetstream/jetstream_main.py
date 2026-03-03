@@ -152,4 +152,11 @@ class JetStreamMainBenchmark(JetStream3Benchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return ("jetstream_3", "jetstream3", "js3") + super().aliases()
+    return (
+        "js3",
+        "js3-latest",
+        "jetstream3",
+        "jetstream3-latest",
+        "jetstream_3",
+        "jetstream_3-latest",
+    ) + super().aliases()

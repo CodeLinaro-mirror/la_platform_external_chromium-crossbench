@@ -72,7 +72,7 @@ class TestEnv():
 
 
 DEFAULT_PYTEST_FLAGS: Final[immutabledict[str, str | None]] = immutabledict({
-    "--verbose": None,
+    "-vv": None,
     "--log-file-level": "DEBUG",
     "--durations": 5,
     "--no-fold-skipped": None,
@@ -86,6 +86,17 @@ def to_flags(flag_dict):
       yield f"{k}={v}"
     else:
       yield k
+
+
+class DurationPlugin:
+
+  @pytest.hookimpl(hookwrapper=True)
+  def pytest_runtest_makereport(self, item, call):
+    outcome = yield
+    report = outcome.get_result()
+    if report.when == "call":
+      sys.stdout.write(f" [DURATION] {item.nodeid}: {report.duration:.2f}s\n")
+      sys.stdout.flush()
 
 
 def run_pytest(path: str | pathlib.Path, *args):

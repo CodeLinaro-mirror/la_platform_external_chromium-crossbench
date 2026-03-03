@@ -49,8 +49,8 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     self.assertTrue(self.platform.ports.is_empty)
     super().tearDown()
 
-  def expect_sh(self, *args, result=""):
-    self.platform.expect_sh(*args, result=result)
+  def expect_sh(self, *args, result="", returncode: int = 0):
+    self.platform.expect_sh(*args, result=result, returncode=returncode)
 
   def test_is_android(self):
     self.assertFalse(self.platform.is_android)
@@ -85,6 +85,13 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     with self.platform.ports.nested() as ports:
       with self.assertRaisesRegex(argparse.ArgumentTypeError, "remote_port"):
         ports.reverse_forward(-1, -1)
+
+  def test_is_remote_desktop_no_script(self):
+    if not self.platform.is_local and self.platform.is_linux:
+      self.expect_sh(
+          "'[' -e /opt/google/chrome-remote-desktop/is-remoting-session ']'",
+          returncode=1)
+    self.assertFalse(self.platform.is_remote_desktop)
 
 
 class BaseLocalMockPlatformTestMixin:

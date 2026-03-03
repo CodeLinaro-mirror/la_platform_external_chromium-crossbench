@@ -14,9 +14,15 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Optional, \
 from immutabledict import immutabledict
 from typing_extensions import override
 
+from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.position import PositionConfig, \
+    SelectorConfig
+from crossbench.action_runner.element_not_found_error import \
+    ElementNotFoundError
 from crossbench.benchmarks.base import PressBenchmark, \
     PressBenchmarkStoryFilter
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
+from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.helper import url_helper
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes.helper import Flatten
@@ -149,6 +155,8 @@ class SpeedometerProbeContext(JsonResultProbeContext):
 class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
   URL_LOCAL: ClassVar[str] = "http://localhost:8000/"
   DEFAULT_ITERATIONS: ClassVar[int] = 10
+  BUTTON_SELECTOR: ClassVar[str] = \
+      "#runSuites, start-tests-button, .buttons button"
 
   def __init__(self,
                substories: Sequence[str] = (),
@@ -245,17 +253,17 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
 
   def run(self, run: Run) -> None:
     with run.actions("Running") as actions:
-      actions.js("""
-          if (window.startTest) {
-            window.startTest();
-          } else {
-            // Interactive Runner fallback / old 3.0 fallback.
-            let startButton = document.getElementById("runSuites") ||
-                document.querySelector("start-tests-button") ||
-                document.querySelector(".buttons button");
-            startButton.click();
-          }
-          """)
+      platform = run.browser.platform
+      if platform.is_android:
+        # On Android, we prefer starting the benchmark via `adb input`, as this
+        # is more likely to trigger touch boosts on the device and thus more
+        # realistic of the real world.
+        if not self._try_click_start_button_android(run, actions):
+          logging.warning("Couldn't press button via adb tap, "
+                          "falling back to starting benchmark via JS")
+          self._start_via_js(actions)
+      else:
+        self._start_via_js(actions)
       actions.wait(self.fast_duration)
     with run.actions("Waiting for completion") as actions:
       actions.wait_js_condition(
@@ -263,6 +271,41 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
           0.5,
           timeout=self.slow_duration,
           delay=self.substory_duration)
+
+  def _try_click_start_button_android(self, run: Run, actions: Actions) -> bool:
+    # Enlarge the button first, as the coordinate logic doesn't work perfectly
+    # at the moment (e.g. the gesture nav taskbar inset confuses the logic in
+    # the AndroidInputActionRunner).
+    actions.js(f"""
+        let startButton = document.querySelector("{self.BUTTON_SELECTOR}");
+        startButton.style.position = "absolute";
+        startButton.style.top = "0px";
+        startButton.style.left = "0px";
+        startButton.style.width = "100%";
+        startButton.style.height = "100%";
+        """)
+
+    selector_config = SelectorConfig(
+        self.BUTTON_SELECTOR, required=True, scroll_into_view=False, wait=False)
+    action = ClickAction(InputSource.TOUCH,
+                         PositionConfig(selector=selector_config))
+    try:
+      run.action_runner.click_touch(run, action)
+      return True
+    except ElementNotFoundError:
+      return False
+
+  def _start_via_js(self, actions: Actions) -> None:
+    actions.js(f"let selector = '{self.BUTTON_SELECTOR}';"
+               """
+        if (window.startTest) {
+          window.startTest();
+        } else {
+          // Interactive Runner fallback / old 3.0 fallback.
+          let startButton = document.querySelector(selector);
+          startButton.click();
+        }
+        """)
 
 
 ProbeClsTupleT = tuple[Type[SpeedometerProbe], ...]

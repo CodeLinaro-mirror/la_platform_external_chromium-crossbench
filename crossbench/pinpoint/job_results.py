@@ -12,13 +12,11 @@ from functools import cache, partial
 from typing import TYPE_CHECKING, Any, Callable
 from urllib.parse import urlparse
 
-import google.cloud.storage as gcloud_storage
-from typing_extensions import override
+import google.cloud.storage as gcloud_storage  # type: ignore
 
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.cli import ui
-from crossbench.env.base import BaseEnv
 from crossbench.pinpoint.helper import annotate
 from crossbench.pinpoint.job_config import fetch_job_config
 from crossbench.runner.runner import Runner
@@ -78,11 +76,34 @@ class PinpointJobResults:
       return time_str
 
   def download(self, out_dir: pth.LocalPath) -> None:
+    self.cas_path = self._find_or_install_cas()
+
     self.download_index = 0
     with ui.spinner(title="Downloading") as spinner:
       tasks = self._prepare_tasks(spinner, out_dir)
       with ThreadPoolExecutor(max_workers=10) as executor:
         executor.map(lambda f: f(), tasks)
+
+  def _find_or_install_cas(self) -> pth.LocalPath:
+    if installed_cas_path := plt.PLATFORM.which("cas"):
+      return pth.LocalPath(installed_cas_path)
+
+    cache_dir = plt.PLATFORM.local_cache_dir("cipd") / "cas"
+    cache_dir_cas = cache_dir / "cas"
+    if cache_dir_cas.exists():
+      return cache_dir_cas
+
+    if plt.PLATFORM.which("cipd"):
+      with annotate("Installing cas via cipd"):
+        plt.PLATFORM.sh("cipd", "install", "infra/tools/luci/cas/${platform}",
+                        "latest", "-root", cache_dir)
+        return cache_dir_cas
+
+    raise FileNotFoundError(
+        "Missing binaries `cas`. Install `cas` from "
+        "https://chrome-infra-packages.appspot.com/p/infra/tools/luci/cas and "
+        "add it to your PATH.")
+
 
   def _prepare_tasks(self, spinner: Spinner,
                      out_dir: pth.LocalPath) -> list[Callable[[], None]]:
@@ -116,11 +137,10 @@ class PinpointJobResults:
   def _download_cas_isolate(self, spinner: Spinner, isolate: str,
                             out_dir: pth.LocalPath) -> None:
     spinner.write(self._next_progress_message())
-    cmd = [
-        "cas", "download", "-cas-instance",
+    cmd: list[pth.AnyPathLike] = [
+        self.cas_path, "download", "-cas-instance",
         "projects/chrome-swarming/instances/default_instance", "-digest",
-        isolate, "-dir",
-        str(out_dir)
+        isolate, "-dir", out_dir
     ]
     plt.PLATFORM.sh(*cmd)
 
@@ -214,26 +234,19 @@ class PinpointAttemptResults:
     return url_by_name
 
 
-class Environment(BaseEnv):
-
-  @override
-  def validate(self) -> None:
-    pass
-
-
 def download_results(job_id: str,
                      out_dir: pth.LocalPath | None = None,
                      force: bool = False) -> None:
   """Downloads results of a Pinpoint job."""
-  Environment(plt.PLATFORM).check_installed(["cas"])
   job_results = PinpointJobResults(job_id)
 
   out_dir = out_dir or Runner.get_out_dir(pathlib.Path.cwd(
   )) / ".." / f"{job_results.created_date}_pinpoint_{job_results.job_id}"
+  out_dir = out_dir.resolve()
   if out_dir.exists() and not force:
     raise FileExistsError(
         f"Output directory {out_dir} already exists. Use --force to overwrite.")
   out_dir.mkdir(parents=True, exist_ok=True)
 
-  logging.info("RESULT DIR: %s", out_dir.resolve())
+  logging.info("RESULT DIR: %s", out_dir)
   job_results.download(out_dir)

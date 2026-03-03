@@ -609,24 +609,18 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertFalse(path.exists())
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse(str(path))
-    with self.assertRaises(argparse.ArgumentTypeError):
-      CustomConfigObject.parse_path(path)
 
   def test_parse_path_missing_file(self):
     path = pathlib.Path("/invalid.file")
     self.assertFalse(path.exists())
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse(path)
-    with self.assertRaises(argparse.ArgumentTypeError):
-      CustomConfigObject.parse_path(path)
 
   def test_parse_path_missing_file_by_type(self):
     path = pathlib.Path("invalid.file")
     self.assertFalse(path.exists())
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse(path)
-    with self.assertRaises(argparse.ArgumentTypeError):
-      CustomConfigObject.parse_path(path)
 
   def test_parse_path_empty_file(self):
     path = pathlib.Path("test_file.json")
@@ -634,16 +628,12 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     path.touch()
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse(path)
-    with self.assertRaises(argparse.ArgumentTypeError):
-      CustomConfigObject.parse_path(path)
 
   def test_parse_path_invalid_json_file(self):
     path = pathlib.Path("test_file.json")
     path.write_text("{{", encoding="utf-8")
     with self.assertRaises(argparse.ArgumentTypeError):
       CustomConfigObject.parse(path)
-    with self.assertRaises(argparse.ArgumentTypeError):
-      CustomConfigObject.parse_path(path)
 
   def test_parse_path_empty_json_object(self):
     path = pathlib.Path("test_file.json")

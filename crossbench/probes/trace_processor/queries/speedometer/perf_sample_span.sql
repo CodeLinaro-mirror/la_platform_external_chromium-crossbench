@@ -47,12 +47,12 @@ select
             m.suite_name || '.' || test_name || '.' || measure_type,
             IIF (
               INSTR (p.name, "(") > 0,
-              SUBSTR (p.name, 0, INSTR (p.name, "(") -1),
+              SUBSTR (p.name, 0, INSTR (p.name, " (")),
               p.name
             ),
             IIF (
               INSTR (t.name, " 0x") > 0,
-              SUBSTR (t.name, 0, INSTR (t.name, " 0x") -1),
+              SUBSTR (t.name, 0, INSTR (t.name, " 0x")),
               t.name
             ),
             STACK_FROM_STACK_PROFILE_CALLSITE (callsite_id)
@@ -65,6 +65,8 @@ select
         speedometer_sample s
         JOIN thread t ON s.utid = t.utid
         JOIN process p ON t.upid = p.upid
+     WHERE
+        s.suite_name = m.suite_name
     )
   ) AS file_size
 FROM
