@@ -251,7 +251,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
 
   def start(self) -> None:
     if not self.probe.record_setup:
-      assert self._recorder
+      assert self._recorder, "Recorder not initialized"
       self._recorder.clear()
 
   def stop(self) -> None:

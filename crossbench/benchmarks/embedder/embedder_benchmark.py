@@ -125,7 +125,7 @@ class EmbedderBenchmark(SubStoryBenchmark):
   @classmethod
   @override
   def cli_description(cls) -> str:
-    assert cls.__doc__
+    assert cls.__doc__, f"Missing class doc on {cls}"
     return cls.__doc__.strip()
 
   @classmethod

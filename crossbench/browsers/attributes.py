@@ -26,6 +26,12 @@ class BrowserAttributes(enum.IntFlag):
 
   REMOTE = enum.auto()
 
+  def assert_chromium_based(self) -> None:
+    assert self.is_chromium_based, (f"Got non chromium-based browser: {self}")
+
+  def assert_is_local(self) -> None:
+    assert self.is_local, (f"Got remote browser: {self}")
+
   @property
   def is_chromium_based(self) -> bool:
     return bool(self.CHROMIUM_BASED & self)

@@ -8,8 +8,8 @@ import abc
 import datetime as dt
 import logging
 import os
-from typing import (TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO,
-                    Type)
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO, \
+    Type
 
 import requests
 from selenium.webdriver.chromium.options import ChromiumOptions
@@ -19,10 +19,10 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chromium.driver_finder import (ChromeDriverFinder,
-                                                        DriverNotFoundError)
-from crossbench.browsers.chromium.version import (ChromeDriverVersion,
-                                                  ChromiumVersion)
+from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder, \
+    DriverNotFoundError
+from crossbench.browsers.chromium.version import ChromeDriverVersion, \
+    ChromiumVersion
 from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.browsers.chromium_based.devtools_tracer import DevToolsTracer
@@ -95,7 +95,7 @@ class ChromiumBasedWebDriver(
     if self._driver_path:
       return self._driver_path
     finder = ChromeDriverFinder(self)
-    assert self.app_path
+    assert self.app_path, "Missing browser app_path"
     if self.use_local_chromedriver():
       return finder.find_local_build()
     try:
@@ -120,7 +120,7 @@ class ChromiumBasedWebDriver(
   def _start_chromedriver(self, session: BrowserSessionRunGroup,
                           driver_path: pth.AnyPath) -> ChromiumDriver:
     assert not self._is_running
-    assert self.log_file
+    assert self.log_file, "Missing log file"
     args = self._get_browser_flags_for_session(session)
     options = self._create_options(session, args)
 
@@ -135,7 +135,9 @@ class ChromiumBasedWebDriver(
     if adb_port and adb_port.isdigit():
       service_args += ["--adb-port=" + adb_port]
 
-    assert self._stdout_log_file is None
+    assert self._stdout_log_file is None, (
+        " stdout_log_file should have been unset, but got "
+        f"{self._stdout_log_file}")
     # On desktop platforms service logs contain browser stdout, hence the name.
     self._stdout_log_file = self.log_file.with_stem("browser.stdout").open("w+")
     service = self.WEB_DRIVER_SERVICE(

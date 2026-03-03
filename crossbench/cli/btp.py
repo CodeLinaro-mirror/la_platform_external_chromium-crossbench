@@ -90,7 +90,7 @@ class BTPUtil:
     for probe in probe_config.probes:
       if isinstance(probe, TraceProcessorProbe):
         tp = probe
-    assert tp is not None
+    assert tp, "Could not find TraceProcessorProbe"
 
     tp_config = TraceProcessorConfig(
         bin_path=str(tp.trace_processor_bin),

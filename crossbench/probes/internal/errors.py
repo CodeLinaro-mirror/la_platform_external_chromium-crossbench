@@ -55,7 +55,7 @@ class ErrorsProbe(InternalJsonResultProbe):
       if not result:
         continue
       source_file = result.json
-      assert source_file.is_file()
+      assert source_file.is_file(), "Missing source file"
       with source_file.open(encoding="utf-8") as f:
         repetition_errors = json.load(f)
         assert isinstance(repetition_errors, list)

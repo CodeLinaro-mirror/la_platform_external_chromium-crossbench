@@ -149,7 +149,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   @override
   def start(self, session: BrowserSessionRunGroup) -> None:
     super().start(session)
-    assert self._driver_path
+    assert self._driver_path, "Missing driver path"
     try:
       self._private_driver = self._start_driver(session, self._driver_path)
     except selenium.common.exceptions.WebDriverException as e:

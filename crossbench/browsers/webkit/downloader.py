@@ -57,8 +57,8 @@ class WebKitDownloader(Downloader):
 
   def __init__(self, version_identifier: str | LocalPath, browser_type: str,
                platform_name: str, browser_platform: Platform) -> None:
-    assert not browser_type
-    assert not platform_name
+    assert not browser_type, f"Unexpected browser_type: {browser_type}"
+    assert not platform_name, f"Unexpected platform_name: {platform_name}"
     if not browser_platform.is_macos:
       raise ValueError("Unsupported platform for downloading webkit nightly: "
                        f"{browser_platform}")

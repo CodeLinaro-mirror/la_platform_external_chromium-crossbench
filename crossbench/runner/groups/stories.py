@@ -70,7 +70,7 @@ class StoriesRunGroup(RunGroup):
 
   @property
   def browser(self) -> Browser:
-    assert self._browser
+    assert self._browser, "Browser not set"
     return self._browser
 
   @property

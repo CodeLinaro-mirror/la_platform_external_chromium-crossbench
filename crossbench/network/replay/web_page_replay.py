@@ -125,7 +125,7 @@ class WprBase(abc.ABC):
 
   def _validate_host(self, host: str) -> str:
     if self._platform.is_remote:
-      assert host == "127.0.0.1"
+      assert host == "127.0.0.1", f"Unsupported local host: {host}"
     return host
 
   def _validate_key_file(self, wpr_root: LocalPath,

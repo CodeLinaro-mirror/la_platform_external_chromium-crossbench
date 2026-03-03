@@ -169,7 +169,8 @@ class ChromiumBuildBinaryFinder(BasePathFinder):
 
   @override
   def is_valid_path(self, candidate: pth.AnyPath) -> bool:
-    assert candidate.name == self._binary_name
+    assert candidate.name == self._binary_name, (
+        f"Name mismatch: {candidate.name} != {self._binary_name}")
     if not self.platform.is_file(candidate):
       return False
     # .../chromium/src/out/Release/BINARY => .../chromium/src/
@@ -277,7 +278,7 @@ class V8ToolsFinder:
       candidate = self.v8_checkout / tick_processor
       assert self.platform.is_file(candidate), (
           f"Provided v8_checkout has no '{tick_processor}' at {candidate}")
-    assert self.d8_binary
+    assert self.d8_binary, "No d8 binary found"
     # Try inferring the V8 checkout from a built d8:
     # .../foo/v8/v8/out/x64.release/d8
     candidate = self.d8_binary.parents[2] / tick_processor

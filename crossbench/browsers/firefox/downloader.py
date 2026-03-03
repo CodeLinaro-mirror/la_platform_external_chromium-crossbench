@@ -68,8 +68,8 @@ class FirefoxDownloader(Downloader):
 
   def __init__(self, version_identifier: str | LocalPath, browser_type: str,
                platform_name: str, browser_platform: Platform) -> None:
-    assert not browser_type
-    assert not platform_name
+    assert not browser_type, f"Unexpected browser_type: {browser_type}"
+    assert not platform_name, f"Unexpected platform_name: {platform_name}"
     firefox_platform_name = _PLATFORM_NAME_LOOKUP.get(browser_platform.key)
     if not firefox_platform_name:
       raise ValueError(

@@ -85,7 +85,7 @@ class AndroidLogcatProbeContext(ProbeContext[LogcatAndroidProbe]):
     self._log_to_logcat("logcat probe end")
 
   def teardown(self) -> ProbeResult:
-    assert self._logcat_start_time
+    assert self._logcat_start_time, "Missing logcat start time"
     file = self.local_result_path.with_suffix(".txt")
     with file.open("w", encoding="utf-8") as f:
       self.browser_platform.sh(

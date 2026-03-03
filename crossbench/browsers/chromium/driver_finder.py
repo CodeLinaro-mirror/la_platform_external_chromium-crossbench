@@ -75,7 +75,7 @@ class ChromeDriverFinder:
     raise RuntimeError("Cannot download chromedriver for remote browser yet")
 
   def find_local_build(self) -> pth.LocalPath:
-    assert self.browser.app_path
+    assert self.browser.app_path, "Missing browser app path"
     # assume it's a local build
     lookup_dir: pth.LocalPath = self.host_platform.local_path(
         self.browser.app_path.parent)

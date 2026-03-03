@@ -315,7 +315,8 @@ class ActionRunner:
 
   @contextlib.contextmanager
   def playback_iteration(self, i: int) -> Iterator[None]:
-    assert self._info_stack is None
+    assert self._info_stack is None, (
+        f"Got unexpected info stack {self._info_stack}")
     with self._info_stack_annotate(f"playback_{i}"):
       yield
 

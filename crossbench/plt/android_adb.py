@@ -148,7 +148,7 @@ class Adb:
     self.start_server()
     serial_id, device_info = self._find_serial_id(device_identifier)
     logging.debug("ADB Selected device: %s %s", serial_id, device_info)
-    assert serial_id
+    assert serial_id, "Missing serial id"
     return serial_id, device_info
 
   def _find_serial_id(

@@ -198,7 +198,7 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
   @override
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
     config = cls.get_pages_config(args)
-    assert cls._page_config is not None
+    assert cls._page_config, "Missing page config"
 
     if args.stories:
       all_page_labels = [str(page.label) for page in config.pages]

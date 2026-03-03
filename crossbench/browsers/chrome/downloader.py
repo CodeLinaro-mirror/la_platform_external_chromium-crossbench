@@ -234,7 +234,7 @@ class ChromeDownloaderLinux(ChromeDownloader):
 
   def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
                platform_name: str, browser_platform: Platform) -> None:
-    assert not browser_type
+    assert not browser_type, f"Unexpected browser_type: {browser_type}"
     if browser_platform.is_linux and browser_platform.is_x64:
       platform_name = "linux64"
     else:
@@ -302,7 +302,7 @@ class ChromeDownloaderMacOS(ChromeDownloader):
 
   def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
                platform_name: str, browser_platform: Platform) -> None:
-    assert not browser_type
+    assert not browser_type, f"Unexpected browser_type: {browser_type}"
     assert browser_platform.is_macos, f"{type(self)} can only be used on macOS"
     platform_name = "mac-universal"
     super().__init__(version_identifier, "chrome", platform_name,
@@ -310,7 +310,8 @@ class ChromeDownloaderMacOS(ChromeDownloader):
 
   @override
   def _requested_version_validation(self) -> None:
-    assert self._browser_platform.is_macos
+    assert self._browser_platform.is_macos, (
+        f"Unsupported platform {self._browser_platform}")
     if self.requested_version.is_channel_version:
       return
     major_version: int = self.requested_version.major
@@ -403,7 +404,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
 
   def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
                platform_name: str, browser_platform: Platform) -> None:
-    assert not browser_type
+    assert not browser_type, f"Unexpected browser_type: {browser_type}"
     assert browser_platform.is_android, (
         f"{type(self)} can only be used on Android")
     # TODO: support more CPU types
@@ -566,7 +567,7 @@ class ChromeDownloaderWin(ChromeDownloader):
 
   def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
                platform_name: str, browser_platform: Platform) -> None:
-    assert not browser_type
+    assert not browser_type, f"Unexpected browser_type: {browser_type}"
     assert browser_platform.is_win, f"{type(self)} can only be used on windows"
     self._archive_stem: str
     if browser_platform.is_arm64:

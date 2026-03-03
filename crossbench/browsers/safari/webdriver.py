@@ -38,7 +38,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
                path: AnyPath,
                settings: Optional[Settings] = None) -> None:
     super().__init__(label, path, settings)
-    assert self.platform.is_apple
+    assert self.platform.is_apple, f"Unsupported platform: {self.platform}"
 
   @classmethod
   @override
@@ -83,8 +83,10 @@ class SafariWebDriver(WebDriverBrowser, Safari):
         driver.session_id)
     all_logs = list(self.host_platform.glob(logs, "safaridriver*"))
     if all_logs:
-      self._driver_log_file = LocalPath(all_logs[0])
-      assert self.host_platform.is_file(all_logs[0])
+      first_log_file = all_logs[0]
+      self._driver_log_file = LocalPath(first_log_file)
+      assert self.host_platform.is_file(first_log_file), (
+          f"Invalid log file {first_log_file}")
     return driver
 
   # TODO(cbruni): implement iOS platform
@@ -139,7 +141,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
   @override
   def _validate_driver_version(self) -> None:
     # The bundled driver is always ok
-    assert self._driver_path
+    assert self._driver_path, "Missing driver path"
     for parent in self._driver_path.parents:
       if parent == self.path.parent:
         return

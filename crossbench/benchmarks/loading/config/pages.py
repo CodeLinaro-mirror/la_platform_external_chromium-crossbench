@@ -63,7 +63,7 @@ class PagesConfig(ConfigObject):
         if not previous_part:
           raise argparse.ArgumentTypeError(
               "Duration can only follow after url. "
-              f"Current value: {repr(part)}")
+              f"Current value: {part!r}")
         values[-1] = f"{previous_part},{part}"
         previous_part = None
       except DurationParseError:
@@ -131,7 +131,7 @@ class PagesConfig(ConfigObject):
                    secrets: Optional[Secrets] = None) -> tuple[PageConfig, ...]:
     pages = []
     for name, page_config in data.items():
-      with exception.annotate_argparsing(f"Parsing story ...['{name}']"):
+      with exception.annotate_argparsing(f"Parsing story ...[{name!r}]"):
         # TODO: fix secrets on the inner page and on the outer pages config
         page = PageConfig.parse(page_config, label=name, secrets=secrets)
         pages.append(page)
@@ -232,7 +232,7 @@ class DevToolsRecorderPagesConfig(PagesConfig):
         css = f"css/{selector_candidate}"
 
     if xpath:
-      assert xpath.startswith("xpath/")
+      assert xpath.startswith("xpath/"), f"Invalid xpath: {xpath!r}"
       return xpath
     if css:
       _, css = css.split("css/", maxsplit=1)
@@ -263,7 +263,8 @@ class ListPagesConfig(PagesConfig):
   def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
     assert not kwargs, f"{cls.__name__} does not support extra kwargs"
     pages: list[PageConfig] = []
-    with exception.annotate_argparsing(f"Loading Pages list file: {path.name}"):
+    with exception.annotate_argparsing(
+        f"Loading Pages list file: {path.name!r}"):
       line: int = 0
       with path.open() as f:
         for single_line_config in f.readlines():

@@ -81,11 +81,11 @@ class SetupNetwork:
     self._interface: str = interface
     self._dnsmasq_process: subprocess.Popen | None = None
     self._is_android: bool = False
-    assert self._interface
+    assert self._interface, "Missing network interface"
 
   def run(self) -> None:
     self._setup()
-    assert self._dnsmasq_process
+    assert self._dnsmasq_process, "Missing dnsmasq process"
     print(KEEP_RUNNING_MESSAGE)
     _, stderr = self._dnsmasq_process.communicate()
     logging.error("dnsmasq process failed: %s", stderr.decode("utf-8"))
@@ -145,7 +145,7 @@ class SetupNetwork:
 
     dnsmasq_bin = PLATFORM.which("dnsmasq")
     assert dnsmasq_bin, "dnsmasq binary not found in $PATH"
-    assert self._interface
+    assert self._interface, "Missing network interface"
 
     PLATFORM.sh(
         "sudo",

@@ -89,7 +89,8 @@ class Browser(abc.ABC):
     self._path = self._init_resolve_binary(path)
     # TODO clean up
     if not self.platform.is_android:
-      assert self.path.is_absolute()
+      assert self.path.is_absolute(), (
+          f"Expected absolute path but got {self.path}")
     self._version = self._extract_version()
     self.unique_name = f"{self.type_name()}_v{self.version.major}_{self.label}"
 
@@ -116,7 +117,7 @@ class Browser(abc.ABC):
 
   @unique_name.setter
   def unique_name(self, name: str) -> None:
-    assert name
+    assert name, "missing name"
     # Replace any potentially unsafe chars in the name
     self._unique_name = pth.safe_filename(name).lower()
 
@@ -238,7 +239,7 @@ class Browser(abc.ABC):
 
   @property
   def stdout_log_file(self) -> pth.AnyPath:
-    assert self.log_file
+    assert self.log_file, "missing log file"
     return self.log_file.with_suffix(".stdout.log")
 
   @property
@@ -257,7 +258,7 @@ class Browser(abc.ABC):
     return path
 
   def _init_resolve_macos_binary(self, path: pth.AnyPath) -> pth.AnyPath:
-    assert self.platform.is_macos
+    assert self.platform.is_macos, f"Unsupported platform: {self.platform}"
     candidate = self.platform.search_binary(path)
     if not candidate or not self.platform.is_file(candidate):
       raise ValueError(f"Could not find browser executable in {path}")
@@ -300,7 +301,8 @@ class Browser(abc.ABC):
   def setup(self) -> None:
     assert not self._is_running, "setup() called in wrong order."
     self._setup_binary()
-    assert not self._cache_dir
+    assert not self._cache_dir, (
+        f"Cache dir should not have been setup, but got {self._cache_dir}")
     self._cache_dir = self._setup_cache_dir()
 
   def _setup_binary(self) -> None:

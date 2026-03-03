@@ -47,7 +47,8 @@ class SafariVersion(BrowserVersion):
     version_str = matches["version"]
     parts_str = matches["parts"]
     major_parts_str = matches["major_parts"]
-    assert version_str and parts_str and major_parts_str
+    assert version_str and parts_str and major_parts_str, (
+        "Missing version parts")
     channel = cls._parse_channel(full_version)
     major_parts = tuple(map(int, major_parts_str.split(".")))
     if len(major_parts) < cls._MIN_MAJOR_PARTS_LEN:

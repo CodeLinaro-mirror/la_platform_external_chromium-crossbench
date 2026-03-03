@@ -155,7 +155,7 @@ class BondClient:
   def _get_request_headers(self, timeout: dt.timedelta) -> Mapping[str, str]:
     if self._credentials.token_state is not TokenState.FRESH:
       self._refresh_credentials(timeout)
-    assert self._credentials.token
+    assert self._credentials.token, "Missing token"
     return {"Authorization": f"Bearer {self._credentials.token}"}
 
   def _post_with_retry(self,

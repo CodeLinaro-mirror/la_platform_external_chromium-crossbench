@@ -70,6 +70,6 @@ class TimeScope:
     return self
 
   def __exit__(self, exc_type, exc_value, traceback) -> None:  # noqa: ANN001
-    assert self._start
+    assert self._start, "Missing start time"
     self._duration = dt.datetime.now() - self._start
     logging.log(self._level, "%s duration=%s", self._message, self._duration)

@@ -58,7 +58,7 @@ class WprReplayNetwork(ReplayNetwork):
       return Flags()
 
     assert self.is_running, "Extra network flags are not valid"
-    assert self._server
+    assert self._server, "WPR server is not running"
     if not browser_attributes.is_chromium_based:
       raise ValueError(
           "Only chromium-based browsers are supported for wpr replay.")

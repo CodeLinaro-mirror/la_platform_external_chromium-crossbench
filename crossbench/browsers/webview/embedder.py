@@ -75,7 +75,7 @@ class WebviewEmbedder(Webview):
     return driver
 
   def _init_driver(self, session: BrowserSessionRunGroup) -> None:
-    assert self._driver_path
+    assert self._driver_path, "Missing driver path"
     self._private_driver = self._start_driver(session, self._driver_path)
     self._set_driver_timeouts(session)
 

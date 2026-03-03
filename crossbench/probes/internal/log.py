@@ -52,7 +52,7 @@ class LogProbeContext(ProbeContext[LogProbe]):
     pass
 
   def teardown(self) -> ProbeResult:
-    assert self._log_handler
+    assert self._log_handler, "Missing log handler"
     logging.getLogger().removeHandler(self._log_handler)
     self._log_handler = None
     return self.local_result(file=(self.local_result_path,))

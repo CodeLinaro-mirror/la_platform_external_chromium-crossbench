@@ -28,7 +28,7 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
   @classmethod
   @override
   def all_story_names(cls) -> tuple[str, ...]:
-    assert cls.SUBSTORIES
+    assert cls.SUBSTORIES, f"Missing {cls}.SUBSTORIES"
     return cls.SUBSTORIES
 
   @classmethod

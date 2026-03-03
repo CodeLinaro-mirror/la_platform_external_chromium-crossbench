@@ -111,7 +111,7 @@ class BasicFlags(Freezable, collections.UserDict):
           groups.get("value_double_quotes") or groups.get("value_no_quotes"))
       if groups.get("equal") and not flag_value:
         raise ValueError(f"Invalid {msg}: missing value for {repr(flag_name)}")
-      assert flag_name
+      assert flag_name, "Missing flag name"
       flag_parts.append((flag_name, flag_value))
 
     if current_end != len(raw_flags):

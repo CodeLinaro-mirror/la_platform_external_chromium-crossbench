@@ -193,7 +193,8 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
                       focused_window or "None")
 
   def _backup_chrome_flags(self) -> None:
-    assert self._previous_command_line_contents is None
+    assert self._previous_command_line_contents is None, (
+        "Got unexpected previous flags: {self._previous_command_line_contents}")
     self._previous_command_line_contents = self._read_device_flags()
     assert not self._needs_restore_chrome_flags, "Invalid flag restore state."
     self._needs_restore_chrome_flags = True
@@ -336,7 +337,7 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
   def _find_driver(self) -> pth.AnyPath:
     if self._driver_path:
       return self._driver_path
-    assert self.app_path
+    assert self.app_path, "Missing app path"
     if build_dir := self.local_build_dir():
       logging.info("Looking for local chromedriver in %s", build_dir.parent)
       finder = ChromiumBuildBinaryFinder(self.host_platform, "chromedriver",

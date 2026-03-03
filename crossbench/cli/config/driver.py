@@ -307,7 +307,7 @@ class DriverConfig(ConfigObject):
     return NumberParser.port_number(port)
 
   def get_ssh_platform(self) -> plt.Platform:
-    assert self.settings
+    assert self.settings, "Missing DriverConfig settings"
     host = ObjectParser.non_empty_str(self.settings.get("host"), "host")
     port = self._parse_ssh_platform_driver_port()
     ssh_port = NumberParser.port_number(

@@ -51,7 +51,7 @@ class Benchmark(abc.ABC):
 
   @classmethod
   def cli_description(cls) -> str:
-    assert cls.__doc__
+    assert cls.__doc__, f"Missing class doc in {cls}"
     return cls.__doc__.strip()
 
   @classmethod
@@ -646,7 +646,9 @@ class PressBenchmark(SubStoryBenchmark):
     if custom_url:
       for story in stories:
         press_story = cast(PressBenchmarkStory, story)
-        assert press_story.url == custom_url
+        assert press_story.url == custom_url, (
+            f"Expected custom url on {press_story} to be {custom_url} "
+            f"but got {press_story.url}")
 
   @override
   def setup(self, runner: Runner) -> None:

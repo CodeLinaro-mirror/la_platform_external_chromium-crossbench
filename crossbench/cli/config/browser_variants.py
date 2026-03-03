@@ -35,8 +35,8 @@ from crossbench.helper.cwd import change_cwd
 from crossbench.parse import LateArgumentError, ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench.browsers.browser import Browser
   from crossbench.browsers.apk_config import ApkConfig
+  from crossbench.browsers.browser import Browser
   from crossbench.cli.config.env import EnvConfig
   from crossbench.network.base import Network
 
@@ -105,7 +105,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
 
   @property
   def variants(self) -> list[BrowserVariantConfig]:
-    assert self._variants
+    assert self._variants, "Missing variants"
     return list(self._variants)
 
   @property
@@ -321,7 +321,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
       apk_config: Optional[ApkConfig] = None) -> BrowserVariantConfig:
     if not self._is_valid_browser_path(browser_config):
       raise ConfigError(f"Browser binary does not exist: {browser_config.path}")
-    assert label
+    assert label, "Expected non-empty label"
     browser_cache_dir = args.browser_cache_dir or browser_config.cache_dir
     clear_cache_dir: bool | None = args.clear_browser_cache_dir
     if clear_cache_dir is None:
@@ -466,7 +466,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
       browser_config = self._config_for_maybe_downloaded_binary(
           BrowserConfig.parse(raw_browser_data))
       browser_cls = self.get_browser_cls(browser_config)
-    assert browser_cls
+    assert browser_cls, "Missing browser cls"
 
     flag_variants: FlagsGroupConfig = self._get_browser_variants(
         args, name, raw_browser_data)

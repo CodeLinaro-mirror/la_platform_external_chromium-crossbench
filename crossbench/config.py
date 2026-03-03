@@ -16,9 +16,8 @@ import json
 import logging
 import re
 import textwrap
-from typing import (TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic,
-                    Iterable, Optional, Sequence, Set, Type, TypeAlias, TypeVar,
-                    cast)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic, \
+    Iterable, Optional, Sequence, Set, Type, TypeAlias, TypeVar, cast
 
 import tabulate
 from typing_extensions import Self, override
@@ -143,8 +142,8 @@ class ConfigArgParser:
 
   def _validate_enum_choices(
       self, choices: Optional[Iterable[object]]) -> Optional[frozenset]:
-    assert self.is_enum
-    assert self.type
+    assert self.is_enum, "Expected enum"
+    assert self.type, "Expected type"
     enum_type: Type[enum.Enum] = cast(Type[enum.Enum], self.type)
     if choices is None:
       return frozenset(enum for enum in enum_type)
@@ -236,7 +235,7 @@ class ConfigArgParser:
 
   @property
   def default_list(self) -> Sequence:
-    assert self.is_list
+    assert self.is_list, "expected list"
     assert isinstance(self.default, collections.abc.Sequence)
     return self.default
 
@@ -290,7 +289,7 @@ class ConfigArgParser:
     if self.type and hasattr(self.type, "help_text_items"):
       # See str_enum_with_help.StrEnumWithHelp
       return [("choices", ""), *self.type.help_text_items()]
-    assert self.choices
+    assert self.choices, "Expected choices"
     return [self._choices_help_text(choice.value for choice in self.choices)]
 
   def parse(self, config_data: dict[str, object],
@@ -399,10 +398,10 @@ class ConfigArgParser:
     return config_object.to_argument_value()
 
   def parse_enum_data(self, data: object) -> enum.Enum:
-    assert self.is_enum
-    assert self.choices
+    assert self.is_enum, "Expected enum"
+    assert self.choices, "Expected choices"
     instance_type = self.type
-    assert instance_type
+    assert instance_type, "Expected instance type"
     assert isinstance(instance_type, type), "type for enum has to be a Class."
     if issubclass(instance_type, ConfigEnum):
       return instance_type.parse(data)  # type: ignore
@@ -968,7 +967,7 @@ class _TemplatedConfigParser(ConfigObject):
       matches.reverse()
       for m in matches:
         arg_name = m.group(1)
-        assert arg_name
+        assert arg_name, "Missing template arg name"
 
         if arg_name in self._unbound_args:
           continue

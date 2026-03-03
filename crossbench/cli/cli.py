@@ -395,7 +395,7 @@ class CrossBenchCLI:
   def _setup_logging(self) -> None:
     if not self._enable_logging:
       return
-    assert self._console_handler
+    assert self._console_handler, "Missing console handler"
     if self.args.verbosity == -1:
       self._console_handler.setLevel(logging.ERROR)
     elif self.args.verbosity == 0:
@@ -414,7 +414,7 @@ class CrossBenchCLI:
     if not self._enable_logging:
       assert self._console_handler is None
       return
-    assert self._console_handler
+    assert self._console_handler, "Missing console handler"
     self._console_handler.flush()
     logging.getLogger().removeHandler(self._console_handler)
     self._console_handler = None

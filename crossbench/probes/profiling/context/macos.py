@@ -78,7 +78,7 @@ class MacOSProfilingContext(PosixProfilingContext):
 
   def stop(self) -> None:
     # Needs to be SIGINT for xctrace, terminate won't work.
-    assert self._profiling_process
+    assert self._profiling_process, "Missing profiling process"
     self.browser_platform.send_signal(self._profiling_process,
                                       self.browser_platform.signals.SIGINT)
 

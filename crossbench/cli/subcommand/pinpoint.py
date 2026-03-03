@@ -643,7 +643,7 @@ class PinpointHelpFormatter(argparse.HelpFormatter):
       return super()._format_action(action)
 
     subactions = action._get_subactions()  # noqa: SLF001
-    assert subactions
+    assert subactions, "Missing subactions"
 
     pinpoint_parts = []
     benchmark_parts = []

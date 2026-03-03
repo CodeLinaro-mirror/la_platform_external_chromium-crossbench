@@ -120,12 +120,12 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
     Returns a unified start time that is the same for all active Decorators.
     This can be used to account for startup delays caused by other Decorators.
     """
-    assert self._start_time
+    assert self._start_time, "Start time not set"
     return self._start_time
 
   @property
   def duration(self) -> dt.timedelta:
-    assert self._start_time and self._stop_time
+    assert self._start_time and self._stop_time, "Missing start or stop time"
     return self._stop_time - self._start_time
 
   @property
@@ -134,7 +134,8 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
 
   def set_start_time(self, start_datetime: dt.datetime) -> None:
     # Used to set a uniform start time across all active DecoratorContexts.
-    assert self._start_time is None
+    assert self._start_time is None, (
+        f"Unexpected start time: {self._start_time}")
     self._start_time = start_datetime
 
   def __enter__(self) -> None:

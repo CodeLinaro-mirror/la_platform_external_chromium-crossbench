@@ -191,7 +191,7 @@ class NetworkConfig(ConfigObject):
     if type and type is not NetworkType.WPR:
       raise argparse.ArgumentTypeError(
           f"Network type mismatch, expected WPR, got {type}")
-    assert url.scheme == "gs"
+    assert url.scheme == "gs", f"Only support gs url, but got {url.scheme}"
     return cls.parse_wpr_archive_url(url.geturl())
 
   @classmethod
@@ -273,7 +273,7 @@ class NetworkConfig(ConfigObject):
       if self.type is NetworkType.LIVE:
         return LiveNetwork(traffic_shaper, browser_platform)
       if self.type is NetworkType.LOCAL:
-        assert self.path
+        assert self.path, "Missing local network path"
         return LocalFileNetwork(self.path, self.url, traffic_shaper,
                                 browser_platform)
       if self.type is NetworkType.WPR:

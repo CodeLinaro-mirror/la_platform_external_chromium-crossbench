@@ -61,7 +61,9 @@ class LoadLine2WebApiProbe(LoadLineProbe):
       runs = j[browser]["info"]["runs"]
       for metric in j[browser]["data"]:
         values = j[browser]["data"][metric]["values"]
-        assert len(values) == runs
+        assert len(values) == runs, (
+            f"Number of score values {len(values)} does not match "
+            f"number of runs {runs}")
         for run, value in enumerate(values):
           timings["browser"].append(browser)
           timings["metric"].append(metric)

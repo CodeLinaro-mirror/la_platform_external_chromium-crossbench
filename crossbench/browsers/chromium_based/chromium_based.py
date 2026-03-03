@@ -93,8 +93,10 @@ class ChromiumBased(Browser):
       self._flags.set("--disable-extensions")
 
     if "--allow-background-interventions" in self._flags.data:
-      # The --allow-background-interventions flag should have no value.
-      assert self._flags.get("--allow-background-interventions") is None
+      value = self._flags.get("--allow-background-interventions")
+      assert value is None, (
+          "The --allow-background-interventions flag should have no value, "
+          f"but got {value}")
     else:
       logging.warning(
           "Disabling background interventions for chromium based browser. "
@@ -187,7 +189,7 @@ class ChromiumBased(Browser):
 
   @property
   def chrome_log_file(self) -> pth.AnyPath:
-    assert self.log_file
+    assert self.log_file, "Missing log file"
     return self.log_file.with_suffix(f".{self.type_name()}.log")
 
   @property
@@ -216,7 +218,9 @@ class ChromiumBased(Browser):
     return details
 
   def _process_extensions(self) -> dict[str, str]:
-    assert not self._local_extension_tmp_dir
+    assert not self._local_extension_tmp_dir, (
+        "Local extension temp dir should be uninitialized, "
+        f"but got {self._local_extension_tmp_dir}.")
     self._local_extension_tmp_dir = pth.LocalPath(self.host_platform.mkdtemp())
 
     load_extension: list[str] = []
@@ -230,7 +234,9 @@ class ChromiumBased(Browser):
 
     if self.platform.is_remote:
       # Create a folder to load the extensions from on the remote device.
-      assert not self._remote_extension_tmp_dir
+      assert not self._remote_extension_tmp_dir, (
+          "Remote extension temp dir should bet uninitialized, "
+          f"but got {self._local_extension_tmp_dir}.")
       self._remote_extension_tmp_dir = self.platform.mkdtemp()
       # Android needs executable permission on the temp folder.
       self.platform.chmod(self._remote_extension_tmp_dir, 0o755)

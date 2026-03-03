@@ -68,13 +68,13 @@ class Safari(Browser):
 
   def _init_path_and_version(self, path: Optional[pth.AnyPath] = None) -> None:
     super()._init_path_and_version(path)
-    assert self.path
+    assert self.path, "Missing browser path"
     self.bundle_name = self.path.stem.replace(" ", "")
-    assert self.bundle_name
+    assert self.bundle_name, "Missing Safari app bundle name"
 
   @override
   def _extract_version(self) -> SafariVersion:
-    assert self.path
+    assert self.path, "Missing browser path"
     app_version: str = self.platform.app_version(self.path)
     driver_version = self.host_platform.app_version(
         find_safaridriver(self.path, self.platform))

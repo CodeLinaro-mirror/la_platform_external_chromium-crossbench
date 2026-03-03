@@ -31,7 +31,7 @@ class D8Version(BrowserVersion):
     if not cls._validate_prefix(prefix):
       raise cls.parse_error(f"Wrong prefix {repr(prefix)}", full_version)
     version_parts = matches["parts"]
-    assert version_parts
+    assert version_parts, "Missing version parts"
     parts: tuple[int, ...] = tuple(map(int, version_parts.split(".")))
     if len(parts) != cls._PARTS_LEN:
       raise cls.parse_error("Invalid number of version number parts",

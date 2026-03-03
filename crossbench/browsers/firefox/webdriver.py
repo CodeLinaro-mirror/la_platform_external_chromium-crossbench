@@ -48,7 +48,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
   def _start_firefox_driver(self, session: BrowserSessionRunGroup,
                             driver_path: pth.AnyPath) -> webdriver.Firefox:
     assert not self._is_running
-    assert self.log_file
+    assert self.log_file, "Missing log file"
     options = FirefoxOptions()
     options.set_capability("browserVersion", str(self.version.major))
     # Don't wait for document-ready.
@@ -167,14 +167,14 @@ class FirefoxDriverFinder:
   def _load_releases(self) -> dict[tuple[int, ...], dict]:
     response = url_helper.get(self.RELEASES_URL)
     releases = response.json()
-    assert isinstance(releases, list)
+    assert isinstance(releases, list), f"Invalid releases list: {releases}"
     versions = {}
     for release in releases:
       # "v0.10.2" => "0.10.2"
       version = release["tag_name"][1:]
       # "0.10.2" => (0, 10, 2)
       version = tuple(int(i) for i in version.split("."))
-      assert version not in versions
+      assert version not in versions, f"Duplicate version: {version}"
       versions[version] = release
     return dict(sorted(versions.items(), reverse=True))
 

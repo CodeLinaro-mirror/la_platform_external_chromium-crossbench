@@ -21,6 +21,7 @@ from crossbench.exception import Annotator, TInfoStack
 from crossbench.helper.cwd import change_cwd
 from crossbench.helper.durations import Durations
 from crossbench.helper.state import State, StateMachine
+from crossbench.parse import NumberParser
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import ProbeResultDict
 from crossbench.runner.actions import Actions
@@ -81,13 +82,11 @@ class Run(ResultOrigin):
                        env_validation_mode)
     self._story = story
     self._action_runner = action_runner
-    assert repetition >= 0
-    self._repetition = repetition
+    self._repetition = NumberParser.positive_zero_int(repetition, "repetition")
     self._is_warmup = is_warmup
     assert temperature, "Missing cache-temperature value."
     self._temperature = temperature
-    assert index >= 0
-    self._index = index
+    self._index = NumberParser.positive_zero_int(index, "index")
     self._name = name
     self._out_dir = self._get_out_dir().absolute()
     self._probe_results = ProbeResultDict(self._out_dir)

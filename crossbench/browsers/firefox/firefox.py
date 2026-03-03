@@ -88,15 +88,19 @@ class Firefox(Browser):
         new_width = int(flags["--width"])
         update_size = True
       else:
-        assert self.viewport.width == int(flags["--width"])
+        assert self.viewport.width == int(
+            flags["--width"]), ("Mismatching viewport.width and --width flag: "
+                                f"{self.viewport.width} != {flags['--width']}")
     if "--height" in flags:
       if self.viewport.is_default:
         new_height = int(flags["--height"])
         update_size = True
       else:
-        assert self.viewport.height == int(flags["--height"])
+        assert self.viewport.height == int(flags["--height"]), (
+            "Mismatching viewport.height and --height flag: "
+            f"{self.viewport.height} != {flags['--height']}")
     if update_size:
-      assert self.viewport.is_default
+      assert self.viewport.is_default, "Expected default viewport"
       self.viewport = Viewport(new_width, new_height)
     elif self.viewport.has_size:
       flags["--width"] = str(self.viewport.width)

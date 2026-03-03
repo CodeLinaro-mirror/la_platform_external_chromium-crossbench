@@ -183,7 +183,8 @@ class Downloader(abc.ABC):
 
   def _load_from_archive(self) -> pth.LocalPath:
     assert not self.requested_version.is_complete
-    assert self._archive_path.exists()
+    assert self._archive_path.exists(), (
+        f"Archive does not exist: {self._archive_path}")
     self.info(f"EXTRACTING ARCHIVE: {self._archive_path}")
     original_out_dir = self._out_dir
     with tempfile.TemporaryDirectory(
@@ -199,7 +200,7 @@ class Downloader(abc.ABC):
         cached_version = self._validate_installed(app_path)
         self.info(f"CACHED: {cached_version} {app_path}")
       else:
-        assert not versioned_path.exists()
+        assert not versioned_path.exists(), f"Cannot override {versioned_path}"
         temp_extracted_path.rename(versioned_path)
     return app_path
 

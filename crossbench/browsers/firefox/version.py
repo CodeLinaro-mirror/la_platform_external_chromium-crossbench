@@ -51,7 +51,8 @@ class FirefoxVersion(BrowserVersion):
       raise cls.parse_error(f"Wrong prefix {repr(prefix)}", full_version)
     version_str = matches["version"]
     version_parts = matches["parts"]
-    assert version_parts and version_str
+    assert version_parts and version_str, (
+        "Missing version parts or version string")
     browser_channel = cls._parse_channel(full_version, matches)
     parts: tuple[int, ...] = tuple(map(int, cls._SPLIT_RE.split(version_parts)))
     if len(parts) == 2:

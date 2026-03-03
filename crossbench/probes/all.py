@@ -127,13 +127,13 @@ GENERAL_PURPOSE_PROBES: tuple[Type[Probe], ...] = (
 for probe_cls in GENERAL_PURPOSE_PROBES:
   assert probe_cls.IS_GENERAL_PURPOSE, (
       f"Probe {probe_cls} should be marked for GENERAL_PURPOSE")
-  assert probe_cls.NAME
+  assert probe_cls.NAME, "Missing {probe_cls}.NAME property"
   assert not probe_cls.NAME.startswith(INTERNAL_NAME_PREFIX), (
       f"General purpose {probe_cls}.NAME cannot start with 'cb.'")
 
 for probe_cls in DEFAULT_INTERNAL_PROBES:
   assert not probe_cls.IS_GENERAL_PURPOSE, (
       f"Internal Probe {probe_cls} should not marked for GENERAL_PURPOSE")
-  assert probe_cls.NAME
+  assert probe_cls.NAME, "Missing {probe_cls}.NAME property"
   assert probe_cls.NAME.startswith(INTERNAL_NAME_PREFIX), (
       f"Internal {probe_cls}.NAME must start with 'cb.'")

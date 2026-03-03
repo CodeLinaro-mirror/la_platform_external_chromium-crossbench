@@ -148,10 +148,10 @@ def generate_simpleperf_command_line(
 ) -> ListCmdArgs:
   command_line: ListCmdArgs = ["simpleperf", "record"]
   if target == TargetMode.RENDERER_MAIN_ONLY:
-    assert renderer_main_tid is not None
+    assert renderer_main_tid is not None, "Missing renderer_main_tid"
     command_line.extend(["-t", str(renderer_main_tid)])
   elif target == TargetMode.RENDERER_PROCESS_ONLY:
-    assert renderer_pid is not None
+    assert renderer_pid is not None, "Missing renderer_pid"
     command_line.extend(["-p", str(renderer_pid)])
   elif target == TargetMode.BROWSER_APP_ONLY:
     command_line.extend(["--app", app_name])

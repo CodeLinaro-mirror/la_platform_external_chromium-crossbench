@@ -162,7 +162,7 @@ class PowerlineBenchmark(Benchmark):
     # This flag is required because Chrome a) does not autoplay based on the
     #  HTML5 tag and b) it will not play from JavaScript if the user does not
     # interact with the page first. https://developer.chrome.com/blog/autoplay
-    assert browser_attributes.is_chromium_based
+    browser_attributes.assert_chromium_based()
     return Flags({
         "--autoplay-policy": "no-user-gesture-required",
         "--enable-renderer-backgrounding": None,
