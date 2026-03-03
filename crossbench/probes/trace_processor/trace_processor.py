@@ -244,7 +244,7 @@ class TraceProcessorProbe(Probe):
     is_debug_logging = logging.getLogger().isEnabledFor(logging.DEBUG)
 
     for module_path in self.module_paths:
-      extra_flags.append("--add-sql-module")
+      extra_flags.append("--add-sql-package")
       extra_flags.append(str(module_path))
 
     return TraceProcessorConfig(

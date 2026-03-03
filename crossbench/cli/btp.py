@@ -94,7 +94,7 @@ class BTPUtil:
 
     tp_config = TraceProcessorConfig(
         bin_path=str(tp.trace_processor_bin),
-        extra_flags=["--add-sql-module", MODULES_DIR])
+        extra_flags=["--add-sql-package", MODULES_DIR])
     btp_conf = BatchTraceProcessorConfig(
         tp_config=tp_config,
         load_failure_handling=FailureHandling.INCREMENT_STAT,
