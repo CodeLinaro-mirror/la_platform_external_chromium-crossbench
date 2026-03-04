@@ -1,7 +1,7 @@
 -- Copyright 2025 The Chromium Authors
 -- Use of this source code is governed by a BSD-style license that can be
 -- found in the LICENSE file.
-INCLUDE PERFETTO MODULE ext.loadline2_stages;
+INCLUDE PERFETTO MODULE chrome.loadline_2;
 
 SELECT
   page,
@@ -11,4 +11,4 @@ SELECT
   (interactive_mark - MAX(renderer_ready, end_request)) / 1e6 AS renderer_interactive,
   (visual_presentation - visual_mark) / 1e6 AS gpu_visual,
   (interactive_presentation - interactive_mark) / 1e6 AS gpu_interactive
-FROM loadline2_stages;
+FROM chrome_loadline2_stages;

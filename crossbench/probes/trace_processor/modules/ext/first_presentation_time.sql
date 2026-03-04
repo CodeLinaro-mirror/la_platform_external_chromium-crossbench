@@ -8,7 +8,7 @@
 
 INCLUDE PERFETTO MODULE slices.with_context;
 
-CREATE OR REPLACE PERFETTO FUNCTION get_event_time(name STRING)
+CREATE OR REPLACE PERFETTO FUNCTION _get_event_time(name STRING)
 RETURNS INT
 AS
 SELECT ts
@@ -45,23 +45,4 @@ CREATE OR REPLACE PERFETTO FUNCTION get_first_presentation_time_for_event(
   name STRING)
 RETURNS INT
 AS
-SELECT get_next_presentation_time(get_event_time($name));
-
-CREATE OR REPLACE PERFETTO FUNCTION get_next_presentation_time_by_pid(
-    ts INT, pid INT)
-RETURNS INT
-AS
-SELECT MIN(a.ts + a.dur) AS ts
-FROM process_slice s, ancestor_slice(s.id) a
-WHERE
-  s.name = 'Commit'
-  AND a.name = 'PipelineReporter'
-  AND s.depth - 1 = a.depth
-  AND s.ts > $ts
-  AND s.pid = $pid
-  -- TODO(crbug.com/409484302): Once we are no longer interested in Chrome
-  -- versions <=M136, leave only 'frame_reporter'.
-  AND COALESCE(
-        EXTRACT_ARG(a.arg_set_id, 'frame_reporter.state'),
-        EXTRACT_ARG(a.arg_set_id, 'chrome_frame_reporter.state')
-      ) = 'STATE_PRESENTED_ALL';
+SELECT get_next_presentation_time(_get_event_time($name));
