@@ -190,7 +190,7 @@ class LoadLine1PhoneDebugBenchmark(LoadLine1PhoneBenchmark):
   @classmethod
   @override
   def default_probe_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "probe_config_experimental_lightweight.hjson"
+    return cls._base_dir() / "probe_config_debug.hjson"
 
   @classmethod
   @override
@@ -208,7 +208,7 @@ class LoadLine1TabletDebugBenchmark(LoadLine1TabletBenchmark):
   @classmethod
   @override
   def default_probe_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "probe_config_experimental_lightweight.hjson"
+    return cls._base_dir() / "probe_config_debug.hjson"
 
   @classmethod
   @override

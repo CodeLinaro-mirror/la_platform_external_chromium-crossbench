@@ -79,20 +79,21 @@ class BenchmarkType(enum.StrEnum):
   TABLET = "loadline-tablet"
 
 
-def _verify_default_metrics(out_dir,
-                            benchmark_type: BenchmarkType,
-                            only_total=False):
+def _verify_metrics(out_dir, benchmark_type: BenchmarkType, only_total=False):
   result_csv = out_dir / "benchmark_score.csv"
-  if benchmark_type == BenchmarkType.PHONE:
-    expected_titles = [
-        "browser", "TOTAL_SCORE", "amazon_product", "cnn_article",
-        "globo_homepage", "google_search_result", "wikipedia_article"
-    ]
-  else:
-    expected_titles = [
-        "browser", "TOTAL_SCORE", "amazon_product", "cnn_article", "google_doc",
-        "google_search_result", "youtube_video"
-    ]
+  match benchmark_type:
+    case BenchmarkType.PHONE:
+      expected_titles = [
+          "browser", "TOTAL_SCORE", "amazon_product", "cnn_article",
+          "globo_homepage", "google_search_result", "wikipedia_article"
+      ]
+    case BenchmarkType.TABLET:
+      expected_titles = [
+          "browser", "TOTAL_SCORE", "amazon_product", "cnn_article",
+          "google_doc", "google_search_result", "youtube_video"
+      ]
+    case _:
+      raise AssertionError(f"Invalid benchmark type {benchmark_type}")
 
   with result_csv.open() as csv:
     lines = csv.readlines()
@@ -134,35 +135,6 @@ def _verify_breakdown(out_dir):
     assert has_values
 
 
-def _verify_experimental_metrics(out_dir):
-  expected_files = {
-      "loadline_benchmark_score.csv", "loadline_breakdown.csv",
-      "loadline_experimental_interaction_latency.csv",
-      "loadline_experimental_sequence_manager.csv",
-      "loadline_experimental_v8_rcs.csv", "loadline_experimental_cpu.csv",
-      "loadline_experimental_mojo.csv", "loadline_experimental_tlp.csv",
-      "loadline_experimental_web_features.csv", "loadline_experimental_dom.csv",
-      "loadline_experimental_resources.csv", "loadline_experimental_v8.csv",
-      "loadline_experimental_worker.csv"
-  }
-  tp_output_files = list(out_dir.rglob("trace_processor/*.csv"))
-  assert {f.name for f in tp_output_files} == expected_files
-
-  # Some metrics for some runs might have no values. But we expect at
-  # least one metric to have some values.
-  has_metric_values = False
-  for f in tp_output_files:
-    with f.open() as output_file:
-      lines = output_file.readlines()
-      assert len(lines) >= 1
-      if len(lines) >= 2:
-        has_metric_values = True
-      num_columns = len(lines[0].split(","))
-      assert num_columns > 0
-
-  assert has_metric_values
-
-
 def test_loadline_phone(device_id, adb_path, test_env: TestEnv) -> None:
   _test_loadline_default(device_id, adb_path, BenchmarkType.PHONE, test_env)
 
@@ -182,27 +154,7 @@ def _test_loadline_default(device_id, adb_path, benchmark_type: BenchmarkType,
   ] + list(test_env.cq_flags))
   # With only 1 repetition, there's a chance that one story won't produce a
   # metric. To avoid flaky failures, we only check the total score here.
-  _verify_default_metrics(out_dir, benchmark_type, only_total=True)
-  _verify_breakdown(out_dir)
-
-
-def test_loadline_experimental(device_id, adb_path, test_env: TestEnv) -> None:
-  cli = CrossBenchCLI()
-  browser_config = _browser_config(device_id, adb_path)
-  out_dir = test_env.results_dir
-  probe_config = (
-      test_env.root_dir /
-      "config/benchmark/loadline/probe_config_experimental.hjson")
-  cli.run([
-      BenchmarkType.PHONE,
-      f"--browser={browser_config}",
-      "--repeat=1",
-      "--throw",
-      f"--out-dir={out_dir}",
-      f"--probe-config={probe_config}",
-      "--env-validation=skip",
-  ] + list(test_env.cq_flags))
-  _verify_experimental_metrics(out_dir)
+  _verify_metrics(out_dir, benchmark_type, only_total=True)
   _verify_breakdown(out_dir)
 
 
@@ -217,7 +169,7 @@ def test_loadline_batch(device_id, adb_path, test_env: TestEnv) -> None:
       "--throw", f"--out-dir={out_dir}", "--time-unit=2s",
       f"--probe=trace_processor:{_batch_trace_process_config()}"
   ] + list(test_env.cq_flags))
-  _verify_default_metrics(out_dir, BenchmarkType.PHONE)
+  _verify_metrics(out_dir, BenchmarkType.PHONE)
   _verify_breakdown(out_dir)
 
 
