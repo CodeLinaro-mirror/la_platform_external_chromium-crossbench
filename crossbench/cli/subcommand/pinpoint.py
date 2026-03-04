@@ -44,6 +44,7 @@ _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME: Final[immutabledict[
         "jetstream_2.0": "jetstream2.0.crossbench",
         "jetstream_2.1": "jetstream2.1.crossbench",
         "jetstream_2.2": "jetstream2.2.crossbench",
+        "jetstream_3.0": "jetstream3.0.crossbench",
         "jetstream_main": "jetstream-main.crossbench",
         "loading": "loading.crossbench",
         "loadline-phone": "loadline_phone.crossbench",

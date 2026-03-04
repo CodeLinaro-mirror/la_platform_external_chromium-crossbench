@@ -162,7 +162,17 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
   @classmethod
   def add_cli_arguments(
       cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument(
+    story_filtering_group = parser.add_mutually_exclusive_group()
+    cls._add_story_filtering_arguments(story_filtering_group)
+    is_combined_group = parser.add_mutually_exclusive_group()
+    cls._add_story_grouping_arguments(is_combined_group)
+
+    return parser
+
+  @classmethod
+  def _add_story_filtering_arguments(
+      cls, group: argparse._MutuallyExclusiveGroup) -> None:
+    group.add_argument(
         "--stories",
         "--story",
         dest="stories",
@@ -170,20 +180,17 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
         help="Comma-separated list of story names. "
         "Use 'all' for selecting all available stories. "
         "Use 'default' for the standard selection of stories.")
-    cls._add_story_grouping_arguments(parser)
-    return parser
 
   @classmethod
-  def _add_story_grouping_arguments(cls,
-                                    parser: argparse.ArgumentParser) -> None:
-    is_combined_group = parser.add_mutually_exclusive_group()
-    is_combined_group.add_argument(
+  def _add_story_grouping_arguments(
+      cls, group: argparse._MutuallyExclusiveGroup) -> None:
+    group.add_argument(
         "--combined",
         dest="separate",
         default=False,
         action="store_false",
         help="Run each story in the same session. (default)")
-    is_combined_group.add_argument(
+    group.add_argument(
         "--separate",
         action="store_true",
         help="Run each story in a fresh browser.")
@@ -201,9 +208,10 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
   def __init__(self,
                story_cls: Type[StoryT],
                patterns: Sequence[str],
-               args: Optional[argparse.Namespace] = None,
+               args: argparse.Namespace,
                separate: bool = False) -> None:
     self._args = args
+    assert args, "Missing args"
     self.story_cls: Type[StoryT] = story_cls
     assert issubclass(
         story_cls, Story), (f"Subclass of {Story} expected, found {story_cls}")
@@ -217,9 +225,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
 
   @property
   def args(self) -> argparse.Namespace:
-    if args := self._args:
-      return args
-    raise RuntimeError("Missing args for additional filtering")
+    return self._args
 
   @abc.abstractmethod
   def process_all(self, patterns: Sequence[str]) -> None:
@@ -489,7 +495,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
   def __init__(self,
                story_cls: Type[PressBenchmarkStoryT],
                patterns: Sequence[str],
-               args: Optional[argparse.Namespace] = None,
+               args: argparse.Namespace,
                separate: bool = False,
                url: Optional[str] = None) -> None:
     self.url: str | None = url

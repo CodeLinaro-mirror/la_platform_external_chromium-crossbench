@@ -136,6 +136,7 @@ class CrossBenchCLI:
       benchmarks.JetStream20Benchmark,
       benchmarks.JetStream21Benchmark,
       benchmarks.JetStream22Benchmark,
+      benchmarks.JetStream30Benchmark,
       benchmarks.JetStreamMainBenchmark,
       # Loading:
       benchmarks.LoadingBenchmark,

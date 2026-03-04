@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import unittest
 from typing import TYPE_CHECKING
@@ -39,19 +40,22 @@ class MockStory(PressBenchmarkStory):
 
 class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
 
+  def story_filter(self, *args, **kwargs):
+    return PressBenchmarkStoryFilter(
+        MockStory, *args, args=argparse.Namespace(), **kwargs)
+
   def test_empty(self):
     with self.assertRaises(ValueError):
-      _ = PressBenchmarkStoryFilter(MockStory, [])
+      _ = self.story_filter([])
 
   def test_all(self):
-    stories = PressBenchmarkStoryFilter(MockStory, ["all"]).stories
+    stories = self.story_filter(["all"]).stories
     self.assertEqual(len(stories), 1)
     story: MockStory = stories[0]
     self.assertSequenceEqual(story.substories, MockStory.SUBSTORIES)
 
   def test_all_separate(self):
-    stories = PressBenchmarkStoryFilter(
-        MockStory, ["all"], separate=True).stories
+    stories = self.story_filter(["all"], separate=True).stories
     self.assertSequenceEqual([story.substories[0] for story in stories],
                              MockStory.SUBSTORIES)
     for story in stories:
@@ -59,22 +63,22 @@ class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
 
   def test_match_regexp_none(self):
     with self.assertRaisesRegex(ValueError, "Story"):
-      _ = PressBenchmarkStoryFilter(MockStory, ["Story"]).stories
+      _ = self.story_filter(["Story"]).stories
 
   def test_match_regexp_some(self):
-    stories = PressBenchmarkStoryFilter(MockStory, [".*-3"]).stories
+    stories = self.story_filter([".*-3"]).stories
     self.assertEqual(len(stories), 1)
     story: MockStory = stories[0]
     self.assertSequenceEqual(story.substories, ["Story-3"])
 
   def test_match_regexp_all(self):
-    stories = PressBenchmarkStoryFilter(MockStory, ["Story.*"]).stories
+    stories = self.story_filter(["Story.*"]).stories
     self.assertEqual(len(stories), 1)
     story: MockStory = stories[0]
     self.assertSequenceEqual(story.substories, MockStory.SUBSTORIES)
 
   def test_match_regexp_all_wrong_case(self):
-    stories = PressBenchmarkStoryFilter(MockStory, ["StOrY.*"]).stories
+    stories = self.story_filter(["StOrY.*"]).stories
     self.assertEqual(len(stories), 1)
     story: MockStory = stories[0]
     self.assertSequenceEqual(story.substories, MockStory.SUBSTORIES)

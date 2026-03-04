@@ -208,7 +208,7 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
   def __init__(self,
                story_cls: Type[JetStream2Story],
                patterns: Sequence[str],
-               args: Optional[argparse.Namespace] = None,
+               args: argparse.Namespace,
                separate: bool = False,
                url: Optional[str] = None,
                url_params: Optional[Mapping[str, str]] = None) -> None:

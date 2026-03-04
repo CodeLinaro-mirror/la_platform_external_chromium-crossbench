@@ -29,4 +29,5 @@ You are only allowed to modify python files in dev-mode and when explicitly inst
 You must follow the google style guide for python coding.
 You are not allowed to use non-local imports or skip pylint checks.
 
+Always do `poetry run ruff check` after completing a change to validate all results.
 Run tests with `poetry run pytest tests/crossbench -x -n 7`

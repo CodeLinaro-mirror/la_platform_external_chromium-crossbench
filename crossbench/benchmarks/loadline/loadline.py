@@ -129,10 +129,10 @@ class LoadLinePageFilter(LoadingPageFilter):
     cls.add_page_config_arguments(page_config_group)
 
   @classmethod
-  def _add_story_grouping_arguments(cls,
-                                    parser: argparse.ArgumentParser) -> None:
+  def _add_story_grouping_arguments(
+      cls, group: argparse._MutuallyExclusiveGroup) -> None:
     # Loadline always needs separate substories for metrics calculation.
-    parser.add_argument(
+    group.add_argument(
         "--separate",
         action="store_true",
         default=True,

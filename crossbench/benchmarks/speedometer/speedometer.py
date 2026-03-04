@@ -347,7 +347,7 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
   def __init__(self,
                story_cls: Type[SpeedometerStory],
                patterns: Sequence[str],
-               args: Optional[argparse.Namespace] = None,
+               args: argparse.Namespace,
                separate: bool = False,
                url: Optional[str] = None,
                iterations: Optional[int] = None,

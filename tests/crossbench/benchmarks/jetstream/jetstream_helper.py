@@ -9,7 +9,7 @@ import copy
 import csv
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Optional, Sequence, Type
 from unittest import mock
 
 from typing_extensions import override
@@ -169,6 +169,9 @@ class JetStream2BaseTestCase(
     detailed_metrics: bool = False
     action_runner_config: ActionRunnerConfig | None = None
 
+  def namespace(self) -> argparse.Namespace:
+    return self.Namespace()
+
   def test_iterations_kwargs(self):
     args = self.Namespace()
     args.stories = "default"
@@ -196,6 +199,7 @@ class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
   @dataclass
   class Namespace(JetStream2BaseTestCase.Namespace):
     prefetch_resources: bool = True
+    story_tags: Sequence[str] | None = None
 
   @override
   def _test_run_browser_expectations(self, browser,
@@ -209,6 +213,10 @@ class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
     # Wait until done
     browser.expect_js(result=True)
     browser.expect_js(result=json.dumps(jetstream_probe_results))
+
+  @property
+  def story_data(self) -> dict[str, list[str]]:
+    return self.story_cls.STORY_DATA
 
   @override
   def test_run_default(self):
@@ -261,3 +269,40 @@ class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
     (story,) = benchmark.stories
     assert isinstance(story, self.story_cls)
     self.assertDictEqual(story.url_params, {"test": "lebab-wtb,espree-wtb"})
+
+  def test_story_tags_wasm(self):
+    args = self.Namespace()
+    args.story_tags = ["wasm"]
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertTrue(benchmark.stories)
+    for story in benchmark.stories:
+      for substory in story.substories:
+        self.assertIn("wasm", self.story_data[substory])
+
+  def test_story_tags_wasm_default(self):
+    args = self.Namespace()
+    args.story_tags = ["wasm,default"]
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertTrue(benchmark.stories)
+    for story in benchmark.stories:
+      for substory in story.substories:
+        tags = self.story_data[substory]
+        self.assertIn("wasm", tags)
+        self.assertIn("default", tags)
+
+  def test_story_tags_default(self):
+    args = self.Namespace()
+    args.story_tags = ["default"]
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertTrue(benchmark.stories)
+    substory_names = {
+        name for story in benchmark.stories for name in story.substories
+    }
+    self.assertSetEqual(substory_names,
+                        set(self.story_cls.default_story_names()))
+
+  def test_story_tags_invalid(self):
+    args = self.Namespace()
+    args.story_tags = ["non-existent-tag"]
+    with self.assertRaises(ValueError):
+      self.benchmark_cls.from_cli_args(args)

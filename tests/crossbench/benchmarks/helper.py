@@ -4,7 +4,8 @@
 from __future__ import annotations
 
 import abc
-from typing import Sequence, Type
+import argparse
+from typing import Optional, Sequence, Type
 
 from typing_extensions import override
 
@@ -43,10 +44,17 @@ class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):
   def story_filter_cls(self) -> Type[benchmark.StoryFilter]:
     return self.benchmark_cls.STORY_FILTER_CLS
 
-  def story_filter(self, patterns: Sequence[str],
+  def story_filter(self,
+                   patterns: Sequence[str],
+                   args: Optional[argparse.Namespace] = None,
                    **kwargs) -> benchmark.StoryFilter:
+    if args is None:
+      args = self.namespace()
     return self.story_filter_cls(
-        story_cls=self.story_cls, patterns=patterns, **kwargs)
+        story_cls=self.story_cls, patterns=patterns, args=args, **kwargs)
+
+  def namespace(self) -> argparse.Namespace:
+    return argparse.Namespace()
 
   def test_instantiate_no_stories(self):
     with self.assertRaises(AssertionError):

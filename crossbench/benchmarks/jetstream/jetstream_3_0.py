@@ -1,4 +1,4 @@
-# Copyright 2025 The Chromium Authors
+# Copyright 2026 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -15,16 +15,16 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
 
 
-class JetStreamMainProbe(JetStream3Probe):
+class JetStream30Probe(JetStream3Probe):
   __doc__ = JetStream3Probe.__doc__
-  NAME: ClassVar[str] = "jetstream_main"
+  NAME: ClassVar[str] = "jetstream_3.0"
 
   @override
-  def get_context_cls(self) -> Type[JetStreamMainProbeContext]:
-    return JetStreamMainProbeContext
+  def get_context_cls(self) -> Type[JetStream30ProbeContext]:
+    return JetStream30ProbeContext
 
 
-class JetStreamMainProbeContext(JetStream3ProbeContext):
+class JetStream30ProbeContext(JetStream3ProbeContext):
   pass
 
 
@@ -37,7 +37,7 @@ class JetStreamMainProbeContext(JetStream3ProbeContext):
      return data}, {}),
   undefined, "  ").replaceAll("[", "(").replaceAll("]", ")");
 """
-JETSTREAM_MAIN_STORY_DATA = {
+JETSTREAM_3_0_STORY_DATA = {
     "zlib-wasm": ("all", "default", "wasm"),
     "WSL": ("all", "default", "js", "wsl"),
     "web-ssr": ("all", "default", "js", "ssr", "web"),
@@ -147,28 +147,41 @@ JETSTREAM_MAIN_STORY_DATA = {
     "8bitbench-wasm": ("all", "default", "wasm")
 }
 
-class JetStreamMainStory(JetStream3Story):
+
+class JetStream30Story(JetStream3Story):
   __doc__ = JetStream3Story.__doc__
-  NAME: ClassVar[str] = "jetstream_main"
-  URL: ClassVar[str] = "https://chromium-workloads.web.app/jetstream/main/"
+  NAME: ClassVar[str] = "jetstream_3.0"
+  URL: ClassVar[str] = "https://chromium-workloads.web.app/jetstream/v3.0/"
   URL_OFFICIAL: ClassVar[
-      str] = "https://chromium-workloads.web.app/jetstream/main/"
+      str] = "https://chromium-workloads.web.app/jetstream/v3.0/"
   URL_CHROME_FORK: ClassVar[
-      str] = "https://chromium-workloads.web.app/jetstream/main-custom/"
-  STORY_DATA = JETSTREAM_MAIN_STORY_DATA
+      str] = "https://chromium-workloads.web.app/jetstream/v3.0-custom/"
+  STORY_DATA = JETSTREAM_3_0_STORY_DATA
   SUBSTORIES: ClassVar[tuple[str, ...]] = tuple(STORY_DATA.keys())
 
 
-class JetStreamMainBenchmark(JetStream3Benchmark):
+class JetStream30Benchmark(JetStream3Benchmark):
   """
-  Benchmark runner for the JetStream main development version.
+  Benchmark runner for the official JetStream v3.0 version.
   """
 
-  NAME: ClassVar[str] = "jetstream_main"
-  DEFAULT_STORY_CLS: ClassVar = JetStreamMainStory
-  PROBES: ClassVar[ProbeClsTupleT] = (JetStreamMainProbe,)
+  NAME: ClassVar[str] = "jetstream_3.0"
+  DEFAULT_STORY_CLS: ClassVar = JetStream30Story
+  PROBES: ClassVar[ProbeClsTupleT] = (JetStream30Probe,)
 
   @classmethod
   @override
   def version(cls) -> VersionParts:
-    return ("main",)
+    return (3, 0)
+
+  @classmethod
+  @override
+  def aliases(cls) -> tuple[str, ...]:
+    return (
+        "js3",
+        "js3-latest",
+        "jetstream3",
+        "jetstream3-latest",
+        "jetstream_3",
+        "jetstream_3-latest",
+    ) + super().aliases()
