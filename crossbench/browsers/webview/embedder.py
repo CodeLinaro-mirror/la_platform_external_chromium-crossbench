@@ -4,10 +4,12 @@
 
 from __future__ import annotations
 
+import collections
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Any, Final, Sequence, cast
+from typing import (TYPE_CHECKING, Any, Final, MutableMapping, MutableSet,
+                    Sequence, cast)
 
 from immutabledict import immutabledict
 from selenium import webdriver
@@ -36,6 +38,9 @@ EMBEDDER_SHORT_NAME_TO_PACKAGE: Final[immutabledict[str, str]] = immutabledict({
 
 
 class WebviewEmbedder(Webview):
+
+  _INSTALLED_APK_PATHS: Final[MutableMapping[str, MutableSet[pth.AnyPath]]] = (
+      collections.defaultdict(set))
 
   @override
   def start(self, session: BrowserSessionRunGroup) -> None:
@@ -131,9 +136,12 @@ class WebviewEmbedder(Webview):
   @override
   def _setup_binary(self) -> None:
     if self.path.suffix == ".apk":
-      title = f"Installing {self.path.name} on {self.platform}"
-      with ui.spinner(title=title):
-        self.platform.adb.install(self.path)
+      device_id = self.platform.serial_id
+      if self.path not in self._INSTALLED_APK_PATHS[device_id]:
+        title = f"Installing {self.path.name} on {self.platform}"
+        with ui.spinner(title=title):
+          self.platform.adb.install(self.path)
+        self._INSTALLED_APK_PATHS[device_id].add(self.path)
     super()._setup_binary()
 
   @override
