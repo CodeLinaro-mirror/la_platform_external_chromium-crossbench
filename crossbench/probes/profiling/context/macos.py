@@ -28,15 +28,16 @@ _XPATH_EXPRESSION: Final[str] = (
     "//trace-toc/run/data/table["
     '@category="PointsOfInterest" and @schema="os-signpost"]|'
     '//trace-toc/run/data/table[@schema="cpu-profile"]')
+KB = 1024
 
 
 class MacOSProfilingContext(PosixProfilingContext):
 
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
     super().__init__(probe, run)
-    assert self.probe.target in (
+    assert self.target in (
         TargetMode.SYSTEM_WIDE, TargetMode.RENDERER_PROCESS_ONLY), (
-            f"Unsupported profiling mode for Mac: {str(self.probe.target)}")
+            f"Unsupported profiling mode for Mac: {str(self.target)}")
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
@@ -67,11 +68,13 @@ class MacOSProfilingContext(PosixProfilingContext):
     # In theory this could start earlier but we leave it here as the
     # renderer-process mode requires us to run when we are guaranteed
     # to have a renderer available.
-    if self.probe.target == TargetMode.SYSTEM_WIDE:
+    if self.target == TargetMode.SYSTEM_WIDE:
       self._start_xctrace()
-    elif self.probe.target == TargetMode.RENDERER_PROCESS_ONLY:
-      renderer_pid, _ = self.renderer_pid_tid
+    elif self.target == TargetMode.RENDERER_PROCESS_ONLY:
+      renderer_pid, _ = self.cached_renderer_pid_tid
       self._start_xctrace(renderer_pid)
+    else:
+      raise ValueError(f"Invalid target: {self.target}")
 
   def stop(self) -> None:
     # Needs to be SIGINT for xctrace, terminate won't work.
@@ -93,6 +96,8 @@ class MacOSProfilingContext(PosixProfilingContext):
       self.browser_platform.sh("xctrace", "export", "--input", self.result_path,
                                "--output", trace_xml_path, "--xpath",
                                _XPATH_EXPRESSION)
+      if self.browser_platform.file_size(trace_xml_path) < 100 * KB:
+        logging.error("Got empty %s file", trace_xml_path)
       return trace_xml_path
 
   def stop_process(self) -> None:

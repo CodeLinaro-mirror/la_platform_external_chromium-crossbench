@@ -344,6 +344,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
                 '--extra-browser-args="--js-flags=--exp-js-flag '
                 '--enable-features=enable3,enable4 '
                 '--disable-features=disable3,disable4"',
+            "tags": '{"origin": "pinpoint_cli"}',
         })
 
   def test_to_request_dict_no_flags(self):
@@ -367,6 +368,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
             "experiment_patch": None,
             "base_extra_args": None,
             "experiment_extra_args": None,
+            "tags": '{"origin": "pinpoint_cli"}',
         })
 
   def test_parse_and_override_recent_commit(self):
@@ -484,6 +486,42 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
     self.response_dict["comparison_mode"] = "bisect"
     with self.assertRaises(ValueError):
       PinpointTryJobConfig.from_response_dict(self.response_dict)
+
+  def test_no_extra_browser_args_for_crossbench(self):
+    config = PinpointTryJobConfig.parse_and_override(
+        benchmark="speedometer3.crossbench",
+        bot="win-11-perf",
+        story="default",
+        base_js_flags="--base-js-flag",
+        exp_js_flags="--exp-js-flag",
+        base_enable_features="--base-enabled-feature",
+        exp_enable_features="--exp-enabled-feature",
+        base_disable_features="--base-disabled-feature",
+        exp_disable_features="--exp-disabled-feature",
+    )
+    request_dict = config.to_request_dict()
+    self.assertEqual(
+        request_dict, {
+            "comparison_mode": "try",
+            "benchmark": "speedometer3.crossbench",
+            "configuration": "win-11-perf",
+            "story": "default",
+            "story_tags": None,
+            "initial_attempt_count": 30,
+            "bug_id": None,
+            "base_git_hash": "aaaabbbb",
+            "end_git_hash": "aaaabbbb",
+            "base_patch": None,
+            "experiment_patch": None,
+            "base_extra_args": "--js-flags=--base-js-flag "
+                               "--enable-features=--base-enabled-feature "
+                               "--disable-features=--base-disabled-feature",
+            "experiment_extra_args":
+                "--js-flags=--exp-js-flag "
+                "--enable-features=--exp-enabled-feature "
+                "--disable-features=--exp-disabled-feature",
+            "tags": '{"origin": "pinpoint_cli"}'
+        })
 
 
 if __name__ == "__main__":

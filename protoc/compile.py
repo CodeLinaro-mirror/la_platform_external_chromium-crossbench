@@ -214,7 +214,7 @@ easier importing into Crossbench.
 
 
 def main() -> None:
-  parser = argparse.ArgumentParser(description=HELP)
+  parser = argparse.ArgumentParser(description=HELP, allow_abbrev=False)
   parser.add_argument("--version", action="version", version="%(prog)s 1.0")
   parser.add_argument(
       "--protoc", default="protoc", help="Override default protoc version")

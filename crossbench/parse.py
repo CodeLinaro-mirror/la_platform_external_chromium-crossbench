@@ -35,6 +35,12 @@ def type_str(value: Any) -> str:
   return type(value).__name__
 
 
+PROTOBUF_TEXT_SUFFIX: Final[tuple[str, ...]] = (".pbtx", ".pbtxt", ".proto",
+                                                ".textproto", ".txtpb")
+PROTOBUF_BINARY_SUFFIX: Final[tuple[str, ...]] = (".proto",)
+PROTOBUF_ALL_SUFFIX: Final[tuple[str, ...]] = (
+    PROTOBUF_TEXT_SUFFIX + PROTOBUF_BINARY_SUFFIX)
+
 class PathParser:
 
   PATH_PREFIX: Final[re.Pattern] = re.compile(r"^(?:"

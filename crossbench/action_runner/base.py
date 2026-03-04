@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import sys
 from typing import TYPE_CHECKING, Iterable, Iterator, Optional, Sequence
 
 from crossbench import exception
@@ -106,7 +107,13 @@ class ActionRunner:
       logging.critical("[STEP-BY-STEP MODE] Next ste: %s", action.to_json())
       ui.prompt("[STEP-BY-STEP MODE] Press Enter to continue")
     self._failure_screenshot_annotations = []
-    action.run_with(run, self)
+    self.run_action(run, action)
+
+  def run_action(self, run: Run, action: i_action.Action) -> None:
+    message: str = action.TYPE.name
+    with run.exceptions.annotate(message):
+      sys.stdout.write(f"   {message.ljust(30)}\r")
+      action.run_with(run, self)
 
   def wait(self, run: Run, action: i_action.WaitAction) -> None:
     with run.actions("WaitAction", measure=False) as actions:

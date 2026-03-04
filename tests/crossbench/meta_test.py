@@ -13,6 +13,7 @@ import pytest
 import tomllib
 from tabulate import tabulate
 
+import crossbench
 from tests import test_helper
 
 RUN_SNIPPET = """
@@ -52,6 +53,11 @@ class MetaTestCase(unittest.TestCase):
         if py_file.name == "__init__.py" and COMMENTS_ONLY_RE.fullmatch(text):
           continue
         self.fail(f"{py_file} is missing future annotation")
+
+  def protobug_text_file_names(self):
+    trace_config_dir = test_helper.config_dir()
+    for config_file in trace_config_dir.glob("*.pbtxt"):
+      self.fail(f"Invalid file extension, use .textpb: {config_file}")
 
   @pytest.mark.xfail
   def test_vpython_poetry_version_match(self):
@@ -130,6 +136,15 @@ class MetaTestCase(unittest.TestCase):
         sorted_dev_dependencies,
         "Dev dependencies in pyproject.toml are not sorted alphabetically.",
     )
+
+  def test_version_match(self):
+    pyproject_toml_path = ROOT_DIR / "pyproject.toml"
+    pyproject_toml = tomllib.loads(pyproject_toml_path.read_text())
+    pyproject_version = pyproject_toml["tool"]["poetry"]["version"]
+    self.assertEqual(
+        pyproject_version, crossbench.__version__,
+        f"Version mismatch between {pyproject_toml_path} "
+        "and crossbench.__version__")
 
 
 if __name__ == "__main__":

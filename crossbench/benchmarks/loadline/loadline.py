@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 import logging
+import subprocess
 from typing import TYPE_CHECKING, ClassVar, Mapping, Optional, Sequence
 
 import pandas as pd
@@ -26,8 +27,10 @@ from crossbench.probes.trace_processor.trace_processor import \
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.benchmarks.loading.page.base import Page
+  from crossbench.plt.base import Platform
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.runner import Runner
 
 
 class LoadLineProbe(BenchmarkProbeMixin, Probe):
@@ -41,11 +44,37 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
     super().__init__(*args, **kwargs)
     self._scores_file: Optional[pth.LocalPath] = None
     self._breakdown_file: Optional[pth.LocalPath] = None
+    self._warnings: list[str] = []
+
+  def _is_device_online(self, platform: Platform) -> bool:
+    # 8.8.8.8 is highly likely to be online, so using it to determine if the
+    # device is connected to the internet.
+    ping_result = platform.sh(
+        "ping",
+        "-c1",
+        "-W2",
+        "8.8.8.8",
+        check=False,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL)
+    return ping_result.returncode == 0
+
+  def _check_connectivity(self, runner: Runner) -> None:
+    for platform in runner.platforms:
+      if not self._is_device_online(platform):
+        self._warnings.append(f"Device {platform.unique_name} is not connected "
+                              "to internet.")
 
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     logging.critical("%s Benchmark (%s)", self.BENCHMARK_NAME,
                      self.BENCHMARK_VERSION)
+    if len(self._warnings) > 0:
+      logging.warning("Warnings registered during the run that can potentially "
+                      "affect scores:")
+      for warning in self._warnings:
+        logging.warning(warning)
     logging.info("-" * 80)
     if scores_file := self._scores_file:
       logging.critical("%s scores:", self.BENCHMARK_NAME)
@@ -124,6 +153,15 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
   STORY_FILTER_CLS: ClassVar = LoadLinePageFilter
 
   _page_config: PagesConfig | None = None
+
+  @classmethod
+  @override
+  def cli_epilog(cls) -> str:
+    return (
+        "IMPORTANT: This benchmark requires access to a special Google Cloud "
+        "Storage bucket. Please refer to https://chromium.googlesource.com/"
+        "crossbench/+/main/config/benchmark/loadline/README.md#cloud-bucket-"
+        "access for how to get access.")
 
   @classmethod
   @abc.abstractmethod

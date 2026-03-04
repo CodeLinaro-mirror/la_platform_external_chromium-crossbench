@@ -204,5 +204,38 @@ class ListJobsTest(MockHttpRequestsMixin):
       list_jobs(UserEnum.ALL, 10, None, ListFormatEnum.TABLE)
 
 
+  def test_list_jobs_extra_columns(self):
+    job_data = {
+        "job_id": "123",
+        "configuration": "config",
+        "user": "user@example.com",
+        "created": "2024-01-01T00:00:00Z",
+        "status": "completed",
+        "arguments": {
+            "benchmark": "speedometer",
+            "story": "story_name",
+            "initial_attempt_count": "10",
+        },
+        "bug_id": "123456",
+        "comparison_mode": "performance"
+    }
+    self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
+
+    list_jobs(
+        "user@example.com",
+        1,
+        None,
+        ListFormatEnum.TABLE,
+        extra_columns=["bug", "story", "attempts"])
+
+    output = self.stdout_mock.getvalue()
+    self.assertIn("Bug", output)
+    self.assertIn("123456", output)
+    self.assertIn("Story", output)
+    self.assertIn("story_name", output)
+    self.assertIn("Attempts", output)
+    self.assertIn("10", output)
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

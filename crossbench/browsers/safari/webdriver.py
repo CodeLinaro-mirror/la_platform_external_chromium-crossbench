@@ -14,6 +14,7 @@ from selenium.webdriver.safari.options import Options as SafariOptions
 from selenium.webdriver.safari.service import Service as SafariService
 from typing_extensions import override
 
+from crossbench import exception
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.safari.safari import Safari, find_safaridriver
 from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
@@ -72,8 +73,8 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     service = SafariService(executable_path=os.fspath(driver_path))
     driver_kwargs = {"service": service, "options": options}
 
-    with ui.spinner():
-      driver = self._start_driver_with_retries(driver_kwargs)
+    with ui.spinner(), exception.annotate("Starting safaridriver with retries"):
+      driver = self._start_driver_with_retries(driver_path, driver_kwargs)
       self.host_platform.sleep(0.5)
 
     assert driver.session_id, "Could not start webdriver"
@@ -88,7 +89,8 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
   # TODO(cbruni): implement iOS platform
   def _start_driver_with_retries(
-      self, driver_kwargs: dict[str, Any]) -> webdriver.Safari:
+      self, driver_path: AnyPath, driver_kwargs: dict[str,
+                                                      Any]) -> webdriver.Safari:
     # safaridriver for iOS / technology preview seems to be brittle.
     # Let's give it several chances to start up.
     seen_exceptions: Set[Type[Exception]] = set()
@@ -100,12 +102,20 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       except Exception as e:  # noqa: BLE001
         retries += 1
         exception_type = type(e)
+        message = str(e).lower()
+        if "--enable" in message or "remote automation" in message:
+          logging.error(
+              "Safari Remote Automation is not enabled. "
+              "Please run '%s --enable' or enable it in "
+              "Safari's 'Develop' menu.", driver_path)
+          raise DriverException("Could not start SafariWebDriver") from e
         logging.warning("SafariWebDriver: startup failed (%s), retrying...",
                         exception_type)
-        logging.debug("SafariWebDriver: startup error %s", e)
         # After 2 retries we don't accept the same error twice.
         if retries >= 2 and exception_type in seen_exceptions:
+          logging.error("SafariWebDriver: startup error %s", e)
           raise DriverException("Could not start SafariWebDriver") from e
+        logging.debug("SafariWebDriver: startup error %s", e)
         seen_exceptions.add(type(e))
     raise DriverException("Could not start SafariWebDriver")
 

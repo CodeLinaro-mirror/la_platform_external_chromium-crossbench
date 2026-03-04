@@ -229,5 +229,50 @@ def test_download(browser_config, test_env):
                                 probe_config)
 
 
+def _webview_shell_config(device_id, adb_path) -> str:
+  return json.dumps({
+      "browser": "org.chromium.webview_shell",
+      "driver": {
+          "type": "adb",
+          "device_id": device_id,
+          "adb_bin": adb_path
+      }
+  })
+
+
+@pytest.mark.legacy_android_sdk
+def test_webview(device_id, adb_path, test_env) -> None:
+  browser_config = _webview_shell_config(device_id, adb_path)
+  test_page = urllib.parse.quote("""
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Loading Test</title>
+</head>
+<body>
+  <div id="content">
+    <p>Hello World</p>
+  </div>
+</body>
+</html>
+""")
+
+  page_config = {
+      "pages": {
+          "LoadingTest": {
+              "actions": [
+                  {
+                      "action": "get",
+                      "url": f"data:text/html;charset=utf-8,{test_page}",
+                      "ready_state": "complete"
+                  },
+              ]
+          }
+      }
+  }
+
+  _run_loading_test(browser_config, page_config, test_env)
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

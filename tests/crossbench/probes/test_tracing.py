@@ -33,6 +33,11 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(probe.record_format, RecordFormat.PROTO)
     self.assertEqual(probe.startup_duration, 0)
 
+  def test_parse_config_proto_json(self):
+    probe: TracingProbe = TracingProbe.parse_dict(
+        {"record_format": "proto-json"})
+    self.assertEqual(probe.record_format, RecordFormat.PROTO_JSON)
+
   def test_parse_config_empty(self):
     probe: TracingProbe = TracingProbe.parse_dict({
         "preset": "empty",

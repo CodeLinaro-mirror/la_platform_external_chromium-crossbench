@@ -16,6 +16,7 @@ from typing_extensions import override
 import crossbench.browsers.all as all_browsers
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.browsers.apk_config import ApkConfig
 from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.webkit.downloader import WebKitDownloader
@@ -71,6 +72,7 @@ class BrowserConfig(ConfigObject):
   cache_dir: pth.AnyPath | None = None
   clear_cache: bool | None = None
   extensions: tuple[ExtensionConfig, ...] = ()
+  apk: ApkConfig | None = None
 
   def __post_init__(self) -> None:
     if not self.browser:
@@ -366,6 +368,7 @@ class BrowserConfig(ConfigObject):
         default=None)
     parser.add_argument(
         "extensions", type=ExtensionConfig, is_list=True, default=())
+    parser.add_argument("apk", type=ApkConfig)
     return parser
 
   @property

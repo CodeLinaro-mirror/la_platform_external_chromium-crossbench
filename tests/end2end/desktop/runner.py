@@ -17,7 +17,8 @@ REPO_DIR = FILE_PATH.absolute().parents[3]
 if REPO_DIR not in sys.path:
   sys.path.insert(0, str(REPO_DIR))
 
-from tests.test_helper import DEFAULT_PYTEST_FLAGS, to_flags  # noqa: E402
+from tests.test_helper import DEFAULT_PYTEST_FLAGS, DurationPlugin, to_flags \
+    # noqa: E402
 
 if __name__ == "__main__":
   pass_through_args = sys.argv[1:]
@@ -25,5 +26,6 @@ if __name__ == "__main__":
       *to_flags(DEFAULT_PYTEST_FLAGS),
       str(TEST_DIR),
       *pass_through_args,
-  ])
+  ],
+                            plugins=[DurationPlugin()])
   sys.exit(return_code)

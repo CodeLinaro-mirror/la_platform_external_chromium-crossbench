@@ -9,47 +9,21 @@ from unittest import mock
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.plt.ios import IOSDeviceInfo
 from tests.crossbench.base import BaseCrossbenchTestCase
 from tests.crossbench.mock_helper import ShResult
 
-XCTRACE_DEVICES_OUTPUT = ShResult("""
-== Devices ==
-a-macbookpro3 (00001234-AAAA-BBBB-0000-11AA22BB33DD)
-An iPhone (17.1.2) (00001111-11AA22BB33DD)
-An iPhone Pro (17.1.1) - Connecting (00002222-11AA22BB33DD)
+IOS_DEVICES_OUTPUT = {
+    "00001111-11AA22BB33DD":
+        IOSDeviceInfo("00001111-11AA22BB33DD", "An iPhone", "17.1.2"),
+    "00002222-11AA22BB33DD":
+        IOSDeviceInfo("00002222-11AA22BB33DDD", "An iPhone pro", "17.1.1"),
+}
 
-== Devices Offline ==
-An iPhone Pro Max (17.1.0) (00003333-11AA22BB33DD)
-
-== Simulators ==
-iPad (10th generation) (17.0.1) (00001234-AAAA-BBBB-1111-11AA22BB33DD)
-iPad (9th generation) Simulator (15.5) (00001234-AAAA-BBBB-2222-11AA22BB33DD
-""")
-
-XCTRACE_DEVICES_SINGLE_OUTPUT = ShResult("""
-== Devices ==
-a-macbookpro3 (00001234-AAAA-BBBB-0000-11AA22BB33DD)
-An iPhone (17.1.2) (00001111-11AA22BB33DD)
-
-== Devices Offline ==
-An iPhone Pro (17.1.1) (00002222-11AA22BB33DD)
-
-== Simulators ==
-iPad (10th generation) (17.0.1) (00001234-AAAA-BBBB-1111-11AA22BB33DD)
-iPad (9th generation) Simulator (15.5) (00001234-AAAA-BBBB-2222-11AA22BB33DD
-""")
-
-XCTRACE_DEVICES_NONE_OUTPUT = ShResult("""
-== Devices ==
-a-macbookpro3 (00001234-AAAA-BBBB-0000-11AA22BB33DD)
-
-== Devices Offline ==
-An iPhone Pro (17.1.1) (00002222-11AA22BB33DD)
-
-== Simulators ==
-iPad (10th generation) (17.0.1) (00001234-AAAA-BBBB-1111-11AA22BB33DD)
-iPad (9th generation) Simulator (15.5) (00001234-AAAA-BBBB-2222-11AA22BB33DD
-""")
+IOS_DEVICES_SINGLE_OUTPUT = {
+    "00001111-11AA22BB33DD":
+        IOSDeviceInfo("00001111-11AA22BB33DD", "An iPhone", "17.1.2"),
+}
 
 ADB_DEVICES_SINGLE_OUTPUT_RESULT = (
     "List of devices attached\n"

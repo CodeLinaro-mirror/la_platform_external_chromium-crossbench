@@ -116,6 +116,10 @@ class MockRun:
   def secrets(self) -> Secrets:
     return self.story_secrets.merge(fallback=self.browser.secrets)
 
+  @property
+  def is_remote(self) -> bool:
+    return self.browser_platform.is_remote
+
   def max_end_datetime(self) -> dt.datetime:
     return dt.datetime.max
 

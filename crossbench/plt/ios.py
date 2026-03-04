@@ -7,6 +7,7 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import functools
+import json
 import re
 from typing import TYPE_CHECKING, Any, Final, Optional, Type
 
@@ -44,21 +45,22 @@ class IOSDeviceInfo(DeviceInfo):
 
 def ios_devices(platform: Platform,
                 show_all: bool = False) -> dict[str, IOSDeviceInfo]:
-  output = platform.sh_stdout("xcrun", "xctrace", "list", "devices")
-  category_index = 0
   results: dict[str, IOSDeviceInfo] = {}
-  for line in output.splitlines():
-    if line.startswith("== "):
-      category_index += 1
-      continue
-    if category_index > 1 and not show_all:
-      return results
-    for match in pattern.finditer(line):
-      device = IOSDeviceInfo(
-          match.group("udid"), match.group("name"), match.group("version"))
-      if device.udid in results:
-        raise ValueError("Invalid UDID")
-      results[device.udid] = device
+  with platform.NamedTemporaryFile(suffix=".json") as tmp_file_path:
+    platform.sh_stdout("xcrun", "devicectl", "list", "devices",
+                       f"--json-output={tmp_file_path}")
+    data = json.loads(platform.read_text(tmp_file_path))
+
+  for device_data in data.get("result", {}).get("devices", []):
+    if not show_all:
+      if device_data["connectionProperties"]["tunnelState"] == "unavailable":
+        continue
+    device = IOSDeviceInfo(device_data["hardwareProperties"]["udid"],
+                           device_data["deviceProperties"]["name"],
+                           device_data["deviceProperties"]["osVersionNumber"])
+    if device.udid in results:
+      raise ValueError("Duplicate UDID")
+    results[device.udid] = device
   return results
 
 
