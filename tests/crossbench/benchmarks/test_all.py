@@ -100,7 +100,7 @@ class AllBenchmarksTestCase(unittest.TestCase):
     seen_names: MutableSet[str] = OrderedSet()
     seen_aliases: MutableSet[str] = OrderedSet()
     for benchmark_cls in ALL:
-      with self.subTest(benchmark_cls=benchmark_cls):
+      with self.subTest(benchmark_cls=benchmark_cls.__name__):
         self.assertNotIn(benchmark_cls.NAME, seen_names)
         seen_names.add(benchmark_cls.NAME)
         for alias in benchmark_cls.aliases():

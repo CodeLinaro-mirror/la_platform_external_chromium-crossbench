@@ -124,20 +124,20 @@
         // devices and simulators.
         "device_id": "00001234-AAAA-BBBB-1111-11AA22BB33DD"
       }
-    },
+    }
     "chrome-android-canary-pixel-custom-apk": {
-      browser: "chrome-canary",
-      driver: {
-        type: "adb",
+      "browser": "chrome-canary"
+      "driver": {
+        "type": "adb"
         // Use unique name or serial number from `adb devices -l`
-        device_id: "Pixel_7_Pro"
-      },
-      apk: {
-        path: "out/android_base/apks/ChromePublic.apk",
-        allow_downgrade: true,
-        reinstall: true,
-      },
-      flags: []
+        "device_id": "Pixel_7_Pro"
+      }
+      "apk": {
+        "path": "out/android_base/apks/ChromePublic.apk"
+        "allow_downgrade": true
+        "reinstall": true
+      }
+      "flags": []
     }
   }
 }

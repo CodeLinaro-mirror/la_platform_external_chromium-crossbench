@@ -62,7 +62,7 @@ class CrossbenchFakeFsTestCase(
     self.addCleanup(sleep_patcher.stop)
 
     # This is platform specific and causes issues pending sh commands
-    self.wakelock_patcher = mock.patch.object(plt.PLATFORM, "wakelock")
+    self.wakelock_patcher = mock.patch("crossbench.plt.PLATFORM.wakelock")
     self.addCleanup(self.wakelock_patcher.stop)
     self.wakelock_patcher.start()
 
@@ -178,7 +178,7 @@ class BaseCrossbenchTestCase(
         mock_browser.MockChromeStable(
             "stable", settings=Settings(platform=self.platform))
     ]
-    mock_platform_patcher = mock.patch.object(plt, "PLATFORM", self.platform)
+    mock_platform_patcher = mock.patch("crossbench.plt.PLATFORM", self.platform)
     mock_platform_patcher.start()
     self.addCleanup(mock_platform_patcher.stop)
     for browser in self.browsers:

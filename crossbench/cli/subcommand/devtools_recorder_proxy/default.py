@@ -15,7 +15,8 @@ import sys
 import tempfile
 from typing import TYPE_CHECKING, Any, Coroutine, Final, Optional
 
-from websockets import server as websockets
+import websockets
+import websockets.asyncio.server as ws_server
 
 from crossbench import path as pth
 from crossbench import plt
@@ -73,7 +74,7 @@ class CrossbenchDevToolsRecorderProxy:
         use_auth_token=args.use_auth_token)
     instance.run()
 
-  _websocket: websockets.WebSocketServerProtocol
+  _websocket: ws_server.ServerConnection
 
   def __init__(self, use_auth_token: bool = True) -> None:
     self._token: str = secrets.token_hex(16)
@@ -112,12 +113,10 @@ class CrossbenchDevToolsRecorderProxy:
       logging.info("#" * 80)
       await asyncio.Future()  # run forever
 
-  async def handler(self,
-                    websocket: websockets.WebSocketServerProtocol) -> None:
+  async def handler(self, websocket: ws_server.ServerConnection) -> None:
     self._websocket = websocket
     async for message in websocket:
       await self._send_message(self._handle_message(message))
-
   async def _send_message(
       self, coroutine: Coroutine[Any, Any, Optional[tuple[Response,
                                                           Any]]]) -> None:

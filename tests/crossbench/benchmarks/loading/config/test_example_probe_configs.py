@@ -28,7 +28,7 @@ class TestExampleProbeListConfig(unittest.TestCase):
     config_paths = tuple(path_iter)
     self.assertGreater(len(config_paths), 0)
     for probe_config_path in config_paths:
-      with self.subTest(probe_config=probe_config_path):
+      with self.subTest(probe_config=str(probe_config_path)):
         self._load_probe_config(probe_config_path)
 
   def _load_probe_config(self, page_config_path):

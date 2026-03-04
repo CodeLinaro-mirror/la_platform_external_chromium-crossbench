@@ -100,12 +100,13 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
   def test_unknown_binary(self):
     binary = Binary("crossbench_mock_binary", default="crossbench_mock_binary")
     for platform in self.all_platforms():
-      with self.assertRaises(BinaryNotFoundError):
-        binary.resolve(platform)
+      with self.subTest(platform=str(platform)):
+        with self.assertRaises(BinaryNotFoundError):
+          binary.resolve(platform)
 
   def test_known_binary_default(self):
     for platform in self.all_mock_platforms():
-      with self.subTest(platform=platform):
+      with self.subTest(platform=str(platform)):
         default = pth.AnyPath("foo/bar/default/crossbench_mock_binary")
         result = default
         if platform.is_win:
@@ -123,7 +124,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
 
   def test_known_binary_default_multiple(self):
     for platform in self.all_mock_platforms():
-      with self.subTest(platform=platform):
+      with self.subTest(platform=str(platform)):
         default_miss = pth.AnyPath("foo/bar/default/fake")
         default = pth.AnyPath("foo/bar/default/crossbench_mock_binary")
         result = default

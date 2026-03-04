@@ -47,7 +47,7 @@ class FirefoxDownloaderTestCase():
     browser = FirefoxWebDriver(
         "test-browser", app_path, settings=Settings(platform=plt.PLATFORM))
     # TODO: fix using dedicated Version object
-    base_version_str = version_str.split("b")[0]
+    base_version_str = version_str.split("b", maxsplit=1)[0]
     assert base_version_str in str(browser.version)
     self._load_and_check_webdriver(output_dir, browser)
     return app_path

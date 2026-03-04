@@ -5,17 +5,17 @@ python_version: "3.11"
 
 wheel: <
   name: "infra/python/wheels/pytest-py3"
-  version: "version:8.3.4"
+  version: "version:9.0.2"
 >
 
 wheel: <
   name: "infra/python/wheels/mypy-py3"
-  version: "version:1.17.1"
+  version: "version:1.18.2"
 >
 
 wheel: <
   name: "infra/python/wheels/types-psutil-py3"
-  version: "version:5.8.23"
+  version: "version:7.0.0.20250822"
 >
 
 wheel: <
@@ -25,18 +25,18 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/selenium-py3"
-  version: "version:4.35.0"
+  version: "version:4.41.0"
 >
 
 wheel: <
   name: "infra/python/wheels/psutil/${vpython_platform}"
-  version: "version:5.8.0.chromium.3"
+  version: "version:7.2.1"
 >
 
 
 wheel: <
   name: "infra/python/wheels/websockets-py3"
-  version: "version:13.0"
+  version: "version:15.0.1"
 >
 
 wheel: <
@@ -46,7 +46,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/attrs-py3"
-  version: "version:24.2.0"
+  version: "version:25.4.0"
 >
 
 wheel: <
@@ -56,7 +56,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/isort-py3"
-  version: "version:5.10.1"
+  version: "version:5.13.2"
 >
 
 wheel: <
@@ -66,12 +66,12 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/execnet-py3"
-  version: "version:2.0.2"
+  version: "version:2.1.1"
 >
 
 wheel: <
   name: "infra/python/wheels/pluggy-py3"
-  version: "version:1.5.0"
+  version: "version:1.6.0"
 >
 
 wheel: <
@@ -81,17 +81,17 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/iniconfig-py3"
-  version: "version:1.1.1"
+  version: "version:2.1.0"
 >
 
 wheel: <
   name: "infra/python/wheels/pytest-xdist-py3"
-  version: "version:3.3.1"
+  version: "version:3.8.0"
 >
 
 wheel: <
   name: "infra/python/wheels/immutabledict-py3"
-  version: "version:4.1.0"
+  version: "version:4.2.1"
 >
 
 wheel: <
@@ -116,17 +116,17 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/pathspec-py3"
-  version: "version:0.9.0"
+  version: "version:1.0.4"
 >
 
 wheel: <
   name: "infra/python/wheels/typing-extensions-py3"
-  version: "version:4.14.0"
+  version: "version:4.15.0"
 >
 
 wheel: <
   name: "infra/python/wheels/packaging-py3"
-  version: "version:24.2"
+  version: "version:25.0"
 >
 
 wheel: <
@@ -136,7 +136,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/trio-py3"
-  version: "version:0.30.0"
+  version: "version:0.33.0"
 >
 
 wheel: <
@@ -151,7 +151,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/urllib3-py3"
-  version: "version:2.5.0"
+  version: "version:2.6.3"
 >
 
 wheel: <
@@ -161,12 +161,12 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/outcome-py3"
-  version: "version:1.2.0"
+  version: "version:1.3.0.post0"
 >
 
 wheel: <
   name: "infra/python/wheels/sniffio-py3"
-  version: "version:1.3.0"
+  version: "version:1.3.1"
 >
 
 wheel: <
@@ -176,7 +176,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/wsproto-py3"
-  version: "version:1.2.0"
+  version: "version:1.3.2"
 >
 
 wheel: <
@@ -186,7 +186,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/certifi-py3"
-  version: "version:2025.8.3"
+  version: "version:2026.2.25"
 >
 
 wheel: <
@@ -227,7 +227,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/debugpy/${vpython_platform}"
-  version: "version:1.8.0"
+  version: "version:1.8.16"
 >
 
 wheel: <
@@ -253,22 +253,22 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/pytz-py2_py3"
-  version: "version:2024.1"
+  version: "version:2025.2"
 >
 
 wheel: <
   name: "infra/python/wheels/perfetto-py3"
-  version: "version:0.13.1"
+  version: "version:0.16.0"
 >
 
 wheel: <
   name: "infra/python/wheels/protobuf-py3"
-  version: "version:6.32.1"
+  version: "version:6.33.5"
 >
 
 wheel: <
   name: "infra/python/wheels/pygments-py3"
-  version: "version:2.14.0"
+  version: "version:2.19.2"
 >
 
 wheel: <
@@ -299,7 +299,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/tzdata-py2_py3"
-  version: "version:2023.4"
+  version: "version:2025.2"
 >
 
 wheel: <
@@ -314,17 +314,17 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/sqlalchemy/${vpython_platform}"
-  version: "version:2.0.4"
+  version: "version:2.0.43"
 >
 
 wheel: <
   name: "infra/python/wheels/greenlet/${vpython_platform}"
-  version: "version:3.0.1"
+  version: "version:3.2.4"
 >
 
 wheel: <
   name: "infra/python/wheels/xlsxwriter-py3"
-  version: "version:3.2.2"
+  version: "version:3.2.5"
 >
 
 wheel: <
@@ -340,7 +340,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/mobly-py3"
-  version: "version:1.12.4"
+  version: "version:1.13"
 >
 
 wheel: <
@@ -365,12 +365,12 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/grpcio/${vpython_platform}"
-  version: "version:1.57.0"
+  version: "version:1.74.0"
 >
 
 wheel: <
   name: "infra/python/wheels/grpcio-status-py3"
-  version: "version:1.57.0"
+  version: "version:1.74.0"
 >
 
 wheel: <
@@ -406,32 +406,10 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/ruff/${vpython_platform}"
-  version: "version:0.13.0"
+  version: "version:0.15.4"
 >
 
-
-# Pylint and its dependencies.
-wheel: <
-  name: "infra/python/wheels/pylint-py3"
-  version: "version:3.2.7"
->
-wheel: <
-  name: "infra/python/wheels/astroid-py3"
-  version: "version:3.2.4"
->
-wheel: <
-  name: "infra/python/wheels/dill-py3"
-  version: "version:0.3.7"
->
-wheel: <
-  name: "infra/python/wheels/mccabe-py3"
-  version: "version:0.6.1"
->
 wheel: <
   name: "infra/python/wheels/platformdirs-py3"
-  version: "version:2.5.2"
->
-wheel: <
-  name: "infra/python/wheels/tomlkit-py3"
-  version: "version:0.12.3"
+  version: "version:4.9.2"
 >

@@ -16,6 +16,10 @@ from crossbench.plt.win import WinPlatform
 
 
 def _get_default() -> Platform:
+  # Avoid resetting the global on module reloads during testing with
+  # pyfakefs.
+  if default := globals().get("PLATFORM"):
+    return default
   if sys.platform == "linux":
     return LinuxPlatform()
   if sys.platform == "darwin":
