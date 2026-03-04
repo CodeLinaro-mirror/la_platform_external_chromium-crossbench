@@ -1,0 +1,32 @@
+{
+  "cujs": {
+    "gma-test-app-init-and-load-rewarded-again": [
+      {
+        "action": "wait"
+        "duration": "2s"
+      }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "res": "com.google.android.libraries.ads.mobile.maitier.testapps.webview:id/init_and_load_rewarded"
+        }
+      }
+      {
+        "action": "wait"
+        "duration": "5s"
+      }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "res": "com.google.android.libraries.ads.mobile.maitier.testapps.webview:id/init_and_load_rewarded"
+        }
+      }
+      {
+        "action": "wait"
+        "duration": "5s"
+      }
+    ]
+  }
+}
