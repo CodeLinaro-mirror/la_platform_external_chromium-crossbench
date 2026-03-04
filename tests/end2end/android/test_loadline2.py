@@ -31,6 +31,7 @@ class BenchmarkType(enum.StrEnum):
   PHONE = "loadline2-phone"
   TABLET = "loadline2-tablet"
   WEBAPI = "loadline2-webapi-phone"
+  DEBUG = "loadline2-phone-debug"
 
 
 def _verify_default_metrics(out_dir, only_total=False):
@@ -66,10 +67,14 @@ def test_loadline2_tablet(device_id, adb_path, test_env: TestEnv) -> None:
   _test_loadline2_default(device_id, adb_path, BenchmarkType.TABLET, test_env)
 
 
-# TODO(crbug.com/372457479): Find a way to test LoadLine 2 WebAPI without root.
+# TODO(crbug.com/489679186): Find a way to test LoadLine 2 WebAPI without root.
 @unittest.skip("LoadLine2 WebAPI requires root to run")
 def test_loadline2_webapi(device_id, adb_path, test_env: TestEnv) -> None:
   _test_loadline2_default(device_id, adb_path, BenchmarkType.WEBAPI, test_env)
+
+
+def test_loadline2_debug(device_id, adb_path, test_env: TestEnv) -> None:
+  _test_loadline2_default(device_id, adb_path, BenchmarkType.DEBUG, test_env)
 
 
 def _test_loadline2_default(device_id, adb_path, benchmark_type,
