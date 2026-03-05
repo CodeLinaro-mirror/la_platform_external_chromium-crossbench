@@ -46,7 +46,7 @@ class ProbeConfigTestCase(BaseConfigTestCase):
                          hjson.loads(probe_config_file.read_text()))
 
   def test_parse_non_hjson_inline_file(self):
-    trace_config_file = TraceConfig.preset_dir() / "v8.pbtxt"
+    trace_config_file = TraceConfig.preset_dir() / "v8.txtpb"
     self.fs.add_real_file(str(trace_config_file))
     self.assertTrue(trace_config_file.is_file())
     src_str = f"perfetto:{trace_config_file}"

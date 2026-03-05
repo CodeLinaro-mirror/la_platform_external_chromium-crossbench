@@ -1,20 +1,25 @@
  WITH
-        target_slice AS (
-            SELECT
-              s.ts AS slice_ts,
-              s.dur AS slice_dur,
-              t.utid AS slice_utid
-            FROM
-              slice s
-            JOIN
-              thread_track tt
-              ON s.track_id = tt.id
-            JOIN
-              thread t
-              ON tt.utid = t.utid
-            WHERE
-              s.name LIKE '%WebViewChromiumAwInit.startChromiumLockedSync%'
-            LIMIT 1  -- In case multiple, take the first (can remove if you want all)
+          start_slice AS (
+              SELECT ts, tt.utid
+              FROM slice s
+              JOIN
+                thread_track tt
+                ON s.track_id = tt.id
+              JOIN
+                thread t
+                ON tt.utid = t.utid
+              WHERE
+                s.name LIKE '%WebViewChromiumAwInit.startChromiumLockedAsync_task1%'
+                OR s.name LIKE '%WebViewChromiumAwInit.startChromiumLockedSync%'
+              LIMIT 1
+          ),
+          end_slice AS (
+              SELECT (ts + dur) as end_ts
+              FROM slice
+              WHERE
+                name LIKE '%WebViewChromiumAwInit.startChromiumLockedAsync_task5%'
+                OR name LIKE '%WebViewChromiumAwInit.startChromiumLockedSync%'
+              LIMIT 1
           ),
           thread_state_breakdown AS (
             SELECT
@@ -22,12 +27,14 @@
               SUM(tsb.dur) AS total_dur_ns
             FROM
               thread_state tsb
-            JOIN
-              target_slice tslice
-              ON
-                tsb.utid = tslice.slice_utid
-                AND tsb.ts < (tslice.slice_ts + tslice.slice_dur)
-                AND (tsb.ts + tsb.dur) > tslice.slice_ts
+            CROSS JOIN
+              start_slice
+            CROSS JOIN
+              end_slice
+            WHERE
+              tsb.utid = start_slice.utid
+              AND tsb.ts < end_slice.end_ts
+              AND (tsb.ts + tsb.dur) > start_slice.ts
             GROUP BY
               tsb.state
           )

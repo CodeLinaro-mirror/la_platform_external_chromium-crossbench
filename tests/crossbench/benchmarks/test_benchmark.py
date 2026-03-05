@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from crossbench.benchmarks.base import PressBenchmarkStoryFilter, RegexFilter
+from crossbench.benchmarks.base import PressBenchmarkStoryFilter, \
+    RangePatternError, RegexFilter
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 from tests import test_helper
 
@@ -57,9 +58,8 @@ class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
       self.assertTrue(len(story.substories), 1)
 
   def test_match_regexp_none(self):
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "Story"):
       _ = PressBenchmarkStoryFilter(MockStory, ["Story"]).stories
-    self.assertIn("Story", str(cm.exception))
 
   def test_match_regexp_some(self):
     stories = PressBenchmarkStoryFilter(MockStory, [".*-3"]).stories
@@ -94,9 +94,8 @@ class RegexFilterTestCase(unittest.TestCase):
 
   def test_match_regexp_none(self):
     regex_filter = RegexFilter(["story1", "story2"], ["story1"])
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "no_such_story"):
       regex_filter.process_all(["no_such_story"])
-    self.assertIn("no_such_story", str(cm.exception))
 
   def test_match_regexp_some(self):
     regex_filter = RegexFilter(["story1", "story2"], ["story1"])
@@ -112,6 +111,71 @@ class RegexFilterTestCase(unittest.TestCase):
     regex_filter = RegexFilter(["story1", "story2"], ["story1"])
     selected = regex_filter.process_all(["StOrY.*"])
     self.assertSequenceEqual(selected, ["story1", "story2"])
+
+  def test_range(self):
+    regex_filter = RegexFilter(["A", "B", "C", "D", "E"],
+                               ["A", "B", "C", "D", "E"])
+    selected = regex_filter.process_all(["B...D"])
+    self.assertSequenceEqual(selected, ["B", "C", "D"])
+
+  def test_range_regex(self):
+    regex_filter = RegexFilter(["A1", "A2", "B1", "B2", "C1", "C2"],
+                               ["A1", "A2", "B1", "B2", "C1", "C2"])
+    selected = regex_filter.process_all(["A.*...B.*"])
+    # Start: A1 (first match of A.*)
+    # End: B2 (last match of B.*)
+    # Range: A1, A2, B1, B2
+    self.assertSequenceEqual(selected, ["A1", "A2", "B1", "B2"])
+
+  def test_range_regex_start_only(self):
+    regex_filter = RegexFilter(["A1", "A2", "B1", "B2", "C1", "C2"],
+                               ["A1", "A2", "B1", "B2", "C1", "C2"])
+    selected = regex_filter.process_all(["B.*..."])
+    # Start: B1 (first match of B.*)
+    # End: C2 (last element)
+    self.assertSequenceEqual(selected, ["B1", "B2", "C1", "C2"])
+
+  def test_range_regex_end_only(self):
+    regex_filter = RegexFilter(["A1", "A2", "B1", "B2", "C1", "C2"],
+                               ["A1", "A2", "B1", "B2", "C1", "C2"])
+    selected = regex_filter.process_all(["...B.*"])
+    # Start: A1 (first element)
+    # End: B2 (last match of B.*)
+    self.assertSequenceEqual(selected, ["A1", "A2", "B1", "B2"])
+
+  def test_range_start_only(self):
+    regex_filter = RegexFilter(["A", "B", "C", "D", "E"],
+                               ["A", "B", "C", "D", "E"])
+    selected = regex_filter.process_all(["C..."])
+    self.assertSequenceEqual(selected, ["C", "D", "E"])
+
+  def test_range_end_only(self):
+    regex_filter = RegexFilter(["A", "B", "C", "D", "E"],
+                               ["A", "B", "C", "D", "E"])
+    selected = regex_filter.process_all(["...C"])
+    self.assertSequenceEqual(selected, ["A", "B", "C"])
+
+  def test_range_invalid_order(self):
+    regex_filter = RegexFilter(["A", "B"], ["A", "B"])
+    with self.assertRaisesRegex(ValueError, "after"):
+      regex_filter.process_all(["B...A"])
+
+  def test_range_invalid_syntax(self):
+    regex_filter = RegexFilter(["A", "B"], ["A", "B"])
+    with self.assertRaisesRegex(RangePatternError, "empty"):
+      regex_filter.process_all(["..."])
+    with self.assertRaisesRegex(RangePatternError, "separator"):
+      regex_filter.process_all(["A...B...C"])
+    with self.assertRaisesRegex(RangePatternError, "negative"):
+      regex_filter.process_all(["-A...B"])
+    with self.assertRaisesRegex(RangePatternError, "negative"):
+      regex_filter.process_all(["A...-B"])
+
+  def test_range_with_other_patterns(self):
+    regex_filter = RegexFilter(["A", "B", "C", "D", "E"],
+                               ["A", "B", "C", "D", "E"])
+    selected = regex_filter.process_all(["B...C", "E"])
+    self.assertSequenceEqual(selected, ["B", "C", "E"])
 
 
 if __name__ == "__main__":

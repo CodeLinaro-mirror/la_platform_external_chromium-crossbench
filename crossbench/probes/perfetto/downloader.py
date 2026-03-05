@@ -31,12 +31,11 @@ PLATFORM_LOOKUP: Final[Mapping[tuple[str, str], str]] = {
     ("android", "x64"): "android-x64",
 }
 
-
 class PerfettoToolDownloader:
 
   def __init__(self,
                tool: str,
-               version: str = "v51.2",
+               version: str = "v53.0",
                platform: Optional[plt.Platform] = None) -> None:
     self._version = version
     self._tool = tool

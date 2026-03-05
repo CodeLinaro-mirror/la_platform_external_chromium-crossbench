@@ -92,9 +92,11 @@ def default_chromium_candidates(platform: Platform) -> tuple[pth.AnyPath, ...]:
   candidates += [
       # Guessing default locations
       home_dir / "Documents/chromium/src",
+      home_dir / "workspace/chromium/src",
       home_dir / "chromium/src",
       platform.path("C:/src/chromium/src"),
       home_dir / "Documents/chrome/src",
+      home_dir / "workspace/chrome/src",
       home_dir / "chrome/src",
       platform.path("C:/src/chrome/src"),
   ]
@@ -463,3 +465,51 @@ class TsProxyFinder(BaseCrossbenchPathFinder):
   @override
   def crossbench_path(cls) -> pth.AnyPath:
     return pth.AnyPath("third_party/tsproxy/tsproxy.py")
+
+
+class MinidumpStackwalkFinder(BaseChromiumPathFinder):
+
+  @classmethod
+  @override
+  def chrome_path(cls) -> pth.AnyPath:
+    # This is a common location in some checkouts, but often it is in build dir.
+    # BaseChromiumPathFinder will try build dirs if we use
+    # ChromiumBuildBinaryFinder.
+    return pth.AnyPath(
+        "third_party/breakpad/breakpad/src/processor/minidump_stackwalk")
+
+
+class MinidumpDumpFinder(BaseChromiumPathFinder):
+
+  @classmethod
+  @override
+  def chrome_path(cls) -> pth.AnyPath:
+    return pth.AnyPath(
+        "third_party/breakpad/breakpad/src/processor/minidump_dump")
+
+
+class DumpSymsFinder(BaseChromiumPathFinder):
+
+  @classmethod
+  @override
+  def chrome_path(cls) -> pth.AnyPath:
+    return pth.AnyPath(
+        "third_party/breakpad/breakpad/src/tools/linux/dump_syms/dump_syms")
+
+
+class CrashpadDatabaseUtilFinder(BaseChromiumPathFinder):
+
+  @classmethod
+  @override
+  def chrome_path(cls) -> pth.AnyPath:
+    return pth.AnyPath(
+        "third_party/crashpad/crashpad/tools/crashpad_database_util")
+
+
+class GenerateBreakpadSymbolsFinder(BaseChromiumPathFinder):
+
+  @classmethod
+  @override
+  def chrome_path(cls) -> pth.AnyPath:
+    return pth.AnyPath("third_party/breakpad/breakpad/src/tools/"
+                       "linux/generate_breakpad_symbols.py")

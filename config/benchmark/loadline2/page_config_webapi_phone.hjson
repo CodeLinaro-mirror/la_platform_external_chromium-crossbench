@@ -16,8 +16,8 @@
         "kwargs": {
           "js":
             '''
-            performance.mark('LoadLine2/amazon_product/start');
-            const navigationStart = performance.timeOrigin + performance.now();
+            const mark = performance.mark('LoadLine2/amazon_product/start');
+            const navigationStart = performance.timeOrigin + mark.startTime;
             window.location.href = 'https://www.amazon.co.uk/NIVEA-Suncream-Spray-Protect-Moisture/dp/B001B0OJXM';
             return {'amazonNavigation': navigationStart};
             '''
@@ -71,8 +71,8 @@
         "kwargs": {
           "js":
             '''
-            performance.mark('LoadLine2/cnn_article/start');
-            const navigationStart = performance.timeOrigin + performance.now();
+            const mark = performance.mark('LoadLine2/cnn_article/start');
+            const navigationStart = performance.timeOrigin + mark.startTime;
             window.location.href = 'https://edition.cnn.com/2024/04/21/china/china-spy-agency-public-profile-intl-hnk/index.html';
             return {'cnnNavigation': navigationStart};
             '''
@@ -126,8 +126,8 @@
         "kwargs": {
           "js":
             '''
-            performance.mark('LoadLine2/wikipedia_article/start');
-            const navigationStart = performance.timeOrigin + performance.now();
+            const mark = performance.mark('LoadLine2/wikipedia_article/start');
+            const navigationStart = performance.timeOrigin + mark.startTime;
             window.location.href = 'https://en.m.wikipedia.org/wiki/Taylor_Swift';
             return {'wikiNavigation': navigationStart};
             '''
@@ -181,8 +181,8 @@
         "kwargs": {
           "js":
             '''
-            performance.mark('LoadLine2/globo_homepage/start');
-            const navigationStart = performance.timeOrigin + performance.now();
+            const mark = performance.mark('LoadLine2/globo_homepage/start');
+            const navigationStart = performance.timeOrigin + mark.startTime;
             window.location.href = 'https://www.globo.com/';
             return {'globoNavigation': navigationStart};
             '''
@@ -236,8 +236,8 @@
         "kwargs": {
           "js":
             '''
-            performance.mark('LoadLine2/google_search_result/start');
-            const navigationStart = performance.timeOrigin + performance.now();
+            const mark = performance.mark('LoadLine2/google_search_result/start');
+            const navigationStart = performance.timeOrigin + mark.startTime;
             window.location.href = 'https://www.google.com/search?q=cats';
             return {'googleNavigation': navigationStart};
             '''

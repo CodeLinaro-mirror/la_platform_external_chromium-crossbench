@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import enum
 import json
+import unittest
 from typing import TYPE_CHECKING
 
 from crossbench.cli.cli import CrossBenchCLI
@@ -65,6 +66,8 @@ def test_loadline2_tablet(device_id, adb_path, test_env: TestEnv) -> None:
   _test_loadline2_default(device_id, adb_path, BenchmarkType.TABLET, test_env)
 
 
+# TODO(crbug.com/372457479): Find a way to test LoadLine 2 WebAPI without root.
+@unittest.skip("LoadLine2 WebAPI requires root to run")
 def test_loadline2_webapi(device_id, adb_path, test_env: TestEnv) -> None:
   _test_loadline2_default(device_id, adb_path, BenchmarkType.WEBAPI, test_env)
 

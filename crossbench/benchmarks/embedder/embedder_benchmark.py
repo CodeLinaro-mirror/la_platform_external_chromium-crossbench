@@ -61,7 +61,7 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
       action_runner = run.action_runner
       for block in self._actions:
         for action in block:
-          action.run_with(run, action_runner)
+          action_runner.run_action(run, action)
     # Empty line to preserve timer output.
     print()
     logging.info("Stopping Embedder Benchmark...")

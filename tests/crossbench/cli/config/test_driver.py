@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+from unittest import mock
 
 import hjson
 
@@ -16,7 +17,7 @@ from crossbench.exception import ArgumentTypeMultiException
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from tests import test_helper
 from tests.crossbench.cli.config.base import ADB_DEVICES_OUTPUT, \
-    XCTRACE_DEVICES_SINGLE_OUTPUT, BaseConfigTestCase
+    IOS_DEVICES_SINGLE_OUTPUT, BaseConfigTestCase
 
 
 class DriverConfigTestCase(BaseConfigTestCase):
@@ -180,8 +181,6 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
   def test_parse_adb_phone_identifier_unknown(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
-    if self.platform.is_macos:
-      self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
 
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = DriverConfig.parse("Unknown Device X")
@@ -223,14 +222,14 @@ class DriverConfigTestCase(BaseConfigTestCase):
   def test_parse_ios_phone_serial(self):
     if not plt.PLATFORM.is_macos:
       return
-    self.platform.sh_results = [
-        ADB_DEVICES_OUTPUT, XCTRACE_DEVICES_SINGLE_OUTPUT,
-        XCTRACE_DEVICES_SINGLE_OUTPUT
-    ]
+    self.platform.sh_results = [ADB_DEVICES_OUTPUT]
 
-    config = DriverConfig.parse("00001111-11AA22BB33DD")
+    with mock.patch(
+        "crossbench.cli.config.driver.ios_devices",
+        return_value=IOS_DEVICES_SINGLE_OUTPUT):
+      config = DriverConfig.parse("00001111-11AA22BB33DD")
     assert isinstance(config, DriverConfig)
-    self.assertEqual(len(self.platform.sh_cmds), 3)
+    self.assertEqual(len(self.platform.sh_cmds), 1)
 
     self.assertEqual(config.type, BrowserDriverType.IOS)
     self.assertEqual(config.device_id, "00001111-11AA22BB33DD")
