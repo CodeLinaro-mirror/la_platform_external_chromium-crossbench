@@ -216,6 +216,15 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     # Force main window to foreground.
     self._private_driver.switch_to.window(
         self._private_driver.current_window_handle)
+    # In some cases, the current window is a special context with URL
+    # chrome://newtab-footer/. Various errors can occur when the driver
+    # is connected to this pseudo window, so we switch to the first normal
+    # window instead.
+    if self._private_driver.current_url == "chrome://newtab-footer/":
+      window_handles = self._private_driver.window_handles
+      window_handles.remove(self._private_driver.current_window_handle)
+      if window_handles:
+        self._private_driver.switch_to.window(window_handles[0])
     if (self.viewport.is_headless or
         not self._private_driver.capabilities["setWindowRect"]):
       return

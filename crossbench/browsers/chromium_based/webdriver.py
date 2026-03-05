@@ -312,7 +312,8 @@ class ChromiumBasedWebDriver(
 
     for handle in driver.window_handles:
       driver.switch_to.window(handle)
-      if handle != current_handle:
+      if (handle != current_handle and
+          driver.current_url != "chrome://newtab-footer/"):
         driver.close()
 
     # Closing every tab will cause the browser to exit.
