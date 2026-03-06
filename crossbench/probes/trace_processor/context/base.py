@@ -4,8 +4,10 @@
 
 from __future__ import annotations
 
+import contextlib
+import logging
 import zipfile
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Iterator, Optional
 
 from google.protobuf import text_format
 from google.protobuf.json_format import MessageToJson
@@ -46,6 +48,17 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
   def teardown(self) -> ProbeResult:
     return self._merge_trace_files().merge(self._maybe_run_tp())
 
+  @property
+  def needs_tp_run(self) -> bool:
+    return self.probe.needs_tp_run
+
+  @contextlib.contextmanager
+  def write_zip_file(self, path: pth.LocalPath) -> Iterator[zipfile.ZipFile]:
+    with zipfile.ZipFile(
+        path, "w", compression=zipfile.ZIP_DEFLATED,
+        compresslevel=1) as zip_file:
+      yield zip_file
+
   def _merge_trace_files(self) -> LocalProbeResult:
     with self.run.actions("TRACE_PROCESSOR: Merging trace files", verbose=True):
       traces = list(self.run.results.all_traces())
@@ -53,13 +66,14 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
         # Symlink the existing trace to save time and space
         self.host_platform.symlink_or_copy(traces[0], self.merged_trace_path)
       else:
-        with zipfile.ZipFile(self.merged_trace_path, "w") as zip_file:
+        with self.write_zip_file(self.merged_trace_path,) as zip_file:
           for f in traces:
             zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
     return LocalProbeResult(perfetto=(self.merged_trace_path,))
 
   def _maybe_run_tp(self) -> ProbeResult:
-    if not self.probe.needs_tp_run:
+    if not self.needs_tp_run:
+      logging.debug("trace_processor probe: skipping queries and metrics")
       return EmptyProbeResult()
     with change_cwd(self.local_result_path), TraceProcessor(
         trace=CrossbenchTraceUriResolver(self),
@@ -68,8 +82,11 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
         query_result = self._run_queries(tp, exceptions)
         metric_result = self._run_metrics(tp, exceptions)
         summary_result = self._summarize_trace(tp)
-      result = query_result.merge(metric_result).merge(summary_result)
-      return result
+    # Special-case for perfetto-generated pprof files:
+    pprof_results = LocalProbeResult(
+        pprof=self.local_result_path.glob("*.pprof"))
+    result = query_result.merge(metric_result, pprof_results, summary_result)
+    return result
 
   def _run_queries(self, tp: TraceProcessor,
                    exceptions: ExceptionAnnotator) -> LocalProbeResult:
@@ -86,12 +103,16 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
     with self.run.actions("TRACE_PROCESSOR: Running queries", verbose=True):
       csv_files = []
       json_files = []
-      for query in self.probe.queries:
+      for query in self.queries:
         with exceptions.capture(f"query: {query}"):
           csv_file, json_file = run_query(query)
           csv_files.append(csv_file)
           json_files.append(json_file)
       return LocalProbeResult(csv=csv_files, json=json_files)
+
+  @property
+  def queries(self) -> tuple[TraceProcessorQueryConfig, ...]:
+    return self._probe.queries
 
   def _run_metrics(self, tp: TraceProcessor,
                    exceptions: ExceptionAnnotator) -> LocalProbeResult:
@@ -117,7 +138,6 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
 
     with self.run.actions(
         "TRACE_PROCESSOR: Running trace summary", verbose=True):
-
       # Trace processor interprets an empty list as 'emit no metrics' and
       # 'None' as emit all metrics specified in the metric definitions.
       # When no metric IDs are explicitly given, default to the more
@@ -142,5 +162,5 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
     return self.local_result_path / "merged_trace.zip"
 
   @property
-  def symbolized_trace_path(self) -> pth.LocalPath:
-    return self.local_result_path / "symbolized_trace_path.zip"
+  def _symbolized_trace_path(self) -> pth.LocalPath:
+    return self.local_result_path / "symbolized_trace.zip"

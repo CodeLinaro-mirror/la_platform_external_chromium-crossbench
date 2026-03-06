@@ -22,6 +22,7 @@ from crossbench.browsers.webview.embedder import WebviewEmbedder
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
+from crossbench.probes.probe import ProbePriority
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -133,6 +134,7 @@ class ChromeHistogramsProbe(JsonResultProbe):
   Probe that collects UMA histogram metrics from Chrome.
   """
   NAME: ClassVar = "chrome_histograms"
+  PRIORITY: ClassVar = ProbePriority.PRE_USER
 
   @classmethod
   @override

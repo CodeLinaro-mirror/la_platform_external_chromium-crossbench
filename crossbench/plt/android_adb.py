@@ -544,6 +544,16 @@ class Adb:
       cmd.extend([package_name, f"android.permission.{perm}"])
       self.shell(*cmd)
 
+  FOCUSED_WINDOW_RE: Final[re.Pattern] = re.compile(
+      r"mCurrentFocus=(Window\{.*\})")
+
+  def focused_window(self) -> Optional[str]:
+    activity_dump = self.dumpsys("activity", "activities")
+    match = re.search(self.FOCUSED_WINDOW_RE, activity_dump)
+    if match:
+      return match.group(1)
+    return None
+
 
 class AndroidAdbPortManager(PortManager):
 
@@ -942,7 +952,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                      timeout: dt.timedelta) -> pth.AnyPath:
 
     timeout_ms = timeout / dt.timedelta(milliseconds=1)
-    cfg_path = self.path("/data/misc/perfetto-configs/{}.pbtxt".format(label))
+    cfg_path = self.path("/data/misc/perfetto-configs/{}.txtpb".format(label))
     dump_path = self.path(
         "/data/misc/perfetto-traces/{}.trace.pb".format(label))
     cfg = ANDROID_JAVA_HPROF_PERFETTO_CFG.format(

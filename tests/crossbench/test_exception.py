@@ -331,6 +331,45 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertEqual(len(annotator), 1)
     self.assertIsInstance(annotator[0].exception, RuntimeError)
 
+  def test_format_assertion_error_no_message(self):
+    annotator = ExceptionAnnotator()
+    with annotator.capture():
+      assert False  # noqa: B011
+    self.assertFalse(annotator.is_success)
+    self.assertEqual(len(annotator), 1)
+    formatted = annotator.format_exception(annotator[0])
+    self.assertIn("in test_exception.py", formatted)
+    self.assertIn("assert False", formatted)
+
+  def test_format_assertion_error_no_message_nested(self):
+    annotator = ExceptionAnnotator()
+
+    def assertion():
+      assert False  # noqa: B011
+
+    with annotator.capture():
+      assertion()
+    self.assertFalse(annotator.is_success)
+    self.assertEqual(len(annotator), 1)
+    formatted = annotator.format_exception(annotator[0])
+    self.assertIn("in test_exception.py", formatted)
+    self.assertIn("assert False", formatted)
+
+  def test_format_assertion_error_message(self):
+    annotator = ExceptionAnnotator()
+
+    def assertion():
+      assert False, "Custom\nMessage"  # noqa: B011
+
+    with annotator.capture():
+      assertion()
+    self.assertFalse(annotator.is_success)
+    self.assertEqual(len(annotator), 1)
+    formatted = annotator.format_exception(annotator[0])
+    self.assertIn("in test_exception.py", formatted)
+    self.assertIn("assert False", formatted)
+    self.assertIn("Custom", formatted)
+    self.assertIn("Message", formatted)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

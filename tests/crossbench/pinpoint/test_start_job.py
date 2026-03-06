@@ -83,6 +83,8 @@ class StartJobTest(MockHttpRequestsMixin):
             '--extra-browser-args="--test-flag --js-flags=--base-js-flag"',
         "experiment_extra_args":
             '--extra-browser-args="--js-flags=--exp-js-flag"',
+        "tags":
+            '{"origin": "pinpoint_cli"}',
     }
     self.mock_post.assert_called_with(
         PINPOINT_START_JOB_API_URL, data=expected_payload)

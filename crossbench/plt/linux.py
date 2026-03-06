@@ -134,6 +134,14 @@ class LinuxPlatform(PosixPlatform):
 
   @property
   @override
+  def is_remote_desktop(self) -> bool:
+    script = self.path("/opt/google/chrome-remote-desktop/is-remoting-session")
+    if self.exists(script):
+      return self.sh(script, check=False, quiet=True).returncode == 0
+    return False
+
+  @property
+  @override
   def is_battery_powered(self) -> bool:
     if self.is_local:
       return super().is_battery_powered

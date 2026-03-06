@@ -135,7 +135,13 @@ class ProbeResult(abc.ABC):
       return False
     return self._url_list == other._url_list
 
-  def merge(self, other: ProbeResult) -> ProbeResult:
+  def merge(self, *args: ProbeResult) -> ProbeResult:
+    merged = self
+    for other in args:
+      merged = merged.merge_single(other)
+    return merged
+
+  def merge_single(self, other: ProbeResult) -> ProbeResult:
     if self.is_empty:
       return other
     if other.is_empty:
