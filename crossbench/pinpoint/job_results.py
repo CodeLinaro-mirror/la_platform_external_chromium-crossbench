@@ -95,6 +95,7 @@ class PinpointJobResults:
 
     if plt.PLATFORM.which("cipd"):
       with annotate("Installing cas via cipd"):
+        plt.PLATFORM.sh("cipd", "init", "-force", cache_dir)
         plt.PLATFORM.sh("cipd", "install", "infra/tools/luci/cas/${platform}",
                         "latest", "-root", cache_dir)
         return cache_dir_cas

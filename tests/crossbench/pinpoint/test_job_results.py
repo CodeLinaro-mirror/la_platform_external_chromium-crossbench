@@ -252,9 +252,17 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
     download_results(_JOB_ID, out_dir)
 
-    args = self.mock_sh.call_args[0]
-    self.assertIn("cipd", args)
-    self.assertIn("install", args)
+    self.assertEqual(self.mock_sh.call_count, 2)
+
+    init_args = self.mock_sh.call_args_list[0][0]
+    self.assertEqual(init_args[0], "cipd")
+    self.assertEqual(init_args[1], "init")
+    self.assertEqual(init_args[2], "-force")
+
+    install_args = self.mock_sh.call_args_list[1][0]
+    self.assertEqual(install_args[0], "cipd")
+    self.assertEqual(install_args[1], "install")
+    self.assertIn("infra/tools/luci/cas/${platform}", install_args)
 
   def test_download_results_no_cipd(self):
     self.mock_which.return_value = None
