@@ -4,7 +4,7 @@
       "textproto":
         '''
           buffers: {
-              size_kb: 131072
+              size_kb: 262144
               fill_policy: DISCARD
           }
           data_sources {
