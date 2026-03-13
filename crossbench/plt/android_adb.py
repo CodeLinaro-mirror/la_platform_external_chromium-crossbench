@@ -12,6 +12,7 @@ import logging
 import math
 import re
 import shlex
+import subprocess
 from typing import TYPE_CHECKING, Any, Final, Generator, Mapping, Optional
 
 from mobly.controllers import android_device
@@ -33,8 +34,6 @@ from protoc import activitymanagerservice_pb2, battery_pb2, enums_pb2, \
     windowmanagerservice_pb2
 
 if TYPE_CHECKING:
-  import subprocess
-
   from crossbench.plt.base import Platform
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo
@@ -685,6 +684,23 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @property
   def adb(self) -> Adb:
     return self._adb
+
+  @override
+  def set_all_cpus_power_mode(self, mode: Optional[str]) -> None:
+    if not mode:
+      return
+    self.adb.shell(  # noqa: S604
+        f"for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; "
+        f"do echo {shlex.quote(mode)} > $f; done",
+        shell=True,
+        stderr=subprocess.DEVNULL)
+
+  @override
+  def get_all_cpus_power_modes(self) -> set[str]:
+    output = self.adb.shell_stdout(  # noqa: S604
+        "cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor",
+        shell=True)
+    return set(output.strip().splitlines())
 
   _MACHINE_ARCH_LOOKUP: Final = {
       "arm64-v8a": MachineArch.ARM_64,

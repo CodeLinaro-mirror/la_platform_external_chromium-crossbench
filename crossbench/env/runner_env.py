@@ -217,9 +217,37 @@ class RunnerEnv(BaseEnv):
           "Auto-brightness was found to be ON. "
           "Deactivate it in 'System Preferences/Displays'")
 
-  def _check_cpu_power_mode(self) -> bool:
-    # TODO Implement checks for performance mode
-    return True
+  def _check_cpu_power_mode(self) -> None:
+    cpu_power_mode = self._config.cpu_power_mode
+    if cpu_power_mode is EnvConfig.IGNORE:
+      return
+
+    done = set()
+    for browser in self._browsers:
+      platform = browser.platform
+      if platform in done:
+        continue
+      existing = platform.get_all_cpus_power_modes()
+      if {cpu_power_mode} == existing:
+        logging.debug(
+            "All CPUs on platform %s already have desire power mode %s",
+            platform, cpu_power_mode)
+        done.add(platform)
+        continue
+      logging.info("Setting CPU power mode from %s to %s on platform %s",
+                   existing, cpu_power_mode, platform)
+      try:
+        platform.set_all_cpus_power_mode(cpu_power_mode)
+      except plt.SubprocessError as e:
+        self.handle_validation_warning(
+            f"Could not set CPUs power mode on {platform}: {e}")
+        continue
+      current = platform.get_all_cpus_power_modes()
+      if {cpu_power_mode} != current:
+        self.handle_validation_warning(
+            f"Requested {platform} CPU power mode={cpu_power_mode}, "
+            f"but got {current}")
+      done.add(platform)
 
   def _check_running_binaries(self) -> None:
     if self._config.browser_allow_existing_process:

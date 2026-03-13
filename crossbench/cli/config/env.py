@@ -61,6 +61,18 @@ def merge_number_min(name: str, left: Optional[Number],
   return min(left, right)
 
 
+def merge_str(name: str, left: Optional[str],
+              right: Optional[str]) -> Optional[str]:
+  if left is None:
+    return right
+  if right is None:
+    return left
+  if left != right:
+    raise ValueError(f"Conflicting merge values for {name}: "
+                     f"{left} vs. {right}")
+  return left
+
+
 def merge_str_list(name: str, left: Optional[list[str]],
                    right: Optional[list[str]]) -> Optional[list[str]]:
   del name
@@ -93,6 +105,7 @@ class EnvConfig(ConfigObject):
   browser_is_headless: bool | None = IGNORE
   cpu_max_usage_percent: float | None = IGNORE
   cpu_min_relative_speed: float | None = IGNORE
+  cpu_power_mode: str | None = IGNORE
   disk_min_free_space_gib: float | None = IGNORE
   power_use_battery: bool | None = IGNORE
   require_probes: bool | None = IGNORE
@@ -143,6 +156,8 @@ class EnvConfig(ConfigObject):
         type=NumberParser.int_range(0, 1),
         default=cls.IGNORE)
     parser.add_argument(
+        "cpu_power_mode", type=ObjectParser.any_str, default=cls.IGNORE)
+    parser.add_argument(
         "disk_min_free_space_gib",
         type=NumberParser.positive_float,
         default=cls.IGNORE)
@@ -171,6 +186,7 @@ class EnvConfig(ConfigObject):
         "browser_is_headless": merge_bool,
         "cpu_max_usage_percent": merge_number_min,
         "cpu_min_relative_speed": merge_number_max,
+        "cpu_power_mode": merge_str,
         "disk_min_free_space_gib": merge_number_max,
         "power_use_battery": merge_bool,
         "require_probes": merge_bool,

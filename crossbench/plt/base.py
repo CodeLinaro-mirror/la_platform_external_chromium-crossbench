@@ -1036,6 +1036,14 @@ class Platform(abc.ABC):
     logging.debug("Missing wakelock support on %s", self)
     yield
 
+  def set_all_cpus_power_mode(self, mode: Optional[str]) -> None:
+    raise NotImplementedError(
+        "'set_all_cpus_power_mode' is only available on Android for now")
+
+  def get_all_cpus_power_modes(self) -> set[str]:
+    raise NotImplementedError(
+        "'get_all_cpus_power_modes' is only available on Android for now")
+
   def set_main_display_brightness(self, brightness_level: int) -> None:
     raise NotImplementedError(
         "'set_main_display_brightness' is only available on MacOS for now")
