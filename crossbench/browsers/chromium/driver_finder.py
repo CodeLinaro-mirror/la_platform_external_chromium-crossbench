@@ -78,17 +78,20 @@ class ChromeDriverFinder:
     assert self.browser.app_path, "Missing browser app path"
     # assume it's a local build
     lookup_dir: pth.LocalPath = self.host_platform.local_path(
-        self.browser.app_path.parent)
+        # out/mac/Chrome.app/Contents/MacOS/Chrome vs out/mac/chromedriver.
+        self.browser.app_path.parents[3] if self.browser.platform.is_macos
+        # out/android/bin/chrome_apk vs out/android/clang_x64/chromedriver.
+        else self.browser.app_path.parents[1] /
+        "clang_x64" if self.browser.platform.is_android
+        # out/linux/chrome vs out/linux/chromedriver.
+        else self.browser.app_path.parent)
     driver_path = lookup_dir / "chromedriver"
     if self.host_platform.is_win:
       driver_path = driver_path.with_suffix(".exe")
     if self.host_platform.is_file(driver_path):
       return driver_path
     error_message: list[str] = [f"Driver '{driver_path}' does not exist."]
-    if helper.is_build_dir(lookup_dir, self.host_platform):
-      error_message += [helper.build_chromedriver_instructions(lookup_dir)]
-    else:
-      error_message += ["Please manually provide a chromedriver binary."]
+    error_message += [helper.BUILD_CHROMEDRIVER_INSTRUCTIONS]
     raise DriverNotFoundError("\n".join(error_message))
 
   def download(self) -> pth.LocalPath:

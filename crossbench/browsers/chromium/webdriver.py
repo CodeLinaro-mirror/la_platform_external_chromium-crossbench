@@ -24,7 +24,6 @@ from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
 from crossbench.cli import ui
 from crossbench.cli.config.secrets import GoogleUsernamePassword
 from crossbench.helper import wait
-from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
 from crossbench.parse import NumberParser
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.base import SubprocessError
@@ -305,6 +304,9 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
     self._package_info: immutabledict[str, Any] = self._parse_package_info(
         settings.platform, path)
     super().__init__(label, path, settings)
+    # The superclass sets this to ".", it's unclear why. This would ideally be
+    # fixed in a different layer, not here.
+    self.app_path = path
 
   @override
   def _lookup_android_package(self, path: pth.AnyPath) -> str:
@@ -332,21 +334,6 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
       sys.stdout.write(f"   Installing {self.path.name} on {self.platform}\r")
       self.host_platform.sh_stdout(self.path, "install",
                                    f"--device={self.platform.serial_id}")
-
-  @override
-  def _find_driver(self) -> pth.AnyPath:
-    if self._driver_path:
-      return self._driver_path
-    assert self.app_path, "Missing app path"
-    if build_dir := self.local_build_dir():
-      logging.info("Looking for local chromedriver in %s", build_dir.parent)
-      finder = ChromiumBuildBinaryFinder(self.host_platform, "chromedriver",
-                                         (build_dir.parent,))
-      if driver_path := finder.path:
-        return driver_path
-    raise ValueError("Chrome APK helper needs an explicit chrome driver. "
-                     "Use --driver-path or a custom browser config.")
-
 
 class AutoForwardingRemoteWebDriver(RemoteWebDriver):
   """

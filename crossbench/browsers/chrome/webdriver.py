@@ -48,7 +48,7 @@ class ChromeWebDriver(ChromeBaseMixin, ChromiumBasedWebDriver):
     except selenium.common.exceptions.WebDriverException as e:
       msg: list[str] = [f"Could not start WebDriver: {e.msg}"]
       if self.is_locally_compiled():
-        msg.append(helper.build_chromedriver_instructions(self.app_path.parent))
+        msg.append(helper.BUILD_CHROMEDRIVER_INSTRUCTIONS)
       msg_str = "\n".join(msg)
       logging.error(msg_str)
       raise DriverException(msg_str) from e

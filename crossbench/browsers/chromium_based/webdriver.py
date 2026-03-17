@@ -199,7 +199,7 @@ class ChromiumBasedWebDriver(
       return None
     return (f"Chromedriver version mismatch: driver={driver_version.parts_str} "
             f"browser={browser_version.parts_str} ({self}).",
-            helper.build_chromedriver_instructions(driver_path.parent))
+            helper.BUILD_CHROMEDRIVER_INSTRUCTIONS)
 
   def _validate_any_driver_version(
       self, driver_path: pth.AnyPath) -> Optional[Iterable[str]]:
