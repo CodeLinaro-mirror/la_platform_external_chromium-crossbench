@@ -401,7 +401,8 @@ class MacOSPlatform(PosixPlatform):
       # Early return if not running, no need to disable the sensor.
       return True
     # Try disabling the process
-    logging.warning("Disabling crowdstrike monitoring:")
+    logging.warning("Disabling crowdstrike monitoring "
+                    "(this can have negative security impact):")
     self.sh("sudo", falconctl, "unload")
     return True
 

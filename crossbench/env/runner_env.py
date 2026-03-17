@@ -130,8 +130,8 @@ class RunnerEnv(BaseEnv):
       self.handle_validation_warning(
           "Crowdstrike monitoring is running, "
           "which can impact startup performance drastically.\n"
-          "Use the following command to disable it manually:\n"
-          "sudo /Applications/Falcon.app/Contents/Resources/falconctl unload\n")
+          "Measuring on a device without crowdstrike improves your "
+          "signal-to-noise ratio.\n")
 
   def _check_disk_space(self) -> None:
     limit = self._config.disk_min_free_space_gib
