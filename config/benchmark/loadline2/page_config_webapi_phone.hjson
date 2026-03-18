@@ -19,7 +19,7 @@
             const mark = performance.mark('LoadLine2/amazon_product/start');
             const navigationStart = performance.timeOrigin + mark.startTime;
             window.location.href = 'https://www.amazon.co.uk/NIVEA-Suncream-Spray-Protect-Moisture/dp/B001B0OJXM';
-            return {'amazonNavigation': navigationStart};
+            return {'amazon_product_navigation_start_ts': navigationStart};
             '''
         }
       }
@@ -43,13 +43,13 @@
           "js":
             '''
             performance.mark('LoadLine2/amazon_product/finish');
-            const visual = performance.timeOrigin +
+            const visualEnd = performance.timeOrigin +
                 performance.getEntriesByName('LoadLine2/amazon_product/visual_raf')[0].startTime;
-            const interactive = performance.timeOrigin +
+            const interactiveEnd = performance.timeOrigin +
                 performance.getEntriesByName('LoadLine2/amazon_product/interactive_raf')[0].startTime;
             return {
-            'amazonVisual': visual,
-            'amazonInteractive': interactive,
+            'amazon_product_visual_end_ts': visualEnd,
+            'amazon_product_interactive_end_ts': interactiveEnd,
             };
             '''
         }
@@ -74,7 +74,7 @@
             const mark = performance.mark('LoadLine2/cnn_article/start');
             const navigationStart = performance.timeOrigin + mark.startTime;
             window.location.href = 'https://edition.cnn.com/2024/04/21/china/china-spy-agency-public-profile-intl-hnk/index.html';
-            return {'cnnNavigation': navigationStart};
+            return {'cnn_article_navigation_start_ts': navigationStart};
             '''
         }
       }
@@ -98,13 +98,13 @@
           "js":
             '''
             performance.mark('LoadLine2/cnn_article/finish');
-            const visual = performance.timeOrigin +
+            const visualEnd = performance.timeOrigin +
                 performance.getEntriesByName('LoadLine2/cnn_article/visual_raf')[0].startTime;
-            const interactive = performance.timeOrigin +
+            const interactiveEnd = performance.timeOrigin +
                 performance.getEntriesByName('LoadLine2/cnn_article/interactive_raf')[0].startTime;
             return {
-            'cnnVisual': visual,
-            'cnnInteractive': interactive,
+            'cnn_article_visual_end_ts': visualEnd,
+            'cnn_article_interactive_end_ts': interactiveEnd,
             };
             '''
         }
@@ -129,7 +129,7 @@
             const mark = performance.mark('LoadLine2/wikipedia_article/start');
             const navigationStart = performance.timeOrigin + mark.startTime;
             window.location.href = 'https://en.m.wikipedia.org/wiki/Taylor_Swift';
-            return {'wikiNavigation': navigationStart};
+            return {'wikipedia_article_navigation_start_ts': navigationStart};
             '''
         }
       }
@@ -153,13 +153,13 @@
           "js":
             '''
             performance.mark('LoadLine2/wikipedia_article/finish');
-            const visual = performance.timeOrigin +
+            const visualEnd = performance.timeOrigin +
                 performance.getEntriesByName('LoadLine2/wikipedia_article/visual_raf')[0].startTime;
-            const interactive = performance.timeOrigin +
+            const interactiveEnd = performance.timeOrigin +
                 performance.getEntriesByName('LoadLine2/wikipedia_article/interactive_raf')[0].startTime;
             return {
-            'wikiVisual': visual,
-            'wikiInteractive': interactive,
+            'wikipedia_article_visual_end_ts': visualEnd,
+            'wikipedia_article_interactive_end_ts': interactiveEnd,
             };
             '''
         }
@@ -184,7 +184,7 @@
             const mark = performance.mark('LoadLine2/globo_homepage/start');
             const navigationStart = performance.timeOrigin + mark.startTime;
             window.location.href = 'https://www.globo.com/';
-            return {'globoNavigation': navigationStart};
+            return {'globo_homepage_navigation_start_ts': navigationStart};
             '''
         }
       }
@@ -208,13 +208,13 @@
           "js":
             '''
             performance.mark('LoadLine2/globo_homepage/finish');
-            const visual = performance.timeOrigin +
+            const visualEnd = performance.timeOrigin +
                 performance.getEntriesByName('LoadLine2/globo_homepage/visual_raf')[0].startTime;
-            const interactive = performance.timeOrigin +
+            const interactiveEnd = performance.timeOrigin +
                 performance.getEntriesByName('LoadLine2/globo_homepage/interactive_raf')[0].startTime;
             return {
-            'globoVisual': visual,
-            'globoInteractive': interactive,
+            'globo_homepage_visual_end_ts': visualEnd,
+            'globo_homepage_interactive_end_ts': interactiveEnd,
             };
             '''
         }
@@ -239,7 +239,7 @@
             const mark = performance.mark('LoadLine2/google_search_result/start');
             const navigationStart = performance.timeOrigin + mark.startTime;
             window.location.href = 'https://www.google.com/search?q=cats';
-            return {'googleNavigation': navigationStart};
+            return {'google_search_result_navigation_start_ts': navigationStart};
             '''
         }
       }
@@ -263,13 +263,13 @@
           "js":
             '''
             performance.mark('LoadLine2/google_search_result/finish');
-            const visual = performance.timeOrigin +
+            const visualEnd = performance.timeOrigin +
                 performance.getEntriesByName('LoadLine2/google_search_result/visual_raf')[0].startTime;
-            const interactive = performance.timeOrigin +
+            const interactiveEnd = performance.timeOrigin +
                 performance.getEntriesByName('LoadLine2/google_search_result/interactive_raf')[0].startTime;
             return {
-            'googleVisual': visual,
-            'googleInteractive': interactive,
+            'google_search_result_visual_end_ts': visualEnd,
+            'google_search_result_interactive_end_ts': interactiveEnd,
             };
             '''
         }

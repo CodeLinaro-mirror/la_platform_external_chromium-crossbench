@@ -9,7 +9,7 @@
   },
   {
     "URL":"https://en.m.wikipedia.org/wiki/Taylor_Swift",
-    "InjectedScript":"wiki_instrumentation.js"
+    "InjectedScript":"wikipedia_instrumentation.js"
   },
   {
     "URL":"https://www.globo.com/",

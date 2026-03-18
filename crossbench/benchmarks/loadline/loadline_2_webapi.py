@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+from enum import StrEnum
 from typing import TYPE_CHECKING, ClassVar, Final, Sequence, Type
 
 import numpy as np
@@ -32,6 +33,14 @@ if TYPE_CHECKING:
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
 VERSION_STRING: Final[str] = "2.1.0"
+
+
+class Story(StrEnum):
+  AMAZON = "amazon_product"
+  CNN = "cnn_article"
+  WIKIPEDIA = "wikipedia_article"
+  GLOBO = "globo_homepage"
+  GOOGLE = "google_search_result"
 
 
 class LoadLine2WebApiProbe(LoadLineProbe):
@@ -74,31 +83,13 @@ class LoadLine2WebApiProbe(LoadLineProbe):
         columns="metric", index=["browser", "run"], values="value")
 
     scores: dict[str, pd.Series] = {}
-    if "amazonNavigation" in df:
-      scores["amazon_product_visual"] = 60e3 / (
-          df["amazonVisual"] - df["amazonNavigation"])
-      scores["amazon_product_interactive"] = 60e3 / (
-          df["amazonInteractive"] - df["amazonNavigation"])
-    if "cnnNavigation" in df:
-      scores["cnn_article_visual"] = 60e3 / (
-          df["cnnVisual"] - df["cnnNavigation"])
-      scores["cnn_article_interactive"] = 60e3 / (
-          df["cnnInteractive"] - df["cnnNavigation"])
-    if "wikiNavigation" in df:
-      scores["wikipedia_article_visual"] = 60e3 / (
-          df["wikiVisual"] - df["wikiNavigation"])
-      scores["wikipedia_article_interactive"] = 60e3 / (
-          df["wikiInteractive"] - df["wikiNavigation"])
-    if "globoNavigation" in df:
-      scores["globo_homepage_visual"] = 60e3 / (
-          df["globoVisual"] - df["globoNavigation"])
-      scores["globo_homepage_interactive"] = 60e3 / (
-          df["globoInteractive"] - df["globoNavigation"])
-    if "googleNavigation" in df:
-      scores["google_search_result_visual"] = 60e3 / (
-          df["googleVisual"] - df["googleNavigation"])
-      scores["google_search_result_interactive"] = 60e3 / (
-          df["googleInteractive"] - df["googleNavigation"])
+    for story in Story:
+      start = f"{story}_navigation_start_ts"
+      if start in df:
+        scores[f"{story}_visual"] = 60e3 / (
+            df[f"{story}_visual_end_ts"] - df[start])
+        scores[f"{story}_interactive"] = 60e3 / (
+            df[f"{story}_interactive_end_ts"] - df[start])
 
     total = pd.DataFrame(scores)
     total["TOTAL_SCORE"] = np.exp(np.log(total).mean(axis=1))
