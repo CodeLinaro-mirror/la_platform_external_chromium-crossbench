@@ -128,10 +128,9 @@ class LoadLine2WebApiProbe(LoadLineProbe):
 
     df = pd.DataFrame.from_dict(timings).pivot(
         columns="metric", index=["browser", "run"], values="value")
-
-    total = pd.DataFrame(df)
+    total = df.groupby("browser").mean()
     total["TOTAL_SCORE"] = np.exp(np.log(total).mean(axis=1))
-    total = total.groupby("browser").mean().T
+    total = total.T
     total.index.name = "Metric"
     return total
 
