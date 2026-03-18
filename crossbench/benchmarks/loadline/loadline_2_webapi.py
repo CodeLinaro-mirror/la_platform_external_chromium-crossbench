@@ -43,6 +43,24 @@ class Story(StrEnum):
   GOOGLE = "google_search_result"
 
 
+class Event(StrEnum):
+  NAVIGATION_START = "navigation_start_ts"
+  VISUAL_END = "visual_end_ts"
+  INTERACTIVE_END = "interactive_end_ts"
+
+
+class Metric(StrEnum):
+  VISUAL = "visual"
+  INTERACTIVE = "interactive"
+
+
+def get_event_name(story: Story, event: Event) -> str:
+  return f"{story}_{event}"
+
+
+def get_metric_name(story: Story, metric: Metric) -> str:
+  return f"{story}_{metric}"
+
 class LoadLine2WebApiProbe(LoadLineProbe):
   NAME: ClassVar = "loadline2_webapi_probe"
   BENCHMARK_NAME: ClassVar = "LoadLine2_WebApi"
@@ -54,44 +72,64 @@ class LoadLine2WebApiProbe(LoadLineProbe):
 
   @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
-    js_result = group.results.get_by_name(JSProbe.NAME)
-    assert js_result, f"{group} has no JSProbe result"
-
-    with js_result.json.open() as file:
-      j = json.load(file)
-
     timings: dict[str, list] = {
         "browser": [],
         "metric": [],
         "run": [],
         "value": []
     }
-    for browser in j:
-      runs = j[browser]["info"]["runs"]
-      for metric in j[browser]["data"]:
-        values = j[browser]["data"][metric]["values"]
-        assert len(values) == runs, (
-            f"Number of score values {len(values)} does not match "
-            f"number of runs {runs}")
-        for run, value in enumerate(values):
-          timings["browser"].append(browser)
-          timings["metric"].append(metric)
-          timings["run"].append(run)
-          timings["value"].append(value)
+    browsers = list(group.browsers)
+    assert len(browsers) == 1, (
+        "Attempting to use 2 different browsers currently fails when "
+        "restarting WPR, so the score computation assumes a single browser.")
+    for run, g in enumerate(group.repetitions_groups):
+      js_results = g.results.get_by_name(JSProbe.NAME)
+      if not js_results:
+        # No JSON file produced for this repetition, skip it entirely.
+        # TODO: warn the user.
+        continue
+
+      j = {}
+      with js_results.json.open() as file:
+        j = json.load(file)
+
+      assert j
+      new_metrics = []
+      new_values = []
+      broken_metrics = False
+      for story in Story:
+        if not all(get_event_name(story, e) in j for e in Event):
+          broken_metrics = True
+          break
+
+        visual_delay = (
+            j[get_event_name(story, Event.VISUAL_END)]["values"][0] -
+            j[get_event_name(story, Event.NAVIGATION_START)]["values"][0])
+        interactive_delay = (
+            j[get_event_name(story, Event.INTERACTIVE_END)]["values"][0] -
+            j[get_event_name(story, Event.NAVIGATION_START)]["values"][0])
+        if visual_delay < 0 or interactive_delay < 0:
+          broken_metrics = True
+          break
+
+        new_metrics.append(get_metric_name(story, Metric.VISUAL))
+        new_values.append(60e3 / visual_delay)
+        new_metrics.append(get_metric_name(story, Metric.INTERACTIVE))
+        new_values.append(60e3 / interactive_delay)
+
+      if broken_metrics:
+        continue
+
+      assert len(new_metrics) == len(new_values)
+      timings["browser"].extend([browsers[0].unique_name] * len(new_metrics))
+      timings["run"].extend([run] * len(new_metrics))
+      timings["metric"].extend(new_metrics)
+      timings["value"].extend(new_values)
 
     df = pd.DataFrame.from_dict(timings).pivot(
         columns="metric", index=["browser", "run"], values="value")
 
-    scores: dict[str, pd.Series] = {}
-    for story in Story:
-      start = f"{story}_navigation_start_ts"
-      if start in df:
-        scores[f"{story}_visual"] = 60e3 / (
-            df[f"{story}_visual_end_ts"] - df[start])
-        scores[f"{story}_interactive"] = 60e3 / (
-            df[f"{story}_interactive_end_ts"] - df[start])
-
-    total = pd.DataFrame(scores)
+    total = pd.DataFrame(df)
     total["TOTAL_SCORE"] = np.exp(np.log(total).mean(axis=1))
     total = total.groupby("browser").mean().T
     total.index.name = "Metric"
