@@ -74,6 +74,7 @@ _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME: Final[immutabledict[
         "speedometer_3.0": "speedometer3.0.crossbench",
         "speedometer_3.1": "speedometer3.1.crossbench",
         "speedometer_main": "speedometer-main.crossbench",
+        "webai": None,
     })
 
 

@@ -27,6 +27,7 @@ from crossbench.benchmarks.powerline import PowerlineBenchmark
 from crossbench.benchmarks.speedometer import Speedometer10Benchmark, \
     Speedometer20Benchmark, Speedometer21Benchmark, Speedometer30Benchmark, \
     Speedometer31Benchmark, SpeedometerMainBenchmark
+from crossbench.benchmarks.webai import WebAIBenchmark
 
 __all__ = [
     "DevToolsFrontendBenchmark",
@@ -65,4 +66,5 @@ __all__ = [
     "Speedometer30Benchmark",
     "Speedometer31Benchmark",
     "SpeedometerMainBenchmark",
+    "WebAIBenchmark",
 ]

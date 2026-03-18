@@ -174,6 +174,8 @@ class CrossBenchCLI:
       benchmarks.Speedometer30Benchmark,
       benchmarks.Speedometer31Benchmark,
       benchmarks.SpeedometerMainBenchmark,
+      # WebAI
+      benchmarks.WebAIBenchmark,
   )
 
   RUNNER_CLS: Type[Runner] = Runner
