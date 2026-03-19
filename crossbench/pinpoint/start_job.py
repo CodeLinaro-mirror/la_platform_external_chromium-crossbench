@@ -12,12 +12,22 @@ from crossbench.pinpoint.api import PINPOINT_START_JOB_API_URL
 from crossbench.pinpoint.helper import annotate
 
 if TYPE_CHECKING:
-  from crossbench.pinpoint.config import PinpointTryJobConfig
+  from crossbench.pinpoint.config import PinpointBisectJobConfig, \
+      PinpointTryJobConfig
 
 
 def start_job(config: PinpointTryJobConfig) -> None:
   """Starts a new Pinpoint job."""
   with annotate("Starting Pinpoint job"):
+    response = http_requests.post(
+        PINPOINT_START_JOB_API_URL, data=config.to_request_dict())
+    response.raise_for_status()
+  print(json.dumps(response.json(), indent=2))
+
+
+def bisect_job(config: PinpointBisectJobConfig) -> None:
+  """Starts a new Pinpoint bisect job."""
+  with annotate("Starting Pinpoint bisect job"):
     response = http_requests.post(
         PINPOINT_START_JOB_API_URL, data=config.to_request_dict())
     response.raise_for_status()

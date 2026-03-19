@@ -17,7 +17,8 @@ from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
 from crossbench.pinpoint.cancel_job import cancel_job
-from crossbench.pinpoint.config import PinpointTryJobConfig
+from crossbench.pinpoint.config import PinpointBisectJobConfig, \
+    PinpointTryJobConfig
 from crossbench.pinpoint.job_config import print_job_config
 from crossbench.pinpoint.job_parser import parse_job_id
 from crossbench.pinpoint.job_results import download_results
@@ -27,7 +28,7 @@ from crossbench.pinpoint.list_builds import list_builds
 from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.list_jobs import EXTRA_COLUMNS, list_jobs
 from crossbench.pinpoint.list_stories import fetch_stories
-from crossbench.pinpoint.start_job import start_job
+from crossbench.pinpoint.start_job import bisect_job, start_job
 from crossbench.pinpoint.user import UserEnum, list_user
 from crossbench.pinpoint.user_metrics import collect_metrics, init_metrics
 
@@ -422,6 +423,101 @@ class PinpointStartSubcommand(PinpointBaseStartSubcommand):
     return args.benchmark
 
 
+class PinpointBisectSubcommand(PinpointBaseSubcommand):
+  """Starts a new Pinpoint bisect job."""
+
+  @override
+  def add_cli_parser(self) -> argparse.ArgumentParser:
+    parser = self._parent.subparsers.add_parser(
+        "bisect",
+        help="Starts a new Pinpoint bisect job.",
+        description="Starts a new Pinpoint bisect job. "
+        "This command allows you to specify a start and end commit "
+        "to bisect a performance regression.",
+        formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument(
+        "--config",
+        help="Bisect job configuration in the JSON/HJSON format. "
+        "Accepts a path to a configuration file, or configuration string. "
+        "If the same argument is specified in the config and then provided "
+        "as a command line argument, the latter overrides the former. "
+        "Get more information by running `describe PinpointBisectJobConfig`")
+    parser.add_argument("--benchmark", help="The benchmark to run.")
+    parser.add_argument(
+        "--bot", help="The bot configuration to run on (e.g., 'linux-perf').")
+    parser.add_argument("--chart", help="The chart (measurement) to bisect.")
+    parser.add_argument("--story", help="The story to run.")
+    parser.add_argument(
+        "--story-tags", dest="story_tags", help="Story tags to filter stories.")
+    parser.add_argument(
+        "--repeat",
+        type=NumberParser.positive_int,
+        help="How many times to repeat the experiment.")
+    parser.add_argument(
+        "--bug",
+        type=NumberParser.positive_int,
+        help="The bug ID to associate with the job.")
+    parser.add_argument(
+        "--start-commit",
+        help="Git commit hash for the start build. Accepts a commit hash, "
+        "'HEAD' (latest commit), or 'recent' (the most recent build).")
+    parser.add_argument(
+        "--end-commit",
+        help="Git commit hash for the end build. Accepts a commit hash, "
+        "'HEAD' (latest commit), or 'recent' (the most recent build).")
+
+    # Extra browser args.
+    parser.add_argument(
+        "--js-flags",
+        help="JavaScript flags to pass to V8.\n"
+        "Example: --js-flags=--turbolev-future")
+    parser.add_argument(
+        "--enable-features",
+        help="Chrome features to enable.\n"
+        "Example: --enable-features=Feature1,Feature2")
+    parser.add_argument(
+        "--disable-features",
+        help="Chrome features to disable.\n"
+        "Example: --disable-features=Feature1,Feature2")
+
+    parser.epilog = """Example:
+  pinpoint bisect \\
+    --config=config.json \\
+    --benchmark=speedometer3.crossbench \\
+    --bot=linux-r350-perf \\
+    --chart=chart_name \\
+    --story=default \\
+    --story-tags=mobile,desktop \\
+    --repeat=20 \\
+    --bug-id=123456 \\
+    --start-commit=HEAD \\
+    --end-commit=recent \\
+    --js-flags=--flag1,--flag2 \\
+    --enable-features=feature1,feature2 \\
+    --disable-features=feature5,feature6
+"""
+    return parser
+
+  @override
+  def subcommand_run(self, args: argparse.Namespace) -> None:
+    config = PinpointBisectJobConfig.parse_and_override(
+        config=args.config,
+        benchmark=args.benchmark,
+        bot=args.bot,
+        chart=args.chart,
+        story=args.story,
+        story_tags=args.story_tags,
+        repeat=args.repeat,
+        bug=args.bug,
+        start_commit=args.start_commit,
+        end_commit=args.end_commit,
+        js_flags=args.js_flags,
+        enable_features=args.enable_features,
+        disable_features=args.disable_features,
+    )
+    bisect_job(config)
+
+
 class PinpointBenchmarkSubcommand(PinpointBaseStartSubcommand):
   """Starts a new Pinpoint A/B job for a given benchmark."""
 
@@ -603,6 +699,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
     self._list_subcommand = PinpointListSubcommand(self)
     self._config_subcommand = PinpointConfigSubcommand(self)
     self._start_subcommand = PinpointStartSubcommand(self)
+    self._bisect_subcommand = PinpointBisectSubcommand(self)
     self._cancel_subcommand = PinpointCancelSubcommand(self)
     self._bots_subcommand = PinpointBotsSubcommand(self)
     self._benchmarks_subcommand = PinpointBenchmarksSubcommand(self)

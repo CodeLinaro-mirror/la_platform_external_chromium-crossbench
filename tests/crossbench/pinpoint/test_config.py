@@ -9,7 +9,9 @@ from typing import Final
 from unittest import mock
 
 from crossbench.cli.config.flags import FlagsConfig
-from crossbench.pinpoint.config import PinpointTryJobConfig, VariantConfig
+from crossbench.pinpoint.config import BisectEndVariantConfig, \
+    BisectStartVariantConfig, PinpointBisectJobConfig, PinpointTryJobConfig, \
+    VariantConfig
 from crossbench.pinpoint.list_builds import Build
 from tests import test_helper
 from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
@@ -522,6 +524,119 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
                 "--disable-features=--exp-disabled-feature",
             "tags": '{"origin": "pinpoint_cli"}'
         })
+
+
+class PinpointBisectJobConfigTest(MockHttpRequestsMixin):
+  _get_auth_session_patch_target = "crossbench.pinpoint.auth.get_auth_session"
+
+  def setUp(self):
+    super().setUp()
+    self.mock_fetch_benchmarks = self.enterContext(
+        mock.patch("crossbench.pinpoint.config.fetch_benchmarks"))
+    self.mock_fetch_benchmarks.return_value = ["test_benchmark"]
+    self.mock_fetch_bots = self.enterContext(
+        mock.patch("crossbench.pinpoint.config.fetch_bots"))
+    self.mock_fetch_bots.return_value = ["test_bot"]
+    self.mock_fetch_stories = self.enterContext(
+        mock.patch("crossbench.pinpoint.config.fetch_stories"))
+    self.mock_fetch_stories.return_value = ["test_story"]
+    self.mock_fetch_builds = self.enterContext(
+        mock.patch("crossbench.pinpoint.config.fetch_builds"))
+    self.mock_fetch_builds.return_value = [
+        Build(commit=_TEST_RECENT_COMMIT, number=1, date="2025-11-02 00:00:00"),
+    ]
+    self.mock_show_warnings = self.enterContext(
+        mock.patch("crossbench.pinpoint.config.show_warnings"))
+
+  def test_parse_minimal_config(self):
+    config = PinpointBisectJobConfig.parse_and_override(
+        config=json.dumps({
+            "benchmark": "test_benchmark",
+            "bot": "test_bot",
+            "story": "test_story",
+            "chart": "test_chart",
+        }))
+    self.assertEqual(
+        config,
+        PinpointBisectJobConfig(
+            benchmark="test_benchmark",
+            bot="test_bot",
+            story="test_story",
+            chart="test_chart",
+            start=BisectStartVariantConfig(commit=_TEST_RECENT_COMMIT),
+            end=BisectEndVariantConfig(commit=_TEST_RECENT_COMMIT),
+        ))
+
+  def test_parse_all_fields(self):
+    config = PinpointBisectJobConfig.parse_and_override(
+        config=json.dumps({
+            "benchmark": "test_benchmark",
+            "bot": "test_bot",
+            "story": "test_story",
+            "chart": "test_chart",
+            "story_tags": "tag1,tag2",
+            "repeat": 42,
+            "bug": 67890,
+            "start": {
+                "commit": "abcdef00",
+                "flags": "--js-flags=--start-js-flag",
+            },
+            "end": {
+                "commit": _TEST_RECENT_COMMIT,
+            },
+        }))
+    self.assertEqual(
+        config,
+        PinpointBisectJobConfig(
+            benchmark="test_benchmark",
+            bot="test_bot",
+            story="test_story",
+            chart="test_chart",
+            story_tags="tag1,tag2",
+            repeat=42,
+            bug=67890,
+            start=BisectStartVariantConfig(
+                commit="abcdef00",
+                flags=FlagsConfig.parse("--js-flags=--start-js-flag"),
+            ),
+            end=BisectEndVariantConfig(
+                commit=_TEST_RECENT_COMMIT,
+            )))
+
+  def test_override_all_fields(self):
+    config = PinpointBisectJobConfig.parse_and_override(
+        benchmark="test_benchmark",
+        bot="test_bot",
+        story="test_story",
+        chart="test_chart",
+        story_tags="tag1,tag2",
+        repeat=42,
+        bug=67890,
+        start_commit="abcdef00",
+        end_commit="12345678",
+        js_flags="--start-js-flag",
+        enable_features="enable1,enable2",
+        disable_features="disable1,disable2",
+    )
+    self.assertEqual(
+        config,
+        PinpointBisectJobConfig(
+            benchmark="test_benchmark",
+            bot="test_bot",
+            story="test_story",
+            chart="test_chart",
+            story_tags="tag1,tag2",
+            repeat=42,
+            bug=67890,
+            start=BisectStartVariantConfig(
+                commit="abcdef00",
+                flags=FlagsConfig.parse("--js-flags=--start-js-flag "
+                                        "--enable-features=enable1,enable2 "
+                                        "--disable-features=disable1,disable2"),
+            ),
+            end=BisectEndVariantConfig(
+                commit="12345678",
+            )))
 
 
 if __name__ == "__main__":

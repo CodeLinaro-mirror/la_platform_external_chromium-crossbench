@@ -11,7 +11,9 @@ from unittest import mock
 from crossbench import path as pth
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.subcommand.pinpoint import PinpointHelpFormatter
-from crossbench.pinpoint.config import PinpointTryJobConfig, VariantConfig
+from crossbench.pinpoint.config import BisectEndVariantConfig, \
+    BisectStartVariantConfig, PinpointBisectJobConfig, PinpointTryJobConfig, \
+    VariantConfig
 from crossbench.pinpoint.user import UserEnum
 from tests import test_helper
 
@@ -150,6 +152,59 @@ class PinpointSubcommandTest(unittest.TestCase):
         exp_disable_features="exp_dis",
     )
     mock_start_job.assert_called_with(test_config)
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.bisect_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointBisectJobConfig.parse_and_override")
+  def test_pinpoint_bisect_job(self, mock_parse_and_override, mock_bisect_job):
+    test_config = PinpointBisectJobConfig(
+        benchmark="speedometer3",
+        bot="linux-r350-perf",
+        chart="my_chart",
+        story="default",
+        story_tags="tag1,tag2",
+        repeat=42,
+        bug="12345",
+        start=BisectStartVariantConfig(
+            commit="HEAD",
+        ),
+        end=BisectEndVariantConfig(
+            commit="recent",
+        ),
+    )
+    mock_parse_and_override.return_value = test_config
+    self.cli.run([
+        *["pinpoint", "bisect"],
+        *["--config", "{benchmark: 'speedometer3', bot: 'linux-r350-perf'}"],
+        *["--benchmark", "speedometer3"],
+        *["--bot", "linux-r350-perf"],
+        *["--chart", "my_chart"],
+        *["--story", "default"],
+        *["--story-tags", "tag1,tag2"],
+        *["--repeat", "42"],
+        *["--bug", "12345"],
+        *["--start-commit", "HEAD"],
+        *["--end-commit", "recent"],
+        "--js-flags=--flag1",
+        *["--enable-features", "base_feat"],
+        *["--disable-features", "base_dis"],
+    ])
+    mock_parse_and_override.assert_called_once_with(
+        config="{benchmark: 'speedometer3', bot: 'linux-r350-perf'}",
+        benchmark="speedometer3",
+        bot="linux-r350-perf",
+        chart="my_chart",
+        story="default",
+        story_tags="tag1,tag2",
+        repeat=42,
+        bug=12345,
+        start_commit="HEAD",
+        end_commit="recent",
+        js_flags="--flag1",
+        enable_features="base_feat",
+        disable_features="base_dis",
+    )
+    mock_bisect_job.assert_called_with(test_config)
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
   @mock.patch(
