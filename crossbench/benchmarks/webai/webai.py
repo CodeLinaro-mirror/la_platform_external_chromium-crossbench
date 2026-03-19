@@ -158,12 +158,12 @@ class WebAIStory(PressBenchmarkStory):
   @property
   @override
   def substory_duration(self) -> dt.timedelta:
-    return dt.timedelta(seconds=30)
+    return dt.timedelta(minutes=5)
 
   @property
   @override
   def slow_duration(self) -> dt.timedelta:
-    return dt.timedelta(minutes=20)
+    return dt.timedelta(hours=2)
 
   @override
   def setup(self, run: Run) -> None:
