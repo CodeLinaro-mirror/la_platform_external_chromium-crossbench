@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING: Final[str] = "2.1.0"
+VERSION_STRING: Final[str] = "2.1.1"
 
 
 class Story(StrEnum):
@@ -82,8 +82,8 @@ class LoadLine2WebApiProbe(LoadLineProbe):
     assert len(browsers) == 1, (
         "Attempting to use 2 different browsers currently fails when "
         "restarting WPR, so the score computation assumes a single browser.")
-    for run, g in enumerate(group.repetitions_groups):
-      js_results = g.results.get_by_name(JSProbe.NAME)
+    for run_number, run in enumerate(group.runs):
+      js_results = run.results.get_by_name(JSProbe.NAME)
       if not js_results:
         # No JSON file produced for this repetition, skip it entirely.
         # TODO: warn the user.
@@ -103,11 +103,11 @@ class LoadLine2WebApiProbe(LoadLineProbe):
           break
 
         visual_delay = (
-            j[get_event_name(story, Event.VISUAL_END)]["values"][0] -
-            j[get_event_name(story, Event.NAVIGATION_START)]["values"][0])
+            j[get_event_name(story, Event.VISUAL_END)] -
+            j[get_event_name(story, Event.NAVIGATION_START)])
         interactive_delay = (
-            j[get_event_name(story, Event.INTERACTIVE_END)]["values"][0] -
-            j[get_event_name(story, Event.NAVIGATION_START)]["values"][0])
+            j[get_event_name(story, Event.INTERACTIVE_END)] -
+            j[get_event_name(story, Event.NAVIGATION_START)])
         if visual_delay < 0 or interactive_delay < 0:
           broken_metrics = True
           break
@@ -122,7 +122,7 @@ class LoadLine2WebApiProbe(LoadLineProbe):
 
       assert len(new_metrics) == len(new_values)
       timings["browser"].extend([browsers[0].unique_name] * len(new_metrics))
-      timings["run"].extend([run] * len(new_metrics))
+      timings["run"].extend([run_number] * len(new_metrics))
       timings["metric"].extend(new_metrics)
       timings["value"].extend(new_values)
 
