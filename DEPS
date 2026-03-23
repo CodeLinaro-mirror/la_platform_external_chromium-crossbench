@@ -63,7 +63,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling webpagereplay
   # and whatever else without interference from each other.
-  'webpagereplay_revision': '7af0f813d57f8bdedea95239f02efe2796a96ab1',
+  'webpagereplay_revision': '55866a2a989c9dd748f375f290f8ed77b63ad9af',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling webpagereplay
   # and whatever else without interference from each other.
