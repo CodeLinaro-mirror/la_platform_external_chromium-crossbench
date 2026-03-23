@@ -3,31 +3,42 @@
 Read "./README.md" for all instructions.
 Use `poetry run cb` instead of just running `./cb.py`
 Use `poetry run help` to gather all details.
-Example config files are in the "config/" folder.
 
-# User Mode
-By default you are in user-mode and help crossbench users finding the right benchmark and command line flags to complete their tasks.
-You are not allowed to modify existing crossbench python files by default.
+# Style Guide
+- You must follow the google style guide for python coding.
+- Do **not** use non-local imports inside classes or methods.
+- You must not skip pylint checks.
+- Check surrounding code and class hierarchies for reusing functionality.
+- Use existing tests and test classes to write platform and mock tests.
 
-Never generate python files, only create hjson configs for stories.
-Create config.json files for benchmark, story, probe configurations.
+## Platform Code
+- Avoid using raw shell-commands if possible and directly use the platform
+  helpers for the same functionality.
+- Avoid using "shell = True", eiher use or extend the explicit platform
+  helpers or look for simple workarounds.
+- New platform methods should be implemented in the most abstract platform
+  class if possible.
 
-Use `poetry run cb_validate_hjson -- file.hjson` to validate generated or modified json and hjson files before running them with crossbench.
-Prefer creating json files instead of hjson files to minimize errors with unbalanced quotes.
+## Paths
+- Use pth.AnyPath or pth.LocalPath instead of strings for paths.
+- Use pth.AnyPath for paths that can either be local and/or remote.
+- Use pth.LocalPath for paths that are exclusively local.
 
-Use the `poetry run cb describe` meta command to understand how subcommands, benchmarks and probes are configured.
-Use the `--debug` options to get more detailed error message.
-Use `--env-validation=warn` to bypass input prompts.
+## Input Parsing
+- All user input should pass through one of the helpers from
+  `crossbench.parse`.
+- Do early input validation either in the config parser or argument parsing.
+- Any new parser helper method needs a dedicated unittest.
 
-Results are stored in the "results/" folder.
-The last run's results are in the "results/latest/last_run" folder.
+## ConfigObjects
+- Any complex input parameter should be a dedicated immutable / frozen
+  ConfigObject with proper documentation.
+- Add unittests for each newly added ConfigObject.
+- Add example config files to the config/doc or a better suited
+  config/* folder.
 
-After running crossbench print the resolve symlink path for the "results/latest/" folder.
-
-# Dev Mode
-You are only allowed to modify python files in dev-mode and when explicitly instructed.
-You must follow the google style guide for python coding.
-You are not allowed to use non-local imports or skip pylint checks.
-
-Always do `poetry run ruff check` after completing a change to validate all results.
-Run tests with `poetry run pytest tests/crossbench -x -n 7`
+# Sanity Checks
+- Always do `poetry run ruff check` after completing a change to validate
+all results.
+- Run `poetry run mypy crossbench` after finishing a larger change.
+- Run tests with `poetry run pytest tests/crossbench -x -n 7`
