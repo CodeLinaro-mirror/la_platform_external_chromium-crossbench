@@ -9,7 +9,7 @@ import dataclasses
 import logging
 import os
 import re
-from typing import Any, Optional, Self
+from typing import Any, Final, Optional, Self
 
 from typing_extensions import override
 
@@ -21,6 +21,7 @@ from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.webkit.downloader import WebKitDownloader
 from crossbench.browsers.webview.embedder import EMBEDDER_SHORT_NAME_TO_PACKAGE
+from crossbench.cli.config.apk_helper import CHROME_APK_HELPER_NAMES
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
@@ -32,9 +33,11 @@ from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import adb_devices
 from crossbench.plt.ios import ios_devices
 
-SUPPORTED_EMBEDDER = tuple(EMBEDDER_SHORT_NAME_TO_PACKAGE)
-SUPPORTED_BROWSER = ("chrome", "chromium", "d8", "edge", "firefox", "safari",
-                     "webkit") + SUPPORTED_EMBEDDER
+SUPPORTED_EMBEDDER: Final = tuple(EMBEDDER_SHORT_NAME_TO_PACKAGE)
+
+SUPPORTED_BROWSER: Final = (
+    "chrome", "chromium", "d8", "edge", "firefox", "safari",
+    "webkit") + CHROME_APK_HELPER_NAMES + SUPPORTED_EMBEDDER
 
 # Split inputs like:
 # - "/out/x64.release/chrome"
@@ -101,12 +104,14 @@ class BrowserConfig(ConfigObject):
     driver = DriverConfig.default()
     network: NetworkConfig | None = None
     env: EnvConfig | None = None
-    if ":" not in value or cls.is_path_like(value):
-      # Variant: $PATH_OR_IDENTIFIER
-      path = cls._parse_path_or_identifier(value)
-    else:
+    if ":" in value and not cls.is_path_like(value):
       # Variant: ${DRIVER_TYPE}:${PATH_OR_IDENTIFIER}:${NETWORK}
       driver, path, network, env = cls._parse_inline_short_form(value)
+    else:
+      # Variant: $PATH_OR_IDENTIFIER
+      if cls._is_android_path(value):
+        driver = DriverConfig(BrowserDriverType.ANDROID)
+      path = cls._parse_path_or_identifier(value, driver=driver)
     assert path, "Invalid path"
     return cls(path, driver, network, env)
 
@@ -205,7 +210,9 @@ class BrowserConfig(ConfigObject):
     if not maybe_path_or_identifier:
       raise argparse.ArgumentTypeError("Got empty browser identifier.")
     if not driver_type:
-      if driver:
+      if cls._is_android_path(maybe_path_or_identifier):
+        driver_type = BrowserDriverType.ANDROID
+      elif driver:
         driver_type = driver.type
       else:
         driver_type = BrowserDriverType.default()
@@ -244,6 +251,14 @@ class BrowserConfig(ConfigObject):
     if cls.is_supported_browser_path(path):
       return path
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
+
+  @classmethod
+  def _is_android_path(cls, value: str) -> bool:
+    if value.endswith(ApkConfig.VALID_EXTENSIONS):
+      return True
+    if pth.LocalPath(value).name in CHROME_APK_HELPER_NAMES:
+      return True
+    return False
 
   @classmethod
   def _is_downloadable_identifier(cls, maybe_path_or_identifier: str) -> bool:

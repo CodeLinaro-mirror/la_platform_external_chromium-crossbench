@@ -403,6 +403,25 @@ class BrowserConfigTestCase(BaseConfigTestCase):
             pth.LocalPosixPath("/chrome/src/out/Release/chrome_public_apk"),
             DriverConfig(BrowserDriverType.ANDROID)))
 
+  def test_parse_simple_with_local_built_apk_helper_no_prefix(self):
+    paths = (
+        "/chrome/src/out/Release/chrome_public_apk",
+        "/out/android-arm64-release/bin/chrome_public_bundle",
+    )
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+    ] * len(paths)
+    for path_str in paths:
+      with self.subTest(path=path_str):
+        path = pth.LocalPath(path_str)
+        self.fs.create_file(path)
+        auto_config = BrowserConfig.parse(path_str)
+        adb_config = BrowserConfig(path.resolve(),
+                                   DriverConfig(BrowserDriverType.ANDROID))
+        self.assertEqual(auto_config.path, adb_config.path)
+        self.assertEqual(auto_config.driver.type, BrowserDriverType.ANDROID)
+        self.assertEqual(auto_config, adb_config)
+
   @unittest.skip("Non-path browser short names are not yet supported "
                  "in complex configs.")
   def test_parse_inline_hjson_android(self):
