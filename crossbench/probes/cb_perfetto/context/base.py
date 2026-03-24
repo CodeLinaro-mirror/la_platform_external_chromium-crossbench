@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Final
 import google.protobuf.text_format as proto_text_format
 
 from crossbench.parse import NumberParser
-from crossbench.probes.perfetto.constants import PERFETTO_CONFIG_NAME, \
+from crossbench.probes.cb_perfetto.constants import PERFETTO_CONFIG_NAME, \
     PERFETTO_TRACE_NAME
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
@@ -22,7 +22,7 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.plt.types import TupleCmdArgs
-  from crossbench.probes.perfetto.perfetto import PerfettoProbe
+  from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
   from crossbench.runner.run import Run
 
 PERFETTO_STOP_TIMEOUT: Final[dt.timedelta] = dt.timedelta(seconds=30)

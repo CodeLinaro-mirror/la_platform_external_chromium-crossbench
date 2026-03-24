@@ -17,14 +17,14 @@ from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.plt.android_adb import Adb
 from crossbench.plt.arch import MachineArch
 from crossbench.probes.all import PerfettoProbe
-from crossbench.probes.perfetto.context.android import \
+from crossbench.probes.cb_perfetto.context.android import \
     AndroidPerfettoProbeContext
-from crossbench.probes.perfetto.context.chromeos import \
+from crossbench.probes.cb_perfetto.context.chromeos import \
     ChromeOsPerfettoProbeContext
-from crossbench.probes.perfetto.context.desktop import \
+from crossbench.probes.cb_perfetto.context.desktop import \
     DesktopPerfettoProbeContext
-from crossbench.probes.perfetto.downloader import PerfettoToolDownloader
-from crossbench.probes.perfetto.perfetto import TraceConfig
+from crossbench.probes.cb_perfetto.downloader import PerfettoToolDownloader
+from crossbench.probes.cb_perfetto.perfetto import TraceConfig
 from protoc import trace_config_pb2
 from tests import test_helper
 from tests.crossbench.base import CrossbenchConfigTestMixin, \

@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from crossbench.probes.perfetto.constants import PERFETTO_TRACE_NAME
-from crossbench.probes.perfetto.context.base import PerfettoProbeContext
+from crossbench.probes.cb_perfetto.constants import PERFETTO_TRACE_NAME
+from crossbench.probes.cb_perfetto.context.base import PerfettoProbeContext
 
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.plt.types import TupleCmdArgs
-  from crossbench.probes.perfetto.perfetto import PerfettoProbe
+  from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
   from crossbench.runner.run import Run
 
 

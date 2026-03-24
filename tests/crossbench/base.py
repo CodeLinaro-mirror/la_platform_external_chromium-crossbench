@@ -34,7 +34,7 @@ from crossbench.cli.config.env import EnvConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
-from crossbench.probes.perfetto.perfetto import TraceConfig
+from crossbench.probes.cb_perfetto.perfetto import TraceConfig
 from crossbench.runner.runner import Runner
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import MockCLI, MockPlatform

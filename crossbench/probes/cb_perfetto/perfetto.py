@@ -19,13 +19,13 @@ from crossbench.config import ConfigObject, config_dir
 from crossbench.helper import fs_helper
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import PROTOBUF_ALL_SUFFIX, ObjectParser, PathParser
-from crossbench.probes.perfetto.context.android import \
+from crossbench.probes.cb_perfetto.context.android import \
     AndroidPerfettoProbeContext
-from crossbench.probes.perfetto.context.chromeos import \
+from crossbench.probes.cb_perfetto.context.chromeos import \
     ChromeOsPerfettoProbeContext
-from crossbench.probes.perfetto.context.desktop import \
+from crossbench.probes.cb_perfetto.context.desktop import \
     DesktopPerfettoProbeContext
-from crossbench.probes.perfetto.context.windows import \
+from crossbench.probes.cb_perfetto.context.windows import \
     WindowsPerfettoProbeContext
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
@@ -34,7 +34,7 @@ from protoc import trace_config_pb2
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
-  from crossbench.probes.perfetto.context.base import PerfettoProbeContext
+  from crossbench.probes.cb_perfetto.context.base import PerfettoProbeContext
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner

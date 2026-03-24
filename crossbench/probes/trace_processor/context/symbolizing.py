@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import override
@@ -16,6 +17,7 @@ from crossbench.cli import ui
 from crossbench.helper.path_finder import ChromiumCheckoutFinder
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
+from crossbench.probes.cb_perfetto import traceconv
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
 from crossbench.probes.trace_processor.context.base import \
     TraceProcessorProbeContext
@@ -98,22 +100,58 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
     }
     env["PATH"] = (os.pathsep).join(
         (str(llvm_symbolizer_bin.parent), env.get("PATH", "")))
+
+    traceconv_log = self.local_result_path / "traceconv.log"
+    has_traceconv_error = False
     with ui.spinner(title="traceconv symbolization"):
       try:
-        self.host_platform.sh(
-            traceconv_bin, "symbolize", merged_file, symbols_result, env=env)
+        with traceconv_log.open("w", encoding="utf-8") as log_file:
+          self.host_platform.sh(
+              traceconv_bin,
+              "--verbose",
+              "symbolize",
+              merged_file,
+              symbols_result,
+              env=env,
+              stdout=log_file,
+              stderr=log_file)
       except SubprocessError as e:
+        has_traceconv_error = True
         logging.error("Symbolization failed: %s", e)
+        self._log_traceconv_error(traceconv_log)
 
     if not self.host_platform.exists(symbols_result) or (
         self.host_platform.file_size(symbols_result) < 100 * KB):
-      logging.error(
-          "Could not generate valid symbols file: %s. Make sure you have "
-          "traceconv version at least 'Perfetto v53.0-4fa2ae872' due to"
-          "http://crbug.com/481290800.", symbols_result)
+      self._traceconv_version_check(traceconv_bin)
+      logging.error("Could not generate valid symbols file: %s.", symbols_path)
+      if not has_traceconv_error:
+        self._log_traceconv_error(traceconv_log)
       return result
 
     return self._maybe_symbolized_result(result, symbols_result)
+
+  def _log_traceconv_error(self, log_path: pth.LocalPath) -> None:
+    logging.error("See log: %s", log_path)
+    if not self.host_platform.exists(log_path):
+      return
+    with log_path.open("r", encoding="utf-8") as log_file:
+      lines = log_file.readlines()
+      if not lines:
+        return
+      logging.error("  ...")
+      for line in lines[-10:]:
+        logging.error("  %s", line.strip())
+
+  def _traceconv_version_check(self, traceconv_bin: pth.LocalPath) -> None:
+    traceconv_version_str = self.host_platform.sh_stdout(
+        traceconv_bin, "--version")
+    traceconv_version = traceconv.PerfettoVersion.parse(traceconv_version_str)
+    if traceconv_version < traceconv.MIN_VERSION:
+      logging.error(
+          "traceconv version is too old: %s\n"
+          "Make sure you have traceconv version at least %s due to "
+          "http://crbug.com/481290800.", traceconv_version,
+          traceconv.MIN_VERSION.version_str)
 
   def _ensure_symbols(self) -> Optional[pth.LocalPath]:
     # If the user provided no perfetto_binary_path, the default value is
@@ -191,8 +229,9 @@ def _download_macos_symbols(host_platform: plt.Platform,
 
   with ui.spinner(title="Downloading symbols"):
     try:
-      host_platform.sh(download_script, "--version", version_str, "--arch",
-                       arch_str, "--out", output_dir, "--channel", channel_name)
+      host_platform.sh(sys.executable, download_script, "--version",
+                       version_str, "--arch", arch_str, "--out", output_dir,
+                       "--channel", channel_name)
     except SubprocessError as e:
       logging.error("Failed to download symbols: %s", e)
       return None

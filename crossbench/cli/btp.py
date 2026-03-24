@@ -7,11 +7,11 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 from typing import Final, Sequence
 
-from perfetto.batch_trace_processor.api import BatchTraceProcessor, \
-    BatchTraceProcessorConfig, FailureHandling
-from perfetto.trace_processor.api import TraceProcessorConfig
+from perfetto.batch_trace_processor import api as btp_api
+from perfetto.trace_processor import api as tp_api
 from perfetto.trace_uri_resolver.resolver import TraceUriResolver
 
 from crossbench import path as pth
@@ -92,15 +92,16 @@ class BTPUtil:
         tp = probe
     assert tp, "Could not find TraceProcessorProbe"
 
-    tp_config = TraceProcessorConfig(
+    tp_config = tp_api.TraceProcessorConfig(
         bin_path=str(tp.trace_processor_bin),
-        extra_flags=["--add-sql-package", MODULES_DIR])
-    btp_conf = BatchTraceProcessorConfig(
+        extra_flags=["--add-sql-package",
+                     os.fspath(MODULES_DIR)])
+    btp_conf = btp_api.BatchTraceProcessorConfig(
         tp_config=tp_config,
-        load_failure_handling=FailureHandling.INCREMENT_STAT,
-        execute_failure_handling=FailureHandling.INCREMENT_STAT)
+        load_failure_handling=btp_api.FailureHandling.INCREMENT_STAT,
+        execute_failure_handling=btp_api.FailureHandling.INCREMENT_STAT)
 
-    with BatchTraceProcessor(
+    with btp_api.BatchTraceProcessor(
         traces=MergedTraceUriResolver(args.result_dir), config=btp_conf) as btp:
       queries = list(tp.queries) + args.extra_query
       for query in queries:

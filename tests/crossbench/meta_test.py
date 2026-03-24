@@ -7,10 +7,11 @@ from __future__ import annotations
 import logging
 import pathlib
 import re
+import tomllib
 import unittest
+from itertools import chain
 
 import pytest
-import tomllib
 from tabulate import tabulate
 
 import crossbench
@@ -145,6 +146,40 @@ class MetaTestCase(unittest.TestCase):
         pyproject_version, crossbench.__version__,
         f"Version mismatch between {pyproject_toml_path} "
         "and crossbench.__version__")
+
+  def test_no_module_shadowing(self):
+    pyproject_toml_path = ROOT_DIR / "pyproject.toml"
+    pyproject_toml = tomllib.loads(pyproject_toml_path.read_text())
+    poetry_options = pyproject_toml["tool"]["poetry"]
+    dependencies = set(poetry_options["dependencies"].keys())
+    dependencies.update(poetry_options["group"]["dev"]["dependencies"].keys())
+
+    # Some dependencies have different module names than their package names,
+    # but for most it's the same.
+    module_names = {
+        "google",
+    }
+    for name in dependencies:
+      if name == "python":
+        continue
+      module_names.add(name.replace("-", "_"))
+
+    found_shadows: list[str] = []
+    # We check all directories that have an __init__.py
+    for init_file in chain(
+        CROSSBENCH_DIR.glob("**/__init__.py"),
+        UNITTEST_DIR.glob("**/__init__.py")):
+      dir_name = init_file.parent.name
+      if dir_name in module_names:
+        found_shadows.append(str(init_file.parent.relative_to(ROOT_DIR)))
+
+    if found_shadows:
+      formatted_modules = "\n  - ".join(found_shadows)
+      self.fail("Found crossbench modules with names that shadow toplevel "
+                "dependencies from pyproject.toml.\n"
+                "Either rename the crossbench module or remove its "
+                "__init__.py file.\n"
+                f"  - {formatted_modules}")
 
 
 if __name__ == "__main__":

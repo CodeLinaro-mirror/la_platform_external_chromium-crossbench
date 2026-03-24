@@ -10,8 +10,8 @@ from typing import cast
 import crossbench.path as pth
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.all import TracingProbe
-from crossbench.probes.perfetto.tracing import MINIMAL_CONFIG, RecordFormat, \
-    RecordMode
+from crossbench.probes.cb_perfetto.tracing import MINIMAL_CONFIG, \
+    RecordFormat, RecordMode
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 

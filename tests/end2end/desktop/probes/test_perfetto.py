@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Iterator
 import pytest
 
 from crossbench import plt
-from crossbench.probes.perfetto.downloader import PerfettoToolDownloader
+from crossbench.probes.cb_perfetto.downloader import PerfettoToolDownloader
 
 if TYPE_CHECKING:
   from tests.test_helper import TestEnv

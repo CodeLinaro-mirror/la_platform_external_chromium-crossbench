@@ -9,6 +9,7 @@ import re
 import sys
 from typing import TYPE_CHECKING, Final
 
+from crossbench.helper.version import Version
 from crossbench.parse import PathParser
 
 if TYPE_CHECKING:
@@ -29,6 +30,21 @@ def add_argument(parser: ConfigParser) -> None:
 
 
 _PROTO_SUFFIX_RE: Final[re.Pattern] = re.compile(r"\.(?:proto|pb|pb\.gz)$")
+_VERSION_RE: Final[re.Pattern] = re.compile(r"Perfetto v(\d+)\.(\d+)")
+
+
+class PerfettoVersion(Version):
+
+  @classmethod
+  def parse(cls, version_str: str) -> PerfettoVersion:
+    if match := _VERSION_RE.search(version_str):
+      parts = (int(match.group(1)), int(match.group(2)))
+      return cls(parts, version_str)
+    raise cls.parse_error("Could not parse perfetto version", version_str)
+
+
+MIN_VERSION: Final[PerfettoVersion] = PerfettoVersion(
+    (53, 0), "Perfetto v53.0-4fa2ae872")
 
 
 def convert_to_json(platform: Platform, traceconv: pth.LocalPath | None,

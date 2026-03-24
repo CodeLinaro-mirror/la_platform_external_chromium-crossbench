@@ -9,7 +9,7 @@ import hjson
 from crossbench import path as pth
 from crossbench.cli.config.probe import ProbeConfig
 from crossbench.config import config_dir
-from crossbench.probes.perfetto.perfetto import TraceConfig
+from crossbench.probes.cb_perfetto.perfetto import TraceConfig
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Optional, Self, cast
 from selenium.webdriver.safari.options import Options as SafariOptions
 from typing_extensions import override
 
-import crossbench.probes.perfetto.traceconv as cb_traceconv
+import crossbench.probes.cb_perfetto.traceconv as cb_traceconv
 from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver
 from crossbench.helper.path_finder import TraceconvFinder
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, ClassVar, Final, FrozenSet, Optional, Self, \
 
 from typing_extensions import override
 
-import crossbench.probes.perfetto.traceconv as cb_traceconv
+import crossbench.probes.cb_perfetto.traceconv as cb_traceconv
 from crossbench import path as pth
 from crossbench.config import ConfigEnum
 from crossbench.helper.path_finder import TraceconvFinder

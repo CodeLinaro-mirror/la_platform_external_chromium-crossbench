@@ -7,6 +7,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Type
 
 from crossbench.probes.android_logcat import LogcatAndroidProbe
+from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
+from crossbench.probes.cb_perfetto.tracing import TracingProbe
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
 from crossbench.probes.chromium_pgo import ChromiumPgoProbe
 from crossbench.probes.debugger import DebuggerProbe
@@ -27,8 +29,6 @@ from crossbench.probes.internal.system_details import SystemDetailsProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.meminfo import MeminfoProbe
-from crossbench.probes.perfetto.perfetto import PerfettoProbe
-from crossbench.probes.perfetto.tracing import TracingProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
 from crossbench.probes.polling import PollingShellProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe

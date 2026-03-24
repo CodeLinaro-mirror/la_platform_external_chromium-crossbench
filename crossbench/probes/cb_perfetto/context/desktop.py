@@ -9,17 +9,17 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from crossbench.probes.perfetto.constants import PERFETTO_CONFIG_NAME, \
+from crossbench.probes.cb_perfetto.constants import PERFETTO_CONFIG_NAME, \
     PERFETTO_TRACE_NAME
-from crossbench.probes.perfetto.context.base import PerfettoProbeContext
-from crossbench.probes.perfetto.downloader import PerfettoToolDownloader
+from crossbench.probes.cb_perfetto.context.base import PerfettoProbeContext
+from crossbench.probes.cb_perfetto.downloader import PerfettoToolDownloader
 
 if TYPE_CHECKING:
   import subprocess
 
   from crossbench import path as pth
   from crossbench.plt.types import TupleCmdArgs
-  from crossbench.probes.perfetto.perfetto import PerfettoProbe
+  from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 

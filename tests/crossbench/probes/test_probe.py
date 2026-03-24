@@ -10,6 +10,8 @@ from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.all import CONFIGURABLE_INTERNAL_PROBES, \
     DEFAULT_INTERNAL_PROBES, GENERAL_PURPOSE_PROBES, INTERNAL_PROBES, \
     NON_CONFIGURABLE_INTERNAL_PROBES, OPTIONAL_INTERNAL_PROBES
+from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
+from crossbench.probes.cb_perfetto.tracing import TracingProbe
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
 from crossbench.probes.chromium_pgo import ChromiumPgoProbe
 from crossbench.probes.chromium_probe import ChromiumProbe
@@ -24,8 +26,6 @@ from crossbench.probes.etm import EtmProbe
 from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
-from crossbench.probes.perfetto.perfetto import PerfettoProbe
-from crossbench.probes.perfetto.tracing import TracingProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
 from crossbench.probes.polling import PollingShellProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe

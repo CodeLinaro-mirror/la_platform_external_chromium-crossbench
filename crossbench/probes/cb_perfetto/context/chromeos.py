@@ -10,9 +10,9 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
-from crossbench.probes.perfetto.constants import PERFETTO_CONFIG_NAME, \
+from crossbench.probes.cb_perfetto.constants import PERFETTO_CONFIG_NAME, \
     PERFETTO_TRACE_NAME
-from crossbench.probes.perfetto.context.base import PerfettoProbeContext
+from crossbench.probes.cb_perfetto.context.base import PerfettoProbeContext
 
 PERFETTO_REMOTE_DIR_CROS: Final = pth.AnyPath("/usr/local/tmp")
 
