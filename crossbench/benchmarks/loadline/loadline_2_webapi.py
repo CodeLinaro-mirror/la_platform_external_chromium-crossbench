@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING: Final[str] = "2.1.1"
+VERSION_STRING: Final[str] = "2.2.0"
 
 
 class Story(StrEnum):
