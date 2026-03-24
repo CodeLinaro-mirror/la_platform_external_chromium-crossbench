@@ -28,7 +28,7 @@ from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
-from tests.crossbench.cli.config.base import XCTRACE_DEVICES_SINGLE_OUTPUT
+from tests.crossbench.cli.config.base import IOS_DEVICES_SINGLE_OUTPUT
 
 if TYPE_CHECKING:
   from crossbench.path import AnyPath
@@ -223,10 +223,14 @@ class FastCliTestCasePartB(BaseCliTestCase):
                        mock_browser.MockChromeDev.mock_app_path(self.platform))
       return mock_browser.MockChromeDev
 
-    self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
-    self.platform.expect_sh(result=XCTRACE_DEVICES_SINGLE_OUTPUT)
-    with self._patch_get_browser_cls(
-        side_effect=mock_get_browser_cls) as get_browser_cls:
+    with (mock.patch(
+        "crossbench.cli.config.driver.ios_devices",
+        return_value=IOS_DEVICES_SINGLE_OUTPUT),
+          mock.patch(
+              "crossbench.plt.ios.ios_devices",
+              return_value=IOS_DEVICES_SINGLE_OUTPUT),
+          self._patch_get_browser_cls(side_effect=mock_get_browser_cls) as
+          get_browser_cls):
       url = "http://test.com"
       self.run_cli("loading", "--browser=ios:chrome-stable",
                    "--browser=selenium:chrome-beta",

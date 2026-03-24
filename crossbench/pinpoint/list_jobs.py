@@ -13,6 +13,8 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Final, Mapping
 
 import yaml
+from immutabledict import immutabledict
+from ordered_set import OrderedSet
 from tabulate import tabulate
 
 from crossbench.pinpoint import http_requests
@@ -24,8 +26,73 @@ from crossbench.pinpoint.list_format import ListFormatEnum
 from crossbench.pinpoint.user import UserEnum
 
 
-def list_jobs(user: UserEnum | str, number: int, truncate: int | None,
-              output_format: ListFormatEnum) -> None:
+class Column:
+
+  def __init__(self, name: str, description: str, json_field: str = "") -> None:
+    self.name = name
+    self.json_field = json_field or name
+    self.description = description
+
+
+EXTRA_COLUMNS: Final[list[Column]] = [
+    Column(
+        name="user",
+        description="The email address of the user created the job.",
+    ),
+    Column(
+        name="name",
+        description="The name of the job.",
+    ),
+    Column(
+        name="base_commit",
+        json_field="base_git_hash",
+        description="The Git commit hash of the base revision.",
+    ),
+    Column(
+        name="exp_commit",
+        json_field="end_git_hash",
+        description="The Git commit hash of the experiment revision.",
+    ),
+    Column(
+        name="base_patch",
+        description="The Gerrit patch URL applied to the base variant.",
+    ),
+    Column(
+        name="exp_patch",
+        json_field="experiment_patch",
+        description="The Gerrit patch URL applied to the experiment.",
+    ),
+    Column(
+        name="story",
+        description="The tested story within the benchmark.",
+    ),
+    Column(
+        name="attempts",
+        json_field="initial_attempt_count",
+        description="The number of times the job ran the test.",
+    ),
+    Column(
+        name="bug",
+        json_field="bug_id",
+        description="The buganier ID associated with the job.",
+    ),
+    Column(
+        name="differences",
+        json_field="difference_count",
+        description="The number of regressions found for bisection jobs.",
+    ),
+]
+
+EXTRA_COLUMNS_DICT: Final[immutabledict[str, Column]] = immutabledict(
+    {c.name: c for c in EXTRA_COLUMNS})
+
+
+def list_jobs(user: UserEnum | str,
+              number: int,
+              truncate: int | None,
+              output_format: ListFormatEnum,
+              extra_columns: list[str] | None = None) -> None:
+  extra_columns = extra_columns or []
   emails_to_query = _fetch_user_emails(user)
 
   jobs = []
@@ -40,7 +107,8 @@ def list_jobs(user: UserEnum | str, number: int, truncate: int | None,
     print("No jobs found.")
     return
 
-  _display_jobs(jobs[:number], output_format, user == UserEnum.ALL, truncate)
+  _display_jobs(jobs[:number], output_format, user == UserEnum.ALL, truncate,
+                OrderedSet(extra_columns))
 
 
 def _fetch_user_emails(user: UserEnum | str) -> set[str | None]:
@@ -86,58 +154,69 @@ def _fetch_jobs(number: int, email: str | None = None) -> list[dict[str, Any]]:
 
 
 def _prepare_job_list_data(
-    jobs: list[dict[str, Any]],
-    all_users: bool) -> tuple[list[str], list[list[Any]]]:
-  user_header = []
-  if all_users:
-    user_header = ["User"]
+    jobs: list[dict[str, Any]], all_users: bool,
+    extra_columns: OrderedSet[str]) -> tuple[list[str], list[list[Any]]]:
+  if all_users and "user" not in extra_columns:
+    extra_columns = OrderedSet(["user", *extra_columns])
   headers = [
-      "Benchmark", "Config", "Type", *user_header, "Start Time", "Job URL",
-      "Status"
+      "Benchmark", "Config", "Type",
+      *[c.replace("_", " ").title() for c in extra_columns], "Start Time",
+      "Job URL", "Status"
   ]
   table_data = []
 
   for job in jobs:
-    created_time = job.get("created")
+    created_time = _extract_field(job, "created")
     if created_time:
       dt_object = dt.datetime.fromisoformat(created_time.replace("Z", "+00:00"))
       created_time = dt_object.strftime(DATETIME_FORMAT)
 
-    user_column = []
-    if all_users:
-      user_column = [job.get("user", "")]
     row = [
-        job.get("arguments", {}).get("benchmark", ""),
-        job.get("configuration", ""),
-        job.get("comparison_mode", ""),
-        *user_column,
+        _extract_field(job, "benchmark"),
+        _extract_field(job, "configuration"),
+        _extract_field(job, "comparison_mode"),
+        *[_extract_field(job, _to_json_field(col)) for col in extra_columns],
         created_time,
-        JOB_SHORTEN_URL_TEMPLATE.format(job_id=job.get("job_id", "")),
-        job.get("status", ""),
+        JOB_SHORTEN_URL_TEMPLATE.format(job_id=_extract_field(job, "job_id")),
+        _extract_field(job, "status"),
     ]
     table_data.append(row)
   return headers, table_data
 
 
+def _to_json_field(column_name: str) -> str:
+  column = EXTRA_COLUMNS_DICT.get(column_name)
+  if not column:
+    raise ValueError(f"Unknown column name: {column_name}")
+  return column.json_field
+
+
+def _extract_field(job: dict[str, Any], field_name: str) -> str:
+  if value := job.get(field_name, ""):
+    return str(value)
+  return str(job.get("arguments", {}).get(field_name, ""))
+
+
 def _display_jobs(jobs: list[dict[str, Any]], output_format: ListFormatEnum,
-                  all_users: bool, truncate: int | None) -> None:
+                  all_users: bool, truncate: int | None,
+                  extra_columns: OrderedSet[str]) -> None:
   match output_format:
     case ListFormatEnum.JSON:
       print(json.dumps(jobs, indent=2))
     case ListFormatEnum.YAML:
       print(yaml.dump(jobs))
     case ListFormatEnum.CSV:
-      headers, rows = _prepare_job_list_data(jobs, all_users)
+      headers, rows = _prepare_job_list_data(jobs, all_users, extra_columns)
       writer = csv.writer(sys.stdout)
       writer.writerow(headers)
       writer.writerows(rows)
     case ListFormatEnum.TSV:
-      headers, rows = _prepare_job_list_data(jobs, all_users)
+      headers, rows = _prepare_job_list_data(jobs, all_users, extra_columns)
       writer = csv.writer(sys.stdout, delimiter="\t")
       writer.writerow(headers)
       writer.writerows(rows)
     case ListFormatEnum.TABLE:
-      headers, rows = _prepare_job_list_data(jobs, all_users)
+      headers, rows = _prepare_job_list_data(jobs, all_users, extra_columns)
       _display_jobs_as_table(headers, rows, truncate)
 
 

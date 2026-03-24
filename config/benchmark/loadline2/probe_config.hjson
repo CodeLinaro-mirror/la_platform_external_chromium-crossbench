@@ -10,7 +10,7 @@
       ]
     }
     "perfetto": {
-      "textproto": "perfetto_basic.pbtxt"
+      "textproto": "perfetto_basic.txtpb"
     }
   }
 }

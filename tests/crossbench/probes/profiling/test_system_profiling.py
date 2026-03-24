@@ -10,6 +10,7 @@ import unittest
 from typing_extensions import override
 
 from crossbench.browsers.settings import Settings
+from crossbench.probes import all as all_probes
 from crossbench.probes.profiling.context.android import \
     generate_simpleperf_command_line
 from crossbench.probes.profiling.system_profiling import RENDERER_CMD_PATH, \
@@ -242,6 +243,42 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
                 "cpu-cycles,instructions", "--no-inherit", "-o", output_path
             ])
 
+  def test_parse_target_preset(self):
+    probe = ProfilingProbe()
+    self.assertEqual(probe.target, TargetMode.AUTO)
+    probe = ProfilingProbe.parse_str("browser_app_only")
+    self.assertEqual(probe.target, TargetMode.BROWSER_APP_ONLY)
+    probe = ProfilingProbe.parse_str("renderer_process_only")
+    self.assertEqual(probe.target, TargetMode.RENDERER_PROCESS_ONLY)
+    probe = ProfilingProbe.parse_str("renderer_main_only")
+    self.assertEqual(probe.target, TargetMode.RENDERER_MAIN_ONLY)
+
+  def test_resolve_target_mode(self):
+    probe = ProfilingProbe()
+    self.assertEqual(probe.target, TargetMode.AUTO)
+
+    macos_platform = MacOsMockPlatform()
+    MockChromeStable.setup_fs(self.fs, macos_platform)
+    macos_browser = MockChromeStable(
+        "macos_chrome", settings=Settings(platform=macos_platform))
+    self.assertEqual(
+        probe.resolve_target_mode(macos_browser),
+        TargetMode.RENDERER_PROCESS_ONLY)
+
+    linux_platform = LinuxMockPlatform()
+    MockChromeStable.setup_fs(self.fs, linux_platform)
+    linux_browser = MockChromeStable(
+        "linux_chrome", settings=Settings(platform=linux_platform))
+    self.assertEqual(
+        probe.resolve_target_mode(linux_browser), TargetMode.BROWSER_APP_ONLY)
+
+    # For explicitly set targets, it should always return that target
+    probe = ProfilingProbe(target=TargetMode.SYSTEM_WIDE)
+    self.assertEqual(
+        probe.resolve_target_mode(macos_browser), TargetMode.SYSTEM_WIDE)
+    self.assertEqual(
+        probe.resolve_target_mode(linux_browser), TargetMode.SYSTEM_WIDE)
+
   def test_create_non_defaults(self):
     probe = ProfilingProbe.parse_dict({
         "js": False,
@@ -266,7 +303,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     self.assertFalse(probe.run_pprof)
     self.assertTrue(probe.cleanup_mode, CleanupMode.NEVER)
     self.assertEqual(probe.target, TargetMode.RENDERER_PROCESS_ONLY)
-    self.assertTrue(probe.start_profiling_after_setup)
+    self.assertTrue(probe.start_profiling_after_setup(probe.target))
     self.assertEqual(probe.pin_renderer_main_core, 3)
     self.assertEqual(probe.call_graph_mode, CallGraphMode.DWARF)
     self.assertEqual(probe.frequency, 1200)
@@ -344,6 +381,8 @@ class EnumTestCase(unittest.TestCase):
     self.assertIs(CallGraphMode("fp"), CallGraphMode.FRAME_POINTER)
     self.assertIs(CallGraphMode("FP"), CallGraphMode.FRAME_POINTER)
 
+# Remove import that's used to avoid circular import issues.
+del all_probes
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

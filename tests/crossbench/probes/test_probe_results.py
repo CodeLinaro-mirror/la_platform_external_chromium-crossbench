@@ -258,6 +258,26 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(DuplicateProbeResult):
       result_2.merge(result_1)
 
+  def test_merge_multiple(self):
+    path_1 = self.create_file("result_1.custom")
+    result_1 = LocalProbeResult(file=(path_1,))
+    path_2 = self.create_file("result_2.custom")
+    result_2 = LocalProbeResult(file=(path_2,))
+    path_3 = self.create_file("result_3.custom")
+    result_3 = LocalProbeResult(file=(path_3,))
+
+    merged = result_1.merge(result_2, result_3)
+    self.assertFalse(merged.is_empty)
+    self.assertListEqual(list(merged.all_files()), [path_1, path_2, path_3])
+
+    merged = result_1.merge(result_3, result_2)
+    self.assertFalse(merged.is_empty)
+    self.assertListEqual(list(merged.all_files()), [path_1, path_3, path_2])
+
+    # Test with empty
+    merged_with_empty = result_1.merge(EmptyProbeResult(), result_2)
+    self.assertListEqual(list(merged_with_empty.all_files()), [path_1, path_2])
+
   def test_perfetto_list_are_files(self):
     trace = self.create_file("trace.pb")
 

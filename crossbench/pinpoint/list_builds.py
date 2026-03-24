@@ -57,8 +57,8 @@ def _convert_json_to_builds(builds_json: dict[str, Any]) -> list[Build]:
     if not commit:
       continue
 
+    end_time = build.get("endTime")
     try:
-      end_time = build.get("endTime")
       datetime_obj = datetime.datetime.fromisoformat(
           end_time.replace("Z", "+00:00"))
       date = datetime_obj.strftime(DATETIME_FORMAT)

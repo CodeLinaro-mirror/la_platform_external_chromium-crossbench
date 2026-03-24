@@ -28,9 +28,10 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
 
+
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING: Final[str] = "experimental"
+VERSION_STRING: Final[str] = "2.1.0"
 
 
 class LoadLine2WebApiProbe(LoadLineProbe):
@@ -110,10 +111,6 @@ class LoadLine2WebApiProbe(LoadLineProbe):
 
 class LoadLine2WebApiProbeContext(ProbeContext[LoadLine2WebApiProbe]):
 
-  def setup(self) -> None:
-    # TODO: setup network/dns?
-    pass
-
   def start(self) -> None:
     pass
 
@@ -172,7 +169,7 @@ class LoadLine2WebApiPhoneBenchmark(LoadLine2WebApiBenchmark):
   @classmethod
   @override
   def default_network_config_path(cls) -> pth.LocalPath:
-    return cls._base_dir() / "network_config_phone.hjson"
+    return cls._base_dir() / "network_config_webapi_phone.hjson"
 
   @classmethod
   @override

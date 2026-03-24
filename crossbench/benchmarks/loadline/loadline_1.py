@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Sequence, Type
 
 import numpy as np
 from typing_extensions import override
@@ -19,14 +19,18 @@ from crossbench.probes.probe_context import ProbeContext
 if TYPE_CHECKING:
   import pandas as pd
 
+  from crossbench.benchmarks.base import StoryT
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.cli.parser import CrossBenchArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.runner import Runner
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING: Final[str] = "1.3.0"
+VERSION_STRING: Final[str] = "1.5.0"
 
 
 def process_scores(df: pd.DataFrame) -> pd.DataFrame:
@@ -63,6 +67,11 @@ class LoadLine1Probe(LoadLineProbe):
     return LoadLine1ProbeContext
 
   @override
+  def setup(self, runner: Runner) -> None:
+    super().setup(runner)
+    self._check_connectivity(runner)
+
+  @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
     df = self._load_query_result(group, "loadline_benchmark_score")
     return process_scores(df)
@@ -71,8 +80,7 @@ class LoadLine1Probe(LoadLineProbe):
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
     df = self._load_query_result(group, "loadline_breakdown")
     if any(df["network"] > df["process_launch"]):
-      logging.warning("Some runs were affected by network latency. "
-                      "Results can be non-representative.")
+      self._warnings.append("Some runs were affected by network latency.")
     return process_breakdown(df)
 
 
@@ -100,6 +108,14 @@ class LoadLine1Benchmark(LoadLineBenchmark):
   DEFAULT_REPETITIONS: ClassVar = 100
 
   @classmethod
+  @override
+  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
+    parser = super().add_cli_parser(subparsers)
+    parser.add_argument(
+        "--benchmark-version", action="version", version=f"{VERSION_STRING}")
+    return parser
+
+  @classmethod
   def _base_dir(cls) -> pth.LocalPath:
     return config.config_dir() / "benchmark" / "loadline"
 
@@ -107,6 +123,11 @@ class LoadLine1Benchmark(LoadLineBenchmark):
   @override
   def default_probe_config_path(cls) -> pth.LocalPath:
     return cls._base_dir() / "probe_config.hjson"
+
+  @override
+  def log_stories(self, stories: Sequence[StoryT]) -> None:
+    logging.warning("⚠️  Please run LoadLine2 which supersedes this benchmark.")
+    super().log_stories(stories)
 
 
 class LoadLine1PhoneBenchmark(LoadLine1Benchmark):
@@ -127,7 +148,7 @@ class LoadLine1PhoneBenchmark(LoadLine1Benchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return ("loadline1-phone", "ld-phone", "ld1-phone")
+    return ("loadline1-phone", "ld-phone", "ld1-phone", "ll-phone")
 
 
 class LoadLine1TabletBenchmark(LoadLine1Benchmark):
@@ -148,7 +169,7 @@ class LoadLine1TabletBenchmark(LoadLine1Benchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return ("loadline1-tablet", "ld-tablet", "ld1-tablet")
+    return ("loadline1-tablet", "ld-tablet", "ld1-tablet", "ll-tablet")
 
   @classmethod
   @override

@@ -22,10 +22,11 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.exception import ExceptionAnnotator
+from crossbench.helper import fs_helper
 from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder import LlvmSymbolizerFinder, \
     TraceconvFinder, TraceProcessorFinder
-from crossbench.parse import ObjectParser
+from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbePriority
 from crossbench.probes.results import LocalProbeResult, ProbeResult
@@ -118,6 +119,12 @@ class TraceProcessorProbe(Probe):
         type=plt.PLATFORM.parse_local_binary_path,
         help="Path to the perfetto traceconv binary")
     parser.add_argument(
+        "perfetto_binary_path",
+        type=PathParser.existing_path,
+        help=("See https://perfetto.dev/docs/data-sources/native-heap-profiler"
+              "#symbolize-your-profile. The docs state this should be a "
+              "directory, but in practice file paths also work."))
+    parser.add_argument(
         "llvm_symbolizer_bin",
         aliases=("llvm_symbolizer",),
         type=plt.PLATFORM.parse_local_binary_path,
@@ -133,15 +140,16 @@ class TraceProcessorProbe(Probe):
 
   def __init__(
       self,
-      batch: bool,
-      metric_definitions: Iterable[str],
-      summary_metrics: Iterable[str],
-      metrics: Iterable[str],
-      queries: Iterable[TraceProcessorQueryConfig],
-      symbolize_profile: bool,
-      module_paths: Iterable[pth.LocalPath],
+      batch: bool = False,
+      metric_definitions: Iterable[str] = (),
+      summary_metrics: Iterable[str] = (),
+      metrics: Iterable[str] = (),
+      queries: Iterable[TraceProcessorQueryConfig] = (),
+      symbolize_profile: bool = True,
+      module_paths: Iterable[pth.LocalPath] = (),
       trace_processor_bin: Optional[pth.LocalPath] = None,
       traceconv_bin: Optional[pth.LocalPath] = None,
+      perfetto_binary_path: Optional[pth.LocalPath] = None,
       llvm_symbolizer_bin: Optional[pth.LocalPath] = None,
       dev_features: bool = True,
   ) -> None:
@@ -165,6 +173,8 @@ class TraceProcessorProbe(Probe):
     self._traceconv_bin: Final[pth.LocalPath
                                | None] = TraceconvFinder.local_binary(
                                    traceconv_bin)
+    self._perfetto_binary_path: Final[pth.LocalPath
+                                      | None] = perfetto_binary_path
     self._llvm_symbolizer_bin: Final[
         pth.LocalPath
         | None] = LlvmSymbolizerFinder.local_binary(llvm_symbolizer_bin)
@@ -215,6 +225,10 @@ class TraceProcessorProbe(Probe):
     return self._traceconv_bin
 
   @property
+  def perfetto_binary_path(self) -> pth.LocalPath | None:
+    return self._perfetto_binary_path
+
+  @property
   def llvm_symbolizer_bin(self) -> pth.LocalPath | None:
     return self._llvm_symbolizer_bin
 
@@ -230,7 +244,7 @@ class TraceProcessorProbe(Probe):
     is_debug_logging = logging.getLogger().isEnabledFor(logging.DEBUG)
 
     for module_path in self.module_paths:
-      extra_flags.append("--add-sql-module")
+      extra_flags.append("--add-sql-package")
       extra_flags.append(str(module_path))
 
     return TraceProcessorConfig(
@@ -314,7 +328,6 @@ class TraceProcessorProbe(Probe):
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     if self.needs_btp_run:
       return self._run_btp(group)
-
     return self._merge_browser_files(group)
 
   def _merge_browser_files(self, group: BrowsersRunGroup) -> LocalProbeResult:
@@ -398,9 +411,12 @@ class TraceProcessorProbe(Probe):
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     logging.info("-" * 80)
-    logging.critical("TraceProcessor merged traces:")
+    logging.critical("TraceProcessor results:")
     for run in group.runs:
-      logging.critical("  - %s", run.results[self].perfetto)
+      results = run.results[self]
+      for result_file in [*results.get_all("pprof"), *results.perfetto_list]:
+        logging.critical("  - %s : %s", result_file,
+                         fs_helper.get_file_size(result_file))
 
 __all__ = [
     "TraceProcessorProbe",

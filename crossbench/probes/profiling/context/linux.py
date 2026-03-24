@@ -75,8 +75,8 @@ class LinuxProfilingContext(PosixProfilingContext):
   @override
   def start_story_run(self) -> None:
     super().start_story_run()
-    if self.probe.start_profiling_after_setup:
-      (self._renderer_pid, self._renderer_tid) = self.renderer_pid_tid
+    if self.start_profiling_after_setup():
+      (self._renderer_pid, self._renderer_tid) = self.cached_renderer_pid_tid
 
   def stop(self) -> None:
     self.stop_process()
@@ -121,7 +121,7 @@ class LinuxProfilingContext(PosixProfilingContext):
 
   def _filter_perf_files(self,
                          perf_files: list[pth.AnyPath]) -> list[pth.AnyPath]:
-    if not self.probe.start_profiling_after_setup:
+    if not self.start_profiling_after_setup():
       return perf_files
     renderer_pid = self._renderer_pid
     if not renderer_pid:
@@ -238,7 +238,6 @@ def prepare_linux_perf_env(
 
 KB = 1024
 
-
 def linux_perf_probe_inject_v8_symbols(
     perf_data_file: pth.AnyPath,
     platform: Optional[plt.Platform] = None) -> Optional[pth.AnyPath]:
@@ -281,6 +280,7 @@ def linux_perf_probe_pprof(
   try:
     url = platform.sh_stdout(
         "pprof",
+        "-symbolize=force",
         "-flame",
         f"-add_comment={run_details}",
         perf_data_file,
@@ -315,9 +315,11 @@ def _linux_perf_probe_pprof_fallback(
       "pprof best-effort: falling back to standard perf data "
       "without js symbols: %s \n"
       "Got failures for %s: %s", raw_perf_data_file, perf_data_file.name, e)
+  url = None
   try:
     url = platform.sh_stdout(
         "pprof",
+        "-symbolize=force",
         "-flame",
         f"-add_comment={run_details}",
         raw_perf_data_file,

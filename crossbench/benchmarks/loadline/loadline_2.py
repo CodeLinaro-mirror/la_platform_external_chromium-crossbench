@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence, Type
 
 import numpy as np
@@ -30,10 +29,11 @@ if TYPE_CHECKING:
   from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.runner import Runner
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING: Final[str] = "2.0.0"
+VERSION_STRING: Final[str] = "2.1.0"
 
 
 class LoadLine2Probe(LoadLineProbe):
@@ -44,6 +44,11 @@ class LoadLine2Probe(LoadLineProbe):
   @override
   def get_context_cls(self,) -> Type[LoadLine2ProbeContext]:
     return LoadLine2ProbeContext
+
+  @override
+  def setup(self, runner: Runner) -> None:
+    super().setup(runner)
+    self._check_connectivity(runner)
 
   @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
@@ -58,10 +63,6 @@ class LoadLine2Probe(LoadLineProbe):
   @override
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
     df = self._load_query_result(group, "loadline2_breakdown")
-    if any(df["network"] > df["process_launch"]):
-      logging.warning("Some runs were affected by network latency. "
-                      "Results can be non-representative.")
-
     df["os"] = df[["network", "process_launch"]].max(axis=1)
     df = df.groupby(["cb_browser", "page"])[[
         "os", "renderer_visual", "renderer_interactive", "gpu_visual",
@@ -103,6 +104,8 @@ class LoadLine2Benchmark(LoadLineBenchmark):
         action="store_true",
         help=("Make Chrome behave more deterministically during loading. Note "
               "that this can affect scores. For experimental use only."))
+    parser.add_argument(
+        "--benchmark-version", action="version", version=f"{VERSION_STRING}")
     return parser
 
   @classmethod
@@ -180,7 +183,7 @@ class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return ("ld2-phone",)
+    return ("ld2-phone", "ll2-phone")
 
 
 class LoadLine2TabletBenchmark(LoadLine2Benchmark):
@@ -201,7 +204,7 @@ class LoadLine2TabletBenchmark(LoadLine2Benchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return ("ld2-tablet",)
+    return ("ld2-tablet", "ll2-tablet")
 
   @classmethod
   @override

@@ -7,8 +7,8 @@ from __future__ import annotations
 import abc
 import enum
 import logging
-from typing import TYPE_CHECKING, ClassVar, Hashable, Optional, Self, Set, \
-    Type, TypeVar
+from typing import TYPE_CHECKING, ClassVar, Hashable, Iterable, Optional, \
+    Self, Set, Type, TypeVar
 
 from typing_extensions import override
 
@@ -303,3 +303,11 @@ class Probe(ProbeResultKey, abc.ABC):
     Override to print a short summary of all the collected results.
     """
     del group
+
+  def get_extra_probes(self, runner: Runner) -> Iterable[Probe]:
+    """
+    Override to return additional probes that should be attached to the runner
+    after all configured and internal have been attached.
+    """
+    del runner
+    return ()
