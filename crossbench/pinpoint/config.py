@@ -13,7 +13,8 @@ from crossbench.cli.config.flags import FlagsConfig
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser
 from crossbench.pinpoint import patch_resolver
-from crossbench.pinpoint.benchmarks import is_crossbench_benchmark
+from crossbench.pinpoint.benchmarks import all_stories, default_story, \
+    is_crossbench_benchmark
 from crossbench.pinpoint.helper import annotate
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
@@ -175,10 +176,8 @@ class PinpointJobConfigMixin:
 
     if is_crossbench_benchmark(self.benchmark):
       if not self.story:
-        self.story = "default"
-      elif self.story != "default":
-        # TODO(b/495355648): Pinpoint UI allows only "default" story. Support
-        # all available stories.
+        self.story = default_story(self.benchmark)
+      elif self.story not in all_stories(self.benchmark):
         return f"Unknown story: {self.story}"
     else:
       stories = fetch_stories(self.benchmark)
@@ -190,8 +189,8 @@ class PinpointJobConfigMixin:
     return None
 
   @classmethod
-  def parse_extra_browser_args(
-      cls, extra_browser_args: str | None) -> FlagsConfig:
+  def parse_extra_browser_args(cls,
+                               extra_browser_args: str | None) -> FlagsConfig:
     if not extra_browser_args:
       return FlagsConfig()
     if match := re.search(r'--extra-browser-args="(.*?)"', extra_browser_args):
@@ -323,7 +322,6 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
     return parsed
 
   def to_request_dict(self) -> dict[str, Any]:
-    is_crossbench = ".crossbench" in self.benchmark
     return {
         "comparison_mode":
             "try",
@@ -348,9 +346,11 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
         "experiment_patch":
             self.experiment.patch,
         "base_extra_args":
-            self.base.extra_browser_flags(is_crossbench),
+            self.base.extra_browser_flags(
+                is_crossbench_benchmark(self.benchmark)),
         "experiment_extra_args":
-            self.experiment.extra_browser_flags(is_crossbench),
+            self.experiment.extra_browser_flags(
+                is_crossbench_benchmark(self.benchmark)),
         "tags":
             '{"origin": "pinpoint_cli"}',
     }
@@ -424,9 +424,7 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
         type=str,
         help="The bot configuration to run on (e.g., 'linux-perf')")
     parser.add_argument(
-        "chart",
-        type=str,
-        help="The chart (measurement) to bisect.")
+        "chart", type=str, help="The chart (measurement) to bisect.")
     parser.add_argument(
         "story",
         type=str,
@@ -525,7 +523,6 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
     return parsed
 
   def to_request_dict(self) -> dict[str, Any]:
-    is_crossbench = ".crossbench" in self.benchmark
     return {
         "comparison_mode":
             "performance",
@@ -548,14 +545,15 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
         "end_git_hash":
             self.end.commit,
         "extra_test_args":
-            self.start.extra_browser_flags(is_crossbench),
+            self.start.extra_browser_flags(
+                is_crossbench_benchmark(self.benchmark)),
         "tags":
             '{"origin": "pinpoint_cli"}',
     }
 
   @classmethod
-  def from_response_dict(
-      cls, raw_dict: dict[str, Any]) -> PinpointBisectJobConfig:
+  def from_response_dict(cls, raw_dict: dict[str,
+                                             Any]) -> PinpointBisectJobConfig:
     """Returns a valid PinpointBisectJobConfig if the server response is
     valid."""
     comparison_mode = raw_dict.get("comparison_mode")
@@ -583,9 +581,7 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
             flags=cls.parse_extra_browser_args(
                 arguments.get("extra_test_args")),
         ),
-        end=BisectEndVariantConfig(
-            commit=arguments.get("end_git_hash"),
-        ),
+        end=BisectEndVariantConfig(commit=arguments.get("end_git_hash"),),
     )
 
   def to_dict(self) -> dict[str, Any]:

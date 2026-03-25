@@ -15,7 +15,7 @@ from crossbench import path as pth
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
-from crossbench.pinpoint.benchmarks import pinpoint_benchmark
+from crossbench.pinpoint.benchmarks import pinpoint_benchmark_name
 from crossbench.pinpoint.cancel_job import cancel_job
 from crossbench.pinpoint.config import PinpointBisectJobConfig, \
     PinpointTryJobConfig
@@ -485,7 +485,7 @@ class PinpointBenchmarkSubcommand(PinpointBaseStartSubcommand):
 
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
-    benchmark_name = pinpoint_benchmark(self._benchmark_cls.NAME)
+    benchmark_name = pinpoint_benchmark_name(self._benchmark_cls.NAME)
     assert benchmark_name, "Must be a valid pinpoint benchmark name"
     start_parser = self.create_parser(
         command=self._benchmark_cls.NAME,
@@ -497,7 +497,7 @@ class PinpointBenchmarkSubcommand(PinpointBaseStartSubcommand):
 
   @override
   def get_benchmark(self, args: argparse.Namespace) -> str | None:
-    return pinpoint_benchmark(self._benchmark_cls.NAME)
+    return pinpoint_benchmark_name(self._benchmark_cls.NAME)
 
 
 class PinpointCancelSubcommand(PinpointJobSubcommand):
@@ -665,7 +665,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
     self._results_subcommand = PinpointResultsSubcommand(self)
     self._benchmark_subcommands: list[PinpointBenchmarkSubcommand] = []
     for benchmark_cls in cli.BENCHMARKS:
-      if pinpoint_benchmark(benchmark_cls.NAME):
+      if pinpoint_benchmark_name(benchmark_cls.NAME):
         self._benchmark_subcommands.append(
             PinpointBenchmarkSubcommand(self, benchmark_cls))
 
@@ -705,7 +705,7 @@ class PinpointHelpFormatter(argparse.HelpFormatter):
     benchmark_parts = []
     for subaction in subactions:
       text = self._format_action(subaction, custom_format=False)
-      if pinpoint_benchmark(subaction.dest):
+      if pinpoint_benchmark_name(subaction.dest):
         benchmark_parts.append(text)
       else:
         pinpoint_parts.append(text)

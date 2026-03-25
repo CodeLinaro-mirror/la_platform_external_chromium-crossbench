@@ -4,61 +4,74 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from immutabledict import immutabledict
 
-# Crossbench benchmarks without corresponding pinpoint benchmarks are None.
-_PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME: Final[immutabledict[
-    str, str | None]] = immutabledict({
-        "devtools_frontend": "devtools_frontend.crossbench",
-        "embedder": "embedder.crossbench",
-        "jetstream_1.1": "jetstream",
-        "jetstream_2.0": "jetstream2.0.crossbench",
-        "jetstream_2.1": "jetstream2.1.crossbench",
-        "jetstream_2.2": "jetstream2.2.crossbench",
-        "jetstream_3.0": "jetstream3.0.crossbench",
-        "jetstream_main": "jetstream-main.crossbench",
-        "loading": "loading.crossbench",
-        "loadline-phone": "loadline_phone.crossbench",
-        "loadline-phone-debug": None,
-        "loadline-phone-fast": None,
-        "loadline-tablet": "loadline_tablet.crossbench",
-        "loadline-tablet-debug": None,
-        "loadline-tablet-fast": None,
-        "loadline2-phone": "loadline_phone2.crossbench",
-        "loadline2-phone-debug": None,
-        "loadline2-tablet": None,
-        "loadline2-tablet-debug": None,
-        "loadline2-webapi-phone": None,
-        "loadline2-webapi-phone-debug": None,
-        "manual": None,
-        "memory": "memory.desktop",
-        "motionmark_1.0": "motionmark1.0.crossbench",
-        "motionmark_1.1": "motionmark1.1.crossbench",
-        "motionmark_1.2": "motionmark1.2.crossbench",
-        "motionmark_1.3": "motionmark1.3.crossbench",
-        "motionmark_1.3.1": "motionmark1.3.1.crossbench",
-        "motionmark_main": None,
-        "powerline": None,
-        "speedometer_1.0": "speedometer",
-        "speedometer_2.0": "speedometer2.0.crossbench",
-        "speedometer_2.1": "speedometer2.1.crossbench",
-        "speedometer_3.0": "speedometer3.0.crossbench",
-        "speedometer_3.1": "speedometer3.1.crossbench",
-        "speedometer_main": "speedometer-main.crossbench",
-        "webai": None,
+import crossbench.benchmarks.all as benchmarks
+from crossbench.benchmarks.base import StoryFilter
+
+if TYPE_CHECKING:
+  from crossbench.benchmarks.base import Benchmark
+
+_BENCHMARK_BY_PINPOINT_NAME: Final[immutabledict[
+    str, Benchmark]] = immutabledict({
+        "devtools_frontend.crossbench": benchmarks.DevToolsFrontendBenchmark,
+        "embedder.crossbench": benchmarks.EmbedderBenchmark,
+        "jetstream2.crossbench": benchmarks.JetStream22Benchmark,
+        "jetstream2.0.crossbench": benchmarks.JetStream20Benchmark,
+        "jetstream2.1.crossbench": benchmarks.JetStream21Benchmark,
+        "jetstream2.2.crossbench": benchmarks.JetStream22Benchmark,
+        "jetstream3.crossbench": benchmarks.JetStream30Benchmark,
+        "jetstream3.0.crossbench": benchmarks.JetStream30Benchmark,
+        "jetstream-main.crossbench": benchmarks.JetStreamMainBenchmark,
+        "loading.crossbench": benchmarks.LoadingBenchmark,
+        "loadline_phone.crossbench": benchmarks.LoadLine1PhoneBenchmark,
+        "loadline_tablet.crossbench": benchmarks.LoadLine1TabletBenchmark,
+        "loadline_phone2.crossbench": benchmarks.LoadLine2PhoneBenchmark,
+        "memory.desktop": benchmarks.MemoryBenchmark,
+        "motionmark1.0.crossbench": benchmarks.MotionMark10Benchmark,
+        "motionmark1.1.crossbench": benchmarks.MotionMark11Benchmark,
+        "motionmark1.2.crossbench": benchmarks.MotionMark12Benchmark,
+        "motionmark1.3.crossbench": benchmarks.MotionMark13Benchmark,
+        "motionmark1.3.1.crossbench": benchmarks.MotionMark131Benchmark,
+        "speedometer": benchmarks.Speedometer10Benchmark,
+        "speedometer2.crossbench": benchmarks.Speedometer21Benchmark,
+        "speedometer2.0.crossbench": benchmarks.Speedometer20Benchmark,
+        "speedometer2.1.crossbench": benchmarks.Speedometer21Benchmark,
+        "speedometer3.crossbench": benchmarks.Speedometer31Benchmark,
+        "speedometer3.0.crossbench": benchmarks.Speedometer30Benchmark,
+        "speedometer3.1.crossbench": benchmarks.Speedometer31Benchmark,
+        "speedometer-main.crossbench": benchmarks.SpeedometerMainBenchmark,
     })
 
-_CROSSBENCH_BENCHMARK_BY_PINPOINT_NAME: Final[immutabledict[
+_BENCHMARK_NAME_BY_PINPOINT_NAME: Final[immutabledict[
     str, str]] = immutabledict({
-        v: k for k, v in _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME.items() if v
+        v.NAME: k for k, v in _BENCHMARK_BY_PINPOINT_NAME.items()
     })
 
 
-def pinpoint_benchmark(crossbench_benchmark: str) -> str | None:
-  return _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME.get(crossbench_benchmark)
+def pinpoint_benchmark_name(crossbench_name: str) -> str | None:
+  return _BENCHMARK_NAME_BY_PINPOINT_NAME.get(crossbench_name)
 
 
-def is_crossbench_benchmark(pinpoint_benchmark: str) -> bool:
-  return pinpoint_benchmark in _CROSSBENCH_BENCHMARK_BY_PINPOINT_NAME
+def is_crossbench_benchmark(pinpoint_name: str) -> bool:
+  return pinpoint_name in _BENCHMARK_BY_PINPOINT_NAME
+
+
+def all_stories(pinpoint_name: str) -> list[str]:
+  benchmark = _BENCHMARK_BY_PINPOINT_NAME.get(pinpoint_name)
+  if not benchmark:
+    return []
+  stories = list(benchmark.DEFAULT_STORY_CLS.all_story_names())
+  if default_story_name := default_story(pinpoint_name):
+    return [default_story_name] + stories
+  return stories
+
+
+def default_story(pinpoint_name: str) -> str | None:
+  benchmark = _BENCHMARK_BY_PINPOINT_NAME.get(pinpoint_name)
+  if not benchmark:
+    return None
+  filter_cls = getattr(benchmark, "STORY_FILTER_CLS", StoryFilter)
+  return filter_cls.DEFAULT_STORY_NAME

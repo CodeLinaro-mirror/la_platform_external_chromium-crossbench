@@ -435,11 +435,26 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
         ["Unknown story: test_story"])
 
   def test_parse_and_override_crossbench_benchmark_no_warning(self):
-    self.mock_fetch_benchmarks.return_value = ["other_benchmark"]
     config = PinpointTryJobConfig.parse_and_override(
         benchmark="speedometer3.0.crossbench", bot="test_bot")
     self.mock_show_warnings.assert_called_once_with([])
     self.assertEqual(config.story, "default")
+
+  def test_parse_and_override_crossbench_benchmark_valid_story(self):
+    config = PinpointTryJobConfig.parse_and_override(
+        benchmark="speedometer3.0.crossbench",
+        bot="test_bot",
+        story="TodoMVC-JavaScript-ES5")
+    self.mock_show_warnings.assert_called_once_with([])
+    self.assertEqual(config.story, "TodoMVC-JavaScript-ES5")
+
+  def test_parse_and_override_crossbench_benchmark_invalid_story(self):
+    PinpointTryJobConfig.parse_and_override(
+        benchmark="speedometer3.0.crossbench",
+        bot="test_bot",
+        story="invalid_story")
+    self.mock_show_warnings.assert_called_once_with(
+        ["Unknown story: invalid_story"])
 
 
   def test_parser_raw_config_minimal(self):
@@ -499,7 +514,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
 
   def test_no_extra_browser_args_for_crossbench(self):
     config = PinpointTryJobConfig.parse_and_override(
-        benchmark="speedometer3.crossbench",
+        benchmark="speedometer3.0.crossbench",
         bot="win-11-perf",
         story="default",
         base_js_flags="--base-js-flag",
@@ -513,7 +528,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
     self.assertEqual(
         request_dict, {
             "comparison_mode": "try",
-            "benchmark": "speedometer3.crossbench",
+            "benchmark": "speedometer3.0.crossbench",
             "configuration": "win-11-perf",
             "story": "default",
             "story_tags": None,
