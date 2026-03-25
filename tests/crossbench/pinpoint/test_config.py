@@ -434,6 +434,14 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
     self.mock_show_warnings.assert_called_once_with(
         ["Unknown story: test_story"])
 
+  def test_parse_and_override_crossbench_benchmark_no_warning(self):
+    self.mock_fetch_benchmarks.return_value = ["other_benchmark"]
+    config = PinpointTryJobConfig.parse_and_override(
+        benchmark="speedometer3.0.crossbench", bot="test_bot")
+    self.mock_show_warnings.assert_called_once_with([])
+    self.assertEqual(config.story, "default")
+
+
   def test_parser_raw_config_minimal(self):
     config = PinpointTryJobConfig.from_response_dict(self.response_dict)
     expectation = PinpointTryJobConfig(

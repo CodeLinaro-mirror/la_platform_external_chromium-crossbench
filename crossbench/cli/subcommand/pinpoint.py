@@ -7,15 +7,15 @@ from __future__ import annotations
 import abc
 import argparse
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Final, final
+from typing import TYPE_CHECKING, final
 
-from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
+from crossbench.pinpoint.benchmarks import pinpoint_benchmark
 from crossbench.pinpoint.cancel_job import cancel_job
 from crossbench.pinpoint.config import PinpointBisectJobConfig, \
     PinpointTryJobConfig
@@ -35,49 +35,6 @@ from crossbench.pinpoint.user_metrics import collect_metrics, init_metrics
 if TYPE_CHECKING:
   from crossbench.cli.cli import BenchmarkClass, CrossBenchCLI
   from crossbench.cli.types import Subparsers
-
-# Crossbench benchmarks without corresponding pinpoint benchmarks are None.
-_PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME: Final[immutabledict[
-    str, str | None]] = immutabledict({
-        "devtools_frontend": "devtools_frontend.crossbench",
-        "embedder": "embedder.crossbench",
-        "jetstream_1.1": "jetstream",
-        "jetstream_2.0": "jetstream2.0.crossbench",
-        "jetstream_2.1": "jetstream2.1.crossbench",
-        "jetstream_2.2": "jetstream2.2.crossbench",
-        "jetstream_3.0": "jetstream3.0.crossbench",
-        "jetstream_main": "jetstream-main.crossbench",
-        "loading": "loading.crossbench",
-        "loadline-phone": "loadline_phone.crossbench",
-        "loadline-phone-debug": None,
-        "loadline-phone-fast": None,
-        "loadline-tablet": "loadline_tablet.crossbench",
-        "loadline-tablet-debug": None,
-        "loadline-tablet-fast": None,
-        "loadline2-phone": "loadline_phone2.crossbench",
-        "loadline2-phone-debug": None,
-        "loadline2-tablet": None,
-        "loadline2-tablet-debug": None,
-        "loadline2-webapi-phone": None,
-        "loadline2-webapi-phone-debug": None,
-        "manual": None,
-        "memory": "memory.desktop",
-        "motionmark_1.0": "motionmark1.0.crossbench",
-        "motionmark_1.1": "motionmark1.1.crossbench",
-        "motionmark_1.2": "motionmark1.2.crossbench",
-        "motionmark_1.3": "motionmark1.3.crossbench",
-        "motionmark_1.3.1": "motionmark1.3.1.crossbench",
-        "motionmark_main": None,
-        "powerline": None,
-        "speedometer_1.0": "speedometer",
-        "speedometer_2.0": "speedometer2.0.crossbench",
-        "speedometer_2.1": "speedometer2.1.crossbench",
-        "speedometer_3.0": "speedometer3.0.crossbench",
-        "speedometer_3.1": "speedometer3.1.crossbench",
-        "speedometer_main": "speedometer-main.crossbench",
-        "webai": None,
-    })
-
 
 class PinpointBaseSubcommand(abc.ABC):
 
@@ -528,19 +485,19 @@ class PinpointBenchmarkSubcommand(PinpointBaseStartSubcommand):
 
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
-    pinpoint_benchmark = _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME[
-        self._benchmark_cls.NAME]
+    benchmark_name = pinpoint_benchmark(self._benchmark_cls.NAME)
+    assert benchmark_name, "Must be a valid pinpoint benchmark name"
     start_parser = self.create_parser(
         command=self._benchmark_cls.NAME,
         aliases=self._benchmark_cls.aliases(),
-        help_text=f'Starts a new "{pinpoint_benchmark}" Pinpoint A/B job.')
+        help_text=f'Starts a new "{benchmark_name}" Pinpoint A/B job.')
     start_parser.epilog = (
         f"Example:\npinpoint {self._benchmark_cls.NAME} --bot win-11-perf\n\n")
     return start_parser
 
   @override
   def get_benchmark(self, args: argparse.Namespace) -> str | None:
-    return _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME[self._benchmark_cls.NAME]
+    return pinpoint_benchmark(self._benchmark_cls.NAME)
 
 
 class PinpointCancelSubcommand(PinpointJobSubcommand):
@@ -708,7 +665,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
     self._results_subcommand = PinpointResultsSubcommand(self)
     self._benchmark_subcommands: list[PinpointBenchmarkSubcommand] = []
     for benchmark_cls in cli.BENCHMARKS:
-      if _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME[benchmark_cls.NAME]:
+      if pinpoint_benchmark(benchmark_cls.NAME):
         self._benchmark_subcommands.append(
             PinpointBenchmarkSubcommand(self, benchmark_cls))
 
@@ -748,7 +705,7 @@ class PinpointHelpFormatter(argparse.HelpFormatter):
     benchmark_parts = []
     for subaction in subactions:
       text = self._format_action(subaction, custom_format=False)
-      if subaction.dest in _PINPOINT_BENCHMARK_BY_CROSSBENCH_NAME:
+      if pinpoint_benchmark(subaction.dest):
         benchmark_parts.append(text)
       else:
         pinpoint_parts.append(text)

@@ -13,6 +13,7 @@ from crossbench.cli.config.flags import FlagsConfig
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser
 from crossbench.pinpoint import patch_resolver
+from crossbench.pinpoint.benchmarks import is_crossbench_benchmark
 from crossbench.pinpoint.helper import annotate
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
@@ -154,7 +155,8 @@ class PinpointJobConfigMixin:
       self.benchmark = benchmark
     if not self.benchmark:
       raise ValueError("Benchmark is required.")
-    if self.benchmark not in fetch_benchmarks():
+    if not is_crossbench_benchmark(
+        self.benchmark) and self.benchmark not in fetch_benchmarks():
       return f"Unknown benchmark: {self.benchmark}"
     return None
 
@@ -171,12 +173,20 @@ class PinpointJobConfigMixin:
     if story:
       self.story = story
 
-    stories = fetch_stories(self.benchmark)
-    if not self.story and len(stories) == 1:
-      self.story = stories[0]
+    if is_crossbench_benchmark(self.benchmark):
+      if not self.story:
+        self.story = "default"
+      elif self.story != "default":
+        # TODO(b/495355648): Pinpoint UI allows only "default" story. Support
+        # all available stories.
+        return f"Unknown story: {self.story}"
+    else:
+      stories = fetch_stories(self.benchmark)
+      if not self.story and len(stories) == 1:
+        self.story = stories[0]
 
-    if self.story not in stories:
-      return f"Unknown story: {self.story}"
+      if self.story not in stories:
+        return f"Unknown story: {self.story}"
     return None
 
   @classmethod
