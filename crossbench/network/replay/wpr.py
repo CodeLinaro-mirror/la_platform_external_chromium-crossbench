@@ -33,13 +33,19 @@ assert GS_PREFIX
 
 class WprReplayNetwork(ReplayNetwork):
 
-  def __init__(self, archive: LocalPath | str,
+  def __init__(self,
+               archive: LocalPath | str,
                traffic_shaper: Optional[TrafficShaper],
-               wpr_go_bin: Optional[LocalPath], browser_platform: Platform,
-               persist_server: bool, inject_deterministic_script: bool,
+               wpr_go_bin: Optional[LocalPath],
+               browser_platform: Platform,
+               persist_server: bool,
+               inject_deterministic_script: bool,
                no_archive_certificates: bool,
                response_transformations_file: LocalPath | None,
-               cross_platform_mode: bool, host: str | None) -> None:
+               cross_platform_mode: bool,
+               host: str | None,
+               http_port: int | None = None,
+               https_port: int | None = None) -> None:
     super().__init__(archive, traffic_shaper, browser_platform)
     self._server: WprReplayServer | None = None
     self._tmp_dir: AnyPath | None = None
@@ -51,6 +57,8 @@ class WprReplayNetwork(ReplayNetwork):
     self._cross_platform_mode: Final[bool] = cross_platform_mode
     self._wpr_go_bin: Final[LocalPath] = self._ensure_wpr_go(wpr_go_bin)
     self._host: Final[str | None] = host
+    self._http_port: Final[int | None] = http_port
+    self._https_port: Final[int | None] = https_port
 
   @override
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
@@ -182,6 +190,11 @@ class LocalWprReplayNetwork(WprReplayNetwork):
   @override
   def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
     extra_kwargs: dict[str, Any] = {}
+    if self._http_port is not None:
+      extra_kwargs["http_port"] = self._http_port
+    if self._https_port is not None:
+      extra_kwargs["https_port"] = self._https_port
+
     if not self._inject_deterministic_script:
       extra_kwargs["inject_scripts"] = []
     if self._cross_platform_mode:
@@ -203,13 +216,18 @@ class LocalWprReplayNetwork(WprReplayNetwork):
 
 class RemoteWprReplayNetwork(WprReplayNetwork):
 
-  def __init__(self, archive: LocalPath | str,
+  def __init__(self,
+               archive: LocalPath | str,
                traffic_shaper: Optional[TrafficShaper],
-               wpr_go_bin: Optional[LocalPath], browser_platform: Platform,
-               persist_server: bool, inject_deterministic_script: bool,
+               wpr_go_bin: Optional[LocalPath],
+               browser_platform: Platform,
+               persist_server: bool,
+               inject_deterministic_script: bool,
                no_archive_certificates: bool,
                response_transformations_file: LocalPath | None,
-               host: str | None) -> None:
+               host: str | None,
+               http_port: int | None = None,
+               https_port: int | None = None) -> None:
     super().__init__(
         archive=archive,
         traffic_shaper=traffic_shaper,
@@ -220,7 +238,9 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         no_archive_certificates=no_archive_certificates,
         response_transformations_file=response_transformations_file,
         cross_platform_mode=False,
-        host=host)
+        host=host,
+        http_port=http_port,
+        https_port=https_port)
 
   @classmethod
   def is_compatible(cls, platform: Platform) -> bool:
@@ -295,6 +315,13 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
       rules_file = self._push_file(file)
     for script in self._get_injected_scripts():
       self._push_file(script)
+
+    extra_kwargs: dict[str, Any] = {}
+    if self._http_port is not None:
+      extra_kwargs["http_port"] = self._http_port
+    if self._https_port is not None:
+      extra_kwargs["https_port"] = self._https_port
+
     return WprReplayServer(
         archive_path=archive,
         bin_path=wpr_go_bin,
@@ -303,7 +330,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         inject_scripts=inject_scripts,
         log_path=log_dir / "network.wpr.log",
         platform=self.browser_platform,
-        rules_file=rules_file)
+        rules_file=rules_file,
+        **extra_kwargs)
 
   def _get_injected_scripts(self) -> list[LocalPath]:
     if not self._response_transformations_file:

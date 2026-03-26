@@ -21,7 +21,7 @@ from crossbench.network.replay.wpr import LocalWprReplayNetwork, \
     RemoteWprReplayNetwork
 from crossbench.network.traffic_shaping import ts_proxy
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
-from crossbench.parse import PathParser
+from crossbench.parse import NumberParser, PathParser
 
 if TYPE_CHECKING:
   import urllib.parse as urlparse
@@ -69,6 +69,8 @@ class NetworkConfig(ConfigObject):
   response_transformations_file: pth.LocalPath | None = None
   cross_platform_mode: bool = False
   host: str | None = None
+  http_port: int | None = None
+  https_port: int | None = None
 
   @classmethod
   def default(cls, type: Optional[NetworkType] = None) -> Self:
@@ -142,6 +144,10 @@ class NetworkConfig(ConfigObject):
               "Incompatible with 'run_on_device' setting."))
     parser.add_argument(
         "host", type=str, help=("A host for WPR server to bind to."))
+    parser.add_argument(
+        "http_port", type=NumberParser.port_number, help="HTTP port for WPR.")
+    parser.add_argument(
+        "https_port", type=NumberParser.port_number, help="HTTPS port for WPR.")
     return parser
 
   @classmethod
@@ -256,7 +262,8 @@ class NetworkConfig(ConfigObject):
     wpr_only_options = ("wpr_go_bin", "persist_server", "run_on_device",
                         "skip_deterministic_script_injection", "host",
                         "no_archive_certificates",
-                        "response_transformations_file", "cross_platform_mode")
+                        "response_transformations_file", "cross_platform_mode",
+                        "http_port", "https_port")
     for option in wpr_only_options:
       if getattr(self, option) and self.type is not NetworkType.WPR:
         raise argparse.ArgumentTypeError(
@@ -265,6 +272,10 @@ class NetworkConfig(ConfigObject):
     if self.cross_platform_mode and self.run_on_device:
       raise argparse.ArgumentTypeError(
           "cross_platform_mode is incompatible with run_on_device")
+
+    if self.cross_platform_mode and (self.http_port or self.https_port):
+      raise argparse.ArgumentTypeError(
+          "http_port and https_port cannot be set in cross_platform_mode")
 
   def create(self, browser_platform: Platform) -> Network:
     with exception.annotate_argparsing(
@@ -291,7 +302,9 @@ class NetworkConfig(ConfigObject):
               response_transformations_file=self.response_transformations_file,
               inject_deterministic_script=not self
               .skip_deterministic_script_injection,
-              host=self.host)
+              host=self.host,
+              http_port=self.http_port,
+              https_port=self.https_port)
         return LocalWprReplayNetwork(
             self.url or str(self.path),
             traffic_shaper,
@@ -303,7 +316,9 @@ class NetworkConfig(ConfigObject):
             inject_deterministic_script=not self
             .skip_deterministic_script_injection,
             cross_platform_mode=self.cross_platform_mode,
-            host=self.host)
+            host=self.host,
+            http_port=self.http_port,
+            https_port=self.https_port)
     raise ValueError(f"Unknown network type {self.type}")
 
   def _create_traffic_shaper(self, browser_platform: Platform) -> TrafficShaper:

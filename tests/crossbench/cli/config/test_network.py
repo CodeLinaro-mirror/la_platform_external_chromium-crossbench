@@ -126,6 +126,63 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertIn("wpr.go archive", message)
     self.assertIn("empty", message)
 
+  def test_parse_invalid_port_for_cross_platform_mode(self):
+    path = pth.LocalPath("/foo/bar/wprgo.archive")
+    self.fs.create_file(path, st_size=1024)
+    with self.assertRaisesRegex(
+        argparse.ArgumentTypeError,
+        "http_port and https_port cannot be set in cross_platform_mode"):
+      _ = NetworkConfig.parse({
+          "type": "wpr",
+          "path": str(path),
+          "cross_platform_mode": True,
+          "http_port": 1234,
+      })
+    with self.assertRaisesRegex(
+        argparse.ArgumentTypeError,
+        "http_port and https_port cannot be set in cross_platform_mode"):
+      _ = NetworkConfig.parse({
+          "type": "wpr",
+          "path": str(path),
+          "cross_platform_mode": True,
+          "https_port": 5678,
+      })
+
+  def test_parse_invalid_port_for_local_file_network(self):
+    path = pth.LocalPath("/foo/bar/dir")
+    self.fs.create_dir(path)
+    self.fs.create_file(path / "index.html")
+    with self.assertRaisesRegex(
+        argparse.ArgumentTypeError,
+        "http_port can only be used for the WPR replay network"):
+      _ = NetworkConfig.parse({
+          "type": "local",
+          "path": str(path),
+          "http_port": 1234,
+      })
+    with self.assertRaisesRegex(
+        argparse.ArgumentTypeError,
+        "https_port can only be used for the WPR replay network"):
+      _ = NetworkConfig.parse({
+          "type": "local",
+          "path": str(path),
+          "https_port": 5678,
+      })
+
+  def test_parse_wpr_ports(self):
+    path = pth.LocalPath("/foo/bar/wprgo.archive")
+    self.fs.create_file(path, st_size=1024)
+    config = NetworkConfig.parse({
+        "type": "wpr",
+        "path": str(path),
+        "http_port": 8080,
+        "https_port": 8081
+    })
+    self.assertEqual(config.type, NetworkType.WPR)
+    self.assertEqual(config.path, path)
+    self.assertEqual(config.http_port, 8080)
+    self.assertEqual(config.https_port, 8081)
+
   def test_parse_wprgo_archive(self):
     path = pth.LocalPath("/foo/bar/wprgo.archive")
     self.fs.create_file(path, st_size=1024)
