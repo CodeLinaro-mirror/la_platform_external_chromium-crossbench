@@ -205,8 +205,9 @@ class SafariWebdriverIOS(SafariWebDriver):
     pass
 
   @override
-  def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
-    return path
+  def _resolve_binary(self,
+                      path: pth.AnyPath) -> tuple[pth.AnyPath, pth.AnyPath]:
+    return path, path
 
   @override
   def _setup_cache_dir(self) -> Optional[pth.AnyPath]:

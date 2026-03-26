@@ -8,11 +8,11 @@ import abc
 import contextlib
 import copy
 import dataclasses
-import pathlib
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Type, cast
 
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
@@ -26,7 +26,6 @@ if TYPE_CHECKING:
   import datetime as dt
   import re
 
-  from crossbench import path as pth
   from crossbench.browsers.version import BrowserVersion
   from crossbench.cli.config.secrets import UsernamePassword
   from crossbench.flags.base import FlagsData
@@ -60,7 +59,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   @classmethod
   @abc.abstractmethod
-  def mock_app_path(cls, platform: plt.Platform) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform) -> pth.AnyPath:
     pass
 
   @classmethod
@@ -74,7 +73,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   @classmethod
   def setup_bin(cls,
                 fs,
-                bin_path: pathlib.Path,
+                bin_path: pth.AnyPath,
                 macos_bin_name: str,
                 platform: plt.Platform = plt.PLATFORM) -> None:
     if platform.is_macos:
@@ -82,7 +81,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
       bin_path = bin_path / "Contents" / "MacOS" / macos_bin_name
     elif platform.is_win:
       assert bin_path.suffix == ".exe"
-    if not bin_path.exists():
+    if not platform.exists(bin_path):
       fs.create_file(bin_path)
 
   @classmethod
@@ -94,14 +93,15 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   def __init__(self,
                label: str,
-               path: Optional[pathlib.Path] = None,
+               path: Optional[pth.AnyPath] = None,
                settings: Optional[Settings] = None):
     settings = settings or Settings()
     platform = settings.platform
     path = path or self.mock_app_path(platform)
-    self.app_path = path
+    self._app_path = path
     if maybe_driver := settings.driver_path:
-      assert isinstance(maybe_driver, pathlib.Path) and maybe_driver.exists()
+      assert isinstance(maybe_driver,
+                        pth.AnyPath) and platform.exists(maybe_driver)
     super().__init__(label, path, settings=settings)
     self.url_list: list[str] = []
     self.expected_js: list[JsInvocation] = []
@@ -263,18 +263,19 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     return self._current_url
 
   @override
-  def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
+  def _resolve_binary(self,
+                      path: pth.AnyPath) -> tuple[pth.AnyPath, pth.AnyPath]:
     if self.platform.is_ios:
-      return path
-    return super()._init_resolve_binary(path)
+      return path, path
+    return super()._resolve_binary(path)
 
 
-def app_root(platform: plt.Platform) -> pathlib.Path:
+def app_root(platform: plt.Platform) -> pth.AnyPath:
   if platform.is_macos:
-    return pathlib.Path("/Applications")
+    return platform.path("/Applications")
   if platform.is_win:
-    return pathlib.Path("C:/Program Files")
-  return pathlib.Path("/usr/bin")
+    return platform.path("C:/Program Files")
+  return platform.path("/usr/bin")
 
 
 class MockChromiumBasedBrowser(MockBrowser, metaclass=abc.ABCMeta):
@@ -312,16 +313,16 @@ class MockChromium(MockChromiumBasedBrowser):
 
   @classmethod
   def mock_app_binary(cls,
-                      platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+                      platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
-      return pathlib.Path("Chromium.app/Contents/MacOS/Chromium")
+      return platform.path("Chromium.app/Contents/MacOS/Chromium")
     if platform.is_win:
-      return pathlib.Path("Google/Chromium/Application/chromium.exe")
-    return pathlib.Path("chromium")
+      return platform.path("Google/Chromium/Application/chromium.exe")
+    return platform.path("chromium")
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     return app_root(platform) / cls.mock_app_binary(platform)
 
   @classmethod
@@ -352,7 +353,7 @@ class MockChromeStable(MockChromeBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Google Chrome.app"
     if platform.is_win:
@@ -371,8 +372,9 @@ class MockChromeAndroidStable(MockChromeStable):
     return cast(AndroidAdbPlatform, self._platform)
 
   @override
-  def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
-    return path
+  def _resolve_binary(self,
+                      path: pth.AnyPath) -> tuple[pth.AnyPath, pth.AnyPath]:
+    return path, path
 
   @classmethod
   @override
@@ -386,7 +388,7 @@ class MockChromeBeta(MockChromeBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Google Chrome Beta.app"
     if platform.is_win:
@@ -399,7 +401,7 @@ class MockChromeDev(MockChromeBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Google Chrome Dev.app"
     if platform.is_win:
@@ -412,7 +414,7 @@ class MockChromeCanary(MockChromeBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Google Chrome Canary.app"
     if platform.is_win:
@@ -437,7 +439,7 @@ class MockEdgeStable(MockEdgeBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Microsoft Edge.app"
     if platform.is_win:
@@ -450,7 +452,7 @@ class MockEdgeBeta(MockEdgeBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Microsoft Edge Beta.app"
     if platform.is_win:
@@ -463,7 +465,7 @@ class MockEdgeDev(MockEdgeBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Microsoft Edge Dev.app"
     if platform.is_win:
@@ -476,7 +478,7 @@ class MockEdgeCanary(MockEdgeBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Microsoft Edge Canary.app"
     if platform.is_win:
@@ -501,24 +503,24 @@ class MockSafari(MockSafariBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Safari.app"
     if platform.is_win:
       return app_root(platform) / "Unsupported/Safari.exe"
-    return pathlib.Path("/unsupported-platform/Safari")
+    return platform.path("/unsupported-platform/Safari")
 
 
 class MockSafariTechnologyPreview(MockSafariBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Safari Technology Preview.app"
     if platform.is_win:
       return app_root(platform) / "Unsupported/Safari Technology Preview.exe"
-    return pathlib.Path("/unsupported-platform/Safari Technology Preview")
+    return platform.path("/unsupported-platform/Safari Technology Preview")
 
 
 class MockFirefoxBrowser(MockBrowser, metaclass=abc.ABCMeta):
@@ -538,7 +540,7 @@ class MockFirefox(MockFirefoxBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Firefox.app"
     if platform.is_win:
@@ -550,7 +552,7 @@ class MockFirefoxDeveloperEdition(MockFirefoxBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Firefox Developer Edition.app"
     if platform.is_win:
@@ -562,7 +564,7 @@ class MockFirefoxNightly(MockFirefoxBrowser):
 
   @classmethod
   @override
-  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pathlib.Path:
+  def mock_app_path(cls, platform: plt.Platform = plt.PLATFORM) -> pth.AnyPath:
     if platform.is_macos:
       return app_root(platform) / "Firefox Nightly.app"
     if platform.is_win:

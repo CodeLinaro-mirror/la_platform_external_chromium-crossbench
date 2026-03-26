@@ -257,22 +257,29 @@ class MacOSPlatform(PosixPlatform):
     return None
 
   def search_app(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
-    app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
-    if not app_or_bin_path.parts:
-      raise ValueError("Got empty path")
+    app_or_bin_path = self._app_bundle_candidate(app_or_bin)
     self.assert_is_local()
-    if app_or_bin_path.suffix != ".app":
-      raise ValueError("Expected app name with '.app' suffix, "
-                       f"but got: '{app_or_bin_path.name}'")
+    # Use search binary so we can more consistently use binary lookup overrides.
     binary = self.search_binary(app_or_bin_path)
     if not binary:
       return None
+    if app_candidate := self._app_bundle_candidate(binary):
+      if self.is_dir(app_candidate):
+        return app_candidate
+      raise ValueError(f"Got invalid .app candidate: {app_candidate}")
+    raise ValueError(f"Could not find .app bundle for {app_or_bin}")
+
+  def _app_bundle_candidate(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath:
+    app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
+    if not app_or_bin_path.parts:
+      raise ValueError("Got empty path")
     # input: /Applications/Safari.app/Contents/MacOS/Safari
     # output: /Applications/Safari.app
-    app_path = binary.parents[2]
-    assert app_path.suffix == ".app", f"Expected .app but got {app_path}"
-    assert self.is_dir(app_path)
-    return app_path
+    for candidate in (app_or_bin_path, *app_or_bin_path.parents):
+      if candidate.suffix == ".app":
+        return candidate
+    raise ValueError("Expected app name with '.app' suffix in the path, "
+                     f"but got: '{app_or_bin_path}'")
 
   @override
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:

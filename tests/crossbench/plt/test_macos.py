@@ -174,6 +174,34 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     with self.assertRaisesRegex(ValueError, "binaries"):
       self.platform.search_binary(app_path)
 
+  def test_search_app(self):
+    app_path = pth.LocalPath("/Applications/Custom Chrome.app")
+    binary_path = app_path / "Contents" / "MacOS" / "Custom Chrome"
+    self.fs.create_file(binary_path, st_size=100)
+
+    self.assertEqual(self.platform.search_app(app_path), app_path)
+    self.assertEqual(self.platform.search_app(binary_path), app_path)
+    self.assertIsNone(
+        self.platform.search_app(
+            pth.LocalPath("/Applications/NonExisting.app")))
+
+  def test_search_app_deep_binary(self):
+    # App bundle with a deeply nested binary
+    app_path = pth.LocalPath("/Applications/Deep.app")
+    # 4 levels deep: Deep.app/Contents/MacOS/inner/Deep
+    binary_path = app_path / "Contents" / "MacOS" / "inner" / "Deep"
+    self.fs.create_file(binary_path, st_size=100)
+
+    info_plist = app_path / "Contents" / "Info.plist"
+    with info_plist.open("wb") as f:
+      plistlib.dump({"CFBundleExecutable": "inner/Deep"}, f)
+
+    # Calling search_app with the binary path should return the .app bundle
+    resolved_app_path = self.platform.search_app(binary_path)
+    self.assertEqual(resolved_app_path, app_path)
+    resolved_app_path = self.platform.search_app(app_path)
+    self.assertEqual(resolved_app_path, app_path)
+
   def test_version(self):
     self.platform.mock_version_str = "15.6.1"
     version = self.platform.version

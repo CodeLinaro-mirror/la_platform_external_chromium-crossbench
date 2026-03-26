@@ -148,8 +148,10 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
         AndroidAdbPlatform), (f"Invalid platform: {self._platform}")
     return self._platform
 
-  def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
-    return path
+  @override
+  def _resolve_binary(self,
+                      path: pth.AnyPath) -> tuple[pth.AnyPath, pth.AnyPath]:
+    return path, path
 
   UNSUPPORTED_FLAGS: tuple[str, ...] = (
       "--disable-sync",
@@ -305,9 +307,6 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
     self._package_info: immutabledict[str, Any] = self._parse_package_info(
         settings.platform, path)
     super().__init__(label, path, settings)
-    # The superclass sets this to ".", it's unclear why. This would ideally be
-    # fixed in a different layer, not here.
-    self.app_path = path
 
   @override
   def _lookup_android_package(self, path: pth.AnyPath) -> str:

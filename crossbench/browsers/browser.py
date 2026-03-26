@@ -61,9 +61,11 @@ class Browser(abc.ABC):
     self._settings = settings or Settings()
     self._platform = self._settings.platform
     self.label: str = label
-    self.app_name: str = self.type_name()
-    self.app_path: pth.AnyPath = pth.AnyPath()
+    # Path to the executable binary on all platforms.
     self._path = pth.AnyPath()
+    self._app_name: str = self.type_name()
+    # Path to the bundle (macos) or the binary (other platforms).
+    self._app_path: pth.AnyPath = pth.AnyPath()
     self._is_local_build: bool = False
     self._unique_name: str = ""
     self._version: BrowserVersion = UnknownBrowserVersion()
@@ -86,7 +88,8 @@ class Browser(abc.ABC):
       self._version = self._extract_version()
       self.unique_name = f"{self.type_name()}_{self.label}".lower()
       return
-    self._path = self._init_resolve_binary(path)
+    self._app_path, self._path = self._resolve_binary(path)
+    self._app_name = self.app_path.stem
     # TODO clean up
     if not self.platform.is_android:
       assert self.path.is_absolute(), (
@@ -124,6 +127,18 @@ class Browser(abc.ABC):
   @property
   def path(self) -> pth.AnyPath:
     return self._path
+
+  @property
+  def app_path(self) -> pth.AnyPath:
+    """Used to distinguish .app bundle vs the executable on macos.
+    macOS: returns the .app bundle path
+    other: returns the same as self.path
+    """
+    return self._app_path
+
+  @property
+  def app_name(self) -> str:
+    return self._app_name
 
   @property
   def driver_logging(self) -> bool:
@@ -246,23 +261,28 @@ class Browser(abc.ABC):
   def driver_log_file(self) -> Optional[pth.LocalPath]:
     return None
 
-  def _init_resolve_binary(self, path: pth.AnyPath) -> pth.AnyPath:
+  def _resolve_binary(self,
+                      path: pth.AnyPath) -> tuple[pth.AnyPath, pth.AnyPath]:
     path = self.platform.absolute(path)
     assert self.platform.exists(path), f"Binary at path={path} does not exist."
-    self.app_path = path
-    self.app_name = self.app_path.stem
     if self.platform.is_macos:
-      path = self._init_resolve_macos_binary(path)
+      return self._resolve_macos_binary(path)
     assert self.platform.is_file(path), (
         f"Binary at path={path} is not a file.")
-    return path
+    app_path = path
+    return app_path, path
 
-  def _init_resolve_macos_binary(self, path: pth.AnyPath) -> pth.AnyPath:
+  def _resolve_macos_binary(
+      self, path: pth.AnyPath) -> tuple[pth.AnyPath, pth.AnyPath]:
+    app_path = self.platform.search_app(path)
+    if not app_path:
+      raise ValueError("Invalid macos binary. "
+                       f"Could noy find .app bundle: {path}")
     assert self.platform.is_macos, f"Unsupported platform: {self.platform}"
     candidate = self.platform.search_binary(path)
     if not candidate or not self.platform.is_file(candidate):
       raise ValueError(f"Could not find browser executable in {path}")
-    return candidate
+    return app_path, candidate
 
   def attach_probe(self, probe: Probe) -> None:
     if probe in self._probes:

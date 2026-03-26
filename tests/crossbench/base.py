@@ -154,7 +154,7 @@ class BaseCrossbenchTestCase(
     # Instantiate MockPlatform before setting up fake_filesystem so we can
     # still interact with the original, real plt.Platform object for extracting
     # basic system information.
-    self.platform = MockPlatform()
+    self.platform = self.setup_platform()
     self.platform.use_fs = True
     super().setUp()
     # Reset the platform ID counter for each test
@@ -167,9 +167,14 @@ class BaseCrossbenchTestCase(
 
     self._default_log_level = logging.getLogger().getEffectiveLevel()
     logging.getLogger().setLevel(logging.CRITICAL)
+    mock_platform_patcher = mock.patch("crossbench.plt.PLATFORM", self.platform)
+    mock_platform_patcher.start()
+    self.addCleanup(mock_platform_patcher.stop)
+
     for mock_browser_cls in mock_browser.ALL:
-      mock_browser_cls.setup_fs(self.fs)
-      self.assertTrue(mock_browser_cls.mock_app_path(self.platform).exists())
+      mock_browser_cls.setup_fs(self.fs, self.platform)
+      self.assertTrue(
+          self.platform.exists(mock_browser_cls.mock_app_path(self.platform)))
     self.out_dir = pathlib.Path("/crossbench-test/results/test")
     self.out_dir.parent.mkdir(parents=True)
     self.browsers: list[mock_browser.MockBrowser] = [
@@ -178,11 +183,11 @@ class BaseCrossbenchTestCase(
         mock_browser.MockChromeStable(
             "stable", settings=Settings(platform=self.platform))
     ]
-    mock_platform_patcher = mock.patch("crossbench.plt.PLATFORM", self.platform)
-    mock_platform_patcher.start()
-    self.addCleanup(mock_platform_patcher.stop)
     for browser in self.browsers:
       self.assertListEqual(browser.expected_js, [])
+
+  def setup_platform(self) -> MockPlatform:
+    return MockPlatform()
 
   def tearDown(self) -> None:
     logging.getLogger().setLevel(self._default_log_level)

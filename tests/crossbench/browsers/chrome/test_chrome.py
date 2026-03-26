@@ -16,6 +16,7 @@ from crossbench.flags.chrome import ChromeFlags
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCrossbenchTestCase
+from tests.crossbench.mock_helper import MacOsMockPlatform
 
 
 class ChromeWebDriverForTesting(ChromeWebDriver):
@@ -86,6 +87,38 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
     self.assertFalse(
         LocalChromeWebDriverAndroid.is_apk_helper(
             pth.AnyPath("org.chromium.chrome")))
+
+
+class ChromePathMacOsTestCase(BaseCrossbenchTestCase):
+
+  @override
+  def setup_platform(self):
+    return MacOsMockPlatform()
+
+  def test_chrome_path_macos(self):
+    app_path = self.platform.path("/Users/user/chrome/src/out/mac/Chrome.app")
+    binary_path = app_path / "Contents" / "MacOS" / "Chrome"
+    self.fs.create_file(binary_path, st_size=100)
+
+    # Test 1: Initialize with app bundle path
+    browser_app = ChromeWebDriverForTesting(
+        label="browser-app",
+        path=app_path,
+        settings=Settings(platform=self.platform))
+    self.assertEqual(browser_app.path, binary_path)
+    self.assertEqual(browser_app.app_path, app_path)
+
+    # Test 2: Initialize with direct binary path
+    browser_bin = ChromeWebDriverForTesting(
+        label="browser-bin",
+        path=binary_path,
+        settings=Settings(platform=self.platform))
+    self.assertEqual(browser_bin.path, binary_path)
+    self.assertEqual(browser_bin.app_path, app_path)
+
+    # Both should be identical in terms of paths
+    self.assertEqual(browser_app.path, browser_bin.path)
+    self.assertEqual(browser_app.app_path, browser_bin.app_path)
 
 
 if __name__ == "__main__":
