@@ -403,9 +403,47 @@ class BrowserConfigTestCase(BaseConfigTestCase):
             pth.LocalPosixPath("/chrome/src/out/Release/chrome_public_apk"),
             DriverConfig(BrowserDriverType.ANDROID)))
 
+  def test_parse_adb_custom_apk(self):
+    self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
+    path_str = "/test/my_custom_apk"
+    path = pth.LocalPath(path_str)
+    self.fs.create_file(path)
+    config = BrowserConfig.parse(f"adb:{path_str}")
+    self.assertEqual(config.path, path)
+    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Unsupported browser"):
+      BrowserConfig.parse(path_str)
+
+  def test_parse_adb_custom_bundle(self):
+    self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
+    path_str = "/test/my_custom_bundle"
+    path = pth.LocalPath(path_str)
+    self.fs.create_file(path)
+    config = BrowserConfig.parse(f"adb:{path_str}")
+    self.assertEqual(config.path, path)
+    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Unsupported browser"):
+      BrowserConfig.parse(path_str)
+
+  def test_parse_arbitrary_apk_no_prefix(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+    ]
+    path_str = "/test/my_app.apk"
+    path = pth.LocalPath(path_str)
+    self.fs.create_file(path)
+    config = BrowserConfig.parse(path_str)
+    self.assertEqual(config.path, path)
+    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    explicit_config = BrowserConfig.parse(f"adb:{path_str}")
+    self.assertEqual(config, explicit_config)
+
   def test_parse_simple_with_local_built_apk_helper_no_prefix(self):
     paths = (
         "/chrome/src/out/Release/chrome_public_apk",
+        "/chrome/src/out/Release/chrome_apk",
         "/out/android-arm64-release/bin/chrome_public_bundle",
     )
     self.platform.sh_results = [

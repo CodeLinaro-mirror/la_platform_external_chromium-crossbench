@@ -109,7 +109,7 @@ class BrowserConfig(ConfigObject):
       driver, path, network, env = cls._parse_inline_short_form(value)
     else:
       # Variant: $PATH_OR_IDENTIFIER
-      if cls._is_android_path(value):
+      if cls._is_known_android_browser(value):
         driver = DriverConfig(BrowserDriverType.ANDROID)
       path = cls._parse_path_or_identifier(value, driver=driver)
     assert path, "Invalid path"
@@ -210,7 +210,7 @@ class BrowserConfig(ConfigObject):
     if not maybe_path_or_identifier:
       raise argparse.ArgumentTypeError("Got empty browser identifier.")
     if not driver_type:
-      if cls._is_android_path(maybe_path_or_identifier):
+      if cls._is_known_android_browser(maybe_path_or_identifier):
         driver_type = BrowserDriverType.ANDROID
       elif driver:
         driver_type = driver.type
@@ -250,10 +250,16 @@ class BrowserConfig(ConfigObject):
             f"Unknown browser path or short name: '{maybe_path_or_identifier}'")
     if cls.is_supported_browser_path(path):
       return path
+    if driver_type == BrowserDriverType.ANDROID:
+      if cls._is_known_android_browser(path.name):
+        return path
+      # Additionally support unknown chrome apk helper binaries.
+      if path.name.endswith(("_apk", "_bundle")):
+        return path
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
 
   @classmethod
-  def _is_android_path(cls, value: str) -> bool:
+  def _is_known_android_browser(cls, value: str) -> bool:
     if value.endswith(ApkConfig.VALID_EXTENSIONS):
       return True
     if pth.LocalPath(value).name in CHROME_APK_HELPER_NAMES:
