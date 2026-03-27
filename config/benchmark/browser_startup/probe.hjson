@@ -1,0 +1,22 @@
+{
+  "probes": {
+    "perfetto": {
+      "trace_config": "./perfetto_trace_config.txtpb"
+    }
+    "trace_processor": {
+      "queries": [
+        {
+          "name": "first_web_contents_paint"
+          "sql":
+            '''
+            SELECT
+              dur / 1e6 AS duration_ms
+            FROM slice
+            WHERE name = 'Startup.FirstWebContents.NonEmptyPaint3'
+            LIMIT 1
+            '''
+        }
+      ]
+    }
+  }
+}

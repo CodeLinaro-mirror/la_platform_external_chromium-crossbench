@@ -1,0 +1,11 @@
+{
+  "pages": {
+    "blank_page_startup": [
+      {
+        "action": "get"
+        "url": "about:blank"
+        "ready_state": "complete"
+      }
+    ]
+  }
+}

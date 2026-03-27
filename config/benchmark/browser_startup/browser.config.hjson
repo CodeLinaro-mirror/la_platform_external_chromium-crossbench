@@ -1,0 +1,11 @@
+{
+  "browsers": {
+    "baseline": {
+      "browser": "chrome"
+    }
+    "initial_webui": {
+      "browser": "chrome"
+      "flags": "--enable-features=InitialWebUI,WebUIReloadButton,WebUIReloadButtonDeferBrowserViewShow,InitialWebUISyncNavStartToCommit,WebUIInProcessResourceLoadingV2"
+    }
+  }
+}
