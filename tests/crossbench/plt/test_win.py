@@ -53,6 +53,10 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertEqual(version.parts, (10, 0, 22631, 3593))
     self.assertEqual(version.version_str, ver_output.strip())
 
+  def test_killall(self):
+    self.expect_sh("taskkill", "/F", "/IM", "chrome.exe", result="")
+    self.platform.killall("chrome")
+
   def test_path_conversion(self):
     self.assertIsInstance(
         self.platform.path("foo/bar"), pathlib.PureWindowsPath)

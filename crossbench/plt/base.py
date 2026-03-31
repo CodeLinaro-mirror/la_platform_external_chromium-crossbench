@@ -521,6 +521,10 @@ class Platform(abc.ABC):
   def kill(self, process: ProcessLike) -> None:
     self._handle_process_tree(process, lambda process: process.kill())
 
+  def killall(self, process_name: str) -> None:
+    del process_name
+    raise NotImplementedError(f"killall not implemented for {self}")
+
   def terminate_gracefully(self,
                            process: ProcessLike,
                            timeout: int = 1,

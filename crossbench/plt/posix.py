@@ -471,6 +471,10 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
         self.send_signal(process, self.signals.SIGKILL)
 
   @override
+  def killall(self, process_name: str) -> None:
+    self.sh("killall", "-9", process_name, check=False)
+
+  @override
   def process_info(self, process: ProcessLike) -> Optional[dict[str, Any]]:
     if self.is_local:
       return super().process_info(process)

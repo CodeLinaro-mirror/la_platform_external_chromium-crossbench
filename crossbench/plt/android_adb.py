@@ -697,6 +697,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def get_all_cpus_power_modes(self) -> set[str]:
+    # Needs shell=True since we're reading multiple files in one go.
     output = self.adb.shell_stdout(  # noqa: S604
         "cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor",
         shell=True)
@@ -874,6 +875,10 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     temp_path_with_suffix = temp_path.with_name(f"{temp_path.name}{suffix}")
     self.rename(temp_path, temp_path_with_suffix)
     return temp_path_with_suffix
+
+  @override
+  def killall(self, process_name: str) -> None:
+    self.sh("pkill", process_name, check=False)
 
   @override
   def processes(self,

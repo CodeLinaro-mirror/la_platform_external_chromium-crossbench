@@ -78,6 +78,13 @@ class WinPlatform(Platform):
         "Get-CIMInstance -query 'select * from Win32_Processor' | ft Name"
     ).strip().splitlines()[2].strip()
 
+  @override
+  def killall(self, process_name: str) -> None:
+    if not process_name.lower().endswith(".exe"):
+      process_name += ".exe"
+    # https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/taskkill
+    self.sh("taskkill", "/F", "/IM", process_name, check=False)
+
   @functools.lru_cache(maxsize=1)
   @override
   def _raw_machine_arch(self) -> str:

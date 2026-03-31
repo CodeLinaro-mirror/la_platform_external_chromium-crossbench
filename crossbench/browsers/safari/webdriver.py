@@ -174,7 +174,8 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       super().force_quit()
     finally:
       # Certain safaridriver versions keep on lingering around when they fail.
-      self.host_platform.sh("killall", "-9", "safaridriver", check=False)
+      self.host_platform.killall("safaridriver")
+
 
 
 class SafariWebdriverIOS(SafariWebDriver):

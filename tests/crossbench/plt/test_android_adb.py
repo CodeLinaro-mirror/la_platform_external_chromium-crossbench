@@ -705,6 +705,19 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("input keyevent KEYCODE_MENU")
     self.platform.unlock_screen()
 
+  def test_force_stop(self):
+    self.expect_sh("am force-stop com.example.app")
+    self.platform.adb.force_stop("com.example.app")
+
+  def test_force_clear(self):
+    self.expect_sh("am get-current-user", result="10")
+    self.expect_sh("pm clear --user 10 com.example.app")
+    self.platform.adb.force_clear("com.example.app")
+
+  def test_killall(self):
+    self.expect_sh("pkill com.example.app")
+    self.platform.killall("com.example.app")
+
   def test_platform_version_cls(self):
     version = AndroidVersion.parse("13 (Tiramisu)")
     self.assertEqual(version.parts, (13,))

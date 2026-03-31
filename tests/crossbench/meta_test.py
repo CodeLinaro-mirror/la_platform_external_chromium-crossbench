@@ -147,6 +147,31 @@ class MetaTestCase(unittest.TestCase):
         f"Version mismatch between {pyproject_toml_path} "
         "and crossbench.__version__")
 
+  def test_no_raw_sh(self):
+    # Matches .sh("cat", .shell("cat", .sh_stdout("cat", .shell_stdout("cat"
+    # and also with adb: .adb.shell("cat", or .adb.shell_stdout("cat"
+    # but avoids "logcat".
+    # We check for common commands that have platform helpers.
+    illegal_commands = ("cat", "rm", "mkdir", "mv", "cp", "touch", "chmod",
+                        "which", "ps", "kill", "pkill", "killall", "uptime",
+                        "uname")
+    commands_re = "|".join(illegal_commands)
+    # Match .sh(..., "command") or .sh(..., 'command')
+    # Also handles escape sequences like \t or \n before the command.
+    re_sh_raw = re.compile(
+        rf"\.(sh|shell)(_stdout)?\(\s*(?:#[^\n]*\n\s*)?['\"]"
+        rf"(?:(?:\\t|\\n|\\r)*)?\b({commands_re})\b", re.MULTILINE)
+    for py_file in CROSSBENCH_DIR.glob("**/*.py"):
+      if py_file.parent.name == "plt":
+        continue
+      content = py_file.read_text()
+      for match in re_sh_raw.finditer(content):
+        line_no = content.count("\n", 0, match.start()) + 1
+        with self.subTest(py_file=str(py_file), line=line_no):
+          command = match.group(3)
+          self.fail(f"Use platform.{command}() helper instead of "
+                    f"raw shell call at {py_file}:{line_no}")
+
   def test_no_module_shadowing(self):
     pyproject_toml_path = ROOT_DIR / "pyproject.toml"
     pyproject_toml = tomllib.loads(pyproject_toml_path.read_text())

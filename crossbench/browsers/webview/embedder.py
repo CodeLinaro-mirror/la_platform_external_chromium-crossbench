@@ -8,8 +8,8 @@ import collections
 import logging
 import os
 import shlex
-from typing import (TYPE_CHECKING, Any, Final, MutableMapping, MutableSet,
-                    Sequence, cast)
+from typing import TYPE_CHECKING, Any, Final, MutableMapping, MutableSet, \
+    Sequence, cast
 
 from immutabledict import immutabledict
 from selenium import webdriver
@@ -60,7 +60,7 @@ class WebviewEmbedder(Webview):
                   self._chrome_command_line_path)
     self.platform.write_text(self._chrome_command_line_path,
                              shlex.join(("webview", *args)))
-    self.platform.sh("pkill", "-f", self.android_package)
+    self.adb_force_stop()
     self._log_browser_start(args)
     self._is_running = True
 

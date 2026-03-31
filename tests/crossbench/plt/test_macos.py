@@ -292,6 +292,10 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     with self.assertRaises(VersionParseError):
       MacOsVersion.parse("foo")
 
+  def test_killall(self):
+    self.expect_sh("killall", "-9", "Google Chrome", result="")
+    self.platform.killall("Google Chrome")
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

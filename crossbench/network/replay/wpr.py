@@ -303,7 +303,7 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
       raise RuntimeError(f"Could not fine local wpr.go on {host_platform}")
 
     wpr_go_bin = self._push_file(self._wpr_go_bin)
-    self.browser_platform.sh("chmod", "+x", wpr_go_bin)
+    self.browser_platform.chmod(wpr_go_bin, 0o755)
     archive: AnyPath = self._push_file(self._archive_path)
     key_file: AnyPath = self._push_file(wpr_root / "ecdsa_key.pem")
     cert_file: AnyPath = self._push_file(wpr_root / "ecdsa_cert.pem")

@@ -403,7 +403,7 @@ class AutoForwardingRemoteWebDriver(RemoteWebDriver):
           self._forward_port = 0
 
   def _killall_chromedriver(self) -> None:
-    self._platform.sh("killall", "chromedriver", check=False)
+    self._platform.killall("chromedriver")
 
   def _wait_for_driver_port(self) -> int:
     for _ in wait.wait_with_backoff(10):
