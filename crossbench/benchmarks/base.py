@@ -288,6 +288,12 @@ PressBenchmarkStoryT = TypeVar(
     "PressBenchmarkStoryT", bound=PressBenchmarkStory)
 
 
+class RangePatternError(argparse.ArgumentTypeError):
+
+  def __init__(self, pattern: str, message: str):
+    super().__init__(f"Invalid range pattern {pattern!r}. {message}")
+
+
 class RegexFilter():
 
   def __init__(self, all_names: Sequence[str], default_names: Sequence[str]):
@@ -297,22 +303,84 @@ class RegexFilter():
     for name in self._all_names:
       assert name, "Invalid empty story name"
       assert not name.startswith("-"), (
-          f"Known story names cannot start with '-', but got '{name}'.")
+          f"Known story names cannot start with '-', but got {name!r}.")
       assert name != "all", "Known story name cannot match 'all'."
 
   def process_all(self, patterns: Sequence[str]) -> OrderedSet[str]:
     if not isinstance(patterns, (list, tuple)):
       raise ValueError("Expected Sequence of story name or patterns "
-                       f"but got '{type(patterns)}'.")
+                       f"but got {type(patterns)!r}.")
     for pattern in patterns:
       self.process_pattern(pattern)
     return self._selected_names
 
   def process_pattern(self, pattern: str) -> None:
+    if "..." in pattern:
+      self._process_range_pattern(pattern)
+      return
     if pattern.startswith("-"):
       self.remove(pattern[1:])
     else:
       self.add(pattern)
+
+  def _process_range_pattern(self, pattern: str) -> None:
+    parts = pattern.split("...")
+    if len(parts) != 2:
+      raise RangePatternError(pattern, "Expected exactly one '...' separator.")
+    start_pattern, end_pattern = parts
+    if not start_pattern and not end_pattern:
+      raise RangePatternError(pattern,
+                              "Start and end patterns cannot both be empty.")
+    if start_pattern.startswith("-"):
+      raise RangePatternError(
+          pattern, f"Start pattern {start_pattern!r} must not be negative.")
+    if end_pattern.startswith("-"):
+      raise RangePatternError(
+          pattern, f"End pattern {end_pattern!r} must not be negative.")
+
+    default_names_list = list(self._default_names.keys())
+    if not default_names_list:
+      return
+
+    start_index = 0
+    if start_pattern:
+      start_matches = self._find_matches_in_list(start_pattern,
+                                                 default_names_list)
+      if not start_matches:
+        raise ValueError(
+            f"Start pattern {start_pattern!r} matched no default stories.")
+      # Start is the first match
+      first_match = start_matches[0]
+      start_index = default_names_list.index(first_match)
+
+    end_index = len(default_names_list) - 1
+    if end_pattern:
+      end_matches = self._find_matches_in_list(end_pattern, default_names_list)
+      if not end_matches:
+        raise ValueError(
+            f"End pattern {end_pattern!r} matched no default stories.")
+      # End is the last match
+      last_match = end_matches[-1]
+      end_index = default_names_list.index(last_match)
+
+    if start_index > end_index:
+      start_name = default_names_list[start_index]
+      end_name = default_names_list[end_index]
+      raise ValueError(
+          f"Range start {start_name!r} (index {start_index}) "
+          f"comes after range end {end_name!r} (index {end_index}).")
+
+    selection = default_names_list[start_index:end_index + 1]
+    self._selected_names.update(selection)
+
+  def _find_matches_in_list(self, pattern: str, names: list[str]) -> list[str]:
+    regexp = self._pattern_to_regexp(pattern)
+    matches = [name for name in names if regexp.fullmatch(name)]
+    if not matches:
+      # Try case insensitive
+      iregexp = re.compile(regexp.pattern, flags=re.IGNORECASE)
+      matches = [name for name in names if iregexp.fullmatch(name)]
+    return matches
 
   def add(self, pattern: str) -> None:
     self._check_processed_pattern(pattern)
@@ -340,9 +408,9 @@ class RegexFilter():
     if not pattern:
       raise ValueError("Empty pattern is not allowed")
     if pattern == "-":
-      raise ValueError(f"Empty remove pattern not allowed: '{pattern}'")
+      raise ValueError(f"Empty remove pattern not allowed: {pattern!r}")
     if pattern[0] == "-":
-      raise ValueError(f"Unprocessed negative pattern not allowed: '{pattern}'")
+      raise ValueError(f"Unprocessed negative pattern not allowed: {pattern!r}")
 
   def _add_matching(self, regexp: re.Pattern, original_pattern: str) -> None:
     substories = self._regexp_match(regexp, original_pattern)
@@ -356,7 +424,7 @@ class RegexFilter():
       except KeyError as e:
         raise ValueError(
             "Removing Story failed: "
-            f"name='{substory}' extracted by pattern='{original_pattern}'"
+            f"name={substory!r} extracted by pattern={original_pattern!r}"
             "is not in the filtered story list") from e
 
   def _regexp_match(self, regexp: re.Pattern,
@@ -369,7 +437,7 @@ class RegexFilter():
     if not substories:
       return self._handle_no_match(original_pattern)
     if len(substories) == len(self._all_names) and self._selected_names:
-      raise ValueError(f"'{original_pattern}' matched all and overrode all"
+      raise ValueError(f"{original_pattern!r} matched all and overrode all"
                        "previously filtered story names.")
     return substories
 
@@ -402,6 +470,9 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
     "-name"   Exclude story with the given name'
     "foo.*"   Include stories whose name matches the regexp.
     "-foo.*"  Exclude stories whose name matches the regexp.
+    "A...B"   Include all default stories from A to B (inclusive).
+    "A..."    Include all default stories from the first A.
+    "...B"    Include all default stories up to the last B.
 
   These patterns can be combined:
     [".*", "-foo", "-bar"] Includes all except the "foo" and "bar" story
@@ -597,7 +668,7 @@ class PressBenchmark(SubStoryBenchmark):
     if all(runner.env.validate_url(url, p) for p in runner.platforms):
       return
     msg = [
-        f"Could not reach live benchmark URL: '{url}'."
+        f"Could not reach live benchmark URL: {url!r}."
         f"Please make sure you're connected to the internet."
     ]
     local_url = first_story.URL_LOCAL
@@ -609,5 +680,5 @@ class PressBenchmark(SubStoryBenchmark):
   def _validate_custom_url(self, runner: Runner, url: str) -> None:
     if not all(runner.env.validate_url(url, p) for p in runner.platforms):
       raise ValueError(
-          f"Could not reach custom benchmark URL: '{self.custom_url}'. "
+          f"Could not reach custom benchmark URL: {self.custom_url!r}. "
           f"Please make sure your local web server is running.")

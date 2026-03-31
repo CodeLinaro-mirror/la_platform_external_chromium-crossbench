@@ -124,7 +124,7 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   def expect_startup_devices(self, devices: str = ADB_DEVICES_SAMPLE_OUTPUT):
     if self.host_platform.is_macos:
       self.host_platform.expect_sh(
-          "brew", "--prefix", result=ShResult(success=False))
+          "brew", "--prefix", result=ShResult(returncode=1))
     self.host_platform.expect_sh(pathlib.Path("adb"), "start-server")
     self.host_platform.expect_sh(
         pathlib.Path("adb"), "devices", "-l", result=devices)

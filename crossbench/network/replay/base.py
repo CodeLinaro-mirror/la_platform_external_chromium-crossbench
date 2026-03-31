@@ -73,15 +73,22 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
 
   def _download_gcloud_archive(self, url: str) -> LocalPath:
     title: str = f"Downloading {url}"
+    hint: str = (
+        f"Failed to download {url} from Google Cloud Storage. Make sure the "
+        "cloud SDK is installed and that you have the necessary permissions "
+        "(run `./cb.py `<your benchmark> --help` and check for mentions to "
+        "permission groups)")
     with exception.annotate(title), ui.spinner(title=title):
-      local_path = (
-          self.host_platform.local_cache_dir("wpr") /
-          self._generate_filename(url))
-      if local_path.is_file():
-        logging.info("Found cached WPR archive: %s", local_path)
-        return local_path
-      logging.info("Downloading WPR archive from %s to %s", url, local_path)
-      self.host_platform.download_gcs_file(url, local_path)
+      # `title` + "\n" + `hint` yields the wrong formatting, so nest.
+      with exception.annotate(hint):
+        local_path = (
+            self.host_platform.local_cache_dir("wpr") /
+            self._generate_filename(url))
+        if local_path.is_file():
+          logging.info("Found cached WPR archive: %s", local_path)
+          return local_path
+        logging.info("Downloading WPR archive from %s to %s", url, local_path)
+        self.host_platform.download_gcs_file(url, local_path)
     return local_path
 
   def _ensure_archive(self, archive: pth.LocalPath | str) -> LocalPath:

@@ -39,8 +39,13 @@ def _parse_flags(flag_data: str | list | tuple | FlagsData | None) -> Flags:
 
 
 def _parse_flags_sequence(flag_data: Iterable) -> Flags:
-  split_flags = (ChromeFlags.split(flag) for flag in flag_data)
-  return ChromeFlags(split_flags).freeze()
+  flags = ChromeFlags()
+  for flag in flag_data:
+    if isinstance(flag, str):
+      flags.update(ChromeFlags.parse_str(flag))
+    else:
+      flags.set(*flag)
+  return flags.freeze()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -248,6 +253,10 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
   def config_from_args_flags(
       cls, args: argparse.Namespace) -> dict[str, list[str] | str | None]:
     initial_flags = ChromeFlags(_parse_flags(args.other_browser_args))
+    with exception.annotate("Parsing --extra-browser-args"):
+      # Parse --extra-browser-args with lower priority after
+      # parsing '-- other_args...'.
+      initial_flags.update(ChromeFlags(_parse_flags(args.extra_browser_args)))
     if args.enable_features:
       initial_flags["--enable-features"] = args.enable_features
     if args.disable_features:
@@ -275,12 +284,13 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
     base_js_flags = initial_flags.js_flags
     if args.js_flags:
       # Create a variant for every js flag:
-      merged_js_flags: list[JSFlags] = []
-      for flags in args.js_flags:
-        js_flags = JSFlags.parse(flags)
-        js_flags.update(base_js_flags)
-        merged_js_flags.append(js_flags)
-      args_config["--js-flags"] = list(map(str, merged_js_flags))
+      js_flag_variants: list[JSFlags] = []
+      for index, flags in enumerate(args.js_flags):
+        with exception.annotate(f"Parsing --js-flags[${index}]"):
+          js_flags = JSFlags.parse(flags)
+          js_flags.update(base_js_flags)
+          js_flag_variants.append(js_flags)
+      args_config["--js-flags"] = list(map(str, js_flag_variants))
     return args_config
 
   def product(self, *args: Self) -> Self:

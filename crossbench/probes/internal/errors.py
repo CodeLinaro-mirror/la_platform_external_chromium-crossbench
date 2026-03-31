@@ -12,7 +12,7 @@ from typing_extensions import override
 from crossbench.probes.internal.base import InternalJsonResultProbe, \
     InternalJsonResultProbeContext
 from crossbench.probes.probe_context import ProbeSessionContext
-from crossbench.probes.results import EmptyProbeResult
+from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 
 if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult, ProbeResultDict
@@ -67,7 +67,12 @@ class ErrorsProbe(InternalJsonResultProbe):
 
     if not merged_errors:
       return EmptyProbeResult()
-    return self.write_group_result(group, merged_errors, csv_formatter=None)
+
+    result = self.write_group_result(group, merged_errors, csv_formatter=None)
+    txt_path = result.json.with_suffix(".txt")
+    if group.exceptions.write_txt(txt_path):
+      return result.merge(LocalProbeResult(txt=(txt_path,)))
+    return result
 
   @override
   def get_context_cls(self) -> Type[ErrorsProbeContext]:
@@ -84,6 +89,14 @@ class ErrorsProbeContext(InternalJsonResultProbeContext):
   @override
   def to_json(self, actions: Actions) -> Json:
     return self.run.exceptions.to_json()
+
+  @override
+  def teardown(self) -> ProbeResult:
+    result = super().teardown()
+    txt_path = self.local_result_path.with_suffix(".txt")
+    if self.run.exceptions.write_txt(txt_path):
+      return result.merge(self.local_result(txt=(txt_path,)))
+    return result
 
 
 class ErrorProbeSessionContext(ProbeSessionContext):
@@ -106,4 +119,7 @@ class ErrorProbeSessionContext(ProbeSessionContext):
     result_path = self.local_result_path.parent / "cb.session.errors.json"
     with result_path.open("w") as f:
       json.dump(self.session.exceptions.to_json(), f)
-    return self.local_result(json=(result_path,))
+    txt_path = result_path.with_suffix(".txt")
+    if self.session.exceptions.write_txt(txt_path):
+      return self.local_result(json=(result_path,), txt=(txt_path,))
+    return self.empty_result()

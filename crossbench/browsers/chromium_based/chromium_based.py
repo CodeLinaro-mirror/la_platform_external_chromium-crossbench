@@ -34,11 +34,14 @@ class ChromiumBased(Browser):
   MIN_BENCHMARKING_EXTENSION_FLAG_MILESTONE: Final[int] = 139
   DEFAULT_FLAGS: tuple[str, ...] = (
       "--no-default-browser-check",
+      "--disable-optimization-guide-model-downloads-for-benchmarking",
       "--disable-component-update",
       "--disable-sync",
       "--no-first-run",
       # This could be enabled via feature-flags as well.
       "--disable-search-engine-choice-screen",
+      # We do not need cashpad metrics
+      "--disable-crashpad-metrics",
   )
   FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS: tuple[str, ...] = (
       "--disable-background-timer-throttling",
@@ -130,11 +133,9 @@ class ChromiumBased(Browser):
   def _maybe_disable_gpu_compositing(self) -> None:
     # Chrome Remote Desktop provides no GPU and older chrome versions
     # don't handle this well.
-    if self.version.major > 92 or ("CHROME_REMOTE_DESKTOP_SESSION"
-                                   not in self.platform.environ):
-      return
-    self.flags.set("--disable-gpu-compositing")
-    self.flags.set("--no-sandbox")
+    if self.version.major <= 92 and self.platform.is_remote_desktop:
+      self.flags.set("--disable-gpu-compositing")
+      self.flags.set("--no-sandbox")
 
   @override
   def validate_flags(self) -> None:

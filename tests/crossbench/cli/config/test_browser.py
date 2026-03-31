@@ -28,8 +28,8 @@ from crossbench.helper.cwd import change_cwd
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.cli.config.base import ADB_DEVICES_OUTPUT, \
-    ADB_DEVICES_SINGLE_OUTPUT, XCTRACE_DEVICES_OUTPUT, \
-    XCTRACE_DEVICES_SINGLE_OUTPUT, BaseConfigTestCase
+    ADB_DEVICES_SINGLE_OUTPUT, IOS_DEVICES_OUTPUT, IOS_DEVICES_SINGLE_OUTPUT, \
+    BaseConfigTestCase
 from tests.crossbench.mock_helper import ShResult
 
 if TYPE_CHECKING:
@@ -238,41 +238,40 @@ class BrowserConfigTestCase(BaseConfigTestCase):
             ENV_CONFIG_PRESETS["battery"]))
 
   def test_parse_simple_ambiguous_with_driver_ios(self):
-    self.platform.sh_results = [XCTRACE_DEVICES_OUTPUT]
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      _ = BrowserConfig.parse("ios:chrome")
+    with unittest.mock.patch(
+        "crossbench.cli.config.browser.ios_devices",
+        return_value=IOS_DEVICES_OUTPUT):
+      with self.assertRaises(argparse.ArgumentTypeError) as cm:
+        _ = BrowserConfig.parse("ios:chrome")
     self.assertIn("devices", str(cm.exception))
 
   def test_parse_simple_with_driver_ios(self):
-    self.platform.sh_results = [
-        XCTRACE_DEVICES_SINGLE_OUTPUT, XCTRACE_DEVICES_SINGLE_OUTPUT
-    ]
-    config = BrowserConfig.parse("ios:chrome")
-    self.assertEqual(
-        config,
-        BrowserConfig(
-            Chrome.stable_path(self.platform),
-            DriverConfig(BrowserDriverType.IOS)))
-    self.assertIsNone(config.network)
-    self.platform.sh_results = [
-        XCTRACE_DEVICES_SINGLE_OUTPUT,
-    ]
-    config = BrowserConfig.parse("ios:chrome:live")
-    self.assertEqual(config.network, NetworkConfig.default())
+    with unittest.mock.patch(
+        "crossbench.cli.config.driver.ios_devices",
+        return_value=IOS_DEVICES_SINGLE_OUTPUT):
+      config = BrowserConfig.parse("ios:chrome")
+      self.assertEqual(
+          config,
+          BrowserConfig(
+              Chrome.stable_path(self.platform),
+              DriverConfig(BrowserDriverType.IOS)))
+      self.assertIsNone(config.network)
+      config = BrowserConfig.parse("ios:chrome:live")
+      self.assertEqual(config.network, NetworkConfig.default())
 
   def test_parse_simple_with_driver_ios_with_network(self):
-    self.platform.sh_results = [
-        XCTRACE_DEVICES_SINGLE_OUTPUT, XCTRACE_DEVICES_SINGLE_OUTPUT
-    ]
-    config = BrowserConfig.parse("ios:chrome:4G")
-    self.assertEqual(
-        config,
-        BrowserConfig(
-            Chrome.stable_path(self.platform),
-            DriverConfig(BrowserDriverType.IOS),
-            NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G)))
-    self.assertEqual(config.network,
-                     NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G))
+    with unittest.mock.patch(
+        "crossbench.cli.config.driver.ios_devices",
+        return_value=IOS_DEVICES_SINGLE_OUTPUT):
+      config = BrowserConfig.parse("ios:chrome:4G")
+      self.assertEqual(
+          config,
+          BrowserConfig(
+              Chrome.stable_path(self.platform),
+              DriverConfig(BrowserDriverType.IOS),
+              NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G)))
+      self.assertEqual(config.network,
+                       NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G))
 
   def test_parse_simple_ambiguous_with_driver_android(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
@@ -628,16 +627,22 @@ class BrowserConfigTestCase(BaseConfigTestCase):
                        "Running on iOS is only possible in mac hosts")
   def test_parse_with_multiple_ios_devices(self):
     adb_devices = ShResult("List of devices attached\n\n")
-    xctrace_devices = ShResult("== Devices ==\n"
-                               "device1 (26.0) (ID-1)\n"
-                               "device2 (26.0) (ID-2)\n"
-                               "device3 (26.0) (ID-3)\n")
-    self.platform.sh_results = (
-        [xctrace_devices] + [adb_devices, xctrace_devices, xctrace_devices] * 6)
-    self.assertTupleEqual(
-        BrowserConfig.parse_with_range("ios-all:safari"),
-        (BrowserConfig.parse("ID-1:safari"), BrowserConfig.parse("ID-2:safari"),
-         BrowserConfig.parse("ID-3:safari")))
+    self.platform.sh_results = ([adb_devices] * 6)
+    ios_devices = {
+        "ID-1": plt.ios.IOSDeviceInfo("ID-1", "device1", "26.0"),
+        "ID-2": plt.ios.IOSDeviceInfo("ID-2", "device2", "26.0"),
+        "ID-3": plt.ios.IOSDeviceInfo("ID-3", "device3", "26.0"),
+    }
+    with (unittest.mock.patch(
+        "crossbench.cli.config.browser.ios_devices", return_value=ios_devices),
+          unittest.mock.patch(
+              "crossbench.cli.config.driver.ios_devices",
+              return_value=ios_devices)):
+      self.assertTupleEqual(
+          BrowserConfig.parse_with_range("ios-all:safari"),
+          (BrowserConfig.parse("ID-1:safari"),
+           BrowserConfig.parse("ID-2:safari"),
+           BrowserConfig.parse("ID-3:safari")))
 
   def test_parse_safari_variants(self):
     config = BrowserConfig.parse("safari")

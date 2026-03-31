@@ -16,9 +16,10 @@ from crossbench.cli import ui
 
 class CrossBenchArgumentParser(argparse.ArgumentParser):
 
-  def __init__(self, *args, **kwargs) -> None:
+  def __init__(self, **kwargs) -> None:
     kwargs["exit_on_error"] = False
-    super().__init__(*args, **kwargs)
+    allow_abbrev = kwargs.pop("allow_abbrev", False)
+    super().__init__(allow_abbrev=allow_abbrev, **kwargs)
 
   def fail(self, message: str) -> None:
     super().error(message)

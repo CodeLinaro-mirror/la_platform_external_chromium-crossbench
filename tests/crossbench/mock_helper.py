@@ -7,6 +7,7 @@ from __future__ import annotations
 import collections
 import contextlib
 import dataclasses
+import enum
 import functools
 import pathlib
 import shlex
@@ -52,14 +53,12 @@ class DownloadMockData:
 
 class ShResult:
 
-  def __init__(self, result: str | bytes = "", success: bool = True) -> None:
+  def __init__(self, result: str | bytes = "", returncode: int = 0) -> None:
     if isinstance(result, str):
       result = result.encode("utf-8")
-
     assert isinstance(result, bytes)
-
     self._result = result
-    self._success = success
+    self._returncode = returncode
 
   @property
   def result(self) -> bytes:
@@ -70,8 +69,8 @@ class ShResult:
     return self.result
 
   @property
-  def success(self) -> bool:
-    return self._success
+  def returncode(self) -> int:
+    return self._returncode
 
 
 class TrackingPortManagerMixin:
@@ -134,7 +133,7 @@ class MockRemotePortManager(TrackingPortManagerMixin,
 
 class MockPlatformMixin:
 
-  def __init__(self, *args, is_battery_powered=False, **kwargs):
+  def __init__(self, *args, is_battery_powered=False, fake_fs=None, **kwargs):
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
     self._sh_cmds: list[TupleCmdArgs] = []
@@ -146,13 +145,21 @@ class MockPlatformMixin:
     self.sleeps: list[dt.timedelta] = []
     self.use_mock_machine = True
     self.use_mock_name = True
-    self.use_fs = False
     self.mock_version_str: str | None = "1.2.3.4.5"
     self._machine_arch: [MachineArch] = None  # type: ignore
     self.popens: list[MockPopen] = []
     self.mkdir_calls: int = 0
     self.screenshots: list[pth.AnyPath] = []
+    self.fake_fs = fake_fs
+    self.use_fs = bool(fake_fs)
     super().__init__(*args, **kwargs)
+
+  def install_mock_binary(self, name, path: pth.AnyPathLike) -> pth.AnyPath:
+    binary = self.path(path)
+    assert self.fake_fs, "missing fake fs"
+    self.fake_fs.create_file(binary)
+    self.set_binary_lookup_override(name, binary)
+    return binary
 
   @property
   def has_display(self) -> bool:
@@ -195,17 +202,18 @@ class MockPlatformMixin:
       self.touch(path)
     return path
 
-  def expect_sh(
-      self, *args: CmdArg | int,
-      result: bytes | str | ShResult = ShResult()) -> None:
+  def expect_sh(self,
+                *args: CmdArg | int,
+                result: bytes | str | ShResult = "",
+                returncode: int = 0) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
       self._expected_sh_cmds.append(self._convert_sh_args(*args))
-    if isinstance(result, str):
-      result = ShResult(result)
-    if isinstance(result, bytes):
-      result = ShResult(result)
+    if isinstance(result, (str, bytes)):
+      result = ShResult(result, returncode)
+    else:
+      assert returncode == 0, "Cannot have ShResult and custom returncode"
     assert isinstance(result, ShResult)
     self._sh_results.append(result)
 
@@ -344,7 +352,28 @@ class MockPlatformMixin:
                       env: Optional[Mapping[str, str]] = None,
                       cwd: Optional[pth.AnyPath] = None,
                       check: bool = True) -> bytes:
-    del shell, quiet, stdin, env, check
+    return self.sh(
+        *args,
+        shell=shell,
+        quiet=quiet,
+        stdin=stdin,
+        env=env,
+        cwd=cwd,
+        check=check,
+        capture_output=True).stdout
+
+  def sh(self,
+         *args: CmdArg,
+         shell: bool = False,
+         capture_output: bool = False,
+         stdout: ProcessIo = None,
+         stderr: ProcessIo = None,
+         stdin: ProcessIo = None,
+         env: Optional[Mapping[str, str]] = None,
+         cwd: Optional[pth.AnyPath] = None,
+         quiet: bool = False,
+         check: bool = True) -> subprocess.CompletedProcess:
+    del capture_output, stderr, stdin, stdout, shell, quiet, env, cwd
     if self._expected_sh_cmds is not None:
       assert self._expected_sh_cmds, (
           f"Missing expected sh_cmds, but got: {args}")
@@ -361,28 +390,13 @@ class MockPlatformMixin:
       raise ValueError(f"After {len(self._sh_cmds)} cmds: "
                        f"MockPlatform has no more sh outputs for cmd: {cmd}")
 
-    sh_result = self._sh_results.pop(0)
-    if not sh_result.success:
-      raise SubprocessError(self, subprocess.CompletedProcess(args, -1))
+    sh_result: ShResult = self._sh_results.pop(0)
+    process = subprocess.CompletedProcess(
+        args, sh_result.returncode, stdout=sh_result.result)
+    if check and process.returncode != 0:
+      raise SubprocessError(self, process)
 
-    return sh_result.result
-
-  def sh(self,
-         *args: CmdArg,
-         shell: bool = False,
-         capture_output: bool = False,
-         stdout: ProcessIo = None,
-         stderr: ProcessIo = None,
-         stdin: ProcessIo = None,
-         env: Optional[Mapping[str, str]] = None,
-         cwd: Optional[pth.AnyPath] = None,
-         quiet: bool = False,
-         check: bool = True):
-    del capture_output, stderr, stdin, stdout
-    result = self.sh_stdout(
-        *args, shell=shell, quiet=quiet, env=env, cwd=cwd, check=check)
-    # TODO: Generalize this in the future, to mimic failing `sh` calls.
-    return subprocess.CompletedProcess(args, 0, stdout=result.encode("utf-8"))
+    return process
 
   def popen(self,
             *args: CmdArg,
@@ -400,7 +414,9 @@ class MockPlatformMixin:
     if not self.popens:
       raise ValueError("No valid mock popen.")
 
-    return self.popens.pop(0)
+    mock_popen = self.popens.pop(0)
+    mock_popen.start()
+    return mock_popen
 
   def mkdir(self,
             path: pth.AnyPathLike,
@@ -464,19 +480,38 @@ class MockFd:
     return
 
 
+class MockPopenState(enum.StrEnum):
+  UNUSED = "unused"
+  RUNNING = "running"
+  TERMINATED = "terminated"
+  KILLED = "killed"
+
+
 class MockPopen:
 
-  def __init__(self, stdout: MockFd, stdin: MockFd):
-    self._stdout: MockFd = stdout
-    self._stdin: MockFd = stdin
+  def __init__(self, stdout: MockFd | None = None, stdin: MockFd | None = None):
+    self._stdout: MockFd = stdout or MockFd()
+    self._stdin: MockFd = stdin or MockFd()
+    self.state = MockPopenState.UNUSED
+
+  def start(self):
+    assert self.state == MockPopenState.UNUSED
+    self.state = MockPopenState.RUNNING
 
   def poll(self):
+    assert self.state != MockPopenState.UNUSED
     return
+
+  def terminate(self):
+    assert self.state != MockPopenState.UNUSED
+    self.state = MockPopenState.TERMINATED
 
   def kill(self):
-    return
+    assert self.state != MockPopenState.UNUSED
+    self.state = MockPopenState.KILLED
 
   def wait(self):
+    assert self.state != MockPopenState.UNUSED
     return
 
   @property
