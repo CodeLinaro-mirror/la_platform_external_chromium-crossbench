@@ -1,6 +1,6 @@
 # Browser Startup Benchmark
 
-This benchmark measures the time to the first non-empty paint (`Startup.FirstWebContents.NonEmptyPaint3`) for the browser startup sequence. It compares a **baseline** configuration against one with the **InitialWebUI** feature enabled.
+This benchmark measures the time to the first non-empty paint (`Startup.BrowserWindow.FirstPaint`) for the browser startup sequence. It compares a **baseline** configuration against one with the **InitialWebUI** feature enabled.
 
 ## Running the Benchmark
 
@@ -18,4 +18,4 @@ poetry run cb loading \
 ## Interpreting Results
 
 After the run finishes, Crossbench outputs a path to the results directory.
-Within the `trace_processor/` sub-directory, look for `first_web_contents_paint.csv` (or `.json`). This file contains the calculated `duration_ms` metric for each run, which you can use to directly compare the performance of each variant.
+Within the `trace_processor/` sub-directory, look for `browser_window_first_paint.csv` (or `.json`). This file contains the calculated `duration_ms` metric for each run, which you can use to directly compare the performance of each variant.

@@ -6,13 +6,13 @@
     "trace_processor": {
       "queries": [
         {
-          "name": "first_web_contents_paint"
+          "name": "browser_window_first_paint"
           "sql":
             '''
             SELECT
               dur / 1e6 AS duration_ms
             FROM slice
-            WHERE name = 'Startup.FirstWebContents.NonEmptyPaint3'
+            WHERE name = 'Startup.BrowserWindow.FirstPaint'
             LIMIT 1
             '''
         }
