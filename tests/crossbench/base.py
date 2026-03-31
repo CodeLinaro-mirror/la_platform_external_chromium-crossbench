@@ -34,6 +34,7 @@ from crossbench.cli.config.env import EnvConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
+from crossbench.config import config_dir
 from crossbench.probes.cb_perfetto.perfetto import TraceConfig
 from crossbench.runner.runner import Runner
 from tests.crossbench import mock_browser
@@ -135,6 +136,7 @@ class CrossbenchConfigTestMixin:
 
   def setup_perfetto_config_presets(self):
     self.setup_config_dir(TraceConfig.preset_dir())
+    self.setup_config_dir(config_dir() / "doc/probe")
 
   def setup_config_dir(self, config_dir):
     self.fs.add_real_directory(config_dir, lazy_read=True)

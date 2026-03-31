@@ -10,7 +10,7 @@ from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.all import CONFIGURABLE_INTERNAL_PROBES, \
     DEFAULT_INTERNAL_PROBES, GENERAL_PURPOSE_PROBES, INTERNAL_PROBES, \
     NON_CONFIGURABLE_INTERNAL_PROBES, OPTIONAL_INTERNAL_PROBES
-from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
+from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe, TraceConfig
 from crossbench.probes.cb_perfetto.tracing import TracingProbe
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
 from crossbench.probes.chromium_pgo import ChromiumPgoProbe
@@ -154,10 +154,11 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
             set(OPTIONAL_INTERNAL_PROBES)))
 
   def test_help(self):
+    TraceConfig.presets.cache_clear()
     self.setup_perfetto_config_presets()
     for probe_cls in self.probe_classes():
       help_text = probe_cls.help_text()
-      self.assertTrue(help)
+      self.assertTrue(help_text)
       summary = probe_cls.summary_text()
       self.assertTrue(summary)
       self.assertIn(summary, help_text)

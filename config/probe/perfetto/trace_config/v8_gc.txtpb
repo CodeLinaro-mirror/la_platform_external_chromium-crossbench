@@ -1,3 +1,4 @@
+# Perfetto configuration for V8 garbage collection.
 buffers {
   size_kb: 524288
   fill_policy: DISCARD

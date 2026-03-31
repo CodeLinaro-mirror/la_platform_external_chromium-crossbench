@@ -299,8 +299,8 @@ class PerfettoProbeFunctionalTestCase(CrossbenchConfigTestMixin,
     dummy_preset = TraceConfig.preset_dir() / "dummy_preset.txtpb"
     self.fs.create_file(dummy_preset)
     help_items = TraceConfig.help_text_items()
-    self.assertTrue(any(k == "presets" for k, v in help_items))
-    presets_str = dict(help_items)["presets"]
+    self.assertTrue(any(k == "trace_config presets" for k, v in help_items))
+    presets_str = dict(help_items)["trace_config presets"]
     self.assertIn("dummy_preset", presets_str)
 
   def test_create_context_desktop(self):

@@ -1,3 +1,4 @@
+# Perfetto configuration for GMA Webview.
 buffers {
   size_kb: 524288
   fill_policy: RING_BUFFER

@@ -113,8 +113,28 @@ class TraceConfig(ConfigObject):
   @override
   def help_text_items(cls) -> list[tuple[str, str]]:
     help_items = super().help_text_items()
-    help_items.append(("presets", ",".join(cls.presets().keys())))
+    preset_help: list[str] = []
+    for name, path in cls.presets().items():
+      help_str = cls._trace_config_help(name, path)
+      preset_help.append(help_str)
+    help_items.append(("trace_config presets", "\n".join(preset_help)))
     return help_items
+
+  @classmethod
+  def _trace_config_help(cls, name: str, path: pth.LocalPath) -> str:
+    comments: list[str] = []
+    with path.open(encoding="utf-8") as f:
+      for line in f:
+        line = line.strip()
+        if not line:
+          continue
+        if not line.startswith("#"):
+          break
+        comments.append(line[1:].strip())
+    if comments:
+      description = " ".join(comments)
+      return f"{name}\n  {description}\n"
+    return f"{name}\n"
 
 
 def has_v8_code_data_source(trace_config: trace_config_pb2.TraceConfig) -> bool:
@@ -146,6 +166,13 @@ class PerfettoProbe(Probe):
   """
   NAME: ClassVar = "perfetto"
   RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
+
+  @classmethod
+  @override
+  def help_text_items(cls) -> list[tuple[str, str]]:
+    items = super().help_text_items()
+    items.extend(TraceConfig.help_text_items())
+    return items
 
   @classmethod
   @override

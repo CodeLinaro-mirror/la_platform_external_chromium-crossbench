@@ -1,3 +1,4 @@
+# Default perfetto configuration for Chromium.
 buffers: {
     size_kb: 524288
     fill_policy: DISCARD
