@@ -918,6 +918,12 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
     self.assertEqual(version.minor, 0)
     self.assertEqual(version.channel_name, "stable")
 
+  def test_parse_stable_compact_firefox(self):
+    version: BrowserVersion = self._parse_helper("Firefox 149.0")
+    self.assertEqual(version.major, 149)
+    self.assertEqual(version.minor, 0)
+    self.assertEqual(version.channel_name, "stable")
+
   def test_parse_stable_alternatives(self):
     version: BrowserVersion = self._parse_helper(self.STABLE_VERSION_STR)
     for version_str in ("Firefox 115.0.3",):
@@ -954,6 +960,34 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
                         "Firefox Nightly 117.0a1"):
       alternative = self._parse_helper(version_str)
       self.assertEqual(version, alternative)
+    # Test verbose lookup without short channel
+    nightly = self._parse_helper("Firefox Nightly 117.0")
+    self.assertTrue(nightly.is_alpha)
+    self.assertEqual(nightly.parts, (117, 0, 0))
+
+  def test_parse_channel_error(self):
+    # Tests the "channel_long and channel_short != '.'" error branch
+    with self.assertRaisesRegex(VersionParseError,
+                                "Invalid ESR/Any channel version"):
+      self.parse("Firefox 116.0b4 esr")
+    with self.assertRaisesRegex(VersionParseError,
+                                "Invalid ESR/Any channel version"):
+      self.parse("Firefox 117.0a1 any")
+    with self.assertRaisesRegex(VersionParseError,
+                                "Invalid ESR/Any channel version"):
+      self.parse("Firefox 115.0 esr")
+
+  def test_parse_prefix_variants(self):
+    version = self.parse(self.STABLE_VERSION_STR)
+    self.assertEqual(version, self.parse("ff 115.0.3"))
+    self.assertEqual(version, self.parse("firefox 115.0.3"))
+    self.assertEqual(version, self.parse("ff-115.0.3"))
+    self.assertEqual(version, self.parse("firefox-115.0.3"))
+
+  def test_channel_name_unsupported(self):
+    version = FirefoxVersion((117, 0, 0), BrowserVersionChannel.PRE_ALPHA)
+    with self.assertRaisesRegex(ValueError, "Unsupported channel"):
+      _ = version.channel_name
 
   def test_str(self):
     self.assertEqual(str(self.parse(self.LTS_VERSION_STR)), "114.0.1 esr")

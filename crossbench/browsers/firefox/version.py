@@ -33,7 +33,7 @@ class FirefoxVersion(BrowserVersion):
       "a": BrowserVersionChannel.ALPHA,
       "any": BrowserVersionChannel.ANY,
   }
-  _CHANNEL_LONG_LOOKUP: Final[dict[str, BrowserVersionChannel]] = {
+  _CHANNEL_VERBOSE_LOOKUP: Final[dict[str, BrowserVersionChannel]] = {
       "developer edition": BrowserVersionChannel.BETA,
       "nightly": BrowserVersionChannel.ALPHA,
   }
@@ -69,13 +69,16 @@ class FirefoxVersion(BrowserVersion):
     channel_short: str | None = matches["channel_short"]
     if not channel_long and not channel_short:
       full_version_lower = full_version.lower()
-      for long_name, channel in cls._CHANNEL_LONG_LOOKUP.items():
+      for long_name, channel in cls._CHANNEL_VERBOSE_LOOKUP.items():
         if long_name in full_version_lower:
           return channel
     if channel_long and channel_short != ".":
       raise cls.parse_error("Invalid ESR/Any channel version", full_version)
-    channel_str: str = (channel_long or channel_short or "stable").lower()
-    return cls._CHANNEL_LOOKUP[channel_str]
+    if channel_long:
+      return cls._CHANNEL_LOOKUP[channel_long.lower()]
+    if channel_short:
+      return cls._CHANNEL_LOOKUP[channel_short.lower()]
+    return BrowserVersionChannel.STABLE
 
   @classmethod
   def _validate_prefix(cls, prefix: Optional[str]) -> bool:
