@@ -152,8 +152,7 @@ class JetStream30Story(JetStream3Story):
   __doc__ = JetStream3Story.__doc__
   NAME: ClassVar[str] = "jetstream_3.0"
   URL: ClassVar[str] = "https://chromium-workloads.web.app/jetstream/v3.0/"
-  URL_OFFICIAL: ClassVar[
-      str] = "https://chromium-workloads.web.app/jetstream/v3.0/"
+  URL_OFFICIAL: ClassVar[str] = "https://browserbench.org/JetStream3.0/"
   URL_CHROME_FORK: ClassVar[
       str] = "https://chromium-workloads.web.app/jetstream/v3.0-custom/"
   STORY_DATA = JETSTREAM_3_0_STORY_DATA
