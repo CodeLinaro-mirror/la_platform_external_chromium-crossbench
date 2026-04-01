@@ -54,7 +54,7 @@ class PartialBrowserVersionError(ValueError):
 
   def __init__(self, version: BrowserVersion):
     self.version = version
-    msg = f"Got partial browser version: {repr(version)}"
+    msg = f"Got partial browser version: {version!r}"
     super().__init__(msg)
 
 

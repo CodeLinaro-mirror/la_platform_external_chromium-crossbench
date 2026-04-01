@@ -330,36 +330,40 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   @override
   def force_quit(self) -> None:
-    if getattr(self, "_private_driver", None) is None or not self._is_running:
+    if not self._is_running:
       return
-    atexit.unregister(self.force_quit)
-    logging.debug("WebDriverBrowser.force_quit()")
+    logging.info("WebDriverBrowser.force_quit()")
     try:
-      try:
-        # Close the current window.
-        self._private_driver.close()
-        time.sleep(0.1)
-      except selenium.common.exceptions.NoSuchWindowException:
-        # No window is good.
-        pass
-      except selenium.common.exceptions.InvalidSessionIdException:
-        # Closing the last tab will close the session as well.
-        return
-      try:
-        self._private_driver.quit()
-      except selenium.common.exceptions.InvalidSessionIdException:
-        return
-      # Sometimes a second quit is needed, ignore any warnings there
-      try:
-        self._private_driver.quit()
-      except Exception as e:  # noqa: BLE001
-        logging.debug("Driver raised exception on quit: %s\n%s", e,
-                      traceback.format_exc())
-      return
+      atexit.unregister(self.force_quit)
+      if driver := getattr(self, "_private_driver", None):
+        self.force_quit_webdriver(driver)
     except Exception as e:  # noqa: BLE001
       logging.debug("Could not quit browser: %s\n%s", e, traceback.format_exc())
     finally:
-      self._is_running = False
+      super().force_quit()
+
+  def force_quit_webdriver(self, driver: webdriver.Remote) -> None:
+    try:
+      # Close the current window.
+      driver.close()
+      time.sleep(0.1)
+    except (selenium.common.exceptions.NoSuchWindowException,
+            selenium.common.exceptions.WebDriverException):
+      # No window is good.
+      pass
+    except selenium.common.exceptions.InvalidSessionIdException:
+      # Closing the last tab will close the session as well.
+      return
+    try:
+      driver.quit()
+    except selenium.common.exceptions.InvalidSessionIdException:
+      return
+    # Sometimes a second quit is needed, ignore any warnings there
+    try:
+      driver.quit()
+    except Exception as e:  # noqa: BLE001
+      logging.debug("Driver raised exception on quit: %s\n%s", e,
+                    traceback.format_exc())
 
 
 class RemoteWebDriver(WebDriverBrowser, Browser):

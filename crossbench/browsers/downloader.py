@@ -235,23 +235,22 @@ class Downloader(abc.ABC):
   def _validate_installed(self, app_path: pth.LocalPath) -> BrowserVersion:
     cached_version: BrowserVersion = self._installed_app_version(app_path)
     msg: str = ""
-    version: BrowserVersion = self.requested_version
-    expected_version_str: str = str(version)
-    if version.is_complete:
-      if version.contains(cached_version):
+    requested_version: BrowserVersion = self.requested_version
+    expected_version_str: str = str(requested_version)
+    if requested_version.is_complete:
+      if requested_version.contains(cached_version):
         return cached_version
       msg = (f"Previously downloaded browser at {app_path} "
              "might have been auto-updated.\n")
     else:
-      requested_milestone: int = version.major
-      logging.debug("Validating installed milestone %s", requested_milestone)
+      logging.debug("Validating installed milestone %s", requested_version)
       latest_milestone_version, _ = self._find_archive_url()
       if cached_version == latest_milestone_version:
         return cached_version
       msg = (f"Previously downloaded browser at {app_path} "
-             f"does not match latest milestone {requested_milestone} "
+             f"does not match latest milestone {requested_version} "
              f"version: {latest_milestone_version}.\n")
-      expected_version_str = f"{version}/{latest_milestone_version}"
+      expected_version_str = f"{requested_version}/{latest_milestone_version}"
     msg += ("Please delete the old version and re-install/-download it.\n"
             f"Expected: {expected_version_str} Got: {cached_version}")
     logging.debug(msg)

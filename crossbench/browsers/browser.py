@@ -408,14 +408,23 @@ class Browser(abc.ABC):
       return
     logging.info("Browser.force_quit()")
     if self.platform.is_macos:
-      self.platform.exec_apple_script(f"""
+      try:
+        self.force_quit_apple_script()
+      except Exception as e:  # noqa: BLE001
+        logging.error("Browser force_quit: %s", e)
+    if self._pid:
+      try:
+        self.platform.terminate(self._pid)
+      except Exception as e:  # noqa: BLE001
+        logging.error("Browser force_quit: %s", e)
+    self._is_running = False
+
+  def force_quit_apple_script(self) -> None:
+    self.platform.exec_apple_script(f"""
   tell application "{self.app_path}"
     quit
   end tell
       """)
-    elif self._pid:
-      self.platform.terminate(self._pid)
-    self._is_running = False
 
   @abc.abstractmethod
   def js(
