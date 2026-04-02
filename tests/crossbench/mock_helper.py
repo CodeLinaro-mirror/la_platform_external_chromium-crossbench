@@ -13,7 +13,7 @@ import pathlib
 import shlex
 import subprocess
 from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, \
-    MutableMapping, Optional, Sequence
+    MutableMapping, Optional, Sequence, TypeAlias
 
 import psutil
 from typing_extensions import override
@@ -131,6 +131,8 @@ class MockRemotePortManager(TrackingPortManagerMixin,
   pass
 
 
+ShResultType: TypeAlias = str | bytes | ShResult
+
 class MockPlatformMixin:
 
   def __init__(self, *args, is_battery_powered=False, fake_fs=None, **kwargs):
@@ -204,7 +206,7 @@ class MockPlatformMixin:
 
   def expect_sh(self,
                 *args: CmdArg | int,
-                result: bytes | str | ShResult = "",
+                result: ShResultType = "",
                 returncode: int = 0) -> None:
     if args:
       if self._expected_sh_cmds is None:

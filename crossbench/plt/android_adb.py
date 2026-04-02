@@ -23,6 +23,7 @@ from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData
 from crossbench.helper.path_finder import BundletoolFinder
 from crossbench.parse import NumberParser
+from crossbench.plt import axml
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
 from crossbench.plt.bin import Binaries
@@ -42,6 +43,8 @@ if TYPE_CHECKING:
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
 ANDROID_PERMISSIONS: Final = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
+
+_AAPT_PACKAGE_NAME_RE = re.compile(r"^package: name='([^']+)'")
 
 # Template for Perfetto config to capture Java heaps.
 ANDROID_JAVA_HPROF_PERFETTO_CFG = """buffers {{
@@ -472,6 +475,13 @@ class Adb:
     cmd.extend([package_name])
     self.shell(*cmd)
 
+  def is_installed(self, package_name: str) -> bool:
+    if not package_name:
+      raise ValueError("Got empty package name")
+    package_path = self.shell_stdout(
+        "pm", "path", package_name, check=False).strip()
+    return package_path.startswith("package:")
+
   def install(self,
               bundle: pth.AnyPath,
               allow_downgrade: bool = False,
@@ -725,15 +735,34 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return 1.0
 
   def app_path_to_package(self, app_path: pth.AnyPathLike) -> str:
-    path = self.path(app_path)
+    path = self.host_platform.local_path(app_path)
+    if self.host_platform.is_file(path) and path.suffix in (".apk", ".apks"):
+      return self._get_package_name(path)
     parts = path.parts
-    if len(parts) > 1:
+    if len(parts) != 1:
       raise ValueError(f"Invalid android package name: '{path}'")
     package: str = parts[0]
     packages = self.adb.packages()
     if package not in packages:
       raise ValueError(f"Package '{package}' is not installed on {self._adb}")
     return package
+
+  def _get_package_name(self, path: pth.LocalPath) -> str:
+    if aapt_bin := Binaries.AAPT.search(self.host_platform):
+      return self._get_package_name_with_aapt(aapt_bin, path)
+    # Fallback to python-only code
+    return axml.manifest_package_name(path)
+
+  def _get_package_name_with_aapt(self, aapt_bin: pth.AnyPath,
+                                  path: pth.AnyPath) -> str:
+    # aapt dump badging path/to/app.apk | grep package: name=
+    output = self.host_platform.sh_stdout(aapt_bin, "dump", "badging", path)
+    for line in output.splitlines():
+      # package: name='com.android.chrome' ...
+      if match := _AAPT_PACKAGE_NAME_RE.search(line):
+        return match.group(1)
+    raise ValueError(f"Could not find package name in aapt output for {path}")
+
 
   @override
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:

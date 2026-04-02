@@ -5,7 +5,10 @@
 from __future__ import annotations
 
 import argparse
+import io
 import pathlib
+import struct
+import zipfile
 from typing import Final
 from unittest import mock
 
@@ -17,10 +20,14 @@ from crossbench.helper.version import VersionParseError
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, \
     AndroidDeviceInfo, AndroidVersion
 from crossbench.plt.arch import MachineArch
+from crossbench.plt.axml import RES_STRING_POOL_TYPE, \
+    RES_XML_START_ELEMENT_TYPE, RES_XML_TYPE, \
+    parse_binary_manifest_package_name
 from crossbench.plt.port_manager import PortForwardException
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
-from tests.crossbench.mock_helper import ShResult, WinMockPlatform
+from tests.crossbench.mock_helper import ShResult, ShResultType, \
+    WinMockPlatform
 from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
 
 ADB_DEVICE_SAMPLE_OUTPUT = (
@@ -129,10 +136,10 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.host_platform.expect_sh(
         pathlib.Path("adb"), "devices", "-l", result=devices)
 
-  def expect_sh(self, *args, result=""):
+  def expect_sh(self, *args, result: ShResultType = ""):
     self.expect_adb("shell", *args, result=result)
 
-  def expect_adb(self, *args, result=""):
+  def expect_adb(self, *args, result: ShResultType = ""):
     self.host_platform.expect_sh(
         pathlib.Path("adb"), "-s", self.DEVICE_ID, *args, result=result)
 
@@ -342,6 +349,20 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_adb(self):
     self.assertIs(self.platform.adb, self.adb)
 
+  def test_is_installed(self):
+    package_name = "com.example.app"
+    self.expect_sh(
+        f"pm path {package_name}",
+        result=f"package:/data/app/{package_name}-1/base.apk\n")
+    self.assertTrue(self.adb.is_installed(package_name))
+
+  def test_is_installed_false(self):
+    package_name = "com.example.non_existent"
+    # pm path returns returncode 1 if not found.
+    self.expect_sh(
+        f"pm path {package_name}", result=ShResult(returncode=1, result=""))
+    self.assertFalse(self.adb.is_installed(package_name))
+
   def test_machine_unknown(self):
     self.expect_sh("getprop ro.product.cpu.abi", result="arm37-XXX")
     with self.assertRaises(ValueError) as cm:
@@ -383,6 +404,96 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         result=("package:com.google.android.wifi.resources\n"
                 "package:com.custom.app"))
     self.assertEqual(self.platform.app_path_to_package(path), "com.custom.app")
+
+  def test_app_path_to_package_apk(self):
+    path = self.create_file("test.apk")
+    aapt_bin = pathlib.Path("/usr/bin/aapt")
+    self.create_file(aapt_bin)
+    self.host_platform.expect_sh(
+        aapt_bin,
+        "dump",
+        "badging",
+        path,
+        result=("package: name='com.example.app' "
+                "versionCode='1' versionName='1.0'"))
+    with mock.patch(
+        "crossbench.plt.android_adb.Binaries.AAPT.search",
+        return_value=aapt_bin):
+      self.assertEqual(
+          self.platform.app_path_to_package(path), "com.example.app")
+
+  def test_app_path_to_package_apk_fallback(self):
+    # No aapt binary
+    path = self.host_platform.path("test.apk")
+    apk_data = io.BytesIO()
+    with zipfile.ZipFile(apk_data, "w") as apk_zip:
+      apk_zip.writestr("AndroidManifest.xml",
+                       self._create_axml("com.example.app"))
+    self.create_file(path, contents=apk_data.getvalue())
+
+    self.assertEqual(self.platform.app_path_to_package(path), "com.example.app")
+
+  def test_app_path_to_package_apks_fallback(self):
+    # No aapt binary
+    path = self.host_platform.path("test.apks")
+
+    # Create a base.apk
+    base_apk_buffer = io.BytesIO()
+    with zipfile.ZipFile(base_apk_buffer, "w") as base_apk_zip:
+      base_apk_zip.writestr("AndroidManifest.xml",
+                            self._create_axml("com.example.apks"))
+    base_apk_data = base_apk_buffer.getvalue()
+
+    # Create the .apks bundle
+    apks_buffer = io.BytesIO()
+    with zipfile.ZipFile(apks_buffer, "w") as apks_zip:
+      apks_zip.writestr("base.apk", base_apk_data)
+    apks_data = apks_buffer.getvalue()
+
+    self.create_file(path, contents=apks_data)
+
+    self.assertEqual(
+        self.platform.app_path_to_package(path), "com.example.apks")
+
+  def test_app_path_to_package_apk_aapt_error(self):
+    path = self.create_file("test.apk")
+    aapt_bin = pathlib.Path("/usr/bin/aapt")
+    self.create_file(aapt_bin)
+    self.host_platform.expect_sh(
+        aapt_bin, "dump", "badging", path, result="some other output")
+    with mock.patch(
+        "crossbench.plt.android_adb.Binaries.AAPT.search",
+        return_value=aapt_bin):
+      with self.assertRaisesRegex(ValueError,
+                                  "Could not find package name in aapt output"):
+        self.platform.app_path_to_package(path)
+
+  def test_app_path_to_package_apk_all_fail(self):
+    # No aapt binary
+    path = self.host_platform.path("test.apk")
+    apk_buffer = io.BytesIO()
+    with zipfile.ZipFile(apk_buffer, "w") as apk_zip:
+      apk_zip.writestr("AndroidManifest.xml", b"no package name here")
+    self.create_file(path, contents=apk_buffer.getvalue())
+
+    with self.assertRaisesRegex(ValueError,
+                                "Invalid Android Binary XML header"):
+      self.platform.app_path_to_package(path)
+
+  def test_app_path_to_package_apk_all_fail_invalid_pool(self):
+    # Valid header, but wrong chunk type for String Pool
+    path = self.host_platform.path("test.apk")
+    # AXML header (8 bytes) + chunk header (8 bytes)
+    # chunk: type=0xFFFF (invalid), header_size=8, chunk_size=8
+    invalid_axml = struct.pack("<HHL HH L", RES_XML_TYPE, 0x0008, 16, 0xFFFF, 8,
+                               8)
+    apk_buffer = io.BytesIO()
+    with zipfile.ZipFile(apk_buffer, "w") as apk_zip:
+      apk_zip.writestr("AndroidManifest.xml", invalid_axml)
+    self.create_file(path, contents=apk_buffer.getvalue())
+
+    with self.assertRaisesRegex(ValueError, "Expected String Pool chunk"):
+      self.platform.app_path_to_package(path)
 
   def test_app_version(self):
     path = pathlib.Path("com.custom.app")
@@ -725,6 +836,87 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with self.assertRaises(VersionParseError):
       AndroidVersion.parse("foo")
 
+
+  def test_parse_binary_manifest_package_name_utf8(self):
+    package_name = "org.chromium.chrome"
+    axml_data = self._create_axml(package_name)
+    b = io.BytesIO()
+    with zipfile.ZipFile(b, "w") as z:
+      z.writestr("AndroidManifest.xml", axml_data)
+    with zipfile.ZipFile(b, "r") as z:
+      with z.open("AndroidManifest.xml") as manifest_file:
+        self.assertEqual(
+            parse_binary_manifest_package_name(manifest_file.read()),
+            package_name)
+
+  def _create_axml(self, package_name: str) -> bytes:
+    # A very minimal Android Binary XML generator for testing.
+    # 1. String Pool
+    strings = ["manifest", "package", package_name]
+    str_offsets = []
+    pool_data = b""
+    for s in strings:
+      str_offsets.append(len(pool_data))
+      encoded = s.encode("utf-16le")
+      pool_data += struct.pack("<H", len(s)) + encoded + b"\x00\x00"
+
+    # Pad pool_data to 4 bytes
+    if len(pool_data) % 4:
+      pool_data += b"\x00" * (4 - len(pool_data) % 4)
+
+    header_size = 28
+    chunk_size = header_size + len(strings) * 4 + len(pool_data)
+    style_count = 0
+    flags = 0
+    string_offset = header_size + len(strings) * 4
+    style_offset = 0
+
+    string_pool_chunk = struct.pack("<HHL LLLLL", RES_STRING_POOL_TYPE,
+                                    header_size, chunk_size, len(strings),
+                                    style_count, flags, string_offset,
+                                    style_offset)
+    for offset in str_offsets:
+      string_pool_chunk += struct.pack("<L", offset)
+    string_pool_chunk += pool_data
+
+    # 2. Manifest Start Element
+    # RES_XML_START_ELEMENT_TYPE, Header=16, Ext=20
+    attr_ns = 0xFFFFFFFF
+    attr_name = 1  # "package" index in string pool
+    attr_raw = 2  # package_name index in string pool
+    attr_type = 0
+    attr_data = 2  # package_name index in string pool
+    attr_data_bytes = struct.pack("<LLLLL", attr_ns, attr_name, attr_raw,
+                                  attr_type, attr_data)
+
+    element_header_size = 16
+    element_ext_size = 20
+    element_chunk_size = element_header_size + element_ext_size + len(
+        attr_data_bytes)
+
+    line_number = 0
+    comment_idx = 0xFFFFFFFF
+    ns_idx = 0xFFFFFFFF
+    name_idx = 0  # "manifest" index in string pool
+    attr_start = element_ext_size
+    attr_size = 20
+    attr_count = 1
+    id_idx = 0
+    class_idx = 0
+    style_idx = 0
+
+    start_element_chunk = struct.pack("<HHL LLLL HH HHHH",
+                                      RES_XML_START_ELEMENT_TYPE,
+                                      element_header_size, element_chunk_size,
+                                      line_number, comment_idx, ns_idx,
+                                      name_idx, attr_start, attr_size,
+                                      attr_count, id_idx, class_idx, style_idx)
+    start_element_chunk += attr_data_bytes
+
+    axml_header = struct.pack(
+        "<HHL", RES_XML_TYPE, 0x0008,
+        8 + len(string_pool_chunk) + len(start_element_chunk))
+    return axml_header + string_pool_chunk + start_element_chunk
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

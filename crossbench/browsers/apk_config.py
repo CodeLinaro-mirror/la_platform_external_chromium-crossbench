@@ -12,6 +12,7 @@ from typing_extensions import Self, override
 
 if TYPE_CHECKING:
   from crossbench import path as pth
+
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import PathParser
 
@@ -58,6 +59,7 @@ class ApkConfig(ConfigObject):
         help="Allow APK downgrade during install.")
     parser.add_argument(
         "reinstall",
+        aliases=("force",),
         type=bool,
         default=True,
         help="Uninstall and reinstall before each run.")

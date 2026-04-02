@@ -210,6 +210,22 @@ class Binaries:
       macos=["adb", "~/Library/Android/sdk/platform-tools/adb"],
       linux=["adb"],
       win=["adb.exe", "Android/sdk/platform-tools/adb.exe"])
+  AAPT: ClassVar = Binary(
+      "aapt",
+      macos=[
+          "aapt",
+          "~/Library/Android/sdk/build-tools/*/aapt",
+          "third_party/android_sdk/public/build-tools/*/aapt",
+      ],
+      linux=[
+          "aapt",
+          "third_party/android_sdk/public/build-tools/*/aapt",
+      ],
+      win=[
+          "aapt.exe",
+          "Android/sdk/build-tools/*/aapt.exe",
+          "third_party/android_sdk/public/build-tools/*/aapt.exe",
+      ])
   CPIO: ClassVar = LinuxBinary("cpio")
   FFMPEG: ClassVar = Binary("ffmpeg", posix="ffmpeg")
   GCERTSTATUS: ClassVar = Binary("gcertstatus", posix="gcertstatus")

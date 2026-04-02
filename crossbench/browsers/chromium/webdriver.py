@@ -8,7 +8,6 @@ import atexit
 import logging
 import re
 import subprocess
-import sys
 from typing import TYPE_CHECKING, Any, Final, Optional, Sequence
 
 from immutabledict import immutabledict
@@ -39,6 +38,7 @@ if TYPE_CHECKING:
   from selenium.webdriver.chromium.options import ChromiumOptions
   from selenium.webdriver.chromium.service import ChromiumService
 
+  from crossbench.browsers.apk_config import ApkConfig
   from crossbench.browsers.settings import Settings
   from crossbench.browsers.version import BrowserVersion
   from crossbench.cli.config.secrets import UsernamePassword
@@ -69,6 +69,37 @@ class ChromiumWebDriver(ChromiumBaseMixin, ChromiumBasedWebDriver):
         service=service)
 
 
+def install_apk(platform: AndroidAdbPlatform, apk_config: Optional[ApkConfig],
+                browser_package: str) -> bool:
+  if not apk_config:
+    logging.debug("Android APK install skipped (no apk_config)")
+    return False
+  if not browser_package:
+    raise ValueError("Android APK installation requires a browser package name")
+  adb = platform.adb
+  with exception.annotate(f"Installing Android APK {browser_package}"):
+    logging.debug("Android APK install: apk=%s package=%s", apk_config.path,
+                  browser_package)
+    if apk_config.reinstall:
+      adb.uninstall(browser_package, missing_ok=True)
+    elif adb.is_installed(browser_package):
+      logging.info("Skipping APK reinstall for %s", browser_package)
+      return False
+    else:
+      logging.info("Package %s missing; installing", browser_package)
+    host_apk_path: pth.LocalPath = platform.host_path(apk_config.path)
+    logging.info("Installing APK %s on %s", host_apk_path, platform)
+    adb.install(
+        host_apk_path,
+        allow_downgrade=apk_config.allow_downgrade,
+        modules=apk_config.modules)
+    if not adb.is_installed(browser_package):
+      raise ValueError(
+          f"Did not install {browser_package} with {host_apk_path}. "
+          "Possibly mismatching browser package name.")
+  return True
+
+
 class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
 
   def __init__(self,
@@ -89,38 +120,16 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
   def _lookup_android_package(self, path: pth.AnyPath) -> str:
     return self.platform.app_path_to_package(path)
 
-  def _apply_android_apk(self, settings: Settings,
-                         browser_name: Optional[pth.AnyPath]) -> None:
-    apk_config = settings.apk_config
-    if not apk_config:
-      logging.debug("Android APK install skipped (no apk_config)")
-      return
-    platform = self.platform
-    adb = platform.adb
+  @override
+  def _setup_binary(self) -> None:
+    super()._setup_binary()
+    self._setup_android_apk()
+    self._setup_binary_permissions()
 
-    if not browser_name:
-      raise ValueError(
-          "Android APK installation requires a browser package name")
-    browser_package = str(browser_name)
-    with exception.annotate(f"Installing Android APK {browser_package}"):
-      logging.debug("Android APK install: apk=%s package=%s", apk_config.path,
-                    browser_package)
-      modules = apk_config.modules
-      allow_downgrade = apk_config.allow_downgrade
-      if apk_config.reinstall:
-        adb.uninstall(browser_package, missing_ok=True)
-      else:
-        package_path = adb.shell_stdout(
-            "pm", "path", browser_package, check=False).strip()
-        if package_path.startswith("package:"):
-          logging.info("Skipping APK reinstall for %s", browser_package)
-          return
-        logging.info("Package %s missing; installing", browser_package)
-      self._installed_android_package = browser_package
-      host_apk_path = platform.host_path(apk_config.path)
-      logging.info("Installing APK %s on %s", host_apk_path, platform)
-      adb.install(
-          host_apk_path, allow_downgrade=allow_downgrade, modules=modules)
+  def _setup_android_apk(self) -> None:
+    if install_apk(self.platform, self.settings.apk_config,
+                   self.android_package):
+      self._installed_android_package = self.android_package
 
   def _uninstall_android_apk(self) -> None:
     # Uninstall only if this run installed the APK.
@@ -162,7 +171,6 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
   @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> webdriver.Remote:
-    self._apply_android_apk(self.settings, self.path)
     self.adb_force_stop()
     if session.browser.wipe_system_user_data:
       self.adb_force_clear()
@@ -220,8 +228,10 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
       finally:
         self.adb_force_stop()
     finally:
-      self._restore_chrome_flags()
-      self._uninstall_android_apk()
+      try:
+        self._restore_chrome_flags()
+      finally:
+        self._uninstall_android_apk()
 
   @override
   def meminfo(self, timeout: dt.timedelta) -> list[ProcessMeminfo]:
@@ -266,11 +276,6 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
       options.add_experimental_option("androidKeepAppDataDir", True)
     return options
 
-  @override
-  def _setup_binary(self) -> None:
-    super()._setup_binary()
-    self._setup_binary_permissions()
-
   def _setup_binary_permissions(self) -> None:
     try:
       self.platform.adb.grant_permissions(self.android_package)
@@ -299,11 +304,14 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
                label: str,
                path: Optional[pth.AnyPath] = None,
                settings: Optional[Settings] = None) -> None:
+    assert settings, "Android browser needs custom settings and platform"
+    assert path, "Got invalid empty path"
     if not self.is_apk_helper(path):
       raise ValueError(
           "Locally built chrome version does not work with packaged apks.")
-    assert settings, "Android browser needs custom settings and platform"
-    assert path, "Got invalid path"
+    if settings.apk_config:
+      raise ValueError(f"{self.type_name()} cannot be used with "
+                       "an additional apk_config settings.")
     self._package_info: immutabledict[str, Any] = self._parse_package_info(
         settings.platform, path)
     super().__init__(label, path, settings)
@@ -328,10 +336,8 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
     return immutabledict(package_info)
 
   @override
-  def _setup_binary(self) -> None:
-    super()._setup_binary()
-    with ui.spinner():
-      sys.stdout.write(f"   Installing {self.path.name} on {self.platform}\r")
+  def _setup_android_apk(self) -> None:
+    with ui.spinner(title=f"Installing {self.path.name} on {self.platform}"):
       self.host_platform.sh_stdout(self.path, "install",
                                    f"--device={self.platform.serial_id}")
 
