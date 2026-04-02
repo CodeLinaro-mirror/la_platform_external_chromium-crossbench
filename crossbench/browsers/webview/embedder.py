@@ -34,6 +34,8 @@ EMBEDDER_SHORT_NAME_TO_PACKAGE: Final[immutabledict[str, str]] = immutabledict({
         "com.google.android.googlequicksearchbox",
     "maitier":
         "com.google.android.libraries.ads.mobile.maitier.testapps.webview",
+    "webview_test_app":
+        "com.google.android.libraries.ads.mobile.maitier.testapps.webview",
 })
 
 
