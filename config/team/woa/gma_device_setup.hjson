@@ -1,0 +1,113 @@
+{
+  "setup_commands": {
+    // Start DNS resolver
+    "dnsmasq": [
+      "sh"
+      "-c"
+      "dnsmasq --conf-file=/tmp/dnsmasq.conf --pid-file </dev/null &>/dev/null"
+    ]
+    // IP table rules to intercept and redirect ad request traffic.
+    "iptables_port_53_tcp": [
+      "iptables"
+      "-t"
+      "nat"
+      "-I"
+      "OUTPUT"
+      "-p"
+      "tcp"
+      "--dport"
+      "53"
+      "-j"
+      "DNAT"
+      "--to-destination"
+      "127.0.0.1:5053"
+    ]
+    "iptables_port_53_udp": [
+      "iptables"
+      "-t"
+      "nat"
+      "-I"
+      "OUTPUT"
+      "-p"
+      "udp"
+      "--dport"
+      "53"
+      "-j"
+      "DNAT"
+      "--to-destination"
+      "127.0.0.1:5053"
+    ]
+    "iptables_port_80": [
+      "iptables"
+      "-t"
+      "nat"
+      "-A"
+      "OUTPUT"
+      "-p"
+      "tcp"
+      "-d"
+      "127.0.0.1"
+      "--dport"
+      "80"
+      "-j"
+      "DNAT"
+      "--to-destination"
+      "127.0.0.1:8080"
+    ]
+    "iptables_port_443": [
+      "iptables"
+      "-t"
+      "nat"
+      "-A"
+      "OUTPUT"
+      "-p"
+      "tcp"
+      "-d"
+      "127.0.0.1"
+      "--dport"
+      "443"
+      "-j"
+      "DNAT"
+      "--to-destination"
+      "127.0.0.1:8081"
+    ]
+    // Install dummy VPN app already pushed to the device.
+    "install_vpn_apk": [
+      "pm"
+      "install"
+      "/tmp/dummy_vpn.apk"
+    ]
+    // Let the system fully process the install command.
+    "wait_after_install": [
+      "sleep"
+      "3"
+    ]
+    // Open the app: com.google.android.apps.dummyvpn
+    "open_vpn_app": [
+      "am"
+      "start"
+      "-W"
+      "-n"
+      "com.google.android.apps.dummyvpn/com.google.android.apps.dummyvpn.MainActivity"
+    ]
+    // Click the "Connect" button, based on Pixel 4 coordinates from uiautomator dump
+    "connect_vpn": [
+      "input"
+      "tap"
+      "540"
+      "396"
+    ]
+    // Wait for dialog to potentially pop up
+    "wait_for_dialog": [
+      "sleep"
+      "3"
+    ]
+    // Click "OK" if a dialog pops up, based on Pixel 4 coordinates from uiautomator dump
+    "confirm_dialog": [
+      "input"
+      "tap"
+      "887"
+      "1410"
+    ]
+  }
+}

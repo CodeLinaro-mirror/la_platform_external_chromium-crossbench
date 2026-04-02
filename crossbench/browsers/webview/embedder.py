@@ -51,6 +51,9 @@ class WebviewEmbedder(Webview):
     # instances to make sure it picks up the new flags when started by the
     # Benchmark.
     session_benchmark = cast("EmbedderBenchmark", session.benchmark)
+    # Push files from host to device before device setup.
+    for (source, destination) in session_benchmark.embedder_push_files:
+      self.platform.push(source, destination)
     if setup_command_config := session_benchmark.embedder_setup_command_config:
       for command in setup_command_config.commands:
         self.platform.sh(*command.command)
