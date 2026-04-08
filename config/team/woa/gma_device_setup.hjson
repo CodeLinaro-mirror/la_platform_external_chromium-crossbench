@@ -4,7 +4,7 @@
     "dnsmasq": [
       "sh"
       "-c"
-      "dnsmasq --conf-file=/tmp/dnsmasq.conf --pid-file </dev/null &>/dev/null"
+      "dnsmasq --conf-file=/data/local/tmp/dnsmasq.conf --pid-file </dev/null &>/dev/null"
     ]
     // IP table rules to intercept and redirect ad request traffic.
     "iptables_port_53_tcp": [
@@ -75,7 +75,7 @@
     "install_vpn_apk": [
       "pm"
       "install"
-      "/tmp/dummy_vpn.apk"
+      "/data/local/tmp/dummy_vpn.apk"
     ]
     // Let the system fully process the install command.
     "wait_after_install": [
