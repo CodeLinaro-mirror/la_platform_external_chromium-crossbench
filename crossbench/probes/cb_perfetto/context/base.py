@@ -12,6 +12,7 @@ import subprocess
 from typing import TYPE_CHECKING, Final
 
 import google.protobuf.text_format as proto_text_format
+from typing_extensions import override
 
 from crossbench.parse import NumberParser
 from crossbench.probes.cb_perfetto.constants import PERFETTO_CONFIG_NAME, \
@@ -81,8 +82,19 @@ class PerfettoProbeContext(
       if not self._perfetto_pid:
         raise RuntimeError("Perfetto was not started")
       return
+    if self.probe.start_tracing_after_start_delay:
+      return
     self._start_perfetto()
     self.browser.performance_mark("probe-perfetto-start")
+
+  @override
+  def start_story_run(self) -> None:
+    super().start_story_run()
+    if self.probe.start_tracing_after_start_delay:
+      if self._perfetto_pid:
+        raise RuntimeError("Perfetto was already started")
+      self._start_perfetto()
+      self.browser.performance_mark("probe-perfetto-start")
 
   def stop(self) -> None:
     self.browser.performance_mark("probe-perfetto-stop")

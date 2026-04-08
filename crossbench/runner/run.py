@@ -404,6 +404,7 @@ class Run(ResultOrigin):
     self._run_story_setup()
     if delay := self.timing.start_delay:
       self._run_story_wait(delay, "Start Delay")
+    self._probe_context_manager.start_story()
     try:
       self._story.run(self)
     except StopStoryException as e:
@@ -420,7 +421,6 @@ class Run(ResultOrigin):
   def _run_story_setup(self) -> None:
     with self.measure("story-setup"):
       self._story.setup(self)
-    self._probe_context_manager.start_story()
 
   def _run_story_teardown(self) -> None:
     self._probe_context_manager.stop_story()
