@@ -4,12 +4,13 @@
 
 from __future__ import annotations
 
+import atexit
 import collections
 import logging
 import os
 import shlex
 from typing import TYPE_CHECKING, Any, Final, MutableMapping, MutableSet, \
-    Sequence, cast
+    Optional, Sequence, cast
 
 from immutabledict import immutabledict
 from selenium import webdriver
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.benchmarks.embedder.embedder_benchmark import \
       EmbedderBenchmark
+  from crossbench.browsers.settings import Settings
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 EMBEDDER_SHORT_NAME_TO_PACKAGE: Final[immutabledict[str, str]] = immutabledict({
@@ -44,6 +46,13 @@ class WebviewEmbedder(Webview):
   _INSTALLED_APK_PATHS: Final[MutableMapping[str, MutableSet[pth.AnyPath]]] = (
       collections.defaultdict(set))
 
+  def __init__(self,
+               label: str,
+               path: Optional[pth.AnyPath] = None,
+               settings: Optional[Settings] = None) -> None:
+    super().__init__(label, path, settings)
+    self._session: Optional[BrowserSessionRunGroup] = None
+
   @override
   def start(self, session: BrowserSessionRunGroup) -> None:
     # Start is a no-op. Embedder activity will be started by the Benchmark.
@@ -59,6 +68,8 @@ class WebviewEmbedder(Webview):
     if setup_command_config := session_benchmark.embedder_setup_command_config:
       for command in setup_command_config.commands:
         self.platform.sh(*command.command)
+    self._session = session
+    atexit.register(self._teardown)
     self._backup_chrome_flags()
     args = self._get_browser_flags_for_session(session)
     logging.debug("%s: setting flags file contents in %s", self,
@@ -75,6 +86,16 @@ class WebviewEmbedder(Webview):
     self._is_running = False
     self._restore_chrome_flags()
     self._teardown_cache_dir()
+    self._teardown()
+
+  def _teardown(self) -> None:
+    atexit.unregister(self._teardown)
+    if self._session:
+      session_benchmark = cast("EmbedderBenchmark", self._session.benchmark)
+      if teardown_config := session_benchmark.embedder_teardown_command_config:
+        for command in teardown_config.commands:
+          self.platform.sh(*command.command)
+      self._session = None
 
   @override
   def _start_driver(self, session: BrowserSessionRunGroup,

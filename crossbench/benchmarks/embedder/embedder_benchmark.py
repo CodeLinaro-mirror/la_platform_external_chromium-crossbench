@@ -92,6 +92,7 @@ class EmbedderBenchmark(SubStoryBenchmark):
       embedder_process_name: str = "search",
       embedder_push_files: Sequence[str] = (),
       embedder_setup_command_config: Optional[SetupCommandsConfig] = None,
+      embedder_teardown_command_config: Optional[SetupCommandsConfig] = None,
       embedder_drop_caches: bool = False,
       android_action: str = "GOOGLE_SEARCH",
       android_activity: str = "SearchActivity",
@@ -102,6 +103,7 @@ class EmbedderBenchmark(SubStoryBenchmark):
     self._embedder_process_name = embedder_process_name
     self._embedder_push_files = embedder_push_files
     self._embedder_setup_command_config = embedder_setup_command_config
+    self._embedder_teardown_command_config = embedder_teardown_command_config
     self._embedder_drop_caches = embedder_drop_caches
     self._android_action = android_action
     self._android_activity = android_activity
@@ -119,6 +121,10 @@ class EmbedderBenchmark(SubStoryBenchmark):
   @property
   def embedder_setup_command_config(self) -> Optional[SetupCommandsConfig]:
     return self._embedder_setup_command_config
+
+  @property
+  def embedder_teardown_command_config(self) -> Optional[SetupCommandsConfig]:
+    return self._embedder_teardown_command_config
 
   @property
   def embedder_drop_caches(self) -> bool:
@@ -164,6 +170,10 @@ class EmbedderBenchmark(SubStoryBenchmark):
         type=SetupCommandsConfig.parse,
         help="Setup commands to run on device before the benchmark.")
     parser.add_argument(
+        "--embedder-teardown-command-config",
+        type=SetupCommandsConfig.parse,
+        help="Teardown commands to run on device after the benchmark.")
+    parser.add_argument(
         "--embedder-drop-caches",
         default=False,
         action="store_true",
@@ -200,6 +210,8 @@ class EmbedderBenchmark(SubStoryBenchmark):
     kwargs["embedder_process_name"] = args.embedder_process_name
     kwargs["embedder_push_files"] = args.embedder_push_files
     kwargs["embedder_setup_command_config"] = args.embedder_setup_command_config
+    kwargs["embedder_teardown_command_config"] = (
+        args.embedder_teardown_command_config)
     kwargs["embedder_drop_caches"] = args.embedder_drop_caches
     kwargs["android_action"] = args.android_action
     kwargs["android_activity"] = args.android_activity
