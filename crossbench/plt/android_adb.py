@@ -9,6 +9,7 @@ import dataclasses
 import datetime as dt
 import functools
 import logging
+import os
 import math
 import re
 import shlex
@@ -198,6 +199,10 @@ class Adb:
   @property
   def serial_id(self) -> str:
     return self._serial_id
+
+  @property
+  def adb_bin(self) -> pth.AnyPath:
+    return self._adb_bin
 
   @functools.cached_property
   def build_version(self) -> int:
@@ -666,11 +671,30 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return self._adb.serial_id
 
   @functools.cached_property
-  def uiautomator_device(self) -> android_device.AndroidDevice:
+  def _uiautomator_device(self) -> android_device.AndroidDevice:
     ad = android_device.AndroidDevice(self.serial_id)
     ad.services.register(uiautomator.ANDROID_SERVICE_NAME,
                          uiautomator.UiAutomatorService)
     return ad
+
+  @contextlib.contextmanager
+  def uiautomator_device(
+      self) -> Generator[android_device.AndroidDevice, Any, None]:
+    # uiautomator requires adb in PATH
+    adb_dir = os.path.dirname(self.adb.adb_bin)  # noqa: PTH120
+    environ = self.host_platform.environ
+    old_path = environ.get("PATH", "")
+    if adb_dir:
+      if old_path:
+        environ["PATH"] = f"{old_path}{os.pathsep}{adb_dir}"
+      else:
+        environ["PATH"] = adb_dir
+
+    try:
+      yield self._uiautomator_device
+    finally:
+      if adb_dir:
+        environ["PATH"] = old_path
 
   @functools.cached_property
   @override

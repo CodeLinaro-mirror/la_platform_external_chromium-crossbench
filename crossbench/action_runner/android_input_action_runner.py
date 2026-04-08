@@ -329,10 +329,11 @@ return [
 
   def _click_ui_selector(self, run: Run, ui_selector: UiSelectorConfig,
                          timeout: dt.timedelta) -> None:
-    ad = cast("AndroidAdbPlatform", run.browser_platform).uiautomator_device
-    selector_dict = ui_selector.to_json()
-    ui_object = ad.ui(**ui_selector.to_json())
-    # This verification step verifies if the element exists.
-    assert ui_object.wait.exists(
-        timeout=timeout), (f"Element with selector {selector_dict} not found")
-    ui_object.click()
+    adb_platform = cast("AndroidAdbPlatform", run.browser_platform)
+    with adb_platform.uiautomator_device() as ad:
+      selector_dict = ui_selector.to_json()
+      ui_object = ad.ui(**ui_selector.to_json())
+      # This verification step verifies if the element exists.
+      assert ui_object.wait.exists(
+          timeout=timeout), (f"Element with selector {selector_dict} not found")
+      ui_object.click()
