@@ -1,0 +1,100 @@
+{
+  "setup_commands": {
+    // Open the app: com.google.android.apps.dummyvpn
+    "open_vpn_app": [
+      "am"
+      "start"
+      "-W"
+      "-n"
+      "com.google.android.apps.dummyvpn/com.google.android.apps.dummyvpn.MainActivity"
+    ]
+    // Click the "Disconnect" button (reverses "Connect")
+    "disconnect_vpn": [
+      "input"
+      "tap"
+      "540"
+      "660"
+    ]
+    // Wait for disconnection to be registered.
+    "wait_after_disconnect": [
+      "sleep"
+      "3"
+    ]
+    // Stop the vpn app
+    "stop_vpn_app": [
+      "am"
+      "force-stop"
+      "com.google.android.apps.dummyvpn"
+    ]
+    // IP table rules removal to stop intercepting and redirecting traffic.
+    "iptables_port_443": [
+      "iptables"
+      "-t"
+      "nat"
+      "-D"
+      "OUTPUT"
+      "-p"
+      "tcp"
+      "-d"
+      "127.0.0.1"
+      "--dport"
+      "443"
+      "-j"
+      "DNAT"
+      "--to-destination"
+      "127.0.0.1:8081"
+    ]
+    "iptables_port_80": [
+      "iptables"
+      "-t"
+      "nat"
+      "-D"
+      "OUTPUT"
+      "-p"
+      "tcp"
+      "-d"
+      "127.0.0.1"
+      "--dport"
+      "80"
+      "-j"
+      "DNAT"
+      "--to-destination"
+      "127.0.0.1:8080"
+    ]
+    "iptables_port_53_udp": [
+      "iptables"
+      "-t"
+      "nat"
+      "-D"
+      "OUTPUT"
+      "-p"
+      "udp"
+      "--dport"
+      "53"
+      "-j"
+      "DNAT"
+      "--to-destination"
+      "127.0.0.1:5053"
+    ]
+    "iptables_port_53_tcp": [
+      "iptables"
+      "-t"
+      "nat"
+      "-D"
+      "OUTPUT"
+      "-p"
+      "tcp"
+      "--dport"
+      "53"
+      "-j"
+      "DNAT"
+      "--to-destination"
+      "127.0.0.1:5053"
+    ]
+    // Stop DNS resolver
+    "dnsmasq": [
+      "killall"
+      "dnsmasq"
+    ]
+  }
+}
