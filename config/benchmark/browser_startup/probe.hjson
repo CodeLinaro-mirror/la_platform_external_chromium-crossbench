@@ -1,7 +1,7 @@
 {
   "probes": {
     "perfetto": {
-      "trace_config": "./perfetto_trace_config.txtpb"
+      "textproto": "./perfetto_trace_config.txtpb"
     }
     "trace_processor": {
       "queries": [
