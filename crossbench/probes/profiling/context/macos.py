@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import atexit
 import logging
+import subprocess
 import time
 from typing import TYPE_CHECKING, Final, Optional
 
@@ -52,8 +53,14 @@ class MacOSProfilingContext(PosixProfilingContext):
     process_filter = ["--all-processes"
                      ] if pid is None else ["--attach", str(pid)]
     self._profiling_process = self.browser_platform.popen(
-        "xctrace", "record", "--template", _MAC_TRACE_TEMPLATE_PATH,
-        *process_filter, "--output", self.result_path)
+        "xctrace",
+        "record",
+        "--template",
+        _MAC_TRACE_TEMPLATE_PATH,
+        *process_filter,
+        "--output",
+        self.result_path,
+        stdin=subprocess.PIPE)
     # xctrace takes some time to start up
     time.sleep(3)
     if self._profiling_process.poll():

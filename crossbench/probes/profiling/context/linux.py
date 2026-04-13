@@ -9,6 +9,7 @@ import json
 import logging
 import multiprocessing
 import shlex
+import subprocess
 import time
 from typing import TYPE_CHECKING, Final, Optional
 
@@ -64,10 +65,14 @@ class LinuxProfilingContext(PosixProfilingContext):
     perf_data_file: pth.AnyPath = self.result_path / "browser.perf.data"
     # TODO: not fully working yet
     self._profiling_process = self.browser_platform.popen(
-        "perf", "record", f"--call-graph={self.probe.call_graph_mode or 'fp'}",
+        "perf",
+        "record",
+        f"--call-graph={self.probe.call_graph_mode or 'fp'}",
         f"--freq={self.probe.frequency or 'max'}",
         f"--clockid={self.probe.clockid or 'mono'}",
-        f"--output={perf_data_file}", f"--pid={self.run.browser.pid}")
+        f"--output={perf_data_file}",
+        f"--pid={self.run.browser.pid}",
+        stdin=subprocess.PIPE)
     if self._profiling_process.poll():
       raise ValueError("Could not start linux profiler")
     atexit.register(self.stop_process)

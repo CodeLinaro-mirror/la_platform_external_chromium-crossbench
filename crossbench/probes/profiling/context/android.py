@@ -49,7 +49,10 @@ class AndroidProfilingContext(PosixProfilingContext):
     command_line = self._generate_command_line()
     logging.info("Starting simpleperf with command line: %s.", command_line)
     self._profiling_process = self.browser_platform.popen(
-        *command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        *command_line,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
     # Wait a bit for simpleperf to start and (potentially) terminate on error.
     time.sleep(1)
     if self._profiling_process.poll():
