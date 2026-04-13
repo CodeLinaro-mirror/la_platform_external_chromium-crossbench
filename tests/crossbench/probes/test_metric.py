@@ -117,6 +117,7 @@ class MetricTestCase(unittest.TestCase):
     self.assertIsInstance(metric.geomean, float)
 
     self.assertEqual(Metric([-1, -1]).geomean, 0)
+    self.assertEqual(Metric().geomean, 0)
 
   def test_geomean_overflow(self):
     metric = Metric([sys.maxsize] * 20)

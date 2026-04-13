@@ -8,8 +8,8 @@ import json
 import logging
 import statistics
 from math import floor, log10
-from typing import (TYPE_CHECKING, Any, Callable, Iterable, Optional, Sequence,
-                    Set)
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, \
+    Sequence, Set
 
 from crossbench.probes import helper
 
@@ -93,6 +93,8 @@ class Metric:
   @property
   def geomean(self) -> float:
     assert self._is_numeric
+    if not self.values:
+      return 0
     if self.min <= 0:
       logging.debug("Ignoring negative values for geomean")
       return 0
