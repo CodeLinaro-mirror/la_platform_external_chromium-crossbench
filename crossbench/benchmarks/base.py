@@ -33,6 +33,8 @@ if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
 
 
+VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
+
 class Benchmark(abc.ABC):
   # TODO: migrate to abstract class methods
   NAME: ClassVar[str]
@@ -57,6 +59,18 @@ class Benchmark(abc.ABC):
   @classmethod
   def cli_epilog(cls) -> str:
     return ""
+
+  @classmethod
+  def short_base_name(cls) -> str:
+    return cls.base_name()
+
+  @classmethod
+  def base_name(cls) -> str:
+    return cls.NAME
+
+  @classmethod
+  def version(cls) -> VersionParts:
+    return ("default",)
 
   @classmethod
   def aliases(cls) -> tuple[str, ...]:
@@ -519,9 +533,6 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
   def create_stories_from_names(
       self, names: list[str], separate: bool) -> Sequence[PressBenchmarkStoryT]:
     return self.story_cls.from_names(names, separate=separate, url=self.url)
-
-
-VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
 
 
 class PressBenchmark(SubStoryBenchmark):

@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Type
 
 from typing_extensions import override
 
-from crossbench import __version__, exception
+from crossbench import exception
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.base import Benchmark
@@ -511,15 +511,21 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         help=("Launch chrome with lldb attached to all processes."
               " See 'describe probe debugger' for more options."))
 
-  def _log_version_info(self) -> None:
-    git_hash = ""
-    try:
-      root_dir = pth.LocalPath(__file__).parent
-      git_hash = plt.PLATFORM.sh_stdout(
-          "git", "rev-parse", "HEAD", quiet=True, cwd=root_dir).strip()
-    except Exception as e:  # noqa: BLE001
-      logging.debug("Could not get git commit: %s", e)
-    logging.info("🛠 crossbench: v%s %s", __version__, git_hash[:12])
+  def benchmark_name(self) -> str:
+    return self._benchmark_cls.base_name().title()
+
+  def benchmark_version(self) -> str:
+    version = self._benchmark_cls.version()
+    if version_str := ".".join(map(str, version)):
+      if version_str[0].isdigit():
+        return f"v{version_str}"
+      return version_str
+    return ""
+
+  def extra_banner_info(self) -> str:
+    benchmark_name = self.benchmark_name()
+    version_str = self.benchmark_version()
+    return f"{benchmark_name} {version_str}"
 
   @override
   def run(self, args: argparse.Namespace) -> None:
@@ -529,7 +535,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     self._helper(args)
     try:
       self._process_args(args)
-      self._log_version_info()
+      self._print_banner(self.extra_banner_info())
       benchmark = self._get_benchmark(args)
       with plt.PLATFORM.TemporaryDirectory(
           prefix="crossbench") as tmp_dirname, plt.PLATFORM.wakelock():
