@@ -101,6 +101,12 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
       probes = ProbeListConfig.parse(probe_config).probes
       self.assertTrue(probes)
 
+  def test_parse_browser_startup_config(self):
+    config_path = self.real_config_dir / "benchmark/browser_startup/probe.hjson"
+    self._add_real_directory(config_path.parent)
+    probes = ProbeListConfig.parse(str(config_path)).probes
+    self.assertTrue(probes)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
