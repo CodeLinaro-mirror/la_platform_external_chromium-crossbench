@@ -108,6 +108,12 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     self.assertEqual(query.name, "speedometer_cpu_time")
     self.assertEqual(query.sql, read_query_sql("speedometer_cpu_time.sql"))
 
+  def test_file_query_path(self):
+    query = TraceProcessorQueryConfig.parse(
+        pth.LocalPath("speedometer_cpu_time"))
+    self.assertEqual(query.name, "speedometer_cpu_time")
+    self.assertEqual(query.sql, read_query_sql("speedometer_cpu_time.sql"))
+
   def test_file_query_sql_suffix(self):
     query = TraceProcessorQueryConfig.parse("speedometer_cpu_time.sql")
     self.assertEqual(query.name, "speedometer_cpu_time")

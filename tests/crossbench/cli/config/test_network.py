@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import unittest
+import urllib.parse as urlparse
 
 from crossbench import path as pth
 from crossbench.cli.config.network import NetworkConfig, NetworkSpeedConfig, \
@@ -104,6 +106,78 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config, config_1)
     config_2 = NetworkConfig.parse("{}")
     self.assertEqual(config, config_2)
+
+  def test_help(self):
+    help_text = NetworkConfig.help()
+    self.assertTrue(help_text)
+    self.assertIn("type", help_text)
+    self.assertIn("speed", help_text)
+
+  def test_parse_local_type_mismatch(self):
+    path = pth.LocalPath("/test/archive.wprgo")
+    self.fs.create_file(path, st_size=100)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Expected local file server"):
+      NetworkConfig.parse_local(str(path))
+
+  def test_parse_str_type_mismatch(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "expected LIVE"):
+      NetworkConfig.parse_str("4G", type=NetworkType.LOCAL)
+
+  def test_parse_url_type_mismatch(self):
+    url = urlparse.urlparse("gs://bucket/wprgo.archive")
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "expected WPR"):
+      NetworkConfig.parse_url(url, type=NetworkType.LIVE)
+
+  def test_parse_path_fallback(self):
+    path = pth.LocalPath("/test/config.json")
+    self.fs.create_file(path, contents='{"type": "live"}')
+    config = NetworkConfig.parse(path)
+    self.assertEqual(config.type, NetworkType.LIVE)
+
+  def test_validate(self):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Missing NetworkConfig.type"):
+      NetworkConfig(type=None)
+
+    class FalsyNetworkSpeedConfig(NetworkSpeedConfig):
+
+      def __bool__(self):
+        return False
+
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Missing NetworkConfig.speed"):
+      NetworkConfig(type=NetworkType.LIVE, speed=FalsyNetworkSpeedConfig())
+
+    path = pth.LocalPath("/test/archive.wprgo")
+    self.fs.create_file(path, st_size=100)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "archive path.*download url"):
+      NetworkConfig(
+          type=NetworkType.WPR, path=path, url="gs://bucket/wprgo.archive")
+
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "cross_platform_mode.*run_on_device"):
+      NetworkConfig(
+          type=NetworkType.WPR,
+          path=path,
+          cross_platform_mode=True,
+          run_on_device=True)
+
+  def test_parse_dict_wpr_response_transformations(self):
+    path = pth.LocalPath("/test/archive.wprgo")
+    self.fs.create_file(path, st_size=100)
+    rules_file = pth.LocalPath("/test/rules.json")
+    self.fs.create_file(rules_file, contents="{}")
+
+    config = NetworkConfig.parse({
+        "type": "wpr",
+        "path": str(path),
+        "response_transformations_file": str(rules_file)
+    })
+    self.assertEqual(config.type, NetworkType.WPR)
+    self.assertEqual(config.path, path)
+    self.assertEqual(config.response_transformations_file, rules_file.resolve())
 
   def test_parse_replay_archive_invalid(self):
     path = pth.LocalPath("/foo/bar/wprgo.archive")
@@ -348,6 +422,63 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config, NetworkConfig.parse(benchmark_folder))
     self.assertEqual(config, NetworkConfig.parse_local(str(benchmark_folder)))
     self.assertEqual(config, NetworkConfig.parse_local(benchmark_folder))
+
+
+class NetworkConfigCreateTestCase(BaseConfigTestCase):
+
+  def test_create_live(self):
+    config = NetworkConfig(type=NetworkType.LIVE)
+    mock_platform = unittest.mock.MagicMock()
+    with unittest.mock.patch(
+        "crossbench.cli.config.network.LiveNetwork") as mock_live:
+      config.create(mock_platform)
+      mock_live.assert_called_once()
+
+  def test_create_local(self):
+    path = pth.LocalPath("/test/dir")
+    self.fs.create_dir(path)
+    self.fs.create_file(path / "index.html")
+    config = NetworkConfig(type=NetworkType.LOCAL, path=path)
+    mock_platform = unittest.mock.MagicMock()
+    with unittest.mock.patch(
+        "crossbench.cli.config.network.LocalFileNetwork") as mock_local:
+      config.create(mock_platform)
+      mock_local.assert_called_once()
+
+  def test_create_wpr_local(self):
+    path = pth.LocalPath("/test/archive.wprgo")
+    self.fs.create_file(path, st_size=100)
+    config = NetworkConfig(type=NetworkType.WPR, path=path)
+    mock_platform = unittest.mock.MagicMock()
+    mock_platform.is_remote = False
+    with unittest.mock.patch(
+        "crossbench.cli.config.network.LocalWprReplayNetwork") as mock_wpr:
+      config.create(mock_platform)
+      mock_wpr.assert_called_once()
+
+  def test_create_wpr_remote(self):
+    path = pth.LocalPath("/test/archive.wprgo")
+    self.fs.create_file(path, st_size=100)
+    config = NetworkConfig(type=NetworkType.WPR, path=path, run_on_device=True)
+    mock_platform = unittest.mock.MagicMock()
+    mock_platform.is_remote = True
+    with unittest.mock.patch(
+        "crossbench.cli.config.network.RemoteWprReplayNetwork") as mock_wpr:
+      mock_wpr.is_compatible.return_value = True
+      config.create(mock_platform)
+      mock_wpr.assert_called_once()
+
+  def test_create_wpr_remote_incompatible(self):
+    path = pth.LocalPath("/test/archive.wprgo")
+    self.fs.create_file(path, st_size=100)
+    config = NetworkConfig(type=NetworkType.WPR, path=path, run_on_device=True)
+    mock_platform = unittest.mock.MagicMock()
+    mock_platform.is_remote = True
+    with unittest.mock.patch(
+        "crossbench.cli.config.network.RemoteWprReplayNetwork") as mock_wpr:
+      mock_wpr.is_compatible.return_value = False
+      with self.assertRaisesRegex(ValueError, "run_on_device is unsupported"):
+        config.create(mock_platform)
 
 
 if __name__ == "__main__":

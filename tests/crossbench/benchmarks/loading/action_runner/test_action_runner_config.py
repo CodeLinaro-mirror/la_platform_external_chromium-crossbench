@@ -40,6 +40,21 @@ class ActionRunnerConfigTest(unittest.TestCase):
     self.assertIsInstance(
         action_runner.instantiate(plt.PLATFORM), DefaultActionRunner)
 
+  def test_parse_auto_android(self):
+    action_runner = ActionRunnerConfig.parse("auto")
+    mock_platform = unittest.mock.MagicMock()
+    mock_platform.is_android = True
+    self.assertIsInstance(
+        action_runner.instantiate(mock_platform), AndroidInputActionRunner)
+
+  def test_parse_auto_chromeos(self):
+    action_runner = ActionRunnerConfig.parse("auto")
+    mock_platform = unittest.mock.MagicMock()
+    mock_platform.is_android = False
+    mock_platform.is_chromeos = True
+    self.assertIsInstance(
+        action_runner.instantiate(mock_platform), ChromeOSInputActionRunner)
+
   def test_parse_android(self):
     action_runner = ActionRunnerConfig.parse("android")
     self.assertIsInstance(action_runner, ActionRunnerConfig)
