@@ -148,9 +148,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         self.assertTrue(variant.platform.is_remote)
         self.assertTrue(variant.platform.is_linux)
 
-      self.assertIsNone(browsers[0].driver_path)
+      self.assertIsNone(browsers[0].driver_path_raw)
       self.assertEqual(str(browsers[1].driver_path), "/path/to/chromedriver")
-      self.assertIsNone(browsers[2].driver_path)
+      self.assertIsNone(browsers[2].driver_path_raw)
       self.assertEqual(str(browsers[3].driver_path), "/path/to/chromedriver")
 
       self.assertEqual(browsers[0].platform.name, "linux_ssh")

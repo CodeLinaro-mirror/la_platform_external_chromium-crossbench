@@ -141,13 +141,12 @@ class SafariWebDriver(WebDriverBrowser, Safari):
   @override
   def _validate_driver_version(self) -> None:
     # The bundled driver is always ok
-    assert self._driver_path, "Missing driver path"
-    for parent in self._driver_path.parents:
+    for parent in self.driver_path.parents:
       if parent == self.path.parent:
         return
-    version = self.host_platform.sh_stdout(self._driver_path, "--version")
+    version = self.host_platform.sh_stdout(self.driver_path, "--version")
     assert str(self.version.major) in version, (
-        f"safaridriver={self._driver_path} version='{version}' "
+        f"safaridriver={self.driver_path} version='{version}' "
         f" doesn't match safari version={self.version.major}")
 
   @override

@@ -74,18 +74,24 @@ class ChromeDriverFinder:
       return
     raise RuntimeError("Cannot download chromedriver for remote browser yet")
 
+  def driver_lookup_dir(self) -> pth.AnyPath:
+    if build_dir := helper.find_build_dir(self.browser.app_path,
+                                          self.host_platform):
+      if self.browser.platform.is_android:
+        return build_dir / "clang_x64"
+      return build_dir
+    # Fallback if no args.gn found
+    if self.browser.platform.is_android:
+      # out/android/bin/chrome_apk vs out/android/clang_x64/chromedriver.
+      return self.browser.app_path.parents[1] / "clang_x64"
+    # Linux: out/linux/chrome vs out/linux/chromedriver
+    # Macos: out/mac/Chrome.app vs out/mac/chromedriver
+    return self.browser.app_path.parent
+
   def find_local_build(self) -> pth.LocalPath:
     assert self.browser.app_path, "Missing browser app path"
-    # assume it's a local build
-    lookup_dir: pth.LocalPath = self.host_platform.local_path(
-        # out/mac/Chrome.app/Contents/MacOS/Chrome vs out/mac/chromedriver.
-        self.browser.app_path.parents[3] if self.browser.platform.is_macos
-        # out/android/bin/chrome_apk vs out/android/clang_x64/chromedriver.
-        else self.browser.app_path.parents[1] /
-        "clang_x64" if self.browser.platform.is_android
-        # out/linux/chrome vs out/linux/chromedriver.
-        else self.browser.app_path.parent)
-    driver_path = lookup_dir / "chromedriver"
+    driver_lookup_dir = self.host_platform.local_path(self.driver_lookup_dir())
+    driver_path = driver_lookup_dir / "chromedriver"
     if self.host_platform.is_win:
       driver_path = driver_path.with_suffix(".exe")
     if self.host_platform.is_file(driver_path):

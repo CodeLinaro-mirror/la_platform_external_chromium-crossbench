@@ -116,6 +116,15 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     self._pid: int = 0
     self.log_file: LocalPath | None = None
 
+  @property
+  def driver_path(self) -> AnyPath:
+    assert self._driver_path, "{self} missing driver path"
+    return self._driver_path
+
+  @property
+  def driver_path_raw(self) -> Optional[AnyPath]:
+    return self._driver_path
+
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
@@ -149,9 +158,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   @override
   def start(self, session: BrowserSessionRunGroup) -> None:
     super().start(session)
-    assert self._driver_path, "Missing driver path"
     try:
-      self._private_driver = self._start_driver(session, self._driver_path)
+      self._private_driver = self._start_driver(session, self.driver_path)
     except selenium.common.exceptions.WebDriverException as e:
       msg = e.msg or "Could not create Webdriver session."
       raise DriverException(msg, self) from e

@@ -95,7 +95,7 @@ class ChromiumBasedWebDriver(
   @override
   def _find_driver(self) -> pth.AnyPath:
     if self._driver_path:
-      return self._driver_path
+      return self.driver_path
     finder = ChromeDriverFinder(self)
     assert self.app_path, "Missing browser app_path"
     if self.use_local_chromedriver():
@@ -179,14 +179,13 @@ class ChromiumBasedWebDriver(
 
   @override
   def _validate_driver_version(self) -> None:
-    assert self._driver_path, "No driver available"
     error_message = None
     if self.is_local and helper.is_build_dir(
         self.platform.local_path(self.app_path.parent), self.platform):
       error_message = self._validate_locally_built_driver(
-          self.platform.local_path(self._driver_path))
+          self.platform.local_path(self.driver_path))
     else:
-      error_message = self._validate_any_driver_version(self._driver_path)
+      error_message = self._validate_any_driver_version(self.driver_path)
     if error_message:
       raise RuntimeError("\n".join(error_message))
 

@@ -11,6 +11,7 @@ from unittest import mock
 
 from crossbench import path as pth
 from crossbench.browsers.chromium.base import ChromiumBaseMixin
+from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriver, \
     LocalChromiumWebDriverAndroid
 from crossbench.browsers.chromium_based import helper
@@ -19,6 +20,8 @@ from crossbench.browsers.settings import Settings
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCrossbenchTestCase
+from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
+    LinuxMockPlatform, MacOsMockPlatform, MockPlatform
 
 
 class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
@@ -170,6 +173,176 @@ class ChromiumBasedWebDriverTestCase(unittest.TestCase):
     browser.switch_tab(relative_tab_index=-1, timeout=dt.timedelta(seconds=5))
     self.assertEqual(mock_driver.title, "3")
     self.assertEqual(mock_driver.current_url, "https://3.com")
+
+
+class ChromeDriverFinderTestCase(BaseCrossbenchTestCase):
+
+  def setUp(self) -> None:
+    super().setUp()
+    self.mock_browser = mock.MagicMock()
+    self.mock_browser.platform.is_linux = False
+    self.mock_browser.platform.is_macos = False
+    self.mock_browser.platform.is_android = False
+    self.mock_browser.platform.is_win = False
+    self.mock_browser.platform.host_platform = self.platform
+    self.mock_browser.version.major = 120
+
+  def test_find_local_build_macos(self):
+    self.mock_browser.platform.is_macos = True
+    out_dir = pth.AnyPath("/Users/user/chromium/src/out/Official")
+    app_path = out_dir / "Chromium.app"
+    bin_path = app_path / "Contents" / "MacOS" / "Chromium"
+    driver_path = out_dir / "chromedriver"
+
+    self.fs.create_file(bin_path, st_size=1000)
+    self.fs.create_file(driver_path, st_size=1000)
+
+    self.mock_browser.app_path = app_path
+    self.mock_browser.path = bin_path
+
+    finder = ChromeDriverFinder(self.mock_browser)
+
+    found_driver = finder.find_local_build()
+    self.assertEqual(str(found_driver), str(driver_path))
+
+  def test_find_local_build_linux(self):
+    self.mock_browser.platform.is_linux = True
+    out_dir = pth.AnyPath("/home/user/chromium/src/out/Default")
+    app_path = out_dir / "chrome"
+    driver_path = out_dir / "chromedriver"
+
+    self.fs.create_file(app_path, st_size=1000)
+    self.fs.create_file(driver_path, st_size=1000)
+
+    self.mock_browser.app_path = app_path
+    self.mock_browser.path = app_path
+
+    finder = ChromeDriverFinder(self.mock_browser)
+
+    found_driver = finder.find_local_build()
+    self.assertEqual(str(found_driver), str(driver_path))
+
+  def test_find_local_build_android(self):
+    self.mock_browser.platform.is_android = True
+
+    out_dir = pth.AnyPath("/home/user/chromium/src/out/Android")
+    app_path = out_dir / "bin/chrome_apk"
+    driver_path = out_dir / "clang_x64/chromedriver"
+
+    self.fs.create_file(app_path, st_size=1000)
+    self.fs.create_file(driver_path, st_size=1000)
+
+    self.mock_browser.app_path = app_path
+    self.mock_browser.path = app_path
+
+    finder = ChromeDriverFinder(self.mock_browser)
+
+    found_driver = finder.find_local_build()
+    self.assertEqual(str(found_driver), str(driver_path))
+
+
+class ChromiumPathMacOSTest(BaseCrossbenchTestCase):
+
+  def setup_platform(self) -> MockPlatform:
+    return MacOsMockPlatform()
+
+  def test_macos_app_path_resolution(self):
+    app_path = pth.AnyPath("/Applications/Chromium.app")
+    bin_path = app_path / "Contents" / "MacOS" / "Chromium"
+
+    self.fs.create_file(bin_path, st_size=1000)
+    self.platform.app_version = mock.MagicMock(return_value="120.0.0.0")
+
+    # Test passing the bundle path
+    browser = ChromiumWebDriver(
+        "test-label", path=app_path, settings=Settings(platform=self.platform))
+    self.assertEqual(str(browser.app_path), str(app_path))
+    self.assertEqual(str(browser.path), str(bin_path))
+
+    # Test passing the binary path
+    browser2 = ChromiumWebDriver(
+        "test-label-2",
+        path=bin_path,
+        settings=Settings(platform=self.platform))
+    self.assertEqual(str(browser2.app_path), str(app_path))
+    self.assertEqual(str(browser2.path), str(bin_path))
+
+
+class ChromiumPathLinuxTest(BaseCrossbenchTestCase):
+
+  def setup_platform(self) -> MockPlatform:
+    return LinuxMockPlatform()
+
+  def test_linux_path_resolution(self):
+    bin_path = pth.AnyPath("/usr/bin/chromium")
+    self.fs.create_file(bin_path, st_size=1000)
+    self.platform.app_version = mock.MagicMock(return_value="120.0.0.0")
+
+    browser = ChromiumWebDriver(
+        "test-label", path=bin_path, settings=Settings(platform=self.platform))
+    self.assertEqual(str(browser.app_path), str(bin_path))
+    self.assertEqual(str(browser.path), str(bin_path))
+
+  def test_linux_driver_lookup(self):
+    out_dir = pth.AnyPath("/home/user/chromium/src/out/Default")
+    bin_path = out_dir / "chrome"
+    driver_path = out_dir / "chromedriver"
+
+    self.fs.create_file(bin_path, st_size=1000)
+    self.fs.create_file(driver_path, st_size=1000)
+    self.fs.create_file(out_dir / "args.gn")
+
+    self.platform.app_version = mock.MagicMock(return_value="120.0.0.0")
+
+    browser = ChromiumWebDriver(
+        "test-label", path=bin_path, settings=Settings(platform=self.platform))
+    browser.validate_binary()
+
+    self.assertEqual(str(browser.driver_path), str(driver_path))
+
+
+class MockLocalChromiumWebDriverAndroid(ChromiumBaseMixin,
+                                        LocalChromiumWebDriverAndroid):
+
+  def _create_driver(self, options, service):
+    raise RuntimeError("start() should not be called")
+
+
+class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
+
+  def setup_platform(self) -> MockPlatform:
+    mock_adb = mock.MagicMock()
+    mock_adb.serial_id = "mock-serial-id"
+    mock_adb.build_version = 30
+    mock_adb.build_description = "mock-build-description"
+    mock_adb.packages.return_value = ["org.chromium.chrome"]
+
+    host_platform = LinuxMockPlatform()
+    platform = AndroidAdbMockPlatform(host_platform=host_platform, adb=mock_adb)
+    platform.exists = mock.MagicMock(return_value=True)
+    platform.is_file = mock.MagicMock(return_value=True)
+    return platform
+
+  def test_android_driver_lookup(self):
+    out_dir = pth.AnyPath("/home/user/chromium/src/out/Android")
+    chrome_public_apk_path = out_dir / "bin/chrome_public_apk"
+    driver_path = out_dir / "clang_x64/chromedriver"
+
+    self.fs.create_file(chrome_public_apk_path, st_size=1000)
+    self.fs.create_file(driver_path, st_size=1000)
+    self.fs.create_file(out_dir / "args.gn")
+
+    self.platform.host_platform.sh_stdout = mock.MagicMock(
+        return_value="Package name: org.chromium.chrome\nversionName: 120.0.0.0"
+    )
+
+    browser = MockLocalChromiumWebDriverAndroid(
+        "test-label",
+        path=chrome_public_apk_path,
+        settings=Settings(platform=self.platform))
+    browser.validate_binary()
+
+    self.assertEqual(str(browser.driver_path), str(driver_path))
 
 
 if __name__ == "__main__":

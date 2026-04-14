@@ -83,7 +83,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
   @override
   def _validate_driver_version(self) -> None:
     # TODO
-    # version = self.platform.sh_stdout(self._driver_path, "--version")
+    # version = self.platform.sh_stdout(self.driver_path, "--version")
     pass
 
 

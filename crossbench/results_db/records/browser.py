@@ -37,7 +37,7 @@ class BrowserRecord(BaseRecord):
         js_flags=str(js_flags),
         driver="N/A",
         driver_version="N/A",
-        driver_path=str(browser.driver_path),
+        driver_path=str(browser.driver_path_raw),
         platform=session.query(PlatformRecord).filter(
             PlatformRecord.name == browser.platform.name).first(),
     )

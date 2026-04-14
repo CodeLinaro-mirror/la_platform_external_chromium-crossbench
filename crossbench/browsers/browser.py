@@ -181,6 +181,10 @@ class Browser(abc.ABC):
     return self._settings.driver_path
 
   @property
+  def driver_path_raw(self) -> Optional[pth.AnyPath]:
+    return self.driver_path
+
+  @property
   def is_local_build(self) -> bool:
     return self._is_local_build
 
