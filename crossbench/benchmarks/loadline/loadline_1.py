@@ -32,6 +32,8 @@ if TYPE_CHECKING:
 # that might affect the benchmark score.
 VERSION_STRING: Final[str] = "1.5.0"
 
+_DEPRECATION_MESSAGE = "⚠️  Please run LoadLine2 which supersedes this benchmark."
+
 
 def process_scores(df: pd.DataFrame) -> pd.DataFrame:
   df = df.groupby(["cb_browser",
@@ -61,6 +63,10 @@ class LoadLine1Probe(LoadLineProbe):
   NAME: ClassVar = "loadline_probe"
   BENCHMARK_NAME: ClassVar = "LoadLine"
   BENCHMARK_VERSION: ClassVar[str] = VERSION_STRING
+
+  def __init__(self, *args, **kwargs) -> None:
+    super().__init__(*args, **kwargs)
+    self._warnings.append(_DEPRECATION_MESSAGE)
 
   @override
   def get_context_cls(self,) -> Type[LoadLine1ProbeContext]:
@@ -126,7 +132,7 @@ class LoadLine1Benchmark(LoadLineBenchmark):
 
   @override
   def log_stories(self, stories: Sequence[StoryT]) -> None:
-    logging.warning("⚠️  Please run LoadLine2 which supersedes this benchmark.")
+    logging.warning(_DEPRECATION_MESSAGE)
     super().log_stories(stories)
 
 
