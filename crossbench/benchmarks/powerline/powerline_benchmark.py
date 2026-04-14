@@ -5,13 +5,13 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Optional, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Optional, Sequence, Type, Any
 
 from typing_extensions import override
 
 from crossbench import config
 from crossbench.action_runner.action.enums import ReadyState
-from crossbench.benchmarks.base import Benchmark
+from crossbench.benchmarks.base import RegexFilter, StoryFilter, SubStoryBenchmark
 from crossbench.cli.ui import timer
 from crossbench.flags.base import Flags
 from crossbench.parse import DurationParser
@@ -125,26 +125,73 @@ class PowerlineStory(Story):
     return sorted(cls.STORY_URLS)
 
 
-class PowerlineBenchmark(Benchmark):
+class PowerlineStoryFilter(StoryFilter[PowerlineStory]):
+  """Story filter for the Powerline benchmark."""
+
+  def __init__(
+      self,
+      story_cls: Type[PowerlineStory],
+      patterns: Sequence[str],
+      args: argparse.Namespace,
+      separate: bool = False,
+      run_for: Optional[dt.timedelta] = dt.timedelta()
+  ) -> None:
+    assert issubclass(story_cls, PowerlineStory)
+    self._run_for = run_for
+    super().__init__(story_cls, patterns, args, separate)
+
+  @override
+  def process_all(self, patterns: Sequence[str]) -> None:
+    regex_filter = RegexFilter(
+        all_names=self.story_cls.all_story_names(),
+        default_names=self.story_cls.all_story_names())
+    self._selected_names = regex_filter.process_all(patterns)
+
+  @override
+  def create_stories(self, separate: bool) -> Sequence[PowerlineStory]:
+    return tuple(
+        self.story_cls(name, self._run_for) for name in self._selected_names)
+
+  @classmethod
+  @override
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+    kwargs = super().kwargs_from_cli(args)
+    kwargs["run_for"] = args.run_for
+    return kwargs
+
+  @classmethod
+  @override
+  def add_cli_arguments(
+      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser = super().add_cli_arguments(parser)
+    parser.add_argument(
+        "--run-for",
+        "--stop-after",
+        "--duration",
+        type=DurationParser.positive_duration,
+        help="How long to run the power measurements for",
+    )
+    return parser
+
+
+class PowerlineBenchmark(SubStoryBenchmark):
   """
   Benchmark runner for the Powerline background power-consumption test.
 
-  This test opens up an HTML5 page which plays an audio, intended to simulate
-  listening to a podcast with the screen off. The test measures the CPU power
-  consumption on the Pixel power rails via Perfetto.
+  This test opens different pages intended to simulate light media
+  playback and idle activity and measures the on-device power rails.
   """
   NAME: ClassVar = "powerline"
   DEFAULT_STORY_CLS: ClassVar = PowerlineStory
+  STORY_FILTER_CLS: ClassVar = PowerlineStoryFilter
 
   # TODO: we may want to check somehow that the device is a Pixel and therefore
   # has meaningful power rails we can read.
 
-  def __init__(self,
-               action_runner_config: Optional[ActionRunnerConfig] = None,
-               run_for: Optional[dt.timedelta] = None) -> None:
-    stories = [
-        PowerlineStory(x, run_for) for x in PowerlineStory.all_story_names()
-    ]
+  def __init__(
+      self,
+      stories: Sequence[PowerlineStory],
+      action_runner_config: Optional[ActionRunnerConfig] = None) -> None:
     super().__init__(stories, action_runner_config)
 
   @classmethod
@@ -173,17 +220,5 @@ class PowerlineBenchmark(Benchmark):
   @override
   def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
-    parser.add_argument(
-        "--run-for",
-        "--stop-after",
-        "--duration",
-        type=DurationParser.positive_duration,
-        help="How long to run the power measurements for")
+    cls.STORY_FILTER_CLS.add_cli_arguments(parser)
     return parser
-
-  @classmethod
-  @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["run_for"] = args.run_for
-    return kwargs
