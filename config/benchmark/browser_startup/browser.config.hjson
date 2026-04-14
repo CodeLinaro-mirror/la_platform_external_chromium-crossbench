@@ -5,7 +5,7 @@
     }
     "initial_webui": {
       "browser": "chrome"
-      "flags": "--enable-features=InitialWebUI,WebUIReloadButton,WebUIReloadButtonDeferBrowserViewShow,InitialWebUISyncNavStartToCommit,WebUIInProcessResourceLoadingV2"
+      "flags": "--enable-features=InitialWebUI:high_stream_priority/true,WebUIReloadButton:WebUIReloadButtonDeferBrowserViewShow/true/WebUIReloadButtonKeepVisibleUntilPaint/true/WebUIReloadButtonPrewarmWebUI/true,SkipIPCChannelPausingForNonGuests,WebUIInProcessResourceLoadingV2,InitialWebUISyncNavStartToCommit,InitialWebUIWithoutExtensions,WebUIBundledCodeCache,SendGPUChannelEarly"
     }
   }
 }
