@@ -173,9 +173,8 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
   def _maybe_symbolized_result(
       self, result: LocalProbeResult,
       symbols_result: pth.LocalPath) -> LocalProbeResult:
-    with self.write_zip_file(self.merged_trace_path,) as zip_file:
-      for f in (*result.perfetto_list, symbols_result):
-        zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
+    self.write_zip_file(self.merged_trace_path,
+                        (*result.perfetto_list, symbols_result))
 
     if (self.host_platform.file_size(self._symbolized_trace_path)
         < self.host_platform.file_size(self.merged_trace_path)):

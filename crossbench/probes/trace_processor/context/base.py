@@ -4,10 +4,9 @@
 
 from __future__ import annotations
 
-import contextlib
 import logging
 import zipfile
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Iterable, Optional
 
 from google.protobuf import text_format
 from google.protobuf.json_format import MessageToJson
@@ -52,12 +51,25 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
   def needs_tp_run(self) -> bool:
     return self.probe.needs_tp_run
 
-  @contextlib.contextmanager
-  def write_zip_file(self, path: pth.LocalPath) -> Iterator[zipfile.ZipFile]:
+  def write_zip_file(self, path: pth.LocalPath,
+                     files: Iterable[pth.LocalPath]) -> None:
+    try:
+      # Try the more-compatible zip32 format first.
+      self._write_zip_file(path, files, allow_zip64=False)
+    except zipfile.LargeZipFile:
+      logging.warning("Trace file too large for standard ZIP, using ZIP64.")
+      self._write_zip_file(path, files, allow_zip64=True)
+
+  def _write_zip_file(self, path: pth.LocalPath, files: Iterable[pth.LocalPath],
+                      allow_zip64: bool) -> None:
     with zipfile.ZipFile(
-        path, "w", compression=zipfile.ZIP_DEFLATED,
-        compresslevel=1) as zip_file:
-      yield zip_file
+        path,
+        "w",
+        compression=zipfile.ZIP_DEFLATED,
+        compresslevel=1,
+        allowZip64=allow_zip64) as zip_file:
+      for f in files:
+        zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
 
   def _merge_trace_files(self) -> LocalProbeResult:
     with self.run.actions("TRACE_PROCESSOR: Merging trace files", verbose=True):
@@ -66,9 +78,7 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
         # Symlink the existing trace to save time and space
         self.host_platform.symlink_or_copy(traces[0], self.merged_trace_path)
       else:
-        with self.write_zip_file(self.merged_trace_path,) as zip_file:
-          for f in traces:
-            zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
+        self.write_zip_file(self.merged_trace_path, traces)
     return LocalProbeResult(perfetto=(self.merged_trace_path,))
 
   def _maybe_run_tp(self) -> ProbeResult:
