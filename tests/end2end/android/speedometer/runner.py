@@ -1,5 +1,5 @@
 #!/usr/bin/env vpython3
-# Copyright 2024 The Chromium Authors
+# Copyright 2026 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -11,7 +11,7 @@ from typing import Final
 
 FILE_PATH: Final = pathlib.Path(__file__).absolute()
 TEST_DIR: Final = FILE_PATH.parent
-REPO_DIR: Final = FILE_PATH.parents[3]
+REPO_DIR: Final = FILE_PATH.parents[4]
 
 if REPO_DIR not in sys.path:
   sys.path.insert(0, str(REPO_DIR))

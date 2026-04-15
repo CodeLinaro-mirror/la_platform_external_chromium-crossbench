@@ -14,18 +14,16 @@ import pathlib
 import sys
 from typing import Final
 
-import pytest
-
-END2END_TEST_DIR: Final = pathlib.Path(__file__).absolute().parent
-REPO_DIR: Final = pathlib.Path(__file__).absolute().parents[2]
+FILE_PATH: Final = pathlib.Path(__file__).absolute()
+END2END_TEST_DIR: Final = FILE_PATH.parent
+REPO_DIR: Final = FILE_PATH.parents[2]
 
 if REPO_DIR not in sys.path:
   sys.path.insert(0, str(REPO_DIR))
-from tests.test_helper import DEFAULT_PYTEST_FLAGS, DurationPlugin, to_flags \
-    # noqa: E402
+
+from tests import test_helper  # noqa: E402
 
 if __name__ == "__main__":
-  pass_through_args = sys.argv[1:]
   more_flags = []
   parser = argparse.ArgumentParser(allow_abbrev=False)
   parser.add_argument("--ignore-tests", required=False)
@@ -46,11 +44,7 @@ if __name__ == "__main__":
     os.environ["PATH"] = updated_path
     os.environ["DEPOT_TOOLS_UPDATE"] = "0"
 
-  return_code = pytest.main(
-      [
-          *to_flags(DEFAULT_PYTEST_FLAGS),
-          str(END2END_TEST_DIR),
-          *pass_through_args,
-      ] + more_flags,
-      plugins=[DurationPlugin()])
-  sys.exit(return_code)
+  test_helper.run_pytest(
+      END2END_TEST_DIR,
+      *more_flags,
+  )

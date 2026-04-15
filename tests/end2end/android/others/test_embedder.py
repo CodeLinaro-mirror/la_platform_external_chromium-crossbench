@@ -33,15 +33,15 @@ def test_embedder(device_id, adb_path, test_env: TestEnv, adb_root) -> None:
   del adb_root
   browser_config = _browser_config(device_id, adb_path)
   CrossBenchCLI().run((
-      "embedder", f"--browser={browser_config}",
+      "embedder",
+      f"--browser={browser_config}",
       "--splashscreen=skip",
       f"--cuj-config={test_env.root_dir}/config/team/woa/embedder_cuj_config.hjson",
       # TODO(zbikowski): Add this flag once embedder in the emulator image is
       # updated.
       # "--embedder-process-name=googleapp",
       f"--probe=embedder:{_embedder_config()}",
-      f"--out-dir={test_env.results_dir}"
-   ) + test_env.cq_flags)
+      f"--out-dir={test_env.results_dir}") + test_env.cq_flags)
 
   with (test_env.results_dir / "embedder.csv").open() as csv:
     lines = csv.readlines()

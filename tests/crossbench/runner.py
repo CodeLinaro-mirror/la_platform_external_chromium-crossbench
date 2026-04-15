@@ -7,12 +7,13 @@ from __future__ import annotations
 
 import pathlib
 import sys
+from typing import Final
 
 import pytest
 
-FILE_PATH = pathlib.Path(__file__).absolute()
-TEST_DIR = FILE_PATH.parent
-REPO_DIR = FILE_PATH.parents[2]
+FILE_PATH: Final = pathlib.Path(__file__).absolute()
+TEST_DIR: Final = FILE_PATH.parent
+REPO_DIR: Final = FILE_PATH.parents[2]
 
 if REPO_DIR not in sys.path:
   sys.path.insert(0, str(REPO_DIR))

@@ -260,13 +260,11 @@ def test_webview(device_id, adb_path, test_env) -> None:
   page_config = {
       "pages": {
           "LoadingTest": {
-              "actions": [
-                  {
-                      "action": "get",
-                      "url": f"data:text/html;charset=utf-8,{test_page}",
-                      "ready_state": "complete"
-                  },
-              ]
+              "actions": [{
+                  "action": "get",
+                  "url": f"data:text/html;charset=utf-8,{test_page}",
+                  "ready_state": "complete"
+              },]
           }
       }
   }

@@ -99,12 +99,27 @@ class DurationPlugin:
       sys.stdout.flush()
 
 
-def run_pytest(path: str | pathlib.Path, *args):
+def run_pytest(path: str | pathlib.Path,
+               *args,
+               plugins: list | None = None,
+               use_default_flags: bool = True,
+               check: bool = True):
   sys.excepthook = exception_formatter.excepthook
-  extra_args = [*args, *sys.argv[1:]]
+  extra_args = list(args)
+  if use_default_flags:
+    extra_args = list(to_flags(DEFAULT_PYTEST_FLAGS)) + extra_args
+  pass_through_args = sys.argv[1:]
+  extra_args.extend(pass_through_args)
   # Run tests single-threaded by default when running the test file directly.
   if "-n" not in extra_args:
     extra_args.extend(["-n", "1"])
   if "-r" not in extra_args:
     extra_args.extend(["-r", "s"])
-  sys.exit(pytest.main([str(path), *extra_args]))
+
+  if plugins is None:
+    plugins = [DurationPlugin()]
+
+  return_code = pytest.main([str(path), *extra_args], plugins=plugins)
+  if check:
+    sys.exit(return_code)
+  return return_code
