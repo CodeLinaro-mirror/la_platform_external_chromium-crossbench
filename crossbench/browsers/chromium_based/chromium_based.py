@@ -177,10 +177,12 @@ class ChromiumBased(Browser):
     return user_data_dir
 
   @property
-  def user_data_dir(self) -> Optional[pth.AnyPath]:
+  @override
+  def profile_data_dir(self) -> Optional[pth.AnyPath]:
     # On chromium-based browsers we can have two separate caching dirs:
     # - user-data-dir containing all profile data
     # - cache-dir containing profile independent caches
+    # TODO: distinguish the two variants for chrome
     return self._cache_dir
 
   @property

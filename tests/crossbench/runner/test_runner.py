@@ -224,14 +224,11 @@ class RunnerTestCase(BaseRunnerTestCase):
     runs_dir = browser_dir / "runs"
     run_symlink = runs_dir / (runs_dir / str(run.index)).readlink()
     self.assertEqual(run_symlink.resolve(), run.out_dir)
-    self._validate_internal_probes(run, runner)
+    self._validate_probes(run, runner)
 
-  def _validate_internal_probes(self, run, runner):
+  def _validate_probes(self, run, runner):
     for probe in runner.probes:
-      if not probe.is_internal:
-        continue
-      result = run.results[probe]
-      self.assertTrue(result)
+      probe.validate_result(run)
 
   def test_single_story_run_mock_probe_partial_setup_fail(self):
     runner = self.single_story_runner(throw=False)
@@ -253,7 +250,7 @@ class RunnerTestCase(BaseRunnerTestCase):
     failed_run = list(runner.runs)[0]
     self.assertFalse(failed_run.is_success)
     self.assertTrue(failed_run.results[probe].is_empty)
-    self._validate_internal_probes(failed_run, runner)
+    self._validate_probes(failed_run, runner)
 
   def test_single_story_run_mock_probe_calls(self):
     # Make sure start / stop are called.
@@ -333,7 +330,7 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertEqual(failed_run.index, 2)
     self.assertFalse(failed_run.is_success)
     self.assertTrue(failed_run.results[probe].is_empty)
-    self._validate_internal_probes(failed_run, runner)
+    self._validate_probes(failed_run, runner)
 
   def test_attach_probe_twice(self):
     runner = self.default_runner()

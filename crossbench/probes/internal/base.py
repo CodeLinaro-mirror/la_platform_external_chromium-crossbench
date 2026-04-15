@@ -13,6 +13,7 @@ from crossbench.probes.probe import Probe, ProbePriority
 
 if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
+  from crossbench.runner.run import Run
 
 
 class InternalProbe(Probe):
@@ -23,6 +24,13 @@ class InternalProbe(Probe):
   @override
   def is_internal(self) -> bool:
     return True
+
+  @override
+  def validate_result(self, run: Run) -> None:
+    super().validate_result(run)
+    result = run.results[self]
+    if not result:
+      raise ValueError(f"Internal probe {self.name} produced empty result")
 
 
 class InternalJsonResultProbe(JsonResultProbe, InternalProbe):

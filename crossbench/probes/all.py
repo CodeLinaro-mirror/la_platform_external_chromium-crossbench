@@ -11,6 +11,7 @@ from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
 from crossbench.probes.cb_perfetto.tracing import TracingProbe
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
 from crossbench.probes.chromium_pgo import ChromiumPgoProbe
+from crossbench.probes.crashdump import CrashdumpProbe
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.downloads import DownloadsProbe
 from crossbench.probes.dtrace import DTraceProbe
@@ -70,6 +71,7 @@ NON_CONFIGURABLE_INTERNAL_PROBES: InternalProbeTuple = (
     ErrorsProbe,
     LogProbe,
     SystemDetailsProbe,
+    CrashdumpProbe,
 )
 # Internal probes that are configurable by command line flags but always
 # installed.

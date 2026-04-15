@@ -64,6 +64,42 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
       self.assertFalse(browser.version.has_channel)
       self.assertEqual(browser.version.version_str, version_str)
 
+  def test_profile_data_dir(self):
+    build_dir = pathlib.Path("/home/testuser/chrome/src/out/release")
+    path = build_dir / mock_browser.MockChromium.mock_app_binary()
+    self.fs.create_file(path, st_size=1000)
+    self.fs.create_file(build_dir / "args.gn")
+
+    version_str = mock_browser.MockChromium.VERSION
+    with mock.patch.object(
+        self.platform, "app_version", return_value=version_str):
+      cache_dir = pth.AnyPath("/tmp/my-cache-dir")
+      browser = ChromiumWebDriver(
+          "local",
+          path=path,
+          settings=Settings(platform=self.platform, cache_dir=cache_dir))
+      browser.setup()
+
+      self.assertEqual(browser.profile_data_dir, cache_dir)
+
+  def test_user_data_dir_flags(self):
+    build_dir = pathlib.Path("/home/testuser/chrome/src/out/release")
+    path = build_dir / mock_browser.MockChromium.mock_app_binary()
+    self.fs.create_file(path, st_size=1000)
+    self.fs.create_file(build_dir / "args.gn")
+
+    version_str = mock_browser.MockChromium.VERSION
+    with mock.patch.object(
+        self.platform, "app_version", return_value=version_str):
+      browser = ChromiumWebDriver(
+          "local", path=path, settings=Settings(platform=self.platform))
+
+      custom_dir = pth.AnyPath("/tmp/custom-user-data-dir")
+      browser.flags["--user-data-dir"] = str(custom_dir)
+      browser.setup()
+
+      self.assertEqual(browser.profile_data_dir, custom_dir)
+
 
 class MockChromiumBasedWebDriver(ChromiumBaseMixin, ChromiumBasedWebDriver):
 

@@ -251,7 +251,16 @@ class Browser(abc.ABC):
 
   @property
   def cache_dir(self) -> Optional[pth.AnyPath]:
+    """Default caching dir, if possible for profile independent data"""
     return self._cache_dir
+
+  @property
+  def profile_data_dir(self) -> Optional[pth.AnyPath]:
+    """
+    Profile-dependent cache (can be the same as cache_dir).
+    Fallback to cache_dir if not overridden by subclasses.
+    """
+    return self.cache_dir
 
   def set_log_file(self, path: pth.AnyPath) -> None:
     self.log_file = path

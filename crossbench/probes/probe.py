@@ -209,6 +209,13 @@ class Probe(ProbeResultKey, abc.ABC):
     """
     del env, browser
 
+  def validate_result(self, run: Run) -> None:
+    """
+    Validate that probe produced valid results for the given run.
+    - Raise exception for hard-errors.
+    """
+    del run
+
   def expect_browser(self,
                      browser: Browser,
                      attributes: BrowserAttributes,
