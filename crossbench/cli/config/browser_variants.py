@@ -292,12 +292,18 @@ class BaseBrowserVariantsConfig(abc.ABC):
       self, browser_config: BrowserConfig) -> BrowserConfig:
     path_or_identifier = browser_config.browser
     if isinstance(path_or_identifier, pth.AnyPath):
+      if browser_config.reinstall:
+        raise ValueError("Cannot set reinstall=true when using browser "
+                         f"at {path_or_identifier}")
       return browser_config
     browser_platform: plt.Platform = self._get_browser_platform(browser_config)
     for downloader_cls in (ChromeDownloader, FirefoxDownloader,
                            WebKitDownloader):
       if downloader_cls.is_valid(path_or_identifier, browser_platform):
-        downloaded = downloader_cls.load(path_or_identifier, browser_platform)
+        downloaded = downloader_cls.load(
+            path_or_identifier,
+            browser_platform,
+            reinstall=browser_config.reinstall or False)
         return dataclasses.replace(browser_config, browser=downloaded)
     raise ValueError(
         f"No version-download support for browser: {path_or_identifier}")

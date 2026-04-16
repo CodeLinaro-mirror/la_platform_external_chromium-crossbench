@@ -1402,8 +1402,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "browser_bin") / "Webkit_Nightly_299105_nightly"
     app_path = downloaded_path / "Release" / "MiniBrowser.app"
 
-    def mock_load_side_effect(name, platform):
-      del name, platform
+    def mock_load_side_effect(name, platform, reinstall):
+      del name, platform, reinstall
       self.fs.create_file(app_path, st_size=100)
       return app_path
 
@@ -1411,8 +1411,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "crossbench.browsers.webkit.downloader.WebKitDownloader.load",
         side_effect=mock_load_side_effect) as mock_load:
       config = BrowserVariantsConfig.parse_args(args)
-      mock_load.assert_called_once_with("webkit-nightly-299105@main",
-                                        self.platform)
+      mock_load.assert_called_once_with(
+          "webkit-nightly-299105@main", self.platform, reinstall=False)
     self.assertEqual(len(config.variants), 1)
     variant = config.variants[0]
     self.assertEqual(variant.browser_cls, WebKitWebDriver)

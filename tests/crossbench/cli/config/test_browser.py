@@ -14,6 +14,7 @@ from immutabledict import immutabledict
 
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.browsers.apk_config import ApkConfig
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.config.browser import ENV_PRESETS, NETWORK_PRESETS, \
@@ -83,6 +84,35 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(
         BrowserConfig.parse(str(path)),
         BrowserConfig(path, DriverConfig(BrowserDriverType.default())))
+
+  def test_parse_reinstall(self):
+    config = BrowserConfig.parse({"browser": "chrome", "reinstall": True})
+    self.assertTrue(config.reinstall)
+    config = BrowserConfig.parse({"browser": "chrome", "reinstall": False})
+    self.assertFalse(config.reinstall)
+    config = BrowserConfig.parse({"browser": "chrome"})
+    self.assertIsNone(config.reinstall)
+    config = BrowserConfig.parse("{browser:'chrome', reinstall: true}")
+    self.assertTrue(config.reinstall)
+    config = BrowserConfig.parse("{browser:'chrome', reinstall: false}")
+    self.assertFalse(config.reinstall)
+
+  def test_reinstall_apk_mutually_exclusive(self):
+    path = Chrome.stable_path(self.platform)
+    apk_path = self.create_file("foo.apk", contents="non-empty")
+    apk = ApkConfig(path=apk_path)
+    with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+      BrowserConfig(path, apk=apk, reinstall=True)
+
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "mutually exclusive"):
+      BrowserConfig.parse({
+          "browser": "chrome",
+          "reinstall": True,
+          "apk": {
+              "path": str(apk_path)
+          }
+      })
 
   def test_parse_invalid_name(self):
     with self.assertRaises(argparse.ArgumentTypeError):

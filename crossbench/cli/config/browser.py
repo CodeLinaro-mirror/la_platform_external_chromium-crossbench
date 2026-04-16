@@ -76,12 +76,16 @@ class BrowserConfig(ConfigObject):
   clear_cache: bool | None = None
   extensions: tuple[ExtensionConfig, ...] = ()
   apk: ApkConfig | None = None
+  reinstall: bool | None = None
 
   def __post_init__(self) -> None:
     if not self.browser:
       raise ValueError(f"{type(self).__name__}.browser cannot be None.")
     if not self.driver:
       raise ValueError(f"{type(self).__name__}.driver cannot be None.")
+    if self.reinstall is not None and self.apk is not None:
+      raise ValueError(
+          f"{type(self).__name__}: reinstall and apk are mutually exclusive.")
 
   @classmethod
   def default(cls) -> Self:
@@ -366,7 +370,15 @@ class BrowserConfig(ConfigObject):
   @classmethod
   @override
   def config_parser(cls) -> ConfigParser[Self]:
-    parser = ConfigParser(cls)
+
+    class BrowserConfigParser(ConfigParser[Self]):
+
+      def kwargs_from_config(self, config_data: dict[str, object],
+                             **extra_kwargs) -> dict[str, object]:
+        kwargs = super().kwargs_from_config(config_data, **extra_kwargs)
+        return kwargs
+
+    parser = BrowserConfigParser(cls)
     parser.add_argument(
         "browser",
         aliases=("path",),
@@ -390,6 +402,12 @@ class BrowserConfig(ConfigObject):
     parser.add_argument(
         "extensions", type=ExtensionConfig, is_list=True, default=())
     parser.add_argument("apk", type=ApkConfig)
+    parser.add_argument(
+        "reinstall",
+        type=ObjectParser.optional_bool,
+        default=None,
+        help="Reinstall the browser if it is already installed")
+    parser.set_mutually_exclusive("apk", "reinstall")
     return parser
 
   @property

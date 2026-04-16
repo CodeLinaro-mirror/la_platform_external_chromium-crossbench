@@ -1102,6 +1102,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     self._arg_names: Set[str] = set()
     self._unused_properties_mode: Final[
         UnusedPropertiesMode] = unused_properties_mode
+    self._mutually_exclusive_groups: list[tuple[str, ...]] = []
 
   @property
   def default(self) -> Optional[ConfigResultObjectT]:
@@ -1146,6 +1147,14 @@ class ConfigParser(Generic[ConfigResultObjectT]):
                          " was previously added as argument.")
       self._arg_names.add(alias)
     return arg
+
+  def set_mutually_exclusive(self, *args: str) -> None:
+    for arg in args:
+      if arg not in self._arg_names:
+        raise ValueError(
+            f"argument name {arg} not found; "
+            "please call add_argument before set_mutually_exclusive")
+    self._mutually_exclusive_groups.append(args)
 
   def add_default_argument(self, name: str, *args, **kwargs) -> None:
     """ Marked argument that is used for parsing single string values. """
@@ -1216,6 +1225,15 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     if self._default and config_data == {} and not kwargs:
       return self._default
     kwargs = self.kwargs_from_config(config_data, **kwargs)
+    for g in self._mutually_exclusive_groups:
+      found = None
+      for arg in g:
+        if kwargs.get(arg) is not None:
+          if found is None:
+            found = arg
+          else:
+            raise ValueError(f"{type(self).__name__}: {found!r} and {arg!r} "
+                             "are mutually exclusive")
     return self.new_instance_from_kwargs(kwargs)
 
   def parse_str(self, value: str) -> ConfigResultObjectT:

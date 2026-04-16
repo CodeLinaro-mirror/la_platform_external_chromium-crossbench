@@ -55,8 +55,12 @@ class WebKitDownloader(Downloader):
     return (browser_platform.exists(path) and
             path.name.endswith(cls.ARCHIVE_SUFFIX))
 
-  def __init__(self, version_identifier: str | LocalPath, browser_type: str,
-               platform_name: str, browser_platform: Platform) -> None:
+  def __init__(self,
+               version_identifier: str | LocalPath,
+               browser_type: str,
+               platform_name: str,
+               browser_platform: Platform,
+               reinstall: bool = False) -> None:
     assert not browser_type, f"Unexpected browser_type: {browser_type}"
     assert not platform_name, f"Unexpected platform_name: {platform_name}"
     if not browser_platform.is_macos:
@@ -69,7 +73,7 @@ class WebKitDownloader(Downloader):
       raise ValueError("Unsupported macos platform version for downloading "
                        f"webkit nightly: {browser_platform}")
     super().__init__(version_identifier, "webkit-nightly", webkit_platform_name,
-                     browser_platform)
+                     browser_platform, reinstall)
 
   @override
   def _parse_version(self, version_identifier: str) -> BrowserVersion:

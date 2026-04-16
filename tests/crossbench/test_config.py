@@ -412,6 +412,91 @@ class ConfigParserTestCase(unittest.TestCase):
     obj = config_parser.parse("custom string")
     self.assertEqual(obj.str_value, "custom string")
 
+  def test_mutually_exclusive(self):
+    parser = ConfigParser(dict)
+    parser.add_argument("foo", type=int)
+    parser.add_argument("bar", type=int)
+    parser.set_mutually_exclusive("foo", "bar")
+
+    # Only one is fine
+    parser.parse({"foo": 1})
+    parser.parse({"bar": 2})
+    # None is fine if not required
+    parser.parse({})
+
+    # Both should fail
+    with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+      parser.parse({"foo": 1, "bar": 2})
+
+  def test_mutually_exclusive_unknown_arg(self):
+    parser = ConfigParser(dict)
+    parser.add_argument("foo", type=int)
+    with self.assertRaisesRegex(ValueError, "not found"):
+      parser.set_mutually_exclusive("foo", "unknown")
+
+  def test_mutually_exclusive_multiple(self):
+    parser = ConfigParser(dict)
+    parser.add_argument("foo", type=int)
+    parser.add_argument("bar", type=int)
+    parser.add_argument("baz", type=int)
+    parser.set_mutually_exclusive("foo", "bar", "baz")
+
+    # Only one is fine
+    self.assertEqual(
+        parser.parse({"foo": 1}), {
+            "foo": 1,
+            "bar": None,
+            "baz": None
+        })
+
+    # Multiple should fail
+    with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+      parser.parse({"foo": 1, "bar": 2})
+    with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+      parser.parse({"foo": 1, "baz": 3})
+    with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+      parser.parse({"foo": 1, "bar": 2, "baz": 3})
+
+  def test_mutually_exclusive_groups(self):
+    parser = ConfigParser(dict)
+    parser.add_argument("a", type=int)
+    parser.add_argument("b", type=int)
+    parser.add_argument("c", type=int)
+    parser.add_argument("d", type=int)
+    parser.set_mutually_exclusive("a", "b")
+    parser.set_mutually_exclusive("c", "d")
+
+    # Fine
+    parser.parse({"a": 1, "c": 3})
+    parser.parse({"a": 1, "d": 4})
+    parser.parse({"b": 2, "c": 3})
+
+    # Fails
+    with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+      parser.parse({"a": 1, "b": 2})
+    with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+      parser.parse({"c": 3, "d": 4})
+
+  def test_mutually_exclusive_defaults(self):
+    parser = ConfigParser(dict)
+    parser.add_argument("foo", type=int, default=10)
+    parser.add_argument("bar", type=int)
+    parser.set_mutually_exclusive("foo", "bar")
+
+    # Fine, only foo is not None
+    self.assertEqual(parser.parse({}), {"foo": 10, "bar": None})
+    self.assertEqual(parser.parse({"foo": 11}), {"foo": 11, "bar": None})
+    # bar=2 and foo will have default=10
+    with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+      parser.parse({"bar": 2})
+
+    parser = ConfigParser(dict)
+    parser.add_argument("foo", type=int, default=10)
+    parser.add_argument("bar", type=int, default=20)
+    parser.set_mutually_exclusive("foo", "bar")
+    with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+      parser.parse({})
+
 
 class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 

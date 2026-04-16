@@ -56,8 +56,10 @@ class Downloader(abc.ABC):
     pass
 
   @classmethod
-  def load(cls, archive_path_or_version_identifier: str | pth.LocalPath,
-           browser_platform: Platform) -> pth.LocalPath:
+  def load(cls,
+           archive_path_or_version_identifier: str | pth.LocalPath,
+           browser_platform: Platform,
+           reinstall: bool = False) -> pth.LocalPath:
     logging.debug("Downloading chrome %s binary for %s",
                   archive_path_or_version_identifier, browser_platform)
     loader_cls: Type[Downloader] | None = cls._get_loader_cls(browser_platform)
@@ -65,17 +67,21 @@ class Downloader(abc.ABC):
       raise ValueError(f"Downloading {cls.name()} is not supported "
                        f"on {browser_platform.name} {browser_platform.machine}")
     loader: Downloader = loader_cls(archive_path_or_version_identifier, "", "",
-                                    browser_platform)
+                                    browser_platform, reinstall)
     return loader.app_path
 
-  def __init__(self, archive_path_or_version_identifier: str | pth.LocalPath,
-               browser_type: str, platform_name: str,
-               browser_platform: Platform) -> None:
+  def __init__(self,
+               archive_path_or_version_identifier: str | pth.LocalPath,
+               browser_type: str,
+               platform_name: str,
+               browser_platform: Platform,
+               reinstall: bool = False) -> None:
     assert browser_type, "Missing browser_type"
     self._browser_type: Final[str] = browser_type
     self._browser_platform: Final[Platform] = browser_platform
     self._platform_name: str = platform_name
     assert platform_name, "Missing platform_name"
+    self._reinstall: bool = reinstall
     self._archive_url: str = ""
     self._archive_path: pth.LocalPath = pth.LocalPath()
     self._out_dir: pth.LocalPath = (
@@ -149,10 +155,12 @@ class Downloader(abc.ABC):
 
   def _load_from_version(self) -> pth.LocalPath:
     self._archive_path = self._create_archive_path(self.requested_version)
-    if app_path := self._find_matching_installed_version():
+    if (not self._reinstall and
+        (app_path := self._find_matching_installed_version())):
       if cached_version := self._validate_installed(app_path):
         self.info(f"CACHED: {cached_version} {self._app_path}")
         return app_path
+
     self._requested_version_validation()
     if not self._try_download_version_archive():
       self.info(f"CACHED DOWNLOAD: {self._archive_path}")

@@ -232,8 +232,12 @@ class ChromeDownloaderLinux(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
-               platform_name: str, browser_platform: Platform) -> None:
+  def __init__(self,
+               version_identifier: str | pth.LocalPath,
+               browser_type: str,
+               platform_name: str,
+               browser_platform: Platform,
+               reinstall: bool = False) -> None:
     assert not browser_type, f"Unexpected browser_type: {browser_type}"
     if browser_platform.is_linux and browser_platform.is_x64:
       platform_name = "linux64"
@@ -241,7 +245,7 @@ class ChromeDownloaderLinux(ChromeDownloader):
       raise ValueError("Unsupported linux architecture for downloading chrome: "
                        f"got={browser_platform.machine} supported=linux.x64")
     super().__init__(version_identifier, "chrome", platform_name,
-                     browser_platform)
+                     browser_platform, reinstall)
 
   @override
   def _installed_app_path(self) -> pth.LocalPath:
@@ -300,13 +304,17 @@ class ChromeDownloaderMacOS(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
-               platform_name: str, browser_platform: Platform) -> None:
+  def __init__(self,
+               version_identifier: str | pth.LocalPath,
+               browser_type: str,
+               platform_name: str,
+               browser_platform: Platform,
+               reinstall: bool = False) -> None:
     assert not browser_type, f"Unexpected browser_type: {browser_type}"
     assert browser_platform.is_macos, f"{type(self)} can only be used on macOS"
     platform_name = "mac-universal"
     super().__init__(version_identifier, "chrome", platform_name,
-                     browser_platform)
+                     browser_platform, reinstall)
 
   @override
   def _requested_version_validation(self) -> None:
@@ -402,8 +410,12 @@ class ChromeDownloaderAndroid(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
-               platform_name: str, browser_platform: Platform) -> None:
+  def __init__(self,
+               version_identifier: str | pth.LocalPath,
+               browser_type: str,
+               platform_name: str,
+               browser_platform: Platform,
+               reinstall: bool = False) -> None:
     assert not browser_type, f"Unexpected browser_type: {browser_type}"
     assert browser_platform.is_android, (
         f"{type(self)} can only be used on Android")
@@ -412,7 +424,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     # TODO: support low-end arm_64 and high-arm_64 at the same time.
     platform_name = "high-arm_64"
     super().__init__(version_identifier, "chrome", platform_name,
-                     browser_platform)
+                     browser_platform, reinstall)
 
   @property
   def adb(self) -> Adb:
@@ -565,8 +577,12 @@ class ChromeDownloaderWin(ChromeDownloader):
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
-  def __init__(self, version_identifier: str | pth.LocalPath, browser_type: str,
-               platform_name: str, browser_platform: Platform) -> None:
+  def __init__(self,
+               version_identifier: str | pth.LocalPath,
+               browser_type: str,
+               platform_name: str,
+               browser_platform: Platform,
+               reinstall: bool = False) -> None:
     assert not browser_type, f"Unexpected browser_type: {browser_type}"
     assert browser_platform.is_win, f"{type(self)} can only be used on windows"
     self._archive_stem: str
@@ -577,7 +593,7 @@ class ChromeDownloaderWin(ChromeDownloader):
       platform_name = "win64-clang"
       self._archive_stem = self.ARCHIVE_STEM_X64
     super().__init__(version_identifier, "chrome", platform_name,
-                     browser_platform)
+                     browser_platform, reinstall)
 
   @override
   def _requested_version_validation(self) -> None:
