@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional, \
-    Sequence, cast
+from typing import (TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional,
+                    Sequence, cast)
 
 from typing_extensions import override
 
@@ -14,8 +14,8 @@ from crossbench.action_runner.action.open_devtools import OpenDevToolsAction
 from crossbench.benchmarks.base import Benchmark
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.metrics_internals import ChromeMetricsInternalsProbe, \
-    ChromeMetricsInternalsProbeContext
+from crossbench.probes.metrics_internals import (
+    ChromeMetricsInternalsProbe, ChromeMetricsInternalsProbeContext)
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -58,6 +58,7 @@ class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
     merger = MetricsMerger.merge_json_list(
         (repetition_group.results[self].json
          for repetition_group in group.repetitions_groups),
+        key_fn=flatten_key_fn,
         merge_duplicate_paths=True)
     self.preserver_high_resolution_data(merger, group.repetitions_groups)
     return self.write_group_result(
@@ -82,12 +83,21 @@ class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
     merger = MetricsMerger.merge_json_list(
         (repetition_group.results[self].json
          for repetition_group in group.repetitions_groups),
+        key_fn=flatten_key_fn,
         merge_duplicate_paths=True)
     self.preserver_high_resolution_data(merger, group.repetitions_groups)
     return self.write_group_result(
         group,
         merger,
     )
+
+def flatten_key_fn(path: tuple[str, ...]) -> str:
+  """Write key in metric.panel.site order with a delimiter that avoids key
+  loss downstream in Chromium Perf Infra"""
+  # TODO(liviurau): fix the convertor script b/469111729.
+  # TODO(liviurau): find a way to reverse the key as data gets merged.
+  return ".".join(path[::-1])
+
 
 
 class DevToolsFrontendLoadTimeProbeContext(ChromeMetricsInternalsProbeContext):
@@ -107,6 +117,14 @@ class DevToolsFrontendStory(Story):
       actions.wait(1.0)  # Wait for page load.
       action_runner.open_devtools(run, OpenDevToolsAction(panel_name=panel))
       actions.wait(1.5)  # Let DevTools settle.
+    logging.info("Benchmark actions complete.")
+
+  def teardown(self, run: Run) -> None:
+    """Close open tabs to avoid browser close hangs on Windows. Work around
+    suggested in https://github.com/puppeteer/puppeteer/issues/6563.
+    """
+    logging.info("Closing all tabs...")
+    run.browser.close_all_tabs()
     logging.info("Stopping benchmark...")
 
   @classmethod
@@ -195,6 +213,12 @@ class DevToolsFrontendBenchmark(Benchmark):
   def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes)
     if browser_attributes.is_chromium_based:
+      # Allows us to establish a CDP session with the browser
       flags.set("--remote-allow-origins", "*")
+      # Ensures we get event data at chrome://metrics-internals/structured
       flags.set("--force-enable-metrics-reporting")
+      # Align with DevTools e2e tests
+      flags.set("--disable-gpu")
+      # Avoids Windows crash (see b/40182504)
+      flags.set("--disable-crashpad-metrics")
     return flags

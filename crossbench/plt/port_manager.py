@@ -8,7 +8,7 @@ import abc
 import atexit
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Final, Iterator, Self, Tuple
+from typing import TYPE_CHECKING, Final, Iterator, Self
 
 from typing_extensions import override
 
@@ -56,11 +56,11 @@ class PortScope:
     return not self._forwarded_ports and not self._reverse_forwarded_ports
 
   @property
-  def forwarded_ports(self) -> Tuple[int, ...]:
+  def forwarded_ports(self) -> tuple[int, ...]:
     return tuple(self._forwarded_ports.keys())
 
   @property
-  def reverse_forwarded_ports(self) -> Tuple[int, ...]:
+  def reverse_forwarded_ports(self) -> tuple[int, ...]:
     return tuple(self._reverse_forwarded_ports.keys())
 
   @contextlib.contextmanager

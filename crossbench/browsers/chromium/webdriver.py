@@ -76,6 +76,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
                path: Optional[pth.AnyPath] = None,
                settings: Optional[Settings] = None) -> None:
     assert settings, "Android browser needs custom settings and platform"
+    self._installed_android_package: str | None = None
     self._chrome_command_line_path: pth.AnyPath = FLAGS_CHROME
     self._previous_command_line_contents: str | None = None
     self._needs_restore_chrome_flags: bool = False
@@ -87,6 +88,53 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
 
   def _lookup_android_package(self, path: pth.AnyPath) -> str:
     return self.platform.app_path_to_package(path)
+
+  def _apply_android_apk(self, settings: Settings,
+                         browser_name: Optional[pth.AnyPath]) -> None:
+    apk_config = settings.apk_config
+    if not apk_config:
+      logging.debug("Android APK install skipped (no apk_config)")
+      return
+    platform = self.platform
+    adb = platform.adb
+
+    if not browser_name:
+      raise ValueError(
+          "Android APK installation requires a browser package name")
+    browser_package = str(browser_name)
+    with exception.annotate(f"Installing Android APK {browser_package}"):
+      logging.debug("Android APK install: apk=%s package=%s", apk_config.path,
+                    browser_package)
+      modules = apk_config.modules
+      allow_downgrade = apk_config.allow_downgrade
+      if apk_config.reinstall:
+        adb.uninstall(browser_package, missing_ok=True)
+      else:
+        package_path = adb.shell_stdout(
+            "pm", "path", browser_package, check=False).strip()
+        if package_path.startswith("package:"):
+          logging.info("Skipping APK reinstall for %s", browser_package)
+          return
+        logging.info("Package %s missing; installing", browser_package)
+      self._installed_android_package = browser_package
+      host_apk_path = platform.host_path(apk_config.path)
+      logging.info("Installing APK %s on %s", host_apk_path, platform)
+      adb.install(
+          host_apk_path, allow_downgrade=allow_downgrade, modules=modules)
+
+  def _uninstall_android_apk(self) -> None:
+    # Uninstall only if this run installed the APK.
+    if not self._installed_android_package:
+      return
+    try:
+      logging.info("Uninstalling APK package %s",
+                   self._installed_android_package)
+      self.platform.adb.uninstall(
+          self._installed_android_package, missing_ok=True)
+    except SubprocessError as e:
+      logging.warning("Error uninstalling APK: %s", e)
+    finally:
+      self._installed_android_package = None
 
   @property
   def android_package(self) -> str:
@@ -112,12 +160,37 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
   @override
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> webdriver.Remote:
+    self._apply_android_apk(self.settings, self.path)
     self.adb_force_stop()
     if session.browser.wipe_system_user_data:
       self.adb_force_clear()
       self._setup_binary_permissions()
     self._backup_chrome_flags()
-    return self._start_chromedriver(session, driver_path)
+    driver = self._start_chromedriver(session, driver_path)
+    self._dismiss_any_os_permission_prompts()
+    return driver
+
+  # Some Android OEMs display permission prompts that we cannot turn off via adb
+  # (e.g. because the permissions can't be granted in advance) or device
+  # settings. However, these prompts interfere with UI automation, so we attempt
+  # to dismiss these here instead.
+  def _dismiss_any_os_permission_prompts(self) -> None:
+    focused_window = None
+    try:
+      for _ in wait.wait_with_backoff(10):
+        try:
+          for _ in wait.wait_with_backoff(1):
+            focused_window = self.platform.adb.focused_window()
+            if focused_window and self.android_package in focused_window:
+              return
+        except TimeoutError:
+          if focused_window:
+            logging.debug("Attempting to dismiss unexpected focused window %s",
+                          focused_window or "None")
+            self.platform.adb.shell("input", "keyevent", "KEYCODE_ESCAPE")
+    except TimeoutError:
+      logging.warning("Couldn't validate app focus, focused window: %s",
+                      focused_window or "None")
 
   def _backup_chrome_flags(self) -> None:
     assert self._previous_command_line_contents is None
@@ -145,6 +218,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
         self.adb_force_stop()
     finally:
       self._restore_chrome_flags()
+      self._uninstall_android_apk()
 
   @override
   def meminfo(self, timeout: dt.timedelta) -> list[ProcessMeminfo]:

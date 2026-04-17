@@ -9,7 +9,8 @@ import datetime as dt
 import json
 import logging
 from contextlib import closing
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Self, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Self
+
 import websocket
 from websocket import create_connection
 
@@ -100,7 +101,7 @@ class DevToolsRemoteClient:
     self._disconnect_internal()
     logging.debug("DevTools disconnected")
 
-  def send_command(self, command_payload: dict[str, Any]) -> Tuple[bool, dict]:
+  def send_command(self, command_payload: dict[str, Any]) -> tuple[bool, dict]:
     """Sends a command to DevTools and checks the response ID.
 
     Args:

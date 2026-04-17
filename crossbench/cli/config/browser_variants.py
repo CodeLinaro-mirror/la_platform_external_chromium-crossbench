@@ -36,6 +36,7 @@ from crossbench.parse import LateArgumentError, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
+  from crossbench.browsers.apk_config import ApkConfig
   from crossbench.cli.config.env import EnvConfig
   from crossbench.network.base import Network
 
@@ -68,6 +69,7 @@ class BrowserVariantConfig():
   browser_cls: Type[Browser]
   browser_config: BrowserConfig
   settings: Settings
+  apk_config: Optional[ApkConfig] = None
 
   @property
   def path(self) -> pth.AnyPath:
@@ -296,7 +298,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
                            WebKitDownloader):
       if downloader_cls.is_valid(path_or_identifier, browser_platform):
         downloaded = downloader_cls.load(path_or_identifier, browser_platform)
-        return BrowserConfig(downloaded, browser_config.driver)
+        return dataclasses.replace(browser_config, browser=downloaded)
     raise ValueError(
         f"No version-download support for browser: {path_or_identifier}")
 
@@ -306,11 +308,17 @@ class BaseBrowserVariantsConfig(abc.ABC):
       return args.remote_driver_path or browser_config.driver.path
     return args.driver_path or browser_config.driver.path
 
-  def _append_variant(self, args: argparse.Namespace, label: str,
-                      browser_cls: Type[Browser], browser_config: BrowserConfig,
-                      flags: Flags, browser_platform: plt.Platform,
-                      network: Network,
-                      env_config: EnvConfig) -> BrowserVariantConfig:
+  def _append_variant(
+      self,
+      args: argparse.Namespace,
+      label: str,
+      browser_cls: Type[Browser],
+      browser_config: BrowserConfig,
+      flags: Flags,
+      browser_platform: plt.Platform,
+      network: Network,
+      env_config: EnvConfig,
+      apk_config: Optional[ApkConfig] = None) -> BrowserVariantConfig:
     if not self._is_valid_browser_path(browser_config):
       raise ConfigError(f"Browser binary does not exist: {browser_config.path}")
     assert label
@@ -320,6 +328,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
       clear_cache_dir = browser_config.clear_cache
     if clear_cache_dir is None:
       clear_cache_dir = True
+    if apk_config and not browser_platform.is_android:
+      raise ConfigError("apk is only valid for Android browser variants")
     settings = Settings(
         cache_dir=browser_cache_dir,
         clear_cache_dir=clear_cache_dir,
@@ -334,9 +344,10 @@ class BaseBrowserVariantsConfig(abc.ABC):
         wipe_system_user_data=args.wipe_system_user_data,
         http_request_timeout=args.http_request_timeout,
         env_config=env_config,
-        extensions=browser_config.extensions)
+        extensions=browser_config.extensions,
+        apk_config=apk_config)
     browser_variant = BrowserVariantConfig(label, browser_cls, browser_config,
-                                           settings)
+                                           settings, apk_config)
     if not self._check_unique_label(label):
       raise ConfigError(f"Got non-unique label: {repr(label)}")
     self._variants.append(browser_variant)
@@ -357,7 +368,6 @@ class BaseBrowserVariantsConfig(abc.ABC):
     if env_config := browser_config.env:
       return env_config
     return args.env
-
 
 class BrowserVariantsConfig(BaseBrowserVariantsConfig):
 
@@ -472,8 +482,10 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
       network: Network = self._get_browser_network(args, browser_config,
                                                    browser_platform)
       env_config: EnvConfig = self._get_browser_env_config(args, browser_config)
+      apk_config = browser_config.apk
       self._append_variant(args, label, browser_cls, browser_config,
-                           browser_flags, browser_platform, network, env_config)
+                           browser_flags, browser_platform, network, env_config,
+                           apk_config)
 
   def _get_browser_variants(
       self, args: argparse.Namespace, browser_name: str,

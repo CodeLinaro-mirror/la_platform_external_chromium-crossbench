@@ -79,37 +79,15 @@ class CliSlowTestCase(BaseCliTestCase):
     self.assertIn(" --help`", output)
 
   def test_browser_identifiers(self):
+    # Use BrowserAliasesTestCase for more detailed aliases
     browsers: dict[str, Type[mock_browser.MockBrowser]] = {
         "chrome": mock_browser.MockChromeStable,
-        "chrome-stable": mock_browser.MockChromeStable,
-        "chr-stable": mock_browser.MockChromeStable,
-        "chrome-beta": mock_browser.MockChromeBeta,
-        "chr-beta": mock_browser.MockChromeBeta,
-        "chrome-dev": mock_browser.MockChromeDev,
         "edge": mock_browser.MockEdgeStable,
-        "edge-stable": mock_browser.MockEdgeStable,
-        "edge-beta": mock_browser.MockEdgeBeta,
-        "edge-dev": mock_browser.MockEdgeDev,
-        "ff": mock_browser.MockFirefox,
         "firefox": mock_browser.MockFirefox,
-        "firefox-dev": mock_browser.MockFirefoxDeveloperEdition,
-        "firefox-developer-edition": mock_browser.MockFirefoxDeveloperEdition,
-        "ff-dev": mock_browser.MockFirefoxDeveloperEdition,
-        "firefox-nightly": mock_browser.MockFirefoxNightly,
-        "ff-nightly": mock_browser.MockFirefoxNightly,
-        "ff-trunk": mock_browser.MockFirefoxNightly,
     }
-    if not self.platform.is_linux:
-      browsers["chr-canary"] = mock_browser.MockChromeCanary
-      browsers["chrome-canary"] = mock_browser.MockChromeCanary
-      browsers["edge-canary"] = mock_browser.MockEdgeCanary
     if self.platform.is_macos:
       browsers.update({
           "safari": mock_browser.MockSafari,
-          "sf": mock_browser.MockSafari,
-          "safari-technology-preview": mock_browser.MockSafariTechnologyPreview,
-          "sf-tp": mock_browser.MockSafariTechnologyPreview,
-          "tp": mock_browser.MockSafariTechnologyPreview,
       })
 
     items_chunk: list[tuple[str, Type[mock_browser.MockBrowser]]] = list(

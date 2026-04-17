@@ -1,0 +1,14 @@
+// Perfetto tracing probe for GMA WebView test app.
+{
+  "probes": {
+    "trace_processor": {
+      "queries": [
+        "gma_wv_latency"
+      ]
+    }
+    "perfetto": {
+      "textproto": "gma_webview"
+      "config_via_stdin": true
+    }
+  }
+}
