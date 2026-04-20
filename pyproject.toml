@@ -22,6 +22,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 colorama = "0.4.6"
+fastmcp = "^3.2.4"
 google-auth = "2.40.3"
 google-cloud-bigquery = "^3.38.0"
 google-cloud-storage = "3.3.1"

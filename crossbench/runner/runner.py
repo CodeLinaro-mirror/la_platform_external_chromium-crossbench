@@ -102,17 +102,7 @@ _DEFAULT_TIMING: Final[Timing] = Timing()
 
 class Runner:
 
-  @classmethod
-  def get_out_dir(cls,
-                  cwd: pth.LocalPath,
-                  suffix: str = "",
-                  test: bool = False) -> pth.LocalPath:
-    if test:
-      return cwd / "results" / "test"
-    if suffix:
-      suffix = "_" + suffix
-    return (cwd / "results" /
-            f"{dt.datetime.now().strftime('%Y-%m-%d_%H%M%S')}{suffix}")
+
 
   @classmethod
   def add_cli_parser(
@@ -216,8 +206,7 @@ class Runner:
     else:
       label = args.label
       assert label
-      root_dir = pth.LocalPath(__file__).parents[2]
-      out_dir = cls.get_out_dir(root_dir, label)
+      out_dir = pth.get_out_dir(pth.ROOT_DIR, label)
     return {
         "out_dir": out_dir,
         "browsers": args.browser,

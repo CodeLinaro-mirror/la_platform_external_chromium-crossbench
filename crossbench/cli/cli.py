@@ -25,6 +25,7 @@ from crossbench.cli.subcommand.describe import DescribeSubcommand
 from crossbench.cli.subcommand.devtools_recorder_proxy.subcommand import \
     DevtoolsRecorderProxySubcommand
 from crossbench.cli.subcommand.help import HelpSubcommand
+from crossbench.cli.subcommand.mcp import McpSubcommand
 from crossbench.cli.subcommand.pinpoint import PinpointSubcommand
 from crossbench.cli.subcommand.setup_cross_platform_mode import \
     SetupCrossPlatformModeSubcommand
@@ -195,6 +196,7 @@ class CrossBenchCLI:
     self._recorder_proxy_subcommand = DevtoolsRecorderProxySubcommand(self)
     self._pinpoint_subcommand = PinpointSubcommand(self)
     self._cross_plaform_mode_subcommand = SetupCrossPlatformModeSubcommand(self)
+    self._mcp_subcommand = McpSubcommand(self)
     self._last_subcommand: CrossbenchSubcommand | None = None
     self.args = argparse.Namespace()
     self._setup_subcommands()
@@ -350,6 +352,8 @@ class CrossBenchCLI:
     subcommand_name: str = getattr(self.args, "subcommand", "")
     if subcommand_name == "describe":
       parser = self._describe_subcommand.parser
+    elif subcommand_name == "mcp":
+      parser = self._mcp_subcommand.parser
     else:
       maybe_benchmark_cls = getattr(self.args, "benchmark_cls", None)
       if maybe_benchmark_cls:

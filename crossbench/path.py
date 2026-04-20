@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import pathlib
 import re
@@ -25,6 +26,8 @@ LocalPath: TypeAlias = pathlib.Path
 LocalPosixPath: TypeAlias = pathlib.PosixPath
 
 LocalPathLike: TypeAlias = str | LocalPath
+
+ROOT_DIR: Final[LocalPath] = LocalPath(__file__).parents[1]
 
 MAX_PART_LEN: Final[int] = 255
 
@@ -59,3 +62,14 @@ def check_hash(file_path: LocalPath, file_hash: str) -> bool:
   sha1 = hashlib.sha1(usedforsecurity=False)
   sha1.update(file_path.read_bytes())
   return sha1.hexdigest() == file_hash
+
+
+def get_out_dir(cwd: LocalPath,
+                suffix: str = "",
+                test: bool = False) -> LocalPath:
+  if test:
+    return cwd / "results" / "test"
+  if suffix:
+    suffix = "_" + suffix
+  return (cwd / "results" /
+          f"{dt.datetime.now().strftime('%Y-%m-%d_%H%M%S')}{suffix}")

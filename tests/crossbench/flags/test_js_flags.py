@@ -115,6 +115,20 @@ class TestJSFlags(TestFlags):
     for js_flag in KNOWN_JS_FLAGS:
       self.assertNotIn(js_flag, KNOWN_CHROME_FLAGS)
 
+  def test_parse_with_flag_value(self):
+    self.assertEqual(
+        self.CLASS.parse("--foo=--other"), self.CLASS({"--foo": "--other"}))
+    self.assertEqual(
+        self.CLASS.parse("--foo='--other'"), self.CLASS({"--foo": "--other"}))
+    self.assertEqual(
+        self.CLASS.parse('--foo="--other"'), self.CLASS({"--foo": "--other"}))
+    self.assertEqual(
+        self.CLASS.parse("--foo='--other=1'"),
+        self.CLASS({"--foo": "--other=1"}))
+    self.assertEqual(
+        self.CLASS.parse('--foo="--other=1"'),
+        self.CLASS({"--foo": "--other=1"}))
+
 
 del TestFlags
 

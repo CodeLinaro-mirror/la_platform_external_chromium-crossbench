@@ -17,6 +17,7 @@ from crossbench.cli import ui
 from crossbench.cli.ui import timer
 from crossbench.helper import input_helper
 from crossbench.parse import DurationParser, ObjectParser
+from crossbench.probes.cdp_endpoint import CDPEndpointProbe
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
   from crossbench.cli.parser import CrossBenchArgumentParser
   from crossbench.cli.types import Subparsers
   from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
 
 
 class ManualStory(Story, metaclass=abc.ABCMeta):
@@ -100,10 +102,18 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
                action_runner_config: Optional[ActionRunnerConfig] = None,
                start_after: Optional[dt.timedelta] = None,
                run_for: Optional[dt.timedelta] = None,
-               url: Optional[str] = None) -> None:
+               url: Optional[str] = None,
+               expose_cdp: bool = False) -> None:
+    self._expose_cdp = expose_cdp
     manual_story = ManualStory(
         start_after=start_after, run_for=run_for, url=url)
     super().__init__([manual_story], action_runner_config)
+
+  @override
+  def setup(self, runner: Runner) -> None:
+    super().setup(runner)
+    if self._expose_cdp:
+      runner.attach_probe(CDPEndpointProbe())
 
   @classmethod
   @override
@@ -124,6 +134,12 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
         "--test-url",
         type=ObjectParser.url_str,
         help="Navigate to URL right after the start-after timeout.")
+    parser.add_argument(
+        "--expose-cdp",
+        action="store_true",
+        default=False,
+        help=("Expose the CDP WebSocket endpoint to a file and logs. "
+              "See 'cdp_endpoint' probe help for more details."))
     return parser
 
   @classmethod
@@ -133,4 +149,5 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
     kwargs["start_after"] = args.start_after
     kwargs["run_for"] = args.run_for
     kwargs["url"] = args.url
+    kwargs["expose_cdp"] = args.expose_cdp
     return kwargs

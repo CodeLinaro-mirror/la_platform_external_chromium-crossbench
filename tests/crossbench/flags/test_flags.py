@@ -254,6 +254,41 @@ class TestFlags(unittest.TestCase):
         self.CLASS.parse("--foo=0 --bar").filtered(["--bar", "--foo"]),
         self.CLASS.parse("--foo=0 --bar"))
 
+  def test_parse_with_value(self):
+    self.assertEqual(
+        self.CLASS.parse("--foo=bar"), self.CLASS({"--foo": "bar"}))
+    self.assertEqual(
+        self.CLASS.parse("--foo='bar'"), self.CLASS({"--foo": "bar"}))
+    self.assertEqual(
+        self.CLASS.parse('--foo="bar"'), self.CLASS({"--foo": "bar"}))
+    self.assertEqual(
+        self.CLASS.parse("--foo=123"), self.CLASS({"--foo": "123"}))
+    self.assertEqual(
+        self.CLASS.parse("--foo='123'"), self.CLASS({"--foo": "123"}))
+    self.assertEqual(
+        self.CLASS.parse('--foo="123"'), self.CLASS({"--foo": "123"}))
+
+  def test_parse_with_flag_value(self):
+    self.assertEqual(
+        self.CLASS.parse("--foo=-bar"), self.CLASS({"--foo": "-bar"}))
+    self.assertEqual(
+        self.CLASS.parse("--foo='-bar'"), self.CLASS({"--foo": "-bar"}))
+    self.assertEqual(
+        self.CLASS.parse('--foo="-bar"'), self.CLASS({"--foo": "-bar"}))
+    self.assertEqual(
+        self.CLASS.parse("--foo=--other"), self.CLASS({"--foo": "--other"}))
+    self.assertEqual(
+        self.CLASS.parse("--foo='--other'"), self.CLASS({"--foo": "--other"}))
+    self.assertEqual(
+        self.CLASS.parse('--foo="--other"'), self.CLASS({"--foo": "--other"}))
+    self.assertEqual(
+        self.CLASS.parse("--foo=--other=1"), self.CLASS({"--foo": "--other=1"}))
+    self.assertEqual(
+        self.CLASS.parse("--foo='--other=1'"),
+        self.CLASS({"--foo": "--other=1"}))
+    self.assertEqual(
+        self.CLASS.parse('--foo="--other=1"'),
+        self.CLASS({"--foo": "--other=1"}))
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

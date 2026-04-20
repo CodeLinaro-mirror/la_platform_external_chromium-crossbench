@@ -19,7 +19,6 @@ from crossbench import plt
 from crossbench.cli import ui
 from crossbench.pinpoint.helper import annotate
 from crossbench.pinpoint.job_config import fetch_job_config
-from crossbench.runner.runner import Runner
 
 if TYPE_CHECKING:
   from crossbench.helper.spinner import Spinner
@@ -241,7 +240,7 @@ def download_results(job_id: str,
   """Downloads results of a Pinpoint job."""
   job_results = PinpointJobResults(job_id)
 
-  out_dir = out_dir or Runner.get_out_dir(pathlib.Path.cwd(
+  out_dir = out_dir or pth.get_out_dir(pathlib.Path.cwd(
   )) / ".." / f"{job_results.created_date}_pinpoint_{job_results.job_id}"
   out_dir = out_dir.resolve()
   if out_dir.exists() and not force:

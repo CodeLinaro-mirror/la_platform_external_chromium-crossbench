@@ -31,9 +31,15 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
   information, including all paths to the results of all attached Probes.
   """
   NAME: ClassVar = "cb.results"
+  FILE_NAME: ClassVar[str] = "cb.results.json"
   # Given that this is  a meta-Probe that summarizes the data from other
   # probes we exclude it from the default results lists.
   PRODUCES_DATA: ClassVar = False
+
+  @property
+  @override
+  def result_path_name(self) -> str:
+    return self.FILE_NAME
 
   @property
   @override
