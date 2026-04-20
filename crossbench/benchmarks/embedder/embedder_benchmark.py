@@ -148,6 +148,9 @@ class EmbedderBenchmark(SubStoryBenchmark):
   @override
   def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
     parser = super().add_cli_parser(subparsers)
+    # Workaround to allow passing multiple --embedder-push-files using a flag
+    # config that needs to have unique keys.
+    parser.allow_abbrev = True
     parser.add_argument(
         "--cujs-config",
         "--cuj-config",
