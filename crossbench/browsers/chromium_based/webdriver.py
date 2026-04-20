@@ -198,9 +198,12 @@ class ChromiumBasedWebDriver(
         self.platform.app_version(driver_path))
     if browser_version.parts == driver_version.parts:
       return None
+    local_build_dir = self.local_build_dir()
+    assert local_build_dir is not None, "expected local_build_dir to be set"
     return (f"Chromedriver version mismatch: driver={driver_version.parts_str} "
             f"browser={browser_version.parts_str} ({self}).",
-            helper.BUILD_CHROMEDRIVER_INSTRUCTIONS)
+            helper.get_chromedriver_build_instructions(
+                local_build_dir, self.platform.is_android))
 
   def _validate_any_driver_version(
       self, driver_path: pth.AnyPath) -> Optional[Iterable[str]]:

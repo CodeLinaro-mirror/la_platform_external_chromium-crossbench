@@ -48,7 +48,11 @@ class ChromeWebDriver(ChromeBaseMixin, ChromiumBasedWebDriver):
     except selenium.common.exceptions.WebDriverException as e:
       msg: list[str] = [f"Could not start WebDriver: {e.msg}"]
       if self.is_locally_compiled():
-        msg.append(helper.BUILD_CHROMEDRIVER_INSTRUCTIONS)
+        local_build_dir = self.local_build_dir()
+        assert local_build_dir is not None, "expected local_build_dir to be set"
+        msg.append(
+            helper.get_chromedriver_build_instructions(
+                local_build_dir, self.platform.is_android))
       msg_str = "\n".join(msg)
       logging.error(msg_str)
       raise DriverException(msg_str) from e

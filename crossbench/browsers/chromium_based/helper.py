@@ -11,10 +11,16 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 
-BUILD_CHROMEDRIVER_INSTRUCTIONS: str = (
-    "Please build 'chromedriver' manually for local builds, or "
-    "clang_x64/chromedriver if you're running on Android. E.g. autoninja -C "
-    "out/Default chromedriver")
+def get_chromedriver_target(is_android: bool) -> str:
+  if is_android:
+    return "clang_x64/chromedriver"
+  return "chromedriver"
+
+
+def get_chromedriver_build_instructions(build_dir: pth.LocalPath,
+                                        is_android: bool = False) -> str:
+  return ("Please build 'chromedriver' manually for local builds:\n"
+          f"    autoninja -C {build_dir} {get_chromedriver_target(is_android)}")
 
 
 def find_build_dir(path: pth.AnyPath,
