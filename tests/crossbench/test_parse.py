@@ -88,6 +88,16 @@ class DurationParserTestCase(unittest.TestCase):
         DurationParser.positive_duration_ms(200),
         dt.timedelta(milliseconds=200))
 
+  def test_time_unit(self):
+    self.assertEqual(DurationParser.time_unit("10x"), dt.timedelta(seconds=10))
+    self.assertEqual(
+        DurationParser.time_unit("0.5x"), dt.timedelta(seconds=0.5))
+    self.assertEqual(DurationParser.time_unit("10s"), dt.timedelta(seconds=10))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.any_duration("10x")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.time_unit("-10x")
+
   def test_milliseconds(self):
     self.assertEqual(
         DurationParser.positive_duration("27.5ms"),

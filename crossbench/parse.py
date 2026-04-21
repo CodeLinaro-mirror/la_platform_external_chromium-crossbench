@@ -901,3 +901,13 @@ class DurationParser:
       # If no time unit provided we assume it is in seconds.
       return default_time_unit.timedelta(time_value)
     return TimeUnit.parse(time_unit).timedelta(time_value)
+
+  @classmethod
+  def time_unit(cls, value: Any, name: str = "time-unit") -> dt.timedelta:
+    """Parses a time unit, supporting standard durations and 'x' as
+       a seconds multiplier. e.g. 10x == 10s"""
+    if isinstance(value, str):
+      value = value.strip()
+      if value.endswith("x"):
+        value = value[:-1] + "s"
+    return cls.positive_duration(value, name)

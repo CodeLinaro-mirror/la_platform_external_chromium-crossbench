@@ -448,13 +448,16 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
 
     timing_group.add_argument(
         "--time-unit",
-        type=DurationParser.any_duration,
+        "--time-scale",
+        type=DurationParser.time_unit,
         default=dt.timedelta(seconds=1),
         help=("Absolute duration of 1 time unit in the runner. "
               "Increase this for slow builds or machines. "
+              "Supports multipliers like '10x'. "
               f"Format: {DurationParser.help()}"))
     timing_group.add_argument(
         "--timeout-unit",
+        "--timeout-scale",
         type=DurationParser.any_duration,
         default=dt.timedelta(),
         help=("Absolute duration of 1 time unit for timeouts in the runner. "
