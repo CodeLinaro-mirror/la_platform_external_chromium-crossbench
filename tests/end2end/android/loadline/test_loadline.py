@@ -166,7 +166,7 @@ def test_loadline_batch(device_id, adb_path, test_env: TestEnv) -> None:
   # the slowness of emulators on test bots.
   cli.run([
       BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=2",
-      "--throw", f"--out-dir={out_dir}", "--time-unit=2s",
+      "--throw", f"--out-dir={out_dir}", "--time-unit=3s",
       f"--probe=trace_processor:{_batch_trace_process_config()}"
   ] + list(test_env.cq_flags))
   _verify_metrics(out_dir, BenchmarkType.PHONE)
