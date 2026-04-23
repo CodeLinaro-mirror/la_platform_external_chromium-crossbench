@@ -92,13 +92,18 @@ else
   SAMPLE_TRIGGER="--freq=${PERF_FREQ_DEFAULT}"
 fi
 
+# Omit flag when no call graph is requested.
+if [ "${PERF_CALL_GRAPH}" != "no_call_graph" ]; then
+  PERF_CALL_GRAPH_FLAG="--call-graph=${PERF_CALL_GRAPH}"
+fi
+
 # Make sure `perf record` doesn't create `.debug/` in the home directory.
 export JITDUMPDIR="${PERF_DATA_DIR}/jitdump";
 export PERF_BUILDID_DIR="${PERF_DATA_DIR}/debug";
 PERF_OUTPUT="${PERF_DATA_DIR}/${PERF_DATA_PREFIX}_${PARENT_PID}_${RENDERER_ID}.perf.data";
 perf --buildid-dir "${PERF_BUILDID_DIR}" \
   record \
-  --call-graph=${PERF_CALL_GRAPH} \
+  ${PERF_CALL_GRAPH_FLAG} \
   --clockid=${PERF_CLOCKID} \
   ${SAMPLE_TRIGGER} \
   ${PERF_RAW_ARGS} \
