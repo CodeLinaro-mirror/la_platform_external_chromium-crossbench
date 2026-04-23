@@ -481,6 +481,13 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
               "and after starting the browser. Use 'input' to wait for user "
               "input."))
     timing_group.add_argument(
+        "--setup-delay",
+        type=DurationParser.duration_or_user_input,
+        default=dt.timedelta(),
+        help=("Delay before running the benchmark's setup workload, "
+              "and after starting the browser. Use 'input' to wait for user "
+              "input."))
+    timing_group.add_argument(
         "--stop-delay",
         type=DurationParser.duration_or_user_input,
         default=dt.timedelta(),
@@ -801,7 +808,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
   def _get_timing(self, args: argparse.Namespace) -> Timing:
     timeout_unit: dt.timedelta = args.timeout_unit or args.time_unit
     return Timing(args.cool_down_time, args.time_unit, timeout_unit,
-                  args.run_timeout, args.start_delay, args.stop_delay)
+                  args.run_timeout, args.setup_delay, args.start_delay,
+                  args.stop_delay)
 
   def _get_runner(self, args: argparse.Namespace, benchmark: Benchmark,
                   probes: Iterable[Probe], env_config: EnvConfig,

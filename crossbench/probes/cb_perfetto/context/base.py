@@ -17,6 +17,8 @@ from typing_extensions import override
 from crossbench.parse import NumberParser
 from crossbench.probes.cb_perfetto.constants import PERFETTO_CONFIG_NAME, \
     PERFETTO_TRACE_NAME
+from crossbench.probes.cb_perfetto.start_tracing_sequence import \
+    StartTracingSequence
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
@@ -82,19 +84,20 @@ class PerfettoProbeContext(
       if not self._perfetto_pid:
         raise RuntimeError("Perfetto was not started")
       return
-    if self.probe.start_tracing_after_start_delay:
-      return
-    self._start_perfetto()
-    self.browser.performance_mark("probe-perfetto-start")
+    if self.probe.start_tracing_sequence == StartTracingSequence.PROBE_START:
+      self._try_start_perfetto()
+
+  @override
+  def start_story_setup(self) -> None:
+    if self.probe.start_tracing_sequence == \
+      StartTracingSequence.STORY_SETUP:
+      self._try_start_perfetto()
 
   @override
   def start_story_run(self) -> None:
     super().start_story_run()
-    if self.probe.start_tracing_after_start_delay:
-      if self._perfetto_pid:
-        raise RuntimeError("Perfetto was already started")
-      self._start_perfetto()
-      self.browser.performance_mark("probe-perfetto-start")
+    if self.probe.start_tracing_sequence == StartTracingSequence.STORY_RUN:
+      self._try_start_perfetto()
 
   def stop(self) -> None:
     self.browser.performance_mark("probe-perfetto-stop")
@@ -102,6 +105,12 @@ class PerfettoProbeContext(
     if not self._perfetto_pid:
       raise RuntimeError("Perfetto was not started")
     self._stop_perfetto()
+
+  def _try_start_perfetto(self) -> None:
+    if self._perfetto_pid:
+      raise RuntimeError("Perfetto was already started")
+    self._start_perfetto()
+    self.browser.performance_mark("probe-perfetto-start")
 
   def _start_perfetto(self) -> None:
     logging.info("PERFETTO: starting")

@@ -27,6 +27,8 @@ from crossbench.probes.cb_perfetto.context.desktop import \
     DesktopPerfettoProbeContext
 from crossbench.probes.cb_perfetto.context.windows import \
     WindowsPerfettoProbeContext
+from crossbench.probes.cb_perfetto.start_tracing_sequence import \
+    StartTracingSequence
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.trace_processor import profile_helper
@@ -229,10 +231,9 @@ class PerfettoProbe(Probe):
         default=False,
         help="Start perfetto tracing before launching the browser.")
     parser.add_argument(
-        "start_tracing_after_start_delay",
-        type=bool,
-        default=False,
-        help="Start perfetto tracing after the start_delay step.")
+        "start_tracing_sequence",
+        type=StartTracingSequence,
+        default=StartTracingSequence.PROBE_START)
     parser.add_argument(
         "config_via_stdin",
         type=bool,
@@ -267,17 +268,19 @@ class PerfettoProbe(Probe):
         enabled_tags=enabled_tags,
         disabled_tags=disabled_tags)
 
-  def __init__(self,
-               trace_config: trace_config_pb2.TraceConfig | None = None,
-               perfetto_bin: pth.AnyPath = pth.AnyPath("perfetto"),
-               tracebox_bin: pth.AnyPath = pth.AnyPath("tracebox"),
-               enabled_tags: Iterable[str] = (),
-               disabled_tags: Iterable[str] = (),
-               enabled_categories: Iterable[str] = (),
-               disabled_categories: Iterable[str] = (),
-               trace_browser_startup: bool = False,
-               start_tracing_after_start_delay: bool = False,
-               config_via_stdin: bool = False) -> None:
+  def __init__(
+      self,
+      trace_config: trace_config_pb2.TraceConfig | None = None,
+      perfetto_bin: pth.AnyPath = pth.AnyPath("perfetto"),
+      tracebox_bin: pth.AnyPath = pth.AnyPath("tracebox"),
+      enabled_tags: Iterable[str] = (),
+      disabled_tags: Iterable[str] = (),
+      enabled_categories: Iterable[str] = (),
+      disabled_categories: Iterable[str] = (),
+      trace_browser_startup: bool = False,
+      start_tracing_sequence: StartTracingSequence = StartTracingSequence
+      .PROBE_START,
+      config_via_stdin: bool = False) -> None:
     super().__init__()
     if not trace_config:
       trace_config = trace_config_pb2.TraceConfig()
@@ -290,8 +293,8 @@ class PerfettoProbe(Probe):
     self._disabled_categories: Final[tuple[str, ...]] = (
         tuple(disabled_categories))
     self._trace_browser_startup: Final[bool] = trace_browser_startup
-    self._start_tracing_after_start_delay: Final[
-        bool] = start_tracing_after_start_delay
+    self._start_tracing_sequence: Final[
+        StartTracingSequence] = start_tracing_sequence
     self._config_via_stdin: Final[bool] = config_via_stdin
     self._needs_v8_code_logger: Final[bool] = has_v8_code_data_source(
         self.trace_config)
@@ -311,8 +314,7 @@ class PerfettoProbe(Probe):
         ("perfetto_bin", str(self.perfetto_bin)),
         ("tracebox_bin", str(self.tracebox_bin)),
         ("trace_browser_startup", str(self.trace_browser_startup)),
-        ("start_tracing_after_start_delay",
-         str(self.start_tracing_after_start_delay)),
+        ("start_tracing_sequence", str(self.start_tracing_sequence)),
         ("config_via_stdin", str(self.config_via_stdin)),
         ("enabled_tags", self.enabled_tags),
         ("disabled_tags", self.disabled_tags),
@@ -372,8 +374,8 @@ class PerfettoProbe(Probe):
     return self._trace_browser_startup
 
   @property
-  def start_tracing_after_start_delay(self) -> bool:
-    return self._start_tracing_after_start_delay
+  def start_tracing_sequence(self) -> StartTracingSequence:
+    return self._start_tracing_sequence
 
   @property
   def config_via_stdin(self) -> bool:

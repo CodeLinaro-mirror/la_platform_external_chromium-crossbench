@@ -245,6 +245,11 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     delegate heavy computation to the "setup" method.
     """
 
+  def start_story_setup(self) -> None:
+    """
+    Called before running a Story's setup workload.
+    """
+
   def start_story_run(self) -> None:
     """
     Called before running a Story's core workload (Story.run)

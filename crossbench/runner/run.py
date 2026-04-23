@@ -401,6 +401,9 @@ class Run(ResultOrigin):
       self.browser.settings.splash_screen.run(actions, display_data)
 
   def _run_story(self) -> None:
+    if delay := self.timing.setup_delay:
+      self._run_story_wait(delay, "Setup Delay")
+    self._probe_context_manager.start_story_setup()
     self._run_story_setup()
     if delay := self.timing.start_delay:
       self._run_story_wait(delay, "Start Delay")
@@ -506,6 +509,13 @@ class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
   def setup_selenium_options(self, options: ArgOptions) -> None:
     for probe_context in self._probe_contexts.values():
       probe_context.setup_selenium_options(options)
+
+  def start_story_setup(self) -> None:
+    with self._measure("probes-start_story_setup"):
+      for probe_context in self._probe_contexts.values():
+        with self.run.exception_capture(
+            f"Probe {probe_context.name} start_story_setup"):
+          probe_context.start_story_setup()
 
   def start_story(self) -> None:
     with self._measure("probes-start_story_run"):
