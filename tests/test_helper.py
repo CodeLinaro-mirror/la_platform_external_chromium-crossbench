@@ -120,6 +120,8 @@ def run_pytest(path: str | pathlib.Path,
     plugins = [DurationPlugin()]
 
   return_code = pytest.main([str(path), *extra_args], plugins=plugins)
+  if return_code == pytest.ExitCode.NO_TESTS_COLLECTED:
+    return_code = pytest.ExitCode.OK
   if check:
     sys.exit(return_code)
   return return_code
