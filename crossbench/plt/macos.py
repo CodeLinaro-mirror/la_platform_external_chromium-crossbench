@@ -189,8 +189,9 @@ class MacOSPlatform(PosixPlatform):
       return None
     try:
       return super()._cpu_freq()
-    except FileNotFoundError as e:
-      logging.debug("psutil.cpu_freq() failed (normal on macOS M1): %s", e)
+    except (FileNotFoundError, SystemError, RuntimeError) as e:
+      # TODO(crbug.com/505086693): Need a workaround to read CPU frequency.
+      logging.debug("psutil.cpu_freq() failed (normal on Apple Silicon): %s", e)
       return None
 
   def _find_app_binary_path(self, app_path: pth.AnyPath) -> pth.AnyPath:
