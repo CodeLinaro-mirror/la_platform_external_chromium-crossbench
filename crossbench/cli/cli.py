@@ -10,7 +10,8 @@ import os
 import sys
 import textwrap
 import traceback
-from typing import IO, TYPE_CHECKING, Any, Optional, Sequence, Type, TypeAlias
+from typing import IO, TYPE_CHECKING, Any, Optional, Sequence, Tuple, Type, \
+    TypeAlias
 
 import tabulate as tbl
 from typing_extensions import override
@@ -129,7 +130,8 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
 
 
 class CrossBenchCLI:
-  BENCHMARKS: tuple[BenchmarkClass, ...] = (
+  BENCHMARKS: Tuple[BenchmarkClass, ...] = (
+      benchmarks.BrowserStartupBenchmark,
       benchmarks.DevToolsFrontendBenchmark,
       benchmarks.EmbedderBenchmark,
       # JetStream:

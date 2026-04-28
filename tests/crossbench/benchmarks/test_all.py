@@ -17,6 +17,7 @@ from crossbench.benchmarks.jetstream.jetstream_2_2 import JetStream22Benchmark
 from crossbench.benchmarks.jetstream.jetstream_3_0 import JetStream30Benchmark
 from crossbench.benchmarks.jetstream.jetstream_main import \
     JetStreamMainBenchmark
+from crossbench.benchmarks.loading.browser_startup import BrowserStartupBenchmark
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loadline import LoadLine1PhoneBenchmark, \
     LoadLine1PhoneDebugBenchmark, LoadLine1PhoneFastBenchmark, \
@@ -62,6 +63,7 @@ ALL = (
     JetStream22Benchmark,
     JetStream30Benchmark,
     JetStreamMainBenchmark,
+    BrowserStartupBenchmark,
     LoadLine1PhoneBenchmark,
     LoadLine1PhoneDebugBenchmark,
     LoadLine1PhoneFastBenchmark,

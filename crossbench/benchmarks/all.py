@@ -10,6 +10,8 @@ from crossbench.benchmarks.embedder import EmbedderBenchmark
 from crossbench.benchmarks.jetstream import JetStream11Benchmark, \
     JetStream20Benchmark, JetStream21Benchmark, JetStream22Benchmark, \
     JetStream30Benchmark, JetStreamMainBenchmark
+from crossbench.benchmarks.loading.browser_startup import \
+    BrowserStartupBenchmark
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loadline import LoadLine1PhoneBenchmark, \
     LoadLine1PhoneDebugBenchmark, LoadLine1PhoneFastBenchmark, \
@@ -39,6 +41,7 @@ __all__ = [
     "JetStream30Benchmark",
     "JetStreamMainBenchmark",
     "LoadingBenchmark",
+    "BrowserStartupBenchmark",
     "LoadLine1PhoneBenchmark",
     "LoadLine1PhoneDebugBenchmark",
     "LoadLine1PhoneFastBenchmark",
