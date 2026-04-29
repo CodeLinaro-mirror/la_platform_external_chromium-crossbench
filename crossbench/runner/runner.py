@@ -18,7 +18,6 @@ from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.cli import ui
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import collection_helper
-from crossbench.helper.state import BaseState, StateMachine
 from crossbench.helper.wait import WaitRange
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes import all as all_probes
@@ -33,6 +32,7 @@ from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.groups.stories import StoriesRunGroup
 from crossbench.runner.groups.thread import RunMainGroup, RunThreadGroup
 from crossbench.runner.run import Run
+from crossbench.runner.runner_state import RunnerState, RunnerStateMachine
 from crossbench.runner.timing import Timing
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
@@ -89,21 +89,10 @@ class ThreadMode(StrEnumWithHelp):
     ]
 
 
-@enum.unique
-class RunnerState(BaseState):
-  INITIAL = enum.auto()
-  SETUP = enum.auto()
-  RUNNING = enum.auto()
-  TEARDOWN = enum.auto()
-
-
 _DEFAULT_TIMING: Final[Timing] = Timing()
 
 
 class Runner:
-
-
-
   @classmethod
   def add_cli_parser(
       cls, benchmark_cls: Type[Benchmark],
@@ -240,10 +229,10 @@ class Runner:
                in_memory_result_db: bool = False,
                step_by_step_mode: bool = False,
                ignore_partial_failures: bool = False) -> None:
-    self._state = StateMachine(RunnerState.INITIAL)
     self.out_dir = out_dir.absolute()
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
     self.out_dir.mkdir(parents=True)
+    self._state = RunnerStateMachine(self)
     self._timing = timing
     self._cool_down_threshold: ThermalStatus | None = cool_down_threshold
     self._browsers: tuple[Browser, ...] = tuple(browsers)
@@ -452,6 +441,10 @@ class Runner:
     return self._results_db
 
   @property
+  def status(self) -> RunnerStateMachine:
+    return self._state
+
+  @property
   def all_runs(self) -> tuple[Run, ...]:
     return tuple(self._all_runs)
 
@@ -513,6 +506,7 @@ class Runner:
 
   def run(self, is_dry_run: bool = False) -> None:
     self._state.expect(RunnerState.INITIAL)
+    logging.info("🏗️  STATUS FILE: %s", self.status.path)
     with self._platform.wakelock():
       with self._exceptions.annotate("Preparing"):
         self._setup()
@@ -524,6 +518,8 @@ class Runner:
       self.assert_successful_sessions_and_runs()
     if not is_dry_run:
       self._teardown()
+    self._state.transition(
+        RunnerState.TEARDOWN, RunnerState.RUNNING, to=RunnerState.DONE)
     self.assert_successful_sessions_and_runs()
 
   def _setup(self) -> None:
@@ -572,6 +568,7 @@ class Runner:
     logging.info("🏃 SETUP %d RUN(S)", len(self._all_runs))
     self._measured_runs = [run for run in self._all_runs if not run.is_warmup]
     self._setup_runs_dirs()
+    self.status.set_total_runs(len(self._all_runs))
 
   def _setup_probes(self) -> None:
     self._validate_probes()
@@ -768,6 +765,9 @@ class Runner:
   @property
   def sessions_dir(self) -> pth.LocalPath:
     return self.out_dir / "sessions"
+
+  def interrupt(self) -> None:
+    self._state.interrupt()
 
   def _setup_runs_dirs(self) -> None:
     if not self.create_symlinks:

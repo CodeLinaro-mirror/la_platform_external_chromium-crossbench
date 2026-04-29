@@ -551,6 +551,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
           prefix="crossbench") as tmp_dirname, plt.PLATFORM.wakelock():
         self._run(args, benchmark, tmp_dirname)
     except KeyboardInterrupt:
+      if self._runner:
+        self._runner.interrupt()
       sys.exit(2)
     except LateArgumentError as e:
       if args.throw:

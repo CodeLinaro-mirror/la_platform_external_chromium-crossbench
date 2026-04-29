@@ -62,6 +62,10 @@ class CrossbenchFakeFsTestCase(
     self.sleep_mock = sleep_patcher.start()
     self.addCleanup(sleep_patcher.stop)
 
+    atexit_patcher = mock.patch("atexit.register")
+    self.mock_atexit_register = atexit_patcher.start()
+    self.addCleanup(atexit_patcher.stop)
+
     # This is platform specific and causes issues pending sh commands
     self.wakelock_patcher = mock.patch("crossbench.plt.PLATFORM.wakelock")
     self.addCleanup(self.wakelock_patcher.stop)
