@@ -187,8 +187,8 @@ class BondClient:
         url=f"{ENDPOINT}/v1/conferences:create",
         body_json=request_body_json,
         timeout=timeout)
-    resonse_body_dict = ObjectParser.dict(response.json())
-    conference = ObjectParser.dict(resonse_body_dict["conference"],
+    response_body_dict = ObjectParser.dict(response.json())
+    conference = ObjectParser.dict(response_body_dict["conference"],
                                    "conference")
     conference_code = ObjectParser.non_empty_str(conference["conferenceCode"],
                                                  "conferenceCode")

@@ -29,7 +29,7 @@ class WebKitVersion(BrowserVersion):
     full_version = full_version.strip()
     if matches := _SIMPLE_VERSION_RE.fullmatch(full_version):
       part = int(matches["parts"])
-      return (part,), BrowserVersionChannel.PRE_ALPHA, f"Webkit Nightly {part}"
+      return (part,), BrowserVersionChannel.PRE_ALPHA, f"WebKit Nightly {part}"
     raise cls.parse_error("Invalid version", full_version)
 
   @property

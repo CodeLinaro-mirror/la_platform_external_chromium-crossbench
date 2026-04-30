@@ -69,7 +69,7 @@ class DTraceProbe(Probe):
     # with crossbench probes) whose name matches $dtrace_probe_name. This will
     # ensure the command either succeeds or fails fast. Use a non-existent probe
     # name to reduce output size
-    dtrace_probe_name = "nonexistantprobename"
+    dtrace_probe_name = "nonexistentprobename"
     # Execute and check the returncode, while ignoring output.
     try:
       browser.platform.sh(

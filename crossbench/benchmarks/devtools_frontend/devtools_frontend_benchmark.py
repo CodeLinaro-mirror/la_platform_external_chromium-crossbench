@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import logging
-from typing import (TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional,
-                    Sequence, cast)
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional, \
+    Sequence, cast
 
 from typing_extensions import override
 
@@ -14,8 +14,8 @@ from crossbench.action_runner.action.open_devtools import OpenDevToolsAction
 from crossbench.benchmarks.base import Benchmark
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.metrics_internals import (
-    ChromeMetricsInternalsProbe, ChromeMetricsInternalsProbeContext)
+from crossbench.probes.metrics_internals import ChromeMetricsInternalsProbe, \
+    ChromeMetricsInternalsProbeContext
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -60,13 +60,13 @@ class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
          for repetition_group in group.repetitions_groups),
         key_fn=flatten_key_fn,
         merge_duplicate_paths=True)
-    self.preserver_high_resolution_data(merger, group.repetitions_groups)
+    self.preserve_high_resolution_data(merger, group.repetitions_groups)
     return self.write_group_result(
         group,
         merger,
     )
 
-  def preserver_high_resolution_data(
+  def preserve_high_resolution_data(
       self, merger: MetricsMerger,
       repetitions_groups: Iterable[RepetitionsRunGroup]) -> None:
     for repetition_group in repetitions_groups:
@@ -85,7 +85,7 @@ class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
          for repetition_group in group.repetitions_groups),
         key_fn=flatten_key_fn,
         merge_duplicate_paths=True)
-    self.preserver_high_resolution_data(merger, group.repetitions_groups)
+    self.preserve_high_resolution_data(merger, group.repetitions_groups)
     return self.write_group_result(
         group,
         merger,

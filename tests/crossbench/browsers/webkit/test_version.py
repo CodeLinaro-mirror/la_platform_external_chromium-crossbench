@@ -14,36 +14,36 @@ class WebKitVersionTestCase(unittest.TestCase):
   def test_parse_webkit_nightly(self):
     version = WebKitVersion.parse("webkit-nightly-299105@main")
     self.assertEqual(version.parts, (299105,))
-    self.assertEqual(version.version_str, "Webkit Nightly 299105")
+    self.assertEqual(version.version_str, "WebKit Nightly 299105")
 
     version = WebKitVersion.parse("webkit-nightly 299105@main")
     self.assertEqual(version.parts, (299105,))
-    self.assertEqual(version.version_str, "Webkit Nightly 299105")
+    self.assertEqual(version.version_str, "WebKit Nightly 299105")
 
     version = WebKitVersion.parse("webkit-nightly-299105")
     self.assertEqual(version.parts, (299105,))
-    self.assertEqual(version.version_str, "Webkit Nightly 299105")
+    self.assertEqual(version.version_str, "WebKit Nightly 299105")
 
     version = WebKitVersion.parse("webkit-nightly 299105")
     self.assertEqual(version.parts, (299105,))
-    self.assertEqual(version.version_str, "Webkit Nightly 299105")
+    self.assertEqual(version.version_str, "WebKit Nightly 299105")
 
   def test_parse_webkit(self):
     version = WebKitVersion.parse("webkit-299105@main")
     self.assertEqual(version.parts, (299105,))
-    self.assertEqual(version.version_str, "Webkit Nightly 299105")
+    self.assertEqual(version.version_str, "WebKit Nightly 299105")
 
     version = WebKitVersion.parse("webkit 299105@main")
     self.assertEqual(version.parts, (299105,))
-    self.assertEqual(version.version_str, "Webkit Nightly 299105")
+    self.assertEqual(version.version_str, "WebKit Nightly 299105")
 
     version = WebKitVersion.parse("webkit-299105")
     self.assertEqual(version.parts, (299105,))
-    self.assertEqual(version.version_str, "Webkit Nightly 299105")
+    self.assertEqual(version.version_str, "WebKit Nightly 299105")
 
     version = WebKitVersion.parse("webkit 299105")
     self.assertEqual(version.parts, (299105,))
-    self.assertEqual(version.version_str, "Webkit Nightly 299105")
+    self.assertEqual(version.version_str, "WebKit Nightly 299105")
 
   def test_parse_invalid(self):
     with self.assertRaises(ValueError):

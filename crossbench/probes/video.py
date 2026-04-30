@@ -353,13 +353,13 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
   def _convert_to_constant_framerate(self) -> None:
     # On some platforms (android for certain) we get VFR videos which confuse
     # the next video extraction / conversion steps.
-    vrf_video_result = (
+    vfr_video_result = (
         self.local_result_path.parent / f"vfr_{self.result_path.name}")
-    self.local_result_path.rename(vrf_video_result)
+    self.local_result_path.rename(vfr_video_result)
     self.host_platform.sh(
         "ffmpeg", "-hide_banner", \
         "-fflags", "+igndts", \
-        "-i", vrf_video_result, \
+        "-i", vfr_video_result, \
         "-filter:v", "fps=60", \
         "-fps_mode:v", "cfr",
         # Use the decoder timebase.
@@ -369,11 +369,11 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     )
     if not self.local_result_path.exists() or self.local_result_path.stat(
     ).st_size == 0:
-      vrf_video_result.rename(self.result_path)
+      vfr_video_result.rename(self.result_path)
       logging.error("Could not generate constant FPS video: %s",
                     self.result_path)
     else:
-      vrf_video_result.unlink()
+      vfr_video_result.unlink()
 
   def _create_time_strip(self, tmpdir: LocalPath) -> LocalPath:
     logging.info("TIMESTRIP")

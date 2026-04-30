@@ -42,7 +42,7 @@ class WindowTarget(ConfigEnum):
   TOP = ("_top", "The topmost browsing context "
          "(the 'highest' context that's an ancestor of the current one). "
          "If no ancestors, behaves as _self.")
-  # The following options are Crossbench specific and are not understoon by the
+  # The following options are Crossbench specific and are not understood by the
   # underlying call to window.open() in JS.
   NEW_TAB = ("_new_tab", "A new tab.")
   NEW_WINDOW = ("_new_window", "A new window.")

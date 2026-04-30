@@ -58,7 +58,7 @@ class DownloadsProbe(Probe):
                save_downloads: bool = False) -> None:
     super().__init__()
     self._clear_downloads: bool = clear_downloads
-    self._save_downlaods: bool = save_downloads
+    self._save_downloads: bool = save_downloads
 
   @override
   def create_context(self, run: Run) -> DownloadsProbeContext:
@@ -77,7 +77,7 @@ class DownloadsProbe(Probe):
 
   @property
   def save_downloads(self) -> bool:
-    return self._save_downlaods
+    return self._save_downloads
 
 
 class DownloadsProbeContext(ProbeContext[DownloadsProbe]):

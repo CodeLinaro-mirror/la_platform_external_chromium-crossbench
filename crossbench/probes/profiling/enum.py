@@ -28,7 +28,7 @@ class CleanupMode(StrEnumWithHelp):
 
 @enum.unique
 class TargetMode(StrEnumWithHelp):
-  AUTO = ("auto", "Automatically chose the best option based on the platform")
+  AUTO = ("auto", "Automatically choose the best option based on the platform")
   RENDERER_MAIN_ONLY = ("renderer_main_only",
                         "Profile Renderer Main thread only")
   RENDERER_PROCESS_ONLY = ("renderer_process_only",
@@ -44,5 +44,5 @@ class CallGraphMode(StrEnumWithHelp):
   # between these options:
   # https://android.googlesource.com/platform/system/extras/+/master/simpleperf/doc/README.md.
   NO_CALL_GRAPH = ("no_call_graph", "Do not record a call graph")
-  DWARF = ("dwarf", "Run DWARF-based unwinding unwinding")
+  DWARF = ("dwarf", "Run DWARF-based unwinding")
   FRAME_POINTER = ("fp", "Run frame pointer unwinding")

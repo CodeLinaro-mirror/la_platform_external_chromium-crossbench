@@ -17,7 +17,7 @@ class ActionType(ConfigEnum):
   SCROLL = ("scroll", "Scroll on page")
   CLICK = ("click", "Click on element or at specified coordinates")
   SWIPE = ("swipe", "Swipe on screen")
-  TEXT_INPUT = ("text_input", "Type printable characters at a"
+  TEXT_INPUT = ("text_input", "Type printable characters at a "
                 "specified speed.")
   WAIT_FOR_CONDITION = ("wait_for_condition",
                         "Wait until JS condition becomes true")

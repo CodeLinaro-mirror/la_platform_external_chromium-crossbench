@@ -104,7 +104,7 @@ class ActionRunner:
 
   def _run_action_step(self, run: Run, action: i_action.Action) -> None:
     if self._step_by_step_mode:
-      logging.critical("[STEP-BY-STEP MODE] Next ste: %s", action.to_json())
+      logging.critical("[STEP-BY-STEP MODE] Next step: %s", action.to_json())
       ui.prompt("[STEP-BY-STEP MODE] Press Enter to continue")
     self._failure_screenshot_annotations = []
     self.run_action(run, action)

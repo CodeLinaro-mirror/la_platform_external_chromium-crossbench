@@ -157,8 +157,8 @@ class ExplicitCPUFrequencyMap(CPUFrequencyMap):
       self, platform: Platform) -> immutabledict[pth.AnyPosixPath, int]:
     return immutabledict({
         self._get_cpu_dir(cpu_name):
-            self._get_target_frequency(platform, cpu_name, config_frequeny)
-        for cpu_name, config_frequeny in self._frequencies.items()
+            self._get_target_frequency(platform, cpu_name, config_frequency)
+        for cpu_name, config_frequency in self._frequencies.items()
     })
 
   @property

@@ -63,7 +63,7 @@ SKIP_HOME_ADDRESS: ClickAction = ClickAction.parse({
 })
 
 SUSPICIOUS_ACTIVITY_URL: str = "https://myaccount.google.com/notifications"
-CHCEK_SUSPICIOUS_ACTIVITY: ClickAction = ClickAction.parse({
+CHECK_SUSPICIOUS_ACTIVITY: ClickAction = ClickAction.parse({
     "action": "click",
     "pos": {
         "selector": "[aria-label='Check activity']",
@@ -176,5 +176,5 @@ class GoogleLogin(PresetLoginBlock):
     if not has_suspicious_activity:
       return
 
-    runner.click(run, CHCEK_SUSPICIOUS_ACTIVITY)
+    runner.click(run, CHECK_SUSPICIOUS_ACTIVITY)
     runner.click(run, CLICK_YES_IT_WAS_ME)
