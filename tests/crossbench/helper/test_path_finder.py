@@ -169,6 +169,30 @@ class V8ToolsFinderTestCase(BaseCheckoutTestCase):
       self.assertIsNone(finder.d8_binary)
       self.assertIsNone(finder.v8_checkout)
       self.assertIsNone(finder.tick_processor)
+      self.assertIsNone(finder.v8_logviewer)
+
+  def test_find_v8_tools(self):
+    checkout_dir = pathlib.Path.home() / "v8/v8"
+    self._add_v8_checkout_files(checkout_dir)
+
+    tick_processor_name = "tools/linux-tick-processor"
+    if self.platform.is_macos:
+      tick_processor_name = "tools/mac-tick-processor"
+    elif self.platform.is_win:
+      tick_processor_name = "tools/windows-tick-processor.bat"
+
+    self.fs.create_file(checkout_dir / tick_processor_name, st_size=100)
+    self.fs.create_file(checkout_dir / "tools/v8-logviewer", st_size=100)
+
+    d8_binary = checkout_dir / "out/Release/d8"
+    self.fs.create_file(d8_binary, st_size=100)
+
+    finder = V8ToolsFinder(
+        self.platform, d8_binary=d8_binary, v8_checkout=checkout_dir)
+    self.assertEqual(finder.d8_binary, d8_binary)
+    self.assertEqual(finder.v8_checkout, checkout_dir)
+    self.assertEqual(finder.tick_processor, checkout_dir / tick_processor_name)
+    self.assertEqual(finder.v8_logviewer, checkout_dir / "tools/v8-logviewer")
 
 
 class WprToolsFinderTestCase(BaseCheckoutTestCase):

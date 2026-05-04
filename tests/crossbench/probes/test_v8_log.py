@@ -109,6 +109,33 @@ class V8LogProbeTestCase(unittest.TestCase):
         "--log-source-code,--log-source-position,--log-code-disassemble",
         str(probe.js_flags))
 
+  def test_parse_config_categories(self):
+    probe = V8LogProbe.parse_dict({"categories": ["ic"]})
+    expected_flags = set(DEFAULT_LOG_FLAGS) | {"--prof", "--log-ic"}
+    self.assertSetEqual(expected_flags, set(probe.js_flags.keys()))
+
+    with self.assertRaises(ValueError):
+      V8LogProbe.parse_dict({"categories": ["invalid"]})
+
+    probe = V8LogProbe.parse_str("all")
+    expected_flags = set(DEFAULT_LOG_FLAGS) | {
+        "--prof", "--log-ic", "--log-maps", "--log-code"
+    }
+    self.assertSetEqual(expected_flags, set(probe.js_flags.keys()))
+
+    probe = V8LogProbe.parse_str("ic,map")
+    expected_flags = set(DEFAULT_LOG_FLAGS) | {
+        "--prof", "--log-ic", "--log-maps"
+    }
+    self.assertSetEqual(expected_flags, set(probe.js_flags.keys()))
+
+  def test_parse_invalid_config_categories(self):
+    with self.assertRaisesRegexp(argparse.ArgumentTypeError, "invalid"):
+      V8LogProbe.parse_str("invalid")
+
+    with self.assertRaisesRegexp(argparse.ArgumentTypeError, "ic"):
+      V8LogProbe.parse_str("ic,invalid")
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

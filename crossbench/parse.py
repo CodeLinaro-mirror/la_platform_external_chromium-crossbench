@@ -191,7 +191,7 @@ class PathParser:
       try:
         cb_hjson.load_unique_keys(f)
       except ValueError as e:
-        message = _extract_decoding_error("Invalid hjson file '{path}':", path,
+        message = _extract_decoding_error(f"Invalid hjson file '{path}':", path,
                                           e)
         raise argparse.ArgumentTypeError(message) from e
     return path
@@ -226,6 +226,33 @@ class ObjectParser:
                                      f"Choices are {choices_str}.")
 
   @classmethod
+  def enum_list(
+      cls,
+      label: str,
+      enum_cls: Type[EnumT],
+      data: Any,
+      choices: Optional[Type[EnumT] | Iterable[EnumT]] = None,
+  ) -> list[EnumT]:
+    if choices is None:
+      choices = enum_cls
+    if isinstance(data, str):
+      if not data:
+        return []
+      if "," in data:
+        data = [x.strip() for x in data.split(",")]
+      else:
+        data = [data]
+    elif isinstance(data, (list, tuple, set)):
+      pass
+    elif isinstance(data, Iterable):
+      data = list(data)
+    else:
+      raise argparse.ArgumentTypeError(
+          f"Expected iterable for {label} list, but got {type_str(data)}: {repr(data)}"
+      )
+    return [cls.enum(label, enum_cls, item, choices) for item in data]
+
+  @classmethod
   def is_hjson_like(cls, value: str) -> bool:
     value = value.strip()
     if len(value) < 2:
@@ -237,7 +264,7 @@ class ObjectParser:
     value_str = cls.non_empty_str(value, "hjson")
     if not cls.is_hjson_like(value_str):
       raise argparse.ArgumentTypeError(
-          "Invalid inline hjson, missing braces: '{value_str}'")
+          f"Invalid inline hjson, missing braces: '{value_str}'")
     try:
       return cb_hjson.loads_unique_keys(value_str)
     except ValueError as e:
@@ -265,7 +292,7 @@ class ObjectParser:
       try:
         return cb_hjson.load_unique_keys(f)
       except ValueError as e:
-        message = _extract_decoding_error("Invalid hjson file '{path}':", path,
+        message = _extract_decoding_error(f"Invalid hjson file '{path}':", path,
                                           e)
         raise argparse.ArgumentTypeError(message) from e
 
@@ -308,6 +335,16 @@ class ObjectParser:
       return value
     raise argparse.ArgumentTypeError(
         f"Expected sequence, but {name} is {type_str(value)}: {repr(value)}")
+
+  @classmethod
+  def iterable(cls, value: Any, name: str = "value") -> Iterable[Any]:
+    if isinstance(value, str):
+      raise argparse.ArgumentTypeError(
+          f"Expected iterable {name}, but got string: {repr(value)}")
+    if isinstance(value, Iterable):
+      return value
+    raise argparse.ArgumentTypeError(
+        f"Expected iterable, but {name} is {type_str(value)}: {repr(value)}")
 
   @classmethod
   def non_empty_sequence(cls, value: Any, name: str = "value") -> Sequence[Any]:

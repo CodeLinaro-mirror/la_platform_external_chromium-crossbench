@@ -29,6 +29,11 @@ class V8RCSProbe(ChromiumProbe):
   Chromium-only Probe to extract runtime-call-stats data that can be used
   to analyze precise counters and time spent in various VM components in V8:
   https://v8.dev/tools/head/callstats.html
+
+  Note: This probe requires a custom Chromium build with the
+  `v8_enable_runtime_call_stats` compile-time flag enabled. It will fail on
+  production builds (e.g., `chrome-stable`). For JS performance analysis on
+  production Chrome, use the `v8.log` or `profiling` probe instead.
   """
   NAME: ClassVar = "v8.rcs"
 

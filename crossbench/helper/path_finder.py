@@ -233,11 +233,15 @@ class V8ToolsFinder:
     else:
       self.v8_checkout = V8CheckoutFinder(self.platform).path
     self.tick_processor: pth.AnyPath | None = None
+    self.v8_logviewer: pth.AnyPath | None = None
     self.d8_binary = self._find_d8()
     if self.d8_binary:
       self.tick_processor = self._find_v8_tick_processor()
-    logging.debug("V8ToolsFinder found d8_binary='%s' tick_processor='%s'",
-                  self.d8_binary, self.tick_processor)
+      self.v8_logviewer = self._find_v8_logviewer()
+    logging.debug(
+        "V8ToolsFinder found d8_binary='%s' tick_processor='%s' "
+        "v8_logviewer='%s'", self.d8_binary, self.tick_processor,
+        self.v8_logviewer)
 
   def _find_d8(self) -> Optional[pth.AnyPath]:
     if self.d8_binary and self.platform.is_file(self.d8_binary):
@@ -274,18 +278,25 @@ class V8ToolsFinder:
           "Not looking for the v8 tick-processor on unsupported platform: %s",
           self.platform)
       return None
+    return self._find_v8_tool(tick_processor)
+
+  def _find_v8_logviewer(self) -> pth.AnyPath | None:
+    return self._find_v8_tool("tools/v8-logviewer")
+
+  def _find_v8_tool(self, tool_path: pth.AnyPathLike) -> pth.AnyPath | None:
+    tool_path = self.platform.path(tool_path)
     if self.v8_checkout and self.platform.is_dir(self.v8_checkout):
-      candidate = self.v8_checkout / tick_processor
+      candidate = self.v8_checkout / tool_path
       assert self.platform.is_file(candidate), (
-          f"Provided v8_checkout has no '{tick_processor}' at {candidate}")
+          f"Provided v8_checkout has no '{tool_path}' at {candidate}")
     assert self.d8_binary, "No d8 binary found"
     # Try inferring the V8 checkout from a built d8:
     # .../foo/v8/v8/out/x64.release/d8
-    candidate = self.d8_binary.parents[2] / tick_processor
+    candidate = self.d8_binary.parents[2] / tool_path
     if self.platform.is_file(candidate):
       return candidate
     if self.v8_checkout:
-      candidate = self.v8_checkout / tick_processor
+      candidate = self.v8_checkout / tool_path
       if self.platform.is_file(candidate):
         return candidate
     return None

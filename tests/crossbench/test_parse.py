@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import enum
 import json
 import math
 import pathlib
@@ -721,6 +722,20 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
         with self.assertRaises(argparse.ArgumentTypeError):
           ObjectParser.sequence(invalid)
 
+  def test_parse_iterable(self):
+    self.assertListEqual(list(ObjectParser.iterable([])), [])
+    self.assertListEqual(list(ObjectParser.iterable([1, 2])), [1, 2])
+    self.assertTupleEqual(tuple(ObjectParser.iterable((1, 2))), (1, 2))
+    self.assertSetEqual(set(ObjectParser.iterable({1, 2})), {1, 2})
+
+  def test_parse_iterable_invalid(self):
+    invalid: Any
+    for invalid in ("", "1", 1, None, 1.2):
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          ObjectParser.iterable(invalid)
+
+
   def test_parse_non_empty_sequence(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = ObjectParser.non_empty_sequence([])
@@ -949,6 +964,29 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     parser = ObjectParser.proto_or_file(trace_config_pb2.TraceConfig)
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "TraceConfig"):
       parser(binary_proto_file)
+
+  def test_parse_enum_list(self):
+
+    class DummyEnum(enum.Enum):
+      A = "a"
+      B = "b"
+      C = "c"
+
+    self.assertListEqual(
+        ObjectParser.enum_list("DummyEnum", DummyEnum, "a,b,c"),
+        [DummyEnum.A, DummyEnum.B, DummyEnum.C])
+    self.assertListEqual(
+        ObjectParser.enum_list("DummyEnum", DummyEnum, ["a", "b", "c"]),
+        [DummyEnum.A, DummyEnum.B, DummyEnum.C])
+    self.assertListEqual(
+        ObjectParser.enum_list("DummyEnum", DummyEnum,
+                               (DummyEnum.A, DummyEnum.B)),
+        [DummyEnum.A, DummyEnum.B])
+    self.assertListEqual(ObjectParser.enum_list("DummyEnum", DummyEnum, ""), [])
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ObjectParser.enum_list("DummyEnum", DummyEnum, "invalid_value")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ObjectParser.enum_list("DummyEnum", DummyEnum, 123)
 
 
 class TimeUnitTestCase(unittest.TestCase):
