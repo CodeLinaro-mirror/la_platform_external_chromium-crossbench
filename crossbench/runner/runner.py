@@ -53,6 +53,18 @@ class RunnerException(exception.MultiException):
 
 
 @enum.unique
+class CacheTemperature(StrEnumWithHelp):
+  COLD = ("cold", "Cold cache: empty cache.")
+  WARM = ("warm", "Warm cache: loaded once.")
+  HOT = ("hot", "Hot cache: loaded twice or more.")
+  DEFAULT = ("default", "Default cache: no special handling.")
+
+  @classmethod
+  def all(cls) -> tuple[CacheTemperature, ...]:
+    return (cls.COLD, cls.WARM, cls.HOT)
+
+
+@enum.unique
 class ThreadMode(StrEnumWithHelp):
   NONE = ("none", (
       "Execute all browser-sessions sequentially, default. "
@@ -130,11 +142,12 @@ class Runner:
         help="Do not fail on partial run failures.")
     run_group.add_argument(
         "--cache-temperatures",
-        default=["default"],
-        const=["cold", "warm", "hot"],
+        default=[CacheTemperature.DEFAULT],
+        const=list(CacheTemperature.all()),
         action="store_const",
-        help=("Repeat each run with different cache temperatures without "
-              "closing the browser in between."))
+        help=("If enabled, repeat each run with different cache temperatures "
+              "without closing the browser in between.\n"
+              f"Enabled temperatures:\n{CacheTemperature.help_text(indent=2)}"))
     run_group.add_argument(
         "--thread-mode",
         "--parallel",
@@ -220,7 +233,8 @@ class Runner:
                env_validation_mode: ValidationMode = ValidationMode.THROW,
                repetitions: int = 1,
                warmup_repetitions: int = 0,
-               cache_temperatures: Iterable[str] = ("default",),
+               cache_temperatures: Iterable[CacheTemperature] = (
+                   CacheTemperature.DEFAULT,),
                timing: Timing = _DEFAULT_TIMING,
                cool_down_threshold: Optional[ThermalStatus] = None,
                thread_mode: ThreadMode = ThreadMode.NONE,
@@ -242,7 +256,9 @@ class Runner:
     self._repetitions = NumberParser.positive_int(repetitions, "repetitions")
     self._warmup_repetitions = NumberParser.positive_zero_int(
         warmup_repetitions, "warmup repetitions")
-    self._cache_temperatures: tuple[str, ...] = tuple(cache_temperatures)
+    self._cache_temperatures: tuple[CacheTemperature, ...] = tuple(
+        ObjectParser.enum_list("cache_temperatures", CacheTemperature,
+                               cache_temperatures))
     self._probes: dict[str, Probe] = {}
     self._default_probes: list[Probe] = []
     # Contains both measure and warmup runs:
@@ -377,7 +393,7 @@ class Runner:
     return self._timing
 
   @property
-  def cache_temperatures(self) -> tuple[str, ...]:
+  def cache_temperatures(self) -> tuple[CacheTemperature, ...]:
     return self._cache_temperatures
 
   @property
@@ -826,14 +842,14 @@ class Runner:
       absolute_dir.symlink_to(relative_dir, target_is_directory=True)
 
 
-TEMPERATURE_ICONS = {
-    "cold": "🥶",
-    "warm": "⛅",
-    "hot": "🔥",
+TEMPERATURE_ICONS: Final[dict[CacheTemperature, str]] = {
+    CacheTemperature.COLD: "🥶",
+    CacheTemperature.WARM: "⛅",
+    CacheTemperature.HOT: "🔥",
 }
 
 
-def temperature_icon(temperature: str) -> str:
+def temperature_icon(temperature: CacheTemperature) -> str:
   if icon := TEMPERATURE_ICONS.get(temperature):
     return icon
-  return temperature
+  return temperature.value

@@ -46,3 +46,9 @@ Use `poetry run help` to gather all details.
   all results.
 - Run `poetry run mypy crossbench` after finishing a larger change.
 - Run tests with `poetry run pytest tests/crossbench -x -n 7`.
+
+# Running Performance Investigations
+- **Environment Validation**: When running `cb.py` automatically, it might
+  block on an interactive prompt for environment validation. Use the
+  `--env-validation=warn` flag to prevent blocking while still seeing warning
+  outputs.

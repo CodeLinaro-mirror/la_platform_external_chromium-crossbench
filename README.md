@@ -36,9 +36,16 @@ Run the latest [speedometer benchmark](https://browserbench.org/Speedometer/)
 ./cb.py jetstream --browser=chrome-stable --browser=chrome-m90 --browser=$PATH
 ```
 
-Profile individual line items (with pprof on linux):
+Profile individual line items (with pprof on linux) with a headless browser and
+skip any blocking env validation prompts:
 ```bash
-./cb.py speedometer --probe='profiling' --separate
+./cb.py speedometer --probe='profiling' --separate --headless \
+   --env-validation=warn
+```
+
+Collect a basic Perfetto trace using the v8 preset:
+```bash
+./cb.py speedometer --probe='perfetto:v8'
 ```
 
 Use a custom chrome build and only run a subset of the stories:
@@ -184,6 +191,10 @@ probe config files (see below).
 
 # Use inline HJSON to configure a probe:
 ./cb.py speedometer --probe='v8.log:{prof:true}'
+
+# Use presets to select specific logviewer categories:
+./cb.py loading --probe='v8.log:all'
+./cb.py loading --probe='v8.log:ic,map'
 ```
 
 #### Probe Config File

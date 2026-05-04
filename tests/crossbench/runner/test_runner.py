@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 from __future__ import annotations
 
+import argparse
 import contextlib
 import json
 import pathlib
@@ -25,7 +26,7 @@ from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.groups.thread import RunThreadGroup
-from crossbench.runner.runner import Runner, ThreadMode
+from crossbench.runner.runner import CacheTemperature, Runner, ThreadMode
 from tests import test_helper
 from tests.crossbench.mock_browser import MockChromeDev
 from tests.crossbench.mock_helper import MockBenchmark
@@ -162,6 +163,19 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertEqual(len(runner.runs), 0)
     # no runs => is_success == false
     self.assertFalse(runner.is_success)
+
+  def test_cache_temperatures_arg_parsing(self):
+    parser = argparse.ArgumentParser()
+    Runner._add_run_arguments(MockBenchmark, parser)
+    Runner._add_output_arguments(MockBenchmark, parser)
+
+    # Test default (no flag)
+    args = parser.parse_args(["--out-dir", "out"])
+    self.assertEqual(args.cache_temperatures, [CacheTemperature.DEFAULT])
+
+    # Test flag present (no args)
+    args = parser.parse_args(["--cache-temperatures", "--out-dir", "out"])
+    self.assertEqual(args.cache_temperatures, list(CacheTemperature.all()))
 
   def test_dry_run(self):
     self.test_run(is_dry_run=True)
