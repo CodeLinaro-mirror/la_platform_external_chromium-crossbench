@@ -24,6 +24,7 @@ from crossbench.probes.profiling.enum import CleanupMode
 
 if TYPE_CHECKING:
   import crossbench.path as pth
+  from crossbench.probes.profiling.system_profiling import ProfilingProbe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -39,6 +40,10 @@ class LinuxProfilingContext(PosixProfilingContext):
       JIT_DUMP_PATTERN,
   )
 
+  def __init__(self, probe: ProfilingProbe, run: Run) -> None:
+    super().__init__(probe, run)
+    self._run_pprof: Optional[bool] = self.probe.run_pprof(run.browser)
+
   @override
   def get_default_result_path(self) -> pth.AnyPath:
     result_dir = super().get_default_result_path()
@@ -48,6 +53,11 @@ class LinuxProfilingContext(PosixProfilingContext):
   @property
   def has_perf_prof_path(self) -> bool:
     return self.browser.version > V8_PERF_PROF_PATH_FLAG_MIN_VERSION
+
+  @property
+  def run_pprof(self) -> bool:
+    assert self._run_pprof is not None, "pprof status not initialized"
+    return self._run_pprof
 
   @override
   def setup(self) -> None:
@@ -110,11 +120,11 @@ class LinuxProfilingContext(PosixProfilingContext):
     try:
       if self.probe.sample_js:
         perf_files = self._inject_v8_symbols(self.run, perf_files)
-      if self.probe.run_pprof:
+      if self.run_pprof:
         urls = self._export_to_pprof(self.run, perf_files)
     finally:
       self._clean_up_temp_files(self.run)
-    if self.probe.run_pprof:
+    if self.run_pprof:
       logging.debug("Profiling results: %s", urls)
       return self.browser_result(url=urls, file=raw_perf_files)
     if self.browser_platform.which("pprof"):
@@ -177,7 +187,7 @@ class LinuxProfilingContext(PosixProfilingContext):
 
   def _export_to_pprof(self, run: Run,
                        perf_files: list[pth.AnyPath]) -> list[str]:
-    assert self.probe.run_pprof
+    assert self.run_pprof
     run_details_json = json.dumps(run.get_browser_details_json())
     with run.actions(
         f"Probe {self.probe.name}: "
@@ -216,7 +226,7 @@ class LinuxProfilingContext(PosixProfilingContext):
       logging.debug("%s: skipping cleanup", self.probe)
       return
     if self.probe.cleanup_mode == CleanupMode.AUTO:
-      if not self.probe.run_pprof:
+      if not self.run_pprof:
         logging.debug("%s: skipping auto cleanup without pprof upload",
                       self.probe)
         return

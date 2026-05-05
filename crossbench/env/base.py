@@ -78,10 +78,12 @@ class BaseEnv(abc.ABC):
 
   def check_installed(self,
                       binaries: Iterable[str],
-                      message: str = "Missing binaries: {}") -> None:
+                      message: str = "Missing binaries: {}",
+                      platform: Optional[Platform] = None) -> None:
     assert not isinstance(binaries, str), "Expected iterable of strings."
+    target_platform = platform or self._platform
     missing_binaries = [
-        binary for binary in binaries if not self._platform.which(binary)
+        binary for binary in binaries if not target_platform.which(binary)
     ]
     if missing_binaries:
       self.handle_validation_warning(message.format(missing_binaries))

@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import functools
 import logging
 import shlex
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterable, Optional, \
@@ -97,7 +98,6 @@ class ProfilingProbe(Probe):
     parser.add_argument(
         "pprof",
         type=bool,
-        default=True,
         help="linux-only: process collected samples with pprof.")
     parser.add_argument(
         "cleanup",
@@ -199,7 +199,7 @@ class ProfilingProbe(Probe):
       self,
       js: bool = True,
       v8_interpreted_frames: Optional[bool] = None,
-      pprof: bool = True,
+      pprof: Optional[bool] = None,
       cleanup: CleanupMode = CleanupMode.AUTO,
       browser_process: bool = False,
       spare_renderer_process: bool = False,
@@ -218,7 +218,7 @@ class ProfilingProbe(Probe):
     self._sample_js: bool = js
     self._sample_browser_process: bool = browser_process
     self._spare_renderer_process: bool = spare_renderer_process
-    self._run_pprof: bool = pprof
+    self._run_pprof: Optional[bool] = pprof
     self._cleanup_mode = cleanup
     if v8_interpreted_frames is None:
       v8_interpreted_frames = js
@@ -270,9 +270,14 @@ class ProfilingProbe(Probe):
   def sample_browser_process(self) -> bool:
     return self._sample_browser_process
 
-  @property
-  def run_pprof(self) -> bool:
-    return self._run_pprof
+  @functools.lru_cache(maxsize=None)
+  def run_pprof(self, browser: Browser) -> bool:
+    if self._run_pprof is not None:
+      return self._run_pprof
+    if not browser.platform.is_linux:
+      return False
+    return (browser.platform.which("pprof") is not None and
+            browser.platform.which("gcert") is not None)
 
   @property
   def cleanup_mode(self) -> CleanupMode:
@@ -344,7 +349,7 @@ class ProfilingProbe(Probe):
     if browser.attributes().is_chromium_based:
       chromium = cast(ChromiumBased, browser)
       self._validate_chromium_based(chromium)
-    if self.run_pprof:
+    if self.run_pprof(browser):
       self._validate_pprof(env, browser)
     # Check that certain Android-only options are
     # not provided by on other platforms.
@@ -387,7 +392,8 @@ class ProfilingProbe(Probe):
             f"{repr(name)} is currently only supported on {platforms}")
 
   def _validate_linux(self, env: RunnerEnv, browser: Browser) -> None:
-    env.check_installed(binaries=["pprof"])
+    if self.run_pprof(browser):
+      env.check_installed(binaries=["pprof"], platform=browser.platform)
     assert browser.platform.which("perf"), "Please install linux-perf"
 
   def _validate_macos(self, env: RunnerEnv, browser: Browser) -> None:
@@ -420,7 +426,7 @@ class ProfilingProbe(Probe):
     assert self._run_pprof
     host_platform = browser.host_platform
     self._run_pprof = host_platform.which("gcert") is not None
-    if not self.run_pprof:
+    if not self.run_pprof(browser):
       logging.warning(
           "Disabled automatic pprof uploading for non-googler machine.")
       return

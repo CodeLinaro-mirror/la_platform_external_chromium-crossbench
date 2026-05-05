@@ -6,13 +6,16 @@ from __future__ import annotations
 import argparse
 import pathlib
 import unittest
+from unittest import mock
 
 from typing_extensions import override
 
+from crossbench.browsers.chromium.version import ChromiumVersion
 from crossbench.browsers.settings import Settings
 from crossbench.probes import all as all_probes
 from crossbench.probes.profiling.context.android import \
     generate_simpleperf_command_line
+from crossbench.probes.profiling.context.linux import LinuxProfilingContext
 from crossbench.probes.profiling.system_profiling import RENDERER_CMD_PATH, \
     CallGraphMode, CleanupMode, ProfilingProbe, TargetMode
 from tests import test_helper
@@ -253,6 +256,41 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     probe = ProfilingProbe.parse_str("renderer_main_only")
     self.assertEqual(probe.target, TargetMode.RENDERER_MAIN_ONLY)
 
+  def test_pprof_default_none(self):
+    probe = ProfilingProbe()
+    self.assertIsNone(probe._run_pprof)
+
+  def test_run_pprof_method(self):
+    probe = ProfilingProbe(pprof=True)
+    mock_browser1 = mock.Mock()
+    self.assertTrue(probe.run_pprof(mock_browser1))
+
+    probe = ProfilingProbe(pprof=False)
+    mock_browser2 = mock.Mock()
+    self.assertFalse(probe.run_pprof(mock_browser2))
+
+    probe = ProfilingProbe(pprof=None)
+
+    mock_browser3 = mock.Mock()
+    mock_browser3.platform.is_linux = False
+    self.assertFalse(probe.run_pprof(mock_browser3))
+
+    mock_browser4 = mock.Mock()
+    mock_browser4.platform = LinuxMockPlatform(fake_fs=self.fs)
+    mock_browser4.platform.install_mock_binary("pprof", "/usr/bin/pprof4")
+    mock_browser4.platform.install_mock_binary("gcert", "/usr/bin/gcert4")
+    self.assertTrue(probe.run_pprof(mock_browser4))
+
+    mock_browser5 = mock.Mock()
+    mock_browser5.platform = LinuxMockPlatform(fake_fs=self.fs)
+    mock_browser5.platform.install_mock_binary("gcert", "/usr/bin/gcert5")
+    self.assertFalse(probe.run_pprof(mock_browser5))
+
+    mock_browser6 = mock.Mock()
+    mock_browser6.platform = LinuxMockPlatform(fake_fs=self.fs)
+    mock_browser6.platform.install_mock_binary("pprof", "/usr/bin/pprof6")
+    self.assertFalse(probe.run_pprof(mock_browser6))
+
   def test_resolve_target_mode(self):
     probe = ProfilingProbe()
     self.assertEqual(probe.target, TargetMode.AUTO)
@@ -300,7 +338,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     self.assertTrue(probe.key)
     self.assertFalse(probe.sample_js)
     self.assertTrue(probe.sample_browser_process)
-    self.assertFalse(probe.run_pprof)
+    self.assertFalse(probe._run_pprof)
     self.assertTrue(probe.cleanup_mode, CleanupMode.NEVER)
     self.assertEqual(probe.target, TargetMode.RENDERER_PROCESS_ONLY)
     self.assertTrue(probe.start_profiling_after_setup(probe.target))
@@ -379,6 +417,55 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     MockChromeStable(
         "chrome",
         settings=Settings(platform=linux_platform)).attach_probe(probe)
+
+
+class LinuxProfilingContextTestCase(GenericProbeTestCase):
+
+  @override
+  def setUp(self):
+    super().setUp()
+    self.probe = ProfilingProbe(pprof=None)
+    self.platform = LinuxMockPlatform(fake_fs=self.fs)
+    self.run = mock.Mock()
+    self.run.browser = mock.Mock()
+    self.run.browser.platform = self.platform
+    self.run.browser.version = ChromiumVersion((120, 0, 0, 0))
+    self.run.result_path = pathlib.Path("/tmp/test_result")
+    self.run.session = mock.Mock()
+    self.run.session.extra_js_flags = {}
+    self.run.get_default_probe_result_path = mock.Mock(
+        return_value=pathlib.Path("/tmp/test_result"))
+    self.platform.absolute = mock.Mock(
+        return_value=pathlib.Path("/tmp/test_result"))
+
+  def test_auto_infer_pprof_true(self):
+    self.platform.install_mock_binary("pprof", "/usr/bin/pprof")
+    self.platform.install_mock_binary("gcert", "/usr/bin/gcert")
+    context = LinuxProfilingContext(self.probe, self.run)
+    context.setup_v8_log_path = mock.Mock()
+    context.setup()
+    self.assertTrue(context.run_pprof)
+
+  def test_auto_infer_pprof_false_missing_pprof(self):
+    self.platform.install_mock_binary("gcert", "/usr/bin/gcert")
+    context = LinuxProfilingContext(self.probe, self.run)
+    context.setup_v8_log_path = mock.Mock()
+    context.setup()
+    self.assertFalse(context.run_pprof)
+
+  def test_auto_infer_pprof_false_missing_gcert(self):
+    self.platform.install_mock_binary("pprof", "/usr/bin/pprof")
+    context = LinuxProfilingContext(self.probe, self.run)
+    context.setup_v8_log_path = mock.Mock()
+    context.setup()
+    self.assertFalse(context.run_pprof)
+
+  def test_explicit_pprof_true(self):
+    self.probe = ProfilingProbe(pprof=True)
+    context = LinuxProfilingContext(self.probe, self.run)
+    context.setup_v8_log_path = mock.Mock()
+    context.setup()
+    self.assertTrue(context.run_pprof)
 
 
 class EnumTestCase(unittest.TestCase):
