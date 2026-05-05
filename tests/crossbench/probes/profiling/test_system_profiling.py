@@ -313,6 +313,26 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     self.assertEqual(probe.grouped_events, ("cache-references", "cache-misses"))
     self.assertEqual(probe.add_counters, ("aa", "bb"))
 
+  def test_v8_interpreted_frames_default(self):
+    probe = ProfilingProbe()
+    self.assertTrue(probe.expose_v8_interpreted_frames)
+
+    probe = ProfilingProbe(js=False)
+    self.assertFalse(probe.expose_v8_interpreted_frames)
+
+    probe = ProfilingProbe(js=True, v8_interpreted_frames=False)
+    self.assertFalse(probe.expose_v8_interpreted_frames)
+
+    with self.assertRaisesRegex(AssertionError,
+                                "Cannot expose V8 interpreted frames"):
+      ProfilingProbe(js=False, v8_interpreted_frames=True)
+
+    probe = ProfilingProbe.parse_dict({"js": False})
+    self.assertFalse(probe.expose_v8_interpreted_frames)
+
+    probe = ProfilingProbe.parse_dict({"js": True})
+    self.assertTrue(probe.expose_v8_interpreted_frames)
+
   def test_create_custom_frequency(self):
     probe = ProfilingProbe.parse_dict({"freq": "max"})
     self.assertEqual(probe.frequency, "max")

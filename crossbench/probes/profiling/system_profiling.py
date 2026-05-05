@@ -87,8 +87,8 @@ class ProfilingProbe(Probe):
               "for fewer uninteresting processes."))
     parser.add_argument(
         "v8_interpreted_frames",
-        type=bool,
-        default=True,
+        type=ObjectParser.optional_bool,
+        default=None,
         help=(
             f"Chrome-only: Sets the {V8_INTERPRETED_FRAMES_FLAG} flag for "
             "V8, which exposes interpreted frames as native frames. "
@@ -198,7 +198,7 @@ class ProfilingProbe(Probe):
   def __init__(
       self,
       js: bool = True,
-      v8_interpreted_frames: bool = True,
+      v8_interpreted_frames: Optional[bool] = None,
       pprof: bool = True,
       cleanup: CleanupMode = CleanupMode.AUTO,
       browser_process: bool = False,
@@ -220,6 +220,8 @@ class ProfilingProbe(Probe):
     self._spare_renderer_process: bool = spare_renderer_process
     self._run_pprof: bool = pprof
     self._cleanup_mode = cleanup
+    if v8_interpreted_frames is None:
+      v8_interpreted_frames = js
     self._expose_v8_interpreted_frames: bool = v8_interpreted_frames
     if v8_interpreted_frames:
       assert js, "Cannot expose V8 interpreted frames without js profiling."
@@ -259,6 +261,10 @@ class ProfilingProbe(Probe):
   @property
   def sample_js(self) -> bool:
     return self._sample_js
+
+  @property
+  def expose_v8_interpreted_frames(self) -> bool:
+    return self._expose_v8_interpreted_frames
 
   @property
   def sample_browser_process(self) -> bool:

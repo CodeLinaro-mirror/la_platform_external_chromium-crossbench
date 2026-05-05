@@ -634,12 +634,13 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_optional_bool(self):
     self.assertIsNone(ObjectParser.optional_bool(None))
+    self.assertIsNone(ObjectParser.optional_bool(""))
     self.assertIs(ObjectParser.optional_bool("true"), True)
     self.assertIs(ObjectParser.optional_bool("false"), False)
 
   def test_parse_optional_bool_invalid(self):
     invalid: Any
-    for invalid in (1, 0, "1", "0", "", [], ()):
+    for invalid in (1, 0, "1", "0", [], ()):
       with self.assertRaises(argparse.ArgumentTypeError):
         ObjectParser.optional_bool(invalid)
         ObjectParser.optional_bool(invalid, strict=True)

@@ -550,7 +550,7 @@ class ObjectParser:
                     value: Any,
                     name: str = "value",
                     strict: bool = False) -> Optional[bool]:
-    if value is None:
+    if value is None or value == "":
       return None
     return cls.bool(value, name, strict)
 
