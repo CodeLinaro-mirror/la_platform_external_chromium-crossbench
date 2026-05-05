@@ -14,6 +14,7 @@ import hjson
 from crossbench import __version__, plt
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.env.runner_env import EnvConfig
+from crossbench.runner.runner import CacheTemperature
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
@@ -121,9 +122,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertIn("benchmarks", data)
     self.assertIn("probes", data)
     self.assertIn("networks", data)
+    self.assertIn("envs", data)
     self.assertIsInstance(data["benchmarks"], dict)
     self.assertIsInstance(data["probes"], dict)
     self.assertIsInstance(data["networks"], dict)
+    self.assertIsInstance(data["envs"], dict)
 
   def test_describe_benchmarks(self):
     self.run_cli("describe", "benchmarks")
@@ -133,6 +136,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertNotIn("benchmarks", data)
     self.assertNotIn("probes", data)
     self.assertNotIn("networks", data)
+    self.assertNotIn("envs", data)
     self.assertIsInstance(data, dict)
     self.assertIn("loading", data)
 
@@ -144,6 +148,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertNotIn("benchmarks", data)
     self.assertNotIn("probes", data)
     self.assertNotIn("networks", data)
+    self.assertNotIn("envs", data)
     self.assertNotIn("config-objects", data)
     self.assertIsInstance(data, dict)
     self.assertIn("v8.log", data)
@@ -156,9 +161,24 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertNotIn("benchmarks", data)
     self.assertNotIn("probes", data)
     self.assertNotIn("networks", data)
+    self.assertNotIn("envs", data)
     self.assertNotIn("config-objects", data)
     self.assertIsInstance(data, dict)
     self.assertIn("LIVE", data)
+
+  def test_describe_envs(self):
+    self.run_cli("describe", "envs")
+    _, stdout, stderr = self.run_cli_output("describe", "--json", "envs")
+    self.assertFalse(stderr)
+    data = json.loads(stdout)
+    self.assertNotIn("benchmarks", data)
+    self.assertNotIn("probes", data)
+    self.assertNotIn("networks", data)
+    self.assertNotIn("config-objects", data)
+    self.assertIsInstance(data, dict)
+    self.assertIn("battery", data)
+    self.assertIn("power", data)
+    self.assertIn("catan", data)
 
   def test_describe_config_objects(self):
     self.run_cli("describe", "config-objects")
@@ -169,6 +189,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertNotIn("benchmarks", data)
     self.assertNotIn("probes", data)
     self.assertNotIn("networks", data)
+    self.assertNotIn("envs", data)
     self.assertIsInstance(data, dict)
     self.assertIn("Secrets", data)
     self.assertIn("PageConfig", data)
@@ -306,10 +327,13 @@ class FastCliTestCasePartA(BaseCliTestCase):
   def test_subcommand_run_subcommand(self):
     with self._patch_get_browser():
       url = "http://test.com"
-      self.run_cli("loading", "run", f"--urls={url}", "--env-validation=skip",
-                   "--throw")
+      cli = self.run_cli("loading", "run", f"--urls={url}",
+                         "--env-validation=skip", "--throw")
       for browser in self.browsers:
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+      runner = cli.last_subcommand.runner
+      self.assertEqual(len(runner.cache_temperatures), 1)
+      self.assertIn(CacheTemperature.DEFAULT, runner.cache_temperatures)
 
   def test_invalid_probe(self):
     with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
@@ -323,6 +347,17 @@ class FastCliTestCasePartA(BaseCliTestCase):
       for browser in self.browsers:
         self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertIn("--log-deopt", browser.js_flags)
+
+  def test_cache_temperatures_flag(self):
+    with self._patch_get_browser():
+      url = "http://test.com"
+      cli = self.run_cli("loading", "--cache-temperatures", f"--urls={url}",
+                         "--env-validation=skip", "--throw")
+      runner = cli.last_subcommand.runner
+      self.assertEqual(len(runner.cache_temperatures), 3)
+      self.assertIn(CacheTemperature.COLD, runner.cache_temperatures)
+      self.assertIn(CacheTemperature.WARM, runner.cache_temperatures)
+      self.assertIn(CacheTemperature.HOT, runner.cache_temperatures)
 
   def test_invalid_empty_probe_config_file(self):
     config_file = pathlib.Path("/config.hjson")

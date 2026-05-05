@@ -24,8 +24,9 @@ if TYPE_CHECKING:
 @enum.unique
 class ValidationMode(StrEnumWithHelp):
   THROW = ("throw", "Strict mode, throw and abort on env issues")
-  PROMPT = ("prompt", "Prompt to accept potential env issues")
-  WARN = ("warn", "Only display a warning for env issue")
+  PROMPT = ("prompt", "Prompt to accept potential env issues (default)")
+  WARN = ("warn", ("Only display a warning for env issue "
+                   "(useful for automated testing/headless)"))
   SKIP = ("skip", "Don't perform any env validation")
 
 

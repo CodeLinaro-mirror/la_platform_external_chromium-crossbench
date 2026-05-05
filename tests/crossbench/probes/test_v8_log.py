@@ -130,10 +130,10 @@ class V8LogProbeTestCase(unittest.TestCase):
     self.assertSetEqual(expected_flags, set(probe.js_flags.keys()))
 
   def test_parse_invalid_config_categories(self):
-    with self.assertRaisesRegexp(argparse.ArgumentTypeError, "invalid"):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "invalid"):
       V8LogProbe.parse_str("invalid")
 
-    with self.assertRaisesRegexp(argparse.ArgumentTypeError, "ic"):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "ic"):
       V8LogProbe.parse_str("ic,invalid")
 
 
