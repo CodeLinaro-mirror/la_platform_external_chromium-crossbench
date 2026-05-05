@@ -119,7 +119,7 @@ class TraceConfig(ConfigObject):
     for name, path in cls.presets().items():
       help_str = cls._trace_config_help(name, path)
       preset_help.append(help_str)
-    help_items.append(("trace_config presets", "\n".join(preset_help)))
+    help_items.append(("presets", "\n".join(preset_help)))
     return help_items
 
   @classmethod
@@ -152,9 +152,16 @@ def has_data_source(trace_config: trace_config_pb2.TraceConfig,
 class PerfettoProbe(Probe):
   """
   A probe to collect Perfetto system traces that can be viewed on
-  https://ui.perfetto.dev/. The probe supports Android and ChromeOS targets.
+  https://ui.perfetto.dev/.
 
-  Recommended way to use:
+  Note: The `perfetto` probe replaces the outdated `tracing` probe.
+
+  Recommended way to use presets (Easy):
+  You can quickly use a predefined preset from the command line:
+    --probe='perfetto:default'
+    --probe='perfetto:v8'
+
+  Advanced way to use custom configs:
   1. Go to https://ui.perfetto.dev/, click "Record new trace" and set up your
      preferred tracing options.
   2. Click "Recording command" and copy the textproto config part of the
@@ -248,8 +255,7 @@ class PerfettoProbe(Probe):
     if "," in value or value.startswith(("-", "+")):
       return cls.parse_tags(value)
     if not value:
-      raise argparse.ArgumentTypeError(
-          "Cannot create empty probe with empty trace config")
+      return cls.parse_str("default")
     return super().parse_str(value)
 
   @classmethod
@@ -283,7 +289,7 @@ class PerfettoProbe(Probe):
       config_via_stdin: bool = False) -> None:
     super().__init__()
     if not trace_config:
-      trace_config = trace_config_pb2.TraceConfig()
+      trace_config = TraceConfig.parse_str("default").trace_config
     self._trace_config_obj: Final[trace_config_pb2.TraceConfig] = trace_config
     self._perfetto_bin: Final[pth.AnyPath] = perfetto_bin
     self._tracebox_bin: Final[pth.AnyPath] = tracebox_bin

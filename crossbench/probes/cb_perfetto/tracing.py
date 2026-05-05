@@ -147,6 +147,9 @@ ANDROID_TRACE_CONFIG_PATH: Final = pth.AnyPosixPath(
 
 class TracingProbe(ChromiumProbe):
   """
+  DEPRECATED: Please use the `perfetto` probe instead.
+  e.g. --probe='perfetto:default' unless strictly required.
+
   Chromium-only Probe to collect tracing / perfetto data that can be used by
   chrome://tracing or https://ui.perfetto.dev/.
 

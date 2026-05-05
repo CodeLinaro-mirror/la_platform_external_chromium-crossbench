@@ -68,6 +68,11 @@ class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
 
 class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
 
+  def setUp(self) -> None:
+    super().setUp()
+    TraceConfig.presets.cache_clear()
+    self.setup_perfetto_config_presets()
+
   def probe_instances(self):
     yield from self.internal_probe_instances()
     yield from self.general_purpose_probe_instances()
@@ -154,8 +159,6 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
             set(OPTIONAL_INTERNAL_PROBES)))
 
   def test_help(self):
-    TraceConfig.presets.cache_clear()
-    self.setup_perfetto_config_presets()
     for probe_cls in self.probe_classes():
       help_text = probe_cls.help_text()
       self.assertTrue(help_text)

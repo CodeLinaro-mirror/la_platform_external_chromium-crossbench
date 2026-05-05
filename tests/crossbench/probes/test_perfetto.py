@@ -75,12 +75,16 @@ class TraceConfigTestCase(unittest.TestCase):
 class PerfettoProbeTestCase(unittest.TestCase):
 
   def test_parse_empty(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
-      PerfettoProbe.parse_str("")
+    probe = PerfettoProbe.parse_str("")
+    self.assertIsInstance(probe, PerfettoProbe)
+    self.assertEqual(probe.trace_config,
+                     TraceConfig.parse_str("default").trace_config)
 
   def test_create_empty(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
-      _ = PerfettoProbe()
+    probe = PerfettoProbe()
+    self.assertIsInstance(probe, PerfettoProbe)
+    self.assertEqual(probe.trace_config,
+                     TraceConfig.parse_str("default").trace_config)
 
   def test_parse_tags_mixed(self):
     probe = PerfettoProbe.parse_tags("tag1,+tag2,-tag3")
@@ -145,8 +149,10 @@ class PerfettoProbeTestCase(unittest.TestCase):
     self.assertIn("cat1", te_config.enabled_categories)
 
   def test_empty_dict_config(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
-      PerfettoProbe.parse_dict({})
+    probe = PerfettoProbe.parse_dict({})
+    self.assertIsInstance(probe, PerfettoProbe)
+    self.assertEqual(probe.trace_config,
+                     TraceConfig.parse_str("default").trace_config)
 
   def test_missing_config(self):
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "unknown 1"):
@@ -299,8 +305,8 @@ class PerfettoProbeFunctionalTestCase(CrossbenchConfigTestMixin,
     dummy_preset = TraceConfig.preset_dir() / "dummy_preset.txtpb"
     self.fs.create_file(dummy_preset)
     help_items = TraceConfig.help_text_items()
-    self.assertTrue(any(k == "trace_config presets" for k, v in help_items))
-    presets_str = dict(help_items)["trace_config presets"]
+    self.assertTrue(any(k == "presets" for k, v in help_items))
+    presets_str = dict(help_items)["presets"]
     self.assertIn("dummy_preset", presets_str)
 
   def test_create_context_desktop(self):
