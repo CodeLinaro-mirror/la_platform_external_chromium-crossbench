@@ -93,6 +93,7 @@ exclude = [
     "third_party/*",
 ]
 target-version = "py311"
+indent-width = 2
 
 [tool.ruff.lint]
 extend-select = [
