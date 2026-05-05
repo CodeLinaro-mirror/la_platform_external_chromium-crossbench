@@ -58,6 +58,7 @@ cb_validate_hjson= 'crossbench.scripts:cb_validate_hjson'
 debugpy = "1.8.16"
 isort = "6.0.1"
 mypy = "1.18.2"
+orjson = "^3.11.8"
 pyfakefs = "5.9.2"
 pyrefly = "^0.31.0"
 pytest = "9.0.2"
@@ -68,6 +69,7 @@ pytest-xdist = "3.8.0"
 ruff = "^0.15.4"
 types-protobuf = "6.32.1.20251105"
 types-psutil = "7.0.0.20250822"
+
 
 [tool.poetry.group.dev-pytype.dependencies]
 python = ">=3.11,<3.12"
