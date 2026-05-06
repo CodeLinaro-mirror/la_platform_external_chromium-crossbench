@@ -470,6 +470,14 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     explicit_config = BrowserConfig.parse(f"adb:{path_str}")
     self.assertEqual(config, explicit_config)
 
+  def test_parse_apk_colon_in_path_fails(self):
+    path_str = "/test/my:app.apk"
+    path = pth.LocalPath(path_str)
+    self.fs.create_file(path)
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Invalid browser short form"):
+      BrowserConfig.parse(f"adb:{path_str}")
+
   def test_parse_simple_with_local_built_apk_helper_no_prefix(self):
     paths = (
         "/chrome/src/out/Release/chrome_public_apk",
@@ -758,6 +766,63 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     version_str = "webkit-nightly-299105@main"
     config = BrowserConfig.parse(version_str)
     self.assertEqual(config.browser, version_str)
+
+  def test_parse_adb_all_no_devices_error(self):
+    adb_devices = ShResult("List of devices attached\n\n")
+    self.platform.sh_results = [adb_devices]
+    with self.assertRaises(argparse.ArgumentTypeError):
+      BrowserConfig.parse_with_range("adb-all:chrome")
+
+  def test_parse_ios_all_no_devices_error(self):
+    with unittest.mock.patch(
+        "crossbench.cli.config.browser.ios_devices", return_value={}), \
+         unittest.mock.patch(
+             "crossbench.cli.config.driver.ios_devices", return_value={}):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        BrowserConfig.parse_with_range("ios-all:safari")
+
+  def test_parse_adb_ip_serial(self):
+    adb_devices = ShResult(
+        "List of devices attached\n"
+        "192.168.0.1:5555 device product:sdk model:m device:d\n")
+    self.platform.sh_results = [adb_devices, adb_devices]
+    config = BrowserConfig.parse("192.168.0.1:5555:chrome")
+    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver.device_id, "192.168.0.1:5555")
+
+  def test_parse_adb_ip_serial_with_network(self):
+    adb_devices = ShResult(
+        "List of devices attached\n"
+        "192.168.0.1:5555 device product:sdk model:m device:d\n")
+    self.platform.sh_results = [adb_devices, adb_devices]
+    config = BrowserConfig.parse("192.168.0.1:5555:chrome:4G")
+    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver.device_id, "192.168.0.1:5555")
+    self.assertEqual(config.network,
+                     NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G))
+
+  def test_parse_adb_ip_serial_with_network_and_env(self):
+    adb_devices = ShResult(
+        "List of devices attached\n"
+        "192.168.0.1:5555 device product:sdk model:m device:d\n")
+    self.platform.sh_results = [adb_devices, adb_devices]
+    config = BrowserConfig.parse("192.168.0.1:5555:chrome:4G:battery")
+    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver.device_id, "192.168.0.1:5555")
+    self.assertEqual(config.network,
+                     NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G))
+    self.assertEqual(config.env, ENV_CONFIG_PRESETS["battery"])
+
+  def test_parse_adb_all_multiple_ip_devices(self):
+    adb_devices = ShResult(
+        "List of devices attached\n"
+        "192.168.0.1:5555 device product:p1 model:m1 device:d1\n"
+        "192.168.0.1:5556 device product:p2 model:m2 device:d2\n")
+    self.platform.sh_results = [adb_devices] * 9
+    self.assertTupleEqual(
+        BrowserConfig.parse_with_range("adb-all:chrome"),
+        (BrowserConfig.parse("192.168.0.1:5555:chrome"),
+         BrowserConfig.parse("192.168.0.1:5556:chrome")))
 
 
 if __name__ == "__main__":

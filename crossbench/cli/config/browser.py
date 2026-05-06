@@ -48,12 +48,14 @@ SUPPORTED_BROWSER: Final = (
 # - "applescript:/out/x64.release/chrome:4G"
 # - "selenium:C:\out\x64.release\chrome"
 # - "selenium:C:\out\x64.release\chrome:4G"
+# - "192.168.0.1:5555:chrome"
+# - "192.168.0.1:5555:chrome:4G"
 NETWORK_PRESETS: str = "|".join(
     re.escape(preset.value) for preset in NetworkSpeedPreset)
 ENV_PRESETS: str = "|".join(re.escape(preset) for preset in ENV_CONFIG_PRESETS)
 
 SHORT_FORM_RE: re.Pattern[str] = re.compile(
-    r"((?P<driver>[\w-]{3,}):)??"
+    r"((?P<driver>(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+|[\w.-]+)):)??"
     r"(?P<path>([A-Z]:[/\\])?[^:]+)"
     f"(:(?P<network>{NETWORK_PRESETS}))?"
     f"(:(?P<env>{ENV_PRESETS}))?")
@@ -110,6 +112,7 @@ class BrowserConfig(ConfigObject):
     env: EnvConfig | None = None
     if ":" in value and not cls.is_path_like(value):
       # Variant: ${DRIVER_TYPE}:${PATH_OR_IDENTIFIER}:${NETWORK}
+      # Variant (with IP port): ${IP}:${PORT}:${PATH_OR_IDENTIFIER}:${NETWORK}
       driver, path, network, env = cls._parse_inline_short_form(value)
     else:
       # Variant: $PATH_OR_IDENTIFIER
@@ -200,9 +203,13 @@ class BrowserConfig(ConfigObject):
       ..., "<serial_idN>")
     """
     if value in ("android-all", "adb-all"):
-      return tuple(adb_devices(plt.PLATFORM).keys())
+      if devices := tuple(adb_devices(plt.PLATFORM).keys()):
+        return devices
+      raise argparse.ArgumentTypeError("No adb devices found.")
     if value == "ios-all":
-      return tuple(ios_devices(plt.PLATFORM).keys())
+      if devices := tuple(ios_devices(plt.PLATFORM).keys()):
+        return devices
+      raise argparse.ArgumentTypeError("No iOS devices attached.")
     return (value,)
 
   @classmethod

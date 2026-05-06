@@ -293,18 +293,26 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       self.assertIn("Expected str or dict", str(cm.exception))
 
   def test_browser_custom_driver_variants(self):
-    sh_results = [ADB_DEVICES_SINGLE_OUTPUT] * 4
+    adb_ip_devices = ShResult(
+        "List of devices attached\n"
+        "192.168.0.1:5555 device product:sdk model:m device:d\n")
+    sh_results = [adb_ip_devices] * 7
     if self.platform.is_macos:
       # For `brew --prefix`.
       sh_results.insert(1, ShResult(returncode=1))
       sh_results.insert(4, ShResult(returncode=1))
+      sh_results.append(adb_ip_devices)
     # Note: insert() on self.platform.sh_results fails, that returns a copy.
     self.platform.sh_results = sh_results
 
     def mock_get_browser_platform(
         browser_config: BrowserConfig) -> plt.Platform:
       if browser_config.driver.type == BrowserDriverType.ANDROID:
-        return AndroidAdbMockPlatform(self.platform, adb=MockAdb(self.platform))
+        return AndroidAdbMockPlatform(
+            self.platform,
+            adb=MockAdb(
+                self.platform,
+                device_identifier=browser_config.driver.device_id))
       return self.platform
 
     with self._patch_get_browser_cls(
@@ -320,20 +328,24 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                   "chrome-stable-adb2": {
                       "path": "chrome",
                       "driver": "adb"
-                  }
+                  },
+                  "chrome-stable-adb-ip": "192.168.0.1:5555:chrome"
               }
           },
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args())
       variants = variants_config.variants
-    self.assertEqual(len(variants), 3)
+    self.assertEqual(len(variants), 4)
     self.assertEqual(variants[0].label, "chrome-stable-default")
     self.assertEqual(variants[1].label, "chrome-stable-adb")
     self.assertEqual(variants[2].label, "chrome-stable-adb2")
+    self.assertEqual(variants[3].label, "chrome-stable-adb-ip")
     self.assertEqual(variants[0].browser_cls, mock_browser.MockChromeStable)
     self.assertEqual(variants[1].browser_cls,
                      mock_browser.MockChromeAndroidStable)
     self.assertEqual(variants[2].browser_cls,
+                     mock_browser.MockChromeAndroidStable)
+    self.assertEqual(variants[3].browser_cls,
                      mock_browser.MockChromeAndroidStable)
 
   def test_flag_combination_invalid(self):
