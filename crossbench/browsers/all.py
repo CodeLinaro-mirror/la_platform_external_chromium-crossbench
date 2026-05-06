@@ -16,7 +16,6 @@ from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver, \
     ChromiumWebDriverChromeOsSsh, ChromiumWebDriverSsh, \
     LocalChromiumWebDriverAndroid
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
-from crossbench.browsers.d8.d8 import D8
 from crossbench.browsers.edge.edge import Edge
 from crossbench.browsers.edge.webdriver import EdgeWebDriver
 from crossbench.browsers.firefox.firefox import Firefox
@@ -25,6 +24,7 @@ from crossbench.browsers.safari.applescript import SafariAppleScript
 from crossbench.browsers.safari.safari import Safari
 from crossbench.browsers.safari.webdriver import SafariWebDriver, \
     SafariWebdriverIOS
+from crossbench.browsers.shell.d8.d8 import D8
 from crossbench.browsers.webkit.webdriver import WebKitWebDriver
 from crossbench.browsers.webview.browser import WebviewBrowser
 from crossbench.browsers.webview.embedder import WebviewEmbedder

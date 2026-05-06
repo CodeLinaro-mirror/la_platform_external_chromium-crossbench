@@ -14,9 +14,9 @@ from typing_extensions import override
 from crossbench import exception
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
-from crossbench.browsers.d8.shell import D8Shell
-from crossbench.browsers.d8.url_mapper import D8URLMapper, DummyURLMapper
-from crossbench.browsers.d8.version import D8Version
+from crossbench.browsers.shell.d8.shell import D8Shell
+from crossbench.browsers.shell.d8.version import D8Version
+from crossbench.browsers.shell.url_mapper import D8URLMapper, DummyURLMapper
 from crossbench.browsers.viewport import Viewport
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.network.local_file_server import LocalFileNetwork

@@ -11,7 +11,7 @@ import crossbench.path as pth
 from crossbench.network.local_file_server import LocalFileNetwork
 
 if TYPE_CHECKING:
-  from crossbench.browsers.d8.d8 import D8
+  from crossbench.browsers.shell.d8.d8 import D8
   from crossbench.network.base import Network
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
