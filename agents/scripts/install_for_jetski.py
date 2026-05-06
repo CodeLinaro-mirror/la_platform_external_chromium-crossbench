@@ -61,10 +61,10 @@ for item in agents_src.iterdir():
     if not dest_sub.exists():
       create_symlink(sub_item, dest_sub)
 
-gemini_md_path = repo_root / "GEMINI.md"
-if not gemini_md_path.exists():
-  with gemini_md_path.open("w") as f:
+agents_md_path = repo_root / "AGENTS.md"
+if not agents_md_path.exists():
+  with agents_md_path.open("w") as f:
     f.write("@agents/prompts/templates/modular.md\n")
-  print(f"Created {gemini_md_path}")
+  print(f"Created {agents_md_path}")
 else:
-  print(f"Skipping {gemini_md_path} creation since it already exists.")
+  print(f"Skipping {agents_md_path} creation since it already exists.")
