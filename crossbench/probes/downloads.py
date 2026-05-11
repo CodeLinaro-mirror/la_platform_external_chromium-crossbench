@@ -8,7 +8,7 @@ import abc
 import re
 import shlex
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Set
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable
 
 from typing_extensions import override
 
@@ -119,7 +119,7 @@ class FileWatchDownloadsProbeContext(DownloadsProbeContext):
                downloads_dir: pth.AnyPath) -> None:
     super().__init__(probe, run)
     self._downloads_dir: pth.AnyPath = downloads_dir
-    self._existing_downloads: Set[pth.AnyPath] = set()
+    self._existing_downloads: set[pth.AnyPath] = set()
     self._results: list[pth.AnyPath] = []
 
   def downloads(self, include_pending: bool = True) -> Iterable[pth.AnyPath]:
@@ -167,7 +167,7 @@ class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
 
   def __init__(self, probe: DownloadsProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._existing_downloads: Set[AndroidDownload] = set()
+    self._existing_downloads: set[AndroidDownload] = set()
     self._user_id: str = str(self.browser_platform.user_id())
     self._results: list[pth.AnyPath] = []
 

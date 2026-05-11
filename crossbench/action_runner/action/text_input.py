@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, ClassVar, Optional, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -29,7 +29,7 @@ class TextInputAction(InputSourceAction):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument("text", type=ObjectParser.non_empty_str, required=False)
     parser.add_argument(
@@ -47,8 +47,8 @@ class TextInputAction(InputSourceAction):
   def __init__(self,
                source: InputSource,
                duration: dt.timedelta,
-               text: Optional[str] = None,
-               keyevent: Optional[str] = None,
+               text: str | None = None,
+               keyevent: str | None = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._text: str | None = text
@@ -56,11 +56,11 @@ class TextInputAction(InputSourceAction):
     super().__init__(source, duration, timeout, index)
 
   @property
-  def text(self) -> Optional[str]:
+  def text(self) -> str | None:
     return self._text
 
   @property
-  def keyevent(self) -> Optional[str]:
+  def keyevent(self) -> str | None:
     return self._keyevent
 
   @override

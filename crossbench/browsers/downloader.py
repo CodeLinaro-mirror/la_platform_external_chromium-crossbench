@@ -11,7 +11,7 @@ import plistlib
 import re
 import shutil
 import tempfile
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable
 
 from typing_extensions import override
 
@@ -40,7 +40,7 @@ class Downloader(abc.ABC):
   @classmethod
   @abc.abstractmethod
   def _get_loader_cls(cls,
-                      browser_platform: Platform) -> Type[Downloader] | None:
+                      browser_platform: Platform) -> type[Downloader] | None:
     pass
 
   @classmethod
@@ -62,7 +62,7 @@ class Downloader(abc.ABC):
            reinstall: bool = False) -> pth.LocalPath:
     logging.debug("Downloading chrome %s binary for %s",
                   archive_path_or_version_identifier, browser_platform)
-    loader_cls: Type[Downloader] | None = cls._get_loader_cls(browser_platform)
+    loader_cls: type[Downloader] | None = cls._get_loader_cls(browser_platform)
     if not loader_cls:
       raise ValueError(f"Downloading {cls.name()} is not supported "
                        f"on {browser_platform.name} {browser_platform.machine}")
@@ -136,14 +136,13 @@ class Downloader(abc.ABC):
   def requested_version(self) -> BrowserVersion:
     return self._requested_version
 
-  def _pre_check(self,
-                 requested_version: Optional[BrowserVersion] = None) -> None:
+  def _pre_check(self, requested_version: BrowserVersion | None = None) -> None:
     del requested_version
 
   def _is_app_installed(self, app_path: pth.LocalPath) -> bool:
     return self._browser_platform.search_app(app_path) is not None
 
-  def _find_matching_installed_version(self) -> Optional[pth.LocalPath]:
+  def _find_matching_installed_version(self) -> pth.LocalPath | None:
     app_path: pth.LocalPath = self._installed_app_path()
     if app_path.parts and self._is_app_installed(app_path):
       return app_path
@@ -265,7 +264,7 @@ class Downloader(abc.ABC):
     raise IncompatibleVersionError(msg)
 
   @abc.abstractmethod
-  def _find_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
+  def _find_archive_url(self) -> tuple[BrowserVersion, str | None]:
     pass
 
   @abc.abstractmethod

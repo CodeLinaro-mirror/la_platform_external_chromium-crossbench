@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Final, Mapping, Optional
+from typing import TYPE_CHECKING, Final, Mapping
 
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.remote import RemotePlatformMixin
@@ -60,8 +60,8 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
   def build_ssh_cmd(self,
                     *args: CmdArg,
                     shell: bool = False,
-                    env: Optional[Mapping[str, str]] = None,
-                    cwd: Optional[pth.AnyPath] = None) -> ListCmdArgs:
+                    env: Mapping[str, str] | None = None,
+                    cwd: pth.AnyPath | None = None) -> ListCmdArgs:
     pass
 
   def sh_stdout_bytes(self,
@@ -69,8 +69,8 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
                       shell: bool = False,
                       quiet: bool = False,
                       stdin: ProcessIo = None,
-                      env: Optional[Mapping[str, str]] = None,
-                      cwd: Optional[pth.AnyPath] = None,
+                      env: Mapping[str, str] | None = None,
+                      cwd: pth.AnyPath | None = None,
                       check: bool = True) -> bytes:
     ssh_cmd: ListCmdArgs = self.build_ssh_cmd(
         *args, shell=shell, env=env, cwd=cwd)
@@ -84,8 +84,8 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
          stdout: ProcessIo = None,
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
-         env: Optional[Mapping[str, str]] = None,
-         cwd: Optional[pth.AnyPath] = None,
+         env: Mapping[str, str] | None = None,
+         cwd: pth.AnyPath | None = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
     ssh_cmd: ListCmdArgs = self.build_ssh_cmd(
@@ -107,8 +107,8 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
             stdout: ProcessIo = None,
             stderr: ProcessIo = None,
             stdin: ProcessIo = None,
-            env: Optional[Mapping[str, str]] = None,
-            cwd: Optional[pth.AnyPath] = None,
+            env: Mapping[str, str] | None = None,
+            cwd: pth.AnyPath | None = None,
             quiet: bool = False) -> subprocess.Popen:
     ssh_cmd: ListCmdArgs = self.build_ssh_cmd(
         *args, shell=shell, env=env, cwd=cwd)

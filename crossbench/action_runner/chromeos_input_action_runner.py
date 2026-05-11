@@ -10,7 +10,7 @@ import datetime as dt
 import shlex
 import subprocess
 from math import ceil
-from typing import TYPE_CHECKING, ClassVar, Final, Optional, Self
+from typing import TYPE_CHECKING, ClassVar, Final, Self
 
 import crossbench.path as pth
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
@@ -38,7 +38,7 @@ class ChromeOSViewportInfo:
                screen_width: int, screen_height: int, screen_avail_width: int,
                screen_avail_height: int, window_offset_x: int,
                window_offset_y: int,
-               element_rect: Optional[DisplayRectangle]) -> None:
+               element_rect: DisplayRectangle | None) -> None:
     # The actual screen width and height in pixels.
     # Corrects for any zoom/scaling factors.
     # 80 is a common factor of most display pixel widths, so use it as a common
@@ -92,7 +92,7 @@ class ChromeOSViewportInfo:
     return self._native_screen
 
   @property
-  def element_rect(self) -> Optional[DisplayRectangle]:
+  def element_rect(self) -> DisplayRectangle | None:
     return self._element_rect
 
   def _dom_rect_to_native_rect(self,
@@ -410,7 +410,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
 
   def _get_click_location(
       self, actions: Actions, action: i_action.ClickAction
-  ) -> tuple[Optional[Point], ChromeOSViewportInfo]:
+  ) -> tuple[Point | None, ChromeOSViewportInfo]:
     if selector_config := action.position.selector:
       if selector_config.wait:
         self.wait_for_element_impl(
@@ -446,7 +446,7 @@ class ChromeOSInputActionRunner(DefaultActionRunner):
   def _get_viewport_info(
       self,
       actions: Actions,
-      selector: Optional[str],
+      selector: str | None,
       scroll_into_view: bool = False) -> ChromeOSViewportInfo:
 
     script = ""

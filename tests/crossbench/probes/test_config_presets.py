@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import pathlib
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 
 from pyfakefs import fake_filesystem_unittest
 
@@ -23,7 +23,7 @@ from tests import test_helper
 if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
 
-PROBE_LOOKUP: dict[str, Type[Probe]] = {
+PROBE_LOOKUP: dict[str, type[Probe]] = {
     probe_cls.NAME: probe_cls for probe_cls in GENERAL_PURPOSE_PROBES
 }
 

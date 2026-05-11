@@ -7,8 +7,7 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, Any, Final, Iterator, Optional, Self, \
-    Sequence, cast
+from typing import TYPE_CHECKING, Any, Final, Iterator, Self, Sequence, cast
 
 from typing_extensions import override
 
@@ -53,8 +52,8 @@ class ActionBlock(ConfigObject):
   @override
   def parse_dict(cls,
                  config: dict[str, Any],
-                 label: Optional[str] = None,
-                 index: Optional[int] = None,
+                 label: str | None = None,
+                 index: int | None = None,
                  **kwargs) -> Self:
     return cls.config_parser().parse(config, label=label, index=index, **kwargs)
 
@@ -73,21 +72,20 @@ class ActionBlock(ConfigObject):
   @classmethod
   def parse_sequence(cls,
                      config: Sequence[dict[str, Any]],
-                     label: Optional[str] = None,
-                     index: Optional[int] = None) -> Self:
+                     label: str | None = None,
+                     index: int | None = None) -> Self:
     with exception.annotate_argparsing(
         "Parsing default block action sequence:"):
       return cls.parse_dict({"actions": config}, label=label, index=index)
     raise exception.UnreachableError
 
   @classmethod
-  def _parse_block_label(cls, value: Any) -> Optional[str]:
+  def _parse_block_label(cls, value: Any) -> str | None:
     if not value:
       return None
     label = ObjectParser.non_empty_str(value)
     if label == LOGIN_LABEL:
-      raise ConfigError(
-          f"Block label {repr(label)} is reserved for login blocks")
+      raise ConfigError(f"Block label {label!r} is reserved for login blocks")
     return value
 
   @classmethod
@@ -232,7 +230,7 @@ class ActionBlockListConfig(ConfigObject):
         if inner_label != label:
           raise ConfigError(
               "ActionBlock inside a dict cannot have a 'label' property, "
-              f"but got label={repr(inner_label)}")
+              f"but got label={inner_label!r}")
     return ActionBlock.parse(block_data, label=label, index=index)
 
   @classmethod

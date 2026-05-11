@@ -13,8 +13,8 @@ import logging
 import math
 import re
 import shlex
-from typing import TYPE_CHECKING, Any, Callable, Final, Iterable, Optional, \
-    Sequence, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, Final, Iterable, Sequence, \
+    TypeVar, cast
 from urllib import parse as urlparse
 
 import google.protobuf.message
@@ -54,7 +54,7 @@ class PathParser:
 
   @classmethod
   def path(cls,
-           value: Optional[pth.AnyPathLike],
+           value: pth.AnyPathLike | None,
            name: str = "value") -> pth.LocalPath:
     path_value: pth.AnyPathLike = ObjectParser.not_none(value,
                                                         "path")  # type: ignore
@@ -64,7 +64,7 @@ class PathParser:
       path = pth.LocalPath(path_value).expanduser()
     except RuntimeError as e:
       raise argparse.ArgumentTypeError(
-          f"Invalid Path {name} {repr(value)}': {e}") from e
+          f"Invalid Path {name} {value!r}': {e}") from e
     return path
 
   @classmethod
@@ -73,8 +73,7 @@ class PathParser:
                          name: str = "value") -> pth.LocalPath:
     path = cls.existing_path(value, name)
     if not path.is_file():
-      raise argparse.ArgumentTypeError(
-          f"{name} is not a file: {repr(str(path))}")
+      raise argparse.ArgumentTypeError(f"{name} is not a file: {str(path)!r}")
     return path
 
   @classmethod
@@ -84,7 +83,7 @@ class PathParser:
     path: pth.LocalPath = cls.existing_file_path(value, name)
     if path.stat().st_size == 0:
       raise argparse.ArgumentTypeError(
-          f"{name} is an empty file: {repr(str(path))}")
+          f"{name} is an empty file: {str(path)!r}")
     return path
 
   @classmethod
@@ -99,8 +98,7 @@ class PathParser:
                name: str = "value") -> pth.LocalPath:
     path = cls.existing_path(value, name)
     if not path.is_dir():
-      raise argparse.ArgumentTypeError(
-          f"{name} is not a folder: '{repr(str(path))}'")
+      raise argparse.ArgumentTypeError(f"{name} is not a folder: {str(path)!r}")
     return path
 
   @classmethod
@@ -111,7 +109,7 @@ class PathParser:
     for _ in dir_path.iterdir():
       return dir_path
     raise argparse.ArgumentTypeError(
-        f"{name} dir must be non empty: {repr(str(dir_path))}")
+        f"{name} dir must be non empty: {str(dir_path)!r}")
 
   @classmethod
   def existing_path(cls,
@@ -120,7 +118,7 @@ class PathParser:
     path = cls.path(value)
     if not path.exists():
       raise argparse.ArgumentTypeError(
-          f"{name} path does not exist: {repr(str(path))}")
+          f"{name} path does not exist: {str(path)!r}")
     return path
 
   @classmethod
@@ -130,13 +128,13 @@ class PathParser:
     path = cls.path(value)
     if path.exists():
       raise argparse.ArgumentTypeError(
-          f"{name} path already exists: {repr(str(path))}")
+          f"{name} path already exists: {str(path)!r}")
     return path
 
   @classmethod
   def binary_path(
       cls,
-      value: Optional[pth.AnyPathLike],
+      value: pth.AnyPathLike | None,
       platform: plt.Platform,
       name: str = "binary",
   ) -> pth.AnyPath:
@@ -151,7 +149,7 @@ class PathParser:
 
   @classmethod
   def any_path(cls,
-               value: Optional[pth.AnyPathLike],
+               value: pth.AnyPathLike | None,
                name: str = "value") -> pth.AnyPath:
     """Parse a path than can be on a local or remote file system."""
     if some_value := ObjectParser.not_none(value, name):
@@ -159,15 +157,15 @@ class PathParser:
     raise argparse.ArgumentTypeError(f"Expected non empty path {name}.")
 
   @classmethod
-  def optional_any_path(
-      cls, value: Optional[pth.AnyPathLike]) -> Optional[pth.AnyPath]:
+  def optional_any_path(cls,
+                        value: pth.AnyPathLike | None) -> pth.AnyPath | None:
     if value is None:
       return None
     return cls.any_path(value)
 
   @classmethod
   def local_binary_path(cls,
-                        value: Optional[pth.AnyPathLike],
+                        value: pth.AnyPathLike | None,
                         platform: plt.Platform,
                         name: str = "binary") -> pth.LocalPath:
     return cast(pth.LocalPath, cls.binary_path(value, platform, name))
@@ -206,8 +204,8 @@ ProtoClassT = TypeVar("ProtoClassT", bound=google.protobuf.message.Message)
 class ObjectParser:
 
   @classmethod
-  def enum(cls, label: str, enum_cls: Type[EnumT], data: Any,
-           choices: Type[EnumT] | Iterable[EnumT]) -> EnumT:
+  def enum(cls, label: str, enum_cls: type[EnumT], data: Any,
+           choices: type[EnumT] | Iterable[EnumT]) -> EnumT:
     try:
       # Try direct conversion, relying on the Enum._missing_ hook:
       enum_value = enum_cls(data)
@@ -222,16 +220,16 @@ class ObjectParser:
       if data in (enum_instance, enum_instance.value):
         return enum_instance
     choices_str: str = ", ".join(repr(item.value) for item in choices)
-    raise argparse.ArgumentTypeError(f"Unknown {label}: {repr(data)}.\n"
+    raise argparse.ArgumentTypeError(f"Unknown {label}: {data!r}.\n"
                                      f"Choices are {choices_str}.")
 
   @classmethod
   def enum_list(
       cls,
       label: str,
-      enum_cls: Type[EnumT],
+      enum_cls: type[EnumT],
       data: Any,
-      choices: Optional[Type[EnumT] | Iterable[EnumT]] = None,
+      choices: type[EnumT] | Iterable[EnumT] | None = None,
   ) -> list[EnumT]:
     if choices is None:
       choices = enum_cls
@@ -247,9 +245,8 @@ class ObjectParser:
     elif isinstance(data, Iterable):
       data = list(data)
     else:
-      raise argparse.ArgumentTypeError(
-          f"Expected iterable for {label} list, but got {type_str(data)}: {repr(data)}"
-      )
+      raise argparse.ArgumentTypeError(f"Expected iterable for {label} list, "
+                                       f"but got {type_str(data)}: {data!r}")
     return [cls.enum(label, enum_cls, item, choices) for item in data]
 
   @classmethod
@@ -310,8 +307,8 @@ class ObjectParser:
     data = cls.non_empty_hjson_file(value)
     if not isinstance(data, dict):
       raise argparse.ArgumentTypeError(
-          "Expected object in hjson config '{value}', "
-          f"but got {type_str(data)}: {repr(data)}")
+          f"Expected object in hjson config '{value}', "
+          f"but got {type_str(data)}: {data!r}")
     return data
 
   @classmethod
@@ -319,7 +316,7 @@ class ObjectParser:
     if isinstance(value, dict):
       return value
     raise argparse.ArgumentTypeError(
-        f"Expected dict, but {name} is {type_str(value)}: {repr(value)}")
+        f"Expected dict, but {name} is {type_str(value)}: {value!r}")
 
   @classmethod
   def non_empty_dict(cls, value: Any, name: str = "value") -> PyDict:
@@ -334,17 +331,17 @@ class ObjectParser:
     if isinstance(value, (list, tuple)):
       return value
     raise argparse.ArgumentTypeError(
-        f"Expected sequence, but {name} is {type_str(value)}: {repr(value)}")
+        f"Expected sequence, but {name} is {type_str(value)}: {value!r}")
 
   @classmethod
   def iterable(cls, value: Any, name: str = "value") -> Iterable[Any]:
     if isinstance(value, str):
       raise argparse.ArgumentTypeError(
-          f"Expected iterable {name}, but got string: {repr(value)}")
+          f"Expected iterable {name}, but got string: {value!r}")
     if isinstance(value, Iterable):
       return value
     raise argparse.ArgumentTypeError(
-        f"Expected iterable, but {name} is {type_str(value)}: {repr(value)}")
+        f"Expected iterable, but {name} is {type_str(value)}: {value!r}")
 
   @classmethod
   def non_empty_sequence(cls, value: Any, name: str = "value") -> Sequence[Any]:
@@ -366,9 +363,8 @@ class ObjectParser:
   def non_empty_str(cls, value: Any, name: str = "value") -> str:
     value = cls.any_str(value, name)
     if not isinstance(value, str):
-      raise argparse.ArgumentTypeError(
-          f"Expected non-empty string {name}, "
-          f"but got {type_str(value)}: {repr(value)}")
+      raise argparse.ArgumentTypeError(f"Expected non-empty string {name}, "
+                                       f"but got {type_str(value)}: {value!r}")
     if not value:
       raise argparse.ArgumentTypeError(f"Non-empty string {name} expected.")
     return value
@@ -393,7 +389,7 @@ class ObjectParser:
 
   @classmethod
   def proto_or_file(
-      cls, proto_cls: Type[ProtoClassT]) -> Callable[[Any], ProtoClassT]:
+      cls, proto_cls: type[ProtoClassT]) -> Callable[[Any], ProtoClassT]:
 
     def parser(value: Any) -> ProtoClassT:
       data: bytes = ObjectParser.bytes_or_file_contents(value)
@@ -454,7 +450,7 @@ class ObjectParser:
   def url_str(cls,
               value: str,
               name: str = "url",
-              schemes: Optional[Sequence[str]] = None) -> str:
+              schemes: Sequence[str] | None = None) -> str:
     cls.url(value, name, schemes)
     return value
 
@@ -469,8 +465,7 @@ class ObjectParser:
     try:
       return urlparse.urlparse(url_str)
     except ValueError as e:
-      raise argparse.ArgumentTypeError(
-          f"Invalid {name}: {repr(value)}, {e}") from e
+      raise argparse.ArgumentTypeError(f"Invalid {name}: {value!r}, {e}") from e
 
   PORT_URL_PATH_RE: Final[re.Pattern] = re.compile(r"^[0-9]+(?:/|$)")
   INVALID_FUZZY_URL_RE: Final[re.Pattern] = re.compile(r"[^./]+(?:/.+)?")
@@ -511,15 +506,15 @@ class ObjectParser:
         elif parsed.path == "localhost":
           pass
         elif cls.INVALID_FUZZY_URL_RE.fullmatch(parsed.path):
-          raise argparse.ArgumentTypeError(f"Invalid {name}: {repr(value)}")
-      schemes = tuple(schemes) + (default_scheme,)
+          raise argparse.ArgumentTypeError(f"Invalid {name}: {value!r}")
+      schemes = (*tuple(schemes), default_scheme)
     return cls.url(url, name, schemes)
 
   @classmethod
   def url(cls,
           value: str,
           name: str = "url",
-          schemes: Optional[Sequence[str]] = None) -> urlparse.ParseResult:
+          schemes: Sequence[str] | None = None) -> urlparse.ParseResult:
     parsed = cls.base_url(value)
     try:
       scheme = parsed.scheme
@@ -527,7 +522,7 @@ class ObjectParser:
         schemes_str = ",".join(map(repr, schemes))
         raise argparse.ArgumentTypeError(
             f"Invalid {name}: Expected scheme to be one of {schemes_str}, "
-            f"but got {repr(parsed.scheme)} for url {repr(value)}")
+            f"but got {parsed.scheme!r} for url {value!r}")
       if port := parsed.port:
         _ = NumberParser.port_number(port, f"{name} port")
       if scheme in ("file", "about", "data"):
@@ -535,21 +530,20 @@ class ObjectParser:
       hostname = parsed.hostname
       if not hostname:
         raise argparse.ArgumentTypeError(
-            f"Missing hostname in {name}: {repr(value)}")
+            f"Missing hostname in {name}: {value!r}")
       if " " in hostname:
         raise argparse.ArgumentTypeError(
-            f"Hostname in {name} contains invalid space: {repr(value)}")
+            f"Hostname in {name} contains invalid space: {value!r}")
     except ValueError as e:
       # Some ParseResult properties trigger errors, wrap all of them
-      raise argparse.ArgumentTypeError(
-          f"Invalid {name}: {repr(value)}, {e}") from e
+      raise argparse.ArgumentTypeError(f"Invalid {name}: {value!r}, {e}") from e
     return parsed
 
   @classmethod
   def optional_bool(cls,
                     value: Any,
                     name: str = "value",
-                    strict: bool = False) -> Optional[bool]:
+                    strict: bool = False) -> bool | None:
     if value is None or value == "":
       return None
     return cls.bool(value, name, strict)
@@ -565,10 +559,10 @@ class ObjectParser:
       if value == "false":
         return False
     raise argparse.ArgumentTypeError(
-        f"Expected bool {name} but got {type_str(value)}: {repr(value)}")
+        f"Expected bool {name} but got {type_str(value)}: {value!r}")
 
   @classmethod
-  def not_none(cls, value: Optional[NotNoneT], name: str = "value") -> NotNoneT:
+  def not_none(cls, value: NotNoneT | None, name: str = "value") -> NotNoneT:
     if value is None:
       raise argparse.ArgumentTypeError(f"Expected {name} to be not None.")
     return value
@@ -596,7 +590,7 @@ class ObjectParser:
       cls,
       value: SequenceT,
       name: str = "sequence",
-      error_cls: Type[Exception] = argparse.ArgumentTypeError) -> SequenceT:
+      error_cls: type[Exception] = argparse.ArgumentTypeError) -> SequenceT:
     unique = set()
     duplicates = set()
     for item in value:
@@ -606,7 +600,7 @@ class ObjectParser:
         unique.add(item)
     if not duplicates:
       return value
-    raise error_cls(f"Unexpected duplicates in {name}: {repr(duplicates)}")
+    raise error_cls(f"Unexpected duplicates in {name}: {duplicates!r}")
 
   @classmethod
   def regexp(cls, value: Any, name: str = "regexp") -> re.Pattern:
@@ -629,8 +623,8 @@ def _extract_decoding_error(message: str, value: pth.AnyPathLike,
   colno = getattr(e, "colno", -1) - 1
   if lineno < 0 or colno < 0:
     if isinstance(value, pth.LocalPath):
-      return f"{message}\n    {str(e)}"
-    return f"{message}: {value}\n    {str(e)}"
+      return f"{message}\n    {e!s}"
+    return f"{message}: {value}\n    {e!s}"
   if isinstance(value, pth.AnyPath):
     with pth.LocalPath(value).open(encoding="utf-8") as f:
       line = f.readlines()[lineno]
@@ -658,7 +652,7 @@ def _extract_decoding_error(message: str, value: pth.AnyPathLike,
   marker = "_▲_"
   # Adjust line to be aligned with marker size
   line = (" " * (len(marker) // 2)) + line
-  return f"{message}\n    {line}\n    {marker_space}{marker}\n({str(e)})"
+  return f"{message}\n    {line}\n    {marker_space}{marker}\n({e!s})"
 
 
 class NumberParser:
@@ -668,7 +662,7 @@ class NumberParser:
     try:
       return float(value)
     except ValueError as e:
-      raise argparse.ArgumentTypeError(f"Invalid {name}: {repr(value)}") from e
+      raise argparse.ArgumentTypeError(f"Invalid {name}: {value!r}") from e
 
   @classmethod
   def positive_float(cls, value: Any, name: str = "float") -> float:
@@ -706,14 +700,14 @@ class NumberParser:
     if (not parse_str and
         isinstance(value, str)) or (not isinstance(value, (int, float, str))):
       raise argparse.ArgumentTypeError(
-          f"Expected integer {name}, but got {type_str(value)}: {repr(value)}")
+          f"Expected integer {name}, but got {type_str(value)}: {value!r}")
     if isinstance(value, float) and not value.is_integer():
-      raise argparse.ArgumentTypeError(f"Invalid integer {name}: {repr(value)}")
+      raise argparse.ArgumentTypeError(f"Invalid integer {name}: {value!r}")
     try:
       return int(value)
     except ValueError as e:
       raise argparse.ArgumentTypeError(
-          f"Invalid integer {name}: {repr(value)}") from e
+          f"Invalid integer {name}: {value!r}") from e
 
   @classmethod
   def positive_zero_int(cls,

@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeAlias
+from typing import TYPE_CHECKING, Any, Sequence, TypeAlias
 
 import tabulate as tbl
 from typing_extensions import override
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
   HelpData: TypeAlias = dict[str, dict[str, Any]]
 
 
-def get_all_subclasses(cls: Type) -> set:
+def get_all_subclasses(cls: type) -> set:
   """
     Recursively gets all subclasses of a given class.
     """
@@ -43,7 +43,7 @@ def get_all_subclasses(cls: Type) -> set:
   return all_subclasses
 
 
-def is_abstract(cls: Type) -> bool:
+def is_abstract(cls: type) -> bool:
   return bool(getattr(cls, "__abstractmethods__", False))
 
 
@@ -98,7 +98,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
     names.sort()
     return names
 
-  def config_classes(self) -> list[Type[ConfigObject]]:
+  def config_classes(self) -> list[type[ConfigObject]]:
     config_classes = list(get_all_subclasses(ConfigObject))
     config_classes = [
         cls for cls in config_classes if not cls.__name__.startswith("_")
@@ -328,7 +328,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
 
   def _benchmark_help_data(
       self,
-      search_str: Optional[str] = None,
+      search_str: str | None = None,
   ) -> dict[str, Any]:
     benchmarks_data: dict[str, dict[str, Any]] = {}
     for benchmark_cls in self.cli.BENCHMARKS:
@@ -393,7 +393,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
   def _config_parser_help_data(
       self,
       config_parsers: list[ConfigParser],
-      usage_lookup: Optional[Mapping[str, list[str]]] = None
+      usage_lookup: Mapping[str, list[str]] | None = None
   ) -> dict[str, dict[str, Any]]:
     config_data: dict[str, dict[str, Any]] = {}
     for config_parser in config_parsers:

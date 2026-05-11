@@ -8,8 +8,7 @@ import argparse
 import dataclasses
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Self, \
-    TypeAlias
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, TypeAlias
 
 from typing_extensions import override
 
@@ -30,8 +29,7 @@ class ValidationMode(StrEnumWithHelp):
   SKIP = ("skip", "Don't perform any env validation")
 
 
-def merge_bool(name: str, left: Optional[bool],
-               right: Optional[bool]) -> Optional[bool]:
+def merge_bool(name: str, left: bool | None, right: bool | None) -> bool | None:
   if left is None:
     return right
   if right is None:
@@ -42,8 +40,8 @@ def merge_bool(name: str, left: Optional[bool],
   return left
 
 
-def merge_number_max(name: str, left: Optional[Number],
-                     right: Optional[Number]) -> Optional[Number]:
+def merge_number_max(name: str, left: Number | None,
+                     right: Number | None) -> Number | None:
   del name
   if left is None:
     return right
@@ -52,8 +50,8 @@ def merge_number_max(name: str, left: Optional[Number],
   return max(left, right)
 
 
-def merge_number_min(name: str, left: Optional[Number],
-                     right: Optional[Number]) -> Optional[Number]:
+def merge_number_min(name: str, left: Number | None,
+                     right: Number | None) -> Number | None:
   del name
   if left is None:
     return right
@@ -62,8 +60,7 @@ def merge_number_min(name: str, left: Optional[Number],
   return min(left, right)
 
 
-def merge_str(name: str, left: Optional[str],
-              right: Optional[str]) -> Optional[str]:
+def merge_str(name: str, left: str | None, right: str | None) -> str | None:
   if left is None:
     return right
   if right is None:
@@ -74,8 +71,8 @@ def merge_str(name: str, left: Optional[str],
   return left
 
 
-def merge_str_list(name: str, left: Optional[list[str]],
-                   right: Optional[list[str]]) -> Optional[list[str]]:
+def merge_str_list(name: str, left: list[str] | None,
+                   right: list[str] | None) -> list[str] | None:
   del name
   if left is None:
     return right
@@ -84,8 +81,8 @@ def merge_str_list(name: str, left: Optional[list[str]],
   return left + right
 
 
-def merge_duration_max(name: str, left: Optional[dt.timedelta],
-                       right: Optional[dt.timedelta]) -> Optional[dt.timedelta]:
+def merge_duration_max(name: str, left: dt.timedelta | None,
+                       right: dt.timedelta | None) -> dt.timedelta | None:
   del name
   if not left:
     return right
@@ -94,7 +91,7 @@ def merge_duration_max(name: str, left: Optional[dt.timedelta],
   return max(left, right)
 
 
-ENV_CONFIG_PRESETS: dict[str, "EnvConfig"] = {}
+ENV_CONFIG_PRESETS: dict[str, EnvConfig] = {}
 
 
 @dataclasses.dataclass(frozen=True)
@@ -128,7 +125,7 @@ class EnvConfig(ConfigObject):
     if preset := ENV_CONFIG_PRESETS.get(value):
       return preset
     raise argparse.ArgumentTypeError(
-        f"Unknown host config preset {repr(value)}. "
+        f"Unknown host config preset {value!r}. "
         f"Choices are {','.join(ENV_CONFIG_PRESETS.keys())}")
 
   @classmethod

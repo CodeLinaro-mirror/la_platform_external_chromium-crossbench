@@ -7,8 +7,7 @@ from __future__ import annotations
 import abc
 import contextlib
 import datetime as dt
-from typing import TYPE_CHECKING, Any, Generic, Iterable, Iterator, Optional, \
-    TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Iterable, Iterator, TypeVar
 
 from typing_extensions import override
 
@@ -142,9 +141,9 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     return maybe_pid
 
   def browser_result(self,
-                     url: Optional[Iterable[str]] = None,
-                     file: Optional[Iterable[AnyPath]] = None,
-                     perfetto: Optional[Iterable[AnyPath]] = None,
+                     url: Iterable[str] | None = None,
+                     file: Iterable[AnyPath] | None = None,
+                     perfetto: Iterable[AnyPath] | None = None,
                      **kwargs: Iterable[AnyPath]) -> BrowserProbeResult:
     """Helper to create BrowserProbeResult that might be stored on a remote
     browser/device and need to be copied over to the local machine."""
@@ -152,9 +151,9 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
         self.result_origin, url=url, file=file, perfetto=perfetto, **kwargs)
 
   def local_result(self,
-                   url: Optional[Iterable[str]] = None,
-                   file: Optional[Iterable[LocalPath]] = None,
-                   perfetto: Optional[Iterable[LocalPath]] = None,
+                   url: Iterable[str] | None = None,
+                   file: Iterable[LocalPath] | None = None,
+                   perfetto: Iterable[LocalPath] | None = None,
                    **kwargs: Iterable[LocalPath]) -> LocalProbeResult:
     """Helper to create LocalProbeResult."""
     return LocalProbeResult(url=url, file=file, perfetto=perfetto, **kwargs)

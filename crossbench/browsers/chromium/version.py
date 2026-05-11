@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Final, Optional
+from typing import Final
 
 from typing_extensions import override
 
@@ -48,10 +48,10 @@ class ChromiumVersion(BrowserVersion):
       raise cls.parse_error("Got empty version match.", full_version)
     prefix = matches["prefix"]
     if not cls._validate_prefix(prefix):
-      raise cls.parse_error(f"Wrong prefix {repr(prefix)}", full_version)
+      raise cls.parse_error(f"Wrong prefix {prefix!r}", full_version)
     suffix = matches["suffix"]
     if not cls._validate_suffix(suffix):
-      raise cls.parse_error(f"Wrong suffix {repr(suffix)}", full_version)
+      raise cls.parse_error(f"Wrong suffix {suffix!r}", full_version)
 
     if not version_str:
       return cls._channel_version(channel_str, full_version)
@@ -90,9 +90,8 @@ class ChromiumVersion(BrowserVersion):
     try:
       parts = tuple(map(int, parts_str))
     except ValueError as e:
-      raise cls.parse_error(
-          f"Could not parse version parts {repr(version_str)}",
-          full_version) from e
+      raise cls.parse_error(f"Could not parse version parts {version_str!r}",
+                            full_version) from e
     if not parts_str:
       raise cls.parse_error("Need at least one version number part.",
                             full_version)
@@ -104,7 +103,7 @@ class ChromiumVersion(BrowserVersion):
     return parts, channel, version_str
 
   @classmethod
-  def _validate_prefix(cls, prefix: Optional[str]) -> bool:
+  def _validate_prefix(cls, prefix: str | None) -> bool:
     if not prefix:
       return True
     prefix = prefix.lower()
@@ -117,7 +116,7 @@ class ChromiumVersion(BrowserVersion):
                            full_version: str) -> BrowserVersionChannel:
     if channel := cls._CHANNEL_LOOKUP.get(channel_str.lower()):
       return channel
-    raise cls.parse_error(f"Unknown channel {repr(channel_str)}", full_version)
+    raise cls.parse_error(f"Unknown channel {channel_str!r}", full_version)
 
   @classmethod
   def _parse_default_channel(cls, full_version: str) -> BrowserVersionChannel:
@@ -128,7 +127,7 @@ class ChromiumVersion(BrowserVersion):
     return BrowserVersionChannel.STABLE
 
   @classmethod
-  def _validate_suffix(cls, suffix: Optional[str]) -> bool:
+  def _validate_suffix(cls, suffix: str | None) -> bool:
     if not suffix:
       return True
     return bool(cls._VALID_SUFFIX_MATCH.fullmatch(suffix))
@@ -175,7 +174,7 @@ class ChromeDriverVersion(ChromiumVersion):
 
   @classmethod
   @override
-  def _validate_prefix(cls, prefix: Optional[str]) -> bool:
+  def _validate_prefix(cls, prefix: str | None) -> bool:
     if not prefix:
       return False
     return prefix.lower() in ("chromedriver ", "chromedriver-",
@@ -190,6 +189,6 @@ class ChromeDriverVersion(ChromiumVersion):
 
   @classmethod
   @override
-  def _validate_suffix(cls, suffix: Optional[str]) -> bool:
+  def _validate_suffix(cls, suffix: str | None) -> bool:
     # TODO: extract commit hash / branch info from newer versions
     return True

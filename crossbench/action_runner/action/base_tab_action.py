@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import functools
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -27,7 +27,7 @@ class BaseTabAction(Action, metaclass=abc.ABCMeta):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
         "tab_index",
@@ -46,10 +46,10 @@ class BaseTabAction(Action, metaclass=abc.ABCMeta):
     return parser
 
   def __init__(self,
-               tab_index: Optional[int] = None,
-               relative_tab_index: Optional[int] = None,
-               title: Optional[re.Pattern] = None,
-               url: Optional[re.Pattern] = None,
+               tab_index: int | None = None,
+               relative_tab_index: int | None = None,
+               title: re.Pattern | None = None,
+               url: re.Pattern | None = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._tab_index = tab_index
@@ -59,19 +59,19 @@ class BaseTabAction(Action, metaclass=abc.ABCMeta):
     super().__init__(timeout, index)
 
   @property
-  def title(self) -> Optional[re.Pattern]:
+  def title(self) -> re.Pattern | None:
     return self._title
 
   @property
-  def url(self) -> Optional[re.Pattern]:
+  def url(self) -> re.Pattern | None:
     return self._url
 
   @property
-  def tab_index(self) -> Optional[int]:
+  def tab_index(self) -> int | None:
     return self._tab_index
 
   @property
-  def relative_tab_index(self) -> Optional[int]:
+  def relative_tab_index(self) -> int | None:
     return self._relative_tab_index
 
   @override

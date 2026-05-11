@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import copy
 import csv
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING
 from unittest import mock
 
 from typing_extensions import override
@@ -28,23 +28,23 @@ class MotionMark1BaseTestCase(
   @property
   @abc.abstractmethod
   @override
-  def benchmark_cls(self) -> Type[MotionMark1Benchmark]:
+  def benchmark_cls(self) -> type[MotionMark1Benchmark]:
     pass
 
   @property
   @abc.abstractmethod
   @override
-  def story_cls(self) -> Type[MotionMark1Story]:
+  def story_cls(self) -> type[MotionMark1Story]:
     pass
 
   @property
   @abc.abstractmethod
-  def probe_cls(self) -> Type[MotionMark1Probe]:
+  def probe_cls(self) -> type[MotionMark1Probe]:
     pass
 
   @property
   @abc.abstractmethod
-  def probe_context_cls(self) -> Type[MotionMark1ProbeContext]:
+  def probe_context_cls(self) -> type[MotionMark1ProbeContext]:
     pass
 
   EXAMPLE_PROBE_DATA = [{
@@ -123,7 +123,7 @@ class MotionMark1BaseTestCase(
       self.assertNotIn(self.story_cls.URL, urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
-  def _test_run(self, custom_url: Optional[str] = None, throw: bool = False):
+  def _test_run(self, custom_url: str | None = None, throw: bool = False):
     stories = self.story_cls.from_names(["Multiply"], url=custom_url)
     repetitions = 3
     # The order should match Runner.get_runs

@@ -9,12 +9,12 @@ import dataclasses
 import datetime as dt
 import functools
 import logging
-import os
 import math
+import os
 import re
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, Final, Generator, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Final, Generator, Mapping
 
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
@@ -86,7 +86,7 @@ class AndroidDeviceInfo(DeviceInfo):
 
 
 def _find_adb_bin(platform: Platform,
-                  adb_bin: Optional[pth.AnyPath] = None) -> pth.AnyPath:
+                  adb_bin: pth.AnyPath | None = None) -> pth.AnyPath:
   if adb_bin:
     return platform.parse_binary_path(adb_bin)
   if adb_bin := Binaries.ADB.search(platform):
@@ -98,7 +98,7 @@ def _find_adb_bin(platform: Platform,
 
 def adb_devices(
     platform: Platform,
-    adb_bin: Optional[pth.AnyPath] = None) -> dict[str, AndroidDeviceInfo]:
+    adb_bin: pth.AnyPath | None = None) -> dict[str, AndroidDeviceInfo]:
   adb_bin = adb_bin or _find_adb_bin(platform)
   output = platform.sh_stdout(adb_bin, "devices", "-l")
   raw_lines = output.strip().splitlines()[1:]
@@ -133,9 +133,9 @@ class Adb:
 
   def __init__(self,
                host_platform: Platform,
-               device_identifier: Optional[str] = None,
-               adb_bin: Optional[pth.AnyPath] = None,
-               bundletool: Optional[pth.AnyPath] = None) -> None:
+               device_identifier: str | None = None,
+               adb_bin: pth.AnyPath | None = None,
+               bundletool: pth.AnyPath | None = None) -> None:
     self._host_platform: Final[Platform] = host_platform
     self._adb_bin: Final[pth.AnyPath] = _find_adb_bin(host_platform, adb_bin)
     self._bundletool: Final[pth.AnyPath
@@ -147,7 +147,7 @@ class Adb:
 
   def _start(
       self,
-      device_identifier: Optional[str] = None) -> tuple[str, AndroidDeviceInfo]:
+      device_identifier: str | None = None) -> tuple[str, AndroidDeviceInfo]:
     self.start_server()
     serial_id, device_info = self._find_serial_id(device_identifier)
     logging.debug("ADB Selected device: %s %s", serial_id, device_info)
@@ -156,7 +156,7 @@ class Adb:
 
   def _find_serial_id(
       self,
-      device_identifier: Optional[str] = None) -> tuple[str, AndroidDeviceInfo]:
+      device_identifier: str | None = None) -> tuple[str, AndroidDeviceInfo]:
     devices = self.devices()
     if not devices:
       raise ValueError("adb could not find any attached devices."
@@ -165,9 +165,9 @@ class Adb:
       if len(devices) != 1:
         raise ValueError(
             f"Too many adb devices attached, please specify one of: {devices}")
-      device_identifier = list(devices.keys())[0]
+      device_identifier = next(iter(devices.keys()))
     if not device_identifier:
-      raise ValueError(f"Invalid device identifier: {repr(device_identifier)}")
+      raise ValueError(f"Invalid device identifier: {device_identifier!r}")
     if device_identifier in devices:
       return device_identifier, devices[device_identifier]
     matches: list[str] = []
@@ -187,8 +187,8 @@ class Adb:
   def __str__(self) -> str:
     info = f"info='{self._device_info}'"
     if model := self._device_info.model:
-      info = f"model={repr(model)}"
-    return f"adb(device_id={repr(self._serial_id)}, {info})"
+      info = f"model={model!r}"
+    return f"adb(device_id={self._serial_id!r}, {info})"
 
   def has_root(self) -> bool:
     return self.shell_stdout("id").startswith("uid=0(root)")
@@ -284,8 +284,8 @@ class Adb:
       self,
       *args: CmdArg,
       shell: bool = False,
-      env: Optional[Mapping[str, str]] = None,
-      cwd: Optional[pth.AnyPath] = None,
+      env: Mapping[str, str] | None = None,
+      cwd: pth.AnyPath | None = None,
   ) -> ListCmdArgs:
     if env:
       # TODO: support env with "export FOO=bar;" prefixes
@@ -311,8 +311,8 @@ class Adb:
                    quiet: bool = False,
                    encoding: str = "utf-8",
                    stdin: ProcessIo = None,
-                   env: Optional[Mapping[str, str]] = None,
-                   cwd: Optional[pth.AnyPath] = None,
+                   env: Mapping[str, str] | None = None,
+                   cwd: pth.AnyPath | None = None,
                    check: bool = True) -> str:
     result = self.shell_stdout_bytes(
         *args,
@@ -329,8 +329,8 @@ class Adb:
                          shell: bool = False,
                          quiet: bool = False,
                          stdin: ProcessIo = None,
-                         env: Optional[Mapping[str, str]] = None,
-                         cwd: Optional[pth.AnyPath] = None,
+                         env: Mapping[str, str] | None = None,
+                         cwd: pth.AnyPath | None = None,
                          check: bool = True) -> bytes:
     # -e: choose escape character, or "none"; default '~'
     # -n: don't read from stdin
@@ -348,8 +348,8 @@ class Adb:
             stdout: ProcessIo = None,
             stderr: ProcessIo = None,
             stdin: ProcessIo = None,
-            env: Optional[Mapping[str, str]] = None,
-            cwd: Optional[pth.AnyPath] = None,
+            env: Mapping[str, str] | None = None,
+            cwd: pth.AnyPath | None = None,
             quiet: bool = False,
             check: bool = True) -> subprocess.CompletedProcess:
     # See shell_stdout for more `adb shell` options.
@@ -490,7 +490,7 @@ class Adb:
   def install(self,
               bundle: pth.AnyPath,
               allow_downgrade: bool = False,
-              modules: Optional[str] = None) -> None:
+              modules: str | None = None) -> None:
     if bundle.suffix == ".apks":
       self.install_apks(bundle, allow_downgrade, modules)
     if bundle.suffix == ".apk":
@@ -510,7 +510,7 @@ class Adb:
   def install_apks(self,
                    apks: pth.AnyPath,
                    allow_downgrade: bool = False,
-                   modules: Optional[str] = None) -> None:
+                   modules: str | None = None) -> None:
     if not self._host_platform.exists(apks):
       raise ValueError(f"APK {apks} does not exist on {self._host_platform}.")
     if self._bundletool is None:
@@ -520,11 +520,9 @@ class Adb:
       binary = ["java", "-jar", str(self._bundletool)]
     else:
       binary = [str(self._bundletool)]
-    cmd = binary + [
-        "install-apks",
-        f"--apks={apks}",
-        f"--adb={self._adb_bin}",
-        f"--device-id={self._serial_id}",
+    cmd = [
+        *binary, "install-apks", f"--apks={apks}", f"--adb={self._adb_bin}",
+        f"--device-id={self._serial_id}"
     ]
     if allow_downgrade:
       cmd.append("--allow-downgrade")
@@ -561,7 +559,7 @@ class Adb:
   FOCUSED_WINDOW_RE: Final[re.Pattern] = re.compile(
       r"mCurrentFocus=(Window\{.*\})")
 
-  def focused_window(self) -> Optional[str]:
+  def focused_window(self) -> str | None:
     activity_dump = self.dumpsys("activity", "activities")
     match = re.search(self.FOCUSED_WINDOW_RE, activity_dump)
     if match:
@@ -627,8 +625,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   def __init__(self,
                host_platform: Platform,
-               device_identifier: Optional[str] = None,
-               adb: Optional[Adb] = None) -> None:
+               device_identifier: str | None = None,
+               adb: Adb | None = None) -> None:
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
     self._adb: Final[Adb] = adb or Adb(host_platform, device_identifier)
@@ -720,7 +718,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return self._adb
 
   @override
-  def set_all_cpus_power_mode(self, mode: Optional[str]) -> None:
+  def set_all_cpus_power_mode(self, mode: str | None) -> None:
     if not mode:
       return
     self.adb.shell(  # noqa: S604
@@ -789,7 +787,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
 
   @override
-  def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+  def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
     app_or_bin_path = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
@@ -825,7 +823,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     return []
 
   @override
-  def foreground_process(self) -> Optional[dict[str, Any]]:
+  def foreground_process(self) -> dict[str, Any] | None:
     # adb shell dumpsys activity activities
     # TODO: implement
     return None
@@ -852,8 +850,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       self,
       *args: CmdArg,
       shell: bool = False,
-      env: Optional[Mapping[str, str]] = None,
-      cwd: Optional[pth.AnyPath] = None,
+      env: Mapping[str, str] | None = None,
+      cwd: pth.AnyPath | None = None,
   ) -> ListCmdArgs:
     return self.adb.build_shell_cmd(*args, shell=shell, env=env, cwd=cwd)
 
@@ -865,8 +863,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
          stdout: ProcessIo = None,
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
-         env: Optional[Mapping[str, str]] = None,
-         cwd: Optional[pth.AnyPath] = None,
+         env: Mapping[str, str] | None = None,
+         cwd: pth.AnyPath | None = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
     return self.adb.shell(
@@ -887,8 +885,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                       shell: bool = False,
                       quiet: bool = False,
                       stdin: ProcessIo = None,
-                      env: Optional[Mapping[str, str]] = None,
-                      cwd: Optional[pth.AnyPath] = None,
+                      env: Mapping[str, str] | None = None,
+                      cwd: pth.AnyPath | None = None,
                       check: bool = True) -> bytes:
     return self.adb.shell_stdout_bytes(
         *args,
@@ -918,9 +916,9 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   def _mktemp_sh(self,
                  is_dir: bool,
-                 suffix: Optional[str] = None,
-                 prefix: Optional[str] = None,
-                 dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+                 suffix: str | None = None,
+                 prefix: str | None = None,
+                 dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
     temp_path = super()._mktemp_sh(is_dir, prefix=prefix, dir=dir)
     if not suffix:
       return temp_path
@@ -934,8 +932,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     self.sh("pkill", process_name, check=False)
 
   @override
-  def processes(self,
-                attrs: Optional[list[str]] = None) -> list[dict[str, Any]]:
+  def processes(self, attrs: list[str] | None = None) -> list[dict[str, Any]]:
     lines = self.sh_stdout("ps", "-A", "-o", "PID,NAME").splitlines()
     if len(lines) == 1:
       return []
@@ -1026,9 +1023,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                      timeout: dt.timedelta) -> pth.AnyPath:
 
     timeout_ms = timeout / dt.timedelta(milliseconds=1)
-    cfg_path = self.path("/data/misc/perfetto-configs/{}.txtpb".format(label))
-    dump_path = self.path(
-        "/data/misc/perfetto-traces/{}.trace.pb".format(label))
+    cfg_path = self.path(f"/data/misc/perfetto-configs/{label}.txtpb")
+    dump_path = self.path(f"/data/misc/perfetto-traces/{label}.trace.pb")
     cfg = ANDROID_JAVA_HPROF_PERFETTO_CFG.format(
         size_kb=trace_buffer_size_kb,
         process_cmdline=identifier,

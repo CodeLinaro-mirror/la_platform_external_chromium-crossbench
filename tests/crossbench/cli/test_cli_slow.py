@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import hjson
@@ -35,7 +35,7 @@ class CliSlowTestCase(BaseCliTestCase):
     subcommands = (benchmark_cls.NAME,)
     # Only test one alias for speeding up testing:
     if aliases := benchmark_cls.aliases():
-      subcommands = subcommands + (aliases[0],)
+      subcommands = (*subcommands, aliases[0])
     return subcommands
 
   def test_subcommand_help(self):
@@ -80,7 +80,7 @@ class CliSlowTestCase(BaseCliTestCase):
 
   def test_browser_identifiers(self):
     # Use BrowserAliasesTestCase for more detailed aliases
-    browsers: dict[str, Type[mock_browser.MockBrowser]] = {
+    browsers: dict[str, type[mock_browser.MockBrowser]] = {
         "chrome": mock_browser.MockChromeStable,
         "edge": mock_browser.MockEdgeStable,
         "firefox": mock_browser.MockFirefox,
@@ -90,7 +90,7 @@ class CliSlowTestCase(BaseCliTestCase):
           "safari": mock_browser.MockSafari,
       })
 
-    items_chunk: list[tuple[str, Type[mock_browser.MockBrowser]]] = list(
+    items_chunk: list[tuple[str, type[mock_browser.MockBrowser]]] = list(
         browsers.items())
     with self.cli() as cli:
       for identifier, browser_cls in items_chunk:
@@ -154,14 +154,15 @@ class CliSlowTestCase(BaseCliTestCase):
         self.assertEqual(network.path, local_server_path)
 
   def test_multiple_browser_compatible_flags(self):
-    mock_browsers: list[Type[mock_browser.MockBrowser]] = [
+    mock_browsers: list[type[mock_browser.MockBrowser]] = [
         mock_browser.MockChromeStable,
         mock_browser.MockFirefox,
         mock_browser.MockChromeDev,
     ]
 
     def mock_get_browser_cls(browser_config: BrowserConfig):
-      self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
+      self.assertEqual(browser_config.driver.driver_type,
+                       BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
         if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls

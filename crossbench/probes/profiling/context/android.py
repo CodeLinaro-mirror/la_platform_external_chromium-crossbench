@@ -9,7 +9,7 @@ import io
 import logging
 import subprocess
 import time
-from typing import TYPE_CHECKING, Iterable, Optional, cast
+from typing import TYPE_CHECKING, Iterable, cast
 
 from typing_extensions import override
 
@@ -138,11 +138,11 @@ class AndroidProfilingContext(PosixProfilingContext):
 def generate_simpleperf_command_line(
     target: TargetMode,
     app_name: str,
-    renderer_pid: Optional[int],
-    renderer_main_tid: Optional[int],
+    renderer_pid: int | None,
+    renderer_main_tid: int | None,
     call_graph_mode: CallGraphMode,
-    frequency: Optional[int | str],
-    count: Optional[int],
+    frequency: int | str | None,
+    count: int | None,
     cpus: tuple[int, ...],
     events: tuple[str, ...],
     grouped_events: tuple[str, ...],

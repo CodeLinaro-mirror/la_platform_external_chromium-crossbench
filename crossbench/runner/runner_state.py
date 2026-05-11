@@ -11,7 +11,7 @@ import enum
 import json
 import os
 import threading
-from typing import TYPE_CHECKING, Iterator, Optional, Set
+from typing import TYPE_CHECKING, Iterator
 
 from typing_extensions import override
 
@@ -42,8 +42,8 @@ class RunnerStateMachine(StateMachine[RunnerState]):
     super().__init__(RunnerState.INITIAL)
     self._status_lock: threading.Lock = threading.Lock()
     self._status_file: pth.LocalPath = runner.out_dir / "status.json"
-    self._active_runs: Set[int] = set()
-    self._pid: Optional[int] = os.getpid()
+    self._active_runs: set[int] = set()
+    self._pid: int | None = os.getpid()
     self._success_count: int = 0
     self._failed_count: int = 0
     self._total_runs: int = 0

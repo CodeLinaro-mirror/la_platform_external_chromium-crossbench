@@ -7,8 +7,7 @@ from __future__ import annotations
 import abc
 import enum
 import logging
-from typing import TYPE_CHECKING, ClassVar, Hashable, Iterable, Optional, \
-    Self, Set, Type, TypeVar
+from typing import TYPE_CHECKING, ClassVar, Hashable, Iterable, Self, TypeVar
 
 from typing_extensions import override
 
@@ -43,7 +42,7 @@ ProbeT = TypeVar("ProbeT", bound="Probe")
 
 class ProbeConfigParser(ConfigParser[ProbeT]):
 
-  def __init__(self, probe_cls: Type[ProbeT]) -> None:
+  def __init__(self, probe_cls: type[ProbeT]) -> None:
     probe_name: str = probe_cls.NAME
     if not probe_name:
       raise ValueError("Missing probe name.")
@@ -52,10 +51,10 @@ class ProbeConfigParser(ConfigParser[ProbeT]):
         key=probe_name,
         title=f"{probe_name} probe parser",
         unused_properties_mode=UnusedPropertiesMode.ERROR)
-    self._probe_cls: Type[ProbeT] = probe_cls
+    self._probe_cls: type[ProbeT] = probe_cls
 
   @property
-  def probe_cls(self) -> Type[ProbeT]:
+  def probe_cls(self) -> type[ProbeT]:
     return self._probe_cls
 
 
@@ -113,11 +112,11 @@ class Probe(ProbeResultKey, abc.ABC):
     return ProbeConfigParser(cls)
 
   @classmethod
-  def parse_str(cls: Type[ProbeT], config_str: str) -> ProbeT:
+  def parse_str(cls, config_str: str) -> Self:
     return cls.config_parser().parse_str(config_str)
 
   @classmethod
-  def parse_dict(cls: Type[ProbeT], config_data: dict) -> ProbeT:
+  def parse_dict(cls, config_data: dict) -> Self:
     return cls.config_parser().parse_dict(config_data)
 
   @classmethod
@@ -139,7 +138,7 @@ class Probe(ProbeResultKey, abc.ABC):
 
   def __init__(self) -> None:
     assert self.name is not None, "A Probe must define a name"
-    self._browsers: Set[Browser] = set()
+    self._browsers: set[Browser] = set()
 
   def __str__(self) -> str:
     return type(self).__name__
@@ -219,7 +218,7 @@ class Probe(ProbeResultKey, abc.ABC):
   def expect_browser(self,
                      browser: Browser,
                      attributes: BrowserAttributes,
-                     message: Optional[str] = None) -> None:
+                     message: str | None = None) -> None:
     if attributes in browser.attributes():
       return
     if not message:
@@ -286,10 +285,10 @@ class Probe(ProbeResultKey, abc.ABC):
     return self.symlinked_single_run_result(group)
 
   def create_context(self: Self, run: Run) -> ProbeContext[Self]:
-    probe_cls: Type[ProbeContext[Self]] = self.get_context_cls()
+    probe_cls: type[ProbeContext[Self]] = self.get_context_cls()
     return probe_cls(self, run)
 
-  def get_context_cls(self: Self) -> Type[ProbeContext[Self]]:
+  def get_context_cls(self: Self) -> type[ProbeContext[Self]]:
     raise NotImplementedError(f"Missing default ProbeContext class for {self}")
 
   def create_session_context(

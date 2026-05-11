@@ -8,7 +8,7 @@ import datetime as dt
 import logging
 import math
 import time
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Iterator
 
 if TYPE_CHECKING:
   from crossbench.runner.timing import AnyTime, AnyTimeUnit
@@ -40,7 +40,7 @@ class WaitRange:
                min: AnyTime = 0.1,
                timeout: AnyTime = 10,
                factor: float = 1.01,
-               max: Optional[AnyTime] = None,
+               max: AnyTime | None = None,
                max_iterations: float = math.inf,
                delay: AnyTime = 0) -> None:
     self._min: dt.timedelta = as_timedelta(min)

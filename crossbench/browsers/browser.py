@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Sequence
 
 from ordered_set import OrderedSet
 
@@ -56,8 +56,8 @@ class Browser(abc.ABC):
 
   def __init__(self,
                label: str,
-               path: Optional[pth.AnyPath] = None,
-               settings: Optional[Settings] = None) -> None:
+               path: pth.AnyPath | None = None,
+               settings: Settings | None = None) -> None:
     self._settings = settings or Settings()
     self._platform = self._settings.platform
     self.label: str = label
@@ -81,7 +81,7 @@ class Browser(abc.ABC):
     # For chrome browsers this corresponds to the user-data-dir.
     self._cache_dir: pth.AnyPath | None = None
 
-  def _init_path_and_version(self, path: Optional[pth.AnyPath] = None) -> None:
+  def _init_path_and_version(self, path: pth.AnyPath | None = None) -> None:
     if not path:
       # TODO: separate class for remote browser (selenium) without an explicit
       # binary path.
@@ -177,11 +177,11 @@ class Browser(abc.ABC):
     return self._settings.http_request_timeout
 
   @property
-  def driver_path(self) -> Optional[pth.AnyPath]:
+  def driver_path(self) -> pth.AnyPath | None:
     return self._settings.driver_path
 
   @property
-  def driver_path_raw(self) -> Optional[pth.AnyPath]:
+  def driver_path_raw(self) -> pth.AnyPath | None:
     return self.driver_path
 
   @property
@@ -208,11 +208,11 @@ class Browser(abc.ABC):
     return str(self.js("return window.navigator.userAgent"))
 
   @property
-  def pid(self) -> Optional[int]:
+  def pid(self) -> int | None:
     return self._pid
 
   @property
-  def is_running_process(self) -> Optional[bool]:
+  def is_running_process(self) -> bool | None:
     # TODO: activate this method again
     if self.pid is None:
       return None
@@ -250,12 +250,12 @@ class Browser(abc.ABC):
     return self.platform.is_remote
 
   @property
-  def cache_dir(self) -> Optional[pth.AnyPath]:
+  def cache_dir(self) -> pth.AnyPath | None:
     """Default caching dir, if possible for profile independent data"""
     return self._cache_dir
 
   @property
-  def profile_data_dir(self) -> Optional[pth.AnyPath]:
+  def profile_data_dir(self) -> pth.AnyPath | None:
     """
     Profile-dependent cache (can be the same as cache_dir).
     Fallback to cache_dir if not overridden by subclasses.
@@ -271,7 +271,7 @@ class Browser(abc.ABC):
     return self.log_file.with_suffix(".stdout.log")
 
   @property
-  def driver_log_file(self) -> Optional[pth.LocalPath]:
+  def driver_log_file(self) -> pth.LocalPath | None:
     return None
 
   def _resolve_binary(self,
@@ -368,13 +368,13 @@ class Browser(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
+  def _setup_cache_dir(self) -> pth.AnyPath | None:
     pass
 
   def _teardown_cache_dir(self) -> None:
     self._clear_cache(self._cache_dir)
 
-  def _clear_cache(self, cache_dir: Optional[pth.AnyPath]) -> None:
+  def _clear_cache(self, cache_dir: pth.AnyPath | None) -> None:
     if self.clear_cache_dir and cache_dir:
       logging.debug("CLEAR CACHE: %s", cache_dir)
       self.platform.rm(cache_dir, missing_ok=True, dir=True)
@@ -387,7 +387,7 @@ class Browser(abc.ABC):
 
   def _log_browser_start(self,
                          args: tuple[str, ...],
-                         driver_path: Optional[pth.AnyPath] = None) -> None:
+                         driver_path: pth.AnyPath | None = None) -> None:
     logging.info("🌐 STARTING BROWSER Binary:  %s", self.path)
     logging.info("🏷️  STARTING BROWSER Version: %s", self.version)
     if driver_path:
@@ -443,9 +443,8 @@ class Browser(abc.ABC):
   def js(
       self,
       script: str,
-      timeout: Optional[dt.timedelta] = None,
-      arguments: Sequence[object] = ()
-  ) -> Any:
+      timeout: dt.timedelta | None = None,
+      arguments: Sequence[object] = ()) -> Any:
     pass
 
   def run_script_on_new_document(self, script: str) -> None:
@@ -462,10 +461,10 @@ class Browser(abc.ABC):
 
   def switch_tab(
       self,
-      title: Optional[re.Pattern] = None,
-      url: Optional[re.Pattern] = None,
-      tab_index: Optional[int] = None,
-      relative_tab_index: Optional[int] = None,
+      title: re.Pattern | None = None,
+      url: re.Pattern | None = None,
+      tab_index: int | None = None,
+      relative_tab_index: int | None = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
   ) -> str:
     del title
@@ -477,10 +476,10 @@ class Browser(abc.ABC):
 
   def close_tab(
       self,
-      title: Optional[re.Pattern] = None,
-      url: Optional[re.Pattern] = None,
-      tab_index: Optional[int] = None,
-      relative_tab_index: Optional[int] = None,
+      title: re.Pattern | None = None,
+      url: re.Pattern | None = None,
+      tab_index: int | None = None,
+      relative_tab_index: int | None = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
   ) -> None:
     del title
@@ -498,7 +497,7 @@ class Browser(abc.ABC):
     raise NotImplementedError(f"Getting current url is not supported by {self}")
 
   @abc.abstractmethod
-  def show_url(self, url: str, target: Optional[str] = None) -> None:
+  def show_url(self, url: str, target: str | None = None) -> None:
     pass
 
   def switch_to_new_tab(self) -> None:

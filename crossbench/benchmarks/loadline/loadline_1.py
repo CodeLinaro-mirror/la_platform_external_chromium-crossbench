@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Sequence, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Sequence
 
 import numpy as np
 from typing_extensions import override
@@ -32,7 +32,8 @@ if TYPE_CHECKING:
 # that might affect the benchmark score.
 VERSION_STRING: Final[str] = "1.5.0"
 
-_DEPRECATION_MESSAGE = "⚠️  Please run LoadLine2 which supersedes this benchmark."
+_DEPRECATION_MESSAGE = (
+    "⚠️  Please run LoadLine2 which supersedes this benchmark.")
 
 
 def process_scores(df: pd.DataFrame) -> pd.DataFrame:
@@ -45,8 +46,9 @@ def process_scores(df: pd.DataFrame) -> pd.DataFrame:
   df["TOTAL_SCORE"] = np.exp(np.log(df).mean(axis=1))
   df.index.rename("browser", inplace=True)
   df = df.reindex(
-      columns=(["TOTAL_SCORE"] +
-               sorted(c for c in df.columns if c != "TOTAL_SCORE")))
+      columns=(
+          ["TOTAL_SCORE", *sorted(
+              c for c in df.columns if c != "TOTAL_SCORE")]))
   return df
 
 
@@ -69,7 +71,7 @@ class LoadLine1Probe(LoadLineProbe):
     self._warnings.append(_DEPRECATION_MESSAGE)
 
   @override
-  def get_context_cls(self,) -> Type[LoadLine1ProbeContext]:
+  def get_context_cls(self,) -> type[LoadLine1ProbeContext]:
     return LoadLine1ProbeContext
 
   @override

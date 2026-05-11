@@ -34,7 +34,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
         WinMockPlatform(),
         # TODO: add adb testing
     )
-    self._all_platforms = (PLATFORM,) + self._all_mock_platforms
+    self._all_platforms = (PLATFORM, *self._all_mock_platforms)
 
   def all_mock_platforms(self):
     yield from self._all_mock_platforms

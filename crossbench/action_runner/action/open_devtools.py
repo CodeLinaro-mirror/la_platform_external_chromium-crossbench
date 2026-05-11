@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, ClassVar, Optional, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -29,11 +29,11 @@ class OpenDevToolsAction(BaseTabAction):
   TYPE: ClassVar[ActionType] = ActionType.OPEN_DEVTOOLS
 
   def __init__(self,
-               panel_name: Optional[str] = None,
-               tab_index: Optional[int] = None,
-               relative_tab_index: Optional[int] = None,
-               title: Optional[re.Pattern] = None,
-               url: Optional[re.Pattern] = None,
+               panel_name: str | None = None,
+               tab_index: int | None = None,
+               relative_tab_index: int | None = None,
+               title: re.Pattern | None = None,
+               url: re.Pattern | None = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._panel_name = panel_name
@@ -46,7 +46,7 @@ class OpenDevToolsAction(BaseTabAction):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument("panel_name", type=ObjectParser.non_empty_str)
     return parser

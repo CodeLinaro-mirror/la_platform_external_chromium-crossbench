@@ -453,8 +453,8 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
       self.assertEqual(variant.index, index)
 
   def test_product_conflicting(self):
-    group_a = FlagsGroupConfig.parse(("--foo=1"))
-    group_b = FlagsGroupConfig.parse(("--foo=2"))
+    group_a = FlagsGroupConfig.parse("--foo=1")
+    group_b = FlagsGroupConfig.parse("--foo=2")
     with self.assertRaises(ValueError) as cm:
       group_a.product(group_b)
     self.assertIn("different previous value", str(cm.exception))
@@ -541,7 +541,7 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
         extra_browser_args=("--foo=1",), other_browser_args=("--bar=2"))
     group_args = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_args), 1)
-    group_a = FlagsGroupConfig.parse(("--bar=2 --foo=1"))
+    group_a = FlagsGroupConfig.parse("--bar=2 --foo=1")
     group_b = FlagsGroupConfig.parse("--bar=2 --foo=1")
     self.assertEqual(group_args, group_a)
     self.assertEqual(group_args, group_b)
@@ -552,9 +552,9 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
         other_browser_args=("--js-flags=--bar=2"))
     group_args = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_args), 1)
-    group_a = FlagsGroupConfig.parse(("--js-flags='--bar=2 --foo=1'"))
+    group_a = FlagsGroupConfig.parse("--js-flags='--bar=2 --foo=1'")
     group_b = FlagsGroupConfig.parse("--js-flags='--bar=2 --foo=1'")
-    group_c = FlagsGroupConfig.parse(("--js-flags='--bar=2,--foo=1'"))
+    group_c = FlagsGroupConfig.parse("--js-flags='--bar=2,--foo=1'")
     self.assertEqual(group_args, group_a)
     self.assertEqual(group_args, group_b)
     self.assertEqual(group_args, group_c)

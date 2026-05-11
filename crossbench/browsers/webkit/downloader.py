@@ -7,8 +7,7 @@ from __future__ import annotations
 import os
 import shutil
 import zipfile
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, \
-    Optional, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping
 
 from typing_extensions import override
 
@@ -36,7 +35,7 @@ class WebKitDownloader(Downloader):
   @classmethod
   @override
   def _get_loader_cls(
-      cls, browser_platform: Platform) -> Type[WebKitDownloader] | None:
+      cls, browser_platform: Platform) -> type[WebKitDownloader] | None:
     if browser_platform.is_macos:
       return WebKitDownloaderMacOS
     return None
@@ -96,14 +95,14 @@ class WebKitDownloaderMacOS(WebKitDownloader):
     pass
 
   @override
-  def _find_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
+  def _find_archive_url(self) -> tuple[BrowserVersion, str | None]:
     if not self.requested_version.is_complete:
       raise NotImplementedError(
           "Only full webkit version identifiers are supported.")
     folder_url = f"{self.BASE_URL}{self._platform_name}/"
     # We are not validating the URL here, since we don't have gsutil access
     # and there is no index page
-    return tuple(self._archive_urls(folder_url, self.requested_version))[0]
+    return next(iter(self._archive_urls(folder_url, self.requested_version)))
 
   @override
   def _download_archive(self, archive_url: str, tmp_dir: LocalPath) -> None:

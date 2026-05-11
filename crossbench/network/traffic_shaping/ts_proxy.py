@@ -15,8 +15,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Final, Iterator, Optional, Self, Type, \
-    TypeVar
+from typing import IO, TYPE_CHECKING, Final, Iterator, Self, TypeVar
 
 from typing_extensions import override
 
@@ -56,7 +55,7 @@ _PORT_RE: re.Pattern[str] = re.compile(r"Started Socks5 proxy server on "
                                        r"(?P<port>\d+)")
 
 
-def parse_ts_socks_proxy_port(output_line: str) -> Optional[int]:
+def parse_ts_socks_proxy_port(output_line: str) -> int | None:
   if match := _PORT_RE.match(output_line):
     return int(match.group("port"))
   return None
@@ -74,14 +73,14 @@ class TsProxyServer:
   def __init__(self,
                platform: Platform,
                ts_proxy_path: LocalPath,
-               host: Optional[str] = None,
-               socks_proxy_port: Optional[int] = None,
-               http_port: Optional[int] = None,
-               https_port: Optional[int] = None,
-               rtt_ms: Optional[int] = None,
-               in_kbps: Optional[int] = None,
-               out_kbps: Optional[int] = None,
-               window: Optional[int] = None,
+               host: str | None = None,
+               socks_proxy_port: int | None = None,
+               http_port: int | None = None,
+               https_port: int | None = None,
+               rtt_ms: int | None = None,
+               in_kbps: int | None = None,
+               out_kbps: int | None = None,
+               window: int | None = None,
                verbose: bool = True) -> None:
     self._platform: Final[Platform] = platform
     self._proc: TsProxyProcess | None = None
@@ -100,8 +99,8 @@ class TsProxyServer:
 
   @classmethod
   def verify_ports(cls,
-                   http_port: Optional[int] = None,
-                   https_port: Optional[int] = None) -> None:
+                   http_port: int | None = None,
+                   https_port: int | None = None) -> None:
     if https_port and not bool(http_port):
       raise ValueError(f"Got https_port={https_port} without a http port")
     if http_port is not None and http_port == https_port:
@@ -118,10 +117,10 @@ class TsProxyServer:
 
   def set_traffic_settings(
       self,
-      rtt_ms: Optional[int] = None,
-      in_kbps: Optional[int] = None,
-      out_kbps: Optional[int] = None,
-      window: Optional[int] = None,
+      rtt_ms: int | None = None,
+      in_kbps: int | None = None,
+      out_kbps: int | None = None,
+      window: int | None = None,
       timeout: int = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     assert self._proc, "ts_proxy is not running."
     self._proc.set_traffic_settings(rtt_ms, in_kbps, out_kbps, window, timeout)
@@ -136,19 +135,19 @@ class TsProxyServer:
     return self._ts_proxy_path
 
   @property
-  def rtt_ms(self) -> Optional[int]:
+  def rtt_ms(self) -> int | None:
     return self._rtt_ms
 
   @property
-  def in_kbps(self) -> Optional[int]:
+  def in_kbps(self) -> int | None:
     return self._in_kbps
 
   @property
-  def out_kbps(self) -> Optional[int]:
+  def out_kbps(self) -> int | None:
     return self._out_kbps
 
   @property
-  def window(self) -> Optional[int]:
+  def window(self) -> int | None:
     return self._window
 
   def start(self) -> None:
@@ -159,7 +158,7 @@ class TsProxyServer:
                                 self._out_kbps, self._window, self._verbose)
     atexit.register(self.stop)
 
-  def stop(self) -> Optional[str]:
+  def stop(self) -> str | None:
     if not self._proc:
       logging.debug("TsProxy: Attempting to stop server that is not running.")
       return None
@@ -172,9 +171,9 @@ class TsProxyServer:
     self.start()
     return self
 
-  def __exit__(self, exc_type: Optional[Type[BaseException]],
-               exc_value: Optional[BaseException],
-               traceback: Optional[TracebackType]) -> None:
+  def __exit__(self, exc_type: type[BaseException] | None,
+               exc_value: BaseException | None,
+               traceback: TracebackType | None) -> None:
     self.stop()
 
 
@@ -184,14 +183,14 @@ class TsProxyProcess:
   def __init__(self,
                platform: Platform,
                ts_proxy_path: LocalPath,
-               host: Optional[str] = None,
-               socks_proxy_port: Optional[int] = None,
-               http_port: Optional[int] = None,
-               https_port: Optional[int] = None,
-               rtt_ms: Optional[int] = None,
-               in_kbps: Optional[int] = None,
-               out_kbps: Optional[int] = None,
-               window: Optional[int] = None,
+               host: str | None = None,
+               socks_proxy_port: int | None = None,
+               http_port: int | None = None,
+               https_port: int | None = None,
+               rtt_ms: int | None = None,
+               in_kbps: int | None = None,
+               out_kbps: int | None = None,
+               window: int | None = None,
                verbose: bool = False,
                timeout: float = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     self._platform = platform
@@ -306,8 +305,8 @@ class TsProxyProcess:
     for _ in wait.wait_with_backoff(timeout):
       try:
         return self._stdout.readline().strip()
-      except IOError as io_error:
-        logging.debug("TsProxy: Error while reading tsproxy line: %s", io_error)
+      except OSError as os_error:
+        logging.debug("TsProxy: Error while reading tsproxy line: %s", os_error)
     return ""
 
   def _send_command(self,
@@ -336,10 +335,10 @@ class TsProxyProcess:
 
   def set_traffic_settings(
       self,
-      rtt_ms: Optional[int] = None,
-      in_kbps: Optional[int] = None,
-      out_kbps: Optional[int] = None,
-      window: Optional[int] = None,
+      rtt_ms: int | None = None,
+      in_kbps: int | None = None,
+      out_kbps: int | None = None,
+      window: int | None = None,
       timeout: float = ts_proxy_settings.DEFAULT_TIMEOUT) -> None:
     if rtt_ms is not None and self._rtt_ms != rtt_ms:
       assert rtt_ms >= 0, f"Invalid rtt value: {rtt_ms}"
@@ -363,7 +362,7 @@ class TsProxyProcess:
     #   self._send_command(f"set window {window}", timeout)
     #   self._window = window
 
-  def stop(self) -> Optional[str]:
+  def stop(self) -> str | None:
     self._send_command("exit")
     self._platform.terminate_gracefully(self._process)
     _, err = self._process.communicate()
@@ -375,11 +374,11 @@ class TsProxyTrafficShaper(TrafficShaper):
 
   def __init__(self,
                browser_platform: Platform,
-               ts_proxy_path: Optional[AnyPath] = None,
-               rtt_ms: Optional[int] = None,
-               in_kbps: Optional[int] = None,
-               out_kbps: Optional[int] = None,
-               window: Optional[int] = None) -> None:
+               ts_proxy_path: AnyPath | None = None,
+               rtt_ms: int | None = None,
+               in_kbps: int | None = None,
+               out_kbps: int | None = None,
+               window: int | None = None) -> None:
     super().__init__(browser_platform)
     if not ts_proxy_path:
       ts_proxy_path = TsProxyFinder(self.host_platform).local_path

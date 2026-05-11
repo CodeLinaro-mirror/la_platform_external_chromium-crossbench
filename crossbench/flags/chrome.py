@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Final, Iterable, Optional
+from typing import Final, Iterable
 
 from typing_extensions import override
 
@@ -84,7 +84,7 @@ class ChromeFlags(Flags):
   @override
   def _set(self,
            flag_name: str,
-           flag_value: Optional[str] = None,
+           flag_value: str | None = None,
            should_override: bool = False) -> None:
     self.assert_not_frozen()
     if self._set_special_flags(flag_name, flag_value, should_override):
@@ -100,7 +100,7 @@ class ChromeFlags(Flags):
 
   def _set_special_flags(self,
                          flag_name: str,
-                         flag_value: Optional[str] = None,
+                         flag_value: str | None = None,
                          should_override: bool = False) -> bool:
     if flag_name == ChromeFeatures.ENABLE_FLAG:
       if flag_value is None:
@@ -158,7 +158,7 @@ class ChromeFlags(Flags):
           js_flag_name, js_flag_value, should_override=should_override)
     self._js_flags.update(new_js_flags)
 
-  def _find_misspelled_flag(self, name: str) -> Optional[str]:
+  def _find_misspelled_flag(self, name: str) -> str | None:
     if name in ("--enable-feature", "--enabled-feature", "--enabled-features"):
       return "--enable-features"
     if name in ("--disable-feature", "--disabled-feature",
@@ -176,7 +176,7 @@ class ChromeFlags(Flags):
       return "--load-extension"
     return None
 
-  def _find_js_flag(self, name: str) -> Optional[str]:
+  def _find_js_flag(self, name: str) -> str | None:
     normalized_name = name
     if name.startswith("--no-"):
       normalized_name = f"--{name[5:]}"
@@ -186,7 +186,7 @@ class ChromeFlags(Flags):
       return name
     return None
 
-  def _set_user_data_dir(self, value: Optional[str]) -> None:
+  def _set_user_data_dir(self, value: str | None) -> None:
     if not value or not value.strip():
       raise ValueError("--user-data-dir cannot be the empty string.")
     # TODO: support remote platforms

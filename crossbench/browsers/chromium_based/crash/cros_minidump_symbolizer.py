@@ -2,11 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# Original Source: telemetry/internal/backends/chrome/cros_minidump_symbolizer.py
+# Original Source:
+# telemetry/internal/backends/chrome/cros_minidump_symbolizer.py
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -20,7 +21,7 @@ from crossbench.browsers.chromium_based.crash.minidump_symbolizer import \
 class CrOSMinidumpSymbolizer(MinidumpSymbolizer):
 
   @override
-  def symbolize_minidump(self, minidump: pth.LocalPath) -> Optional[str]:
+  def symbolize_minidump(self, minidump: pth.LocalPath) -> str | None:
     if not self._platform.is_posix:
       logging.warning("Cannot get stack traces unless running on a Posix host.")
       return None

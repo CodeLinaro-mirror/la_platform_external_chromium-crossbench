@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import TYPE_CHECKING, ClassVar, Optional, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -32,7 +32,7 @@ class JsAction(Action):
   @classmethod
   @override
   @functools.cache
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument("script", type=ObjectParser.non_empty_str)
     parser.add_argument(
@@ -41,9 +41,9 @@ class JsAction(Action):
     return parser
 
   def __init__(self,
-               script: Optional[str],
-               script_path: Optional[pth.LocalPath],
-               replacements: Optional[Replacements] = None,
+               script: str | None,
+               script_path: pth.LocalPath | None,
+               replacements: Replacements | None = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._original_script = script

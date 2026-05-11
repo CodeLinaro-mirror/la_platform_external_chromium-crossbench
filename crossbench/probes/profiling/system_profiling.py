@@ -7,8 +7,8 @@ from __future__ import annotations
 import functools
 import logging
 import shlex
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterable, Optional, \
-    Self, Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterable, Self, \
+    Sequence, cast
 
 from typing_extensions import override
 
@@ -198,17 +198,17 @@ class ProfilingProbe(Probe):
   def __init__(
       self,
       js: bool = True,
-      v8_interpreted_frames: Optional[bool] = None,
-      pprof: Optional[bool] = None,
+      v8_interpreted_frames: bool | None = None,
+      pprof: bool | None = None,
       cleanup: CleanupMode = CleanupMode.AUTO,
       browser_process: bool = False,
       spare_renderer_process: bool = False,
       target: TargetMode = TargetMode.AUTO,
-      pin_renderer_main_core: Optional[int] = None,
+      pin_renderer_main_core: int | None = None,
       call_graph_mode: CallGraphMode = CallGraphMode.FRAME_POINTER,
-      frequency: Optional[int | str] = None,
-      clockid: Optional[str] = None,
-      count: Optional[int] = None,
+      frequency: int | str | None = None,
+      clockid: str | None = None,
+      count: int | None = None,
       cpu: Sequence[int] = (),
       events: Sequence[str] = (),
       grouped_events: Sequence[str] = (),
@@ -218,7 +218,7 @@ class ProfilingProbe(Probe):
     self._sample_js: bool = js
     self._sample_browser_process: bool = browser_process
     self._spare_renderer_process: bool = spare_renderer_process
-    self._run_pprof: Optional[bool] = pprof
+    self._run_pprof: bool | None = pprof
     self._cleanup_mode = cleanup
     if v8_interpreted_frames is None:
       v8_interpreted_frames = js
@@ -239,24 +239,21 @@ class ProfilingProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return super().key + (
-        ("js", self._sample_js),
-        ("v8_interpreted_frames", self._expose_v8_interpreted_frames),
-        ("pprof", self._run_pprof),
-        ("cleanup", self._cleanup_mode),
-        ("browser_process", self._sample_browser_process),
-        ("spare_renderer_process", self._spare_renderer_process),
-        ("target", str(self._target)),
-        ("pin_renderer_main_core", self._pin_renderer_main_core),
-        ("call_graph_mode", str(self._call_graph_mode)),
-        ("target", str(self.target)),
-        ("frequency", self._frequency),
-        ("count", self._count),
-        ("cpu", self._cpu),
-        ("events", self._events),
-        ("grouped_events", self._grouped_events),
-        ("add_counters", self._add_counters),
-    )
+    return (*super().key, ("js", self._sample_js),
+            ("v8_interpreted_frames",
+             self._expose_v8_interpreted_frames), ("pprof", self._run_pprof),
+            ("cleanup", self._cleanup_mode), ("browser_process",
+                                              self._sample_browser_process),
+            ("spare_renderer_process",
+             self._spare_renderer_process), ("target", str(self._target)),
+            ("pin_renderer_main_core",
+             self._pin_renderer_main_core), ("call_graph_mode",
+                                             str(self._call_graph_mode)),
+            ("target", str(self.target)), ("frequency", self._frequency),
+            ("count", self._count), ("cpu", self._cpu), ("events",
+                                                         self._events),
+            ("grouped_events", self._grouped_events), ("add_counters",
+                                                       self._add_counters))
 
   @property
   def sample_js(self) -> bool:
@@ -288,7 +285,7 @@ class ProfilingProbe(Probe):
     return self._target
 
   @property
-  def pin_renderer_main_core(self) -> Optional[int]:
+  def pin_renderer_main_core(self) -> int | None:
     return self._pin_renderer_main_core
 
   @property
@@ -296,15 +293,15 @@ class ProfilingProbe(Probe):
     return self._call_graph_mode
 
   @property
-  def frequency(self) -> Optional[int | str]:
+  def frequency(self) -> int | str | None:
     return self._frequency
 
   @property
-  def clockid(self) -> Optional[str]:
+  def clockid(self) -> str | None:
     return self._clockid
 
   @property
-  def count(self) -> Optional[int]:
+  def count(self) -> int | None:
     return self._count
 
   @property
@@ -389,7 +386,7 @@ class ProfilingProbe(Probe):
       if value:
         raise ProbeIncompatibleBrowser(
             self, browser,
-            f"{repr(name)} is currently only supported on {platforms}")
+            f"{name!r} is currently only supported on {platforms}")
 
   def _validate_linux(self, env: RunnerEnv, browser: Browser) -> None:
     if self.run_pprof(browser):
@@ -408,7 +405,7 @@ class ProfilingProbe(Probe):
                              TargetMode.RENDERER_PROCESS_ONLY)
     assert self._target in supported_mac_targets, (
         f"Unsupported profile target for Mac: {self._target}. "
-        f"Should be one of {str(supported_mac_targets)}.")
+        f"Should be one of {supported_mac_targets!s}.")
 
   def _validate_android(self, env: RunnerEnv, browser: Browser) -> None:
     del env

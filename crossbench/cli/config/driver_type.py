@@ -48,7 +48,7 @@ class BrowserDriverType(StrEnumWithHelp):
       return BrowserDriverType.LINUX_SSH
     if identifier == "chromeos-ssh":
       return BrowserDriverType.CHROMEOS_SSH
-    raise argparse.ArgumentTypeError(f"Unknown driver type: {repr(value)}")
+    raise argparse.ArgumentTypeError(f"Unknown driver type: {value!r}")
 
   @property
   def is_remote_driver(self) -> bool:

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import datetime
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from crossbench.browsers.chromium_based.crash import helper
 from crossbench.helper import path_finder
@@ -37,9 +37,9 @@ class MinidumpFinder:
 
   def __init__(self,
                platform: Platform,
-               build_dir: Optional[pth.LocalPath] = None) -> None:
+               build_dir: pth.LocalPath | None = None) -> None:
     self._platform: Platform = platform
-    self._build_dir: Optional[pth.LocalPath] = build_dir
+    self._build_dir: pth.LocalPath | None = build_dir
     self._os: str = platform.name
     self._arch: str = str(platform.machine)
     self._minidump_path_crashpad_retrieval: dict[pth.AnyPath, bool] = {}
@@ -59,7 +59,7 @@ class MinidumpFinder:
 
   def get_all_crashpad_minidumps(
       self, minidump_dir: pth.AnyPath
-  ) -> tuple[Optional[list[tuple[datetime.datetime, pth.AnyPath]]], list[str]]:
+  ) -> tuple[list[tuple[datetime.datetime, pth.AnyPath]] | None, list[str]]:
     """Returns all minidumps in the given directory findable by Crashpad.
 
     Args:
@@ -103,8 +103,7 @@ class MinidumpFinder:
     return self._get_all_minidump_paths(minidump_dir), self._explanation
 
   def get_most_recent_minidump(
-      self,
-      minidump_dir: pth.AnyPath) -> tuple[Optional[pth.AnyPath], list[str]]:
+      self, minidump_dir: pth.AnyPath) -> tuple[pth.AnyPath | None, list[str]]:
     """Finds the most recently created Crashpad or Breakpad minidump.
 
     Args:
@@ -214,7 +213,7 @@ class MinidumpFinder:
     return []
 
   def _get_most_recent_crashpad_minidump(
-      self, minidump_dir: pth.AnyPath) -> Optional[pth.AnyPath]:
+      self, minidump_dir: pth.AnyPath) -> pth.AnyPath | None:
     if reports_list := self._get_all_crashpad_minidumps(minidump_dir):
       _, most_recent_report_path = max(reports_list)
       return most_recent_report_path
@@ -231,7 +230,7 @@ class MinidumpFinder:
     return list(self._platform.glob(minidump_dir, "*.dmp"))
 
   def _get_most_recent_minidump(
-      self, minidump_dir: pth.AnyPath) -> Optional[pth.AnyPath]:
+      self, minidump_dir: pth.AnyPath) -> pth.AnyPath | None:
     # Crashpad dump layout will be the standard eventually, check it first.
     crashpad_dump = True
     most_recent_dump = self._get_most_recent_crashpad_minidump(minidump_dir)

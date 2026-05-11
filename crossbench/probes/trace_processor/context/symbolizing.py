@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -153,7 +153,7 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
           "http://crbug.com/481290800.", traceconv_version,
           traceconv.MIN_VERSION.version_str)
 
-  def _ensure_symbols(self) -> Optional[pth.LocalPath]:
+  def _ensure_symbols(self) -> pth.LocalPath | None:
     # If the user provided no perfetto_binary_path, the default value is
     # a guess that works for some dev-built binaries. Worst-case scenario,
     # symbolization fails but the unsymbolized trace is still available. For
@@ -197,7 +197,7 @@ _MACOS_SYMBOL_ARCH_LOOKUP = {
 
 
 def _download_macos_symbols(host_platform: plt.Platform,
-                            browser: Browser) -> Optional[pth.LocalPath]:
+                            browser: Browser) -> pth.LocalPath | None:
   checkout_path = ChromiumCheckoutFinder(host_platform).path
   if not checkout_path:
     logging.debug("Could not find chromium checkout to download symbols.")

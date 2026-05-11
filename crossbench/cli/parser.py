@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from typing import Never, Optional
+from typing import Never
 
 import colorama
 
@@ -24,7 +24,7 @@ class CrossBenchArgumentParser(argparse.ArgumentParser):
   def fail(self, message: str) -> None:
     super().error(message)
 
-  def exit(self, status: int = 0, message: Optional[str] = None) -> Never:
+  def exit(self, status: int = 0, message: str | None = None) -> Never:
     if message:
       if status == 0:
         logging.info(message)

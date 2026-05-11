@@ -9,7 +9,7 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, ClassVar, Final, Self, TextIO, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Self, TextIO
 
 from typing_extensions import override
 
@@ -158,7 +158,7 @@ class VideoProbe(Probe):
             f"which differs from first viewport {first_viewport}. ")
 
   @override
-  def get_context_cls(self) -> Type[VideoProbeContext]:
+  def get_context_cls(self) -> type[VideoProbeContext]:
     return VideoProbeContext
 
   @override

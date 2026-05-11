@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -41,7 +41,7 @@ class BrowserStartupBenchmark(LoadingBenchmark):
     return cls._base_dir() / "story.hjson"
 
   @classmethod
-  def get_pages_config(
-      cls, args: Optional[argparse.Namespace] = None) -> PagesConfig:
+  def get_pages_config(cls,
+                       args: argparse.Namespace | None = None) -> PagesConfig:
     del args
     return PagesConfig.parse(cls.default_pages_config_path())

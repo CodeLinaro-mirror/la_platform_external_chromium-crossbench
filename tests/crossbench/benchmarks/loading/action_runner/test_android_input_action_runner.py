@@ -6,7 +6,7 @@ from __future__ import annotations
 import datetime as dt
 import pathlib
 import unittest
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -149,10 +149,10 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
   def expect_action_setup(
       self,
       found_element: bool = True,
-      js_args: Optional[tuple[str, bool]] = None,
+      js_args: tuple[str, bool] | None = None,
       app_bounds: DisplayRectangle = DisplayRectangle(Point(0, 0), 10, 10),
-      window_inner_height: Optional[int] = None,
-      window_inner_width: Optional[int] = None,
+      window_inner_height: int | None = None,
+      window_inner_width: int | None = None,
       element_bounds: DisplayRectangle = DisplayRectangle(Point(0, 0), 0, 0)):
     self.platform.expect_sh(
         "dumpsys",

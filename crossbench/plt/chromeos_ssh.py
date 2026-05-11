@@ -8,7 +8,7 @@ import functools
 import json
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Any, Final, Optional
+from typing import TYPE_CHECKING, Any, Final
 
 from typing_extensions import override
 
@@ -46,7 +46,7 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
     return "chromeos_ssh"
 
   @property
-  def username(self) -> Optional[str]:
+  def username(self) -> str | None:
     return self._username
 
   @property
@@ -64,9 +64,9 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
     return True
 
   def create_debugging_session(self,
-                               browser_flags: Optional[tuple[str, ...]] = None,
-                               username: Optional[str] = None,
-                               password: Optional[str] = None) -> int:
+                               browser_flags: tuple[str, ...] | None = None,
+                               username: str | None = None,
+                               password: str | None = None) -> int:
     disable_extensions_flag: str = "--disable-extensions"
 
     flags_for_session: list[str] = []

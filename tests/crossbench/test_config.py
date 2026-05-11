@@ -10,7 +10,7 @@ import enum
 import json
 import pathlib
 import unittest
-from typing import Any, Optional, Self
+from typing import Any, Self
 from unittest import mock
 
 from immutabledict import immutabledict
@@ -42,7 +42,7 @@ class CustomConfigEnum(ConfigEnum):
 class CustomValueEnum(enum.Enum):
 
   @classmethod
-  def _missing_(cls, value: Any) -> Optional[CustomValueEnum]:
+  def _missing_(cls, value: Any) -> CustomValueEnum | None:
     if value is True:
       return CustomValueEnum.A_OR_TRUE
     if value is False:
@@ -115,8 +115,8 @@ class CustomConfigObject(ConfigObject):
   generic_enum: GenericEnum = GenericEnum.A
   config_enum: CustomConfigEnum = CustomConfigEnum.A
   custom_value_enum: CustomValueEnum = CustomValueEnum.DEFAULT
-  depending_nested: Optional[dict[str, Any]] = None
-  depending_many: Optional[dict[str, Any]] = None
+  depending_nested: dict[str, Any] | None = None
+  depending_many: dict[str, Any] | None = None
 
   @classmethod
   def default(cls) -> CustomConfigObject:
@@ -138,9 +138,8 @@ class CustomConfigObject(ConfigObject):
     return super().parse_path(path, **kwargs)
 
   @classmethod
-  def parse_depending_nested(
-      cls, value: Optional[str],
-      nested: CustomNestedConfigObject) -> Optional[dict]:
+  def parse_depending_nested(cls, value: str | None,
+                             nested: CustomNestedConfigObject) -> dict | None:
     if not value:
       return None
     return {
@@ -149,9 +148,9 @@ class CustomConfigObject(ConfigObject):
     }
 
   @classmethod
-  def parse_depending_many(cls, value: Optional[str], array: list[Any],
+  def parse_depending_many(cls, value: str | None, array: list[Any],
                            integer: int,
-                           nested: CustomNestedConfigObject) -> Optional[dict]:
+                           nested: CustomNestedConfigObject) -> dict | None:
     if not value:
       return None
     return {

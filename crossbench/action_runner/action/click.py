@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, ClassVar, Optional, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -31,7 +31,7 @@ class ClickAction(InputSourceAction):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
         "position",
@@ -52,7 +52,7 @@ class ClickAction(InputSourceAction):
                position: PositionConfig,
                attempts: int = 1,
                duration: dt.timedelta = dt.timedelta(),
-               verify: Optional[str] = None,
+               verify: str | None = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._position = position
@@ -75,7 +75,7 @@ class ClickAction(InputSourceAction):
     return self._attempts
 
   @property
-  def verify(self) -> Optional[str]:
+  def verify(self) -> str | None:
     return self._verify
 
   @override

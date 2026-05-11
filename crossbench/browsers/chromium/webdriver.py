@@ -8,7 +8,7 @@ import atexit
 import logging
 import re
 import subprocess
-from typing import TYPE_CHECKING, Any, Final, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Final, Sequence
 
 from immutabledict import immutabledict
 from selenium.webdriver.chromium import webdriver as chromium_webdriver
@@ -69,7 +69,7 @@ class ChromiumWebDriver(ChromiumBaseMixin, ChromiumBasedWebDriver):
         service=service)
 
 
-def install_apk(platform: AndroidAdbPlatform, apk_config: Optional[ApkConfig],
+def install_apk(platform: AndroidAdbPlatform, apk_config: ApkConfig | None,
                 browser_package: str) -> bool:
   if not apk_config:
     logging.debug("Android APK install skipped (no apk_config)")
@@ -104,8 +104,8 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
 
   def __init__(self,
                label: str,
-               path: Optional[pth.AnyPath] = None,
-               settings: Optional[Settings] = None) -> None:
+               path: pth.AnyPath | None = None,
+               settings: Settings | None = None) -> None:
     assert settings, "Android browser needs custom settings and platform"
     self._installed_android_package: str | None = None
     self._chrome_command_line_path: pth.AnyPath = FLAGS_CHROME
@@ -210,7 +210,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     self._needs_restore_chrome_flags = True
     atexit.register(self._restore_chrome_flags)
 
-  def _read_device_flags(self) -> Optional[str]:
+  def _read_device_flags(self) -> str | None:
     if not self.platform.exists(self._chrome_command_line_path):
       return None
     return self.platform.cat(self._chrome_command_line_path)
@@ -295,15 +295,15 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
   """
 
   @classmethod
-  def is_apk_helper(cls, path: Optional[pth.AnyPath]) -> bool:
+  def is_apk_helper(cls, path: pth.AnyPath | None) -> bool:
     if not path or len(path.parts) == 1:
       return False
     return path.name in CHROME_APK_HELPER_NAMES
 
   def __init__(self,
                label: str,
-               path: Optional[pth.AnyPath] = None,
-               settings: Optional[Settings] = None) -> None:
+               path: pth.AnyPath | None = None,
+               settings: Settings | None = None) -> None:
     assert settings, "Android browser needs custom settings and platform"
     assert path, "Got invalid empty path"
     if not self.is_apk_helper(path):
@@ -370,7 +370,7 @@ class AutoForwardingRemoteWebDriver(RemoteWebDriver):
   def __init__(
       self,
       platform: LinuxSshPlatform,
-      chromedriver_path: Optional[pth.AnyPath],
+      chromedriver_path: pth.AnyPath | None,
       options: ChromiumOptions,
   ) -> None:
     self._platform: Final[LinuxSshPlatform] = platform

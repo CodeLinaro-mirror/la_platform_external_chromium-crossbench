@@ -9,8 +9,7 @@ import datetime as dt
 import logging
 import sys
 import time as py_time
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Self, \
-    Sequence, Type
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Self, Sequence
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.cli import ui
@@ -44,8 +43,8 @@ class Actions(TimeScope):
       self,
       message: str,
       run: Run,
-      runner: Optional[Runner] = None,
-      browser: Optional[Browser] = None,
+      runner: Runner | None = None,
+      browser: Browser | None = None,
       verbose: bool = False,
       measure: bool = True,
       timeout: dt.timedelta = dt.timedelta()) -> None:
@@ -85,9 +84,9 @@ class Actions(TimeScope):
       sys.stdout.write(f"   {self._message.ljust(30)}\r")
     return self
 
-  def __exit__(self, exc_type: Optional[Type[BaseException]],
-               exc_value: Optional[BaseException],
-               exc_traceback: Optional[TracebackType]) -> None:
+  def __exit__(self, exc_type: type[BaseException] | None,
+               exc_value: BaseException | None,
+               exc_traceback: TracebackType | None) -> None:
     self._is_active = False
     self._exception_annotation.__exit__(exc_type, exc_value, exc_traceback)
     super().__exit__(exc_type, exc_value, exc_traceback)
@@ -163,7 +162,7 @@ class Actions(TimeScope):
   def show_url(
       self,
       url: str,
-      target: Optional[str] = None,
+      target: str | None = None,
       ready_state: ReadyState = ReadyState.ANY,
       timeout: dt.timedelta = dt.timedelta()
   ) -> None:

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, ClassVar, Optional, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -29,7 +29,7 @@ class MeminfoAction(BaseProbeAction):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument("browser", type=ObjectParser.bool, default=True)
     parser.add_argument(
@@ -41,7 +41,7 @@ class MeminfoAction(BaseProbeAction):
   def __init__(self,
                browser: bool = True,
                packages: tuple[str, ...] = (),
-               title: Optional[str] = None,
+               title: str | None = None,
                system: bool = False,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:

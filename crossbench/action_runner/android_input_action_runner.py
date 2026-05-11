@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import re
-from typing import TYPE_CHECKING, Final, Optional, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from crossbench.action_runner.base import InputSourceNotImplementedError
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
@@ -33,7 +33,7 @@ class ViewportInfo:
                raw_chrome_window_bounds: DisplayRectangle,
                window_inner_height: int,
                window_inner_width: int,
-               element_rect: Optional[DisplayRectangle] = None) -> None:
+               element_rect: DisplayRectangle | None = None) -> None:
     self._element_rect: DisplayRectangle | None = None
 
     # On android, clank does not report the correct window.devicePixelRatio
@@ -75,10 +75,10 @@ class ViewportInfo:
   def actual_pixel_ratio(self) -> float:
     return self._actual_pixel_ratio
 
-  def element_rect(self) -> Optional[DisplayRectangle]:
+  def element_rect(self) -> DisplayRectangle | None:
     return self._element_rect
 
-  def element_center(self) -> Optional[Point]:
+  def element_center(self) -> Point | None:
     if not self._element_rect:
       return None
     return self._element_rect.middle
@@ -251,7 +251,7 @@ return [
   def _get_viewport_info(self,
                          run: Run,
                          actions: Actions,
-                         selector: Optional[str] = None,
+                         selector: str | None = None,
                          scroll_into_view: bool = False) -> ViewportInfo:
 
     script = ""

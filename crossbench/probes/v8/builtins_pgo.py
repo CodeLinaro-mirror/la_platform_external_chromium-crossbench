@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -31,7 +31,7 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
     browser.js_flags.set("--allow-natives-syntax")
 
   @override
-  def get_context_cls(self) -> Type[V8BuiltinsPGOProbeContext]:
+  def get_context_cls(self) -> type[V8BuiltinsPGOProbeContext]:
     return V8BuiltinsPGOProbeContext
 
   @override

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
-from typing import TYPE_CHECKING, Final, Iterator, Optional, Self, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Self, TypeVar
 
 from crossbench import plt
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
@@ -23,8 +23,8 @@ NetworkT = TypeVar("NetworkT", bound="Network")
 class Network(abc.ABC):
 
   def __init__(self,
-               traffic_shaper: Optional[TrafficShaper] = None,
-               browser_platform: Optional[plt.Platform] = None) -> None:
+               traffic_shaper: TrafficShaper | None = None,
+               browser_platform: plt.Platform | None = None) -> None:
     browser_platform = browser_platform or plt.PLATFORM
     self._traffic_shaper: Final[
         TrafficShaper] = traffic_shaper or NoTrafficShaper(browser_platform)
@@ -65,17 +65,17 @@ class Network(abc.ABC):
     return False
 
   @property
-  def http_port(self) -> Optional[int]:
+  def http_port(self) -> int | None:
     """HTTP port for non-live server-based networks."""
     return None
 
   @property
-  def https_port(self) -> Optional[int]:
+  def https_port(self) -> int | None:
     """HTTPS port for non-live server-based networks."""
     return None
 
   @property
-  def host(self) -> Optional[str]:
+  def host(self) -> str | None:
     """Host for non-live server-based networks."""
     return None
 

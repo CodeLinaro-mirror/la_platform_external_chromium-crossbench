@@ -23,7 +23,7 @@ class BondActionNotImplementedError(NotImplementedError):
 
     if msg_context:
       msg_context = f", context: {msg_context}"
-    message = (f"{str(action.TYPE)}-action "
+    message = (f"{action.TYPE!s}-action "
                f"not implemented in {type(runner).__name__}{msg_context}")
     super().__init__(message)
 

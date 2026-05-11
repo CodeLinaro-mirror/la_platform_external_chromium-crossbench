@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Final, Optional
+from typing import Final
 
 from typing_extensions import override
 
@@ -48,7 +48,7 @@ class FirefoxVersion(BrowserVersion):
       raise cls.parse_error("Could not extract version number", full_version)
     prefix = matches["prefix"]
     if not cls._validate_prefix(prefix):
-      raise cls.parse_error(f"Wrong prefix {repr(prefix)}", full_version)
+      raise cls.parse_error(f"Wrong prefix {prefix!r}", full_version)
     version_str = matches["version"]
     version_parts = matches["parts"]
     assert version_parts and version_str, (
@@ -81,7 +81,7 @@ class FirefoxVersion(BrowserVersion):
     return BrowserVersionChannel.STABLE
 
   @classmethod
-  def _validate_prefix(cls, prefix: Optional[str]) -> bool:
+  def _validate_prefix(cls, prefix: str | None) -> bool:
     if not prefix:
       return True
     return bool(cls._PREFIX_RE.match(prefix))

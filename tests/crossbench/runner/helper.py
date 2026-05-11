@@ -8,7 +8,7 @@ import abc
 import datetime as dt
 import json
 import pathlib
-from typing import TYPE_CHECKING, Any, Iterable, NamedTuple, Optional, Type
+from typing import TYPE_CHECKING, Any, Iterable, NamedTuple
 
 from typing_extensions import override
 
@@ -55,7 +55,7 @@ class MockRun:
                runner,
                browser_session,
                story="story",
-               action_runner: Optional[ActionRunner] = None,
+               action_runner: ActionRunner | None = None,
                repetition=0,
                is_warmup=False,
                temperature="default",
@@ -144,7 +144,7 @@ class MockRun:
         delay=timing.timedelta(delay))
 
   def get_probe_context(self,
-                        probe_cls: Type[ProbeT]) -> ProbeContext[ProbeT] | None:
+                        probe_cls: type[ProbeT]) -> ProbeContext[ProbeT] | None:
     del probe_cls
     return self.probe_context
 
@@ -208,7 +208,7 @@ class MockProbe(Probe):
 
   def __init__(self,
                test_data: Any = (),
-               context_cls: Optional[Type[MockProbeContext]] = None) -> None:
+               context_cls: type[MockProbeContext] | None = None) -> None:
     super().__init__()
     self.test_data = test_data
     self.context_cls = context_cls or MockProbeContext
@@ -253,9 +253,9 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
     self.browsers: list[Browser] = [self.mock_chrome_dev, self.mock_firefox]
 
   def default_runner(self,
-                     browsers: Optional[Iterable[Browser]] = None,
-                     benchmark: Optional[Benchmark] = None,
-                     probes: Optional[Iterable[Probe]] = None,
+                     browsers: Iterable[Browser] | None = None,
+                     benchmark: Benchmark | None = None,
+                     probes: Iterable[Probe] | None = None,
                      throw: bool = True,
                      create_symlinks: bool = True) -> Runner:
     return Runner(
@@ -269,7 +269,7 @@ class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
         in_memory_result_db=True)
 
   def single_story_runner(self,
-                          browser: Optional[Browser] = None,
+                          browser: Browser | None = None,
                           throw: bool = True) -> Runner:
     browsers = [browser or self.mock_chrome_dev]
     benchmark = MockBenchmark([self.stories[0]])

@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import threading
 import time
-from typing import TYPE_CHECKING, ClassVar, Iterable, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Iterable, Self
 
 from typing_extensions import override
 
@@ -58,8 +58,8 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return super().key + (("cmd", tuple(self.cmd)),
-                          ("interval", self.interval.total_seconds()))
+    return (*super().key, ("cmd", tuple(self.cmd)),
+            ("interval", self.interval.total_seconds()))
 
   @property
   def interval(self) -> dt.timedelta:
@@ -77,7 +77,7 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
                          f"repetitions={env.repetitions}.")
 
   @override
-  def get_context_cls(self) -> Type[PollingProbeContext]:
+  def get_context_cls(self) -> type[PollingProbeContext]:
     return PollingProbeContext
 
 

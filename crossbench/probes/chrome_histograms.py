@@ -11,8 +11,7 @@ import datetime as dt
 import functools
 import logging
 import re
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Optional, \
-    Self, Sequence, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Self, Sequence
 
 from typing_extensions import override
 
@@ -117,14 +116,13 @@ def parse_histogram_metrics(value: Any,
         continue
       m = re.match(PERCENTILE_METRIC_RE, metric)
       if not m:
-        raise argparse.ArgumentTypeError(
-            f"{name} {repr(histogram_name)} "
-            f"{repr(metric)} is not a valid metric")
+        raise argparse.ArgumentTypeError(f"{name} {histogram_name!r} "
+                                         f"{metric!r} is not a valid metric")
       percentile = int(m[1])
       if percentile < 0 or percentile > 100:
         raise argparse.ArgumentTypeError(
-            f"{name} {repr(histogram_name)} "
-            f"{repr(metric)} is not a valid percentile")
+            f"{name} {histogram_name!r} "
+            f"{metric!r} is not a valid percentile")
       result.append(ChromeHistogramPercentileMetric(histogram_name, percentile))
   return result
 
@@ -176,7 +174,7 @@ class ChromeHistogramsProbe(JsonResultProbe):
     super().validate_browser(env, browser)
     self.expect_browser(browser, BrowserAttributes.CHROMIUM_BASED)
 
-  def get_context_cls(self) -> Type[ChromeHistogramsProbeContext]:
+  def get_context_cls(self) -> type[ChromeHistogramsProbeContext]:
     return ChromeHistogramsProbeContext
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
@@ -268,10 +266,10 @@ class ChromeHistogramSample:
   def __init__(self,
                name: str,
                count: int = 0,
-               mean: Optional[float] = 0,
+               mean: float | None = 0,
                flags: int = 0,
-               bucket_counts: Optional[dict[int, int]] = None,
-               bucket_maxes: Optional[dict[int, int]] = None) -> None:
+               bucket_counts: dict[int, int] | None = None,
+               bucket_maxes: dict[int, int] | None = None) -> None:
     self._name = name
     self._count = count
     self._mean = mean
@@ -284,7 +282,7 @@ class ChromeHistogramSample:
                        f"but buckets add to {bucket_sum}")
 
   @property
-  def mean(self) -> Optional[float]:
+  def mean(self) -> float | None:
     return self._mean
 
   @property
@@ -295,7 +293,7 @@ class ChromeHistogramSample:
   def flags(self) -> int:
     return self._flags
 
-  def bucket_max(self, bucket_min: int) -> Optional[int]:
+  def bucket_max(self, bucket_min: int) -> int | None:
     return self._bucket_maxes.get(bucket_min)
 
   def bucket_count(self, bucket_min: int) -> int:

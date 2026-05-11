@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -58,7 +58,7 @@ class Firefox(Browser):
     return BrowserAttributes.FIREFOX
 
   @override
-  def _setup_cache_dir(self) -> Optional[AnyPath]:
+  def _setup_cache_dir(self) -> AnyPath | None:
     if cache_dir := self.settings.cache_dir:
       return cache_dir
     return self.platform.mkdtemp(prefix="firefox")

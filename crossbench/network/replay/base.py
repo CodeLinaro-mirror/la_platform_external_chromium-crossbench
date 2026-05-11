@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Final, Iterator, Optional, Self, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Self, TypeVar
 from urllib.parse import urlparse
 
 from typing_extensions import override
@@ -34,8 +34,8 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
 
   def __init__(self,
                archive: pth.LocalPath | str,
-               traffic_shaper: Optional[TrafficShaper] = None,
-               browser_platform: Optional[plt.Platform] = None) -> None:
+               traffic_shaper: TrafficShaper | None = None,
+               browser_platform: plt.Platform | None = None) -> None:
     super().__init__(traffic_shaper, browser_platform)
     self._archive_path: Final[LocalPath] = self._ensure_archive(archive)
 

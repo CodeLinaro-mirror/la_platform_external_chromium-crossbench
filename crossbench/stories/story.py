@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Final, Optional, Sequence
+from typing import TYPE_CHECKING, Final, Sequence
 
 from crossbench.cli.config.secrets import Secrets
 from crossbench.path import safe_filename
@@ -27,7 +27,7 @@ class Story(abc.ABC):
   def __init__(self,
                name: str,
                duration: dt.timedelta = dt.timedelta(seconds=15),
-               secrets: Optional[Secrets] = None) -> None:
+               secrets: Secrets | None = None) -> None:
     assert name, "Invalid page name"
     self._name: str = safe_filename(name)
     self._duration: Final[dt.timedelta] = duration

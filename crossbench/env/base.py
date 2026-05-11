@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Iterable
 
 import colorama
 
@@ -26,7 +26,7 @@ class BaseEnv(abc.ABC):
 
   def __init__(self,
                platform: Platform,
-               config: Optional[EnvConfig] = None,
+               config: EnvConfig | None = None,
                validation_mode: ValidationMode = ValidationMode.THROW) -> None:
     self._platform = platform
     self._config: EnvConfig = config or EnvConfig()
@@ -79,7 +79,7 @@ class BaseEnv(abc.ABC):
   def check_installed(self,
                       binaries: Iterable[str],
                       message: str = "Missing binaries: {}",
-                      platform: Optional[Platform] = None) -> None:
+                      platform: Platform | None = None) -> None:
     assert not isinstance(binaries, str), "Expected iterable of strings."
     target_platform = platform or self._platform
     missing_binaries = [

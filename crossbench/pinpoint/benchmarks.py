@@ -65,7 +65,7 @@ def all_stories(pinpoint_name: str) -> list[str]:
     return []
   stories = list(benchmark.DEFAULT_STORY_CLS.all_story_names())
   if default_story_name := default_story(pinpoint_name):
-    return [default_story_name] + stories
+    return [default_story_name, *stories]
   return stories
 
 

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from crossbench import path as pth
 from crossbench import plt
@@ -28,22 +28,22 @@ class Settings:
 
   def __init__(
       self,
-      flags: Optional[FlagsData] = None,
-      js_flags: Optional[FlagsData] = None,
-      cache_dir: Optional[pth.AnyPath] = None,
+      flags: FlagsData | None = None,
+      js_flags: FlagsData | None = None,
+      cache_dir: pth.AnyPath | None = None,
       clear_cache_dir: bool = True,
-      network: Optional[Network] = None,
-      driver_path: Optional[pth.AnyPath] = None,
-      viewport: Optional[Viewport] = None,
-      splash_screen: Optional[SplashScreen] = None,
-      platform: Optional[plt.Platform] = None,
+      network: Network | None = None,
+      driver_path: pth.AnyPath | None = None,
+      viewport: Viewport | None = None,
+      splash_screen: SplashScreen | None = None,
+      platform: plt.Platform | None = None,
       secrets: Secrets = Secrets(),
       driver_logging: bool = False,
       wipe_system_user_data: bool = False,
       http_request_timeout: dt.timedelta = dt.timedelta(),
-      env_config: Optional[EnvConfig] = None,
-      extensions: Optional[tuple[ExtensionConfig, ...]] = None,
-      apk_config: Optional[ApkConfig] = None,
+      env_config: EnvConfig | None = None,
+      extensions: tuple[ExtensionConfig, ...] | None = None,
+      apk_config: ApkConfig | None = None,
   ) -> None:
     self._flags = self._convert_flags(flags, "flags")
     self._js_flags = self._extract_js_flags(self._flags, js_flags)
@@ -63,20 +63,20 @@ class Settings:
     self._apk_config = apk_config
 
   def _extract_js_flags(self, flags: Flags,
-                        js_flags: Optional[FlagsData]) -> Flags:
+                        js_flags: FlagsData | None) -> Flags:
     if isinstance(flags, ChromeFlags):
       chrome_js_flags = flags.js_flags
       if not js_flags:
         return chrome_js_flags
       if chrome_js_flags:
         raise ValueError(
-            f"Ambiguous js-flags: flags.js_flags={repr(chrome_js_flags)}, "
-            f"js_flags={repr(js_flags)}")
+            f"Ambiguous js-flags: flags.js_flags={chrome_js_flags!r}, "
+            f"js_flags={js_flags!r}")
     return self._convert_flags(js_flags, "--js-flags")
 
-  def _convert_flags(self, flags: Optional[FlagsData], label: str) -> Flags:
+  def _convert_flags(self, flags: FlagsData | None, label: str) -> Flags:
     if isinstance(flags, str):
-      raise ValueError(f"{label} should be a list, but got: {repr(flags)}")
+      raise ValueError(f"{label} should be a list, but got: {flags!r}")
     if not flags:
       return Flags()
     if isinstance(flags, Flags):
@@ -96,7 +96,7 @@ class Settings:
     return self._js_flags
 
   @property
-  def cache_dir(self) -> Optional[pth.AnyPath]:
+  def cache_dir(self) -> pth.AnyPath | None:
     return self._cache_dir
 
   @property
@@ -104,7 +104,7 @@ class Settings:
     return self._clear_cache_dir
 
   @property
-  def driver_path(self) -> Optional[pth.AnyPath]:
+  def driver_path(self) -> pth.AnyPath | None:
     return self._driver_path
 
   @property
@@ -140,7 +140,7 @@ class Settings:
     return self._extensions
 
   @property
-  def apk_config(self) -> Optional[ApkConfig]:
+  def apk_config(self) -> ApkConfig | None:
     return self._apk_config
 
   @property

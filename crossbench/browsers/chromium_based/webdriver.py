@@ -8,8 +8,7 @@ import abc
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, TextIO, \
-    Type
+from typing import TYPE_CHECKING, Any, Iterable, Sequence, TextIO
 
 import requests
 import selenium.common.exceptions
@@ -46,8 +45,8 @@ if TYPE_CHECKING:
 class ChromiumBasedWebDriver(
     WebDriverBrowser, ChromiumBased, metaclass=abc.ABCMeta):
 
-  WEB_DRIVER_OPTIONS: Type[ChromiumOptions] = ChromiumOptions
-  WEB_DRIVER_SERVICE: Type[ChromiumService] = ChromiumService
+  WEB_DRIVER_OPTIONS: type[ChromiumOptions] = ChromiumOptions
+  WEB_DRIVER_SERVICE: type[ChromiumService] = ChromiumService
   UNSUPPORTED_FLAGS: tuple[str, ...] = ()
 
   def __init__(self, *args, **kwargs) -> None:
@@ -190,7 +189,7 @@ class ChromiumBasedWebDriver(
       raise RuntimeError("\n".join(error_message))
 
   def _validate_locally_built_driver(
-      self, driver_path: pth.LocalPath) -> Optional[Iterable[str]]:
+      self, driver_path: pth.LocalPath) -> Iterable[str] | None:
     # TODO: migrate to version object on the browser
     browser_version: BrowserVersion = self.version
     assert isinstance(browser_version, ChromiumVersion)
@@ -206,7 +205,7 @@ class ChromiumBasedWebDriver(
                 local_build_dir, self.platform.is_android))
 
   def _validate_any_driver_version(
-      self, driver_path: pth.AnyPath) -> Optional[Iterable[str]]:
+      self, driver_path: pth.AnyPath) -> Iterable[str] | None:
     raw_version_str = self.host_platform.sh_stdout(driver_path, "--version")
     driver_version = ChromeDriverVersion.parse(raw_version_str)
     if driver_version.major == self.version.major:
@@ -241,10 +240,10 @@ class ChromiumBasedWebDriver(
   @override
   def switch_tab(
       self,
-      title: Optional[re.Pattern] = None,
-      url: Optional[re.Pattern] = None,
-      tab_index: Optional[int] = None,
-      relative_tab_index: Optional[int] = None,
+      title: re.Pattern | None = None,
+      url: re.Pattern | None = None,
+      tab_index: int | None = None,
+      relative_tab_index: int | None = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
   ) -> str:
     assert not (tab_index is not None and relative_tab_index is not None)
@@ -274,9 +273,9 @@ class ChromiumBasedWebDriver(
         return handle
     error = "No new tab found"
     if title is not None:
-      error += f" with title matching {repr(title.pattern)}"
+      error += f" with title matching {title.pattern!r}"
     if url is not None:
-      error += f" with url matching {repr(url.pattern)}"
+      error += f" with url matching {url.pattern!r}"
     if tab_index is not None:
       error += f" with tab_index matching {tab_index}"
     if relative_tab_index is not None:
@@ -286,10 +285,10 @@ class ChromiumBasedWebDriver(
   @override
   def close_tab(
       self,
-      title: Optional[re.Pattern] = None,
-      url: Optional[re.Pattern] = None,
-      tab_index: Optional[int] = None,
-      relative_tab_index: Optional[int] = None,
+      title: re.Pattern | None = None,
+      url: re.Pattern | None = None,
+      tab_index: int | None = None,
+      relative_tab_index: int | None = None,
       timeout: dt.timedelta = dt.timedelta(seconds=0)
   ) -> None:
     driver = self._private_driver
@@ -360,13 +359,12 @@ class ChromiumBasedWebDriver(
   def debugger_address(self) -> str:
     capabilities = self._private_driver.capabilities
     if "goog:chromeOptions" not in capabilities:
-      raise RuntimeError(
-          f"Browser does not support remote debugging. Capabilities: {capabilities}"
-      )
+      raise RuntimeError("Browser does not support remote debugging. "
+                         f"Capabilities: {capabilities}")
     if "debuggerAddress" not in capabilities["goog:chromeOptions"]:
       raise RuntimeError(
-          f"Browser was not started with remote debugging enabled. Capabilities: {capabilities['goog:chromeOptions']}"
-      )
+          "Browser was not started with remote debugging enabled. "
+          f"Capabilities: {capabilities['goog:chromeOptions']}")
 
     return self._private_driver.capabilities["goog:chromeOptions"][
         "debuggerAddress"]
@@ -377,12 +375,10 @@ class ChromiumBasedWebDriver(
       json_response = get(
           f"http://{self.debugger_address}/json/version", retry=3).json()
       if "webSocketDebuggerUrl" not in json_response:
-        raise RuntimeError(
-            "Could not find webSocketDebuggerUrl in response. Response: %s" %
-            json_response)
+        raise RuntimeError("Could not find webSocketDebuggerUrl in response. "
+                           f"Response: {json_response}")
 
       return json_response["webSocketDebuggerUrl"]
     except requests.exceptions.RequestException as e:
-      raise RuntimeError(
-          f"Could not get target list from http://{self.debugger_address}/json/version"
-      ) from e
+      raise RuntimeError("Could not get target list from "
+                         f"http://{self.debugger_address}/json/version") from e

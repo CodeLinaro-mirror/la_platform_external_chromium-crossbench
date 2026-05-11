@@ -7,8 +7,7 @@ from __future__ import annotations
 import collections
 import json
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Self, \
-    Type
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self
 
 import pandas as pd
 from google.protobuf.json_format import MessageToJson
@@ -147,10 +146,10 @@ class TraceProcessorProbe(Probe):
       queries: Iterable[TraceProcessorQueryConfig] = (),
       symbolize_profile: bool = True,
       module_paths: Iterable[pth.LocalPath] = (),
-      trace_processor_bin: Optional[pth.LocalPath] = None,
-      traceconv_bin: Optional[pth.LocalPath] = None,
-      perfetto_binary_path: Optional[pth.LocalPath] = None,
-      llvm_symbolizer_bin: Optional[pth.LocalPath] = None,
+      trace_processor_bin: pth.LocalPath | None = None,
+      traceconv_bin: pth.LocalPath | None = None,
+      perfetto_binary_path: pth.LocalPath | None = None,
+      llvm_symbolizer_bin: pth.LocalPath | None = None,
       dev_features: bool = True,
   ) -> None:
     super().__init__()
@@ -166,7 +165,7 @@ class TraceProcessorProbe(Probe):
     self._queries: Final[tuple[TraceProcessorQueryConfig, ...]] = tuple(queries)
     self._symbolize_profile: Final[bool] = symbolize_profile
     self._module_paths: Final[tuple[pth.LocalPath,
-                                    ...]] = (MODULES_DIR,) + tuple(module_paths)
+                                    ...]] = (MODULES_DIR, *tuple(module_paths))
     self._trace_processor_bin: Final[
         pth.LocalPath
         | None] = TraceProcessorFinder.local_binary(trace_processor_bin)
@@ -257,7 +256,7 @@ class TraceProcessorProbe(Probe):
         extra_flags=extra_flags)
 
   @override
-  def get_context_cls(self) -> Type[TraceProcessorProbeContext]:
+  def get_context_cls(self) -> type[TraceProcessorProbeContext]:
     # TODO: enable on linux and android
     if self._platform.is_macos:
       return TraceProcessorSymbolizingProbeContext

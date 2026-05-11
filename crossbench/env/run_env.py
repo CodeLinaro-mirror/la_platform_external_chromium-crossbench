@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from crossbench.cli.config.env import EnvConfig, ValidationMode
 from crossbench.env.base import BaseEnv
@@ -18,7 +18,7 @@ class RunEnv(BaseEnv):
 
   def __init__(self,
                run: Run,
-               config: Optional[EnvConfig] = None,
+               config: EnvConfig | None = None,
                validation_mode: ValidationMode = ValidationMode.THROW) -> None:
     self._run: Run = run
     self._browser: Browser = run.browser

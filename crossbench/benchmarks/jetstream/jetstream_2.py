@@ -7,8 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Optional, \
-    Sequence, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Sequence
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -108,8 +107,8 @@ class JetStream2Story(JetStreamStory, metaclass=abc.ABCMeta):
 
   def __init__(self,
                substories: Sequence[str] = (),
-               url: Optional[str] = None,
-               url_params: Optional[Mapping[str, str]] = None) -> None:
+               url: str | None = None,
+               url_params: Mapping[str, str] | None = None) -> None:
     self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
     super().__init__(substories=substories, url=url)
 
@@ -155,7 +154,7 @@ class JetStream2Story(JetStreamStory, metaclass=abc.ABCMeta):
         arguments=[self.substories])
 
 
-ProbeClsTupleT = tuple[Type[JetStream2Probe], ...]
+ProbeClsTupleT = tuple[type[JetStream2Probe], ...]
 
 
 class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
@@ -206,12 +205,12 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
     return url_params
 
   def __init__(self,
-               story_cls: Type[JetStream2Story],
+               story_cls: type[JetStream2Story],
                patterns: Sequence[str],
                args: argparse.Namespace,
                separate: bool = False,
-               url: Optional[str] = None,
-               url_params: Optional[Mapping[str, str]] = None) -> None:
+               url: str | None = None,
+               url_params: Mapping[str, str] | None = None) -> None:
     self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
     assert issubclass(story_cls, JetStream2Story)
     super().__init__(story_cls, patterns, args, separate, url)

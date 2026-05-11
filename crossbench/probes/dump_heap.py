@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
@@ -38,7 +38,7 @@ class DumpHeapProbe(Probe):
     return parser
 
   @override
-  def get_context_cls(self) -> Type[DumpHeapProbeContext]:
+  def get_context_cls(self) -> type[DumpHeapProbeContext]:
     return DumpHeapProbeContext
 
 

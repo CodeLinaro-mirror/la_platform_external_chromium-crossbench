@@ -15,7 +15,7 @@ GEN_DIR = MODULE_DIR / "gen"
 @contextmanager
 def protoc_in_sys_path() -> Iterator[None]:
   prev_path = sys.path
-  sys.path = [str(GEN_DIR)] + prev_path
+  sys.path = [str(GEN_DIR), *prev_path]
   try:
     yield
   finally:

@@ -10,8 +10,7 @@ import os
 import shutil
 import tempfile
 import zipfile
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Iterator, \
-    Optional, Type, cast
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Iterator, cast
 
 from typing_extensions import override
 
@@ -66,7 +65,7 @@ class ChromeDownloader(Downloader):
   @classmethod
   @override
   def _get_loader_cls(
-      cls, browser_platform: Platform) -> Type[ChromeDownloader] | None:
+      cls, browser_platform: Platform) -> type[ChromeDownloader] | None:
     if browser_platform.is_macos:
       return ChromeDownloaderMacOS
     if browser_platform.is_linux:
@@ -82,8 +81,7 @@ class ChromeDownloader(Downloader):
     super().__init__(*args, **kwargs)
 
   @override
-  def _pre_check(self,
-                 requested_version: Optional[BrowserVersion] = None) -> None:
+  def _pre_check(self, requested_version: BrowserVersion | None = None) -> None:
     super()._pre_check(requested_version)
     if not requested_version:
       return
@@ -110,13 +108,13 @@ class ChromeDownloader(Downloader):
     return ChromeVersion.parse_unique(version_identifier)
 
   @override
-  def _find_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
+  def _find_archive_url(self) -> tuple[BrowserVersion, str | None]:
     # Quick probe for complete versions
     if self.requested_version.is_complete:
       return self._find_exact_archive_url()
     return self._find_milestone_archive_url()
 
-  def _find_milestone_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
+  def _find_milestone_archive_url(self) -> tuple[BrowserVersion, str | None]:
     platform = self.VERSION_URL_PLATFORM_LOOKUP.get(self._browser_platform.key)
     if not platform:
       raise ValueError(f"Unsupported platform {self._browser_platform}")
@@ -166,7 +164,7 @@ class ChromeDownloader(Downloader):
     return (version,
             f"{self.STORAGE_URL}{version.parts_str}/{self._platform_name}/")
 
-  def _find_exact_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
+  def _find_exact_archive_url(self) -> tuple[BrowserVersion, str | None]:
     # TODO: respect channel
     version, test_url = self._create_version_url(self.requested_version)
     self.info(f"LIST VERSIONS at {test_url}")
@@ -174,7 +172,7 @@ class ChromeDownloader(Downloader):
 
   def _filter_candidate_urls(
       self, versions_urls: list[tuple[BrowserVersion, str]]
-  ) -> tuple[BrowserVersion, Optional[str]]:
+  ) -> tuple[BrowserVersion, str | None]:
     versions_urls.sort(key=lambda version_url: version_url[0], reverse=True)
     # Iterate from new to old version and and the first one that is older or
     # equal than the requested version.
@@ -431,8 +429,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     return cast(AndroidAdbPlatform, self._browser_platform).adb
 
   @override
-  def _pre_check(self,
-                 requested_version: Optional[BrowserVersion] = None) -> None:
+  def _pre_check(self, requested_version: BrowserVersion | None = None) -> None:
     super()._pre_check(requested_version)
     assert self._browser_platform.is_android, (
         f"Expected android but got {self._browser_platform}")
@@ -503,7 +500,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     return pth.LocalPath(package_name)
 
   @override
-  def _find_matching_installed_version(self) -> Optional[pth.LocalPath]:
+  def _find_matching_installed_version(self) -> pth.LocalPath | None:
     # TODO: we should use aapt and read the package name directly from
     # the apk: `aapt dump badging <path-to-apk> | grep package:\ name`
     # Iterate over all chrome versions and find any matching release

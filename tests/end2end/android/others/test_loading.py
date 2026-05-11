@@ -8,7 +8,7 @@ import json
 import pathlib
 import tempfile
 import urllib.parse
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 
@@ -20,7 +20,7 @@ from tests import test_helper
 def _run_loading_test(browser_config: str,
                       page_config: Any,
                       test_env: Any,
-                      probe_config_file: Optional[pathlib.Path] = None) -> None:
+                      probe_config_file: pathlib.Path | None = None) -> None:
   with tempfile.NamedTemporaryFile(
       suffix="page.config.json", mode="w",
       encoding="utf-8") as page_config_file:
@@ -31,8 +31,9 @@ def _run_loading_test(browser_config: str,
 
     args = [
         "loading", f"--browser={browser_config}",
-        f"--page-config={page_config_file.name}", "--action-runner=android"
-    ] + list(test_env.cq_flags)
+        f"--page-config={page_config_file.name}", "--action-runner=android",
+        *list(test_env.cq_flags)
+    ]
 
     if probe_config_file:
       args.append(f"--probe-config={probe_config_file}")

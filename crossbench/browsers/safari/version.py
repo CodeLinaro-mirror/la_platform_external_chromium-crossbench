@@ -58,7 +58,7 @@ class SafariVersion(BrowserVersion):
     if release_str := matches["release"]:
       release = int(release_str)
     parts = cls._parse_parts(full_version, parts_str)
-    parts = major_parts + (release,) + parts
+    parts = (*major_parts, release, *parts)
     return parts, channel, f"{major_parts_str} ({version_str})"
 
   @classmethod

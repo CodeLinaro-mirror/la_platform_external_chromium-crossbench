@@ -29,8 +29,8 @@ def test_profiling_probe(browser_config, test_env, adb_root) -> None:
   cli.run([
       "load", "--url=blank,2s", "--throw", f"--browser={browser_config}",
       f"--probe=profiling{profiling_config}",
-      f"--out-dir={test_env.results_dir}"
-  ] + list(test_env.cq_flags))
+      f"--out-dir={test_env.results_dir}", *list(test_env.cq_flags)
+  ])
 
   simpleperf_files = list(test_env.results_dir.rglob("simpleperf.perf.data"))
   assert len(simpleperf_files) == 1

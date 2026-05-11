@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
   from crossbench import path as pth
@@ -16,9 +16,8 @@ if TYPE_CHECKING:
 def find_crash_binary(
     platform: Platform,
     binary_name: str,
-    build_dir: Optional[pth.LocalPath] = None,
-    finder_cls: Optional[Type[BasePathFinder]] = None
-) -> Optional[pth.LocalPath]:
+    build_dir: pth.LocalPath | None = None,
+    finder_cls: type[BasePathFinder] | None = None) -> pth.LocalPath | None:
   if build_dir:
     candidate = build_dir / binary_name
     if candidate.is_file():

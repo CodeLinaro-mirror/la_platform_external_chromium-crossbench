@@ -8,7 +8,7 @@ import abc
 import contextlib
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import override
 
@@ -35,9 +35,9 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
   STORY_NAME = "manual"
 
   def __init__(self,
-               start_after: Optional[dt.timedelta] = dt.timedelta(),
-               run_for: Optional[dt.timedelta] = dt.timedelta(),
-               url: Optional[str] = None) -> None:
+               start_after: dt.timedelta | None = dt.timedelta(),
+               run_for: dt.timedelta | None = dt.timedelta(),
+               url: str | None = None) -> None:
     self._start_after = start_after
     self._run_for = run_for
     self._url = url
@@ -99,10 +99,10 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
   DEFAULT_STORY_CLS: ClassVar = ManualStory
 
   def __init__(self,
-               action_runner_config: Optional[ActionRunnerConfig] = None,
-               start_after: Optional[dt.timedelta] = None,
-               run_for: Optional[dt.timedelta] = None,
-               url: Optional[str] = None,
+               action_runner_config: ActionRunnerConfig | None = None,
+               start_after: dt.timedelta | None = None,
+               run_for: dt.timedelta | None = None,
+               url: str | None = None,
                expose_cdp: bool = False) -> None:
     self._expose_cdp = expose_cdp
     manual_story = ManualStory(

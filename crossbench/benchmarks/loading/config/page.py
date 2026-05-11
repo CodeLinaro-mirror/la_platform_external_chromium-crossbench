@@ -7,8 +7,7 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Iterator, Optional, Self, \
-    Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator, Self, Sequence, cast
 
 from typing_extensions import override
 
@@ -49,7 +48,7 @@ class PageConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str, label: Optional[str] = None) -> Self:
+  def parse_str(cls, value: str, label: str | None = None) -> Self:
     """
     Simple comma-separated string with optional duration:
       value = URL,[DURATION]
@@ -69,8 +68,8 @@ class PageConfig(ConfigObject):
   @classmethod
   def parse_sequence(cls,
                      value: Sequence[Any],
-                     label: Optional[str] = None,
-                     secrets: Optional[Secrets] = None) -> Self:
+                     label: str | None = None,
+                     secrets: Secrets | None = None) -> Self:
     value = ObjectParser.non_empty_sequence(value, "story actions or blocks")
     blocks = ActionBlockListConfig.parse_sequence(value)
     if label is not None:
@@ -82,8 +81,8 @@ class PageConfig(ConfigObject):
   @override
   def parse_dict(cls,
                  config: dict[str, Any],
-                 label: Optional[str] = None,
-                 secrets: Optional[Secrets] = None,
+                 label: str | None = None,
+                 secrets: Secrets | None = None,
                  **kwargs) -> Self:
     config = ObjectParser.non_empty_dict(config, "story actions or blocks")
     page_config = cls.config_parser().parse(
@@ -108,7 +107,7 @@ class PageConfig(ConfigObject):
 
   @classmethod
   def from_url(cls,
-               label: Optional[str],
+               label: str | None,
                url: str,
                duration: dt.timedelta = dt.timedelta()) -> Self:
     blocks = (ActionBlock.from_url(url, duration),)

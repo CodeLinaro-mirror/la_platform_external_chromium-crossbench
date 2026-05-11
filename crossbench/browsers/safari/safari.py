@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Final, Optional
+from typing import TYPE_CHECKING, Final
 
 from typing_extensions import override
 
@@ -61,12 +61,12 @@ class Safari(Browser):
   def __init__(self,
                label: str,
                path: pth.AnyPath,
-               settings: Optional[Settings] = None) -> None:
+               settings: Settings | None = None) -> None:
     self.bundle_name: str = ""
     super().__init__(label, path, settings=settings)
     assert self.platform.is_apple, "Safari only works on Apple platforms"
 
-  def _init_path_and_version(self, path: Optional[pth.AnyPath] = None) -> None:
+  def _init_path_and_version(self, path: pth.AnyPath | None = None) -> None:
     super()._init_path_and_version(path)
     assert self.path, "Missing browser path"
     self.bundle_name = self.path.stem.replace(" ", "")
@@ -81,7 +81,7 @@ class Safari(Browser):
     return SafariVersion.parse(f"{app_version} {driver_version}")
 
   @override
-  def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
+  def _setup_cache_dir(self) -> pth.AnyPath | None:
     assert self.settings.cache_dir is None, (
         "Cannot set custom cache dir for Safari")
     assert self.bundle_name, "Missing bundle_name"
@@ -94,7 +94,7 @@ class Safari(Browser):
     return cache_dir
 
   @override
-  def _clear_cache(self, cache_dir: Optional[pth.AnyPath]) -> None:
+  def _clear_cache(self, cache_dir: pth.AnyPath | None) -> None:
     super()._clear_cache(cache_dir)
     # This magic wait lowers safaridriver startup failures.
     self.platform.sleep(0.5)

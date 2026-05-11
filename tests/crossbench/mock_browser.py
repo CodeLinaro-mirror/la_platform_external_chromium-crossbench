@@ -8,7 +8,7 @@ import abc
 import contextlib
 import copy
 import dataclasses
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Type, cast
+from typing import TYPE_CHECKING, Any, Iterator, cast
 
 from typing_extensions import override
 
@@ -93,8 +93,8 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   def __init__(self,
                label: str,
-               path: Optional[pth.AnyPath] = None,
-               settings: Optional[Settings] = None):
+               path: pth.AnyPath | None = None,
+               settings: Settings | None = None):
     settings = settings or Settings()
     platform = settings.platform
     path = path or self.mock_app_path(platform)
@@ -117,7 +117,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
 
   def expect_js(
       self,
-      expected_js: Optional[JsInvocation] = None,
+      expected_js: JsInvocation | None = None,
       result: Any = None,
   ) -> None:
     if not expected_js:
@@ -133,11 +133,11 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.expected_is_logged_in.append(secret)
 
   @override
-  def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
+  def _setup_cache_dir(self) -> pth.AnyPath | None:
     return None
 
   @override
-  def _clear_cache(self, cache_dir: Optional[pth.AnyPath]) -> None:
+  def _clear_cache(self, cache_dir: pth.AnyPath | None) -> None:
     pass
 
   @override
@@ -161,7 +161,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     return f"Mock Browser {self.type_name()}, {self.VERSION}"
 
   @override
-  def show_url(self, url, target: Optional[str] = None) -> None:
+  def show_url(self, url, target: str | None = None) -> None:
     self.url_list.append(url)
 
   @override
@@ -179,7 +179,7 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self.tab_list.append(next(self.tab_handler_generator))
 
   @override
-  def js(self, script, timeout: Optional[dt.timedelta] = None, arguments=()):
+  def js(self, script, timeout: dt.timedelta | None = None, arguments=()):
 
     self.invoked_js.append(
         JsInvocation(
@@ -572,7 +572,7 @@ class MockFirefoxNightly(MockFirefoxBrowser):
     return app_root(platform) / "firefox-trunk"
 
 
-ALL: tuple[Type[MockBrowser], ...] = (
+ALL: tuple[type[MockBrowser], ...] = (
     MockChromeCanary,
     MockChromeDev,
     MockChromeBeta,

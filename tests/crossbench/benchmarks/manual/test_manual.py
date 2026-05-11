@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Optional
 from unittest import mock
 
 from typing_extensions import override
@@ -49,8 +48,8 @@ class TestManualBenchmark(BaseBenchmarkTestCase):
       self.assertFalse(urls)
 
   def _test_run(self,
-                start_after: Optional[dt.timedelta] = None,
-                run_for: Optional[dt.timedelta] = None):
+                start_after: dt.timedelta | None = None,
+                run_for: dt.timedelta | None = None):
     repetitions = 3
     benchmark = ManualBenchmark(None, start_after, run_for)
     self.assertTrue(len(benchmark.describe()) > 0)

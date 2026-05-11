@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -41,7 +41,7 @@ class VideoAccelerationProbe(JsonResultProbe):
     super().attach(browser)
 
   @override
-  def get_context_cls(self) -> Type[VideoAccelerationProbeContext]:
+  def get_context_cls(self) -> type[VideoAccelerationProbeContext]:
     return VideoAccelerationProbeContext
 
   @property

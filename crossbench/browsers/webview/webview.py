@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import re
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -29,8 +29,8 @@ class Webview(ChromeWebDriverAndroid, metaclass=abc.ABCMeta):
 
   def __init__(self,
                label: str,
-               path: Optional[pth.AnyPath] = None,
-               settings: Optional[Settings] = None) -> None:
+               path: pth.AnyPath | None = None,
+               settings: Settings | None = None) -> None:
     super().__init__(label, path, settings)
     self._chrome_command_line_path: pth.AnyPath = FLAGS_WEBVIEW
 

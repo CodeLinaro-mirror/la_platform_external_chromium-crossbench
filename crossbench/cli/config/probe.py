@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Final, Self, Type
+from typing import TYPE_CHECKING, Any, Final, Self
 
 from typing_extensions import override
 
@@ -25,7 +25,7 @@ class ProbeConfigError(ConfigError):
   pass
 
 
-PROBE_LOOKUP: dict[str, Type[Probe]] = {
+PROBE_LOOKUP: dict[str, type[Probe]] = {
     cls.NAME: cls for cls in GENERAL_PURPOSE_PROBES
 }
 
@@ -35,7 +35,7 @@ _PROBE_CONFIG_RE: Final[re.Pattern] = re.compile(
 
 @dataclasses.dataclass(frozen=True)
 class ProbeConfig(ConfigObject):
-  probe_cls: Type[Probe]
+  probe_cls: type[Probe]
   # Full source including probe name:
   # 1. "v8.log:{log_all:true}"
   # 2. "v8.log:presetName"
@@ -75,7 +75,7 @@ class ProbeConfig(ConfigObject):
       return None
     probe_name: str = match["probe_name"]
     config_str: str = match["config"]
-    probe_cls: Type[Probe] | None = PROBE_LOOKUP.get(probe_name)
+    probe_cls: type[Probe] | None = PROBE_LOOKUP.get(probe_name)
     if not probe_cls:
       return None
     config = {"name": probe_name}
@@ -105,18 +105,18 @@ class ProbeConfig(ConfigObject):
                        **kwargs) -> Self:
     if direct_probe_cls := PROBE_LOOKUP.get(probe_name):
       return cls(direct_probe_cls, config_dict=config, **kwargs)
-    probe_cls: Type[Probe] = cls._handle_dict_unknown_probe_name(probe_name)
+    probe_cls: type[Probe] = cls._handle_dict_unknown_probe_name(probe_name)
     return cls(probe_cls, config_dict=config, **kwargs)
 
   @classmethod
-  def _handle_dict_unknown_probe_name(cls, probe_name: str) -> Type[Probe]:
+  def _handle_dict_unknown_probe_name(cls, probe_name: str) -> type[Probe]:
     msg = ""
     if ":" in probe_name or "}" in probe_name:
       msg = "\n    Likely missing quotes for --probe argument.\n"
     return cls._handle_unknown_probe_name(msg, probe_name)
 
   @classmethod
-  def _handle_unknown_probe_name(cls, msg: str, value: str) -> Type[Probe]:
+  def _handle_unknown_probe_name(cls, msg: str, value: str) -> type[Probe]:
     error_message, alternative = close_matches_message(value,
                                                        PROBE_LOOKUP.keys(),
                                                        "Probe name")
@@ -129,7 +129,7 @@ class ProbeConfig(ConfigObject):
   def new_instance(self) -> Probe:
     info: list[str] = []
     if self.src_str:
-      info.append(f"Parsing: {repr(self.src_str)}")
+      info.append(f"Parsing: {self.src_str!r}")
     with exception.annotate_argparsing(*info):
       if config_str := self.config_str:
         return self.probe_cls.parse_str(config_str)

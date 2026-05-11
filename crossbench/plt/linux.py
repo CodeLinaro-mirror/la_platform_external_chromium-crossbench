@@ -9,8 +9,7 @@ import datetime as dt
 import functools
 import os
 import re
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterator, Optional, \
-    Type
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterator
 
 from typing_extensions import override
 
@@ -109,7 +108,7 @@ class LinuxPlatform(PosixPlatform):
     return "linux"
 
   @property
-  def signals(self) -> Type[LinuxSignals]:
+  def signals(self) -> type[LinuxSignals]:
     return LinuxSignals
 
   def check_system_monitoring(self, disable: bool = False) -> bool:
@@ -158,7 +157,7 @@ class LinuxPlatform(PosixPlatform):
         details[info_bin] = self.sh_stdout(info_bin_path)
     return details
 
-  def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+  def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
     app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")

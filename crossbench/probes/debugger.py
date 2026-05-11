@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import shlex
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self
 
 from typing_extensions import override
 
@@ -91,13 +91,10 @@ class DebuggerProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return super().key + (
-        ("debugger", str(self._debugger_bin)),
-        ("debugger_args", tuple(self._debugger_args)),
-        ("auto_run", self._auto_run),
-        ("geometry", str(self._geometry)),
-        ("spare_renderer_process", self._spare_renderer_process),
-    )
+    return (*super().key, ("debugger", str(self._debugger_bin)),
+            ("debugger_args", tuple(self._debugger_args)),
+            ("auto_run", self._auto_run), ("geometry", str(self._geometry)),
+            ("spare_renderer_process", self._spare_renderer_process))
 
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
@@ -151,7 +148,7 @@ class DebuggerProbe(Probe):
     return shlex.join(debugger_cmd)
 
   @override
-  def get_context_cls(self) -> Type[DebuggerContext]:
+  def get_context_cls(self) -> type[DebuggerContext]:
     return DebuggerContext
 
 

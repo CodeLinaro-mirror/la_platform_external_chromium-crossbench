@@ -12,7 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from crossbench import path as pth
 from crossbench.browsers.chromium_based.crash import helper
@@ -31,8 +31,8 @@ class MinidumpSymbolizer(abc.ABC):
                platform: Platform,
                dump_finder: MinidumpFinder,
                build_dir: pth.LocalPath,
-               symbols_dir: Optional[pth.LocalPath] = None,
-               result_dir: Optional[pth.LocalPath] = None) -> None:
+               symbols_dir: pth.LocalPath | None = None,
+               result_dir: pth.LocalPath | None = None) -> None:
     """Abstract class for handling all minidump symbolizing code.
 
     Args:
@@ -54,10 +54,10 @@ class MinidumpSymbolizer(abc.ABC):
     self._platform: Platform = platform
     self._dump_finder: MinidumpFinder = dump_finder
     self._build_dir: pth.LocalPath = build_dir
-    self._symbols_dir: Optional[pth.LocalPath] = symbols_dir
+    self._symbols_dir: pth.LocalPath | None = symbols_dir
     self._result_dir: pth.LocalPath = result_dir
 
-  def symbolize_minidump(self, minidump: pth.LocalPath) -> Optional[str]:
+  def symbolize_minidump(self, minidump: pth.LocalPath) -> str | None:
     """Gets the stack trace from the given minidump.
 
     Args:
@@ -107,7 +107,7 @@ class MinidumpSymbolizer(abc.ABC):
       minidump: The path to the minidump being symbolized.
     """
 
-  def get_breakpad_platform_override(self) -> Optional[str]:
+  def get_breakpad_platform_override(self) -> str | None:
     """Returns the platform to be passed to generate_breakpad_symbols."""
     return None
 

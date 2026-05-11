@@ -9,7 +9,7 @@ import datetime as dt
 import functools
 import json
 import re
-from typing import TYPE_CHECKING, Any, Final, Optional, Type
+from typing import TYPE_CHECKING, Any, Final
 
 from typing_extensions import override
 
@@ -92,15 +92,15 @@ class IOSPlatform(RemotePlatformMixin, Platform):
 
   def __init__(self,
                host_platform: Platform,
-               device_identifier: Optional[str] = None) -> None:
+               device_identifier: str | None = None) -> None:
     assert not host_platform.is_remote, (
         "ios on remote platform is not supported yet")
     super().__init__(host_platform)
     self._device: Final[IOSDeviceInfo] = self._find_ios_device(
         device_identifier)
 
-  def _find_ios_device(
-      self, device_identifier: Optional[str] = None) -> IOSDeviceInfo:
+  def _find_ios_device(self,
+                       device_identifier: str | None = None) -> IOSDeviceInfo:
     devices: dict[str, IOSDeviceInfo] = ios_devices(self._host_platform)
     if not devices:
       raise ValueError("No devices attached.")
@@ -108,7 +108,7 @@ class IOSPlatform(RemotePlatformMixin, Platform):
       if len(devices) != 1:
         raise ValueError(
             f"Too many devices attached, please specify one of: {devices}")
-      return list(devices.values())[0]
+      return next(iter(devices.values()))
     if device := devices.get(device_identifier):
       return device
     matches: list[IOSDeviceInfo] = []
@@ -140,7 +140,7 @@ class IOSPlatform(RemotePlatformMixin, Platform):
 
   @property
   @override
-  def signals(self) -> Type[AnySignals]:
+  def signals(self) -> type[AnySignals]:
     # TODO: Can iOS handle signal?
     raise NotImplementedError
 
@@ -222,7 +222,7 @@ class IOSPlatform(RemotePlatformMixin, Platform):
     return 0
 
   @override
-  def _cpu_freq(self) -> Optional[CPUFreqInfo]:
+  def _cpu_freq(self) -> CPUFreqInfo | None:
     return None
 
   def get_relative_cpu_speed(self) -> float:
@@ -240,7 +240,7 @@ class IOSPlatform(RemotePlatformMixin, Platform):
     return "Safari.app" in pth.AnyPath(app_or_bin).parts
 
   @override
-  def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+  def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
     if self._is_safari_app(app_or_bin):
       return pth.AnyPath(app_or_bin)
     raise ValueError(

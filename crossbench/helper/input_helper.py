@@ -7,11 +7,10 @@ from __future__ import annotations
 import contextlib
 import datetime as dt
 import threading
-from typing import Optional
 
 
 def input_with_timeout(timeout: dt.timedelta = dt.timedelta(seconds=10),
-                       default: Optional[str] = None) -> str | None:
+                       default: str | None = None) -> str | None:
   result_container = [default]
   wait = threading.Thread(
       target=_input, args=[

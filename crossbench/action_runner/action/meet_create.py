@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, ClassVar, Optional, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -29,7 +29,7 @@ class MeetCreateAction(BondAction):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument("bots", type=AddBotsConfig)
     parser.add_argument(
@@ -37,7 +37,7 @@ class MeetCreateAction(BondAction):
     return parser
 
   def __init__(self,
-               bots: Optional[AddBotsConfig] = None,
+               bots: AddBotsConfig | None = None,
                target: WindowTarget = WindowTarget.SELF,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
@@ -46,7 +46,7 @@ class MeetCreateAction(BondAction):
     super().__init__(timeout, index)
 
   @property
-  def bots(self) -> Optional[AddBotsConfig]:
+  def bots(self) -> AddBotsConfig | None:
     return self._bots
 
   @property

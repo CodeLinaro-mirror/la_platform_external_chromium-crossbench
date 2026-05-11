@@ -8,7 +8,7 @@ import argparse
 import contextlib
 import copy
 import json
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Type
+from typing import TYPE_CHECKING, Any, Mapping
 from unittest import mock
 
 import hjson
@@ -59,7 +59,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
   def setUp(self):
     super().setUp()
     self.browser_lookup: Mapping[str, tuple[
-        Type[mock_browser.MockBrowser], BrowserConfig]] = {
+        type[mock_browser.MockBrowser], BrowserConfig]] = {
             "chr-stable":
                 (mock_browser.MockChromeStable,
                  BrowserConfig(mock_browser.MockChromeStable.mock_app_path())),
@@ -78,7 +78,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   @contextlib.contextmanager
   def _patch_get_browser_cls(self,
-                             return_value: Optional[Type[Browser]] = None,
+                             return_value: type[Browser] | None = None,
                              **kwargs):
     if not kwargs:
       kwargs["return_value"] = return_value or mock_browser.MockChromeStable
@@ -307,7 +307,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
     def mock_get_browser_platform(
         browser_config: BrowserConfig) -> plt.Platform:
-      if browser_config.driver.type == BrowserDriverType.ANDROID:
+      if browser_config.driver.driver_type == BrowserDriverType.ANDROID:
         return AndroidAdbMockPlatform(
             self.platform,
             adb=MockAdb(
@@ -866,7 +866,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           str(browser_variant.flags), expected_flags[index],
           f"Unexpected flags for variant[{index}]")
       label = browser_variant.label
-      self.assertLessEqual(len(label), 255, f"Too long label: {repr(label)}")
+      self.assertLessEqual(len(label), 255, f"Too long label: {label!r}")
 
   def test_flag_combination_js_flags_with_fixed(self):
     flags = ("--max_maglev_inlined_bytecode_size=363",
@@ -1281,7 +1281,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     for driver_type, browser_cls in expected_classes:
       config = BrowserConfig(
           browser=pth.AnyPath("Chrome.bin"),
-          driver=DriverConfig(type=driver_type))
+          driver=DriverConfig(driver_type=driver_type))
       self.assertIs(variants.get_browser_cls(config), browser_cls)
 
   def test_get_browser_cls_chromium_driver_types(self):
@@ -1294,7 +1294,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     for driver_type, browser_cls in expected_classes:
       config = BrowserConfig(
           browser=pth.AnyPath("Chromium.bin"),
-          driver=DriverConfig(type=driver_type))
+          driver=DriverConfig(driver_type=driver_type))
       self.assertIs(variants.get_browser_cls(config), browser_cls)
 
   def test_get_browser_cls_chromium_android_default(self):
@@ -1304,7 +1304,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     variants = BrowserVariantsConfig()
     config = BrowserConfig(
         browser=pth.AnyPath("chromium.apk"),
-        driver=DriverConfig(type=BrowserDriverType.ANDROID))
+        driver=DriverConfig(driver_type=BrowserDriverType.ANDROID))
     self.assertIs(variants.get_browser_cls(config), ChromiumWebDriverAndroid)
 
   def test_get_browser_cls_chrome_android_default(self):
@@ -1314,7 +1314,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     variants = BrowserVariantsConfig()
     config = BrowserConfig(
         browser=pth.AnyPath("chrome.apk"),
-        driver=DriverConfig(type=BrowserDriverType.ANDROID))
+        driver=DriverConfig(driver_type=BrowserDriverType.ANDROID))
     self.assertIs(variants.get_browser_cls(config), ChromeWebDriverAndroid)
 
   def test_get_browser_cls_chrome_android_local_helper(self):
@@ -1325,7 +1325,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     apk_helper = pth.AnyPath("/home/user/Documents/chrome/src/"
                              "out/arm64.apk/bin/chrome_public_apk")
     config = BrowserConfig(
-        browser=apk_helper, driver=DriverConfig(type=BrowserDriverType.ANDROID))
+        browser=apk_helper,
+        driver=DriverConfig(driver_type=BrowserDriverType.ANDROID))
     self.assertIs(variants.get_browser_cls(config), LocalChromeWebDriverAndroid)
 
   def test_get_browser_cls_chromium_android_local_helper(self):
@@ -1339,7 +1340,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     variants = BrowserVariantsConfig()
     config = BrowserConfig(
         browser=pth.AnyPath("org.chromium.webview_shell"),
-        driver=DriverConfig(type=BrowserDriverType.ANDROID))
+        driver=DriverConfig(driver_type=BrowserDriverType.ANDROID))
     # "webview" in package name should take precedence over "chromium"
     self.assertIs(variants.get_browser_cls(config), WebviewBrowser)
 
@@ -1350,7 +1351,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     variants = BrowserVariantsConfig()
     config = BrowserConfig(
         browser=pth.AnyPath("webview/velvet.apk"),
-        driver=DriverConfig(type=BrowserDriverType.ANDROID))
+        driver=DriverConfig(driver_type=BrowserDriverType.ANDROID))
     # valid embedder short name should take precedence over "webview" in path
     self.assertIs(variants.get_browser_cls(config), WebviewEmbedder)
 
@@ -1359,7 +1360,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     variants = BrowserVariantsConfig()
     with mock.patch.object(
         DriverConfig, "validate_chromeos", return_value=None) as mock_method:
-      driver = DriverConfig(type=BrowserDriverType.CHROMEOS_SSH)
+      driver = DriverConfig(driver_type=BrowserDriverType.CHROMEOS_SSH)
     mock_method.assert_called_once()
     config = BrowserConfig(browser=pth.AnyPath("chrome"), driver=driver)
     self.assertIs(variants.get_browser_cls(config), ChromeWebDriverChromeOsSsh)

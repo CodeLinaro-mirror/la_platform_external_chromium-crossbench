@@ -11,7 +11,7 @@ import multiprocessing
 import shlex
 import subprocess
 import time
-from typing import TYPE_CHECKING, Final, Optional
+from typing import TYPE_CHECKING, Final
 
 from typing_extensions import override
 
@@ -42,7 +42,7 @@ class LinuxProfilingContext(PosixProfilingContext):
 
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._run_pprof: Optional[bool] = self.probe.run_pprof(run.browser)
+    self._run_pprof: bool | None = self.probe.run_pprof(run.browser)
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
@@ -235,10 +235,9 @@ class LinuxProfilingContext(PosixProfilingContext):
         file.unlink()
 
 
-def prepare_linux_perf_env(
-    platform: plt.Platform,
-    cwd: pth.AnyPath,
-    env: Optional[dict[str, str]] = None) -> dict[str, str]:
+def prepare_linux_perf_env(platform: plt.Platform,
+                           cwd: pth.AnyPath,
+                           env: dict[str, str] | None = None) -> dict[str, str]:
   abs_cwd = platform.absolute(cwd)
   if env is None:
     env = dict(platform.environ)
@@ -255,7 +254,7 @@ KB = 1024
 
 def linux_perf_probe_inject_v8_symbols(
     perf_data_file: pth.AnyPath,
-    platform: Optional[plt.Platform] = None) -> Optional[pth.AnyPath]:
+    platform: plt.Platform | None = None) -> pth.AnyPath | None:
   platform = platform or plt.PLATFORM
   assert platform.is_file(perf_data_file)
   output_file = perf_data_file.with_suffix(".data.jitted")
@@ -284,10 +283,9 @@ def linux_perf_probe_inject_v8_symbols(
   return output_file
 
 
-def linux_perf_probe_pprof(
-    perf_data_file: pth.AnyPath,
-    run_details: str,
-    platform: Optional[plt.Platform] = None) -> Optional[str]:
+def linux_perf_probe_pprof(perf_data_file: pth.AnyPath,
+                           run_details: str,
+                           platform: plt.Platform | None = None) -> str | None:
   platform = platform or plt.PLATFORM
   size = fs_helper.get_file_size(perf_data_file, platform=platform)
   env = prepare_linux_perf_env(platform, perf_data_file.parent)

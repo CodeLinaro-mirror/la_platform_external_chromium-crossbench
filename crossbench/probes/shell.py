@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Iterable, Optional, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Iterable, Self
 
 from typing_extensions import override
 
@@ -69,12 +69,12 @@ class ShellProbe(Probe):
     return parser
 
   def __init__(self,
-               setup_cmd: Optional[Iterable[CmdArg]] = None,
-               start_cmd: Optional[Iterable[CmdArg]] = None,
-               start_story_run_cmd: Optional[Iterable[CmdArg]] = None,
-               stop_story_run_cmd: Optional[Iterable[CmdArg]] = None,
-               stop_cmd: Optional[Iterable[CmdArg]] = None,
-               teardown_cmd: Optional[Iterable[CmdArg]] = None) -> None:
+               setup_cmd: Iterable[CmdArg] | None = None,
+               start_cmd: Iterable[CmdArg] | None = None,
+               start_story_run_cmd: Iterable[CmdArg] | None = None,
+               stop_story_run_cmd: Iterable[CmdArg] | None = None,
+               stop_cmd: Iterable[CmdArg] | None = None,
+               teardown_cmd: Iterable[CmdArg] | None = None) -> None:
     super().__init__()
     self._setup_cmd: TupleCmdArgs = tuple(setup_cmd) if setup_cmd else ()
     self._start_cmd: TupleCmdArgs = tuple(start_cmd) if start_cmd else ()
@@ -89,14 +89,12 @@ class ShellProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return super().key + (
-        ("setup_cmd", tuple(map(str, self.stop_cmd))),
-        ("start_cmd", tuple(map(str, self.start_cmd))),
-        ("start_story_run_cmd", tuple(map(str, self.start_story_run_cmd))),
-        ("stop_story_run_cmd", tuple(map(str, self.stop_story_run_cmd))),
-        ("stop_cmd", tuple(map(str, self.stop_cmd))),
-        ("teardown_cmd", tuple(map(str, self.teardown_cmd))),
-    )
+    return (*super().key, ("setup_cmd", tuple(map(str, self.stop_cmd))),
+            ("start_cmd", tuple(map(str, self.start_cmd))),
+            ("start_story_run_cmd", tuple(map(str, self.start_story_run_cmd))),
+            ("stop_story_run_cmd", tuple(map(str, self.stop_story_run_cmd))),
+            ("stop_cmd", tuple(map(str, self.stop_cmd))),
+            ("teardown_cmd", tuple(map(str, self.teardown_cmd))))
 
   @property
   def setup_cmd(self) -> TupleCmdArgs:
@@ -130,7 +128,7 @@ class ShellProbe(Probe):
                          f"repetitions={env.repetitions}.")
 
   @override
-  def get_context_cls(self) -> Type[ShellProbeContext]:
+  def get_context_cls(self) -> type[ShellProbeContext]:
     return ShellProbeContext
 
 

@@ -9,7 +9,7 @@ import hashlib
 import pathlib
 import re
 import unicodedata
-from typing import Final, Optional, TypeAlias
+from typing import Final, TypeAlias
 
 # A path that can refer to files on a remote platform with potentially
 # a different Path flavour (e.g. Win vs Posix).
@@ -40,11 +40,11 @@ def safe_filename(name: str, strict_len: bool = False) -> str:
   ascii_name = normalized_name.encode("ascii", "ignore").decode("ascii")
   safe_name: str = _UNSAFE_FILENAME_CHARS_RE.sub("_", ascii_name)
   if strict_len and len(safe_name) > MAX_PART_LEN:
-    raise ValueError(f"Too long file name: {repr(safe_name)}")
+    raise ValueError(f"Too long file name: {safe_name!r}")
   return safe_name[:MAX_PART_LEN]
 
 
-def try_resolve_existing_path(value: str) -> Optional[LocalPath]:
+def try_resolve_existing_path(value: str) -> LocalPath | None:
   if not value:
     return None
   maybe_path = LocalPath(value)

@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import sys
-from typing import TYPE_CHECKING, Iterable, Iterator, Optional, Sequence
+from typing import TYPE_CHECKING, Iterable, Iterator, Sequence
 
 from crossbench import exception
 from crossbench.action_runner.action_runner_listener import \
@@ -40,7 +40,7 @@ class ActionNotImplementedError(NotImplementedError):
 
     if msg_context:
       msg_context = f", context: {msg_context}"
-    message = (f"{str(action.TYPE)}-action "
+    message = (f"{action.TYPE!s}-action "
                f"not implemented in {type(runner).__name__}{msg_context}")
     super().__init__(message)
 
@@ -54,7 +54,7 @@ class InputSourceNotImplementedError(ActionNotImplementedError):
                msg_context: str = "") -> None:
     if msg_context:
       msg_context = f", context: {msg_context}"
-    input_source_message = (f"Source {repr(input_source)} "
+    input_source_message = (f"Source {input_source!r} "
                             f"not implemented{msg_context}")
     super().__init__(runner, action, input_source_message)
 
@@ -99,7 +99,7 @@ class ActionRunner:
       with self._info_stack_annotate(f"block_{block_index}"):
         for action_index, action in enumerate(block, start=1):
           with self._info_stack_annotate(f"action_{action_index}"):
-            with exception.annotate(f"action {action_index}: {str(action)}"):
+            with exception.annotate(f"action {action_index}: {action!s}"):
               self._run_action_step(run, action)
 
   def _run_action_step(self, run: Run, action: i_action.Action) -> None:
@@ -239,7 +239,7 @@ class ActionRunner:
       self,
       run: Run,
       suffix: str,
-      annotations: Optional[Sequence[ScreenshotAnnotation]] = None) -> None:
+      annotations: Sequence[ScreenshotAnnotation] | None = None) -> None:
     del run, suffix, annotations
     raise NotImplementedError("screenshot_impl not implemented")
 
@@ -325,7 +325,7 @@ class ActionRunner:
     parent_info_stack = self._info_stack
     try:
       if self._info_stack is not None:
-        self._info_stack = self._info_stack + (name,)
+        self._info_stack = (*self._info_stack, name)
       else:
         self._info_stack = (name,)
       yield

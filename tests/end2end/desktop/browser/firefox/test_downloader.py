@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 @unittest.skipIf(not plt.PLATFORM.is_macos, "Only supported on macOS")
-class FirefoxDownloaderTestCase():
+class FirefoxDownloaderTestCase:
 
   def _load_and_check_version(self,
                               output_dir: pathlib.Path,

@@ -6,7 +6,7 @@ from __future__ import annotations
 import datetime as dt
 import pathlib
 import unittest
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.position import PositionConfig
@@ -393,7 +393,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
   def expect_mouse_click(
       self,
       expected_js: JsInvocation,
-      clicked_coordinates: Optional[Point],
+      clicked_coordinates: Point | None,
       click_duration: dt.timedelta = dt.timedelta(seconds=0)):
 
     path = SCRIPTS_DIR / "get_window_positions.js"
@@ -413,13 +413,13 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     mouse_process_stdin: MockFd = MockFd()
     mouse_process_stdout: MockFd = MockFd()
 
-    mouse_process_stdout.read_returns.append("0\n".encode("utf-8"))
+    mouse_process_stdout.read_returns.append(b"0\n")
 
     if clicked_coordinates:
       mouse_process_stdin.expected_writes.append(
           f"{click_duration.total_seconds()}\n"
-          f"{clicked_coordinates.x}\n{clicked_coordinates.y}\n".encode("utf-8"))
-      mouse_process_stdout.read_returns.append("0\n".encode("utf-8"))
+          f"{clicked_coordinates.x}\n{clicked_coordinates.y}\n".encode())
+      mouse_process_stdout.read_returns.append(b"0\n")
 
     mock_mouse_process: MockPopen = MockPopen(mouse_process_stdout,
                                               mouse_process_stdin)
@@ -428,7 +428,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
   def assert_coordinates_touched(
       self,
       start_coordinates: Point,
-      end_coordinates: Optional[Point] = None,
+      end_coordinates: Point | None = None,
       duration: dt.timedelta = dt.timedelta()
   ) -> None:
 
@@ -439,7 +439,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     pushed_files = self.platform.file_contents
     self.assertEqual(len(pushed_files), 1)
 
-    actual_playback_history = list(pushed_files.values())[0]
+    actual_playback_history = next(iter(pushed_files.values()))
 
     actual_playback = actual_playback_history.pop(0)
 

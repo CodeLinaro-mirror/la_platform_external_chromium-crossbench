@@ -9,7 +9,7 @@ import dataclasses
 import enum
 import functools
 import re
-from typing import Any, Final, Iterable, Optional, Self
+from typing import Any, Final, Iterable, Self
 
 from typing_extensions import override
 
@@ -81,7 +81,7 @@ class BrowserVersion(Version, metaclass=abc.ABCMeta):
   @classmethod
   def parse(cls,
             value: str,
-            channel: Optional[BrowserVersionChannel] = None) -> Self:
+            channel: BrowserVersionChannel | None = None) -> Self:
     (parts, parsed_channel, version_str) = cls._parse(value)
     parts = cls._validate_parts(parts, value)
     return cls(parts, channel or parsed_channel, version_str)
@@ -225,9 +225,8 @@ class BrowserVersion(Version, metaclass=abc.ABCMeta):
     return f"{self._version_str} {self.channel_name}"
 
   def __repr__(self) -> str:
-    return (
-        f"{self.__class__.__name__}"
-        f"({self.parts_str}, {self.channel_name}, {repr(self._version_str)})")
+    return (f"{self.__class__.__name__}"
+            f"({self.parts_str}, {self.channel_name}, {self._version_str!r})")
 
   @override
   def __le__(self, other: Any) -> bool:

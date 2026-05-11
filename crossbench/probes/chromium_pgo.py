@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Type, cast
+from typing import TYPE_CHECKING, ClassVar, Final, cast
 
 from typing_extensions import override
 
@@ -18,8 +18,8 @@ from crossbench.parse import PathParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
-from crossbench.probes.results import (EmptyProbeResult, LocalProbeResult,
-                                       ProbeResult)
+from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
+    ProbeResult
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -80,7 +80,7 @@ class ChromiumPgoProbe(ChromiumProbe):
     return self._REMOTE_PGO_CACHE_SUFFIX
 
   @override
-  def get_context_cls(self) -> Type[ChromiumPgoProbeContext]:
+  def get_context_cls(self) -> type[ChromiumPgoProbeContext]:
     # This probe currently only supports Android (enforced by
     # validate_browser()). If other platforms are added, inspect
     # browser.platform here to return the correct context. For now,

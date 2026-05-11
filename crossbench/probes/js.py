@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from typing_extensions import override
 
@@ -55,28 +55,26 @@ class JSProbe(JsonResultProbe):
               "(nested) metric values (numbers)."))
     return parser
 
-  def __init__(self, js: Optional[str], setup: Optional[str] = None) -> None:
+  def __init__(self, js: str | None, setup: str | None = None) -> None:
     super().__init__()
     self._setup_js = setup
     self._metric_js = js
 
   @property
-  def setup_js(self) -> Optional[str]:
+  def setup_js(self) -> str | None:
     return self._setup_js
 
   @property
-  def metric_js(self) -> Optional[str]:
+  def metric_js(self) -> str | None:
     return self._metric_js
 
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return super().key + (
-        ("setup_js", self._setup_js),
-        ("metric_js", self._metric_js),
-    )
+    return (*super().key, ("setup_js", self._setup_js), ("metric_js",
+                                                         self._metric_js))
 
-  def get_context_cls(self) -> Type[JSProbeContext]:
+  def get_context_cls(self) -> type[JSProbeContext]:
     return JSProbeContext
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:

@@ -9,7 +9,7 @@ import io
 import logging
 import subprocess
 from functools import cached_property
-from typing import TYPE_CHECKING, Iterable, Optional, Self, Type, cast
+from typing import TYPE_CHECKING, Iterable, Self, cast
 
 from typing_extensions import override
 
@@ -54,9 +54,8 @@ class EtmProbe(ChromiumProbe):
         "cpu",
         type=NumberParser.positive_zero_int,
         required=True,
-        help=(
-            "The cpu that RendererMain will be pinned to along and sampled from."
-        ),
+        help=("The cpu that RendererMain will be pinned "
+              "to along and sampled from."),
     )
     parser.add_argument(
         "aux_buffer_size",
@@ -97,37 +96,35 @@ class EtmProbe(ChromiumProbe):
   def __init__(
       self,
       cpu: int,
-      aux_buffer_size: Optional[str] = None,
+      aux_buffer_size: str | None = None,
       record_timestamp: bool = False,
       record_cycles: bool = False,
-      cycle_threshold: Optional[int] = None,
-      flush_interval: Optional[int] = None,
+      cycle_threshold: int | None = None,
+      flush_interval: int | None = None,
   ) -> None:
     super().__init__()
     self._cpu: int = cpu
-    self._aux_buffer_size: Optional[str] = aux_buffer_size
+    self._aux_buffer_size: str | None = aux_buffer_size
     self._record_timestamp: bool = record_timestamp
     self._record_cycles: bool = record_cycles
-    self._cycle_threshold: Optional[int] = cycle_threshold
-    self._flush_interval: Optional[int] = flush_interval
+    self._cycle_threshold: int | None = cycle_threshold
+    self._flush_interval: int | None = flush_interval
 
   @property
   def key(self) -> ProbeKeyT:
-    return super().key + (
-        ("cpu", self._cpu),
-        ("aux_buffer_size", self._aux_buffer_size),
-        ("record_timestamp", self._record_timestamp),
-        ("record_cycles", self._record_cycles),
-        ("cycle_threshold", self._cycle_threshold),
-        ("flush_interval", self._flush_interval),
-    )
+    return (*super().key, ("cpu", self._cpu), ("aux_buffer_size",
+                                               self._aux_buffer_size),
+            ("record_timestamp", self._record_timestamp), ("record_cycles",
+                                                           self._record_cycles),
+            ("cycle_threshold", self._cycle_threshold), ("flush_interval",
+                                                         self._flush_interval))
 
   @property
   def cpu(self) -> int:
     return self._cpu
 
   @property
-  def aux_buffer_size(self) -> Optional[str]:
+  def aux_buffer_size(self) -> str | None:
     return self._aux_buffer_size
 
   @property
@@ -139,11 +136,11 @@ class EtmProbe(ChromiumProbe):
     return self._record_cycles
 
   @property
-  def cycle_threshold(self) -> Optional[int]:
+  def cycle_threshold(self) -> int | None:
     return self._cycle_threshold
 
   @property
-  def flush_interval(self) -> Optional[int]:
+  def flush_interval(self) -> int | None:
     return self._flush_interval
 
   @override
@@ -172,7 +169,7 @@ class EtmProbe(ChromiumProbe):
     chromium.flags.enable_benchmarking_api()
 
   @override
-  def get_context_cls(self) -> Type[EtmProbeContext]:
+  def get_context_cls(self) -> type[EtmProbeContext]:
     return EtmProbeContext
 
 
@@ -180,14 +177,14 @@ class EtmProbeContext(ProbeContext[EtmProbe]):
 
   def __init__(self, probe: EtmProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._etm_process: Optional[subprocess.Popen] = None
+    self._etm_process: subprocess.Popen | None = None
 
   @cached_property
   def _renderer_tid(self) -> int:
     assert self._story_ready, (
         "Fetching renderer PID/TID before the story is loaded could lead to "
         "the wrong PID/TID being used. This should never happen TM!")
-    renderer_main_tid: Optional[int] = None
+    renderer_main_tid: int | None = None
     with self.run.actions("Get Renderer Main TID") as actions:
       renderer_main_tid = actions.js(
           "return chrome?.benchmarking?.getRendererMainTid?.();")

@@ -17,7 +17,7 @@ import socket
 import subprocess
 import traceback as tb
 from subprocess import SubprocessError
-from typing import TYPE_CHECKING, Any, Final, Iterator, Optional, Type
+from typing import TYPE_CHECKING, Any, Final, Iterator
 
 import psutil
 from typing_extensions import override
@@ -99,7 +99,7 @@ class MacOSPlatform(PosixPlatform):
     return "macos"
 
   @property
-  def signals(self) -> Type[MacOSSignals]:
+  def signals(self) -> type[MacOSSignals]:
     return MacOSSignals
 
   @functools.cached_property
@@ -181,7 +181,7 @@ class MacOSPlatform(PosixPlatform):
   def display_resolution(self) -> tuple[int, int]:
     return self.display_details()[0]["resolution"]
 
-  def _cpu_freq(self) -> Optional[CPUFreqInfo]:
+  def _cpu_freq(self) -> CPUFreqInfo | None:
     if self.is_remote:
       return super()._cpu_freq()
     # BUG(394337121): older macOs versions on arm segfault with python 3.11
@@ -223,7 +223,7 @@ class MacOSPlatform(PosixPlatform):
       raise ValueError(f"No binaries found in {app_path}")
     raise ValueError(f"Invalid number of binaries found: {binaries}")
 
-  def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+  def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
     app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
@@ -245,7 +245,7 @@ class MacOSPlatform(PosixPlatform):
     return None
 
   def _validate_search_binary_candidate(
-      self, is_app: bool, result_path: pth.AnyPath) -> Optional[pth.AnyPath]:
+      self, is_app: bool, result_path: pth.AnyPath) -> pth.AnyPath | None:
     if not is_app:
       if self.is_file(result_path):
         return result_path
@@ -257,7 +257,7 @@ class MacOSPlatform(PosixPlatform):
       return result_path
     return None
 
-  def search_app(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+  def search_app(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
     app_or_bin_path = self._app_bundle_candidate(app_or_bin)
     self.assert_is_local()
     # Use search binary so we can more consistently use binary lookup overrides.
@@ -324,7 +324,7 @@ class MacOSPlatform(PosixPlatform):
       end run"""
     return self.sh_stdout("/usr/bin/osascript", "-e", script, *args)
 
-  def foreground_process(self) -> Optional[dict[str, Any]]:
+  def foreground_process(self) -> dict[str, Any] | None:
     foreground_process_info = self.sh_stdout("lsappinfo", "front").strip()
     if not foreground_process_info:
       return None

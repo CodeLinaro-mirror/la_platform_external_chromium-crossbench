@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import json
-from typing import TYPE_CHECKING, Any, ClassVar, Self, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from typing_extensions import override
 
@@ -34,7 +34,7 @@ class MeminfoProbe(Probe):
     return parser
 
   @override
-  def get_context_cls(self) -> Type[MeminfoProbeContext]:
+  def get_context_cls(self) -> type[MeminfoProbeContext]:
     return MeminfoProbeContext
 
 

@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Iterable, Self, Type, cast
+from typing import TYPE_CHECKING, ClassVar, Iterable, Self, cast
 
 from typing_extensions import override
 
@@ -52,7 +52,7 @@ class LogcatAndroidProbe(Probe):
       raise ProbeIncompatibleBrowser(self, browser, "Only supported on android")
 
   @override
-  def get_context_cls(self) -> Type[AndroidLogcatProbeContext]:
+  def get_context_cls(self) -> type[AndroidLogcatProbeContext]:
     return AndroidLogcatProbeContext
 
 

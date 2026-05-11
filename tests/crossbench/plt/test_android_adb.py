@@ -205,8 +205,8 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh(
         "mktemp -d /data/local/tmp/custom_prefix.XXXXXXXXXXX",
         result="/data/local/tmp/custom_prefix.RANDOM")
-    self.expect_sh(("mv /data/local/tmp/custom_prefix.RANDOM "
-                    "/data/local/tmp/custom_prefix.RANDOM.custom_suffix"))
+    self.expect_sh("mv /data/local/tmp/custom_prefix.RANDOM "
+                   "/data/local/tmp/custom_prefix.RANDOM.custom_suffix")
     self.platform.mkdtemp(".custom_suffix", "custom_prefix.")
 
   def test_mktemp_suffix(self):

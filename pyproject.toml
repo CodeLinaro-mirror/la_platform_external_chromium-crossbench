@@ -134,6 +134,7 @@ extend-select = [
     "PLE",  # pylint error
     "PLC",  # pylint refactor
     "PLW",  # pylint warnings
+    "RUF010", # explicit-f-string-type-conversion
 ]
 ignore = [
     "TC006", # Allow non-string type in casts

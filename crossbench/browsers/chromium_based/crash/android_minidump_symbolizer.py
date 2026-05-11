@@ -2,13 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# Original Source: telemetry/internal/backends/chrome/android_minidump_symbolizer.py
+# Original Source:
+# telemetry/internal/backends/chrome/android_minidump_symbolizer.py
 from __future__ import annotations
 
 import datetime
 import logging
 import re
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -61,8 +62,8 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
                platform: Platform,
                dump_finder: MinidumpFinder,
                build_dir: pth.LocalPath,
-               symbols_dir: Optional[pth.LocalPath] = None,
-               result_dir: Optional[pth.LocalPath] = None) -> None:
+               symbols_dir: pth.LocalPath | None = None,
+               result_dir: pth.LocalPath | None = None) -> None:
     """Class for handling all minidump symbolizing code on Android.
 
     Args:
@@ -82,8 +83,8 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
     self._minidump_dump_output: dict[pth.LocalPath, str] = {}
     # Map from minidump path to the directory that should be used when
     # looking for symbol binaries.
-    self._minidump_symbol_binaries_directories: dict[
-        pth.LocalPath, Optional[pth.LocalPath]] = {}
+    self._minidump_symbol_binaries_directories: dict[pth.LocalPath,
+                                                     pth.LocalPath | None] = {}
     super().__init__(
         platform.host_platform,
         dump_finder,
@@ -92,7 +93,7 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
         result_dir=result_dir)
 
   @override
-  def symbolize_minidump(self, minidump: pth.LocalPath) -> Optional[str]:
+  def symbolize_minidump(self, minidump: pth.LocalPath) -> str | None:
     if not self._platform.is_posix:
       logging.warning(
           "Cannot get Android stack traces unless running on a Posix host.")
@@ -117,7 +118,7 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
     return []
 
   @override
-  def get_breakpad_platform_override(self) -> Optional[str]:
+  def get_breakpad_platform_override(self) -> str | None:
     return "android"
 
   def _extract_library_names_from_dump(self,
@@ -163,7 +164,7 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
 
   def _get_symbol_binary_directory(
       self, minidump: pth.LocalPath,
-      libraries: list[str]) -> Optional[pth.LocalPath]:
+      libraries: list[str]) -> pth.LocalPath | None:
     """Gets the directory that should contain symbol binaries for |minidump|.
 
     Args:
@@ -229,7 +230,7 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
     self._minidump_symbol_binaries_directories[minidump] = symbol_dir
     return symbol_dir
 
-  def _get_minidump_dump_output(self, minidump: pth.LocalPath) -> Optional[str]:
+  def _get_minidump_dump_output(self, minidump: pth.LocalPath) -> str | None:
     """Runs minidump_dump on the given minidump.
 
     Caches the result for reuse.

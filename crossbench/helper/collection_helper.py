@@ -5,8 +5,7 @@
 from __future__ import annotations
 
 import difflib
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, \
-    Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Protocol, TypeVar
 
 if TYPE_CHECKING:
   from crossbench.path import AnyPath
@@ -33,7 +32,7 @@ def group_by(
     *,
     key: Callable[[InputT], KeyT],
     value: Callable[[InputT], ValueT] | None = None,
-    sort_key: Optional[Callable[[tuple[KeyT, Any]], Any]] = str
+    sort_key: Callable[[tuple[KeyT, Any]], Any] | None = str
 ) -> dict[KeyT, list[ValueT]]:
   """
   Works similar to itertools.groupby but does a global, SQL-style grouping
@@ -58,8 +57,8 @@ def group_by_custom(
     *,
     key: Callable[[InputT], KeyT],
     group: Callable[[KeyT], GroupT],
-    value: Optional[Callable[[InputT], ValueT]] = None,
-    sort_key: Optional[Callable[[tuple[KeyT, Any]], Any]] = str
+    value: Callable[[InputT], ValueT] | None = None,
+    sort_key: Callable[[tuple[KeyT, Any]], Any] | None = str
 ) -> dict[KeyT, GroupT]:
   """
   Works similar to itertools.groupby but does a global, SQL-style grouping
@@ -87,7 +86,7 @@ def _group_by(
     key_fn: Callable[[InputT], KeyT],
     group_fn: Callable[[KeyT], GroupT],
     value_fn: Callable[[InputT], ValueT],
-    sort_key_fn: Optional[Callable[[tuple[KeyT, Any]], Any]] = str
+    sort_key_fn: Callable[[tuple[KeyT, Any]], Any] | None = str
 ) -> dict[KeyT, GroupT]:
   if not key_fn:  # type: ignore
     raise ValueError("No key function provided")
@@ -118,13 +117,13 @@ def close_matches_message(choice: str,
   similar_choices = difflib.get_close_matches(choice, choices)
   error_message: str = ""
   if name:
-    error_message = f"Invalid {name}: {repr(choice)}."
+    error_message = f"Invalid {name}: {choice!r}."
   alternative: str | None = None
   if len(similar_choices) > 1:
     error_message += f" Did you mean one of {', '.join(similar_choices)}?"
   elif len(similar_choices) == 1:
     alternative = similar_choices[0]
-    error_message += f" Did you mean {repr(alternative)}?"
+    error_message += f" Did you mean {alternative!r}?"
   else:
     error_message += f" Choices are {','.join(choices)}"
   return error_message, alternative

@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-from typing import Type
-
 from crossbench.action_runner.action.action import ACTIONS, Action
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.close_all_tabs import CloseAllTabsAction
@@ -35,7 +33,7 @@ from crossbench.action_runner.action.wait_for_element import \
 from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
 
-ACTIONS_TUPLE: tuple[Type[Action], ...] = (
+ACTIONS_TUPLE: tuple[type[Action], ...] = (
     ClickAction,
     CloseTabAction,
     CloseAllTabsAction,

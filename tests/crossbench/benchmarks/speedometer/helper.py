@@ -11,7 +11,7 @@ import csv
 import datetime as dt
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Sequence
 from unittest import mock
 
 from typing_extensions import override
@@ -38,23 +38,23 @@ class SpeedometerBaseTestCase(
   @property
   @abc.abstractmethod
   @override
-  def benchmark_cls(self) -> Type[SpeedometerBenchmark]:
+  def benchmark_cls(self) -> type[SpeedometerBenchmark]:
     pass
 
   @property
   @abc.abstractmethod
   @override
-  def story_cls(self) -> Type[SpeedometerStory]:
+  def story_cls(self) -> type[SpeedometerStory]:
     pass
 
   @property
   @abc.abstractmethod
-  def probe_cls(self) -> Type[SpeedometerProbe]:
+  def probe_cls(self) -> type[SpeedometerProbe]:
     pass
 
   @property
   @abc.abstractmethod
-  def probe_context_cls(self) -> Type[SpeedometerProbeContext]:
+  def probe_context_cls(self) -> type[SpeedometerProbeContext]:
     pass
 
   @property
@@ -155,12 +155,12 @@ class SpeedometerBaseTestCase(
     )
 
   def _test_run(self,
-                story_names: Optional[Sequence[str]] = None,
+                story_names: Sequence[str] | None = None,
                 separate: bool = False,
                 iterations: int = 2,
                 repetitions: int = 3,
                 warmup_repetitions: int = 0,
-                custom_url: Optional[str] = None,
+                custom_url: str | None = None,
                 throw: bool = True) -> Runner:
     if story_names is None:
       default_story_name = self.story_cls.SUBSTORIES[0]
@@ -220,7 +220,7 @@ class SpeedometerBaseTestCase(
   def _verify_results(
       self,
       runner: Runner,
-      expected_num_urls: Optional[int] = None) -> list[dict[str, str]]:
+      expected_num_urls: int | None = None) -> list[dict[str, str]]:
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       if expected_num_urls is not None:
@@ -485,8 +485,8 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     keys_2 = tuple(data_2.keys())
     self.assertTupleEqual(keys_1, keys_2)
     # Make sure the aggregate metrics are at the end
-    expected_keys = story_names + ("Iteration-0-Total", "Iteration-1-Total",
-                                   "Geomean", "Score")
+    expected_keys = (*story_names, "Iteration-0-Total", "Iteration-1-Total",
+                     "Geomean", "Score")
     self.assertTupleEqual(keys_1, expected_keys)
 
     with (runner.story_groups[0].path / probe_file).open() as f:

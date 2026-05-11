@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Final, Iterable, Optional
+from typing import Any, Final, Iterable
 
 from ordered_set import OrderedSet
 
@@ -27,9 +27,9 @@ class ChromeExtensions(Freezable):
   DISABLE_EXCEPT_FLAG: Final[str] = "--disable-extensions-except"
 
   ENABLE_FLAGS: Final[tuple[str, ...]] = (LOAD_FLAG, DISABLE_EXCEPT_FLAG)
-  FLAGS: Final[tuple[str, ...]] = ENABLE_FLAGS + (DISABLE_FLAG,)
+  FLAGS: Final[tuple[str, ...]] = (*ENABLE_FLAGS, DISABLE_FLAG)
 
-  def __init__(self, extensions: Optional[Iterable[str]] = None) -> None:
+  def __init__(self, extensions: Iterable[str] | None = None) -> None:
     super().__init__()
     self._mode: ExtensionsMode = ExtensionsMode.DEFAULT
     self._extensions: OrderedSet[str] = OrderedSet(extensions or ())
@@ -74,7 +74,7 @@ class ChromeExtensions(Freezable):
         raise ValueError(f"Extensions are disabled, cannot add {extension}")
       if self._mode == ExtensionsMode.ENABLED_SELECTIVE:
         raise ValueError(
-            f"Cannot enable additional extension {repr(extension)}, "
+            f"Cannot enable additional extension {extension!r}, "
             f"currently they are restricted to {self.extensions_str}")
     assert self._mode in (ExtensionsMode.DEFAULT, ExtensionsMode.ENABLED)
     self._mode = ExtensionsMode.ENABLED
@@ -113,7 +113,7 @@ class ChromeExtensions(Freezable):
 
   def set(self,
           flag_name: str,
-          flag_value: Optional[str] = None,
+          flag_value: str | None = None,
           should_override: bool = False) -> None:
     self.assert_not_frozen()
     self._verify_flag(flag_name, flag_value)
@@ -127,10 +127,10 @@ class ChromeExtensions(Freezable):
       case _:
         raise ValueError(f"Unsupported extension flag: {flag_name}")
 
-  def _verify_flag(self, flag_name: str, value: Optional[str]) -> Optional[str]:
+  def _verify_flag(self, flag_name: str, value: str | None) -> str | None:
     if flag_name == self.DISABLE_FLAG:
       if value:
-        raise ValueError(f"{flag_name} expects no value, but got {repr(value)}")
+        raise ValueError(f"{flag_name} expects no value, but got {value!r}")
       enable_flag, _ = self.item()
       if enable_flag:
         raise ValueError(
@@ -141,7 +141,7 @@ class ChromeExtensions(Freezable):
     if flag_name not in self.ENABLE_FLAGS:
       raise ValueError(f"Unsupported extensions flag {flag_name}")
     if not value:
-      raise ValueError(f"{flag_name} expects a value, but got {repr(value)}")
+      raise ValueError(f"{flag_name} expects a value, but got {value!r}")
     if self.disabled:
       raise ValueError(
           f"Existing --disable-extensions conflicts with {flag_name}. "

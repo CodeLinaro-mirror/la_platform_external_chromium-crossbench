@@ -15,8 +15,8 @@ screen_width = int(sys.argv[1])
 screen_height = int(sys.argv[2])
 
 events = (
-    uinput.ABS_X + (0, screen_width, 0, 0),
-    uinput.ABS_Y + (0, screen_height, 0, 0),
+    (*uinput.ABS_X, 0, screen_width, 0, 0),
+    (*uinput.ABS_Y, 0, screen_height, 0, 0),
     uinput.BTN_LEFT,
     uinput.BTN_RIGHT,
 )

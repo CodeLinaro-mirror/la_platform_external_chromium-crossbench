@@ -8,7 +8,7 @@ import abc
 import datetime as dt
 import functools
 import json
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Self, Type, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Self, TypeVar
 
 from typing_extensions import override
 
@@ -48,7 +48,7 @@ _ACTION_TYPE_CONFIG_PARSER: Final = ActionTypeConfigParser()
 ACTION_TIMEOUT: Final = dt.timedelta(seconds=20)
 
 # Lazily initialized Action class lookup.
-ACTIONS: dict[ActionType, Type[Action]] = {}
+ACTIONS: dict[ActionType, type[Action]] = {}
 
 # TODO: remove once pytype is fixed/replaced since it gets confused with Self
 # annotations on classmethods with decorators.
@@ -73,7 +73,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   @override
   def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
     action_type: ActionType = _ACTION_TYPE_CONFIG_PARSER.parse(config)
-    action_cls: Type[Self] = ACTIONS[action_type]  # type: ignore
+    action_cls: type[Self] = ACTIONS[action_type]  # type: ignore
     # Drop _ACTION_TYPE_CONFIG_PARSER arguments/aliases and avoid warnings
     config = dict(config)
     config.pop("action", None)
@@ -88,7 +88,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   @classmethod
   @override
   @functools.cache
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("index", type=NumberParser.positive_zero_int, default=0)
     parser.add_argument(

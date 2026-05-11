@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, ClassVar, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
@@ -85,7 +85,7 @@ class FrequencyProbe(EnvModifier):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return super().key + (("cpus", self._cpu_frequency_map.key),)
+    return (*super().key, ("cpus", self._cpu_frequency_map.key))
 
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
@@ -98,7 +98,7 @@ class FrequencyProbe(EnvModifier):
     return self._cpu_frequency_map
 
   @override
-  def get_context_cls(self) -> Type[FrequencyProbeContext]:
+  def get_context_cls(self) -> type[FrequencyProbeContext]:
     return FrequencyProbeContext
 
 

@@ -13,7 +13,7 @@ import pathlib
 import shlex
 import subprocess
 from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, \
-    MutableMapping, Optional, Sequence, TypeAlias
+    MutableMapping, Sequence, TypeAlias
 
 import psutil
 from typing_extensions import override
@@ -187,7 +187,7 @@ class MockPlatformMixin:
   def expect_download(self,
                       url: str,
                       path: pth.AnyPath,
-                      data: Optional[bytes] = None):
+                      data: bytes | None = None):
     self._download_results.append(DownloadMockData(url, path, data))
 
   def download_to(self, url: str, path: pth.AnyPath) -> pth.AnyPath:
@@ -244,7 +244,7 @@ class MockPlatformMixin:
     return list(self._sh_cmds)
 
   @property
-  def expected_sh_cmds(self) -> Optional[list[TupleCmdArgs]]:
+  def expected_sh_cmds(self) -> list[TupleCmdArgs] | None:
     if self._expected_sh_cmds is None:
       return None
     return list(self._expected_sh_cmds)
@@ -351,8 +351,8 @@ class MockPlatformMixin:
                       shell: bool = False,
                       quiet: bool = False,
                       stdin: ProcessIo = None,
-                      env: Optional[Mapping[str, str]] = None,
-                      cwd: Optional[pth.AnyPath] = None,
+                      env: Mapping[str, str] | None = None,
+                      cwd: pth.AnyPath | None = None,
                       check: bool = True) -> bytes:
     return self.sh(
         *args,
@@ -371,8 +371,8 @@ class MockPlatformMixin:
          stdout: ProcessIo = None,
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
-         env: Optional[Mapping[str, str]] = None,
-         cwd: Optional[pth.AnyPath] = None,
+         env: Mapping[str, str] | None = None,
+         cwd: pth.AnyPath | None = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
     del capture_output, stderr, stdin, stdout, shell, quiet, env, cwd
@@ -407,8 +407,8 @@ class MockPlatformMixin:
             stdout: ProcessIo = None,
             stderr: ProcessIo = None,
             stdin: ProcessIo = None,
-            env: Optional[Mapping[str, str]] = None,
-            cwd: Optional[pth.AnyPath] = None,
+            env: Mapping[str, str] | None = None,
+            cwd: pth.AnyPath | None = None,
             quiet: bool = False) -> MockPopen:
     del bufsize, stdout, stderr, stdin
     self.sh_stdout(*args, shell=shell, quiet=quiet, env=env, cwd=cwd)

@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Optional, \
-    Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Sequence, \
+    cast
 
 from typing_extensions import override
 
@@ -163,7 +163,7 @@ class DevToolsFrontendBenchmark(Benchmark):
       self,
       sites: Sequence[str],
       panels: Sequence[str],
-      action_runner_config: Optional[ActionRunnerConfig] = None,
+      action_runner_config: ActionRunnerConfig | None = None,
   ) -> None:
     stories = tuple(
         DevToolsFrontendStory(f"{site}_{panel}")

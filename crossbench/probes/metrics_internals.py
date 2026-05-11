@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Optional, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Self
 
 from typing_extensions import override
 
@@ -80,7 +80,7 @@ class ChromeMetricsInternalsProbe(JsonResultProbe):
     super().validate_browser(env, browser)
     self.expect_browser(browser, BrowserAttributes.CHROMIUM_BASED)
 
-  def get_context_cls(self) -> Type[ChromeMetricsInternalsProbeContext]:
+  def get_context_cls(self) -> type[ChromeMetricsInternalsProbeContext]:
     return ChromeMetricsInternalsProbeContext
 
 
@@ -96,7 +96,8 @@ function webUIResponse(id, isSuccess, response) {
   }
 }
 window.cr.webUIResponse = webUIResponse;
-chrome.send("fetchStructuredMetricsEvents", ["crossbench_structured_metrics_1"]);
+chrome.send(
+    "fetchStructuredMetricsEvents", ["crossbench_structured_metrics_1"]);
 """
 
   # JS code that checks if there is a structured metrics response.
@@ -109,13 +110,15 @@ chrome.send("fetchStructuredMetricsEvents", ["crossbench_structured_metrics_1"])
 
   def __init__(self, probe: ChromeMetricsInternalsProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._metric_value: Optional[int] = None
+    self._metric_value: int | None = None
 
-  def _read_metric_key(self, label: str) -> Optional[int]:
+  def _read_metric_key(self, label: str) -> int | None:
+    url = ("chrome://metrics-internals/structured?"
+           f"project={self.probe.project_name}&event={self.probe.event_name}")
     with self.run.actions(
         f"Probe({self.probe.name}) dump structured metrics {label}") as actions:
       actions.show_url(
-          f"chrome://metrics-internals/structured?project={self.probe.project_name}&event={self.probe.event_name}",
+          url,
           ready_state=ReadyState.COMPLETE,
           target="_new_tab",
           timeout=dt.timedelta(seconds=10))

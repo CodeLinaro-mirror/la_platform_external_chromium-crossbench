@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import pytest
@@ -32,10 +32,10 @@ class SysExitException(Exception):
 
 def _run_cli(*args: str,
              extra_flags: tuple[str, ...] = (),
-             test_env: Optional[TestEnv] = None,
+             test_env: TestEnv | None = None,
              auto_headless: bool = False) -> tuple[CrossBenchCLI, io.StringIO]:
   if test_env is not None:
-    args += (f"--out-dir={test_env.results_dir}",) + test_env.cq_flags
+    args += (f"--out-dir={test_env.results_dir}", *test_env.cq_flags)
   if auto_headless and not plt.PLATFORM.has_display and ("--headless"
                                                          not in args):
     args += ("--headless",)
@@ -433,9 +433,8 @@ def test_chrome_stdout_logging(test_env: TestEnv) -> None:
 def test_devtools_frontend_all(test_env: TestEnv, test_chrome_name,
                                test_chrome_version) -> None:
   if test_chrome_version < 144:
-    pytest.skip(
-        "Skipping test for Chrome versions below 144; CDP command may not be supported"
-    )
+    pytest.skip("Skipping test for Chrome versions below 144; "
+                "CDP command may not be supported")
   pytest.skip("Skip until b/487909749 is addressed")
   _run_cli(
       "devtools_frontend",
@@ -450,9 +449,8 @@ def test_devtools_frontend_all(test_env: TestEnv, test_chrome_name,
 def test_devtools_frontend_selection(test_env: TestEnv, test_chrome_name,
                                      test_chrome_version) -> None:
   if test_chrome_version < 144:
-    pytest.skip(
-        "Skipping test for Chrome versions below 144; CDP command may not be supported"
-    )
+    pytest.skip("Skipping test for Chrome versions below 144; "
+                "CDP command may not be supported")
   pytest.skip("Skip until b/487909749 is addressed")
   _run_cli(
       "devtools_frontend",

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import abc
 import argparse
-from typing import Optional, Sequence, Type
+from typing import Sequence
 
 from typing_extensions import override
 
@@ -17,7 +17,7 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 
   @property
   @abc.abstractmethod
-  def benchmark_cls(self) -> Type[benchmark.Benchmark]:
+  def benchmark_cls(self) -> type[benchmark.Benchmark]:
     pass
 
   @property
@@ -41,12 +41,12 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):
 
   @property
-  def story_filter_cls(self) -> Type[benchmark.StoryFilter]:
+  def story_filter_cls(self) -> type[benchmark.StoryFilter]:
     return self.benchmark_cls.STORY_FILTER_CLS
 
   def story_filter(self,
                    patterns: Sequence[str],
-                   args: Optional[argparse.Namespace] = None,
+                   args: argparse.Namespace | None = None,
                    **kwargs) -> benchmark.StoryFilter:
     if args is None:
       args = self.namespace()

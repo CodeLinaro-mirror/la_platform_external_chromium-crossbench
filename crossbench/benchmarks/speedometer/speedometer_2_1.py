@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -21,7 +21,7 @@ class Speedometer21Probe(Speedometer2Probe):
   NAME: ClassVar[str] = "speedometer_2.1"
 
   @override
-  def get_context_cls(self) -> Type[Speedometer21ProbeContext]:
+  def get_context_cls(self) -> type[Speedometer21ProbeContext]:
     return Speedometer21ProbeContext
 
 
@@ -53,11 +53,5 @@ class Speedometer21Benchmark(SpeedometerBenchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return (
-        "sp2",
-        "sp2-latest",
-        "speedometer2",
-        "speedometer2-latest",
-        "speedometer_2",
-        "speedometer_2-latest",
-    ) + super().aliases()
+    return ("sp2", "sp2-latest", "speedometer2", "speedometer2-latest",
+            "speedometer_2", "speedometer_2-latest", *super().aliases())

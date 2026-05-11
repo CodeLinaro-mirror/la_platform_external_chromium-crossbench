@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import os
 import shutil
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable
 
 from typing_extensions import override
 
@@ -43,7 +43,7 @@ class FirefoxDownloader(Downloader):
   @classmethod
   @override
   def _get_loader_cls(
-      cls, browser_platform: Platform) -> Type[FirefoxDownloader] | None:
+      cls, browser_platform: Platform) -> type[FirefoxDownloader] | None:
     if browser_platform.is_macos:
       return FirefoxDownloaderMacOS
     if browser_platform.is_linux:
@@ -91,16 +91,16 @@ class FirefoxDownloader(Downloader):
     pass
 
   @override
-  def _find_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
+  def _find_archive_url(self) -> tuple[BrowserVersion, str | None]:
     # Quick probe for complete versions
     if self.requested_version.is_complete:
       return self._find_exact_archive_url()
     raise NotImplementedError("Only full-release versions supported.")
 
-  def _find_exact_archive_url(self) -> tuple[BrowserVersion, Optional[str]]:
+  def _find_exact_archive_url(self) -> tuple[BrowserVersion, str | None]:
     folder_url = (
         f"{self.STORAGE_URL}{self.requested_version.parts_str}/mac/en-GB")
-    return tuple(self._archive_urls(folder_url, self.requested_version))[0]
+    return next(iter(self._archive_urls(folder_url, self.requested_version)))
 
   @override
   def _download_archive(self, archive_url: str, tmp_dir: LocalPath) -> None:

@@ -9,7 +9,7 @@ import datetime as dt
 import itertools
 import json
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Type
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import override
 
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
   from crossbench.types import Json
 
 
-def _clean_up_path_segments(path: tuple[str, ...]) -> Optional[str]:
+def _clean_up_path_segments(path: tuple[str, ...]) -> str | None:
   name = path[-1]
   if name.startswith("segment") or name == "data":
     return None
@@ -50,7 +50,7 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
 
   @abc.abstractmethod
   @override
-  def get_context_cls(self) -> Type[MotionMark1ProbeContext]:
+  def get_context_cls(self) -> type[MotionMark1ProbeContext]:
     pass
 
   @override

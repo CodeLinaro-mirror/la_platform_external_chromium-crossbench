@@ -8,7 +8,7 @@ import argparse
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Any, Final, Iterable, Optional, Set, Type
+from typing import TYPE_CHECKING, Any, Final, Iterable
 
 from crossbench import exception
 from crossbench import path as pth
@@ -107,14 +107,14 @@ _DEFAULT_TIMING: Final[Timing] = Timing()
 class Runner:
   @classmethod
   def add_cli_parser(
-      cls, benchmark_cls: Type[Benchmark],
+      cls, benchmark_cls: type[Benchmark],
       parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     cls._add_run_arguments(benchmark_cls, parser)
     cls._add_output_arguments(benchmark_cls, parser)
     return parser
 
   @classmethod
-  def _add_run_arguments(cls, benchmark_cls: Type[Benchmark],
+  def _add_run_arguments(cls, benchmark_cls: type[Benchmark],
                          parser: argparse.ArgumentParser) -> None:
     run_group = parser.add_argument_group("Run & Repetition Options")
     run_group.add_argument(
@@ -161,7 +161,7 @@ class Runner:
         help="Wait for user input before executing each action.")
 
   @classmethod
-  def _add_output_arguments(cls, benchmark_cls: Type[Benchmark],
+  def _add_output_arguments(cls, benchmark_cls: type[Benchmark],
                             parser: argparse.ArgumentParser) -> None:
     out_dir_group = parser.add_argument_group("Output Directory Options")
     symlink_group = out_dir_group.add_mutually_exclusive_group()
@@ -228,15 +228,15 @@ class Runner:
                browsers: Iterable[Browser],
                benchmark: Benchmark,
                probes: Iterable[Probe] = (),
-               platform: Optional[plt.Platform] = None,
-               env_config: Optional[EnvConfig] = None,
+               platform: plt.Platform | None = None,
+               env_config: EnvConfig | None = None,
                env_validation_mode: ValidationMode = ValidationMode.THROW,
                repetitions: int = 1,
                warmup_repetitions: int = 0,
                cache_temperatures: Iterable[CacheTemperature] = (
                    CacheTemperature.DEFAULT,),
                timing: Timing = _DEFAULT_TIMING,
-               cool_down_threshold: Optional[ThermalStatus] = None,
+               cool_down_threshold: ThermalStatus | None = None,
                thread_mode: ThreadMode = ThreadMode.NONE,
                throw: bool = False,
                create_symlinks: bool = True,
@@ -449,7 +449,7 @@ class Runner:
     return self._env
 
   @property
-  def platforms(self) -> Set[plt.Platform]:
+  def platforms(self) -> set[plt.Platform]:
     return {browser.platform for browser in self.browsers}
 
   @property

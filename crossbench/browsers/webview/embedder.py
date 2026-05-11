@@ -10,7 +10,7 @@ import logging
 import os
 import shlex
 from typing import TYPE_CHECKING, Any, Final, MutableMapping, MutableSet, \
-    Optional, Sequence, cast
+    Sequence, cast
 
 from immutabledict import immutabledict
 from selenium import webdriver
@@ -48,10 +48,10 @@ class WebviewEmbedder(Webview):
 
   def __init__(self,
                label: str,
-               path: Optional[pth.AnyPath] = None,
-               settings: Optional[Settings] = None) -> None:
+               path: pth.AnyPath | None = None,
+               settings: Settings | None = None) -> None:
     super().__init__(label, path, settings)
-    self._session: Optional[BrowserSessionRunGroup] = None
+    self._session: BrowserSessionRunGroup | None = None
 
   @override
   def start(self, session: BrowserSessionRunGroup) -> None:

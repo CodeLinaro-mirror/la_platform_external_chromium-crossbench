@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Self, Sequence
 
 from typing_extensions import override
 
@@ -101,7 +101,7 @@ class PagesConfig(ConfigObject):
     pages: list[PageConfig] = []
     for index, single_line_config in enumerate(values):
       with exception.annotate_argparsing(
-          f"Parsing pages[{index}]: {repr(single_line_config)}"):
+          f"Parsing pages[{index}]: {single_line_config!r}"):
         pages.append(PageConfig.parse_str(single_line_config))
     return cls(pages=tuple(pages))
 
@@ -128,7 +128,7 @@ class PagesConfig(ConfigObject):
   @classmethod
   def _parse_pages(cls,
                    data: dict[str, Any],
-                   secrets: Optional[Secrets] = None) -> tuple[PageConfig, ...]:
+                   secrets: Secrets | None = None) -> tuple[PageConfig, ...]:
     pages = []
     for name, page_config in data.items():
       with exception.annotate_argparsing(f"Parsing story ...[{name!r}]"):
@@ -239,10 +239,10 @@ class DevToolsRecorderPagesConfig(PagesConfig):
       return css
     if aria:
       _, aria = aria.split("aria/", maxsplit=1)
-      return f"[aria-label={repr(aria)}]"
+      return f"[aria-label={aria!r}]"
     if text:
       _, text = text.split("text/", maxsplit=1)
-      return f"xpath///*[text()={repr(text)}]"
+      return f"xpath///*[text()={text!r}]"
 
     raise ValueError("Need at least one single element xpath or aria "
                      "selector for click action")
@@ -255,8 +255,7 @@ class ListPagesConfig(PagesConfig):
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
-    raise argparse.ArgumentTypeError(
-        f"URL list file {repr(value)} does not exist.")
+    raise argparse.ArgumentTypeError(f"URL list file {value!r} does not exist.")
 
   @classmethod
   @override

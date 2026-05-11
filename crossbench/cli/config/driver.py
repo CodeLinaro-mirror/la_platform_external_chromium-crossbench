@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import logging
 import re
-from typing import Any, Optional, Self, Type
+from typing import Any, Self
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -30,21 +30,19 @@ class AmbiguousDriverIdentifier(argparse.ArgumentTypeError):
 IOS_UUID_RE: re.Pattern[str] = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
 
 
-def driver_path(
-    value: Optional[pth.AnyPathLike],
-    type: BrowserDriverType,  #pylint: disable=redefined-builtin
-    name: str = "driver path"
-) -> Optional[pth.AnyPath]:
+def driver_path(value: pth.AnyPathLike | None,
+                driver_type: BrowserDriverType,
+                name: str = "driver path") -> pth.AnyPath | None:
   if not value:
     return None
-  if type.is_remote_driver:
+  if driver_type.is_remote_driver:
     return PathParser.any_path(value, name)
   return plt.PLATFORM.parse_local_binary_path(value, name)
 
 
 @dataclasses.dataclass(frozen=True)
 class DriverConfig(ConfigObject):
-  type: BrowserDriverType = BrowserDriverType.default()
+  driver_type: BrowserDriverType = BrowserDriverType.default()
   path: pth.AnyPath | None = None
   device_id: str | None = None
   adb_bin: pth.AnyPath | None = None
@@ -62,8 +60,7 @@ class DriverConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Cannot parse empty string")
     # Variant: $PATH handled in parse_any_path
     if cls.is_path_like(value):
-      raise argparse.ArgumentTypeError(
-          f"Driver path does not exist: {repr(value)}")
+      raise argparse.ArgumentTypeError(f"Driver path does not exist: {value!r}")
     # Variant: $DRIVER_TYPE
     try:
       driver_type = BrowserDriverType.parse(value)
@@ -96,7 +93,7 @@ class DriverConfig(ConfigObject):
     return cls(driver_type, existing_path)
 
   @classmethod
-  def parse_short_settings(cls: Type[Self], value: str,
+  def parse_short_settings(cls: type[Self], value: str,
                            platform: plt.Platform) -> Self:
     """Check for short versions and multiple candidates"""
     logging.debug("Looking for driver candidates: %s", value)
@@ -111,7 +108,7 @@ class DriverConfig(ConfigObject):
 
   @classmethod
   def try_parse_adb_settings(cls, value: str,
-                             platform: plt.Platform) -> Optional[Self]:
+                             platform: plt.Platform) -> Self | None:
     candidate_serials: list[str] = []
     pattern: re.Pattern = cls.compile_search_pattern(value)
     for serial, info in adb_devices(platform).items():
@@ -135,7 +132,7 @@ class DriverConfig(ConfigObject):
 
   @classmethod
   def try_parse_ios_settings(cls, value: str,
-                             platform: plt.Platform) -> Optional[Self]:
+                             platform: plt.Platform) -> Self | None:
     candidate_serials: list[str] = []
     pattern: re.Pattern = cls.compile_search_pattern(value)
     for uuid, device_info in ios_devices(platform).items():
@@ -170,13 +167,14 @@ class DriverConfig(ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
-        "type",
+        "driver_type",
+        aliases=("type",),
         type=BrowserDriverType.parse,
         default=BrowserDriverType.default())
     parser.add_argument(
         "path",
         type=driver_path,
-        depends_on=("type",),
+        depends_on=("driver_type",),
         help="Path to the driver executable")
     parser.add_argument(
         "settings",
@@ -198,7 +196,7 @@ class DriverConfig(ConfigObject):
     return parser
 
   def __post_init__(self) -> None:
-    if not self.type:
+    if not self.driver_type:
       raise ValueError(f"{type(self).__name__}.type cannot be None.")
     try:
       hash(self.settings)
@@ -209,23 +207,23 @@ class DriverConfig(ConfigObject):
 
   @property
   def is_remote(self) -> bool:
-    return self.type.is_remote_driver
+    return self.driver_type.is_remote_driver
 
   @property
   def is_local(self) -> bool:
-    return self.type.is_local_driver
+    return self.driver_type.is_local_driver
 
   @override
   def validate(self) -> None:
-    if self.type == BrowserDriverType.ANDROID:
+    if self.driver_type == BrowserDriverType.ANDROID:
       self.validate_android()
     elif self.adb_bin:
       raise argparse.ArgumentTypeError("adb_bin is only valid for Android.")
     elif self.bundletool:
       raise argparse.ArgumentTypeError("bundletool is only valid for Android.")
-    if self.type == BrowserDriverType.IOS:
+    if self.driver_type == BrowserDriverType.IOS:
       self.validate_ios()
-    if self.type == BrowserDriverType.CHROMEOS_SSH:
+    if self.driver_type == BrowserDriverType.CHROMEOS_SSH:
       # Unlike the validation functions above for iOS and Android,
       # which validate the "host" to which the device is connected,
       # the ChromeOS validation function validates the "client".
@@ -253,7 +251,7 @@ class DriverConfig(ConfigObject):
           "Please explicitly specify a device ID.")
     if self.device_id not in devices:
       raise argparse.ArgumentTypeError(
-          f"Could not find ADB device with device_id={repr(self.device_id)}. "
+          f"Could not find ADB device with device_id={self.device_id!r}. "
           f"Choices are {names}.")
     if self.adb_bin:
       platform.parse_binary_path(self.adb_bin)
@@ -283,16 +281,16 @@ class DriverConfig(ConfigObject):
           "Please explicitly specify a device UUID.")
     if self.device_id not in devices:
       raise argparse.ArgumentTypeError(
-          f"Could not find ios device with device_id={repr(self.device_id)}. "
+          f"Could not find ios device with device_id={self.device_id!r}. "
           f"Choices are {names}.")
 
   def get_platform(self) -> plt.Platform:
-    if self.type == BrowserDriverType.ANDROID:
+    if self.driver_type == BrowserDriverType.ANDROID:
       return self.get_adb_platform()
-    if self.type == BrowserDriverType.IOS:
+    if self.driver_type == BrowserDriverType.IOS:
       return self.get_ios_platform()
-    if self.type in (BrowserDriverType.LINUX_SSH,
-                     BrowserDriverType.CHROMEOS_SSH):
+    if self.driver_type in (BrowserDriverType.LINUX_SSH,
+                            BrowserDriverType.CHROMEOS_SSH):
       return self.get_ssh_platform()
     return plt.PLATFORM
 
@@ -314,7 +312,7 @@ class DriverConfig(ConfigObject):
         self.settings.get("ssh_port"), "ssh port")
     ssh_user = ObjectParser.non_empty_str(
         self.settings.get("ssh_user"), "ssh user")
-    if self.type == BrowserDriverType.CHROMEOS_SSH:
+    if self.driver_type == BrowserDriverType.CHROMEOS_SSH:
 
       try:
         enable_arc = ObjectParser.bool(
@@ -344,8 +342,8 @@ class DriverConfig(ConfigObject):
     return IOSPlatform(plt.PLATFORM, self.device_id)
 
 
-def driver_device_id(device_id: Optional[str],
-                     settings: Optional[immutabledict]) -> Optional[str]:
+def driver_device_id(device_id: str | None,
+                     settings: immutabledict | None) -> str | None:
   if not settings:
     return device_id
   settings_device_id = settings.get("device_id")
@@ -354,5 +352,5 @@ def driver_device_id(device_id: Optional[str],
   if settings_device_id != device_id:
     raise TypeError("Conflicting both driver['settings']['device_id'] "
                     "and driver['device_id']: "
-                    f"{repr(settings_device_id)} vs {repr(device_id)}")
+                    f"{settings_device_id!r} vs {device_id!r}")
   return device_id

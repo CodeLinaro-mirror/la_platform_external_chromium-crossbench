@@ -56,8 +56,7 @@ class PerfettoProbeContext(
   def _setup_validate_bin(self) -> None:
     binary = self.perfetto_cmd[0]
     if not self.browser_platform.which(binary):
-      raise ValueError(
-          f"{repr(binary)} cannot be found on {self.browser_platform}")
+      raise ValueError(f"{binary!r} cannot be found on {self.browser_platform}")
 
   def _setup_push_perfetto_config(self) -> None:
     self.host_platform.write_text(
@@ -114,14 +113,10 @@ class PerfettoProbeContext(
 
   def _start_perfetto(self) -> None:
     logging.info("PERFETTO: starting")
-    cmd: TupleCmdArgs = self.perfetto_cmd + (
-        "--background",
-        "--config",
-        "-" if self.probe.config_via_stdin else self.get_browser_config_path(),
-        "--txt",
-        "--out",
-        self.result_path,
-    )
+    cmd: TupleCmdArgs = (*self.perfetto_cmd, "--background", "--config",
+                         "-" if self.probe.config_via_stdin else
+                         self.get_browser_config_path(), "--txt", "--out",
+                         self.result_path)
     try:
       if self.probe.config_via_stdin:
         with self._host_config_file.open() as f:

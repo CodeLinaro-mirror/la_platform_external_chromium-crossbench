@@ -10,7 +10,7 @@ import datetime as dt
 import enum
 import logging
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Optional, Self, Sequence, Type
+from typing import TYPE_CHECKING, ClassVar, Self, Sequence
 
 from typing_extensions import override
 
@@ -83,7 +83,7 @@ class PowerSamplerProbe(Probe):
     return parser
 
   def __init__(self,
-               bin_path: Optional[AnyPath] = None,
+               bin_path: AnyPath | None = None,
                sampling_interval: dt.timedelta = dt.timedelta(),
                samplers: Sequence[SamplerType] = SAMPLERS,
                wait_for_battery: bool = True) -> None:
@@ -101,15 +101,14 @@ class PowerSamplerProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return super().key + (
-        ("bin_path", str(self.bin_path)),
-        ("sampling_interval", self.sampling_interval.total_seconds()),
-        ("samplers", tuple(map(str, self.samplers))),
-        ("wait_for_battery", self.wait_for_battery),
-    )
+    return (*super().key, ("bin_path", str(self.bin_path)),
+            ("sampling_interval", self.sampling_interval.total_seconds()),
+            ("samplers", tuple(map(str,
+                                   self.samplers))), ("wait_for_battery",
+                                                      self.wait_for_battery))
 
   @property
-  def bin_path(self) -> Optional[AnyPath]:
+  def bin_path(self) -> AnyPath | None:
     return self._bin_path
 
   @property
@@ -165,7 +164,7 @@ class PowerSamplerProbe(Probe):
     return ProbeValidationError(self, "\n".join(error_message))
 
   @override
-  def get_context_cls(self) -> Type[PowerSamplerProbeContext]:
+  def get_context_cls(self) -> type[PowerSamplerProbeContext]:
     return PowerSamplerProbeContext
 
 

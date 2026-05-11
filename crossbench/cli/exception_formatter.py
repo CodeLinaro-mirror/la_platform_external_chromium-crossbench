@@ -21,7 +21,7 @@ from __future__ import annotations
 import io
 import logging
 import traceback
-from typing import TYPE_CHECKING, Any, Callable, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable
 
 from pygments import highlight
 from pygments.formatters import get_formatter_by_name
@@ -45,7 +45,7 @@ def _get_term_color_support() -> int:
 
 
 def _determine_formatter(style: str = "default",
-                         colors: Optional[int] = None) -> Any:
+                         colors: int | None = None) -> Any:
   colors = colors or _get_term_color_support()
   logging.debug("Detected support for %s colors", colors)
   if colors == 256:
@@ -62,9 +62,8 @@ def _determine_formatter(style: str = "default",
     return get_formatter_by_name(fmt_alias)
 
 
-def _get_causes(
-    ex_type: Type[BaseException], ex_value: BaseException,
-    tb: Optional[TracebackType]) -> list[traceback.TracebackException]:
+def _get_causes(ex_type: type[BaseException], ex_value: BaseException,
+                tb: TracebackType | None) -> list[traceback.TracebackException]:
   tb_exception = traceback.TracebackException(ex_type, ex_value, tb)
   causes: list[traceback.TracebackException] = []
   current = tb_exception
@@ -98,8 +97,8 @@ def _get_formatting_tb_printer() -> Callable[[str], None]:
   return formatting_tb_printer
 
 
-def excepthook(ex_type: Type[BaseException], ex_value: BaseException,
-               tb: Optional[TracebackType]) -> None:
+def excepthook(ex_type: type[BaseException], ex_value: BaseException,
+               tb: TracebackType | None) -> None:
   causes: list[traceback.TracebackException] = _get_causes(
       ex_type, ex_value, tb)
   tb_printer = _get_tb_printer()

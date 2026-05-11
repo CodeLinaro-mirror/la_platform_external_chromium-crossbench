@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import logging
 import urllib.request
-from typing import TYPE_CHECKING, Any, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from typing_extensions import override
 
@@ -64,7 +64,7 @@ class D8(Browser):
     return self.platform.local_path(self.app_path)
 
   @override
-  def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
+  def _setup_cache_dir(self) -> pth.AnyPath | None:
     pass
 
   @override
@@ -134,25 +134,21 @@ class D8(Browser):
   def js(
       self,
       script: str,
-      timeout: Optional[dt.timedelta] = None,
-      arguments: Sequence[object] = ()
-  ) -> Any:
+      timeout: dt.timedelta | None = None,
+      arguments: Sequence[object] = ()) -> Any:
     logging.debug("JS: %s", script)
     args_str: str = json.dumps(arguments)
-    script = """JSON.stringify((function exceptionWrapper(){
-        try {
+    script = f"""JSON.stringify((function exceptionWrapper(){{
+        try {{
           return [
-            (function(...arguments){
-              %(script)s
-            }).apply(globalThis, %(args_str)s),
+            (function(...arguments){{
+              {script}
+            }}).apply(globalThis, {args_str}),
             true];
-        } catch(e) {
+        }} catch(e) {{
           return [e + "", false];
-        }
-      })());""" % {
-        "script": script,
-        "args_str": args_str
-    }
+        }}
+      }})());"""
     result, is_success = "Not started", False
     if d8_shell := self._d8_shell:
       json_result: str = d8_shell.execute(script, eval=True, timeout=timeout)
@@ -171,7 +167,7 @@ class D8(Browser):
     return result
 
   @override
-  def show_url(self, url: str, target: Optional[str] = None) -> None:
+  def show_url(self, url: str, target: str | None = None) -> None:
     if url.startswith("data:text/html;"):
       self._print_data_url(url)
       return

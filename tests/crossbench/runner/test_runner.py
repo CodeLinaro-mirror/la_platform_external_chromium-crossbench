@@ -261,7 +261,7 @@ class RunnerTestCase(BaseRunnerTestCase):
 
     self.assertFalse(runner.is_success)
     self.assertEqual(len(runner.runs), 1)
-    failed_run = list(runner.runs)[0]
+    failed_run = next(iter(runner.runs))
     self.assertFalse(failed_run.is_success)
     self.assertTrue(failed_run.results[probe].is_empty)
     self._validate_probes(failed_run, runner)

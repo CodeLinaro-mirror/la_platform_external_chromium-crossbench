@@ -12,8 +12,7 @@ import logging
 import pathlib
 import re
 import shlex
-from typing import TYPE_CHECKING, Any, Final, Generator, Iterator, Mapping, \
-    Optional, Set, Type
+from typing import TYPE_CHECKING, Any, Final, Generator, Iterator, Mapping
 
 from typing_extensions import override
 
@@ -58,7 +57,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return tmp_path
 
   @property
-  def signals(self) -> Type[AnyPosixSignals]:
+  def signals(self) -> type[AnyPosixSignals]:
     return PosixBaseSignal
 
   @functools.cached_property
@@ -107,7 +106,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     assert not self.is_macos, "unsupported operation on macos"
     entries = self.sh_stdout("grep", "-E", "processor|core id|physical id",
                              "/proc/cpuinfo")
-    logical_cores: Set[int] = set()
+    logical_cores: set[int] = set()
     core_ids: list[int] = []
     physical_ids: list[int] = []
 
@@ -233,7 +232,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return pth.AnyPosixPath(converted_path)
 
   @override
-  def which(self, binary_name: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+  def which(self, binary_name: pth.AnyPathLike) -> pth.AnyPath | None:
     if self.is_local:
       return super().which(binary_name)
     if not binary_name:
@@ -312,27 +311,27 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   @override
   def mkdtemp(self,
-              suffix: Optional[str] = None,
-              prefix: Optional[str] = None,
-              dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+              suffix: str | None = None,
+              prefix: str | None = None,
+              dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
     if self.is_local:
       return super().mkdtemp(suffix, prefix, dir)
     return self._mktemp_sh(is_dir=True, suffix=suffix, prefix=prefix, dir=dir)
 
   @override
   def mktemp(self,
-             suffix: Optional[str] = None,
-             prefix: Optional[str] = None,
-             dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+             suffix: str | None = None,
+             prefix: str | None = None,
+             dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
     if self.is_local:
       return super().mktemp(suffix, prefix, dir)
     return self._mktemp_sh(is_dir=False, suffix=suffix, prefix=prefix, dir=dir)
 
   def _mktemp_sh(self,
                  is_dir: bool,
-                 suffix: Optional[str] = None,
-                 prefix: Optional[str] = None,
-                 dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+                 suffix: str | None = None,
+                 prefix: str | None = None,
+                 dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
     if not dir:
       dir = self.default_tmp_dir
     template = self.path(dir) / f"{prefix or ''}XXXXXXXXXXX{suffix or ''}"
@@ -475,7 +474,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     self.sh("killall", "-9", process_name, check=False)
 
   @override
-  def process_info(self, process: ProcessLike) -> Optional[dict[str, Any]]:
+  def process_info(self, process: ProcessLike) -> dict[str, Any] | None:
     if self.is_local:
       return super().process_info(process)
     try:
@@ -555,8 +554,8 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
             stdout: ProcessIo = None,
             stderr: ProcessIo = None,
             stdin: ProcessIo = None,
-            env: Optional[Mapping[str, str]] = None,
-            cwd: Optional[pth.AnyPath] = None,
+            env: Mapping[str, str] | None = None,
+            cwd: pth.AnyPath | None = None,
             quiet: bool = False) -> subprocess.Popen:
     del shell
     assert not (self.is_android and env), "ADB does not support env vars"

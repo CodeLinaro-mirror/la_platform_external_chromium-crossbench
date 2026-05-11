@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Type, TypeVar
+from typing import TYPE_CHECKING, ClassVar, TypeVar
 
 from typing_extensions import override
 
@@ -37,7 +37,7 @@ class InternalJsonResultProbe(JsonResultProbe, InternalProbe):
   IS_GENERAL_PURPOSE: ClassVar = False
 
   @override
-  def get_context_cls(self) -> Type[InternalJsonResultProbeContext]:
+  def get_context_cls(self) -> type[InternalJsonResultProbeContext]:
     return InternalJsonResultProbeContext
 
 

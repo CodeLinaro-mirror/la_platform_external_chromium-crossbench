@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import TYPE_CHECKING, Any, ClassVar, Mapping, Optional, Sequence, \
-    Type
+from typing import TYPE_CHECKING, Any, ClassVar, Mapping, Sequence
 
 from typing_extensions import override
 
@@ -271,7 +270,7 @@ class LoadingBenchmark(SubStoryBenchmark):
   """
   NAME: ClassVar = "loading"
   DEFAULT_STORY_CLS: ClassVar = Page
-  STORY_FILTER_CLS: ClassVar[Type[LoadingPageFilter]] = LoadingPageFilter
+  STORY_FILTER_CLS: ClassVar[type[LoadingPageFilter]] = LoadingPageFilter
 
   @classmethod
   @override
@@ -289,7 +288,7 @@ class LoadingBenchmark(SubStoryBenchmark):
       # TODO: make stories and page_config mutually exclusive.
       if not has_default_stories:
         raise argparse.ArgumentTypeError(
-            f"Cannot specify --stories={repr(args.stories)} "
+            f"Cannot specify --stories={args.stories!r} "
             "with any other page config option.")
       pages = cls.STORY_FILTER_CLS.stories_from_config(args, config)
       if args.separate:
@@ -311,8 +310,8 @@ class LoadingBenchmark(SubStoryBenchmark):
 
   @classmethod
   def get_pages_config(cls,
-                       args: Optional[argparse.Namespace] = None
-                      ) -> Optional[PagesConfig]:
+                       args: argparse.Namespace | None = None
+                      ) -> PagesConfig | None:
     if not args:
       raise ValueError("Missing args")
     if global_config := args.config:
@@ -351,10 +350,9 @@ class LoadingBenchmark(SubStoryBenchmark):
     # TODO: Use StoryFilter for listing stories everywhere.
     return sorted(story.name for story in cls.STORY_FILTER_CLS.all_stories())
 
-  def __init__(
-      self,
-      stories: Sequence[Page],
-      action_runner_config: Optional[ActionRunnerConfig] = None) -> None:
+  def __init__(self,
+               stories: Sequence[Page],
+               action_runner_config: ActionRunnerConfig | None = None) -> None:
     for story in stories:
       assert isinstance(story, Page)
     super().__init__(stories, action_runner_config)

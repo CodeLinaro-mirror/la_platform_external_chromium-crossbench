@@ -58,7 +58,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
     assert isinstance(probe, V8LogProbe)
-    for flag in js_flags + ["--log-all"]:
+    for flag in [*js_flags, "--log-all"]:
       self.assertIn(flag, probe.js_flags)
 
   def test_from_cli_args(self):
@@ -80,7 +80,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
     assert isinstance(probe, V8LogProbe)
-    for flag in js_flags + ["--log-all"]:
+    for flag in [*js_flags, "--log-all"]:
       self.assertIn(flag, probe.js_flags)
 
   def test_inline_config(self):

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -32,7 +32,7 @@ class CDPEndpointProbe(Probe):
     return self.FILE_NAME
 
   @override
-  def get_context_cls(self) -> Type[CDPEndpointProbeContext]:
+  def get_context_cls(self) -> type[CDPEndpointProbeContext]:
     return CDPEndpointProbeContext
 
 

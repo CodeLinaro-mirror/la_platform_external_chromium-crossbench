@@ -9,7 +9,6 @@ import functools
 import logging
 import os
 import shutil
-from typing import Optional, Type
 
 from typing_extensions import override
 
@@ -34,7 +33,7 @@ class WinPlatform(Platform):
   )
 
   @property
-  def signals(self) -> Type[WinSignals]:
+  def signals(self) -> type[WinSignals]:
     return WinSignals
 
   @property
@@ -136,7 +135,7 @@ class WinPlatform(Platform):
         milliseconds=results["Milliseconds"])
 
   @override
-  def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+  def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
     self.assert_is_local()
     app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
     if not app_or_bin_path.parts:

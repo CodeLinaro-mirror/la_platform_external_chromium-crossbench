@@ -124,7 +124,7 @@ class WildcardCPUFrequencyMap(CPUFrequencyMap):
           "the CPU frequency map should be the only key.")
 
     self._target_frequency: Final[FrequencyType] = self._parse_frequency(
-        list(frequencies.values())[0])
+        next(iter(frequencies.values())))
 
   @override
   def get_target_frequencies(

@@ -8,8 +8,7 @@ import abc
 import contextlib
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Self, Type, \
-    TypeVar
+from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Self, TypeVar
 
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.probe_context import BaseProbeContext, ProbeContext
@@ -31,7 +30,7 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
     self._state = StateMachine(State.INITIAL)
     self._origin = result_origin
     self._probe_results = probe_results
-    self._probe_contexts: dict[Type[Probe], ProbeContextT] = {}
+    self._probe_contexts: dict[type[Probe], ProbeContextT] = {}
     # Contains all probe context where the setup succeeded.
     self._setup_probe_contexts: list[ProbeContextT] = []
     self._failed_probe_contexts: list[ProbeContextT] = []
@@ -166,11 +165,11 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
   def _create_probe_context(self, probe: Probe) -> ProbeContextT | None:
     pass
 
-  def has_probe_context(self, probe_cls: Type[ProbeT]) -> bool:
+  def has_probe_context(self, probe_cls: type[ProbeT]) -> bool:
     return probe_cls in self._probe_contexts
 
   def get_probe_context(self,
-                        probe_cls: Type[ProbeT]) -> ProbeContext[ProbeT] | None:
+                        probe_cls: type[ProbeT]) -> ProbeContext[ProbeT] | None:
     if probe_context := self._probe_contexts.get(probe_cls):
       assert isinstance(probe_context.probe, probe_cls), (
           f"Expected instance of {probe_cls}: got {probe_context.probe}")

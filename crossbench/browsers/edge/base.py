@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 
 from crossbench.browsers.edge.version import EdgeVersion
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class EdgeBaseMixin:
 
   @classmethod
-  def version_cls(cls) -> Type[ChromiumVersion]:
+  def version_cls(cls) -> type[ChromiumVersion]:
     return EdgeVersion
 
   @classmethod

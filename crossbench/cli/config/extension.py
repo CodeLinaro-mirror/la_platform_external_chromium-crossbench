@@ -9,7 +9,7 @@ import dataclasses
 import logging
 import re
 import zipfile
-from typing import TYPE_CHECKING, Optional, Self
+from typing import TYPE_CHECKING, Self
 
 from typing_extensions import override
 
@@ -27,9 +27,9 @@ EXTENSION_ID_PATTERN: re.Pattern = re.compile(r"^[a-p]{32}$")
 @dataclasses.dataclass(frozen=True)
 class ExtensionConfig(ConfigObject):
   VALID_EXTENSIONS = (".crx",)
-  crx: Optional[LocalPath] = None
-  id: Optional[str] = None
-  unpacked: Optional[LocalPath] = None
+  crx: LocalPath | None = None
+  id: str | None = None
+  unpacked: LocalPath | None = None
 
   @classmethod
   @override
@@ -48,12 +48,12 @@ class ExtensionConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Extension paths must not contain ','")
     if path.is_file():
       assert path.suffix == ".crx", (
-          f"Extension files must be crx: {repr(str(path))}")
+          f"Extension files must be crx: {str(path)!r}")
       return cls(crx=path, id=None, unpacked=None)
     # Extension is unpacked in a directory.
     manifest_path = path / "manifest.json"
     assert manifest_path.exists(), (
-        f"Extension dirs must contain a manifest.json: {repr(str(path))}")
+        f"Extension dirs must contain a manifest.json: {str(path)!r}")
     return cls(crx=None, id=None, unpacked=path)
 
   @classmethod

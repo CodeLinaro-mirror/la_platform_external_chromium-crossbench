@@ -9,8 +9,8 @@ import argparse
 import contextlib
 import dataclasses
 import logging
-from typing import TYPE_CHECKING, Any, Final, Iterator, Mapping, Optional, \
-    Self, Sequence, Set, TextIO, Type
+from typing import TYPE_CHECKING, Any, Final, Iterator, Mapping, Self, \
+    Sequence, TextIO
 
 from typing_extensions import override
 
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
   from crossbench.network.base import Network
 
   FlagGroupItemT = tuple[str, str | None] | None
-  BrowserLookupTableT = Mapping[str, tuple[Type[Browser], "BrowserConfig"]]
+  BrowserLookupTableT = Mapping[str, tuple[type[Browser], "BrowserConfig"]]
 
 # Add some slack for buffer for browser + platform names. Note that ultimately
 # this is going to get cropped to MAX_PART_LEN.
@@ -64,12 +64,12 @@ def _flags_to_label(flags: Flags) -> str:
 
 
 @dataclasses.dataclass(frozen=True)
-class BrowserVariantConfig():
+class BrowserVariantConfig:
   label: str
-  browser_cls: Type[Browser]
+  browser_cls: type[Browser]
   browser_config: BrowserConfig
   settings: Settings
-  apk_config: Optional[ApkConfig] = None
+  apk_config: ApkConfig | None = None
 
   @property
   def path(self) -> pth.AnyPath:
@@ -95,12 +95,12 @@ class BaseBrowserVariantsConfig(abc.ABC):
   def parse_args(cls, args: argparse.Namespace) -> BaseBrowserVariantsConfig:
     pass
 
-  def __init__(
-      self,
-      browser_lookup_override: Optional[BrowserLookupTableT] = None) -> None:
+  def __init__(self,
+               browser_lookup_override: BrowserLookupTableT | None = None
+              ) -> None:
     self.flags_config: FlagsConfig = FlagsConfig()
     self._variants: list[BrowserVariantConfig] = []
-    self._unique_labels: Set[str] = set()
+    self._unique_labels: set[str] = set()
     self._browser_lookup_override = browser_lookup_override or {}
 
   @property
@@ -189,8 +189,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
     if isinstance(flag_group_names, str):
       flag_group_names = [flag_group_names]
     if not isinstance(flag_group_names, list):
-      raise ConfigError(
-          f"'flags' is not a list for browser={repr(browser_name)}")
+      raise ConfigError(f"'flags' is not a list for browser={browser_name!r}")
     ObjectParser.unique_sequence(flag_group_names, error_cls=ConfigError)
 
   def _log_browser_variants(self, name: str,
@@ -201,8 +200,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
       logging.info("   %s: %s", i, variant.flags)
 
   @classmethod
-  def get_browser_cls(cls, browser_config: BrowserConfig) -> Type[Browser]:
-    driver = browser_config.driver.type
+  def get_browser_cls(cls, browser_config: BrowserConfig) -> type[Browser]:
+    driver = browser_config.driver.driver_type
     path: pth.AnyPath = browser_config.path
     assert not isinstance(path, str), "Invalid path"
     if not BrowserConfig.is_supported_browser_path(path):
@@ -235,8 +234,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
 
   @classmethod
   def get_safari_browser_cls(cls,
-                             browser_config: BrowserConfig) -> Type[Browser]:
-    driver = browser_config.driver.type
+                             browser_config: BrowserConfig) -> type[Browser]:
+    driver = browser_config.driver.driver_type
     if driver == BrowserDriverType.IOS:
       return all_browsers.SafariWebdriverIOS
     if driver == BrowserDriverType.WEB_DRIVER:
@@ -247,8 +246,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
 
   @classmethod
   def get_chrome_browser_cls(cls,
-                             browser_config: BrowserConfig) -> Type[Browser]:
-    driver = browser_config.driver.type
+                             browser_config: BrowserConfig) -> type[Browser]:
+    driver = browser_config.driver.driver_type
     if driver == BrowserDriverType.WEB_DRIVER:
       return all_browsers.ChromeWebDriver
     if driver == BrowserDriverType.APPLE_SCRIPT:
@@ -266,8 +265,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
 
   @classmethod
   def get_chromium_browser_cls(cls,
-                               browser_config: BrowserConfig) -> Type[Browser]:
-    driver = browser_config.driver.type
+                               browser_config: BrowserConfig) -> type[Browser]:
+    driver = browser_config.driver.driver_type
     # TODO: technically this should be ChromiumWebDriver
     if driver == BrowserDriverType.WEB_DRIVER:
       return all_browsers.ChromiumWebDriver
@@ -309,7 +308,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
         f"No version-download support for browser: {path_or_identifier}")
 
   def _get_driver_path(self, args: argparse.Namespace,
-                       browser_config: BrowserConfig) -> Optional[pth.AnyPath]:
+                       browser_config: BrowserConfig) -> pth.AnyPath | None:
     if browser_config.driver.is_remote:
       return args.remote_driver_path or browser_config.driver.path
     return args.driver_path or browser_config.driver.path
@@ -318,13 +317,13 @@ class BaseBrowserVariantsConfig(abc.ABC):
       self,
       args: argparse.Namespace,
       label: str,
-      browser_cls: Type[Browser],
+      browser_cls: type[Browser],
       browser_config: BrowserConfig,
       flags: Flags,
       browser_platform: plt.Platform,
       network: Network,
       env_config: EnvConfig,
-      apk_config: Optional[ApkConfig] = None) -> BrowserVariantConfig:
+      apk_config: ApkConfig | None = None) -> BrowserVariantConfig:
     if not self._is_valid_browser_path(browser_config):
       raise ConfigError(f"Browser binary does not exist: {browser_config.path}")
     assert label, "Expected non-empty label"
@@ -355,7 +354,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
     browser_variant = BrowserVariantConfig(label, browser_cls, browser_config,
                                            settings, apk_config)
     if not self._check_unique_label(label):
-      raise ConfigError(f"Got non-unique label: {repr(label)}")
+      raise ConfigError(f"Got non-unique label: {label!r}")
     self._variants.append(browser_variant)
     return browser_variant
 
@@ -409,9 +408,9 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
     return config_variants
 
   def __init__(self,
-               raw_config_data: Optional[dict[str, Any]] = None,
-               browser_lookup_override: Optional[BrowserLookupTableT] = None,
-               args: Optional[argparse.Namespace] = None) -> None:
+               raw_config_data: dict[str, Any] | None = None,
+               browser_lookup_override: BrowserLookupTableT | None = None,
+               args: argparse.Namespace | None = None) -> None:
     super().__init__(browser_lookup_override)
     if raw_config_data:
       assert args, "args object needed when loading from dict."
@@ -448,7 +447,7 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
   def _parse_browsers(self, data: dict[str, Any],
                       args: argparse.Namespace) -> None:
     for name, browser_config in data.items():
-      with exception.annotate(f"Parsing browsers[{repr(name)}]"):
+      with exception.annotate(f"Parsing browsers[{name!r}]"):
         self._parse_browser(name, browser_config, args)
 
   def _parse_browser(self, name: str, raw_browser_data: Any,
@@ -456,14 +455,14 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
     if not isinstance(raw_browser_data, (dict, str)):
       raise argparse.ArgumentTypeError(
           f"Expected str or dict, got {type(raw_browser_data).__name__}: "
-          f"{repr(raw_browser_data)}")
+          f"{raw_browser_data!r}")
 
     path_or_identifier: str | None = None
     if isinstance(raw_browser_data, dict):
       path_or_identifier = raw_browser_data.get("path")
     else:
       path_or_identifier = raw_browser_data
-    browser_cls: Type[Browser] | None = None
+    browser_cls: type[Browser] | None = None
     if path_or_identifier and (path_or_identifier
                                in self._browser_lookup_override):
       browser_cls, browser_config = self._browser_lookup_override[
@@ -501,10 +500,10 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
     if not isinstance(raw_browser_data, dict):
       return flag_variants
     flag_groups: list[FlagsGroupConfig] = []
-    with exception.annotate(f"Parsing browsers[{repr(browser_name)}].flags"):
+    with exception.annotate(f"Parsing browsers[{browser_name!r}].flags"):
       flag_groups = self._parse_browser_flags(browser_name, raw_browser_data)
     with exception.annotate(
-        f"Expand browsers[{repr(browser_name)}].flags into full variants"):
+        f"Expand browsers[{browser_name!r}].flags into full variants"):
       flag_variants = flag_variants.product(*flag_groups)
 
     if args.browser:
@@ -531,10 +530,9 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
       else:
         maybe_flag_group = self.flags_config.get(flag_group_name, None)
         if maybe_flag_group is None:
-          raise ConfigError(
-              f"group={repr(flag_group_name)} "
-              f"for browser={repr(browser_name)} does not exist.\n"
-              f"Choices are: {list(self.flags_config.keys())}")
+          raise ConfigError(f"group={flag_group_name!r} "
+                            f"for browser={browser_name!r} does not exist.\n"
+                            f"Choices are: {list(self.flags_config.keys())}")
         flag_groups.append(maybe_flag_group)
     if inline_flags:
       flag_data = {"inline": inline_flags}
@@ -564,7 +562,7 @@ class BrowserVariantConfigArgs(BaseBrowserVariantsConfig):
                       browser_config: BrowserConfig) -> None:
     assert browser_config, "Expected non-empty BrowserConfig."
     browser_config = self._config_for_maybe_downloaded_binary(browser_config)
-    browser_cls: Type[Browser] = self.get_browser_cls(browser_config)
+    browser_cls: type[Browser] = self.get_browser_cls(browser_config)
     args_variants = FlagsGroupConfig.parse_args(args)
     browser_platform: plt.Platform = self._get_browser_platform(browser_config)
     network: Network = self._get_browser_network(args, browser_config,

@@ -8,8 +8,8 @@ import abc
 import argparse
 import logging
 import re
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Mapping, Optional, \
-    Sequence, Type, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Mapping, Sequence, \
+    TypeAlias, TypeVar, cast
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -38,8 +38,8 @@ VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
 class Benchmark(abc.ABC):
   # TODO: migrate to abstract class methods
   NAME: ClassVar[str]
-  DEFAULT_STORY_CLS: ClassVar[Type[Story]] = Story  # type: ignore
-  PROBES: ClassVar[tuple[Type[BenchmarkProbeMixin], ...]] = ()
+  DEFAULT_STORY_CLS: ClassVar[type[Story]] = Story  # type: ignore
+  PROBES: ClassVar[tuple[type[BenchmarkProbeMixin], ...]] = ()
   DEFAULT_REPETITIONS: ClassVar[int] = 1
 
   @classmethod
@@ -114,11 +114,11 @@ class Benchmark(abc.ABC):
     }
 
   @classmethod
-  def default_probe_config_path(cls) -> Optional[pth.LocalPath]:
+  def default_probe_config_path(cls) -> pth.LocalPath | None:
     return None
 
   @classmethod
-  def default_network_config_path(cls) -> Optional[pth.LocalPath]:
+  def default_network_config_path(cls) -> pth.LocalPath | None:
     return None
 
   @classmethod
@@ -135,10 +135,9 @@ class Benchmark(abc.ABC):
     kwargs = cls.kwargs_from_cli(args)
     return cls(**kwargs)
 
-  def __init__(
-      self,
-      stories: Sequence[Story],
-      action_runner_config: Optional[ActionRunnerConfig] = None) -> None:
+  def __init__(self,
+               stories: Sequence[Story],
+               action_runner_config: ActionRunnerConfig | None = None) -> None:
     assert self.NAME is not None, f"{self} has no .NAME property"
     assert self.DEFAULT_STORY_CLS != Story, (
         f"{self} has no .DEFAULT_STORY_CLS property")
@@ -214,19 +213,19 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
     return {"patterns": args.stories.split(","), "args": args}
 
   @classmethod
-  def from_cli_args(cls, story_cls: Type[StoryT],
+  def from_cli_args(cls, story_cls: type[StoryT],
                     args: argparse.Namespace) -> StoryFilter[StoryT]:
     kwargs = cls.kwargs_from_cli(args)
     return cls(story_cls, **kwargs)
 
   def __init__(self,
-               story_cls: Type[StoryT],
+               story_cls: type[StoryT],
                patterns: Sequence[str],
                args: argparse.Namespace,
                separate: bool = False) -> None:
     self._args = args
     assert args, "Missing args"
-    self.story_cls: Type[StoryT] = story_cls
+    self.story_cls: type[StoryT] = story_cls
     assert issubclass(
         story_cls, Story), (f"Subclass of {Story} expected, found {story_cls}")
     # Using order-preserving dict instead of set
@@ -251,7 +250,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
 
 
 class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
-  STORY_FILTER_CLS: ClassVar[Type[StoryFilter]] = StoryFilter  # type: ignore
+  STORY_FILTER_CLS: ClassVar[type[StoryFilter]] = StoryFilter  # type: ignore
 
   @classmethod
   @override
@@ -314,7 +313,7 @@ class RangePatternError(argparse.ArgumentTypeError):
     super().__init__(f"Invalid range pattern {pattern!r}. {message}")
 
 
-class RegexFilter():
+class RegexFilter:
 
   def __init__(self, all_names: Sequence[str], default_names: Sequence[str]):
     self._all_names: dict[str, None] = dict.fromkeys(all_names)
@@ -507,11 +506,11 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
     return kwargs
 
   def __init__(self,
-               story_cls: Type[PressBenchmarkStoryT],
+               story_cls: type[PressBenchmarkStoryT],
                patterns: Sequence[str],
                args: argparse.Namespace,
                separate: bool = False,
-               url: Optional[str] = None) -> None:
+               url: str | None = None) -> None:
     self.url: str | None = url
     self._selected_names: OrderedSet[str] = OrderedSet()
     super().__init__(story_cls, patterns, args, separate)
@@ -538,7 +537,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
 class PressBenchmark(SubStoryBenchmark):
   STORY_FILTER_CLS: ClassVar = PressBenchmarkStoryFilter
   DEFAULT_STORY_CLS: ClassVar[
-      Type[PressBenchmarkStory]] = PressBenchmarkStory  # type: ignore
+      type[PressBenchmarkStory]] = PressBenchmarkStory  # type: ignore
 
   @classmethod
   @abc.abstractmethod
@@ -656,8 +655,8 @@ class PressBenchmark(SubStoryBenchmark):
 
   def __init__(self,
                stories: Sequence[Story],
-               action_runner_config: Optional[ActionRunnerConfig] = None,
-               custom_url: Optional[str] = None) -> None:
+               action_runner_config: ActionRunnerConfig | None = None,
+               custom_url: str | None = None) -> None:
     super().__init__(stories, action_runner_config)
     self.custom_url = custom_url
     if custom_url:

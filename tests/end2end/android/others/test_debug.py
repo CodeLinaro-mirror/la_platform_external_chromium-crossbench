@@ -14,8 +14,8 @@ def test_debug(browser_config, test_env) -> None:
   cli = CrossBenchCLI()
   cli.run([
       "loading", "--url=blank", f"--browser={browser_config}", "--debug",
-      f"--out-dir={test_env.results_dir}"
-  ] + list(test_env.cq_flags))
+      f"--out-dir={test_env.results_dir}", *list(test_env.cq_flags)
+  ])
 
   result_files = list(test_env.results_dir.glob("cb.results.json"))
   assert len(result_files) == 1

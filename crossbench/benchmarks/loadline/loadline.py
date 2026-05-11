@@ -8,7 +8,7 @@ import abc
 import argparse
 import logging
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, ClassVar, Mapping, Sequence
 
 import pandas as pd
 from tabulate import tabulate
@@ -42,8 +42,8 @@ class LoadLineProbe(BenchmarkProbeMixin, Probe):
 
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
-    self._scores_file: Optional[pth.LocalPath] = None
-    self._breakdown_file: Optional[pth.LocalPath] = None
+    self._scores_file: pth.LocalPath | None = None
+    self._breakdown_file: pth.LocalPath | None = None
     self._warnings: list[str] = []
 
   def _is_device_online(self, platform: Platform) -> bool:
@@ -182,8 +182,8 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def get_pages_config(
-      cls, args: Optional[argparse.Namespace] = None) -> PagesConfig:
+  def get_pages_config(cls,
+                       args: argparse.Namespace | None = None) -> PagesConfig:
     # Use manual caching, since args is not hashable.
     if not args or not args.pages_config:
       if cls._page_config is None:

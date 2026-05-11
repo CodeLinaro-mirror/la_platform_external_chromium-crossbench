@@ -9,7 +9,7 @@ import datetime as dt
 import itertools
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Iterable, Sequence
 
 from typing_extensions import override
 
@@ -50,7 +50,7 @@ class EnableFastAction(argparse.Action):
                parser: argparse.ArgumentParser,
                namespace: argparse.Namespace,
                values: str | Sequence[Any] | None,
-               option_string: Optional[str] = None) -> None:
+               option_string: str | None = None) -> None:
     del parser, values, option_string
     namespace.cool_down_time = dt.timedelta()
     namespace.splash_screen = SplashScreen.NONE
@@ -68,7 +68,7 @@ class AppendDebuggerProbeAction(argparse.Action):
                parser: argparse.ArgumentParser,
                namespace: argparse.Namespace,
                values: str | Sequence[Any] | None,
-               option_string: Optional[str] = None) -> None:
+               option_string: str | None = None) -> None:
     del parser, values
     probes: list[ProbeConfig] = getattr(namespace, self.dest, [])
     probe_settings: dict[str, str] = {"debugger": "gdb"}
@@ -84,9 +84,9 @@ class AppendDebuggerProbeAction(argparse.Action):
 class BenchmarkSubcommand(CrossbenchSubcommand):
 
   def __init__(self, cli: CrossBenchCLI,
-               benchmark_cls: Type[Benchmark]) -> None:
+               benchmark_cls: type[Benchmark]) -> None:
     self._benchmark_cls = benchmark_cls
-    self._runner_cls: Type[Runner] = Runner
+    self._runner_cls: type[Runner] = Runner
     self._runner: Runner | None = None
     super().__init__(cli)
 
@@ -688,8 +688,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       raise argparse.ArgumentTypeError(
           f"--config: config file has no config properties {config_file}")
 
-  def _log_benchmark_subcommand_failure(self, benchmark: Optional[Benchmark],
-                                        runner: Optional[Runner],
+  def _log_benchmark_subcommand_failure(self, benchmark: Benchmark | None,
+                                        runner: Runner | None,
                                         e: Exception) -> None:
     logging.debug(e)
     logging.error("")
@@ -788,7 +788,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     return args.probe_config.probes
 
   def _get_benchmark(self, args: argparse.Namespace) -> Benchmark:
-    benchmark_cls: Type[Benchmark] = self._get_benchmark_cls(args)
+    benchmark_cls: type[Benchmark] = self._get_benchmark_cls(args)
     assert (issubclass(benchmark_cls, Benchmark)), (
         f"benchmark_cls={benchmark_cls} is not subclass of Runner")
     with exception.annotate_argparsing(
@@ -796,7 +796,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       return benchmark_cls.from_cli_args(args)
     raise exception.UnreachableError
 
-  def _get_benchmark_cls(self, args: argparse.Namespace) -> Type[Benchmark]:
+  def _get_benchmark_cls(self, args: argparse.Namespace) -> type[Benchmark]:
     del args
     return self._benchmark_cls
 

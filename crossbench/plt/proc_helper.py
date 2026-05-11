@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import logging
 from subprocess import Popen, TimeoutExpired
-from typing import TYPE_CHECKING, Final, Optional
+from typing import TYPE_CHECKING, Final
 
 import psutil
 
@@ -23,7 +23,7 @@ PROCESS_NOT_FOUND_EXCEPTIONS: Final = (psutil.NoSuchProcess,
 def terminate_gracefully(platform: Platform,
                          process: ProcessLike,
                          timeout: int = 1,
-                         signal: Optional[Signals] = None) -> None:
+                         signal: Signals | None = None) -> None:
   """Graceful process termination
     1. Send the provided signal or SIGTERM by default
     2. Wait for the process to terminate

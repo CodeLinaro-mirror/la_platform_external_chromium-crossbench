@@ -19,7 +19,7 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 
-class DevToolsInBrowserClient():
+class DevToolsInBrowserClient:
   """Manages communication with the Chrome DevTools Protocol from within
      the browser context.
   """

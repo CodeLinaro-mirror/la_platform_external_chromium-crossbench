@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Sequence
 
 from typing_extensions import override
 
@@ -25,8 +25,8 @@ class WebviewBrowser(Webview):
 
   def __init__(self,
                label: str,
-               path: Optional[pth.AnyPath] = None,
-               settings: Optional[Settings] = None) -> None:
+               path: pth.AnyPath | None = None,
+               settings: Settings | None = None) -> None:
     super().__init__(label, path, settings)
     # TODO: crbug.com/408236113 - Read the activity name from config
     # or command line to replace "WebViewBrowserActivity".

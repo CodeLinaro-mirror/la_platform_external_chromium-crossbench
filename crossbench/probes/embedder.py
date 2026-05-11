@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Final, Type, cast
+from typing import TYPE_CHECKING, ClassVar, Final, cast
 
 from typing_extensions import override
 
@@ -58,7 +58,7 @@ class WebviewEmbedderProbe(JsonResultProbe):
       raise ProbeIncompatibleBrowser(self, browser,
                                      "Only supported for WV embedders")
 
-  def get_context_cls(self) -> Type[WebviewEmbedderProbeContext]:
+  def get_context_cls(self) -> type[WebviewEmbedderProbeContext]:
     return WebviewEmbedderProbeContext
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:

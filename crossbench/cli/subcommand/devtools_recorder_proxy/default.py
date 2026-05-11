@@ -13,7 +13,7 @@ import secrets
 import shlex
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Any, Coroutine, Final, Optional
+from typing import TYPE_CHECKING, Any, Coroutine, Final
 
 import websockets
 import websockets.asyncio.server as ws_server
@@ -97,7 +97,7 @@ class CrossbenchDevToolsRecorderProxy:
       logging.exception(e)
       serve = websockets.serve(self.handler, "localhost")
     async with serve as server:
-      self._port = list(server.sockets)[0].getsockname()[1]
+      self._port = next(iter(server.sockets)).getsockname()[1]
       logging.info("#" * 80)
       logging.info("#" * 80)
       logging.info("# Crossbench DevTools Recorder Replay Server Started")
@@ -118,11 +118,11 @@ class CrossbenchDevToolsRecorderProxy:
     async for message in websocket:
       await self._send_message(self._handle_message(message))
   async def _send_message(
-      self, coroutine: Coroutine[Any, Any, Optional[tuple[Response,
-                                                          Any]]]) -> None:
+      self, coroutine: Coroutine[Any, Any,
+                                 tuple[Response, Any] | None]) -> None:
     response: JsonDict = {"success": False, "payload": None, "error": None}
     try:
-      result: Optional[tuple[Response, Any]] = await coroutine
+      result: tuple[Response, Any] | None = await coroutine
       response["success"] = True
       if result:
         response_type, payload = result
@@ -143,7 +143,7 @@ class CrossbenchDevToolsRecorderProxy:
     await self._websocket.send(response_json)
 
   async def _handle_message(
-      self, message: bytearray | bytes | str) -> Optional[tuple[Response, Any]]:
+      self, message: bytearray | bytes | str) -> tuple[Response, Any] | None:
     logging.debug("RECEIVE Message: %s", message)
     try:
       payload: dict[str, Any] = json.loads(message)
@@ -207,8 +207,8 @@ class CrossbenchDevToolsRecorderProxy:
     return await self._status_command()
 
   async def _send_output(
-      self, stdout_str: Optional[str],
-      stderr_str: Optional[str]) -> Optional[tuple[Response, dict[str, str]]]:
+      self, stdout_str: str | None,
+      stderr_str: str | None) -> tuple[Response, dict[str, str]] | None:
     if self._state != State.RUNNING:
       return None
     if self._print_cmd_output:

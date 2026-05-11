@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Final, Optional
+from typing import Final
 
 from typing_extensions import override
 
@@ -29,7 +29,7 @@ class D8Version(BrowserVersion):
       raise cls.parse_error("Could not extract version number", full_version)
     prefix = matches["prefix"]
     if not cls._validate_prefix(prefix):
-      raise cls.parse_error(f"Wrong prefix {repr(prefix)}", full_version)
+      raise cls.parse_error(f"Wrong prefix {prefix!r}", full_version)
     version_parts = matches["parts"]
     assert version_parts, "Missing version parts"
     parts: tuple[int, ...] = tuple(map(int, version_parts.split(".")))
@@ -40,7 +40,7 @@ class D8Version(BrowserVersion):
     return parts, BrowserVersionChannel.ALPHA, version_str
 
   @classmethod
-  def _validate_prefix(cls, prefix: Optional[str]) -> bool:
+  def _validate_prefix(cls, prefix: str | None) -> bool:
     if not prefix:
       return True
     return "V8" in prefix

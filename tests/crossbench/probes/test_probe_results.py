@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import pathlib
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
@@ -300,7 +300,7 @@ class MockRun:
   def __init__(self,
                browser,
                browser_platform,
-               action_runner: Optional[ActionRunner] = None):
+               action_runner: ActionRunner | None = None):
     self.browser = browser
     self.browser_platform = browser_platform
     self.is_remote = False

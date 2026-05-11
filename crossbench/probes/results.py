@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Iterable, Optional, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Iterable, TypeVar, cast, overload
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -36,9 +36,9 @@ class ProbeResult(abc.ABC):
   """
 
   def __init__(self,
-               url: Optional[Iterable[str]] = None,
-               file: Optional[Iterable[pth.LocalPath]] = None,
-               perfetto: Optional[Iterable[pth.LocalPath]] = None,
+               url: Iterable[str] | None = None,
+               file: Iterable[pth.LocalPath] | None = None,
+               perfetto: Iterable[pth.LocalPath] | None = None,
                **kwargs: Iterable[pth.LocalPath]) -> None:
     self._url_list: tuple[str, ...] = ()
     if url:
@@ -68,15 +68,14 @@ class ProbeResult(abc.ABC):
   def _append(self,
               tmp_files: dict[str, OrderedSet[pth.LocalPath]],
               file: pth.LocalPath,
-              suffix: Optional[str] = None,
+              suffix: str | None = None,
               allow_duplicates: bool = False) -> None:
     file_suffix_name = file.suffix[1:]
     if not suffix:
       suffix = file_suffix_name
     elif file_suffix_name != suffix:
-      raise ValueError(
-          f"Expected '.{suffix}' suffix, but got {repr(file.suffix)} "
-          f"for {file}")
+      raise ValueError(f"Expected '.{suffix}' suffix, but got {file.suffix!r} "
+                       f"for {file}")
     if files_with_suffix := tmp_files.get(suffix):
       if file not in files_with_suffix:
         files_with_suffix.add(file)
@@ -89,7 +88,7 @@ class ProbeResult(abc.ABC):
   def _extend(self,
               tmp_files: dict[str, OrderedSet[pth.LocalPath]],
               files: Iterable[pth.LocalPath],
-              suffix: Optional[str] = None,
+              suffix: str | None = None,
               allow_duplicates: bool = False) -> None:
     for file in files:
       self._append(
@@ -248,9 +247,9 @@ class BrowserProbeResult(ProbeResult):
 
   def __init__(self,
                result_origin: ProbeResultOrigin,
-               url: Optional[Iterable[str]] = None,
-               file: Optional[Iterable[pth.AnyPath]] = None,
-               perfetto: Optional[Iterable[pth.AnyPath]] = None,
+               url: Iterable[str] | None = None,
+               file: Iterable[pth.AnyPath] | None = None,
+               perfetto: Iterable[pth.AnyPath] | None = None,
                **kwargs: Iterable[pth.AnyPath]) -> None:
     self._browser_file = file
     local_file: Iterable[pth.LocalPath] | None = None
@@ -347,7 +346,7 @@ class ProbeResultDict:
 
   def get(self,
           probe: ProbeResultKey,
-          default: Optional[DefaultT] = None,
+          default: DefaultT | None = None,
           /) -> ProbeResult | DefaultT | None:
     return self._dict.get(probe.name, default)
 

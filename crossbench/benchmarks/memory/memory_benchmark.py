@@ -8,7 +8,7 @@ import datetime as dt
 import json
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Final, MutableMapping, \
-    Optional, Sequence, Type
+    Sequence
 
 import selenium.common.exceptions
 import urllib3.exceptions
@@ -50,7 +50,7 @@ class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
   NAME: ClassVar[str] = "memory_probe"
 
   @override
-  def get_context_cls(self) -> Type[MemoryProbeContext]:
+  def get_context_cls(self) -> type[MemoryProbeContext]:
     return MemoryProbeContext
 
   def to_json(self, actions: Actions) -> JsonDict:
@@ -326,7 +326,7 @@ class MemoryBenchmark(SubStoryBenchmark):
   NAME: ClassVar = "memory"
   DEFAULT_STORY_CLS: ClassVar = Page
   STORY_FILTER_CLS: ClassVar = MemoryBenchmarkStoryFilter
-  PROBES: ClassVar[tuple[Type[MemoryProbe], ...]] = (MemoryProbe,)
+  PROBES: ClassVar[tuple[type[MemoryProbe], ...]] = (MemoryProbe,)
 
   @classmethod
   @override
@@ -368,7 +368,7 @@ class MemoryBenchmark(SubStoryBenchmark):
 
   def __init__(self,
                stories: Sequence[Page],
-               action_runner_config: Optional[ActionRunnerConfig] = None,
+               action_runner_config: ActionRunnerConfig | None = None,
                skippable_tab_count: int = 0,
                target_tab_count: int = 0,
                intensive_tab_switch_count: int = 0) -> None:

@@ -5,12 +5,11 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 _FLAG_TO_PATH_RE: re.Pattern[str] = re.compile(r"[-/\\:.]")
 
 
-def convert_flags_to_label(*flags: str, index: Optional[int] = None) -> str:
+def convert_flags_to_label(*flags: str, index: int | None = None) -> str:
   label = "default"
   if flags:
     label = _FLAG_TO_PATH_RE.sub("_", "_".join(flags).replace("--", ""))

@@ -29,7 +29,7 @@ class Replacements(ConfigObject):
     dict_value = ObjectParser.dict(config)
     for replace_key, replace_value in dict_value.items():
       with exception.annotate_argparsing(
-          f"Parsing ...[{repr(replace_key)}] = {repr(config)}"):
+          f"Parsing ...[{replace_key!r}] = {config!r}"):
         ObjectParser.non_empty_str(replace_key, "replacement key")
         ObjectParser.not_none(replace_value, "replacement value")
     return cls(config)

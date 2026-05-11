@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence
 
 import numpy as np
 from typing_extensions import override
@@ -42,7 +42,7 @@ class LoadLine2Probe(LoadLineProbe):
   BENCHMARK_VERSION: ClassVar[str] = VERSION_STRING
 
   @override
-  def get_context_cls(self,) -> Type[LoadLine2ProbeContext]:
+  def get_context_cls(self,) -> type[LoadLine2ProbeContext]:
     return LoadLine2ProbeContext
 
   @override

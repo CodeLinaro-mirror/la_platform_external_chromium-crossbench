@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import functools
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -26,7 +26,7 @@ class InputSourceAction(BaseDurationAction, metaclass=abc.ABCMeta):
   @classmethod
   @override
   @functools.cache
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument(
         "source", type=InputSource.parse, default=InputSource.JS)

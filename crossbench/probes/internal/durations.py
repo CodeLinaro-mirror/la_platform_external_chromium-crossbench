@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -43,7 +43,7 @@ class DurationsProbe(InternalJsonResultProbe):
     return self.write_group_result(group, merged, csv_formatter=None)
 
   @override
-  def get_context_cls(self) -> Type[InternalJsonResultProbeContext]:
+  def get_context_cls(self) -> type[InternalJsonResultProbeContext]:
     return DurationsProbeContext
 
 

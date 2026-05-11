@@ -10,8 +10,7 @@ import os
 import sys
 import textwrap
 import traceback
-from typing import IO, TYPE_CHECKING, Any, Optional, Sequence, Tuple, Type, \
-    TypeAlias
+from typing import IO, TYPE_CHECKING, Any, Sequence, TypeAlias
 
 import tabulate as tbl
 from typing_extensions import override
@@ -42,8 +41,8 @@ if TYPE_CHECKING:
   from crossbench.cli.types import Subparsers
   from crossbench.parse import LateArgumentError
 
-  BenchmarkClass: TypeAlias = Type[Benchmark]
-  BrowserLookupTable: TypeAlias = dict[str, tuple[Type[Browser], pth.LocalPath]]
+  BenchmarkClass: TypeAlias = type[Benchmark]
+  BrowserLookupTable: TypeAlias = dict[str, tuple[type[Browser], pth.LocalPath]]
 
 
 class CrossBenchArgumentError(argparse.ArgumentError):
@@ -75,7 +74,7 @@ class EnableDebuggingAction(argparse.Action):
                parser: argparse.ArgumentParser,
                namespace: argparse.Namespace,
                values: str | Sequence[Any] | None,
-               option_string: Optional[str] = None) -> None:
+               option_string: str | None = None) -> None:
     del parser, values, option_string
     namespace.throw = True
     namespace.verbosity = 3
@@ -130,7 +129,7 @@ class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
 
 
 class CrossBenchCLI:
-  BENCHMARKS: Tuple[BenchmarkClass, ...] = (
+  BENCHMARKS: tuple[BenchmarkClass, ...] = (
       benchmarks.BrowserStartupBenchmark,
       benchmarks.DevToolsFrontendBenchmark,
       benchmarks.EmbedderBenchmark,
@@ -181,7 +180,7 @@ class CrossBenchCLI:
       benchmarks.WebAIBenchmark,
   )
 
-  RUNNER_CLS: Type[Runner] = Runner
+  RUNNER_CLS: type[Runner] = Runner
 
   def __init__(self, enable_logging: bool = True) -> None:
     self._enable_logging: bool = enable_logging

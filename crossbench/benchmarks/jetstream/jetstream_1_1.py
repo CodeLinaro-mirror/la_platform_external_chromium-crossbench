@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -24,7 +24,7 @@ class JetStream11Probe(JetStreamProbe):
   NAME: ClassVar[str] = "jetstream_1.1"
 
   @override
-  def get_context_cls(self) -> Type[JetStream11ProbeContext]:
+  def get_context_cls(self) -> type[JetStream11ProbeContext]:
     return JetStream11ProbeContext
 
 
@@ -124,7 +124,7 @@ class JetStream11Story(JetStreamStory):
           delay=self.substory_duration)
 
 
-ProbeClsTupleT = tuple[Type[JetStream11Probe], ...]
+ProbeClsTupleT = tuple[type[JetStream11Probe], ...]
 
 
 class JetStream11Benchmark(JetStreamBenchmark):

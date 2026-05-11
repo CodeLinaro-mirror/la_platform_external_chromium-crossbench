@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Set, Type
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
@@ -36,7 +36,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
   def __init__(self,
                label: str,
                path: AnyPath,
-               settings: Optional[Settings] = None) -> None:
+               settings: Settings | None = None) -> None:
     super().__init__(label, path, settings)
     assert self.platform.is_apple, f"Unsupported platform: {self.platform}"
 
@@ -95,7 +95,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
                                                       Any]) -> webdriver.Safari:
     # safaridriver for iOS / technology preview seems to be brittle.
     # Let's give it several chances to start up.
-    seen_exceptions: Set[Type[Exception]] = set()
+    seen_exceptions: set[type[Exception]] = set()
     retries = 0
     for _ in WaitRange(
         min=2, timeout=self.MAX_STARTUP_TIMEOUT).wait_with_backoff():
@@ -210,6 +210,6 @@ class SafariWebdriverIOS(SafariWebDriver):
     return path, path
 
   @override
-  def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
+  def _setup_cache_dir(self) -> pth.AnyPath | None:
     # TODO: Can we manage cache dir on iOS?
     return None

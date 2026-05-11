@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import shutil
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Optional, Self, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Self
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -74,10 +74,10 @@ class WebPageReplayProbe(Probe):
   def __init__(self,
                http_port: int = 0,
                https_port: int = 0,
-               wpr_go_bin: Optional[LocalPath] = None,
-               inject_scripts: Optional[Iterable[LocalPath]] = None,
-               key_file: Optional[LocalPath] = None,
-               cert_file: Optional[LocalPath] = None,
+               wpr_go_bin: LocalPath | None = None,
+               inject_scripts: Iterable[LocalPath] | None = None,
+               key_file: LocalPath | None = None,
+               cert_file: LocalPath | None = None,
                use_test_root_certificate: bool = False,
                record_setup: bool = True) -> None:
     super().__init__()
@@ -132,7 +132,7 @@ class WebPageReplayProbe(Probe):
     return browser.attributes().is_chromium_based and browser.platform.is_local
 
   @override
-  def get_context_cls(self) -> Type[WprRecorderProbeContext]:
+  def get_context_cls(self) -> type[WprRecorderProbeContext]:
     return WprRecorderProbeContext
 
   @override

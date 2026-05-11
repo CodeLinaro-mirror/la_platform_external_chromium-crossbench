@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -24,7 +24,7 @@ class BaseRunGroupTestCase(BaseRunnerTestCase):
     self.runner = self.default_runner()
 
   def default_session(self,
-                      browser: Optional[Browser] = None,
+                      browser: Browser | None = None,
                       throw: bool = True) -> BrowserSessionRunGroup:
     browser = browser or self.browsers[0]
     return BrowserSessionRunGroup(self.runner.env, self.runner.probes, browser,

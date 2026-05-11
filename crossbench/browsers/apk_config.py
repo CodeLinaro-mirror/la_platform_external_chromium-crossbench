@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-from typing import TYPE_CHECKING, ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import Self, override
 
@@ -24,7 +24,7 @@ class ApkConfig(ConfigObject):
   path: pth.LocalPath
   allow_downgrade: bool = True
   reinstall: bool = True
-  modules: Optional[str] = None
+  modules: str | None = None
 
   @classmethod
   def apk_path(cls, value: pth.AnyPathLike) -> pth.LocalPath:

@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import argparse
 import enum
-from typing import TYPE_CHECKING, ClassVar, Final, FrozenSet, Optional, Self, \
-    Sequence, Set, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence
 
 from typing_extensions import override
 
@@ -25,13 +24,13 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
 
 # TODO: go over these again and clean the categories.
-MINIMAL_CONFIG: Final[FrozenSet[str]] = frozenset((
+MINIMAL_CONFIG: Final[frozenset[str]] = frozenset((
     "blink.user_timing",
     "toplevel",
     "v8",
     "v8.execute",
 ))
-DEVTOOLS_TRACE_CONFIG: Final[FrozenSet[str]] = frozenset((
+DEVTOOLS_TRACE_CONFIG: Final[frozenset[str]] = frozenset((
     "blink.console",
     "blink.user_timing",
     "devtools.timeline",
@@ -49,7 +48,7 @@ DEVTOOLS_TRACE_CONFIG: Final[FrozenSet[str]] = frozenset((
     "toplevel",
     "v8.execute",
 ))
-V8_TRACE_CONFIG: Final[FrozenSet[str]] = frozenset((
+V8_TRACE_CONFIG: Final[frozenset[str]] = frozenset((
     "blink",
     "blink.user_timing",
     "browser",
@@ -86,7 +85,7 @@ V8_TRACE_CONFIG: Final[FrozenSet[str]] = frozenset((
     "v8.execute",
     "wayland",
 ))
-V8_GC_STATS_TRACE_CONFIG: Final[FrozenSet[str]] = V8_TRACE_CONFIG | frozenset(
+V8_GC_STATS_TRACE_CONFIG: Final[frozenset[str]] = V8_TRACE_CONFIG | frozenset(
     ("disabled-by-default-v8.gc_stats",))
 
 TRACE_PRESETS: Final[dict[str, frozenset[str]]] = {
@@ -214,16 +213,16 @@ class TracingProbe(ChromiumProbe):
     return parser
 
   def __init__(self,
-               preset: Optional[str] = None,
-               categories: Optional[Sequence[str]] = None,
-               trace_config: Optional[pth.LocalPath] = None,
+               preset: str | None = None,
+               categories: Sequence[str] | None = None,
+               trace_config: pth.LocalPath | None = None,
                startup_duration: int = 0,
                record_mode: RecordMode = RecordMode.CONTINUOUSLY,
                record_format: RecordFormat = RecordFormat.PROTO,
-               traceconv: Optional[pth.LocalPath] = None) -> None:
+               traceconv: pth.LocalPath | None = None) -> None:
     super().__init__()
     self._trace_config: pth.LocalPath | None = trace_config
-    self._categories: Set[str] = set(categories or MINIMAL_CONFIG)
+    self._categories: set[str] = set(categories or MINIMAL_CONFIG)
     self._preset: str | None = preset
     if preset:
       self._categories.update(TRACE_PRESETS[preset])
@@ -244,12 +243,12 @@ class TracingProbe(ChromiumProbe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return super().key + (("preset", self._preset),
-                          ("categories", tuple(self._categories)),
-                          ("startup_duration", self._startup_duration),
-                          ("record_mode", str(self._record_mode)),
-                          ("record_format", str(self._record_format)),
-                          ("traceconv", str(self._traceconv)))
+    return (*super().key, ("preset", self._preset), ("categories",
+                                                     tuple(self._categories)),
+            ("startup_duration",
+             self._startup_duration), ("record_mode", str(self._record_mode)),
+            ("record_format", str(self._record_format)), ("traceconv",
+                                                          str(self._traceconv)))
 
   @property
   @override
@@ -269,7 +268,7 @@ class TracingProbe(ChromiumProbe):
     return self._record_mode
 
   @property
-  def categories(self) -> Set[str]:
+  def categories(self) -> set[str]:
     return set(self._categories)
 
   @property
@@ -304,7 +303,7 @@ class TracingProbe(ChromiumProbe):
     super().attach(browser)
 
   @override
-  def get_context_cls(self) -> Type[TracingProbeContext]:
+  def get_context_cls(self) -> type[TracingProbeContext]:
     return TracingProbeContext
 
 

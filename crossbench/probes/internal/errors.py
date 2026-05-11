@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, ClassVar, Iterable, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Iterable, Self
 
 from typing_extensions import override
 
@@ -75,7 +75,7 @@ class ErrorsProbe(InternalJsonResultProbe):
     return result
 
   @override
-  def get_context_cls(self) -> Type[ErrorsProbeContext]:
+  def get_context_cls(self) -> type[ErrorsProbeContext]:
     return ErrorsProbeContext
 
   @override

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import collections
 import logging
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -43,7 +43,7 @@ class V8RCSProbe(ChromiumProbe):
     browser.js_flags.update(("--runtime-call-stats", "--allow-natives-syntax"))
 
   @override
-  def get_context_cls(self) -> Type[V8RCSProbeContext]:
+  def get_context_cls(self) -> type[V8RCSProbeContext]:
     return V8RCSProbeContext
 
   def concat_group_files(self, group: RepetitionsRunGroup

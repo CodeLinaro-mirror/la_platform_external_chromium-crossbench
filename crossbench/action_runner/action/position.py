@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import functools
-from typing import TYPE_CHECKING, Any, Self, Type
+from typing import TYPE_CHECKING, Any, Self
 
 from typing_extensions import override
 
@@ -34,7 +34,7 @@ class CoordinatesConfig(ConfigObject):
   @override
   @functools.lru_cache(maxsize=1)
   def config_parser(
-      cls: Type[CoordinatesConfig]) -> ConfigParser[CoordinatesConfig]:
+      cls: type[CoordinatesConfig]) -> ConfigParser[CoordinatesConfig]:
     parser = ConfigParser(
         cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
     parser.add_argument("x", type=NumberParser.positive_zero_int, required=True)
@@ -63,7 +63,7 @@ class SelectorConfig(ConfigObject):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: Type[SelectorConfig]) -> ConfigParser[SelectorConfig]:
+  def config_parser(cls: type[SelectorConfig]) -> ConfigParser[SelectorConfig]:
     parser = ConfigParser(
         cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
     parser.add_argument(

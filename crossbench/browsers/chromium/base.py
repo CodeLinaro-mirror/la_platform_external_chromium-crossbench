@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 
 from crossbench.browsers.chromium.version import ChromiumVersion
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class ChromiumBaseMixin:
 
   @classmethod
-  def version_cls(cls) -> Type[ChromiumVersion]:
+  def version_cls(cls) -> type[ChromiumVersion]:
     return ChromiumVersion
 
   @classmethod

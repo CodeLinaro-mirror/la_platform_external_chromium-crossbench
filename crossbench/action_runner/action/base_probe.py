@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -30,7 +30,7 @@ class BaseProbeAction(Action):
   @classmethod
   @override
   @functools.cache
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     return parser
 
@@ -44,7 +44,7 @@ class BaseProbeAction(Action):
     super().__init__(timeout, index)
 
   @property
-  def probe_cls(self) -> Type[Probe]:
+  def probe_cls(self) -> type[Probe]:
     return self._probe_cls
 
   @property

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import zipfile
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING, Iterable
 
 from google.protobuf import text_format
 from google.protobuf.json_format import MessageToJson
@@ -152,7 +152,7 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
       # 'None' as emit all metrics specified in the metric definitions.
       # When no metric IDs are explicitly given, default to the more
       # sensible option of emitting every metric.
-      metric_ids: Optional[list[str]] = None
+      metric_ids: list[str] | None = None
       if self.probe.summary_metrics:
         metric_ids = list(self.probe.summary_metrics)
 

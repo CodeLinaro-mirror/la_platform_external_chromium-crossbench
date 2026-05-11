@@ -12,7 +12,7 @@ import shlex
 import subprocess
 import threading
 import time
-from typing import IO, TYPE_CHECKING, Final, Optional, Sequence
+from typing import IO, TYPE_CHECKING, Final, Sequence
 
 from crossbench.helper.state import BaseState, StateMachine
 
@@ -43,7 +43,7 @@ class BackgroundReader(threading.Thread):
           print(data, end="")
         self._queue.put(data)
 
-  def get(self, timeout: Optional[float] = None) -> str:
+  def get(self, timeout: float | None = None) -> str:
     return self._queue.get(timeout=timeout)
 
 
@@ -60,7 +60,7 @@ class D8Shell:
                platform: plt.Platform,
                d8_bin: pth.LocalPath,
                flags: Sequence[str] = (),
-               cwd: Optional[pth.LocalPath] = None):
+               cwd: pth.LocalPath | None = None):
     self._state = StateMachine(State.INITIAL)
     self._platform = platform
     assert platform.is_local, (
@@ -106,7 +106,7 @@ class D8Shell:
     finally:
       self._platform.terminate(self._process)
 
-  def read(self, timeout: Optional[dt.timedelta] = None) -> str:
+  def read(self, timeout: dt.timedelta | None = None) -> str:
     self._state.expect(State.WAIT_FOR_OUTPUT)
     if timeout is None:
       timeout = DEFAULT_TIMEOUT
@@ -142,9 +142,9 @@ class D8Shell:
               cmd: str,
               eval: bool = False,
               print_output: bool = False,
-              timeout: Optional[dt.timedelta] = None) -> str:
+              timeout: dt.timedelta | None = None) -> str:
     if eval:
-      cmd = f"eval({repr(cmd)})"
+      cmd = f"eval({cmd!r})"
     self.write(cmd, print_output=print_output)
     return self.read(timeout)
 
@@ -152,4 +152,4 @@ class D8Shell:
     if not file.exists():
       raise RuntimeError(f"{file} does not exist")
     logging.debug("D8 load: %s", file)
-    return self.execute(f"load({repr(str(file))})")
+    return self.execute(f"load({str(file)!r})")

@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Iterable, Optional, Set, Type
+from typing import TYPE_CHECKING, Iterable
 
 from typing_extensions import override
 
@@ -68,7 +68,7 @@ class Run(ResultOrigin):
       is_warmup: bool,
       temperature: str,
       index: int,
-      name: Optional[str] = None,
+      name: str | None = None,
       timeout: dt.timedelta = dt.timedelta(),
       throw: bool = False,
       env_validation_mode: ValidationMode = ValidationMode.THROW) -> None:
@@ -91,13 +91,13 @@ class Run(ResultOrigin):
     self._out_dir = self._get_out_dir().absolute()
     self._probe_results = ProbeResultDict(self._out_dir)
     self._durations = Durations()
-    self._start_datetime = dt.datetime.fromtimestamp(0, dt.timezone.utc)
+    self._start_datetime = dt.datetime.fromtimestamp(0, dt.UTC)
     self._timeout = timeout
     self._exceptions = Annotator(throw)
     self._browser_tmp_dir: pth.AnyPath | None = None
     self._probe_context_manager = ProbeRunContextManager(
         self, self._probe_results)
-    self._annotations: Set[RunAnnotation] = set()
+    self._annotations: set[RunAnnotation] = set()
 
   def __str__(self) -> str:
     return f"Run({self.name}, state={self._state}, {self.browser})"
@@ -265,7 +265,7 @@ class Run(ResultOrigin):
     return self._story
 
   @property
-  def name(self) -> Optional[str]:
+  def name(self) -> str | None:
     return self._name
 
   @property
@@ -485,11 +485,11 @@ class Run(ResultOrigin):
     logging.info("- " * 40)
     RunAnnotation.log_all(self.annotations, limit=10)
 
-  def has_probe_context(self, probe_cls: Type[ProbeT]) -> bool:
+  def has_probe_context(self, probe_cls: type[ProbeT]) -> bool:
     return self._probe_context_manager.has_probe_context(probe_cls)
 
   def get_probe_context(self,
-                        probe_cls: Type[ProbeT]) -> ProbeContext[ProbeT] | None:
+                        probe_cls: type[ProbeT]) -> ProbeContext[ProbeT] | None:
     return self._probe_context_manager.get_probe_context(probe_cls)
 
 

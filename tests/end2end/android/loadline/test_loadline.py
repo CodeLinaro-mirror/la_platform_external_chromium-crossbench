@@ -150,8 +150,8 @@ def _test_loadline_default(device_id, adb_path, benchmark_type: BenchmarkType,
   out_dir = test_env.results_dir / f"default_{benchmark_type}"
   cli.run([
       benchmark_type, f"--browser={browser_config}", "--repeat=1", "--throw",
-      f"--out-dir={out_dir}", "--debug"
-  ] + list(test_env.cq_flags))
+      f"--out-dir={out_dir}", "--debug", *list(test_env.cq_flags)
+  ])
   # With only 1 repetition, there's a chance that one story won't produce a
   # metric. To avoid flaky failures, we only check the total score here.
   _verify_metrics(out_dir, benchmark_type, only_total=True)
@@ -167,8 +167,9 @@ def test_loadline_batch(device_id, adb_path, test_env: TestEnv) -> None:
   cli.run([
       BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=2",
       "--throw", f"--out-dir={out_dir}", "--time-unit=3s",
-      f"--probe=trace_processor:{_batch_trace_process_config()}"
-  ] + list(test_env.cq_flags))
+      f"--probe=trace_processor:{_batch_trace_process_config()}",
+      *list(test_env.cq_flags)
+  ])
   _verify_metrics(out_dir, BenchmarkType.PHONE)
   _verify_breakdown(out_dir)
 

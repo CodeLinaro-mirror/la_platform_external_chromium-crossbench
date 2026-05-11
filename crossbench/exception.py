@@ -11,7 +11,7 @@ import re
 import sys
 import traceback as tb
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final, Iterator, Optional, Self, Type
+from typing import TYPE_CHECKING, Any, Final, Iterator, Self
 
 from crossbench.helper import collection_helper, txt_helper
 
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 TInfoStack = tuple[str, ...]
 
-TExceptionTypes = tuple[Type[BaseException], ...]
+TExceptionTypes = tuple[type[BaseException], ...]
 
 _TRACEBACK_SOURCE_POSITION_RE = re.compile(r'  File "([^"]+)", line (\d+)')
 
@@ -48,7 +48,7 @@ class MultiException(ValueError):
   def __len__(self) -> int:
     return len(self.exceptions)
 
-  def matching(self, *args: Type[BaseException]) -> list[BaseException]:
+  def matching(self, *args: type[BaseException]) -> list[BaseException]:
     return self.exceptions.matching(*args)
 
   @property
@@ -69,7 +69,7 @@ class ExceptionAnnotationScope:
       exception_types: TExceptionTypes,
       ignore_exception_types: TExceptionTypes,
       entries: tuple[str, ...],
-      throw_cls: Optional[Type[BaseException]] = None,
+      throw_cls: type[BaseException] | None = None,
   ) -> None:
     logging.debug("EAS: %s%s", "  " * annotator.depth, " ".join(entries))
     self._annotator: Final[ExceptionAnnotator] = annotator
@@ -78,7 +78,7 @@ class ExceptionAnnotationScope:
         *ignore_exception_types, StopIteration, GeneratorExit,
         StopAsyncIteration)
     self._added_info_stack_entries: Final[tuple[str, ...]] = entries
-    self._throw_cls: Final[Type[BaseException] | None] = throw_cls
+    self._throw_cls: Final[type[BaseException] | None] = throw_cls
     self._previous_info_stack: TInfoStack = ()
 
   def __enter__(self) -> Self:
@@ -86,9 +86,9 @@ class ExceptionAnnotationScope:
         self._added_info_stack_entries)
     return self
 
-  def __exit__(self, exception_type: Optional[Type[BaseException]],
-               exception_value: Optional[BaseException],
-               traceback: Optional[TracebackType]) -> bool:
+  def __exit__(self, exception_type: type[BaseException] | None,
+               exception_value: BaseException | None,
+               traceback: TracebackType | None) -> bool:
     if not exception_value or not exception_type:
       self._annotator.leave(self._previous_info_stack)
       # False => exception not handled
@@ -124,10 +124,10 @@ class ExceptionAnnotator:
 
   def __init__(self,
                throw: bool = False,
-               throw_cls: Optional[Type[BaseException]] = None) -> None:
+               throw_cls: type[BaseException] | None = None) -> None:
     self._exceptions: list[Entry] = []
     self.throw: Final[bool] = throw
-    self._throw_cls: Final[Type[BaseException] | None] = throw_cls
+    self._throw_cls: Final[type[BaseException] | None] = throw_cls
     # The info_stack adds additional meta information to handle exceptions.
     # Unlike the source-based backtrace, this can contain dynamic information
     # for easier debugging.
@@ -179,7 +179,7 @@ class ExceptionAnnotator:
       self._pending_exceptions[exception_value] = self.info_stack
     self._info_stack = previous_stack
 
-  def matching(self, *args: Type[BaseException]) -> list[BaseException]:
+  def matching(self, *args: type[BaseException]) -> list[BaseException]:
     result = []
     for entry in self._exceptions:
       exception = entry.exception
@@ -189,8 +189,8 @@ class ExceptionAnnotator:
 
   def assert_success(
       self,
-      message: Optional[str] = None,
-      exception_cls: Type[BaseException] = MultiException,
+      message: str | None = None,
+      exception_cls: type[BaseException] = MultiException,
   ) -> None:
     if self.is_success:
       return
@@ -377,7 +377,7 @@ def annotate(
     *stack_entries: str,
     exceptions: TExceptionTypes = (Exception,),
     ignore: TExceptionTypes = (),
-    throw_cls: Optional[Type[BaseException]] = MultiException
+    throw_cls: type[BaseException] | None = MultiException
 ) -> ExceptionAnnotationScope:
   """Use to annotate an exception.
   By default this will throw a MultiException which can keep track of

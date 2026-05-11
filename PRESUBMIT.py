@@ -98,7 +98,7 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   # ---------------------------------------------------------------------------
   # isort:
   # ---------------------------------------------------------------------------
-  SortImports(input_api, output_api, results, modified_py_files)
+  SortImports(input_api, modified_py_files)
 
   # ---------------------------------------------------------------------------
   # js:
@@ -127,22 +127,18 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   return results
 
 
-def SortImports(input_api: Any, output_api: Any, results: list,
-                modified_py_files: list[str]) -> None:
-  for py_file in modified_py_files:
-    if GlobalSkipChecks(input_api, py_file):
-      continue
-    full_py_path = pathlib.Path(input_api.change.RepositoryRoot()) / py_file
-    original_contents = input_api.ReadFile(str(full_py_path), "r")
-    subprocess.run([input_api.python_executable, "-m", "isort", full_py_path],
-                   check=True)
-    formatted_contents = input_api.ReadFile(str(full_py_path), "r")
-    if original_contents != formatted_contents:
-      results.append(
-          output_api.PresubmitPromptWarning(
-              "Unsorted python imports in file:",
-              items=[str(full_py_path)],
-              long_text="Please update your commit with the formatted file."))
+def SortImports(input_api: Any, modified_py_files: list[str]) -> None:
+  files_to_sort = [
+      str(pathlib.Path(input_api.change.RepositoryRoot()) / f)
+      for f in modified_py_files
+      if not GlobalSkipChecks(input_api, f)
+  ]
+  if files_to_sort:
+    # Batches all files into a single synchronous parallel invocation that
+    # formats in place
+    subprocess.run(
+        [input_api.python_executable, "-m", "isort", "-j", "0", *files_to_sort],
+        check=True)
 
 
 def FormatHjsonFiles(input_api: Any, output_api: Any, results: list,

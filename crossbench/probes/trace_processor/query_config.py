@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final, Optional, Self
+from typing import TYPE_CHECKING, Final, Self
 
 from typing_extensions import override
 
@@ -54,7 +54,7 @@ class TraceProcessorQueryConfig(ConfigObject):
   def __init__(self,
                name: str,
                sql: str,
-               replacements: Optional[Replacements] = None) -> None:
+               replacements: Replacements | None = None) -> None:
     self._name: Final[str] = name
     self._sql: Final[str] = self._init_sql(sql, replacements)
 

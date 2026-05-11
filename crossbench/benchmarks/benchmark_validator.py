@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING
 
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.probes.probe import Probe
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.base import Benchmark
 
 
-def validate_cls(cls: Type[Benchmark]) -> None:
+def validate_cls(cls: type[Benchmark]) -> None:
   for benchmark_probe_cls in cls.PROBES:
     assert inspect.isclass(benchmark_probe_cls), (
         f"{cls}.PROBES must contain classes only, "

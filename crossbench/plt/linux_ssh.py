@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import shlex
-from typing import TYPE_CHECKING, Any, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping
 
 from typing_extensions import override
 
@@ -41,8 +41,8 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
   def build_ssh_cmd(self,
                     *args: CmdArg,
                     shell: bool = False,
-                    env: Optional[Mapping[str, str]] = None,
-                    cwd: Optional[AnyPath] = None) -> ListCmdArgs:
+                    env: Mapping[str, str] | None = None,
+                    cwd: AnyPath | None = None) -> ListCmdArgs:
     if env:
       # TODO: support env with "export FOO=bar;" prefixes
       raise ValueError(f"{self} platform only supports an empty env for now.")
@@ -66,13 +66,12 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
       self,
       *args: CmdArg,
       shell: bool = False,
-      env: Optional[Mapping[str, str]] = None,
-      cwd: Optional[AnyPath] = None,
+      env: Mapping[str, str] | None = None,
+      cwd: AnyPath | None = None,
   ) -> ListCmdArgs:
     return self.build_ssh_cmd(*args, shell=shell, env=env, cwd=cwd)
 
-  def processes(self,
-                attrs: Optional[list[str]] = None) -> list[dict[str, Any]]:
+  def processes(self, attrs: list[str] | None = None) -> list[dict[str, Any]]:
     del attrs
     # TODO: Define a more generic method in PosixPlatform, possibly with
     # an overridable function to generate ps command line.

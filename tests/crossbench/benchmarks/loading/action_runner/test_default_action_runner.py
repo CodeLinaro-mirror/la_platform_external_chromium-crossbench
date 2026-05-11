@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import pathlib
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any
 
 from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
@@ -35,7 +35,7 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
   def set_up_with_probe(
       self,
       probe: Probe,
-      probe_context_cls: Type[ProbeContext] | None = None,
+      probe_context_cls: type[ProbeContext] | None = None,
       probe_context_args: dict[str, Any] | None = None) -> None:
     self.fs.create_file(
         "/usr/bin/google-chrome", contents="definitely a browser")

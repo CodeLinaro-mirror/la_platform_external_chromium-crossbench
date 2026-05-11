@@ -7,8 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Optional, Sequence, \
-    cast
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence, cast
 
 from typing_extensions import override
 
@@ -84,7 +83,7 @@ def to_ms(duration: dt.timedelta) -> int:
   return int(round(duration.total_seconds() * 1000))
 
 
-def parse_shuffle_seed(value: Optional[Any]) -> ShuffleSeedT:
+def parse_shuffle_seed(value: Any | None) -> ShuffleSeedT:
   if value in (None, "off", "generate"):
     return value
   if isinstance(value, int):
@@ -372,8 +371,8 @@ class Speedometer3Benchmark(SpeedometerBenchmark, metaclass=abc.ABCMeta):
 
   def __init__(self,
                stories: Sequence[Story],
-               action_runner_config: Optional[ActionRunnerConfig] = None,
-               custom_url: Optional[str] = None,
+               action_runner_config: ActionRunnerConfig | None = None,
+               custom_url: str | None = None,
                detailed_metrics: bool = False) -> None:
     self._detailed_metrics: Final[bool] = detailed_metrics
     super().__init__(stories, action_runner_config, custom_url)

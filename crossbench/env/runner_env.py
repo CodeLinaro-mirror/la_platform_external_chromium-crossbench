@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Final, Iterable, Optional
+from typing import TYPE_CHECKING, Final, Iterable
 
 from crossbench import plt
 from crossbench.cli.config.env import EnvConfig, ValidationMode
@@ -48,7 +48,7 @@ class RunnerEnv(BaseEnv):
                browsers: Iterable[Browser],
                probes: Iterable[Probe],
                repetitions: int,
-               config: Optional[EnvConfig] = None,
+               config: EnvConfig | None = None,
                validation_mode: ValidationMode = ValidationMode.THROW) -> None:
     super().__init__(platform, config, validation_mode)
     self._wait_until: dt.datetime = dt.datetime.now()
@@ -79,7 +79,7 @@ class RunnerEnv(BaseEnv):
 
   def validate_url(self,
                    url: str,
-                   platform: Optional[plt.Platform] = None) -> bool:
+                   platform: plt.Platform | None = None) -> bool:
     if self._validation_mode == ValidationMode.SKIP:
       return True
     platform = platform or plt.PLATFORM

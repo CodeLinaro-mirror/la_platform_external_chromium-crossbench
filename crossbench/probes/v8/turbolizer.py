@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -36,7 +36,7 @@ class V8TurbolizerProbe(ChromiumProbe):
     browser.js_flags.set("--trace-turbo")
 
   @override
-  def get_context_cls(self) -> Type[V8TurbolizerProbeContext]:
+  def get_context_cls(self) -> type[V8TurbolizerProbeContext]:
     return V8TurbolizerProbeContext
 
 

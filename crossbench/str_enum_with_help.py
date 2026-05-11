@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import enum
 import textwrap
-from typing import Any, NamedTuple, Optional, Self, Type, cast
+from typing import Any, NamedTuple, Self, cast
 
 import tabulate
 
@@ -19,7 +19,7 @@ class StrEnumWithHelpData(NamedTuple):
 class StrEnumWithHelp(StrEnumWithHelpData, enum.Enum):
 
   @classmethod
-  def _missing_(cls: Type[Self], value: Any) -> Optional[Self]:
+  def _missing_(cls: type[Self], value: Any) -> Self | None:
     value = str(value).lower()
     for member in cls:
       if member.value == value:

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Self, Set, TypeVar
+from typing import Self, TypeVar
 
 from crossbench.decor import base
 from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -16,7 +16,7 @@ SessionDecoratorT = TypeVar("SessionDecoratorT", bound="SessionDecorator")
 
 class SessionDecorator(base.Decorator[Run]):
 
-  def runs(self) -> Set[Run]:
+  def runs(self) -> set[Run]:
     return self._targets
 
   @abc.abstractmethod

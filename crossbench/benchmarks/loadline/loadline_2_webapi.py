@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from enum import StrEnum
-from typing import TYPE_CHECKING, ClassVar, Final, Sequence, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Sequence
 
 import numpy as np
 import pandas as pd
@@ -67,7 +67,7 @@ class LoadLine2WebApiProbe(LoadLineProbe):
   BENCHMARK_VERSION: ClassVar[str] = VERSION_STRING
 
   @override
-  def get_context_cls(self,) -> Type[LoadLine2WebApiProbeContext]:
+  def get_context_cls(self,) -> type[LoadLine2WebApiProbeContext]:
     return LoadLine2WebApiProbeContext
 
   @override

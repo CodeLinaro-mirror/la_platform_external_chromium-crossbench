@@ -13,7 +13,7 @@ import re
 import shlex
 import subprocess
 import time
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, TextIO
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, TextIO
 
 from typing_extensions import override
 
@@ -46,10 +46,10 @@ class WprBase(abc.ABC):
                http_port: int = 0,
                https_port: int = 0,
                host: str = "127.0.0.1",
-               inject_scripts: Optional[Iterable[AnyPath]] = None,
-               key_file: Optional[AnyPath] = None,
-               cert_file: Optional[AnyPath] = None,
-               log_path: Optional[LocalPath] = None,
+               inject_scripts: Iterable[AnyPath] | None = None,
+               key_file: AnyPath | None = None,
+               cert_file: AnyPath | None = None,
+               log_path: LocalPath | None = None,
                run_as_root: bool = False,
                platform: Platform = PLATFORM) -> None:
     self._platform: Final[Platform] = platform
@@ -65,7 +65,7 @@ class WprBase(abc.ABC):
 
     (wpr_root, go_cmd) = self._validate_wpr()
     if run_as_root:
-      go_cmd = ("sudo",) + go_cmd
+      go_cmd = ("sudo", *go_cmd)
     self._go_cmd: Final[TupleCmdArgs] = go_cmd
 
     self._archive_path: Final[AnyPath] = self._validate_archive_path(
@@ -366,7 +366,7 @@ class WprRecorder(WprBase):
   @property
   @override
   def cmd(self) -> TupleCmdArgs:
-    return ("record",) + super().base_cmd_flags + (str(self._archive_path),)
+    return ("record", *super().base_cmd_flags, str(self._archive_path))
 
   @override
   def _validate_archive_path(self, path: AnyPath) -> LocalPath:
@@ -386,12 +386,12 @@ class WprReplayServer(WprBase):
                http_port: int = 0,
                https_port: int = 0,
                host: str = "127.0.0.1",
-               inject_scripts: Optional[Iterable[AnyPath]] = None,
-               key_file: Optional[AnyPath] = None,
-               cert_file: Optional[AnyPath] = None,
+               inject_scripts: Iterable[AnyPath] | None = None,
+               key_file: AnyPath | None = None,
+               cert_file: AnyPath | None = None,
                no_archive_certificates: bool = False,
-               rules_file: Optional[AnyPath] = None,
-               log_path: Optional[LocalPath] = None,
+               rules_file: AnyPath | None = None,
+               log_path: LocalPath | None = None,
                fuzzy_url_matching: bool = True,
                serve_chronologically: bool = True,
                run_as_root: bool = False,
@@ -412,7 +412,7 @@ class WprReplayServer(WprBase):
   @property
   @override
   def cmd(self) -> TupleCmdArgs:
-    cmd = ("replay",) + super().base_cmd_flags
+    cmd = ("replay", *super().base_cmd_flags)
     if self._no_archive_certificates:
       cmd += ("--no_archive_certificates",)
     if self._rules_file:

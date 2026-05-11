@@ -9,7 +9,7 @@ import copy
 import csv
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Sequence
 from unittest import mock
 
 from typing_extensions import override
@@ -31,23 +31,23 @@ class JetStream2BaseTestCase(
   @property
   @abc.abstractmethod
   @override
-  def benchmark_cls(self) -> Type[JetStream2Benchmark]:
+  def benchmark_cls(self) -> type[JetStream2Benchmark]:
     pass
 
   @property
   @abc.abstractmethod
   @override
-  def story_cls(self) -> Type[JetStream2Story]:
+  def story_cls(self) -> type[JetStream2Story]:
     pass
 
   @property
   @abc.abstractmethod
-  def probe_cls(self) -> Type[JetStream2Probe]:
+  def probe_cls(self) -> type[JetStream2Probe]:
     pass
 
   @property
   @abc.abstractmethod
-  def probe_context_cls(self) -> Type[JetStream2ProbeContext]:
+  def probe_context_cls(self) -> type[JetStream2ProbeContext]:
     pass
 
   def test_run_throw(self):
@@ -70,7 +70,7 @@ class JetStream2BaseTestCase(
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
   def _test_run(self,
-                custom_url: Optional[str] = None,
+                custom_url: str | None = None,
                 story_names=("WSL",),
                 throw: bool = True):
     repetitions = 3

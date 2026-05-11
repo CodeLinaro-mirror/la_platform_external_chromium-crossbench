@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Iterable, Iterator, Optional
+from typing import Iterable, Iterator
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -27,40 +27,39 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
     return len(self._enabled) == 0 and len(self._disabled) == 0
 
   @property
-  def enabled(self) -> dict[str, Optional[str]]:
+  def enabled(self) -> dict[str, str | None]:
     return dict(self._enabled)
 
   @property
   def disabled(self) -> OrderedSet[str]:
     return OrderedSet(self._disabled)
 
-  def _parse_feature(self, feature: str) -> tuple[str, Optional[str]]:
+  def _parse_feature(self, feature: str) -> tuple[str, str | None]:
     if not feature:
       raise ValueError("Cannot parse empty feature")
     if "," in feature:
-      raise ValueError(f"{repr(feature)} contains multiple features. "
+      raise ValueError(f"{feature!r} contains multiple features. "
                        "Please split them first.")
     return self._parse_feature_parts(feature)
 
   @abc.abstractmethod
-  def _parse_feature_parts(self, feature: str) -> tuple[str, Optional[str]]:
+  def _parse_feature_parts(self, feature: str) -> tuple[str, str | None]:
     pass
 
   def enable(self, feature: str) -> None:
     name, value = self._parse_feature(feature)
     self._enable(name, value)
 
-  def _enable(self, name: str, value: Optional[str]) -> None:
+  def _enable(self, name: str, value: str | None) -> None:
     self.assert_not_frozen()
     if name in self._disabled:
-      raise ValueError(
-          f"Cannot enable previously disabled feature={repr(name)}")
+      raise ValueError(f"Cannot enable previously disabled feature={name!r}")
     if name in self._enabled:
       prev_value = self._enabled[name]
       if value != prev_value:
         raise ValueError("Cannot set conflicting values "
-                         f"({repr(prev_value)}, vs. {repr(value)}) "
-                         f"for the same feature={repr(name)}")
+                         f"({prev_value!r}, vs. {value!r}) "
+                         f"for the same feature={name!r}")
     else:
       self._enabled[name] = value
 
@@ -68,8 +67,7 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
     self.assert_not_frozen()
     name, _ = self._parse_feature(feature)
     if name in self._enabled:
-      raise ValueError(
-          f"Cannot disable previously enabled feature={repr(name)}")
+      raise ValueError(f"Cannot disable previously enabled feature={name!r}")
     self._disabled.add(name)
 
   def clear_enabled(self) -> None:
@@ -133,17 +131,17 @@ class ChromeFeatures(ChromeBaseFeatures):
   DISABLE_FLAG: str = "--disable-features"
 
   @override
-  def _parse_feature_parts(self, feature: str) -> tuple[str, Optional[str]]:
+  def _parse_feature_parts(self, feature: str) -> tuple[str, str | None]:
     parts = feature.split("<")
     if len(parts) == 2:
       return (parts[0], "<" + parts[1])
     if len(parts) != 1:
-      raise ValueError(f"Invalid number of feature parts: {repr(parts)}")
+      raise ValueError(f"Invalid number of feature parts: {parts!r}")
     parts = feature.split(":")
     if len(parts) == 2:
       return (parts[0], ":" + parts[1])
     if len(parts) != 1:
-      raise ValueError(f"Invalid number of feature parts: {repr(parts)}")
+      raise ValueError(f"Invalid number of feature parts: {parts!r}")
     return (feature, None)
 
 
@@ -160,8 +158,8 @@ class ChromeBlinkFeatures(ChromeBaseFeatures):
   DISABLE_FLAG: str = "--disable-blink-features"
 
   @override
-  def _parse_feature_parts(self, feature: str) -> tuple[str, Optional[str]]:
+  def _parse_feature_parts(self, feature: str) -> tuple[str, str | None]:
     if "<" in feature or ":" in feature:
       raise ValueError("blink features do not have params, "
-                       f"but found param separator in {repr(feature)}")
+                       f"but found param separator in {feature!r}")
     return (feature, None)

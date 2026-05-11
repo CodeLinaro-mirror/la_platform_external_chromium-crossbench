@@ -10,8 +10,7 @@ import json
 import logging
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Optional, \
-    Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar
 
 import xlsxwriter
 from tabulate import tabulate
@@ -132,7 +131,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
       self,
       group: RunGroup,
       merged_data: dict | list | MetricsMerger,
-      csv_formatter: Optional[Type[CSVFormatter]] = CSVFormatter,
+      csv_formatter: type[CSVFormatter] | None = CSVFormatter,
       value_fn: Callable[[Any], Any] = metric_geomean) -> ProbeResult:
     merged_json_path = group.get_local_probe_result_path(self)
     with merged_json_path.open("w", encoding="utf-8") as f:
@@ -150,7 +149,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
 
   def write_group_csv_result(self, group: RunGroup, merged_data: MetricsMerger,
                              merged_json_path: LocalPath,
-                             csv_formatter: Type[CSVFormatter],
+                             csv_formatter: type[CSVFormatter],
                              value_fn: Callable[[Any], Any]) -> ProbeResult:
     merged_csv_path = merged_json_path.with_suffix(".csv")
     assert not merged_csv_path.exists(), (
@@ -180,7 +179,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
       data = browser_result["data"]
       self._extract_result_metrics_table(data, table)
     flattened: list[list[str]] = [
-        [label] + values for label, values in table.items()
+        [label, *values] for label, values in table.items()
     ]
     logging.critical(tabulate(flattened, tablefmt="plain"))
 

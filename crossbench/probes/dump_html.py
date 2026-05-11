@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
@@ -32,7 +32,7 @@ class DumpHtmlProbe(Probe):
     return parser
 
   @override
-  def get_context_cls(self) -> Type[DumpHtmlProbeContext]:
+  def get_context_cls(self) -> type[DumpHtmlProbeContext]:
     return DumpHtmlProbeContext
 
   # TODO: implement merge_repetitions()

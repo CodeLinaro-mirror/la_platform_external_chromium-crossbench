@@ -7,8 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, ClassVar, Generic, Optional, Set, Type, \
-    TypeVar
+from typing import TYPE_CHECKING, ClassVar, Generic, Self, TypeVar
 
 from crossbench import plt
 from crossbench.config import ConfigParser
@@ -27,7 +26,7 @@ DecoratorTargetT = TypeVar("DecoratorTargetT", bound=DecoratorTargetProtocol)
 
 class DecoratorConfigParser(ConfigParser[DecoratorT]):
 
-  def __init__(self, probe_cls: Type[DecoratorT]) -> None:
+  def __init__(self, probe_cls: type[DecoratorT]) -> None:
     super().__init__(probe_cls)
     self._probe_cls = probe_cls
 
@@ -44,7 +43,7 @@ class Decorator(abc.ABC, Generic[DecoratorTargetT]):
     return DecoratorConfigParser(cls)
 
   @classmethod
-  def from_config(cls: Type[DecoratorT], config_data: dict) -> DecoratorT:
+  def from_config(cls, config_data: dict) -> Self:
     return cls.config_parser().parse(config_data)
 
   @classmethod
@@ -53,7 +52,7 @@ class Decorator(abc.ABC, Generic[DecoratorTargetT]):
 
   def __init__(self) -> None:
     assert self.name is not None, f"{type(self).__name__} must have a name"
-    self._targets: Set[DecoratorTargetT] = set()
+    self._targets: set[DecoratorTargetT] = set()
 
   def __str__(self) -> str:
     return type(self).__name__
@@ -148,9 +147,9 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
         self._state.transition(self._State.STARTING, to=self._State.FAILURE)
         raise
 
-  def __exit__(self, exc_type: Optional[Type[BaseException]],
-               exc_value: Optional[BaseException],
-               traceback: Optional[TracebackType]) -> None:
+  def __exit__(self, exc_type: type[BaseException] | None,
+               exc_value: BaseException | None,
+               traceback: TracebackType | None) -> None:
     self._state.expect(self._State.RUNNING, self._State.FAILURE)
     with self._target.exception_capture(f"{self._label} stop"):
       try:

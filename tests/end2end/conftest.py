@@ -10,7 +10,7 @@ import pathlib
 import re
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Final, Iterator, Optional
+from typing import TYPE_CHECKING, Final, Iterator
 from unittest import mock
 
 import psutil
@@ -64,7 +64,7 @@ def pytest_xdist_auto_num_workers(config):
   return 4
 
 
-def _get_app_path(request, option_key) -> Optional[pathlib.Path]:
+def _get_app_path(request, option_key) -> pathlib.Path | None:
   app_path = request.config.getoption(option_key)
   if app_path and plt.PLATFORM.is_win and app_path.suffix not in WIN_APP_SUFFIX:
     if (app_path.parent / (app_path.name + ".bat")).exists():
@@ -75,7 +75,7 @@ def _get_app_path(request, option_key) -> Optional[pathlib.Path]:
 
 
 @pytest.fixture(scope="session")
-def driver_path(request) -> Optional[pathlib.Path]:
+def driver_path(request) -> pathlib.Path | None:
   maybe_driver_path: LocalPath | None = _get_app_path(request, TEST_DRIVER_FLAG)
   if maybe_driver_path:
     logging.info("driver path: %s", maybe_driver_path)
@@ -84,7 +84,7 @@ def driver_path(request) -> Optional[pathlib.Path]:
 
 
 @pytest.fixture(scope="session")
-def browser_path(request) -> Optional[pathlib.Path]:
+def browser_path(request) -> pathlib.Path | None:
   maybe_browser_path: pathlib.Path | None = _get_app_path(
       request, TEST_BROWSER_FLAG)
   if maybe_browser_path:
@@ -221,7 +221,7 @@ def test_env(request):
 
 
 @pytest.fixture(scope="session")
-def device_id(request, adb_path) -> Optional[str]:
+def device_id(request, adb_path) -> str | None:
   maybe_device_id: str | None = request.config.getoption(ADB_DEVICE_ID_FLAG)
   if maybe_device_id:
     logging.info("adb device id: %s", maybe_device_id)
@@ -237,7 +237,7 @@ def device_id(request, adb_path) -> Optional[str]:
 
 
 @pytest.fixture(scope="session")
-def adb_path(request) -> Optional[str]:
+def adb_path(request) -> str | None:
   maybe_adb_path: str | None = request.config.getoption(ADB_PATH_FLAG)
   if maybe_adb_path:
     logging.info("adb path: %s", maybe_adb_path)
@@ -252,7 +252,7 @@ def adb_path(request) -> Optional[str]:
 
 
 @pytest.fixture(scope="session")
-def bundletool(request) -> Optional[str]:
+def bundletool(request) -> str | None:
   maybe_bundletool: str | None = request.config.getoption(BUNDLETOOL_FLAG)
   logging.info("bundletool: %s", maybe_bundletool)
   return maybe_bundletool

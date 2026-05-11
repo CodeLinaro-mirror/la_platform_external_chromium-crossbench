@@ -22,7 +22,7 @@ class Settings:
 
   def __new__(cls) -> Settings:  # noqa: PYI034
     if cls._instance is None:
-      cls._instance = super(Settings, cls).__new__(cls)
+      cls._instance = super().__new__(cls)
       cls._instance._private_init()  # noqa: SLF001
     return cls._instance
 

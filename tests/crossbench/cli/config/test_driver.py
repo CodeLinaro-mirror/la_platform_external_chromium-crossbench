@@ -24,7 +24,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
   def test_default(self):
     default = DriverConfig.default()
-    self.assertEqual(default.type, BrowserDriverType.WEB_DRIVER)
+    self.assertEqual(default.driver_type, BrowserDriverType.WEB_DRIVER)
     self.assertTrue(default.is_local)
     self.assertFalse(default.is_remote)
 
@@ -110,7 +110,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
                             f"'[' -e {ChromeOsSshPlatform.AUTOLOGIN_PATH} ']'")
     config = DriverConfig.parse(config_dict)
     assert isinstance(config, DriverConfig)
-    self.assertEqual(config.type, BrowserDriverType.CHROMEOS_SSH)
+    self.assertEqual(config.driver_type, BrowserDriverType.CHROMEOS_SSH)
     self.assertTrue(config.is_remote)
     self.assertFalse(config.is_local)
     platform = config.get_platform()
@@ -125,25 +125,25 @@ class DriverConfigTestCase(BaseConfigTestCase):
     config_dict = {"type": "adb", "settings": {"device_id": "0a388e93"}}
     config_1 = DriverConfig.parse(hjson.dumps(config_dict))
     assert isinstance(config_1, DriverConfig)
-    self.assertEqual(config_1.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config_1.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config_1.device_id, "0a388e93")
     self.assertEqual(config_1.settings["device_id"], "0a388e93")
     self.assertFalse(config_1.is_remote)
     self.assertTrue(config_1.is_local)
-    self.assertTrue(config_1.type.is_remote_browser)
-    self.assertFalse(config_1.type.is_local_browser)
+    self.assertTrue(config_1.driver_type.is_remote_browser)
+    self.assertFalse(config_1.driver_type.is_local_browser)
     self.assertIsNone(config_1.adb_bin)
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_2 = DriverConfig.parse_dict(config_dict)
     assert isinstance(config_2, DriverConfig)
-    self.assertEqual(config_2.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config_2.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config_2.device_id, "0a388e93")
     self.assertEqual(config_2.settings["device_id"], "0a388e93")
     self.assertFalse(config_2.is_remote)
     self.assertTrue(config_2.is_local)
-    self.assertTrue(config_2.type.is_remote_browser)
-    self.assertFalse(config_2.type.is_local_browser)
+    self.assertTrue(config_2.driver_type.is_remote_browser)
+    self.assertFalse(config_2.driver_type.is_local_browser)
     self.assertIsNone(config_2.adb_bin)
     self.assertEqual(config_1, config_2)
 
@@ -151,12 +151,12 @@ class DriverConfigTestCase(BaseConfigTestCase):
     config_dict = {"type": "adb", "device_id": "0a388e93"}
     config_3 = DriverConfig.parse_dict(config_dict)
     assert isinstance(config_3, DriverConfig)
-    self.assertEqual(config_3.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config_3.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config_3.device_id, "0a388e93")
     self.assertFalse(config_3.is_remote)
     self.assertTrue(config_3.is_local)
-    self.assertTrue(config_3.type.is_remote_browser)
-    self.assertFalse(config_3.type.is_local_browser)
+    self.assertTrue(config_3.driver_type.is_remote_browser)
+    self.assertFalse(config_3.driver_type.is_local_browser)
     self.assertIsNone(config_3.settings)
     self.assertIsNone(config_2.adb_bin)
     self.assertNotEqual(config_1, config_3)
@@ -176,7 +176,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.fs.create_file(adb_bin, st_size=100)
     config = DriverConfig.parse(hjson.dumps(config_dict))
     assert isinstance(config, DriverConfig)
-    self.assertEqual(config.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config.adb_bin, adb_bin)
 
   def test_parse_adb_phone_identifier_unknown(self):
@@ -204,7 +204,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     assert isinstance(config, DriverConfig)
     self.assertEqual(len(self.platform.sh_cmds), 2)
 
-    self.assertEqual(config.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config.device_id, "0a388e93")
     self.assertFalse(config.is_remote)
     self.assertTrue(config.is_local)
@@ -216,7 +216,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     assert isinstance(config, DriverConfig)
     self.assertEqual(len(self.platform.sh_cmds), 2)
 
-    self.assertEqual(config.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config.device_id, "0a388e93")
 
   def test_parse_ios_phone_serial(self):
@@ -231,7 +231,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     assert isinstance(config, DriverConfig)
     self.assertEqual(len(self.platform.sh_cmds), 1)
 
-    self.assertEqual(config.type, BrowserDriverType.IOS)
+    self.assertEqual(config.driver_type, BrowserDriverType.IOS)
     self.assertEqual(config.device_id, "00001111-11AA22BB33DD")
 
   def test_parse_custom_bundletool(self):
@@ -251,7 +251,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.fs.create_file(bundletool, st_size=100)
     config = DriverConfig.parse(hjson.dumps(config_dict))
     assert isinstance(config, DriverConfig)
-    self.assertEqual(config.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config.bundletool, bundletool)
 
 

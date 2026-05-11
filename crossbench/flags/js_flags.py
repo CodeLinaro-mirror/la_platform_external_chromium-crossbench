@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Optional, Self
+from typing import Self
 
 from typing_extensions import override
 
@@ -40,7 +40,7 @@ class JSFlags(Flags):
   @override
   def _set(self,
            flag_name: str,
-           flag_value: Optional[str] = None,
+           flag_value: str | None = None,
            should_override: bool = False) -> None:
     self._validate_js_flag_name(flag_name)
     if flag_value is not None:
@@ -51,21 +51,21 @@ class JSFlags(Flags):
   def _validate_js_flag_value(self, flag_name: str, flag_value: str) -> None:
     if not isinstance(flag_value, str):
       raise TypeError("JSFlag value must be str, "
-                      f"but got {type(flag_value)}: {repr(flag_value)}")
+                      f"but got {type(flag_value)}: {flag_value!r}")
     if "," in flag_value:
       raise ValueError(
           "--js-flags: Comma in V8 flag value, flag escaping for chrome's "
-          f"--js-flags might not work: {flag_name}={repr(flag_value)}")
+          f"--js-flags might not work: {flag_name}={flag_value!r}")
     if self._WHITE_SPACE_RE.search(flag_value):
       raise ValueError("--js-flags: V8 flag-values cannot contain whitespaces:"
-                       f"{flag_name}={repr(flag_value)}")
+                       f"{flag_name}={flag_value!r}")
 
   def _validate_js_flag_name(self, flag_name: str) -> None:
     if not flag_name.startswith("--"):
       raise ValueError("--js-flags: Only long-form flag names allowed, "
-                       f"but got {repr(flag_name)}")
+                       f"but got {flag_name!r}")
     if not self._NAME_RE.fullmatch(flag_name):
-      raise ValueError(f"--js-flags: Invalid flag name {repr(flag_name)}. \n"
+      raise ValueError(f"--js-flags: Invalid flag name {flag_name!r}. \n"
                        "Check invalid characters in the V8 flag name?")
 
   def _check_negated_flag(self, flag_name: str, should_override: bool) -> None:
@@ -80,7 +80,7 @@ class JSFlags(Flags):
       elif enabled in self:
         raise ValueError(
             f"Conflicting flag {flag_name}, "
-            f"it has already been enabled by {repr(self._describe(enabled))}")
+            f"it has already been enabled by {self._describe(enabled)!r}")
     else:
       # --foo => --no-foo
       disabled = f"--no-{flag_name[2:]}"
@@ -94,7 +94,7 @@ class JSFlags(Flags):
       else:
         raise ValueError(f"Conflicting flag {flag_name}, "
                          "it has previously been disabled by "
-                         f"{repr(self._describe(flag_name))}")
+                         f"{self._describe(flag_name)!r}")
 
   def __str__(self) -> str:
     return ",".join(self)

@@ -9,7 +9,7 @@ import dataclasses
 import json
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Final, Iterator, Mapping, Sequence
 
 from typing_extensions import override
 
@@ -25,15 +25,14 @@ class BasePathFinder(abc.ABC):
   @classmethod
   def find_binary(cls,
                   platform: Platform,
-                  override: Optional[pth.AnyPath] = None) -> pth.AnyPath | None:
+                  override: pth.AnyPath | None = None) -> pth.AnyPath | None:
     if override:
       return platform.parse_binary_path(override)
     return cls(platform).path
 
   @classmethod
   def local_binary(cls,
-                   override: Optional[pth.AnyPath] = None
-                  ) -> pth.LocalPath | None:
+                   override: pth.AnyPath | None = None) -> pth.LocalPath | None:
     if override:
       return plt.PLATFORM.parse_local_binary_path(override)
     return cls(plt.PLATFORM).local_path
@@ -223,8 +222,8 @@ class V8ToolsFinder:
 
   def __init__(self,
                platform: Platform,
-               d8_binary: Optional[pth.AnyPath] = None,
-               v8_checkout: Optional[pth.AnyPath] = None) -> None:
+               d8_binary: pth.AnyPath | None = None,
+               v8_checkout: pth.AnyPath | None = None) -> None:
     self.platform = platform
     self.d8_binary: pth.AnyPath | None = d8_binary
     self.v8_checkout: pth.AnyPath | None = None
@@ -243,7 +242,7 @@ class V8ToolsFinder:
         "v8_logviewer='%s'", self.d8_binary, self.tick_processor,
         self.v8_logviewer)
 
-  def _find_d8(self) -> Optional[pth.AnyPath]:
+  def _find_d8(self) -> pth.AnyPath | None:
     if self.d8_binary and self.platform.is_file(self.d8_binary):
       return self.d8_binary
     environ = self.platform.environ
@@ -374,7 +373,7 @@ class BaseCrossbenchPathFinder(BaseChromiumPathFinder):
   @override
   def candidates(self) -> tuple[pth.AnyPath, ...]:
     candidates = super().candidates()
-    return (CROSSBENCH_DIR / self.crossbench_path(),) + candidates
+    return (CROSSBENCH_DIR / self.crossbench_path(), *candidates)
 
   @classmethod
   @abc.abstractmethod
@@ -453,8 +452,8 @@ class BundletoolFinder(BaseChromiumPathFinder):
     except subprocess.CalledProcessError:
       return super_candidates
 
-    return super_candidates + (self.platform.local_path(
-        brew_path / "bin/bundletool"),)
+    return (*super_candidates,
+            self.platform.local_path(brew_path / "bin/bundletool"))
 
 
 class LlvmSymbolizerFinder(BaseChromiumPathFinder):

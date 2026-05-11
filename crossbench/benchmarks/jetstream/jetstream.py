@@ -10,7 +10,7 @@ import json
 import logging
 import statistics
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Sequence, Type, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Sequence, cast
 
 from typing_extensions import override
 
@@ -53,7 +53,7 @@ class JetStreamProbe(
 
   @abc.abstractmethod
   @override
-  def get_context_cls(self) -> Type[JetStreamProbeContext]:
+  def get_context_cls(self) -> type[JetStreamProbeContext]:
     pass
 
   @override
@@ -263,8 +263,8 @@ class JetStreamBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
 
   def __init__(self,
                stories: Sequence[Story],
-               action_runner_config: Optional[ActionRunnerConfig] = None,
-               custom_url: Optional[str] = None,
+               action_runner_config: ActionRunnerConfig | None = None,
+               custom_url: str | None = None,
                detailed_metrics: bool = False) -> None:
     self._detailed_metrics = detailed_metrics
     super().__init__(stories, action_runner_config, custom_url)

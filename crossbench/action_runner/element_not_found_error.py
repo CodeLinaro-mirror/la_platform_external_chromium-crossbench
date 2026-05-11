@@ -8,5 +8,5 @@ from __future__ import annotations
 class ElementNotFoundError(RuntimeError):
 
   def __init__(self, selector: str) -> None:
-    message = f"Could not find matching DOM element: {repr(selector)}"
+    message = f"Could not find matching DOM element: {selector!r}"
     super().__init__(message)

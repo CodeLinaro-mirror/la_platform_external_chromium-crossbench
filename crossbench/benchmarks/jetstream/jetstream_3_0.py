@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -20,7 +20,7 @@ class JetStream30Probe(JetStream3Probe):
   NAME: ClassVar[str] = "jetstream_3.0"
 
   @override
-  def get_context_cls(self) -> Type[JetStream30ProbeContext]:
+  def get_context_cls(self) -> type[JetStream30ProbeContext]:
     return JetStream30ProbeContext
 
 
@@ -176,11 +176,5 @@ class JetStream30Benchmark(JetStream3Benchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return (
-        "js3",
-        "js3-latest",
-        "jetstream3",
-        "jetstream3-latest",
-        "jetstream_3",
-        "jetstream_3-latest",
-    ) + super().aliases()
+    return ("js3", "js3-latest", "jetstream3", "jetstream3-latest",
+            "jetstream_3", "jetstream_3-latest", *super().aliases())

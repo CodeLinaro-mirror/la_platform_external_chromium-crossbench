@@ -8,7 +8,7 @@ import atexit
 import logging
 import subprocess
 import time
-from typing import TYPE_CHECKING, Final, Optional
+from typing import TYPE_CHECKING, Final
 
 from typing_extensions import override
 
@@ -38,13 +38,13 @@ class MacOSProfilingContext(PosixProfilingContext):
     super().__init__(probe, run)
     assert self.target in (
         TargetMode.SYSTEM_WIDE, TargetMode.RENDERER_PROCESS_ONLY), (
-            f"Unsupported profiling mode for Mac: {str(self.target)}")
+            f"Unsupported profiling mode for Mac: {self.target!s}")
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "profile.trace"
 
-  def _start_xctrace(self, pid: Optional[int] = None) -> None:
+  def _start_xctrace(self, pid: int | None = None) -> None:
     assert self.browser_platform.is_file(_MAC_TRACE_TEMPLATE_PATH), (
         f"Didn't find {_MAC_TRACE_TEMPLATE_PATH}")
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Final, Iterable, Iterator, Optional, Type
+from typing import TYPE_CHECKING, Final, Iterable, Iterator
 
 import sqlalchemy
 import sqlalchemy.engine as orm_engine
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
   from crossbench.results_db.records.base import BaseRecord
   from crossbench.runner.run import Run
 
-DEFAULT_CLASSES: Final[tuple[Type[BaseRecord],
+DEFAULT_CLASSES: Final[tuple[type[BaseRecord],
                              ...]] = (PlatformRecord, BrowserRecord, RunRecord,
                                       UnitRecord)
 
@@ -46,8 +46,8 @@ def set_sqlite_pragma(dbapi_connection: sqlite3.Connection,
 
 class ResultsDB:
 
-  def __init__(self, db_file: Optional[pth.LocalPath] = None):
-    self._db_file: Optional[pth.LocalPath] = db_file
+  def __init__(self, db_file: pth.LocalPath | None = None):
+    self._db_file: pth.LocalPath | None = db_file
     init_tables: bool = True
     engine_url: str = "sqlite:///:memory:"
     if db_file:

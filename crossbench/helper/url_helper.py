@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import urllib.parse as urlparse
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Callable, Mapping
 
 import requests
 
@@ -60,8 +60,8 @@ def get(url: str,
 
 
 def post(url: str,
-         body_json: Optional[Any] = None,
-         headers: Optional[Mapping[str, str]] = None,
+         body_json: Any | None = None,
+         headers: Mapping[str, str] | None = None,
          timeout: AnyTime = DEFAULT_REQUEST_TIMEOUT,
          retry: int = 0,
          verbose: bool = True) -> requests.Response:

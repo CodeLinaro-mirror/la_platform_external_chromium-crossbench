@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, ClassVar, Sequence, Type
+from typing import TYPE_CHECKING, ClassVar, Sequence
 
 from typing_extensions import override
 
@@ -81,7 +81,7 @@ class JetStream3Story(JetStream2Story, metaclass=abc.ABCMeta):
     pass
 
 
-ProbeClsTupleT = tuple[Type[JetStream3Probe], ...]
+ProbeClsTupleT = tuple[type[JetStream3Probe], ...]
 
 
 class JetStream3BenchmarkStoryFilter(JetStream2BenchmarkStoryFilter):
@@ -158,7 +158,7 @@ class JetStream3BenchmarkStoryFilter(JetStream2BenchmarkStoryFilter):
 # TODO: introduce JetStreamBenchmark
 class JetStream3Benchmark(JetStream2Benchmark):
   STORY_FILTER_CLS: ClassVar = JetStream3BenchmarkStoryFilter
-  DEFAULT_STORY_CLS: ClassVar[Type[JetStream3Story]]
+  DEFAULT_STORY_CLS: ClassVar[type[JetStream3Story]]
 
   @classmethod
   @override

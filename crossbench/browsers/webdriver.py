@@ -11,7 +11,7 @@ import os
 import time
 import traceback
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
 
 import selenium.common.exceptions
 import urllib3
@@ -40,7 +40,7 @@ class DriverException(RuntimeError):
   """Wrapper for more readable error messages than the default
   WebDriver exceptions."""
 
-  def __init__(self, msg: str, browser: Optional[Browser] = None) -> None:
+  def __init__(self, msg: str, browser: Browser | None = None) -> None:
     self._browser = browser
     self._msg = msg
     super().__init__(msg)
@@ -68,7 +68,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     executor.client_config.timeout = timeout
 
   @contextmanager
-  def js_timeout(self, timeout: Optional[dt.timedelta]) -> Iterator[None]:
+  def js_timeout(self, timeout: dt.timedelta | None) -> Iterator[None]:
     """
     A context manager method to temporarily adjust timeouts.
     """
@@ -107,8 +107,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   def __init__(self,
                label: str,
-               path: Optional[AnyPath] = None,
-               settings: Optional[Settings] = None) -> None:
+               path: AnyPath | None = None,
+               settings: Settings | None = None) -> None:
     super().__init__(label, path, settings)
     self._driver_path: AnyPath | None = self._settings.driver_path
     self._driver_log_file: LocalPath | None = None
@@ -122,7 +122,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     return self._driver_path
 
   @property
-  def driver_path_raw(self) -> Optional[AnyPath]:
+  def driver_path_raw(self) -> AnyPath | None:
     return self._driver_path
 
   @classmethod
@@ -131,7 +131,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     return BrowserAttributes.WEBDRIVER
 
   @property
-  def driver_log_file(self) -> Optional[LocalPath]:
+  def driver_log_file(self) -> LocalPath | None:
     return self._driver_log_file
 
   @override
@@ -259,7 +259,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     return details
 
   @override
-  def show_url(self, url: str, target: Optional[str] = None) -> None:
+  def show_url(self, url: str, target: str | None = None) -> None:
     logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
     try:
       if target in ("_self", None):
@@ -303,9 +303,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def js(
       self,
       script: str,
-      timeout: Optional[dt.timedelta] = None,
-      arguments: Sequence[object] = ()
-  ) -> Any:
+      timeout: dt.timedelta | None = None,
+      arguments: Sequence[object] = ()) -> Any:
     logging.debug("WebDriverBrowser.js() timeout=%s, args: %s, script: %s",
                   timeout, arguments, script)
     assert self._is_running

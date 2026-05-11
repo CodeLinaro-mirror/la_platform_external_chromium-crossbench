@@ -52,8 +52,8 @@ def test_wpr_record_and_replay(browser_config, tmp_dir, test_env) -> None:
   cli.run([
       "loading", f"--url={target_url}", f"--browser={browser_config}",
       f"--probe=wpr:{_wpr_record_config(local_wpr_go)}",
-      f"--out-dir={result_record_dir}"
-  ] + list(test_env.cq_flags))
+      f"--out-dir={result_record_dir}", *list(test_env.cq_flags)
+  ])
 
   archives = list(
       result_record_dir.glob("*/stories/*/0/0_default/archive.wprgo"))

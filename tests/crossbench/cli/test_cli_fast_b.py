@@ -8,7 +8,7 @@ import datetime as dt
 import json
 import os
 import pathlib
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import hjson
@@ -84,14 +84,15 @@ class FastCliTestCasePartB(BaseCliTestCase):
                    "--urls=http://test.com", "--env-validation=skip", "--throw")
 
   def test_browser_identifiers_multiple(self):
-    mock_browsers: list[Type[mock_browser.MockBrowser]] = [
+    mock_browsers: list[type[mock_browser.MockBrowser]] = [
         mock_browser.MockChromeStable,
         mock_browser.MockChromeBeta,
         mock_browser.MockChromeDev,
     ]
 
     def mock_get_browser_cls(browser_config: BrowserConfig):
-      self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
+      self.assertEqual(browser_config.driver.driver_type,
+                       BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
         if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
@@ -128,13 +129,14 @@ class FastCliTestCasePartB(BaseCliTestCase):
     class MockChromeDev2(mock_browser.MockChromeDev):
       VERSION = "100.22.33.200"
 
-    mock_browsers: list[Type[mock_browser.MockBrowser]] = [
+    mock_browsers: list[type[mock_browser.MockBrowser]] = [
         MockChromeBeta2,
         MockChromeDev2,
     ]
 
     def mock_get_browser_cls(browser_config: BrowserConfig):
-      self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
+      self.assertEqual(browser_config.driver.driver_type,
+                       BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
         if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
@@ -170,13 +172,14 @@ class FastCliTestCasePartB(BaseCliTestCase):
     class MockChromeDev2(mock_browser.MockChromeDev):
       VERSION = "100.22.33.999"
 
-    mock_browsers: list[Type[mock_browser.MockBrowser]] = [
+    mock_browsers: list[type[mock_browser.MockBrowser]] = [
         MockChromeBeta2,
         MockChromeDev2,
     ]
 
     def mock_get_browser_cls(browser_config: BrowserConfig):
-      self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
+      self.assertEqual(browser_config.driver.driver_type,
+                       BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
         if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
@@ -207,17 +210,17 @@ class FastCliTestCasePartB(BaseCliTestCase):
   def test_browser_different_drivers(self):
 
     def mock_get_browser_cls(browser_config: BrowserConfig):
-      if browser_config.driver.type == BrowserDriverType.IOS:
+      if browser_config.driver.driver_type == BrowserDriverType.IOS:
         self.assertEqual(
             browser_config.path,
             mock_browser.MockChromeStable.mock_app_path(self.platform))
         return mock_browser.MockChromeStable
-      if browser_config.driver.type == BrowserDriverType.WEB_DRIVER:
+      if browser_config.driver.driver_type == BrowserDriverType.WEB_DRIVER:
         self.assertEqual(
             browser_config.path,
             mock_browser.MockChromeBeta.mock_app_path(self.platform))
         return mock_browser.MockChromeBeta
-      self.assertEqual(browser_config.driver.type,
+      self.assertEqual(browser_config.driver.driver_type,
                        BrowserDriverType.APPLE_SCRIPT)
       self.assertEqual(browser_config.path,
                        mock_browser.MockChromeDev.mock_app_path(self.platform))
@@ -314,13 +317,14 @@ class FastCliTestCasePartB(BaseCliTestCase):
         ])
 
   def test_conflicting_driver_path(self):
-    mock_browsers: list[Type[mock_browser.MockBrowser]] = [
+    mock_browsers: list[type[mock_browser.MockBrowser]] = [
         mock_browser.MockChromeStable,
         mock_browser.MockFirefox,
     ]
 
     def mock_get_browser_cls(browser_config: BrowserConfig):
-      self.assertEqual(browser_config.driver.type, BrowserDriverType.WEB_DRIVER)
+      self.assertEqual(browser_config.driver.driver_type,
+                       BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
         if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
@@ -538,7 +542,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
     searched_binaries = []
     original_search_binary = plt.PLATFORM.search_binary
 
-    def mock_search_binary(binary) -> Optional[AnyPath]:
+    def mock_search_binary(binary) -> AnyPath | None:
       searched_binaries.append(binary)
       if "gdb" in str(binary) or "lldb" in str(binary):
         return None

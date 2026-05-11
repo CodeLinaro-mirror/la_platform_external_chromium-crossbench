@@ -11,8 +11,7 @@ import json
 import logging
 import os
 import threading
-from typing import TYPE_CHECKING, Final, Iterator, Mapping, Optional, Self, \
-    Type, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Mapping, Self, TypeVar
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -54,7 +53,7 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
       cls,
       server_dir: LocalPath,
       extra_headers: Mapping[str, str],
-  ) -> Type[http.server.SimpleHTTPRequestHandler]:
+  ) -> type[http.server.SimpleHTTPRequestHandler]:
     # Use a temporary class to bind arguments.
     class BoundDirectoryRequestHandler(cls):  # type: ignore
 
@@ -69,8 +68,8 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
 
   def __init__(self,
                *args,
-               directory: Optional[str] = None,
-               extra_headers: Optional[Mapping[str, str]] = None,
+               directory: str | None = None,
+               extra_headers: Mapping[str, str] | None = None,
                **kwargs) -> None:
     self._extra_headers: Final[immutabledict[str, str]] = (
         immutabledict(extra_headers) if extra_headers else immutabledict())
@@ -90,9 +89,9 @@ class LocalFileNetwork(Network):
 
   def __init__(self,
                path: LocalPath,
-               url: Optional[str],
-               traffic_shaper: Optional[TrafficShaper] = None,
-               browser_platform: Optional[plt.Platform] = None) -> None:
+               url: str | None,
+               traffic_shaper: TrafficShaper | None = None,
+               browser_platform: plt.Platform | None = None) -> None:
     super().__init__(traffic_shaper, browser_platform)
     self._path: Final[LocalPath] = path
     (host, port) = self._parse_url(url)
@@ -113,7 +112,7 @@ class LocalFileNetwork(Network):
   def path(self) -> LocalPath:
     return self._path
 
-  def _parse_url(self, url: Optional[str]) -> tuple[str, int]:
+  def _parse_url(self, url: str | None) -> tuple[str, int]:
     host: str = _DEFAULT_HOST
     port: int = _DEFAULT_PORT
     if not url:
@@ -200,18 +199,18 @@ class LocalFileNetwork(Network):
 
   @property
   @override
-  def http_port(self) -> Optional[int]:
+  def http_port(self) -> int | None:
     return self._port
 
   @property
   @override
-  def https_port(self) -> Optional[int]:
+  def https_port(self) -> int | None:
     # TODO: support https locally
     return None
 
   @property
   @override
-  def host(self) -> Optional[str]:
+  def host(self) -> str | None:
     return self._host
 
   @override

@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import Any, ClassVar, Final, Iterable, Iterator, Optional, Self, \
-    Set, TypeAlias, TypeVar, Union
+from typing import Any, ClassVar, Final, Iterable, Iterator, Self, TypeAlias, \
+    TypeVar, Union
 
 from typing_extensions import override
 
@@ -34,7 +34,7 @@ class Freezable:
     self._frozen = True
     return self
 
-  def assert_not_frozen(self, msg: Optional[str] = None) -> None:
+  def assert_not_frozen(self, msg: str | None = None) -> None:
     if not self._frozen:
       return
     if not msg:
@@ -66,7 +66,7 @@ class BasicFlags(Freezable, collections.UserDict):
       fr"{END_OR_SEPARATOR_PATTERN}")
 
   @classmethod
-  def split(cls, flag_str: str) -> tuple[str, Optional[str]]:
+  def split(cls, flag_str: str) -> tuple[str, str | None]:
     if "=" in flag_str:
       flag_name, flag_value = flag_str.split("=", maxsplit=1)
       return (flag_name, flag_value)
@@ -95,7 +95,7 @@ class BasicFlags(Freezable, collections.UserDict):
       if current_end is None:
         if match.start() != 0:
           part = raw_flags[:match.start()]
-          raise ValueError(f"Invalid {msg} part at pos=0: {repr(part)}")
+          raise ValueError(f"Invalid {msg} part at pos=0: {part!r}")
       elif current_end != match.start():
         raise ValueError(f"Invalid {msg}: could not consume all data")
       current_end = match.end()
@@ -103,38 +103,38 @@ class BasicFlags(Freezable, collections.UserDict):
       groups = match.groupdict()
       maybe_flag_name: str | None = groups.get("name")
       if not maybe_flag_name:
-        raise ValueError(f"Invalid {msg}: {repr(raw_flags)}")
+        raise ValueError(f"Invalid {msg}: {raw_flags!r}")
       # Re-assign since pytype doesn't remove the Optional.
       flag_name: str = maybe_flag_name
       flag_value: str | None = (
           groups.get("value_single_quotes") or
           groups.get("value_double_quotes") or groups.get("value_no_quotes"))
       if groups.get("equal") and not flag_value:
-        raise ValueError(f"Invalid {msg}: missing value for {repr(flag_name)}")
+        raise ValueError(f"Invalid {msg}: missing value for {flag_name!r}")
       assert flag_name, "Missing flag name"
       flag_parts.append((flag_name, flag_value))
 
     if current_end != len(raw_flags):
       part = raw_flags[current_end:]
       raise ValueError(
-          f"Invalid {msg} part at pos={current_end or 0}: {repr(part)}")
+          f"Invalid {msg} part at pos={current_end or 0}: {part!r}")
     return cls(flag_parts)
 
   def __init__(self, initial_data: FlagsData = None) -> None:
     super().__init__(initial_data)
 
-  def __setitem__(self, flag_name: str, flag_value: Optional[str]) -> None:
+  def __setitem__(self, flag_name: str, flag_value: str | None) -> None:
     return self.set(flag_name, flag_value)
 
   def set(self,
           flag_name: str,
-          flag_value: Optional[str] = None,
+          flag_value: str | None = None,
           should_override: bool = False) -> None:
     self._set(flag_name, flag_value, should_override)
 
   def _set(self,
            flag_name: str,
-           flag_value: Optional[str] = None,
+           flag_value: str | None = None,
            should_override: bool = False) -> None:
     self.assert_not_frozen()
     self._validate_flag_name(flag_name)
@@ -147,33 +147,30 @@ class BasicFlags(Freezable, collections.UserDict):
     if not flag_name:
       raise ValueError("Cannot set empty flag")
     if self._WHITE_SPACE_RE.search(flag_name):
-      raise ValueError(
-          f"Flag name cannot contain whitespaces: {repr(flag_name)}")
+      raise ValueError(f"Flag name cannot contain whitespaces: {flag_name!r}")
     if "=" in flag_name:
-      raise ValueError(
-          f"Flag name contains '=': {repr(flag_name)}, please split")
+      raise ValueError(f"Flag name contains '=': {flag_name!r}, please split")
     if flag_name[0] != "-":
       raise ValueError(
-          f"Flag name must begin with a '-', but got {repr(flag_name)}")
+          f"Flag name must begin with a '-', but got {flag_name!r}")
     if not self._BASIC_FLAG_NAME_RE.fullmatch(flag_name):
-      raise ValueError(
-          f"Flag name contains invalid characters: {repr(flag_name)}")
+      raise ValueError(f"Flag name contains invalid characters: {flag_name!r}")
 
   def _validate_flag_value(self, flag_name: str, flag_value: str) -> None:
     assert flag_value, "Got invalid empty flag_value."
     if not isinstance(flag_value, str):
       raise TypeError(
           f"Expected None or string flag-value for flag {flag_name}, "
-          f"but got: {repr(flag_value)}")
+          f"but got: {flag_value!r}")
 
-  def _validate_override(self, flag_name: str, flag_value: Optional[str],
+  def _validate_override(self, flag_name: str, flag_value: str | None,
                          should_override: bool) -> None:
     if should_override or flag_name not in self:
       return
     old_value = self[flag_name]
     if flag_value != old_value:
-      raise ValueError(f"Flag {flag_name}={repr(flag_value)} was already set "
-                       f"with a different previous value: {repr(old_value)}")
+      raise ValueError(f"Flag {flag_name}={flag_value!r} was already set "
+                       f"with a different previous value: {old_value!r}")
 
   def update(  # type: ignore
       self,
@@ -205,7 +202,7 @@ class BasicFlags(Freezable, collections.UserDict):
     return ret
 
   def filtered(self: Self, flag_names: Iterable[str]) -> Self:
-    flag_names_set: Set[str] = set(flag_names)
+    flag_names_set: set[str] = set(flag_names)
     filtered_flags = {k: v for k, v in self.items() if k in flag_names_set}
     return self.__class__(filtered_flags)
 
@@ -219,10 +216,10 @@ class BasicFlags(Freezable, collections.UserDict):
     return f"{flag_name}={value}"
 
   @override
-  def items(self) -> Iterable[tuple[str, Optional[str]]]:  # type: ignore
+  def items(self) -> Iterable[tuple[str, str | None]]:  # type: ignore
     return self.data.items()
 
-  def to_dict(self) -> dict[str, Optional[str]]:
+  def to_dict(self) -> dict[str, str | None]:
     return dict(self.items())
 
   def clear(self) -> None:
@@ -268,8 +265,7 @@ class Flags(BasicFlags):
   def _validate_flag_name(self, flag_name: str) -> None:
     super()._validate_flag_name(flag_name)
     if not self._FLAG_NAME_RE.fullmatch(flag_name):
-      raise ValueError(
-          f"Flag name contains invalid characters: {repr(flag_name)}")
+      raise ValueError(f"Flag name contains invalid characters: {flag_name!r}")
 
 
 FlagsT = TypeVar("FlagsT", bound=Flags)

@@ -403,14 +403,11 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
     ]
+    package = "com.google.android.libraries.ads.mobile.maitier.testapps.webview"
     self.assertEqual(
-        BrowserConfig.parse(
-            "adb:com.google.android.libraries.ads.mobile.maitier.testapps.webview"
-        ),
+        BrowserConfig.parse(f"adb:{package}"),
         BrowserConfig(
-            pth.AnyPosixPath(
-                "com.google.android.libraries.ads.mobile.maitier.testapps.webview"
-            ), DriverConfig(BrowserDriverType.ANDROID)))
+            pth.AnyPosixPath(package), DriverConfig(BrowserDriverType.ANDROID)))
     self.assertListEqual(self.platform.sh_results, [])
 
   def test_parse_simple_with_local_apk(self):
@@ -440,7 +437,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.fs.create_file(path)
     config = BrowserConfig.parse(f"adb:{path_str}")
     self.assertEqual(config.path, path)
-    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver.driver_type, BrowserDriverType.ANDROID)
     with self.assertRaisesRegex(argparse.ArgumentTypeError,
                                 "Unsupported browser"):
       BrowserConfig.parse(path_str)
@@ -452,7 +449,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.fs.create_file(path)
     config = BrowserConfig.parse(f"adb:{path_str}")
     self.assertEqual(config.path, path)
-    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver.driver_type, BrowserDriverType.ANDROID)
     with self.assertRaisesRegex(argparse.ArgumentTypeError,
                                 "Unsupported browser"):
       BrowserConfig.parse(path_str)
@@ -466,7 +463,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.fs.create_file(path)
     config = BrowserConfig.parse(path_str)
     self.assertEqual(config.path, path)
-    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver.driver_type, BrowserDriverType.ANDROID)
     explicit_config = BrowserConfig.parse(f"adb:{path_str}")
     self.assertEqual(config, explicit_config)
 
@@ -495,7 +492,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         adb_config = BrowserConfig(path.resolve(),
                                    DriverConfig(BrowserDriverType.ANDROID))
         self.assertEqual(auto_config.path, adb_config.path)
-        self.assertEqual(auto_config.driver.type, BrowserDriverType.ANDROID)
+        self.assertEqual(auto_config.driver.driver_type,
+                         BrowserDriverType.ANDROID)
         self.assertEqual(auto_config, adb_config)
 
   @unittest.skip("Non-path browser short names are not yet supported "
@@ -611,12 +609,12 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
     config_1 = BrowserConfig.parse(hjson.dumps(config_dict))
     assert isinstance(config_1, BrowserConfig)
-    self.assertEqual(config_1.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config_1.driver.driver_type, BrowserDriverType.ANDROID)
 
     self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
     config_2 = BrowserConfig.parse_dict(config_dict)
     assert isinstance(config_2, BrowserConfig)
-    self.assertEqual(config_2.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config_2.driver.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config_1, config_2)
 
     short_config_dict: JsonDict = {
@@ -631,7 +629,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
     config_3 = BrowserConfig.parse_dict(short_config_dict)
     assert isinstance(config_3, BrowserConfig)
-    self.assertEqual(config_3.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config_3.driver.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config_1, config_3)
 
   def test_parse_inline_hjson_short_string(self):
@@ -657,7 +655,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     assert isinstance(config, BrowserConfig)
     self.assertEqual(config.browser,
                      mock_browser.MockChromeStable.mock_app_path())
-    self.assertEqual(config.driver.type, BrowserDriverType.WEB_DRIVER)
+    self.assertEqual(config.driver.driver_type, BrowserDriverType.WEB_DRIVER)
     self.assertEqual(config.driver.path, driver_path)
 
   def test_parse_with_range_simple(self):
@@ -787,7 +785,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         "192.168.0.1:5555 device product:sdk model:m device:d\n")
     self.platform.sh_results = [adb_devices, adb_devices]
     config = BrowserConfig.parse("192.168.0.1:5555:chrome")
-    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config.driver.device_id, "192.168.0.1:5555")
 
   def test_parse_adb_ip_serial_with_network(self):
@@ -796,7 +794,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         "192.168.0.1:5555 device product:sdk model:m device:d\n")
     self.platform.sh_results = [adb_devices, adb_devices]
     config = BrowserConfig.parse("192.168.0.1:5555:chrome:4G")
-    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config.driver.device_id, "192.168.0.1:5555")
     self.assertEqual(config.network,
                      NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G))
@@ -807,7 +805,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         "192.168.0.1:5555 device product:sdk model:m device:d\n")
     self.platform.sh_results = [adb_devices, adb_devices]
     config = BrowserConfig.parse("192.168.0.1:5555:chrome:4G:battery")
-    self.assertEqual(config.driver.type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.driver.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config.driver.device_id, "192.168.0.1:5555")
     self.assertEqual(config.network,
                      NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G))

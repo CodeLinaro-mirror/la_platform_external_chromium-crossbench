@@ -8,8 +8,7 @@ import json
 import logging
 import statistics
 from math import floor, log10
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, \
-    Sequence, Set
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence
 
 from crossbench.probes import helper
 
@@ -29,7 +28,7 @@ class Metric:
   """
 
   @classmethod
-  def format(cls, value: float, stddev: Optional[float] = None) -> str:
+  def format(cls, value: float, stddev: float | None = None) -> str:
     """Format value and stdev to only expose significant + 1 digits.
     Example outputs:
       100 ± 10%
@@ -54,7 +53,7 @@ class Metric:
     assert isinstance(values, list)
     return cls(values)
 
-  def __init__(self, values: Optional[Iterable] = None) -> None:
+  def __init__(self, values: Iterable | None = None) -> None:
     if not values:
       self.values: list[float] = []
     else:
@@ -174,7 +173,7 @@ class MetricsMerger:
   @classmethod
   def merge_json_list(cls,
                       files: Iterable[LocalPath],
-                      key_fn: Optional[helper.KeyFnType] = None,
+                      key_fn: helper.KeyFnType | None = None,
                       merge_duplicate_paths: bool = False) -> MetricsMerger:
     merger = cls(key_fn=key_fn)
     for file in files:
@@ -183,7 +182,7 @@ class MetricsMerger:
 
   def __init__(self,
                *args: dict | Iterable[dict],
-               key_fn: Optional[helper.KeyFnType] = None):
+               key_fn: helper.KeyFnType | None = None):
     """Create a new MetricsMerger
 
     Args:
@@ -193,7 +192,7 @@ class MetricsMerger:
     """
     self._data: dict[str, Metric] = {}
     self._key_fn: helper.KeyFnType = key_fn or helper.default_flatten_key_fn
-    self._ignored_keys: Set[str] = set()
+    self._ignored_keys: set[str] = set()
     for data in args:
       self.add(data)
 
@@ -217,7 +216,7 @@ class MetricsMerger:
                    merge_duplicate_paths: bool = False) -> None:
     """Merge a previously json-serialized MetricsMerger object"""
     for property_name, item in data.items():
-      path = prefix_path + (property_name,)
+      path = (*prefix_path, property_name)
       key = self._key_fn(path)
       if key is None or key in self._ignored_keys:
         continue
@@ -250,7 +249,7 @@ class MetricsMerger:
       self, data: dict | list[dict], parent_path: tuple[str, ...] = ()) -> None:
     assert isinstance(data, dict)
     for property_name, value in data.items():
-      path = parent_path + (property_name,)
+      path = (*parent_path, property_name)
       key: str | None = self._key_fn(path)
       if key is None:
         continue
@@ -268,7 +267,7 @@ class MetricsMerger:
           values.append(value)
 
   def to_json(self,
-              value_fn: Optional[Callable[[Any], Json]] = None,
+              value_fn: Callable[[Any], Json] | None = None,
               sort: bool = True) -> JsonDict:
     items = []
     for key, value in self._data.items():
@@ -309,7 +308,7 @@ class CSVFormatter:
 
   def __init__(self,
                metrics: MetricsMerger,
-               value_fn: Optional[Callable[[Any], Any]] = None,
+               value_fn: Callable[[Any], Any] | None = None,
                headers: Sequence[tuple[Any, ...]] = (),
                include_parts: bool = True,
                sort: bool = True):
@@ -345,7 +344,7 @@ class CSVFormatter:
       if include_parts:
         parts = tuple(path.split("/"))
         buffer = ("",) * (max_path_depth - len(parts))
-        row = (path,) + parts + buffer + (value,)
+        row = (path, *parts, *buffer, value)
       else:
         row = (path, value)
       self._table.append(row)

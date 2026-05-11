@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# Original Source: telemetry/internal/backends/chrome/desktop_minidump_symbolizer.py
+# Original Source:
+# telemetry/internal/backends/chrome/desktop_minidump_symbolizer.py
 from __future__ import annotations
 
 import logging
 import re
-from typing import Optional
 
 from typing_extensions import override
 
@@ -26,7 +26,7 @@ _BUNDLED_DYLIB_RE = re.compile(
 class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
 
   @override
-  def symbolize_minidump(self, minidump: pth.LocalPath) -> Optional[str]:
+  def symbolize_minidump(self, minidump: pth.LocalPath) -> str | None:
     """Gets the stack trace from the given minidump.
 
     Args:
@@ -40,7 +40,7 @@ class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
       return self.symbolize_minidump_win(minidump)
     return super().symbolize_minidump(minidump)
 
-  def symbolize_minidump_win(self, minidump: pth.LocalPath) -> Optional[str]:
+  def symbolize_minidump_win(self, minidump: pth.LocalPath) -> str | None:
     cdb = self._get_cdb_path()
     if not cdb:
       logging.warning("cdb.exe not found.")
@@ -139,7 +139,7 @@ class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
         filtered_binaries.append(binary)
     return filtered_binaries
 
-  def _get_cdb_path(self) -> Optional[pth.LocalPath]:
+  def _get_cdb_path(self) -> pth.LocalPath | None:
     # cdb.exe might have been co-located with the browser's executable
     # during the build, but that's not a certainty. (This is only done
     # in Chromium builds on the bots, which is why it's not a hard

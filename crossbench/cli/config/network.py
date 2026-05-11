@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from typing_extensions import override
 
@@ -73,7 +73,7 @@ class NetworkConfig(ConfigObject):
   https_port: int | None = None
 
   @classmethod
-  def default(cls, type: Optional[NetworkType] = None) -> Self:
+  def default(cls, type: NetworkType | None = None) -> Self:
     return cls(type=type or NetworkType.LIVE)
 
   @classmethod
@@ -171,7 +171,7 @@ class NetworkConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_str(cls, value: str, type: Optional[NetworkType] = None) -> Self:
+  def parse_str(cls, value: str, type: NetworkType | None = None) -> Self:
     if not value:
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
     if value == "default":
@@ -191,7 +191,7 @@ class NetworkConfig(ConfigObject):
   @classmethod
   def parse_url(cls,
                 url: urlparse.ParseResult,
-                type: Optional[NetworkType] = None,
+                type: NetworkType | None = None,
                 **kwargs) -> Self:
     cls.expect_no_extra_kwargs(kwargs)
     if type and type is not NetworkType.WPR:

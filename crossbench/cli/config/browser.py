@@ -9,7 +9,7 @@ import dataclasses
 import logging
 import os
 import re
-from typing import Any, Final, Optional, Self
+from typing import Any, Final, Self
 
 from typing_extensions import override
 
@@ -35,9 +35,9 @@ from crossbench.plt.ios import ios_devices
 
 SUPPORTED_EMBEDDER: Final = tuple(EMBEDDER_SHORT_NAME_TO_PACKAGE)
 
-SUPPORTED_BROWSER: Final = (
-    "chrome", "chromium", "d8", "edge", "firefox", "safari",
-    "webkit") + CHROME_APK_HELPER_NAMES + SUPPORTED_EMBEDDER
+SUPPORTED_BROWSER: Final = ("chrome", "chromium", "d8", "edge", "firefox",
+                            "safari", "webkit", *CHROME_APK_HELPER_NAMES,
+                            *SUPPORTED_EMBEDDER)
 
 # Split inputs like:
 # - "/out/x64.release/chrome"
@@ -161,20 +161,20 @@ class BrowserConfig(ConfigObject):
     start_match = VERSION_FOR_RANGE_RE.fullmatch(start_version)
     if not start_match:
       raise argparse.ArgumentTypeError(
-          f"Start of a browser range {repr(value)} must end in digits, "
-          f"but got {repr(start_version)}")
+          f"Start of a browser range {value!r} must end in digits, "
+          f"but got {start_version!r}")
     limit_match = VERSION_FOR_RANGE_RE.fullmatch(limit_version)
     if not limit_match:
       raise argparse.ArgumentTypeError(
-          f"Upper limit of a browser range {repr(value)} must end in digits, "
-          f"but got {repr(limit_version)}")
+          f"Upper limit of a browser range {value!r} must end in digits, "
+          f"but got {limit_version!r}")
 
     start_prefix = start_match["prefix"]
     limit_prefix = limit_match["prefix"]
     if limit_prefix and not start_prefix.endswith(limit_prefix):
       raise argparse.ArgumentTypeError(
-          f"Browser version range start prefix {repr(start_prefix)} must match "
-          f"limit prefix {repr(limit_prefix)}: {repr(value)}")
+          f"Browser version range start prefix {start_prefix!r} must match "
+          f"limit prefix {limit_prefix!r}: {value!r}")
 
     start_milestone: int = NumberParser.positive_int(
         start_match["milestone"], "browser version range start milestone")
@@ -182,7 +182,7 @@ class BrowserConfig(ConfigObject):
         limit_match["milestone"], "browser version range limit milestone")
     if start_milestone > limit_milestone:
       raise argparse.ArgumentTypeError(
-          f"Browser version limit must be larger than start: {repr(value)}")
+          f"Browser version limit must be larger than start: {value!r}")
 
     count = limit_milestone - start_milestone
     logging.info("Creating %d intermediate browser versions from %s", count,
@@ -216,15 +216,15 @@ class BrowserConfig(ConfigObject):
   def _parse_path_or_identifier(
       cls,
       maybe_path_or_identifier: str,
-      driver_type: Optional[BrowserDriverType] = None,
-      driver: Optional[DriverConfig] = None) -> pth.AnyPathLike:
+      driver_type: BrowserDriverType | None = None,
+      driver: DriverConfig | None = None) -> pth.AnyPathLike:
     if not maybe_path_or_identifier:
       raise argparse.ArgumentTypeError("Got empty browser identifier.")
     if not driver_type:
       if cls._is_known_android_browser(maybe_path_or_identifier):
         driver_type = BrowserDriverType.ANDROID
       elif driver:
-        driver_type = driver.type
+        driver_type = driver.driver_type
       else:
         driver_type = BrowserDriverType.default()
     identifier = maybe_path_or_identifier.lower()
@@ -242,7 +242,7 @@ class BrowserConfig(ConfigObject):
       if ":" in maybe_path_or_identifier:
         raise argparse.ArgumentTypeError(
             "Got unexpected short-form string "
-            f"{repr(maybe_path_or_identifier)}. \n"
+            f"{maybe_path_or_identifier!r}. \n"
             "  - Use a complex browser config with separate "
             "'browser' and 'driver' attributes, or\n"
             "  - Use the short-form directly on the parent config attribute: \n"
@@ -289,7 +289,7 @@ class BrowserConfig(ConfigObject):
   @classmethod
   def _try_parse_short_name(
       cls, identifier: str,
-      driver_type: BrowserDriverType) -> Optional[pth.AnyPath]:
+      driver_type: BrowserDriverType) -> pth.AnyPath | None:
     # We're not using a dict-based lookup here, since not all browsers are
     # available on all platforms
     # TODO: handle remote platforms.
@@ -348,9 +348,9 @@ class BrowserConfig(ConfigObject):
   @classmethod
   def _parse_inline_short_form(
       cls, value: str
-  ) -> tuple[DriverConfig, pth.AnyPathLike, Optional[NetworkConfig],
-             Optional[EnvConfig]]:
-    assert ":" in value, f"Invalid short config {repr(value)} for {cls}"
+  ) -> tuple[DriverConfig, pth.AnyPathLike, NetworkConfig | None, EnvConfig
+             | None]:
+    assert ":" in value, f"Invalid short config {value!r} for {cls}"
     match = SHORT_FORM_RE.fullmatch(value)
     if not match:
       raise argparse.ArgumentTypeError(
@@ -365,7 +365,7 @@ class BrowserConfig(ConfigObject):
     if driver_identifier := match.group("driver"):
       driver = DriverConfig.parse(driver_identifier)
     path: pth.AnyPathLike = cls._parse_path_or_identifier(
-        path_or_identifier, driver.type)
+        path_or_identifier, driver.driver_type)
     network = None
     if network_identifier := match.group("network"):
       network = NetworkConfig.parse_str(network_identifier)
@@ -419,11 +419,11 @@ class BrowserConfig(ConfigObject):
 
   @property
   def is_remote(self) -> bool:
-    return self.driver.type.is_remote_browser
+    return self.driver.driver_type.is_remote_browser
 
   @property
   def is_local(self) -> bool:
-    return self.driver.type.is_local_browser
+    return self.driver.driver_type.is_local_browser
 
   @property
   def path(self) -> pth.AnyPath:

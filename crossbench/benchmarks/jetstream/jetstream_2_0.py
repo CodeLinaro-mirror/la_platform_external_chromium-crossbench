@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -20,7 +20,7 @@ class JetStream20Probe(JetStream2Probe):
   NAME: ClassVar[str] = "jetstream_2.0"
 
   @override
-  def get_context_cls(self) -> Type[JetStream20ProbeContext]:
+  def get_context_cls(self) -> type[JetStream20ProbeContext]:
     return JetStream20ProbeContext
 
 

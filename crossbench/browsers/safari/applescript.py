@@ -25,7 +25,9 @@ class SafariAppleScript(Safari, AppleScriptBrowser):
   def _setup_window(self) -> None:
     self._exec_apple_script(f"""
       tell application "System Events"
-          click menu item "New Private Window" of menu "File" of menu bar 1 of process "{self.bundle_name}"
+          tell process "{self.bundle_name}"
+              click menu item "New Private Window" of menu "File" of menu bar 1
+          end tell
       end tell
       set URL of current tab of front window to ""
     """)
@@ -43,8 +45,8 @@ class SafariAppleScript(Safari, AppleScriptBrowser):
     else:
       bounds = (f"{self.viewport.x},{self.viewport.y},"
                 f"{self.viewport.width},{self.viewport.height}")
-      self._exec_apple_script("set the bounds of the first window to {%s}" %
-                              bounds)
+      self._exec_apple_script(
+          f"set the bounds of the first window to {{{bounds}}}")
 
   @override
   def quit(self) -> None:

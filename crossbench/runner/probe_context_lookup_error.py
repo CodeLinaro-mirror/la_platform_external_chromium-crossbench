@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final, Type
+from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 class ProbeContextLookupError(LookupError):
 
-  def __init__(self, probe_cls: Type[Probe]) -> None:
-    self._probe_cls: Final[Type[Probe]] = probe_cls
-    super().__init__(
-        f"No active probe context for {repr(probe_cls.NAME)} probe")
+  def __init__(self, probe_cls: type[Probe]) -> None:
+    self._probe_cls: Final[type[Probe]] = probe_cls
+    super().__init__(f"No active probe context for {probe_cls.NAME!r} probe")

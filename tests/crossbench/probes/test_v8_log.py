@@ -11,7 +11,7 @@ from crossbench.probes.all import V8LogProbe
 from crossbench.probes.v8.log import DEFAULT_LOG_FLAGS
 from tests import test_helper
 
-DEFAULT_LOG_FLAGS_PROF = frozenset(DEFAULT_LOG_FLAGS + ("--prof",))
+DEFAULT_LOG_FLAGS_PROF = frozenset((*DEFAULT_LOG_FLAGS, "--prof"))
 
 
 class V8LogProbeTestCase(unittest.TestCase):

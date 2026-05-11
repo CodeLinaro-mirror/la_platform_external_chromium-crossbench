@@ -12,7 +12,7 @@ import os
 import re
 import subprocess
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Final, Iterable, \
-    Optional, Self, Type, cast
+    Self, cast
 
 from typing_extensions import override
 
@@ -149,12 +149,12 @@ class V8LogProbe(ChromiumProbe):
       prof: bool = True,
       profview: bool = True,
       logview: bool = True,
-      categories: Optional[Iterable[LogviewCategory]] = None,
-      js_flags: Optional[Iterable[str]] = DEFAULT_LOG_FLAGS,
-      prof_sampling_interval: Optional[dt.timedelta] = None,
+      categories: Iterable[LogviewCategory] | None = None,
+      js_flags: Iterable[str] | None = DEFAULT_LOG_FLAGS,
+      prof_sampling_interval: dt.timedelta | None = None,
       # TODO: support remote platform
-      d8_binary: Optional[LocalPath] = None,
-      v8_checkout: Optional[LocalPath] = None) -> None:
+      d8_binary: LocalPath | None = None,
+      v8_checkout: LocalPath | None = None) -> None:
     super().__init__()
     self._profview: bool = profview
     self._logview: bool = logview
@@ -201,7 +201,7 @@ class V8LogProbe(ChromiumProbe):
 
   @classmethod
   @override
-  def parse_str(cls: Type[Self], value: str) -> Self:
+  def parse_str(cls: type[Self], value: str) -> Self:
     if not value:
       return super().parse_str(value)
     if value == "all":
@@ -334,7 +334,7 @@ class V8LogProbe(ChromiumProbe):
     return tasks
 
   @override
-  def get_context_cls(self) -> Type[V8LogProbeContext]:
+  def get_context_cls(self) -> type[V8LogProbeContext]:
     return V8LogProbeContext
 
   @override

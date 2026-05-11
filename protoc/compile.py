@@ -179,8 +179,7 @@ def check_protoc_version(protoc_bin: str) -> None:
                                                text=True)
   version_match = VERSION_RE.match(protoc_version_str)
   if not version_match:
-    raise ValueError(
-        f"Invalid protoc version string: {repr(protoc_version_str)}")
+    raise ValueError(f"Invalid protoc version string: {protoc_version_str!r}")
   protoc_version = version_match[1]
   # parse version "29" from "5.29.3":
   pkg_version_str = importlib.metadata.version("protobuf")

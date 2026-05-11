@@ -95,13 +95,13 @@ class GoogleLogin(PresetLoginBlock):
     action.wait_js_condition(
         ("return "
          f"document.querySelector(\"[aria-label='{aria_label}']\") != null &&"
-         f"document.getElementById({repr(button_name)}) != null;"),
+         f"document.getElementById({button_name!r}) != null;"),
         0.2,
         timeout=20)
     action.js("const inputField ="
               f" document.querySelector(\"[aria-label='{aria_label}']\");"
-              f"inputField.value = {repr(input_val)};"
-              f"document.getElementById({repr(button_name)}).click();")
+              f"inputField.value = {input_val!r};"
+              f"document.getElementById({button_name!r}).click();")
 
   def timeout(self, secret: UsernamePassword) -> dt.timedelta:
     if secret.is_interactive:

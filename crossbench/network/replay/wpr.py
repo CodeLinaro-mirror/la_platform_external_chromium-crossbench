@@ -8,7 +8,7 @@ import abc
 import contextlib
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Final, Iterator, Optional, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Iterator, Self, TypeVar
 
 from typing_extensions import override
 
@@ -35,8 +35,8 @@ class WprReplayNetwork(ReplayNetwork):
 
   def __init__(self,
                archive: LocalPath | str,
-               traffic_shaper: Optional[TrafficShaper],
-               wpr_go_bin: Optional[LocalPath],
+               traffic_shaper: TrafficShaper | None,
+               wpr_go_bin: LocalPath | None,
                browser_platform: Platform,
                persist_server: bool,
                inject_deterministic_script: bool,
@@ -87,7 +87,7 @@ class WprReplayNetwork(ReplayNetwork):
     return extra_flags
 
   @abc.abstractmethod
-  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> LocalPath:
+  def _ensure_wpr_go(self, wpr_go_bin: LocalPath | None = None) -> LocalPath:
     pass
 
   @abc.abstractmethod
@@ -147,7 +147,7 @@ class WprReplayNetwork(ReplayNetwork):
 class LocalWprReplayNetwork(WprReplayNetwork):
 
   @override
-  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> LocalPath:
+  def _ensure_wpr_go(self, wpr_go_bin: LocalPath | None = None) -> LocalPath:
     if not wpr_go_bin:
       if local_wpr_go := WprGoFinder(self.host_platform).local_path:
         wpr_go_bin = local_wpr_go
@@ -218,8 +218,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
 
   def __init__(self,
                archive: LocalPath | str,
-               traffic_shaper: Optional[TrafficShaper],
-               wpr_go_bin: Optional[LocalPath],
+               traffic_shaper: TrafficShaper | None,
+               wpr_go_bin: LocalPath | None,
                browser_platform: Platform,
                persist_server: bool,
                inject_deterministic_script: bool,
@@ -247,7 +247,7 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
     return platform.is_android or platform.is_chromeos
 
   @override
-  def _ensure_wpr_go(self, wpr_go_bin: Optional[LocalPath] = None) -> LocalPath:
+  def _ensure_wpr_go(self, wpr_go_bin: LocalPath | None = None) -> LocalPath:
     assert RemoteWprReplayNetwork.is_compatible(self.browser_platform)
     if wpr_go_bin:
       if wpr_go_bin.suffix == ".go":

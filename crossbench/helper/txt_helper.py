@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import textwrap
-from typing import Iterable, Type
+from typing import Iterable
 
 
 def wrap_lines(body: str, width: int = 80, indent: str = "") -> Iterable[str]:
@@ -17,7 +17,7 @@ def wrap_lines(body: str, width: int = 80, indent: str = "") -> Iterable[str]:
       yield f"{indent}{split}"
 
 
-def type_name(t: Type) -> str:
+def type_name(t: type) -> str:
   module = t.__module__
   if not module:
     return t.__qualname__

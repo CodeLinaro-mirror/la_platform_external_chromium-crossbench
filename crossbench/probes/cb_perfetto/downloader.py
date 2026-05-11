@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final, Mapping, Optional
+from typing import TYPE_CHECKING, Final, Mapping
 
 from crossbench import exception, plt
 
@@ -37,7 +37,7 @@ class PerfettoToolDownloader:
   def __init__(self,
                tool: str,
                version: str = "v53.0",
-               platform: Optional[plt.Platform] = None) -> None:
+               platform: plt.Platform | None = None) -> None:
     self._version = version
     self._tool = tool
     self._platform = platform or plt.PLATFORM

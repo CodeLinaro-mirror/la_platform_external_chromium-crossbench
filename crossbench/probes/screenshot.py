@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar, Optional, Self, Sequence, Type
+from typing import TYPE_CHECKING, ClassVar, Self, Sequence
 
 from typing_extensions import override
 
@@ -50,7 +50,7 @@ class ScreenshotProbe(Probe):
             f"Viewport for '{browser}' might include toolbar: {viewport}")
 
   @override
-  def get_context_cls(self) -> Type[ScreenshotProbeContext]:
+  def get_context_cls(self) -> type[ScreenshotProbeContext]:
     return ScreenshotProbeContext
 
   # TODO: implement merge_repetitions()
@@ -96,16 +96,16 @@ class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
   def invoke(self,
              info_stack: exception.TInfoStack,
              timeout: dt.timedelta,
-             label: Optional[str] = None,
-             annotations: Optional[Sequence[ScreenshotAnnotation]] = None,
+             label: str | None = None,
+             annotations: Sequence[ScreenshotAnnotation] | None = None,
              **kwargs) -> None:
     self.expect_no_extra_kwargs(kwargs)
     self.screenshot(label, annotations)
 
   def screenshot(
       self,
-      label: Optional[str] = None,
-      annotations: Optional[Sequence[ScreenshotAnnotation]] = None) -> None:
+      label: str | None = None,
+      annotations: Sequence[ScreenshotAnnotation] | None = None) -> None:
     # TODO: support screen coordinates
     if not label:
       label = str(dt.datetime.now().strftime("%Y-%m-%d_%H%M%S"))

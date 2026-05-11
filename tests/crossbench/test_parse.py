@@ -288,7 +288,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
                     math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
                     None):
       with self.assertRaises(
-          argparse.ArgumentTypeError, msg=f"invalid={repr(invalid)}"):
+          argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"):
         _ = NumberParser.positive_int(invalid)
 
   def test_parse_int_range(self):
@@ -315,7 +315,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
                     1.2, "Nan", math.nan, "inf", math.inf, "-inf", -math.inf,
                     "invalid", None):
       with self.assertRaises(
-          argparse.ArgumentTypeError, msg=f"invalid={repr(invalid)}"):
+          argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"):
         _ = NumberParser.positive_int(invalid, parse_str=False)
 
   def test_parse_positive_zero_int(self):
@@ -330,7 +330,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     for invalid in ("", "-1", -1, "-1.2", -1.2, "1.2", 1.2, "NaN", math.nan,
                     "inf", math.inf, "-inf", -math.inf, "invalid", None):
       with self.assertRaises(
-          argparse.ArgumentTypeError, msg=f"invalid={repr(invalid)}"):
+          argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"):
         _ = NumberParser.positive_zero_int(invalid)
 
   def test_parse_any_float(self):

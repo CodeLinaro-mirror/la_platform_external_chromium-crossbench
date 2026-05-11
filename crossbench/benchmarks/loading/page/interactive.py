@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Iterator, Optional, cast
+from typing import TYPE_CHECKING, Iterator, cast
 
 from typing_extensions import override
 
@@ -36,10 +36,10 @@ class InteractivePage(Page):
   def __init__(self,
                name: str,
                blocks: tuple[ActionBlock, ...],
-               login: Optional[LoginBlock] = None,
-               setup: Optional[ActionBlock] = None,
-               teardown: Optional[ActionBlock] = None,
-               secrets: Optional[Secrets] = None,
+               login: LoginBlock | None = None,
+               setup: ActionBlock | None = None,
+               teardown: ActionBlock | None = None,
+               secrets: Secrets | None = None,
                playback: PlaybackController = PlaybackController.default(),
                tabs: TabController = TabController.default(),
                about_blank_duration: dt.timedelta = dt.timedelta(),

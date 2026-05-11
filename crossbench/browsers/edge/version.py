@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Final, Iterable, Optional, Self
+from typing import Final, Iterable, Self
 
 from typing_extensions import override
 
@@ -19,7 +19,7 @@ class EdgeVersion(ChromiumVersion):
 
   @classmethod
   @override
-  def _validate_prefix(cls, prefix: Optional[str]) -> bool:
+  def _validate_prefix(cls, prefix: str | None) -> bool:
     if not prefix:
       return True
     prefix = prefix.lower()
@@ -30,7 +30,7 @@ class EdgeVersion(ChromiumVersion):
 
   @classmethod
   @override
-  def _validate_suffix(cls, suffix: Optional[str]) -> bool:
+  def _validate_suffix(cls, suffix: str | None) -> bool:
     if suffix and "(Official Build)" in suffix:
       return True
     return super()._validate_suffix(suffix)

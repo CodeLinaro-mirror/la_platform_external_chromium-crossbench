@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import atexit
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Self, TextIO, Type
+from typing import TYPE_CHECKING, ClassVar, Self, TextIO
 
 from typing_extensions import override
 
@@ -47,7 +47,7 @@ class DTraceProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return super().key + (("script_path", str(self.script_path)),)
+    return (*super().key, ("script_path", str(self.script_path)))
 
   @property
   def script_path(self) -> LocalPath:
@@ -87,7 +87,7 @@ class DTraceProbe(Probe):
           "This probe will fail to start.") from e
 
   @override
-  def get_context_cls(self) -> Type[DTraceProbeContext]:
+  def get_context_cls(self) -> type[DTraceProbeContext]:
     return DTraceProbeContext
 
 

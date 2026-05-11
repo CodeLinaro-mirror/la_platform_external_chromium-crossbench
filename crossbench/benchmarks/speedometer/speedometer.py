@@ -8,8 +8,7 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Optional, \
-    Sequence, Type
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Sequence
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -57,7 +56,7 @@ class SpeedometerProbe(
 
   @abc.abstractmethod
   @override
-  def get_context_cls(self) -> Type[SpeedometerProbeContext]:
+  def get_context_cls(self) -> type[SpeedometerProbeContext]:
     pass
 
   @override
@@ -160,9 +159,9 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
 
   def __init__(self,
                substories: Sequence[str] = (),
-               iterations: Optional[int] = None,
-               url_params: Optional[Mapping[str, str]] = None,
-               url: Optional[str] = None) -> None:
+               iterations: int | None = None,
+               url_params: Mapping[str, str] | None = None,
+               url: str | None = None) -> None:
     self._iterations: Final[int] = NumberParser.positive_int(
         iterations or self.DEFAULT_ITERATIONS,
         "iteration count",
@@ -308,7 +307,7 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
         """)
 
 
-ProbeClsTupleT = tuple[Type[SpeedometerProbe], ...]
+ProbeClsTupleT = tuple[type[SpeedometerProbe], ...]
 
 
 class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
@@ -345,13 +344,13 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
     return {}
 
   def __init__(self,
-               story_cls: Type[SpeedometerStory],
+               story_cls: type[SpeedometerStory],
                patterns: Sequence[str],
                args: argparse.Namespace,
                separate: bool = False,
-               url: Optional[str] = None,
-               iterations: Optional[int] = None,
-               url_params: Optional[Mapping[str, str]] = None) -> None:
+               url: str | None = None,
+               iterations: int | None = None,
+               url_params: Mapping[str, str] | None = None) -> None:
     self._iterations: Final[int | None] = iterations
     self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
     assert issubclass(story_cls, SpeedometerStory)

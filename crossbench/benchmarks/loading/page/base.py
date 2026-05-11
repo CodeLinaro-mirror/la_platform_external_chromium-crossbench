@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import TYPE_CHECKING, Final, Optional
+from typing import TYPE_CHECKING, Final
 
 from typing_extensions import override
 
@@ -43,7 +43,7 @@ class Page(Story, metaclass=abc.ABCMeta):
                playback: PlaybackController = PlaybackController.default(),
                tabs: TabController = TabController.default(),
                about_blank_duration: dt.timedelta = dt.timedelta(),
-               secrets: Optional[Secrets] = None) -> None:
+               secrets: Secrets | None = None) -> None:
     self._playback: PlaybackController = playback
     self._tabs: TabController = tabs
     self._about_blank_duration = about_blank_duration

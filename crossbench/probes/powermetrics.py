@@ -8,7 +8,7 @@ import atexit
 import datetime as dt
 import enum
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Self, Sequence, Type
+from typing import TYPE_CHECKING, ClassVar, Self, Sequence
 
 from typing_extensions import override
 
@@ -77,10 +77,9 @@ class PowerMetricsProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return super().key + (
-        ("sampling_interval", self.sampling_interval.total_seconds()),
-        ("samplers", tuple(map(str, self.samplers))),
-    )
+    return (*super().key, ("sampling_interval",
+                           self.sampling_interval.total_seconds()),
+            ("samplers", tuple(map(str, self.samplers))))
 
   @property
   def sampling_interval(self) -> dt.timedelta:
@@ -96,7 +95,7 @@ class PowerMetricsProbe(Probe):
     self.expect_macos(browser)
 
   @override
-  def get_context_cls(self) -> Type[PowerMetricsProbeContext]:
+  def get_context_cls(self) -> type[PowerMetricsProbeContext]:
     return PowerMetricsProbeContext
 
 

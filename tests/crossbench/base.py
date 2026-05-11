@@ -12,7 +12,7 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Final, Iterator, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Final, Iterator, Sequence
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -76,7 +76,7 @@ class CrossbenchFakeFsTestCase(
     self.fs.create_file(path, contents=contents)
     return path
 
-  def mock_platform_default_tmp_dir(self, platform_cls: Type) -> None:
+  def mock_platform_default_tmp_dir(self, platform_cls: type) -> None:
     patcher = mock.patch.object(
         platform_cls,
         "_create_default_tmp_dir",
@@ -311,7 +311,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
 
   @contextlib.contextmanager
   def _patch_get_browser_cls(self,
-                             return_value: Optional[Type[Browser]] = None,
+                             return_value: type[Browser] | None = None,
                              **kwargs) -> Iterator[mock.MagicMock]:
     if not kwargs:
       kwargs["return_value"] = return_value or mock_browser.MockChromeStable
@@ -339,7 +339,7 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
 
   @contextlib.contextmanager
   def _patch_get_browser(self,
-                         return_value: Optional[Sequence[Browser]] = None
+                         return_value: Sequence[Browser] | None = None
                         ) -> Iterator[None]:
     if not return_value:
       return_value = self.browsers

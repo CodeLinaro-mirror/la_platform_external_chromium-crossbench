@@ -25,7 +25,7 @@ class ProbeContextManagerTestCase(BaseRunnerTestCase):
 
   def setup_context_manager(self, throw: bool = True):
     self.runner = self.single_story_runner(throw=throw)
-    self.cb_run = list(self.runner._get_runs())[0]
+    self.cb_run = next(iter(self.runner._get_runs()))
     self.context_manager = ProbeRunContextManager(self.cb_run,
                                                   self.cb_run.results)
 

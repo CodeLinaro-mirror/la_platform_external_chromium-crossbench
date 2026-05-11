@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Final, Optional, Type, cast
+from typing import TYPE_CHECKING, Final, cast
 
 from typing_extensions import override
 
@@ -53,7 +53,7 @@ class ChromiumBased(Browser):
 
   @classmethod
   @abc.abstractmethod
-  def version_cls(cls) -> Type[ChromiumVersion]:
+  def version_cls(cls) -> type[ChromiumVersion]:
     pass
 
   @classmethod
@@ -66,10 +66,10 @@ class ChromiumBased(Browser):
   def __init__(self,
                label: str,
                path: pth.AnyPath,
-               settings: Optional[Settings] = None) -> None:
+               settings: Settings | None = None) -> None:
     super().__init__(label, path, settings=settings)
-    self._local_extension_tmp_dir: Optional[pth.LocalPath] = None
-    self._remote_extension_tmp_dir: Optional[pth.AnyPath] = None
+    self._local_extension_tmp_dir: pth.LocalPath | None = None
+    self._remote_extension_tmp_dir: pth.AnyPath | None = None
     assert isinstance(self._flags, ChromeFlags)
 
   @override
@@ -145,7 +145,7 @@ class ChromiumBased(Browser):
     self.flags.validate()
 
   @override
-  def _setup_cache_dir(self) -> Optional[pth.AnyPath]:
+  def _setup_cache_dir(self) -> pth.AnyPath | None:
     # See documentation for more details:
     # https://chromium.googlesource.com/chromium/src/+/main/docs/user_data_dir.md
     # We only deal with the user-data-dir here and ignore the user-cache-dir.
@@ -153,8 +153,8 @@ class ChromiumBased(Browser):
     if flag_user_data_dir := self._flags.get("--user-data-dir", None):
       if user_data_dir and str(user_data_dir) != str(flag_user_data_dir):
         raise ValueError("Conflicting cache_dir from "
-                         f"settings.cache_dir={repr(str(user_data_dir))} and "
-                         f"--user-data-dir={repr(str(flag_user_data_dir))}")
+                         f"settings.cache_dir={str(user_data_dir)!r} and "
+                         f"--user-data-dir={str(flag_user_data_dir)!r}")
       return pth.AnyPath(flag_user_data_dir)
 
     if user_data_dir:
@@ -178,7 +178,7 @@ class ChromiumBased(Browser):
 
   @property
   @override
-  def profile_data_dir(self) -> Optional[pth.AnyPath]:
+  def profile_data_dir(self) -> pth.AnyPath | None:
     # On chromium-based browsers we can have two separate caching dirs:
     # - user-data-dir containing all profile data
     # - cache-dir containing profile independent caches

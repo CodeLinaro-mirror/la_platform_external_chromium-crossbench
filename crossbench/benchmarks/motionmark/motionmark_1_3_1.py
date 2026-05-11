@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -22,7 +22,7 @@ class MotionMark131Probe(MotionMark1Probe):
   NAME: ClassVar = "motionmark_1.3.1"
 
   @override
-  def get_context_cls(self) -> Type[MotionMark131ProbeContext]:
+  def get_context_cls(self) -> type[MotionMark131ProbeContext]:
     return MotionMark131ProbeContext
 
 

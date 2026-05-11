@@ -7,7 +7,6 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Optional
 
 import hjson
 
@@ -15,21 +14,21 @@ from crossbench.cli.btp import BTPUtil
 from crossbench.cli.cli import CrossBenchCLI
 
 
-def crossbench(argv: Optional[list[str]] = None) -> None:
+def crossbench(argv: list[str] | None = None) -> None:
   if not argv:
     argv = sys.argv
   cli = CrossBenchCLI()
   cli.run(argv[1:])
 
 
-def cb_btp(argv: Optional[list[str]] = None) -> None:
+def cb_btp(argv: list[str] | None = None) -> None:
   if not argv:
     argv = sys.argv
   btp = BTPUtil()
   btp.run(argv[1:])
 
 
-def cb_validate_hjson(argv: Optional[list[str]] = None) -> None:
+def cb_validate_hjson(argv: list[str] | None = None) -> None:
   if not argv:
     argv = sys.argv
   for path_str in argv[1:]:

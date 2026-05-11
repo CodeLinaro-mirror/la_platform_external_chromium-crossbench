@@ -30,7 +30,7 @@ def is_on_swarming():
 
 
 @dataclass(frozen=True)
-class TestEnv():
+class TestEnv:
   # Avoid getting PytestCollectionWarning as the class name starts with Test.
   __test__ = False
 

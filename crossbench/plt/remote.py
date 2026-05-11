@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import subprocess
-from typing import TYPE_CHECKING, Final, Mapping, Optional
+from typing import TYPE_CHECKING, Final, Mapping
 
 from typing_extensions import override
 
@@ -36,8 +36,8 @@ class RemotePlatformMixin:
   def build_shell_cmd(self,
                       *args: CmdArg,
                       shell: bool = False,
-                      env: Optional[Mapping[str, str]] = None,
-                      cwd: Optional[AnyPath] = None) -> ListCmdArgs:
+                      env: Mapping[str, str] | None = None,
+                      cwd: AnyPath | None = None) -> ListCmdArgs:
     raise NotImplementedError
 
 

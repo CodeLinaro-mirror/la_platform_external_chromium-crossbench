@@ -5,8 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Optional, \
-    TypeAlias
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, TypeAlias
 
 from typing_extensions import override
 
@@ -50,13 +49,13 @@ class Binary:
 
   def __init__(self,
                name: str,
-               default: Optional[BinaryLookup] = None,
-               posix: Optional[BinaryLookup] = None,
-               linux: Optional[BinaryLookup] = None,
-               android: Optional[BinaryLookup] = None,
-               macos: Optional[BinaryLookup] = None,
-               win: Optional[BinaryLookup] = None,
-               chromeos: Optional[BinaryLookup] = None) -> None:
+               default: BinaryLookup | None = None,
+               posix: BinaryLookup | None = None,
+               linux: BinaryLookup | None = None,
+               android: BinaryLookup | None = None,
+               macos: BinaryLookup | None = None,
+               win: BinaryLookup | None = None,
+               chromeos: BinaryLookup | None = None) -> None:
     self._name = name
     self._default = self._convert(default)
     self._posix = self._convert(posix)
@@ -70,7 +69,7 @@ class Binary:
       raise ValueError("At least one platform binary must be provided")
 
   def _convert(self,
-               paths: Optional[BinaryLookup] = None) -> tuple[pth.AnyPath, ...]:
+               paths: BinaryLookup | None = None) -> tuple[pth.AnyPath, ...]:
     if paths is None:
       return ()
     if isinstance(paths, str):

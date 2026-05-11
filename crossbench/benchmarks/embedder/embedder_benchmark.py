@@ -8,8 +8,7 @@ import abc
 import argparse
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Iterator, Optional, \
-    Sequence, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Iterator, Sequence, cast
 
 from typing_extensions import override
 
@@ -52,8 +51,8 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
         "am", "start", "-S", "-W", "-n",
         f"{run_browser.android_package}/.{run_benchmark.android_activity}")
     if run_benchmark.android_action != "":
-      cmd = cmd + (
-          "-a", f"{run_browser.android_package}.{run_benchmark.android_action}")
+      cmd = (*cmd, "-a",
+             f"{run_browser.android_package}.{run_benchmark.android_action}")
     run.browser_platform.sh(*cmd)
     logging.info("Starting Embedder Benchmark...")
 
@@ -88,11 +87,11 @@ class EmbedderBenchmark(SubStoryBenchmark):
   def __init__(
       self,
       stories: Sequence[Story],
-      action_runner_config: Optional[ActionRunnerConfig] = None,
+      action_runner_config: ActionRunnerConfig | None = None,
       embedder_process_name: str = "search",
       embedder_push_files: Sequence[str] = (),
-      embedder_setup_command_config: Optional[SetupCommandsConfig] = None,
-      embedder_teardown_command_config: Optional[SetupCommandsConfig] = None,
+      embedder_setup_command_config: SetupCommandsConfig | None = None,
+      embedder_teardown_command_config: SetupCommandsConfig | None = None,
       embedder_drop_caches: bool = False,
       android_action: str = "GOOGLE_SEARCH",
       android_activity: str = "SearchActivity",
@@ -119,11 +118,11 @@ class EmbedderBenchmark(SubStoryBenchmark):
       yield pth.LocalPath(source), pth.AnyPosixPath(destination)
 
   @property
-  def embedder_setup_command_config(self) -> Optional[SetupCommandsConfig]:
+  def embedder_setup_command_config(self) -> SetupCommandsConfig | None:
     return self._embedder_setup_command_config
 
   @property
-  def embedder_teardown_command_config(self) -> Optional[SetupCommandsConfig]:
+  def embedder_teardown_command_config(self) -> SetupCommandsConfig | None:
     return self._embedder_teardown_command_config
 
   @property

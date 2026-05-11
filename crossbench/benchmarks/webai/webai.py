@@ -8,7 +8,7 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Sequence, Type, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Sequence, cast
 
 from typing_extensions import override
 
@@ -42,7 +42,7 @@ class WebAIProbe(BenchmarkProbeMixin, JsonResultProbe, metaclass=abc.ABCMeta):
     return cast(WebAIProbeContext, super().create_context(run))
 
   @override
-  def get_context_cls(self) -> Type[WebAIProbeContext]:
+  def get_context_cls(self) -> type[WebAIProbeContext]:
     return WebAIProbeContext
 
   @override
@@ -150,7 +150,7 @@ class WebAIStory(PressBenchmarkStory):
 
   def __init__(self,
                substories: Sequence[str] = (),
-               url: Optional[str] = None) -> None:
+               url: str | None = None) -> None:
     if not substories:
       substories = self.SUBSTORIES
     super().__init__(substories=substories, url=url or self.URL)
@@ -189,7 +189,8 @@ class WebAIStory(PressBenchmarkStory):
         if (window.startTest) {
           window.startTest();
         } else {
-          let startButton = document.querySelector("#runSuites, .start-tests-button, button.start");
+          let startButton = document.querySelector(
+              "#runSuites, .start-tests-button, button.start");
           if (startButton) startButton.click();
         }
       """)
@@ -204,7 +205,7 @@ class WebAIBenchmark(PressBenchmark):
   """
   NAME: ClassVar[str] = "webai"
   DEFAULT_STORY_CLS = WebAIStory
-  PROBES: ClassVar[tuple[Type[WebAIProbe], ...]] = (WebAIProbe,)
+  PROBES: ClassVar[tuple[type[WebAIProbe], ...]] = (WebAIProbe,)
   STORY_FILTER_CLS: ClassVar = PressBenchmarkStoryFilter
 
   @classmethod

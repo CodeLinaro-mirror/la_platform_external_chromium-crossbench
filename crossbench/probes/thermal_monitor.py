@@ -9,7 +9,7 @@ import json
 import logging
 import re
 from enum import IntEnum
-from typing import TYPE_CHECKING, ClassVar, Iterable, Optional
+from typing import TYPE_CHECKING, ClassVar, Iterable
 
 from typing_extensions import override
 
@@ -59,7 +59,7 @@ class ThermalStatus(IntEnum):
       if value.upper().endswith(member.name):
         return member
 
-    raise ValueError(f"Invalid ThermalStatus: {repr(value)}")
+    raise ValueError(f"Invalid ThermalStatus: {value!r}")
 
 
 class ThermalMonitorProbe(InternalJsonResultProbe):
@@ -70,7 +70,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
 
   def __init__(self,
                cool_down_time: dt.timedelta = dt.timedelta(),
-               threshold: Optional[ThermalStatus] = None) -> None:
+               threshold: ThermalStatus | None = None) -> None:
     super().__init__()
     self._threshold: ThermalStatus | None = threshold
     self._cool_down_time: dt.timedelta = cool_down_time
@@ -83,7 +83,7 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
     return "cb.thermal_monitor.json"
 
   @property
-  def threshold(self) -> Optional[ThermalStatus]:
+  def threshold(self) -> ThermalStatus | None:
     return self._threshold
 
   @property

@@ -5,15 +5,14 @@
 from __future__ import annotations
 
 import csv
-from typing import TYPE_CHECKING, Any, Callable, Final, Mapping, Optional, \
-    Sequence, Set
+from typing import TYPE_CHECKING, Any, Callable, Final, Mapping, Sequence
 
 if TYPE_CHECKING:
   from crossbench.path import LocalPath
 
 INTERNAL_NAME_PREFIX: Final[str] = "cb."
 
-KeyFnType = Callable[[tuple[str, ...]], Optional[str]]
+KeyFnType = Callable[[tuple[str, ...]], str | None]
 
 
 def default_flatten_key_fn(path: tuple[str, ...]) -> str:
@@ -34,7 +33,7 @@ class Flatten:
 
   def __init__(self,
                *args: Mapping,
-               key_fn: Optional[KeyFnType] = None,
+               key_fn: KeyFnType | None = None,
                sort: bool = True) -> None:
     """_summary_
 
@@ -74,7 +73,7 @@ class Flatten:
     for name, item in data.items():
       if item is None:
         continue
-      path = parent_path + (name,)
+      path = (*parent_path, name)
       if self._is_leaf_item(item):
         if ignore_toplevel and parent_path == ():
           continue
@@ -94,7 +93,7 @@ def _ljust_row(sequence: list, n: int, fill_value: Any = None) -> list:
 
 
 def merge_csv(csv_list: Sequence[LocalPath],
-              headers: Optional[list[str]] = None,
+              headers: list[str] | None = None,
               row_header_len: int = 1,
               delimiter: str = "\t") -> list[list[Any]]:
   """
@@ -125,7 +124,7 @@ def merge_csv(csv_list: Sequence[LocalPath],
   """
   table: list[list[Any]] = []
   # Initial row-headers from the first csv file.
-  known_row_headers: Set[tuple[str, ...]] = set()
+  known_row_headers: set[tuple[str, ...]] = set()
   row_header_len = _merge_csv_prepare_row_headers(table, known_row_headers,
                                                   csv_list[0], row_header_len,
                                                   delimiter)
@@ -145,12 +144,12 @@ def merge_csv(csv_list: Sequence[LocalPath],
                                       known_row_headers, table_row_len)
 
   if table_headers:
-    return [table_headers] + table
+    return [table_headers, *table]
   return table
 
 
 def _merge_csv_prepare_row_headers(table: list[list[Any]],
-                                   known_row_headers: Set[tuple[str, ...]],
+                                   known_row_headers: set[tuple[str, ...]],
                                    csv_file: LocalPath, row_header_len: int,
                                    delimiter: str) -> int:
   with csv_file.open(encoding="utf-8") as first_file:
@@ -178,8 +177,8 @@ def _detect_row_header_len(row: list[str]) -> int:
 
 def _merge_csv_append(csv_data: list[list[Any]], table: list[list[Any]],
                       table_headers: list[str | None], row_header_len: int,
-                      headers: Optional[list[str]],
-                      known_row_headers: Set[tuple[str, ...]],
+                      headers: list[str] | None,
+                      known_row_headers: set[tuple[str, ...]],
                       table_row_len: int) -> int:
   # Find the max row width in added csv_data.
   max_csv_row_len = max(len(row) for row in csv_data) - row_header_len

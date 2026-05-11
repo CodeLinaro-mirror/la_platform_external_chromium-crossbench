@@ -17,7 +17,7 @@ import logging
 import re
 import textwrap
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic, \
-    Iterable, Optional, Sequence, Set, Type, TypeAlias, TypeVar, cast
+    Iterable, Sequence, TypeAlias, TypeVar, cast
 
 import tabulate
 from typing_extensions import Self, override
@@ -30,8 +30,10 @@ from crossbench.parse import ObjectParser, PathParser
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
-  ArgParserType: TypeAlias = Callable[..., object] | Type
+  import builtins
   import urllib.parse as urlparse
+
+  ArgParserType: TypeAlias = Callable[..., object] | type
 
 
 class ConfigError(argparse.ArgumentTypeError):
@@ -49,14 +51,14 @@ class ConfigArgParser:
   def __init__(self,
                parser: ConfigParser,
                name: str,
-               type: Optional[ArgParserType],
+               type: ArgParserType | None,
                default: object = NOT_SET,
-               choices: Optional[Iterable[object]] = None,
+               choices: Iterable[object] | None = None,
                aliases: Iterable[str] = (),
-               help: Optional[str] = None,
+               help: str | None = None,
                is_list: bool = False,
                required: bool = False,
-               depends_on: Optional[Iterable[str]] = None):
+               depends_on: Iterable[str] | None = None):
     self.parser: Final[ConfigParser] = parser
     self.name: Final[str] = name
     self.aliases = tuple(aliases)
@@ -70,7 +72,7 @@ class ConfigArgParser:
     self.is_enum: Final[bool] = type_is_class and issubclass(
         type,  # type: ignore
         enum.Enum)
-    self.config_object_type: Final[Type[ConfigObject]
+    self.config_object_type: Final[builtins.type[ConfigObject]
                                    | None] = self._validate_config_object_type(
                                        type)
     self.depends_on: Final[frozenset[str]] = frozenset(
@@ -121,14 +123,14 @@ class ConfigArgParser:
     ObjectParser.unique_sequence(self.aliases, "aliases", ValueError)
 
   def _validate_config_object_type(
-      self, type_obj: object) -> Type[ConfigObject] | None:
+      self, type_obj: object) -> type[ConfigObject] | None:
     if self.type_is_class and isinstance(type_obj, type) and issubclass(
         type_obj, ConfigObject):
       return type_obj
     return None
 
-  def _validate_choices(
-      self, choices: Optional[Iterable[object]]) -> Optional[frozenset]:
+  def _validate_choices(self,
+                        choices: Iterable[object] | None) -> frozenset | None:
     if self.is_enum:
       return self._validate_enum_choices(choices)
     if choices is None:
@@ -141,10 +143,10 @@ class ConfigArgParser:
     return frozen_choices
 
   def _validate_enum_choices(
-      self, choices: Optional[Iterable[object]]) -> Optional[frozenset]:
+      self, choices: Iterable[object] | None) -> frozenset | None:
     assert self.is_enum, "Expected enum"
     assert self.type, "Expected type"
-    enum_type: Type[enum.Enum] = cast(Type[enum.Enum], self.type)
+    enum_type: type[enum.Enum] = cast(type[enum.Enum], self.type)
     if choices is None:
       return frozenset(enum for enum in enum_type)
     frozen_choices = frozenset(choices)
@@ -163,7 +165,7 @@ class ConfigArgParser:
           "a 'default' argument when default is None")
     if self.required:
       raise ValueError("Required argument should have an empty default value, "
-                       f"but got default={repr(default)}")
+                       f"but got default={default!r}")
     if self.is_enum:
       return self._validate_enum_default(default)
     maybe_class: ArgParserType | None = self.type
@@ -173,18 +175,18 @@ class ConfigArgParser:
       self._validate_class_default(default, maybe_class)
     return default
 
-  def _validate_class_default(self, default: object, class_type: Type) -> None:
+  def _validate_class_default(self, default: object, class_type: type) -> None:
     if not isinstance(default, class_type):
       raise ValueError(f"Expected default value of type={class_type.__name__}, "
                        f"but got type={type(default).__name__}: {default}")
 
   def _validate_list_default(self, default: object,
-                             maybe_class: Optional[ArgParserType]) -> None:
+                             maybe_class: ArgParserType | None) -> None:
     if not isinstance(default, collections.abc.Sequence):
       raise ValueError(f"List default must be a sequence, but got: {default}")
     if isinstance(default, str):
       raise ValueError(
-          f"List default should not be a string, but got: {repr(default)}")
+          f"List default should not be a string, but got: {default!r}")
     if inspect.isclass(maybe_class):
       for default_item in default:
         if not isinstance(default_item, maybe_class):
@@ -193,7 +195,7 @@ class ConfigArgParser:
               f"but got type={type(default_item).__name__}: {default_item}")
 
   def _validate_enum_default(self, default: object) -> object:
-    enum_type: Type[enum.Enum] = cast(Type[enum.Enum], self.type)
+    enum_type: type[enum.Enum] = cast(type[enum.Enum], self.type)
     if self.is_list:
       default_list = default
     else:
@@ -203,17 +205,17 @@ class ConfigArgParser:
           f"Default must be a {enum_type} enum, but got: {default}")
     return default
 
-  def _validate_depends_on(self, depends_on: Optional[Iterable[str]]) -> None:
+  def _validate_depends_on(self, depends_on: Iterable[str] | None) -> None:
     if not depends_on:
       return
     if not self._is_iterable_non_str(depends_on):
       raise TypeError(f"Expected depends_on to be a collection of str, "
                       f"but got {type(depends_on).__name__}: "
-                      f"{repr(depends_on)}")
+                      f"{depends_on!r}")
     for i, value in enumerate(depends_on):
       if not isinstance(value, str):
         raise TypeError(f"Expected depends_on[{i}] to be a str, but got "
-                        f"{type(value).__name__}: {repr(value)}")
+                        f"{type(value).__name__}: {value!r}")
     if not self.type:
       raise ValueError(f"Argument '{self.name}' without a type "
                        "cannot have argument dependencies.")
@@ -226,7 +228,7 @@ class ConfigArgParser:
     return isinstance(value, collections.abc.Iterable)
 
   @property
-  def cls(self) -> Type:
+  def cls(self) -> type:
     return self.parser.cls
 
   @property
@@ -317,7 +319,7 @@ class ConfigArgParser:
       return self.parse_list_data(data, depending_kwargs)
     return self.parse_data(data, depending_kwargs)
 
-  def _pop_alias(self, config_data: dict[str, object]) -> Optional[object]:
+  def _pop_alias(self, config_data: dict[str, object]) -> object | None:
     value: object | None = None
     found: bool = False
     for alias in self.aliases:
@@ -352,7 +354,7 @@ class ConfigArgParser:
       self, depending_kwargs: dict[str, object]) -> None:
     if depending_kwargs:
       raise ValueError(
-          f"{str(self.type)} does not accept "
+          f"{self.type!s} does not accept "
           f"additional depending arguments, but got: {depending_kwargs}")
 
   def parse_list_data(
@@ -392,7 +394,7 @@ class ConfigArgParser:
       return self.parse_config_object(config_object_type, data)
     return self.type(data, **depending_kwargs)
 
-  def parse_config_object(self, config_object_type: Type[ConfigObject],
+  def parse_config_object(self, config_object_type: type[ConfigObject],
                           data: object) -> object:
     config_object: ConfigObject = config_object_type.parse(data)
     return config_object.to_argument_value()
@@ -642,7 +644,7 @@ class ConfigObject(abc.ABC):
     raise exception.UnreachableError
 
   @classmethod
-  def parse_dict(cls: Type[Self], config: dict[str, object], **kwargs) -> Self:
+  def parse_dict(cls: type[Self], config: dict[str, object], **kwargs) -> Self:
     parser: ConfigParser[Self] = cls.config_parser()
     result: Self = parser.parse(config, **kwargs)
     return result
@@ -755,7 +757,7 @@ def template_args(value: object) -> dict[str, TemplateArg]:
 
   for arg_key, arg_value in dict_value.items():
     with exception.annotate_argparsing(
-        f"Parsing ...[{repr(arg_key)}] = {repr(arg_value)}"):
+        f"Parsing ...[{arg_key!r}] = {arg_value!r}"):
 
       if not re.match(ARG_NAME_PATTERN, arg_key):
         raise argparse.ArgumentTypeError(
@@ -796,13 +798,13 @@ class _TemplatedConfigParser(ConfigObject):
 
   def __init__(self,
                template: object,
-               args: Optional[dict[str, TemplateArg]] = None,
-               unbound_args: Optional[Iterable[str]] = None):
+               args: dict[str, TemplateArg] | None = None,
+               unbound_args: Iterable[str] | None = None):
     self._template: Final[object] = template
     self._args: Final[dict[str, TemplateArg]] = args if args else {}
     self._unbound_args: Final[frozenset[str]] = frozenset(
         unbound_args) if unbound_args else frozenset()
-    self._missing_args: Final[Set[str]] = set()
+    self._missing_args: Final[set[str]] = set()
 
     self.validate()
 
@@ -831,7 +833,7 @@ class _TemplatedConfigParser(ConfigObject):
     if not isinstance(value, dict):
       return False
 
-    keys: Set[str] = set(value.keys())
+    keys: set[str] = set(value.keys())
     if keys in cls.VALID_KEYS_FOR_TEMPLATE_OBJECT:
       return True
 
@@ -845,7 +847,7 @@ class _TemplatedConfigParser(ConfigObject):
 
   @classmethod
   @override
-  def config_parser(cls: Type[Self]) -> ConfigParser[Self]:
+  def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("template", type=ObjectParser.not_none, required=True)
     parser.add_argument("args", type=template_args, required=False, default={})
@@ -923,7 +925,7 @@ class _TemplatedConfigParser(ConfigObject):
             child_value)
     return result
 
-  def _is_list_spread_reference(self, value: object) -> Optional[str]:
+  def _is_list_spread_reference(self, value: object) -> str | None:
     if not isinstance(value, str):
       return None
 
@@ -986,10 +988,10 @@ class _TemplatedConfigParser(ConfigObject):
           # non-string values to be substituted.
           return arg_value
         if not isinstance(arg_value, (str, int, float)):
-          raise ConfigTemplateError((
-              f"Argument {repr(arg_name)} with type {type(arg_value).__name__} "
-              f"can not be substituted into {repr(value)}, "
-              f"must be str/int/float"))
+          raise ConfigTemplateError(
+              f"Argument {arg_name!r} with type {type(arg_value).__name__} "
+              f"can not be substituted into {value!r}, "
+              f"must be str/int/float")
 
         value = value[:m.start()] + str(arg_value) + value[m.end():]
 
@@ -1015,7 +1017,7 @@ class _ConfigKwargsParser:
   def __init__(self, parser: ConfigParser, config_data: dict[str, object]):
     self._parser: Final[ConfigParser] = parser
     self._kwargs: dict[str, object] = {}
-    self._processed_args: Set[str] = set()
+    self._processed_args: set[str] = set()
     self._config_data: Final[dict[str, object]] = config_data
     self._parse()
 
@@ -1075,13 +1077,13 @@ class ConfigParser(Generic[ConfigResultObjectT]):
 
   def __init__(
       self,
-      cls: Type[ConfigResultObjectT],
-      key: Optional[str] = None,
-      title: Optional[str] = None,
-      default: Optional[ConfigResultObjectT] = None,
+      cls: type[ConfigResultObjectT],
+      key: str | None = None,
+      title: str | None = None,
+      default: ConfigResultObjectT | None = None,
       unused_properties_mode: UnusedPropertiesMode = UnusedPropertiesMode.WARN
   ) -> None:
-    self._cls: Final[Type[ConfigResultObjectT]] = cls
+    self._cls: Final[type[ConfigResultObjectT]] = cls
     if key is None:
       key = cls.__name__
     if not key:
@@ -1099,44 +1101,43 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     self._default: Final[ConfigResultObjectT | None] = default
     self._args: dict[str, ConfigArgParser] = {}
     self._default_arg: ConfigArgParser | None = None
-    self._arg_names: Set[str] = set()
+    self._arg_names: set[str] = set()
     self._unused_properties_mode: Final[
         UnusedPropertiesMode] = unused_properties_mode
     self._mutually_exclusive_groups: list[tuple[str, ...]] = []
 
   @property
-  def default(self) -> Optional[ConfigResultObjectT]:
+  def default(self) -> ConfigResultObjectT | None:
     return self._default
 
   def add_argument(self,
                    name: str,
-                   type: Optional[ArgParserType],
-                   default: Optional[object] = NOT_SET,
-                   choices: Optional[Iterable[object]] = None,
+                   type: ArgParserType | None,
+                   default: object | None = NOT_SET,
+                   choices: Iterable[object] | None = None,
                    aliases: tuple[str, ...] = (),
-                   help: Optional[str] = None,
+                   help: str | None = None,
                    is_list: bool = False,
                    required: bool = False,
-                   depends_on: Optional[Iterable[str]] = None) -> None:
+                   depends_on: Iterable[str] | None = None) -> None:
     self._add_argument(name, type, default, choices, aliases, help, is_list,
                        required, depends_on)
 
-  def _add_argument(
-      self,
-      name: str,
-      type: Optional[ArgParserType],
-      default: Optional[object] = NOT_SET,
-      choices: Optional[Iterable[object]] = None,
-      aliases: tuple[str, ...] = (),
-      help: Optional[str] = None,
-      is_list: bool = False,
-      required: bool = False,
-      depends_on: Optional[Iterable[str]] = None) -> ConfigArgParser:
+  def _add_argument(self,
+                    name: str,
+                    type: ArgParserType | None,
+                    default: object | None = NOT_SET,
+                    choices: Iterable[object] | None = None,
+                    aliases: tuple[str, ...] = (),
+                    help: str | None = None,
+                    is_list: bool = False,
+                    required: bool = False,
+                    depends_on: Iterable[str] | None = None) -> ConfigArgParser:
     if name in self._arg_names:
       raise ValueError(f"Duplicate argument: {name}")
     if required and (default_arg := self._default_arg):
-      raise ValueError(f"{repr(name)} is marked as required and conflicts with "
-                       f"existing default argument {repr(default_arg.name)}")
+      raise ValueError(f"{name!r} is marked as required and conflicts with "
+                       f"existing default argument {default_arg.name!r}")
     arg = self._args[name] = ConfigArgParser(self, name, type, default, choices,
                                              aliases, help, is_list, required,
                                              depends_on)
@@ -1160,19 +1161,19 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     """ Marked argument that is used for parsing single string values. """
     if default_arg := self._default_arg:
       raise ValueError(
-          f"Cannot override existing default argument {repr(default_arg.name)}")
+          f"Cannot override existing default argument {default_arg.name!r}")
     for arg_name, arg in self._args.items():
       if arg.required:
         raise ValueError(
-            f"Cannot add default argument {repr(name)}, it conflicts with a "
-            f"previously added required argument `{repr(arg_name)}`.")
+            f"Cannot add default argument {name!r}, it conflicts with a "
+            f"previously added required argument `{arg_name!r}`.")
     self._default_arg = self._add_argument(name, *args, **kwargs)
 
   def get_argument(self, arg_name: str) -> ConfigArgParser:
     return self._args[arg_name]
 
   def has_all_required_args(self, config_data: dict[str, object]) -> bool:
-    config_keys: Set[str] = set(config_data.keys())
+    config_keys: set[str] = set(config_data.keys())
     for arg in self._args.values():
       if arg.required:
         names = set(arg.aliases)
@@ -1182,7 +1183,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     return True
 
   def has_any_args(self, config_data: dict[str, object]) -> bool:
-    config_keys: Set[str] = set(config_data.keys())
+    config_keys: set[str] = set(config_data.keys())
     return bool(config_keys.intersection(self._arg_names))
 
   def arg_types(self) -> set[ArgParserType]:
@@ -1192,7 +1193,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
         types.add(arg_type)
     return types
 
-  def config_arg_types(self) -> set[Type[ConfigObject]]:
+  def config_arg_types(self) -> set[type[ConfigObject]]:
     return {
         t for t in self.arg_types()
         if inspect.isclass(t) and issubclass(t, ConfigObject)
@@ -1240,12 +1241,12 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     if not self._default_arg:
       if issubclass(self.cls, ConfigObject):
         return self.cls.parse_str(value)  # type: ignore[return-value]
-      raise ValueError(f"{self.key}: Cannot parse string: {repr(value)}")
+      raise ValueError(f"{self.key}: Cannot parse string: {value!r}")
     default_arg_name: str = self._default_arg.name
     config_data = {default_arg_name: value}
     with exception.annotate_argparsing(
         f"Parsing {self._cls.__name__} default argument: "
-        f"{repr(default_arg_name)}"):
+        f"{default_arg_name!r}"):
       return self.parse(config_data)
     raise exception.UnreachableError
 
@@ -1256,10 +1257,9 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       if extra_data is None:
         continue
       if extra_key in config_data and extra_data is not config_data[extra_key]:
-        raise ValueError(
-            f"Extra config data {repr(extra_key)}={repr(extra_data)} "
-            "was already present in "
-            f"config_data[..]={repr(config_data[extra_key])}")
+        raise ValueError(f"Extra config data {extra_key!r}={extra_data!r} "
+                         "was already present in "
+                         f"config_data[..]={config_data[extra_key]!r}")
       config_data[extra_key] = extra_data
     return config_data
 
@@ -1291,7 +1291,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
     return tuple(self._args.values())
 
   @property
-  def cls(self) -> Type:
+  def cls(self) -> type:
     return self._cls
 
   @property

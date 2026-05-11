@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -24,7 +24,7 @@ class SystemDetailsProbe(InternalJsonResultProbe):
   AUTO_MERGE_REPETITIONS: ClassVar = False
 
   @override
-  def get_context_cls(self) -> Type[InternalJsonResultProbeContext]:
+  def get_context_cls(self) -> type[InternalJsonResultProbeContext]:
     return SystemDetailsProbeContext
 
 

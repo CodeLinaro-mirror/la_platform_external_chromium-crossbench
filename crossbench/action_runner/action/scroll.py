@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, ClassVar, Optional, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -29,7 +29,7 @@ class ScrollAction(InputSourceAction):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: Type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
     parser = super().config_parser()
     parser.add_argument("distance", type=NumberParser.any_float, default=500)
     parser.add_argument(
@@ -44,7 +44,7 @@ class ScrollAction(InputSourceAction):
                source: InputSource,
                distance: float = 500.0,
                duration: dt.timedelta = dt.timedelta(seconds=1),
-               selector: Optional[str] = None,
+               selector: str | None = None,
                required: bool = False,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
@@ -60,7 +60,7 @@ class ScrollAction(InputSourceAction):
     return self._distance
 
   @property
-  def selector(self) -> Optional[str]:
+  def selector(self) -> str | None:
     return self._selector
 
   @property

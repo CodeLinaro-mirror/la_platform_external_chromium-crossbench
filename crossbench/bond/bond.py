@@ -8,7 +8,7 @@ import dataclasses
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Any, Mapping, Self, Sequence, Set
+from typing import TYPE_CHECKING, Any, Mapping, Self, Sequence
 
 import google.auth.transport.requests
 from google.auth.credentials import TokenState
@@ -131,7 +131,7 @@ SCOPE = "https://www.googleapis.com/auth/meetings"
 
 class BondClient:
   _credentials: service_account.Credentials
-  _meetings_with_bots: Set[str]
+  _meetings_with_bots: set[str]
 
   def __init__(self, secret: ServiceAccount) -> None:
     self._credentials = service_account.Credentials.from_service_account_info(

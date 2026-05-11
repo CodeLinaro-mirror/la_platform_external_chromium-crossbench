@@ -24,7 +24,7 @@ import tempfile
 import urllib.error
 import urllib.request
 from typing import TYPE_CHECKING, Any, Callable, Final, Generator, Iterable, \
-    Iterator, Mapping, Optional, Sequence, Type
+    Iterator, Mapping, Sequence
 
 import google.cloud.storage as gcloud_storage
 import psutil
@@ -140,7 +140,7 @@ class Platform(abc.ABC):
 
   @property
   @abc.abstractmethod
-  def signals(self) -> Type[AnySignals]:
+  def signals(self) -> type[AnySignals]:
     pass
 
   @property
@@ -321,7 +321,7 @@ class Platform(abc.ABC):
       })
     return details
 
-  def _cpu_freq(self) -> Optional[CPUFreqInfo]:
+  def _cpu_freq(self) -> CPUFreqInfo | None:
     self.assert_is_local()
     cpu_freq = psutil.cpu_freq()
     return CPUFreqInfo(cpu_freq.min, cpu_freq.max, cpu_freq.current)
@@ -381,7 +381,7 @@ class Platform(abc.ABC):
       macos: Sequence[str],
       win: Sequence[str],
       linux: Sequence[str],
-      lookup_callable: Callable[[pth.AnyPath], Optional[pth.AnyPath]],
+      lookup_callable: Callable[[pth.AnyPath], pth.AnyPath | None],
   ) -> pth.AnyPath:
     executables: Sequence[str] = []
     if self.is_macos:
@@ -417,14 +417,14 @@ class Platform(abc.ABC):
   ) -> pth.AnyPath:
     return self._search_executable(name, macos, win, linux, self.search_binary)
 
-  def search_app(self, app_or_bin: pth.AnyPath) -> Optional[pth.AnyPath]:
+  def search_app(self, app_or_bin: pth.AnyPath) -> pth.AnyPath | None:
     """Look up a application bundle (macos) or binary (all other platforms) in
     the common search paths.
     """
     return self.search_binary(app_or_bin)
 
   @abc.abstractmethod
-  def search_binary(self, app_or_bin: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+  def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
     """Look up a binary in the common search paths based of a path or a single
     segment path with just the binary name.
     Returns the location of the binary (and not the .app bundle on macOS).
@@ -460,7 +460,7 @@ class Platform(abc.ABC):
     # Helper to avoid circular imports.
     return parse.PathParser.local_binary_path(value, self, name)
 
-  def which(self, binary_name: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+  def which(self, binary_name: pth.AnyPathLike) -> pth.AnyPath | None:
     if not binary_name:
       raise ValueError("Got empty path")
     self.assert_is_local()
@@ -471,11 +471,11 @@ class Platform(abc.ABC):
     return None
 
   def lookup_binary_override(
-      self, binary_name: pth.AnyPathLike) -> Optional[pth.AnyPath]:
+      self, binary_name: pth.AnyPathLike) -> pth.AnyPath | None:
     return self._binary_lookup_override.get(os.fspath(binary_name))
 
   def set_binary_lookup_override(self, binary_name: pth.AnyPathLike,
-                                 new_path: Optional[pth.AnyPath]) -> None:
+                                 new_path: pth.AnyPath | None) -> None:
     name = os.fspath(binary_name)
     if new_path is None:
       prev_result = self._binary_lookup_override.pop(name, None)
@@ -485,13 +485,13 @@ class Platform(abc.ABC):
             binary_name)
       return
     if self.search_binary(new_path) is None:
-      raise ValueError(f"Suggested binary override for {repr(name)} "
+      raise ValueError(f"Suggested binary override for {name!r} "
                        f"does not exist: {new_path}")
     self._binary_lookup_override[name] = new_path
 
   @contextlib.contextmanager
   def override_binary(self, binary: pth.AnyPathLike | Binary,
-                      result: Optional[pth.AnyPath]) -> Iterator[None]:
+                      result: pth.AnyPath | None) -> Iterator[None]:
     binary_name: pth.AnyPathLike = ""
     if isinstance(binary, Binary):
       if override := binary.platform_path(self):
@@ -528,7 +528,7 @@ class Platform(abc.ABC):
   def terminate_gracefully(self,
                            process: ProcessLike,
                            timeout: int = 1,
-                           signal: Optional[Signals] = None) -> None:
+                           signal: Signals | None = None) -> None:
     proc_helper.terminate_gracefully(self, process, timeout, signal)
 
   def process_pid(self, process: ProcessLike) -> int:
@@ -553,13 +553,12 @@ class Platform(abc.ABC):
     except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       pass
 
-  def processes(self,
-                attrs: Optional[list[str]] = None) -> list[dict[str, Any]]:
+  def processes(self, attrs: list[str] | None = None) -> list[dict[str, Any]]:
     # TODO(cbruni): support remote platforms
     assert self.is_local, "Only local platform supported"
     return self._collect_process_dict(psutil.process_iter(attrs=attrs))
 
-  def process_running(self, process_name_list: list[str]) -> Optional[str]:
+  def process_running(self, process_name_list: list[str]) -> str | None:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     for proc in psutil.process_iter(attrs=["name"]):
@@ -589,7 +588,7 @@ class Platform(abc.ABC):
         process_info_list.append(process.as_dict())
     return process_info_list
 
-  def process_info(self, process: ProcessLike) -> Optional[dict[str, Any]]:
+  def process_info(self, process: ProcessLike) -> dict[str, Any] | None:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
@@ -607,7 +606,7 @@ class Platform(abc.ABC):
     del timeout
     raise NotImplementedError(f"system_meminfo not implemented for {self}.")
 
-  def foreground_process(self) -> Optional[dict[str, Any]]:
+  def foreground_process(self) -> dict[str, Any] | None:
     return None
 
   def dump_java_heap(self, identifier: str, label: str,
@@ -644,10 +643,10 @@ class Platform(abc.ABC):
       s.bind(("localhost", 0))
       return s.getsockname()[1]
 
-  def local_cache_dir(self, name: Optional[str] = None) -> pth.LocalPath:
+  def local_cache_dir(self, name: str | None = None) -> pth.LocalPath:
     return self.local_path(self.cache_dir(name))
 
-  def cache_dir(self, name: Optional[str] = None) -> pth.AnyPath:
+  def cache_dir(self, name: str | None = None) -> pth.AnyPath:
     if self._cache_dir_root is None:
       self._cache_dir_root = self._lazy_setup_cache_dir()
     assert self._cache_dir_root, "missing cache dir"
@@ -801,16 +800,16 @@ class Platform(abc.ABC):
     self.local_path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
   def mkdtemp(self,
-              suffix: Optional[str] = None,
-              prefix: Optional[str] = None,
-              dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+              suffix: str | None = None,
+              prefix: str | None = None,
+              dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
     self.assert_is_local()
     return self.path(tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir))
 
   def mktemp(self,
-             suffix: Optional[str] = None,
-             prefix: Optional[str] = None,
-             dir: Optional[pth.AnyPathLike] = None) -> pth.AnyPath:
+             suffix: str | None = None,
+             prefix: str | None = None,
+             dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
     self.assert_is_local()
     fd, name = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir)
     os.close(fd)
@@ -819,9 +818,9 @@ class Platform(abc.ABC):
   @contextlib.contextmanager
   def NamedTemporaryFile(  # noqa: N802
       self,
-      suffix: Optional[str] = None,
-      prefix: Optional[str] = None,
-      dir: Optional[pth.AnyPathLike] = None) -> Iterator[pth.AnyPath]:
+      suffix: str | None = None,
+      prefix: str | None = None,
+      dir: pth.AnyPathLike | None = None) -> Iterator[pth.AnyPath]:
     tmp_file: pth.AnyPath = self.mktemp(suffix, prefix, dir)
     try:
       yield tmp_file
@@ -831,9 +830,9 @@ class Platform(abc.ABC):
   @contextlib.contextmanager
   def TemporaryDirectory(  # noqa: N802
       self,
-      suffix: Optional[str] = None,
-      prefix: Optional[str] = None,
-      dir: Optional[pth.AnyPathLike] = None) -> Iterator[pth.AnyPath]:
+      suffix: str | None = None,
+      prefix: str | None = None,
+      dir: pth.AnyPathLike | None = None) -> Iterator[pth.AnyPath]:
     tmp_dir = self.mkdtemp(suffix, prefix, dir)
     try:
       yield tmp_dir
@@ -874,8 +873,8 @@ class Platform(abc.ABC):
                 quiet: bool = False,
                 encoding: str = "utf-8",
                 stdin: ProcessIo = None,
-                env: Optional[Mapping[str, str]] = None,
-                cwd: Optional[pth.AnyPath] = None,
+                env: Mapping[str, str] | None = None,
+                cwd: pth.AnyPath | None = None,
                 check: bool = True) -> str:
     result = self.sh_stdout_bytes(
         *args,
@@ -892,8 +891,8 @@ class Platform(abc.ABC):
                       shell: bool = False,
                       quiet: bool = False,
                       stdin: ProcessIo = None,
-                      env: Optional[Mapping[str, str]] = None,
-                      cwd: Optional[pth.AnyPath] = None,
+                      env: Mapping[str, str] | None = None,
+                      cwd: pth.AnyPath | None = None,
                       check: bool = True) -> bytes:
     completed_process = self.sh(
         *args,
@@ -918,8 +917,8 @@ class Platform(abc.ABC):
             stdout: ProcessIo = None,
             stderr: ProcessIo = None,
             stdin: ProcessIo = None,
-            env: Optional[Mapping[str, str]] = None,
-            cwd: Optional[pth.AnyPath] = None,
+            env: Mapping[str, str] | None = None,
+            cwd: pth.AnyPath | None = None,
             quiet: bool = False) -> subprocess.Popen:
     self.assert_is_local()
     self.validate_shell_args(args, shell)
@@ -943,8 +942,8 @@ class Platform(abc.ABC):
          stdout: ProcessIo = None,
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
-         env: Optional[Mapping[str, str]] = None,
-         cwd: Optional[pth.AnyPath] = None,
+         env: Mapping[str, str] | None = None,
+         cwd: pth.AnyPath | None = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
     self.assert_is_local()
@@ -1040,7 +1039,7 @@ class Platform(abc.ABC):
     logging.debug("Missing wakelock support on %s", self)
     yield
 
-  def set_all_cpus_power_mode(self, mode: Optional[str]) -> None:
+  def set_all_cpus_power_mode(self, mode: str | None) -> None:
     raise NotImplementedError(
         "'set_all_cpus_power_mode' is only available on Android for now")
 

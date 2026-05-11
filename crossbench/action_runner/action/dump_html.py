@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar
 
 from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
@@ -21,7 +21,7 @@ class DumpHtmlAction(BaseProbeAction):
   TYPE: ClassVar[ActionType] = ActionType.DUMP_HTML
 
   def __init__(self,
-               suffix: Optional[str] = None,
+               suffix: str | None = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     kwargs = {}

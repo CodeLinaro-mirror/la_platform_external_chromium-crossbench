@@ -8,7 +8,7 @@ import abc
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Optional, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence
 
 import psutil
 from typing_extensions import override
@@ -54,19 +54,16 @@ class AppleScript:
     """Create a script that returns [JSON.stringify(result), true] on success,
     and [exception.toString(), false] when failing."""
     args_str: str = json.dumps(args)
-    script = """JSON.stringify((function exceptionWrapper(){
-        try {
+    script = f"""JSON.stringify((function exceptionWrapper(){{
+        try {{
           return [
-            (function(...arguments){%(script)s}).apply(window, %(args_str)s),
+            (function(...arguments){{{script}}}).apply(window, {args_str}),
             true
           ];
-        } catch(e) {
+        }} catch(e) {{
           return [e + "", false];
-        }
-      })())""" % {
-        "script": script,
-        "args_str": args_str
-    }
+        }}
+      }})())"""
     return script.strip()
 
   class JavaScriptFromAppleScriptException(ValueError):
@@ -181,9 +178,8 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
   def js(
       self,
       script: str,
-      timeout: Optional[dt.timedelta] = None,
-      arguments: Sequence[object] = ()
-  ) -> Any:
+      timeout: dt.timedelta | None = None,
+      arguments: Sequence[object] = ()) -> Any:
     del timeout
     js_script = AppleScript.js_script_with_args(script, arguments)
     json_result: str = self._exec_apple_script(
@@ -194,7 +190,7 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
     return result
 
   @override
-  def show_url(self, url: str, target: Optional[str] = None) -> None:
+  def show_url(self, url: str, target: str | None = None) -> None:
     if target not in (None, "_self"):
       raise NotImplementedError(
           f"AppleScriptBrowser show_url does not support target {target}")

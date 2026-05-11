@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import functools
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, Type
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self
 
 from google.protobuf import json_format
 from typing_extensions import override
@@ -249,7 +249,7 @@ class PerfettoProbe(Probe):
     return parser
 
   @classmethod
-  def parse_str(cls: Type[Self], value: str) -> Self:
+  def parse_str(cls: type[Self], value: str) -> Self:
     if ":" in value:
       return super().parse_str(value)
     if "," in value or value.startswith(("-", "+")):
@@ -315,18 +315,16 @@ class PerfettoProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return super().key + (
-        ("textproto", str(self._trace_config_obj)),
-        ("perfetto_bin", str(self.perfetto_bin)),
-        ("tracebox_bin", str(self.tracebox_bin)),
-        ("trace_browser_startup", str(self.trace_browser_startup)),
-        ("start_tracing_sequence", str(self.start_tracing_sequence)),
-        ("config_via_stdin", str(self.config_via_stdin)),
-        ("enabled_tags", self.enabled_tags),
-        ("disabled_tags", self.disabled_tags),
-        ("enabled_categories", self.enabled_categories),
-        ("disabled_categories", self.disabled_categories),
-    )
+    return (*super().key, ("textproto", str(self._trace_config_obj)),
+            ("perfetto_bin", str(self.perfetto_bin)), ("tracebox_bin",
+                                                       str(self.tracebox_bin)),
+            ("trace_browser_startup", str(self.trace_browser_startup)),
+            ("start_tracing_sequence", str(self.start_tracing_sequence)),
+            ("config_via_stdin",
+             str(self.config_via_stdin)), ("enabled_tags", self.enabled_tags),
+            ("disabled_tags", self.disabled_tags), ("enabled_categories",
+                                                    self.enabled_categories),
+            ("disabled_categories", self.disabled_categories))
 
   @property
   def trace_config(self) -> trace_config_pb2.TraceConfig:

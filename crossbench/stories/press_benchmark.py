@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Optional, Self, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence
 
 from typing_extensions import override
 
@@ -40,14 +40,14 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
   @classmethod
   def all(cls,
           separate: bool = False,
-          url: Optional[str] = None,
+          url: str | None = None,
           **kwargs) -> list[Self]:
     return cls.from_names(cls.all_story_names(), separate, url, **kwargs)
 
   @classmethod
   def default(cls,
               separate: bool = False,
-              url: Optional[str] = None,
+              url: str | None = None,
               **kwargs) -> list[Self]:
     return cls.from_names(cls.default_story_names(), separate, url, **kwargs)
 
@@ -55,7 +55,7 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
   def from_names(cls,
                  substories: Sequence[str],
                  separate: bool = False,
-                 url: Optional[str] = None,
+                 url: str | None = None,
                  **kwargs) -> list[Self]:
     if not substories:
       raise ValueError("No substories provided")
@@ -69,8 +69,8 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
   def __init__(self,
                *args,
                substories: Sequence[str] = (),
-               duration: Optional[float] = None,
-               url: Optional[str] = None,
+               duration: float | None = None,
+               url: str | None = None,
                **kwargs) -> None:
     cls = self.__class__
     assert self.SUBSTORIES, f"{cls}.SUBSTORIES is not set."

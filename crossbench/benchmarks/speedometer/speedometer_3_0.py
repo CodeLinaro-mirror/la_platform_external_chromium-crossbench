@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Type
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -25,7 +25,7 @@ class Speedometer30Probe(Speedometer3Probe):
   NAME: ClassVar[str] = "speedometer_3.0"
 
   @override
-  def get_context_cls(self) -> Type[Speedometer30ProbeContext]:
+  def get_context_cls(self) -> type[Speedometer30ProbeContext]:
     return Speedometer30ProbeContext
 
 

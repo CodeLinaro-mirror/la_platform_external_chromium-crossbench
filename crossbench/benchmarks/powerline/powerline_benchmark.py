@@ -5,13 +5,14 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar, Final, Optional, Sequence, Type, Any
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence
 
 from typing_extensions import override
 
 from crossbench import config
 from crossbench.action_runner.action.enums import ReadyState
-from crossbench.benchmarks.base import RegexFilter, StoryFilter, SubStoryBenchmark
+from crossbench.benchmarks.base import RegexFilter, StoryFilter, \
+    SubStoryBenchmark
 from crossbench.cli.ui import timer
 from crossbench.flags.base import Flags
 from crossbench.parse import DurationParser
@@ -69,7 +70,7 @@ class PowerlineStory(Story):
 
   def __init__(self,
                story_name: str,
-               duration: Optional[dt.timedelta] = dt.timedelta()):
+               duration: dt.timedelta | None = dt.timedelta()):
     duration = (duration or dt.timedelta(seconds=60))
     super().__init__(story_name, duration)
 
@@ -130,11 +131,11 @@ class PowerlineStoryFilter(StoryFilter[PowerlineStory]):
 
   def __init__(
       self,
-      story_cls: Type[PowerlineStory],
+      story_cls: type[PowerlineStory],
       patterns: Sequence[str],
       args: argparse.Namespace,
       separate: bool = False,
-      run_for: Optional[dt.timedelta] = dt.timedelta()
+      run_for: dt.timedelta | None = dt.timedelta()
   ) -> None:
     assert issubclass(story_cls, PowerlineStory)
     self._run_for = run_for
@@ -188,10 +189,9 @@ class PowerlineBenchmark(SubStoryBenchmark):
   # TODO: we may want to check somehow that the device is a Pixel and therefore
   # has meaningful power rails we can read.
 
-  def __init__(
-      self,
-      stories: Sequence[PowerlineStory],
-      action_runner_config: Optional[ActionRunnerConfig] = None) -> None:
+  def __init__(self,
+               stories: Sequence[PowerlineStory],
+               action_runner_config: ActionRunnerConfig | None = None) -> None:
     super().__init__(stories, action_runner_config)
 
   @classmethod
