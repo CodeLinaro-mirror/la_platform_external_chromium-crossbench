@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING: Final[str] = "1.5.0"
+VERSION_STRING: Final[str] = "1.6.0"
 
 _DEPRECATION_MESSAGE = (
     "⚠️  Please run LoadLine2 which supersedes this benchmark.")
@@ -43,6 +43,11 @@ def process_scores(df: pd.DataFrame) -> pd.DataFrame:
                        index=["cb_browser"],
                        values=["score"])
   df = df.droplevel(0, axis=1)
+  # The globo workload was modified at some point, and to keep scores
+  # comparable between versions, we introduced a coefficient.
+  # See crbug.com/479819560 for details.
+  if "globo_homepage" in df:
+    df["globo_homepage"] *= 0.64
   df["TOTAL_SCORE"] = np.exp(np.log(df).mean(axis=1))
   df.index.rename("browser", inplace=True)
   df = df.reindex(

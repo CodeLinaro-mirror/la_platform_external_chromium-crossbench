@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING: Final[str] = "2.2.0"
+VERSION_STRING: Final[str] = "2.3.0"
 
 
 class LoadLine2Probe(LoadLineProbe):
@@ -56,6 +56,11 @@ class LoadLine2Probe(LoadLineProbe):
     total = df.drop(columns=["cb_story", "cb_temperature", "cb_run"]).groupby(
         ["cb_browser", "metric"]).mean().reset_index().pivot(
             columns="cb_browser", index="metric", values="value")
+    # The globo workload was modified at some point, and to keep scores
+    # comparable between versions, we introduced a coefficient.
+    # See crbug.com/479819560 for details.
+    if "globo_homepage_interactive" in total.index:
+      total.loc["globo_homepage_interactive"] *= 0.58
     total.loc["TOTAL_SCORE", :] = np.exp(np.log(total).mean())
     total.index.name = "Metric"
     return total

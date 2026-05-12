@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING: Final[str] = "2.2.0"
+VERSION_STRING: Final[str] = "2.3.0"
 
 
 class Story(StrEnum):
@@ -129,6 +129,11 @@ class LoadLine2WebApiProbe(LoadLineProbe):
     df = pd.DataFrame.from_dict(timings).pivot(
         columns="metric", index=["browser", "run"], values="value")
     total = df.groupby("browser").mean()
+    # The globo workload was modified at some point, and to keep scores
+    # comparable between versions, we introduced a coefficient.
+    # See crbug.com/479819560 for details.
+    if "globo_homepage_interactive" in total.index:
+      total.loc["globo_homepage_interactive"] *= 0.58
     total["TOTAL_SCORE"] = np.exp(np.log(total).mean(axis=1))
     total = total.T
     total.index.name = "Metric"
