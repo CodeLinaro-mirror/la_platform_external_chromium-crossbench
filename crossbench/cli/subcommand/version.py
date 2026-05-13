@@ -15,15 +15,24 @@ from crossbench.cli.subcommand.base import CrossbenchSubcommand
 if TYPE_CHECKING:
   import argparse
 
+  from crossbench.cli.parser import CBArgumentParser
+  from crossbench.cli.types import Subparsers
+
 
 class VersionSubcommand(CrossbenchSubcommand):
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
-    version_parser = self.cli.subparsers.add_parser(
+  def register_subcommand(self,
+                          subparsers: Subparsers) -> argparse.ArgumentParser:
+    self._parser = subparsers.add_parser(
         "version",
         help="Show program's version number and exit, same as --version")
-    return version_parser
+    self._parser.set_defaults(crossbench_subcommand=self)
+    return self.parser
+
+  @override
+  def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
+    return parser
 
   @override
   def run(self, args: argparse.Namespace) -> None:

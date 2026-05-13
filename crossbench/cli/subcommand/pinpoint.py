@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, final
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.cli.parser import CrossBenchArgumentParser
+from crossbench.cli.parser import CBArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
 from crossbench.pinpoint.benchmarks import pinpoint_benchmark_name
@@ -40,11 +40,11 @@ class PinpointBaseSubcommand(abc.ABC):
 
   def __init__(self, parent: PinpointSubcommand) -> None:
     self._parent = parent
-    self._parser = self.add_cli_parser()
+    self._parser = self.add_cli_arguments()
     self._parser.set_defaults(pinpoint_subcommand=self)
 
   @abc.abstractmethod
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def add_cli_arguments(self) -> argparse.ArgumentParser:
     pass
 
   @final
@@ -67,7 +67,7 @@ class PinpointListSubcommand(PinpointBaseSubcommand):
   """A subcommand for interacting with the Pinpoint service."""
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def add_cli_arguments(self) -> argparse.ArgumentParser:
     list_parser = self._parent.subparsers.add_parser(
         "list",
         aliases=("ls",),
@@ -141,7 +141,7 @@ class PinpointJobSubcommand(PinpointBaseSubcommand):
   """Base class for subcommands that operate on a Pinpoint job."""
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def add_cli_arguments(self) -> argparse.ArgumentParser:
     parser = self.create_parser()
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
@@ -346,7 +346,7 @@ class PinpointStartSubcommand(PinpointBaseStartSubcommand):
   """Starts a new Pinpoint A/B job."""
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def add_cli_arguments(self) -> argparse.ArgumentParser:
     start_parser = self.create_parser(
         "start", help_text="Starts a new Pinpoint A/B job.")
     start_parser.epilog = """Example:
@@ -384,7 +384,7 @@ class PinpointBisectSubcommand(PinpointBaseSubcommand):
   """Starts a new Pinpoint bisect job."""
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def add_cli_arguments(self) -> argparse.ArgumentParser:
     parser = self._parent.subparsers.add_parser(
         "bisect",
         help="Starts a new Pinpoint bisect job.",
@@ -484,7 +484,7 @@ class PinpointBenchmarkSubcommand(PinpointBaseStartSubcommand):
     super().__init__(parent)
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def add_cli_arguments(self) -> argparse.ArgumentParser:
     benchmark_name = pinpoint_benchmark_name(self._benchmark_cls.NAME)
     assert benchmark_name, "Must be a valid pinpoint benchmark name"
     start_parser = self.create_parser(
@@ -523,7 +523,7 @@ class PinpointBaseFilteredListSubcommand(PinpointBaseSubcommand):
   """Base subcommand class for displaying filtered string lists."""
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def add_cli_arguments(self) -> argparse.ArgumentParser:
     parser = self.create_parser()
     parser.add_argument(
         "--filter",
@@ -598,7 +598,7 @@ class PinpointBuildsSubcommand(PinpointBaseSubcommand):
   """Displays recent successful builds for a given bot."""
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def add_cli_arguments(self) -> argparse.ArgumentParser:
     builds_parser = self._parent.subparsers.add_parser(
         "builds", help="Displays recent successful builds for a given bot.")
     builds_parser.add_argument(
@@ -643,51 +643,6 @@ class PinpointResultsSubcommand(PinpointJobSubcommand):
         job_id=job_id, out_dir=args.output_directory, force=args.force)
 
 
-class PinpointSubcommand(CrossbenchSubcommand):
-  """A subcommand for interacting with the Pinpoint service."""
-
-  def __init__(self, cli: CrossBenchCLI) -> None:
-    super().__init__(cli)
-    self._subparsers = self.parser.add_subparsers(
-        parser_class=CrossBenchArgumentParser,
-        dest="action",
-        required=True,
-        help="Pinpoint actions")
-    self._list_subcommand = PinpointListSubcommand(self)
-    self._config_subcommand = PinpointConfigSubcommand(self)
-    self._start_subcommand = PinpointStartSubcommand(self)
-    self._bisect_subcommand = PinpointBisectSubcommand(self)
-    self._cancel_subcommand = PinpointCancelSubcommand(self)
-    self._bots_subcommand = PinpointBotsSubcommand(self)
-    self._benchmarks_subcommand = PinpointBenchmarksSubcommand(self)
-    self._stories_subcommand = PinpointStoriesSubcommand(self)
-    self._builds_subcommand = PinpointBuildsSubcommand(self)
-    self._results_subcommand = PinpointResultsSubcommand(self)
-    self._benchmark_subcommands: list[PinpointBenchmarkSubcommand] = []
-    for benchmark_cls in cli.BENCHMARKS:
-      if pinpoint_benchmark_name(benchmark_cls.NAME):
-        self._benchmark_subcommands.append(
-            PinpointBenchmarkSubcommand(self, benchmark_cls))
-
-  @property
-  def subparsers(self) -> Subparsers:
-    return self._subparsers
-
-  @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
-    pinpoint_parser = self.cli.subparsers.add_parser(
-        "pinpoint",
-        aliases=("pp",),
-        help="Interact with the Pinpoint service.",
-        formatter_class=PinpointHelpFormatter)
-    assert isinstance(pinpoint_parser, CrossBenchArgumentParser)
-    return pinpoint_parser
-
-  @override
-  def run(self, args: argparse.Namespace) -> None:
-    args.pinpoint_subcommand.run(args)
-
-
 class PinpointHelpFormatter(argparse.HelpFormatter):
   """Hacks HelpFormatter for displaying a pretty Pinpoint help message."""
 
@@ -715,3 +670,54 @@ class PinpointHelpFormatter(argparse.HelpFormatter):
         "\nBenchmarks:",
         "".join(benchmark_parts),
     ])
+
+
+class PinpointSubcommand(CrossbenchSubcommand):
+  """A subcommand for interacting with the Pinpoint service."""
+
+  def __init__(self, cli: CrossBenchCLI) -> None:
+    super().__init__(cli)
+
+  @override
+  def register_subcommand(self,
+                          subparsers: Subparsers) -> argparse.ArgumentParser:
+    self._parser = subparsers.add_parser(
+        "pinpoint",
+        aliases=("pp",),
+        help="Interact with the Pinpoint service.",
+        formatter_class=PinpointHelpFormatter)
+    self._parser.set_defaults(crossbench_subcommand=self)
+
+    self._subparsers = self.parser.add_subparsers(
+        parser_class=CBArgumentParser,
+        dest="action",
+        required=True,
+        help="Pinpoint actions")
+    self._list_subcommand = PinpointListSubcommand(self)
+    self._config_subcommand = PinpointConfigSubcommand(self)
+    self._start_subcommand = PinpointStartSubcommand(self)
+    self._bisect_subcommand = PinpointBisectSubcommand(self)
+    self._cancel_subcommand = PinpointCancelSubcommand(self)
+    self._bots_subcommand = PinpointBotsSubcommand(self)
+    self._benchmarks_subcommand = PinpointBenchmarksSubcommand(self)
+    self._stories_subcommand = PinpointStoriesSubcommand(self)
+    self._builds_subcommand = PinpointBuildsSubcommand(self)
+    self._results_subcommand = PinpointResultsSubcommand(self)
+    self._benchmark_subcommands: list[PinpointBenchmarkSubcommand] = []
+    for benchmark_cls in self.cli.BENCHMARKS:
+      if pinpoint_benchmark_name(benchmark_cls.NAME):
+        self._benchmark_subcommands.append(
+            PinpointBenchmarkSubcommand(self, benchmark_cls))
+    return self.parser
+
+  @property
+  def subparsers(self) -> Subparsers:
+    return self._subparsers
+
+  @override
+  def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
+    return parser
+
+  @override
+  def run(self, args: argparse.Namespace) -> None:
+    args.pinpoint_subcommand.run(args)

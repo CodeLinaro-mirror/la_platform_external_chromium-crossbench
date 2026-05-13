@@ -21,8 +21,7 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.base import StoryT
   from crossbench.browsers.attributes import BrowserAttributes
-  from crossbench.cli.parser import CrossBenchArgumentParser
-  from crossbench.cli.types import Subparsers
+  from crossbench.cli.parser import CBArgumentParser
   from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -117,13 +116,13 @@ class LoadLine1ProbeContext(ProbeContext[LoadLine1Probe]):
 
 
 class LoadLine1Benchmark(LoadLineBenchmark):
-  PROBES = (LoadLine1Probe,)
+  PROBES: ClassVar = (LoadLine1Probe,)
   DEFAULT_REPETITIONS: ClassVar = 100
 
   @classmethod
   @override
-  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers)
+  def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
+    super().add_cli_arguments(parser)
     parser.add_argument(
         "--benchmark-version", action="version", version=f"{VERSION_STRING}")
     return parser

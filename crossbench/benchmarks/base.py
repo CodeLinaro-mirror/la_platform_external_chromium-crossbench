@@ -15,7 +15,6 @@ from ordered_set import OrderedSet
 from typing_extensions import override
 
 from crossbench.action_runner.config import ActionRunnerConfig
-from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.flags.base import Flags
 from crossbench.helper import txt_helper
 from crossbench.helper.collection_helper import close_matches_message
@@ -28,10 +27,10 @@ if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.cli.parser import CBArgumentParser
   from crossbench.cli.types import Subparsers
   from crossbench.plt.base import Platform
   from crossbench.runner.runner import Runner
-
 
 VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
 
@@ -77,15 +76,18 @@ class Benchmark(abc.ABC):
     return ()
 
   @classmethod
-  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
-    parser = subparsers.add_parser(
+  def register_subcommand(cls,
+                          subparsers: Subparsers) -> argparse.ArgumentParser:
+    return subparsers.add_parser(
         cls.NAME,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        aliases=cls.aliases(),
         help=cls.cli_help(),
         description=cls.cli_description(),
         epilog=cls.cli_epilog(),
-    )
-    assert isinstance(parser, CrossBenchArgumentParser)
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+
+  @classmethod
+  def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     parser.add_argument(
         "--action-runner-config",
         "--action-runner",
@@ -576,17 +578,18 @@ class PressBenchmark(SubStoryBenchmark):
         version_names.append(version_name)
     return tuple(version_names)
 
+
   @classmethod
   @override
-  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers)
+  def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
+    super().add_cli_arguments(parser)
     # TODO: Move story-related args to dedicated PressBenchmarkStoryFilter class
     cls._add_story_url_arguments(parser)
     cls.STORY_FILTER_CLS.add_cli_arguments(parser)
     return parser
 
   @classmethod
-  def _add_story_url_arguments(cls, parser: CrossBenchArgumentParser) -> None:
+  def _add_story_url_arguments(cls, parser: CBArgumentParser) -> None:
     benchmark_url_group = parser.add_argument_group(
         "Story URL Options").add_mutually_exclusive_group()
     live_url: str = cls.DEFAULT_STORY_CLS.URL

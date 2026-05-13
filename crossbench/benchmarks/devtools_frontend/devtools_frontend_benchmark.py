@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Sequence, \
-    cast
+    Type, cast
 
 from typing_extensions import override
 
@@ -21,12 +21,9 @@ from crossbench.stories.story import Story
 if TYPE_CHECKING:
   import argparse
 
-  import Type
-
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
-  from crossbench.cli.parser import CrossBenchArgumentParser
-  from crossbench.cli.types import Subparsers
+  from crossbench.cli.parser import CBArgumentParser
   from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
@@ -50,7 +47,7 @@ class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
                                          "TimeSinceSessionStart")
 
   @override
-  def get_context_cls(self) -> Type[DevToolsFrontendLoadTimeProbeContext]:
+  def get_context_cls(self) -> type[DevToolsFrontendLoadTimeProbeContext]:
     return DevToolsFrontendLoadTimeProbeContext
 
   @override
@@ -100,7 +97,8 @@ def flatten_key_fn(path: tuple[str, ...]) -> str:
 
 
 
-class DevToolsFrontendLoadTimeProbeContext(ChromeMetricsInternalsProbeContext):
+class DevToolsFrontendLoadTimeProbeContext(
+    ChromeMetricsInternalsProbeContext[DevToolsFrontendLoadTimeProbe]):
 
   @override
   def to_json(self, actions: Actions) -> Json:
@@ -173,8 +171,8 @@ class DevToolsFrontendBenchmark(Benchmark):
 
   @classmethod
   @override
-  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers)
+  def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
+    super().add_cli_arguments(parser)
     parser.add_argument(
         "--sites",
         type=str,

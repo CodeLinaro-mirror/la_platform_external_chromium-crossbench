@@ -31,8 +31,7 @@ if TYPE_CHECKING:
   import argparse
 
   from crossbench.action_runner.config import ActionRunnerConfig
-  from crossbench.cli.parser import CrossBenchArgumentParser
-  from crossbench.cli.types import Subparsers
+  from crossbench.cli.parser import CBArgumentParser
   from crossbench.path import LocalPath
   from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
@@ -330,8 +329,8 @@ class MemoryBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers)
+  def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
+    super().add_cli_arguments(parser)
     cls.STORY_FILTER_CLS.add_cli_arguments(parser)
     parser.add_argument(
         "--skippable-tab-count",

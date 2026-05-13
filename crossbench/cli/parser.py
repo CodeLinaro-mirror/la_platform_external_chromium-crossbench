@@ -14,7 +14,7 @@ import colorama
 from crossbench.cli import ui
 
 
-class CrossBenchArgumentParser(argparse.ArgumentParser):
+class CBArgumentParser(argparse.ArgumentParser):
 
   def __init__(self, **kwargs) -> None:
     kwargs["exit_on_error"] = False

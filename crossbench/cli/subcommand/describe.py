@@ -15,7 +15,6 @@ from typing_extensions import override
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.config.network_speed import NetworkSpeedConfig
-from crossbench.cli.parser import CrossBenchArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.config import ConfigObject
 from crossbench.helper import txt_helper
@@ -26,6 +25,8 @@ if TYPE_CHECKING:
   import argparse
   from collections.abc import Mapping
 
+  from crossbench.cli.parser import CBArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.config import ConfigParser
 
   HelpData: TypeAlias = dict[str, dict[str, Any]]
@@ -58,10 +59,17 @@ class DescribeSubcommand(CrossbenchSubcommand):
       PROBE_ALIAS + BENCHMARK_ALIAS + NETWORK_ALIAS + CONFIG_OBJECT_ALIAS +
       ENV_ALIAS)
 
-  def add_cli_parser(self) -> argparse.ArgumentParser:
-    describe_parser = self.cli.subparsers.add_parser(
+  @override
+  def register_subcommand(self,
+                          subparsers: Subparsers) -> argparse.ArgumentParser:
+    self._parser = subparsers.add_parser(
         "describe", aliases=["desc"], help="Print all benchmarks and stories")
-    assert isinstance(describe_parser, CrossBenchArgumentParser)
+    self._parser.set_defaults(crossbench_subcommand=self)
+    return self.parser
+
+  @override
+  def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
+    describe_parser = parser
     describe_parser.add_argument(
         "category",
         nargs="?",

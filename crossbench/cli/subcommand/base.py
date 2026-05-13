@@ -8,18 +8,19 @@ import abc
 import colorsys
 import logging
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from crossbench import __version__
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.cli import ui
+from crossbench.cli.parser import CBArgumentParser
 
 if TYPE_CHECKING:
   import argparse
 
   from crossbench.cli.cli import CrossBenchCLI
-
+  from crossbench.cli.types import Subparsers
 
 BANNER = r"""
                    ▌           ▌      Browser Benchmark Runner
@@ -33,19 +34,30 @@ class CrossbenchSubcommand(abc.ABC):
 
   def __init__(self, cli: CrossBenchCLI) -> None:
     self._cli = cli
-    self._parser: argparse.ArgumentParser = self.add_cli_parser()
-    self._parser.set_defaults(crossbench_subcommand=self)
+    self._parser: argparse.ArgumentParser | None = None
+    self._parser_populated = False
+
+  def init_cli_parser(self) -> None:
+    if not self._parser_populated:
+      self.add_cli_arguments(self.parser)
+      self._parser_populated = True
 
   @property
   def cli(self) -> CrossBenchCLI:
     return self._cli
 
   @property
-  def parser(self) -> argparse.ArgumentParser:
-    return self._parser
+  def parser(self) -> CBArgumentParser:
+    assert self._parser is not None, "Parser not registered"
+    return cast(CBArgumentParser, self._parser)
 
   @abc.abstractmethod
-  def add_cli_parser(self) -> argparse.ArgumentParser:
+  def register_subcommand(self,
+                          subparsers: Subparsers) -> argparse.ArgumentParser:
+    pass
+
+  @abc.abstractmethod
+  def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
     pass
 
   @abc.abstractmethod
@@ -56,7 +68,7 @@ class CrossbenchSubcommand(abc.ABC):
     self.cli.error(message)
 
   def fail(self, message: str) -> None:
-    self._parser.error(message)
+    self.parser.error(message)
 
   def _get_version_info(self) -> str:
     try:

@@ -15,12 +15,31 @@ from crossbench.cli.subcommand.devtools_recorder_proxy.default import \
 if TYPE_CHECKING:
   import argparse
 
+  from crossbench.cli.parser import CBArgumentParser
+  from crossbench.cli.types import Subparsers
 
 class DevtoolsRecorderProxySubcommand(CrossbenchSubcommand):
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
-    parser = CrossbenchDevToolsRecorderProxy.add_cli_parser(self.cli.subparsers)
+  def register_subcommand(self,
+                          subparsers: Subparsers) -> argparse.ArgumentParser:
+    self._parser = subparsers.add_parser(
+        "devtools-recorder-proxy",
+        aliases=["devtools"],
+        help=("Starts a local server to communicate with the "
+              "DevTools Recorder extension."))
+    self._parser.set_defaults(crossbench_subcommand=self)
+    return self.parser
+
+  @override
+  def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
+    parser.add_argument(
+        "--disable-token-authentication",
+        dest="use_auth_token",
+        default=True,
+        action="store_false",
+        help=("Disable token-based authentication. "
+              "Unsafe, only use for local development."))
     return parser
 
   @override

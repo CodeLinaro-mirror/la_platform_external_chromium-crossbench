@@ -24,8 +24,7 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.attributes import BrowserAttributes
-  from crossbench.cli.parser import CrossBenchArgumentParser
-  from crossbench.cli.types import Subparsers
+  from crossbench.cli.parser import CBArgumentParser
   from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -102,8 +101,8 @@ class LoadLine2Benchmark(LoadLineBenchmark):
 
   @classmethod
   @override
-  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers)
+  def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
+    super().add_cli_arguments(parser)
     parser.add_argument(
         "--deterministic",
         action="store_true",

@@ -10,7 +10,7 @@ import os
 import sys
 import textwrap
 import traceback
-from typing import IO, TYPE_CHECKING, Any, Sequence, TypeAlias
+from typing import IO, TYPE_CHECKING, Any, Sequence, Type, TypeAlias, TypeVar
 
 import tabulate as tbl
 from typing_extensions import override
@@ -19,7 +19,7 @@ import crossbench.benchmarks.all as benchmarks
 from crossbench import __version__
 from crossbench import path as pth
 from crossbench.cli import exception_formatter, ui
-from crossbench.cli.parser import CrossBenchArgumentParser
+from crossbench.cli.parser import CBArgumentParser
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.cli.subcommand.describe import DescribeSubcommand
 from crossbench.cli.subcommand.devtools_recorder_proxy.subcommand import \
@@ -42,7 +42,8 @@ if TYPE_CHECKING:
   from crossbench.parse import LateArgumentError
 
   BenchmarkClass: TypeAlias = type[Benchmark]
-  BrowserLookupTable: TypeAlias = dict[str, tuple[type[Browser], pth.LocalPath]]
+  BrowserLookupTable: TypeAlias = dict[str, tuple[Type[Browser], pth.LocalPath]]
+  SubcommandT = TypeVar("SubcommandT", bound=CrossbenchSubcommand)
 
 
 class CrossBenchArgumentError(argparse.ArgumentError):
@@ -81,7 +82,7 @@ class EnableDebuggingAction(argparse.Action):
     namespace.driver_logging = True
 
 
-class MainCrossBenchArgumentParser(CrossBenchArgumentParser):
+class MainCrossBenchArgumentParser(CBArgumentParser):
   @override
   def print_help(self,
                  file: IO[str] | None = None) -> None:  # type: ignore[override]
@@ -191,28 +192,35 @@ class CrossBenchCLI:
                      "with configurable measurement probes.\n"))
     self._subparsers = self._setup_subparsers()
     self._setup_parser()
-    self._describe_subcommand = DescribeSubcommand(self)
-    self._help_subcommand = HelpSubcommand(self)
-    self._version_subcommand = VersionSubcommand(self)
-    self._recorder_proxy_subcommand = DevtoolsRecorderProxySubcommand(self)
-    self._pinpoint_subcommand = PinpointSubcommand(self)
-    self._cross_plaform_mode_subcommand = SetupCrossPlatformModeSubcommand(self)
-    self._mcp_subcommand = McpSubcommand(self)
     self._last_subcommand: CrossbenchSubcommand | None = None
     self.args = argparse.Namespace()
     self._setup_subcommands()
+
+  def _setup_subcommands(self) -> None:
+    self._add_subcommand(DescribeSubcommand)
+    self._add_subcommand(HelpSubcommand)
+    self._add_subcommand(VersionSubcommand)
+    self._add_subcommand(DevtoolsRecorderProxySubcommand)
+    self._add_subcommand(PinpointSubcommand)
+    self._add_subcommand(SetupCrossPlatformModeSubcommand)
+    self._add_subcommand(McpSubcommand)
+
+    for benchmark_cls in self.BENCHMARKS:
+      subcommand = BenchmarkSubcommand(self, benchmark_cls)
+      subcommand.register_subcommand(self.subparsers)
+      self._benchmark_subcommands[benchmark_cls] = subcommand
 
   @property
   def subparsers(self) -> Subparsers:
     return self._subparsers
 
   @property
-  def describe_subcommand(self) -> DescribeSubcommand:
-    return self._describe_subcommand
-
-  @property
-  def help_subcommand(self) -> HelpSubcommand:
-    return self._help_subcommand
+  def subcommands(self) -> dict[str, CrossbenchSubcommand]:
+    subcommands: dict[str, CrossbenchSubcommand] = {}
+    for key, parser in self.subparsers.choices.items():
+      if subcommand := parser.get_default("crossbench_subcommand"):
+        subcommands[key] = subcommand
+    return subcommands
 
   @property
   def last_subcommand(self) -> CrossbenchSubcommand | None:
@@ -227,7 +235,7 @@ class CrossBenchCLI:
         title="Subcommands",
         dest="subcommand",
         required=True,
-        parser_class=CrossBenchArgumentParser)
+        parser_class=CBArgumentParser)
     return subparsers
 
   def add_base_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -277,10 +285,22 @@ class CrossBenchCLI:
         help="Enable debug output, equivalent to --throw -vvv")
     return debug_group
 
-  def _setup_subcommands(self) -> None:
-    for benchmark_cls in self.BENCHMARKS:
-      subcommand = BenchmarkSubcommand(self, benchmark_cls)
-      self._benchmark_subcommands[benchmark_cls] = subcommand
+  def _add_subcommand(
+      self,
+      subcommand_cls: Type[SubcommandT],
+  ) -> SubcommandT:
+    subcommand = subcommand_cls(self)
+    subcommand.register_subcommand(self.subparsers)
+    return subcommand
+
+  def _lazy_init_subcommand(self, argv: Sequence[str]) -> None:
+    if not argv:
+      return
+    subcommand_name = argv[0]
+    if subcommand_name.startswith("-"):
+      return
+    if subcommand := self.subcommands.get(subcommand_name):
+      subcommand.init_cli_parser()
 
   def log_assertion_error_statement(self, e: AssertionError) -> None:
     _, exc_exception, tb = sys.exc_info()
@@ -295,6 +315,7 @@ class CrossBenchCLI:
     unprocessed_argv: list[str] = []
     try:
       argv = self._rename_subcommand(argv)
+      self._lazy_init_subcommand(argv)
       # Manually check for unprocessed_argv to print nicer error messages.
       self.args, unprocessed_argv = self.parser.parse_known_args(argv)
     except argparse.ArgumentError as e:
@@ -322,12 +343,12 @@ class CrossBenchCLI:
     if subcommand.startswith("-"):
       return argv
 
-    choices = set(self._subparsers.choices.keys())
-    if subcommand in choices:
+    if subcommand in self.subcommands:
       return argv
 
     alternative: str | None = None
-    for benchmark_cls in self._benchmark_subcommands:
+    choices = set(self.subcommands.keys())
+    for benchmark_cls in self.BENCHMARKS:
       aliases = benchmark_cls.aliases()
       if subcommand in aliases:
         alternative = benchmark_cls.NAME
@@ -351,17 +372,12 @@ class CrossBenchCLI:
     # ArgumentParser tends to default to the toplevel parser instead of the
     # current subcommand, which in turn prints the wrong usage text.
     subcommand_name: str = getattr(self.args, "subcommand", "")
-    if subcommand_name == "describe":
-      parser = self._describe_subcommand.parser
-    elif subcommand_name == "mcp":
-      parser = self._mcp_subcommand.parser
-    else:
-      maybe_benchmark_cls = getattr(self.args, "benchmark_cls", None)
-      if maybe_benchmark_cls:
-        parser = self._benchmark_subcommands[maybe_benchmark_cls].parser
+    subcommand = self.subcommands.get(subcommand_name)
+    if subcommand:
+      parser = subcommand.parser
     if subcommand_name:
       message = f"{subcommand_name}: {message}"
-    if isinstance(parser, CrossBenchArgumentParser):
+    if isinstance(parser, CBArgumentParser):
       parser.fail(message)
     else:
       parser.error(message)

@@ -25,8 +25,7 @@ if TYPE_CHECKING:
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.benchmarks.loading.config.blocks import ActionBlock
   from crossbench.browsers.webview.embedder import WebviewEmbedder
-  from crossbench.cli.parser import CrossBenchArgumentParser
-  from crossbench.cli.types import Subparsers
+  from crossbench.cli.parser import CBArgumentParser
   from crossbench.plt.types import TupleCmdArgs
   from crossbench.runner.run import Run
 
@@ -145,8 +144,8 @@ class EmbedderBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def add_cli_parser(cls, subparsers: Subparsers) -> CrossBenchArgumentParser:
-    parser = super().add_cli_parser(subparsers)
+  def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
+    super().add_cli_arguments(parser)
     # Workaround to allow passing multiple --embedder-push-files using a flag
     # config that needs to have unique keys.
     parser.allow_abbrev = True

@@ -19,7 +19,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.cli.parser import CrossBenchArgumentParser
+from crossbench.cli.parser import CBArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.cli.subcommand.describe import DescribeSubcommand
 from crossbench.flags.base import Flags
@@ -30,12 +30,19 @@ from crossbench.probes.internal.summary import ResultsSummaryProbe
 
 if TYPE_CHECKING:
   from crossbench.cli.cli import CrossBenchCLI
+  from crossbench.cli.types import Subparsers
+
 
 
 class DescribeSubcommandNoParser(DescribeSubcommand):
 
-  def add_cli_parser(self) -> argparse.ArgumentParser:
-    return CrossBenchArgumentParser()
+  def __init__(self, cli: CrossBenchCLI) -> None:
+    super().__init__(cli)
+    self._parser = CBArgumentParser()
+
+  @override
+  def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
+    return parser
 
 
 @dataclasses.dataclass
@@ -60,6 +67,18 @@ class McpSubcommand(CrossbenchSubcommand):
     self._status_file: pth.LocalPath | None = None
     self._process: subprocess.Popen | None = None
 
+  @override
+  def register_subcommand(self,
+                          subparsers: Subparsers) -> argparse.ArgumentParser:
+    parser = subparsers.add_parser(
+        "mcp",
+        help="Start the Crossbench MCP server",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Start a MCP server to let agents control Crossbench.")
+    self._parser = parser
+    parser.set_defaults(crossbench_subcommand=self)
+    return parser
+
   @property
   def mcp_session_dir(self) -> pth.LocalPath:
     if not self._mcp_session_dir:
@@ -75,13 +94,8 @@ class McpSubcommand(CrossbenchSubcommand):
     return self._status_file
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
-    mcp_parser = self.cli.subparsers.add_parser(
-        "mcp",
-        help="Start the Crossbench MCP server",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="Start a MCP server to let agents control Crossbench.")
-    return mcp_parser
+  def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
+    return parser
 
   @override
   def run(self, args: argparse.Namespace) -> None:

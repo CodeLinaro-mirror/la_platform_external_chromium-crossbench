@@ -53,7 +53,7 @@ class CrossbenchDevToolsRecorderProxy:
   DEFAULT_PORT: Final = 44645
 
   @classmethod
-  def add_cli_parser(cls, subparsers: Subparsers) -> argparse.ArgumentParser:
+  def add_cli_arguments(cls, subparsers: Subparsers) -> argparse.ArgumentParser:
     parser = subparsers.add_parser(
         "devtools-recorder-proxy",
         aliases=["devtools"],

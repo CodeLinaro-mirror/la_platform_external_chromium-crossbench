@@ -17,7 +17,7 @@ class CrossbenchDevToolsRecorderProxy:
   supported."""
 
   @classmethod
-  def add_cli_parser(cls, subparsers: Subparsers) -> argparse.ArgumentParser:
+  def add_cli_arguments(cls, subparsers: Subparsers) -> argparse.ArgumentParser:
     return subparsers.add_parser(
         "devtools-recorder-proxy",
         aliases=["devtools"],

@@ -40,6 +40,8 @@ from crossbench.runner.timing import Timing
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.cli.cli import CrossBenchCLI
+  from crossbench.cli.parser import CBArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.probes.probe import Probe
 
 
@@ -96,12 +98,16 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     return self._runner
 
   @override
-  def add_cli_parser(self) -> argparse.ArgumentParser:
-    parser = self._benchmark_cls.add_cli_parser(self.cli.subparsers)
-    assert isinstance(parser, argparse.ArgumentParser), (
-        f"Benchmark class {self._benchmark_cls}.add_cli_parser did not return "
-        f"an ArgumentParser: {parser}")
-    self._runner_cls.add_cli_parser(self._benchmark_cls, parser)
+  def register_subcommand(self,
+                          subparsers: Subparsers) -> argparse.ArgumentParser:
+    self._parser = self._benchmark_cls.register_subcommand(subparsers)
+    self._parser.set_defaults(crossbench_subcommand=self)
+    return self.parser
+
+  @override
+  def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
+    self._benchmark_cls.add_cli_arguments(parser)
+    self._runner_cls.add_cli_arguments(self._benchmark_cls, parser)
     self._add_timing_arguments(parser)
     self._add_network_arguments(parser)
     self._add_env_arguments(parser)
@@ -591,7 +597,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       args.other_browser_args.pop()
       return
     if maybe_command == "help":
-      self._parser.print_help()
+      self.parser.print_help()
       sys.exit(0)
     if maybe_command == "describe":
       logging.warning("See `describe benchmark %s` for more options",
@@ -600,7 +606,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       args.category = "benchmarks"
       args.filter = self._benchmark_cls.NAME
       args.json = False
-      self.cli.describe_subcommand.run(args)
+      subcommand = self.cli.subcommands["describe"]
+      subcommand.run(args)
       sys.exit(0)
 
   def _process_args(self, args: argparse.Namespace) -> None:

@@ -54,7 +54,9 @@ class McpSubcommandTest(unittest.TestCase):
         pass
 
     self.cli = DummyCLI()
-    self.mcp_cmd = McpSubcommand(self.cli)  # type: ignore
+    self.cli.subparsers.add_parser("mcp")
+    self.mcp_cmd = McpSubcommand(self.cli)
+
 
     # Mock paths to avoid touching real filesystem
     self.mock_state_file = mock.MagicMock(spec=pth.LocalPath)

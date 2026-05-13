@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Self
+from typing import TYPE_CHECKING, ClassVar, Final, Generic, Self, TypeVar
 
 from typing_extensions import override
 
@@ -84,8 +84,14 @@ class ChromeMetricsInternalsProbe(JsonResultProbe):
     return ChromeMetricsInternalsProbeContext
 
 
+ChromeMetricsInternalsProbeT = TypeVar(
+    "ChromeMetricsInternalsProbeT", bound="ChromeMetricsInternalsProbe")
+
+
 class ChromeMetricsInternalsProbeContext(
-    JsonResultProbeContext[ChromeMetricsInternalsProbe]):
+    JsonResultProbeContext[ChromeMetricsInternalsProbeT],
+    Generic[ChromeMetricsInternalsProbeT],
+):
 
   # JS code that overrides the chrome.send response handler and requests
   # structured metrics.
@@ -108,7 +114,7 @@ chrome.send(
   STRUCTURED_METRICS_DATA: Final[
       str] = "return window.crossbench_structured_metrics"
 
-  def __init__(self, probe: ChromeMetricsInternalsProbe, run: Run) -> None:
+  def __init__(self, probe: ChromeMetricsInternalsProbeT, run: Run) -> None:
     super().__init__(probe, run)
     self._metric_value: int | None = None
 

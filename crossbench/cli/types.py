@@ -7,8 +7,8 @@ from __future__ import annotations
 import argparse
 from typing import TypeAlias
 
-from crossbench.cli.parser import CrossBenchArgumentParser
+from crossbench.cli.parser import CBArgumentParser
 
 Subparsers: TypeAlias = (
-    argparse._SubParsersAction[CrossBenchArgumentParser]  # noqa: SLF001
+    argparse._SubParsersAction[CBArgumentParser]  # noqa: SLF001
 )

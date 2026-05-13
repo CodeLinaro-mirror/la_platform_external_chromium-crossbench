@@ -23,7 +23,10 @@ from crossbench.plt.ios import ios_devices
 if TYPE_CHECKING:
   import argparse
 
+  from crossbench.cli.parser import CBArgumentParser
+  from crossbench.cli.types import Subparsers
   from crossbench.plt.types import CmdArg
+
 
 WARNING_MESSAGE = """
 WARNING: In order to establish an Ethernet connection to the tested device,
@@ -55,11 +58,18 @@ SETUP_TIMEOUT = datetime.timedelta(seconds=20)
 
 class SetupCrossPlatformModeSubcommand(CrossbenchSubcommand):
 
-  def add_cli_parser(self) -> argparse.ArgumentParser:
-    parser = self.cli.subparsers.add_parser(
+  @override
+  def register_subcommand(self,
+                          subparsers: Subparsers) -> argparse.ArgumentParser:
+    self._parser = subparsers.add_parser(
         "setup_cross_platform_mode",
         help=("Sets up Ethernet connection to your device in a way "
               "required by the loadline2-webapi benchmark."))
+    self._parser.set_defaults(crossbench_subcommand=self)
+    return self.parser
+
+  @override
+  def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
     parser.add_argument(
         "--interface",
         type=str,

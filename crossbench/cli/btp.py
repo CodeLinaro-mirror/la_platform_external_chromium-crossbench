@@ -16,7 +16,7 @@ from perfetto.trace_uri_resolver.resolver import TraceUriResolver
 
 from crossbench import path as pth
 from crossbench.cli.config.probe_list import ProbeListConfig
-from crossbench.cli.parser import CrossBenchArgumentParser
+from crossbench.cli.parser import CBArgumentParser
 from crossbench.parse import PathParser
 from crossbench.probes.trace_processor.trace_processor import MODULES_DIR, \
     QUERIES_DIR, TraceProcessorProbe
@@ -54,7 +54,7 @@ class MergedTraceUriResolver(TraceUriResolver):
 class BTPUtil:
 
   def __init__(self) -> None:
-    self.parser = CrossBenchArgumentParser(
+    self.parser = CBArgumentParser(
         description=("Runs trace processor queries in a batch mode on existing "
                      "benchmark results, without re-running the benchmark "
                      "itself."),
