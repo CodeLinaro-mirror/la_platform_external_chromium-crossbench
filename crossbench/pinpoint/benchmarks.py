@@ -29,6 +29,7 @@ _BENCHMARK_BY_PINPOINT_NAME: Final[immutabledict[
         "loadline_phone.crossbench": benchmarks.LoadLine1PhoneBenchmark,
         "loadline_tablet.crossbench": benchmarks.LoadLine1TabletBenchmark,
         "loadline2_phone.crossbench": benchmarks.LoadLine2PhoneBenchmark,
+        "loadline2_tablet.crossbench": benchmarks.LoadLine2TabletBenchmark,
         "memory.desktop": benchmarks.MemoryBenchmark,
         "motionmark1.0.crossbench": benchmarks.MotionMark10Benchmark,
         "motionmark1.1.crossbench": benchmarks.MotionMark11Benchmark,
