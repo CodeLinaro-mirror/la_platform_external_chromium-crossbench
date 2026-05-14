@@ -8,7 +8,6 @@ import json
 from enum import StrEnum
 from typing import TYPE_CHECKING, ClassVar, Final, Sequence
 
-import numpy as np
 import pandas as pd
 from typing_extensions import override
 
@@ -17,6 +16,7 @@ from crossbench import path as pth
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loadline.loadline import LoadLineBenchmark, \
     LoadLineProbe
+from crossbench.benchmarks.loadline.loadline_2 import process_scores
 from crossbench.probes.js import JSProbe
 from crossbench.probes.probe_context import ProbeContext
 
@@ -73,9 +73,9 @@ class LoadLine2WebApiProbe(LoadLineProbe):
   @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
     timings: dict[str, list] = {
-        "browser": [],
+        "cb_browser": [],
         "metric": [],
-        "run": [],
+        "cb_run": [],
         "value": []
     }
     browsers = list(group.browsers)
@@ -121,23 +121,12 @@ class LoadLine2WebApiProbe(LoadLineProbe):
         continue
 
       assert len(new_metrics) == len(new_values)
-      timings["browser"].extend([browsers[0].unique_name] * len(new_metrics))
-      timings["run"].extend([run_number] * len(new_metrics))
+      timings["cb_browser"].extend([browsers[0].unique_name] * len(new_metrics))
+      timings["cb_run"].extend([run_number] * len(new_metrics))
       timings["metric"].extend(new_metrics)
       timings["value"].extend(new_values)
 
-    df = pd.DataFrame.from_dict(timings).pivot(
-        columns="metric", index=["browser", "run"], values="value")
-    total = df.groupby("browser").mean()
-    # The globo workload was modified at some point, and to keep scores
-    # comparable between versions, we introduced a coefficient.
-    # See crbug.com/479819560 for details.
-    if "globo_homepage_interactive" in total.index:
-      total.loc["globo_homepage_interactive"] *= 0.58
-    total["TOTAL_SCORE"] = np.exp(np.log(total).mean(axis=1))
-    total = total.T
-    total.index.name = "Metric"
-    return total
+    return process_scores(pd.DataFrame.from_dict(timings))
 
   @override
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:

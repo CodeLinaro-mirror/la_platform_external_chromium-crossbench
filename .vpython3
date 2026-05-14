@@ -498,3 +498,8 @@ wheel: <
   name: "infra/python/wheels/click-py3"
   version: "version:8.0.3"
 >
+
+wheel: <
+  name: "infra/python/wheels/scipy/${vpython_platform}"
+  version: "version:1.10.1"
+>

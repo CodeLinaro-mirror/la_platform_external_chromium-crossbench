@@ -7,6 +7,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence
 
 import numpy as np
+import pandas as pd
+import scipy.stats
 from typing_extensions import override
 
 from crossbench import config
@@ -20,8 +22,6 @@ from crossbench.probes.probe_context import ProbeContext
 if TYPE_CHECKING:
   import argparse
 
-  import pandas as pd
-
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
@@ -33,6 +33,98 @@ if TYPE_CHECKING:
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
 VERSION_STRING: Final[str] = "2.3.0"
+
+
+def _metric_stats(df: pd.DataFrame) -> dict[str, dict[str, Any]]:
+  metric_stats = {}
+  for metric, metric_df in df.groupby("metric"):
+    values = metric_df["value"].dropna().values
+    n = len(values)
+    if n == 0:
+      continue
+    mean = float(np.mean(values))
+    if n > 1:
+      s = float(np.std(values, ddof=1))
+      se = s / np.sqrt(n)
+      t = float(scipy.stats.t.ppf(1 - (1 - 0.95) / 2, n - 1))
+      delta = t * se
+    else:
+      delta = 0.0
+      se = 0.0
+    metric_stats[str(metric)] = {
+        "mean": mean,
+        "delta": delta,
+        "se": se,
+        "n": n,
+    }
+  return metric_stats
+
+
+def process_scores(df: pd.DataFrame,
+                   expected_metrics: int = 10) -> pd.DataFrame:
+  run_metrics = (
+      df.groupby(["cb_browser", "metric",
+                  "cb_run"])["value"].mean().reset_index())
+  results: dict[str, dict[str, str]] = {}
+  for browser, browser_df in run_metrics.groupby("cb_browser"):
+    if not (metric_stats := _metric_stats(browser_df)):
+      continue
+
+    log_means = []
+    rel_vars = []
+    n_values = []
+    metric_results: dict[str, str] = {}
+    for metric, stats in metric_stats.items():
+      metric_mean = stats["mean"]
+      metric_delta = stats["delta"]
+      # The globo workload was modified at some point, and to keep scores
+      # comparable between versions, we introduced a coefficient.
+      # See crbug.com/479819560 for details.
+      if metric == "globo_homepage_interactive":
+        metric_mean *= 0.58
+        metric_delta *= 0.58
+
+      if stats["n"] > 1:
+        metric_results[metric] = f"{metric_mean:.3f} ± {metric_delta:.3f}"
+      else:
+        metric_results[metric] = f"{metric_mean:.3f}"
+
+      assert metric_mean > 0
+      log_means.append(float(np.log(metric_mean)))
+      rel_vars.append(float((stats["se"] / stats["mean"])**2))
+      n_values.append(stats["n"])
+
+    metric_results = {m: metric_results[m] for m in sorted(metric_stats.keys())}
+
+    # Only compute the total if all metrics are present.
+    if len(log_means) == expected_metrics:
+      # Use the Delta Method (first-order Taylor series expansion) to
+      # approximate the variance of the total score from the standard errors
+      # of individual metrics.
+      # Let T = exp(1/M * sum(ln(X_i))). Assuming independent metrics,
+      # the variance of ln(X_i) is approximately
+      # Var(X_i) / X_i^2 = (SE_i / Mean_i)^2.
+      # Therefore, Var(ln(T)) is approx 1/M^2 * sum((SE_i / Mean_i)^2).
+      # Applying the Delta Method again for the final exponential
+      # transformation gives:
+      # SE(T) approx T * sqrt(Var(ln(T))).
+      total_mean = float(np.exp(np.mean(log_means)))
+      total_df = int(np.round(np.mean([n - 1 for n in n_values])))
+      if total_df > 0:
+        total_se = (
+            total_mean * float(np.sqrt(np.sum(rel_vars))) / len(log_means))
+        total_t = float(scipy.stats.t.ppf(0.975, total_df))
+        total_delta = total_t * total_se
+        metric_results["TOTAL_SCORE"] = (
+            f"{total_mean:.3f} ± {total_delta:.3f}")
+      else:
+        metric_results["TOTAL_SCORE"] = f"{total_mean:.3f}"
+
+    results[str(browser)] = metric_results
+
+  total = pd.DataFrame(results)
+  total.index.name = "Metric"
+  return total
 
 
 class LoadLine2Probe(LoadLineProbe):
@@ -52,17 +144,7 @@ class LoadLine2Probe(LoadLineProbe):
   @override
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
     df = self._load_query_result(group, "loadline2_benchmark_score")
-    total = df.drop(columns=["cb_story", "cb_temperature", "cb_run"]).groupby(
-        ["cb_browser", "metric"]).mean().reset_index().pivot(
-            columns="cb_browser", index="metric", values="value")
-    # The globo workload was modified at some point, and to keep scores
-    # comparable between versions, we introduced a coefficient.
-    # See crbug.com/479819560 for details.
-    if "globo_homepage_interactive" in total.index:
-      total.loc["globo_homepage_interactive"] *= 0.58
-    total.loc["TOTAL_SCORE", :] = np.exp(np.log(total).mean())
-    total.index.name = "Metric"
-    return total
+    return process_scores(df)
 
   @override
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:

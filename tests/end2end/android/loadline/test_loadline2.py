@@ -34,11 +34,13 @@ class BenchmarkType(enum.StrEnum):
   DEBUG = "loadline2-phone-debug"
 
 
-def _verify_default_metrics(out_dir, only_total=False):
+def _verify_default_metrics(out_dir, require_all_metrics=True):
   result_csv = out_dir / "benchmark_score.csv"
   with result_csv.open() as csv:
     lines = csv.readlines()
-    assert len(lines) == 12
+    assert len(lines) > 1
+    if require_all_metrics:
+      assert len(lines) == 12
 
     titles = lines[0].split(",")
     assert len(titles) == 2
@@ -46,17 +48,29 @@ def _verify_default_metrics(out_dir, only_total=False):
 
     metrics = dict(line.split(",") for line in lines[1:])
 
-    assert "TOTAL_SCORE" in metrics, f"Total score missing: {lines}"
-    value = metrics["TOTAL_SCORE"]
-    assert value, f"Encountered empty value. CSV contents: {lines}"
-    assert float(value) > 0, f"Expected positive number, but got {value}"
-    if only_total:
-      return
+    def check_ci_value(val: str) -> None:
+      val = val.strip()
+      parts = val.split(" ± ")
+      assert len(parts) in (
+          1,
+          2,
+      ), f"Value '{val}' does not match expected metric format"
+      assert float(parts[0]) > 0, f"Expected positive mean, got {parts[0]}"
+      if len(parts) == 2:
+        assert (float(parts[1])
+                >= 0), f"Expected non-negative delta, got {parts[1]}"
 
-    for metric, value in metrics:
+    for metric, value in metrics.items():
       assert metric, f"Encountered empty metric name. CSV contents: {lines}"
       assert value, f"Encountered empty value. CSV contents: {lines}"
-      assert float(value) > 0, f"Expected positive number, but got {value}"
+      check_ci_value(value)
+
+    if require_all_metrics:
+      assert len(metrics) == 11  # 10 metrics + TOTAL
+      assert "TOTAL_SCORE" in metrics, f"Total score missing: {lines}"
+      value = metrics["TOTAL_SCORE"]
+      assert value, f"Encountered empty value. CSV contents: {lines}"
+      check_ci_value(value)
 
 
 def test_loadline2_phone(device_id, adb_path, test_env: TestEnv) -> None:
@@ -88,8 +102,9 @@ def _test_loadline2_default(device_id, adb_path, benchmark_type,
   ])
 
   # With only 1 repetition, there's a chance that one story won't produce a
-  # metric. To avoid flaky failures, we only check the total score here.
-  _verify_default_metrics(out_dir, only_total=True)
+  # metric. To avoid flaky failures, we only check that some metrics are
+  # present.
+  _verify_default_metrics(out_dir, require_all_metrics=False)
 
 
 if __name__ == "__main__":
