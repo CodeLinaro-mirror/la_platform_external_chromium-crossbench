@@ -274,7 +274,7 @@ Crossbench supports various network settings directly, see `./cb.py help network
 | Type | Description |
 | ------- | -- |
 | LIVE    | Live network.  |
-| WPR     | Replayed network from a [wpr.go](https://chromium.googlesource.com/webpagereplay/) archive. Note you can use the `--probe=wpr` probe to record fresh network archives |
+| WPR     | Replayed network from a [webpagereplay](https://chromium.googlesource.com/webpagereplay/) archive. Note you can use the `--probe=wpr` probe to record fresh network archives |
 | LOCAL   | Serve content from a local http file server. This is useful for local debugging or running press benchmarks. |
 
 | Example | Description |

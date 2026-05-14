@@ -197,7 +197,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       NetworkConfig.parse(str(path))
     message = str(cm.exception)
-    self.assertIn("wpr.go archive", message)
+    self.assertIn("webpagereplay archive", message)
     self.assertIn("empty", message)
 
   def test_parse_invalid_port_for_cross_platform_mode(self):

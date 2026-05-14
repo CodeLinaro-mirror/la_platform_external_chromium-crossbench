@@ -256,9 +256,9 @@ benchmark scores will likely be lower than in the default configuration.
 
 ## Common issues
 
-### Problems finding wpr.go
+### Problems finding webpagereplay
 
-If you see a `Could not find wpr.go binary` error:
+If you see a `Could not find wpr binary` error:
 
 *   If you have chromium checked out locally: set `CHROMIUM_SRC` environment
     variable to the path of your chromium/src folder.

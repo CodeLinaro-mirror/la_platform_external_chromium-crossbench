@@ -213,7 +213,7 @@ class WprBase(abc.ABC):
       self._start_wpr()
       logging.info("WPR: waiting for startup...")
       self._wait_for_startup()
-      logging.info(("WPR: Started wpr.go %s: "
+      logging.info(("WPR: Started webpagereplay %s: "
                     "DONE (platform=%s, http_port=%s, http_port=%s)"),
                    self.NAME, self._platform, self.http_port, self.https_port)
     except BaseException as e:
@@ -292,14 +292,14 @@ class WprBase(abc.ABC):
     raise self._startup_failure()
 
   def _startup_failure(self) -> WprStartupError:
-    return WprStartupError("Could not start wpr.go.\n"
+    return WprStartupError("Could not start webpagereplay.\n"
                            f"See log for more details: {self._log_path}")
 
   def _parse_wpr_log_line(self, line: str) -> bool:
     if "Failed to start server on" in line:
       logging.error(line)
       raise WprStartupError(
-          f"Could not start wpr.go server, address in use: {line}")
+          f"Could not start webpagereplay server, address in use: {line}")
     line = line.strip()
     if match := _WPR_PORT_RE.match(line):
       protocol = match["protocol"].lower()

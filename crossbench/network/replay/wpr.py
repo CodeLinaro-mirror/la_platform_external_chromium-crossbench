@@ -153,11 +153,11 @@ class LocalWprReplayNetwork(WprReplayNetwork):
         wpr_go_bin = local_wpr_go
     if not wpr_go_bin:
       raise RuntimeError(
-          f"Could not find wpr.go binary on {self.host_platform}")
+          f"Could not find webpagereplay binary on {self.host_platform}")
     if wpr_go_bin.suffix == ".go" and not self.host_platform.which("go"):
       raise ValueError(f"'go' binary not found on {self.host_platform}")
     return self.host_platform.parse_local_binary_path(wpr_go_bin,
-                                                      "wpr.go source")
+                                                      "wpr binary/source")
 
   @contextlib.contextmanager
   @override
@@ -255,7 +255,7 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
     else:
       wpr_go_bin = self._download_prebuilt_wpr()
     return self.host_platform.parse_local_binary_path(wpr_go_bin,
-                                                      "wpr.go binary")
+                                                      "wpr binary/source")
 
   def _download_prebuilt_wpr(self) -> LocalPath:
     wpr_cloud_binary: WprCloudBinary = WprGoFinder(
@@ -300,7 +300,7 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
     if local_wpr_go := WprGoFinder(host_platform).local_path:
       wpr_root = local_wpr_go.parents[1]
     else:
-      raise RuntimeError(f"Could not fine local wpr.go on {host_platform}")
+      raise RuntimeError(f"Could not find local wpr.go on {host_platform}")
 
     wpr_go_bin = self._push_file(self._wpr_go_bin)
     self.browser_platform.chmod(wpr_go_bin, 0o755)

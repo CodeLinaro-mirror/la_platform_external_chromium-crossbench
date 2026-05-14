@@ -34,10 +34,10 @@ if TYPE_CHECKING:
 
 class WebPageReplayProbe(Probe):
   """
-  Probe to collect browser requests to wpr.go archive which then can be
+  Probe to collect browser requests to webpagereplay archive which then can be
   replayed using a local proxy server.
 
-  Chrome telemetry's wpr.go:
+  Chrome telemetry's webpagereplay:
   https://chromium.googlesource.com/webpagereplay/+/HEAD/README.md
   """
 
@@ -87,7 +87,7 @@ class WebPageReplayProbe(Probe):
     if not wpr_go_bin:
       raise RuntimeError(f"Could not find wpr.go on {host_platform}")
     self._wpr_go_bin: LocalPath = host_platform.parse_local_binary_path(
-        wpr_go_bin, "wpr.go")
+        wpr_go_bin, "wpr binary/source")
 
     self._recorder_kwargs: immutabledict[str, Any] = immutabledict(
         bin_path=wpr_go_bin,

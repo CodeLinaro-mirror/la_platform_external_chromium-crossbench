@@ -46,7 +46,7 @@ def _parse_existing_file_path_and_resolve(value: str) -> pth.LocalPath:
 @enum.unique
 class NetworkType(ConfigEnum):
   LIVE = ("live", "Live network.")
-  WPR = ("wpr", "Replayed network from a wpr.go archive.")
+  WPR = ("wpr", "Replayed network from a webpagereplay archive.")
   LOCAL = ("local", "Serve content from a local http file server.")
 
 
@@ -97,7 +97,7 @@ class NetworkConfig(ConfigObject):
     parser.add_argument(
         "wpr_go_bin",
         type=PathParser.existing_file_path,
-        help=("Location of the wpr.go binary or source, "
+        help=("Location of the wpr binary or wpr.go source, "
               "used for WPR replay network. "
               "If not specified, a default lookup in known locations is used."))
     parser.add_argument("persist_server", type=bool, default=False)
@@ -226,7 +226,7 @@ class NetworkConfig(ConfigObject):
 
   @classmethod
   def parse_wpr_archive_path(cls, path: pth.LocalPath) -> Self:
-    path = PathParser.non_empty_file_path(path, "wpr.go archive")
+    path = PathParser.non_empty_file_path(path, "webpagereplay archive")
     return cls(type=NetworkType.WPR, path=path)
 
   @classmethod
@@ -247,7 +247,7 @@ class NetworkConfig(ConfigObject):
       if not self.path and not self.url:
         raise argparse.ArgumentTypeError(
             "NetworkConfig with type=replay requires "
-            "a valid wpr.go archive path or download url.")
+            "a valid webpagereplay archive path or download url.")
       if self.path and self.url:
         raise argparse.ArgumentTypeError(
             "NetworkConfig with type=replay requires "
