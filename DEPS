@@ -159,3 +159,8 @@ hooks = [
     ],
   },
 ]
+
+recursedeps = [
+  # WebPageReplay includes a go compiler in its DEPS.
+  'third_party/webpagereplay'
+]

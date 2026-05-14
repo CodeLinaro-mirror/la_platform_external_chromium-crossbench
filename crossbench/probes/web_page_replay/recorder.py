@@ -11,9 +11,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Self
 from immutabledict import immutabledict
 from typing_extensions import override
 
-from crossbench import plt
 from crossbench.helper import fs_helper
-from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
 from crossbench.parse import PathParser
@@ -50,8 +48,6 @@ class WebPageReplayProbe(Probe):
     parser.add_argument("http_port", type=int, default=8080, required=False)
     parser.add_argument("https_port", type=int, default=8081, required=False)
     parser.add_argument(
-        "wpr_go_bin", type=plt.PLATFORM.parse_local_binary_path, required=False)
-    parser.add_argument(
         "key_file", type=PathParser.existing_file_path, required=False)
     parser.add_argument(
         "cert_file", type=PathParser.existing_file_path, required=False)
@@ -74,23 +70,13 @@ class WebPageReplayProbe(Probe):
   def __init__(self,
                http_port: int = 0,
                https_port: int = 0,
-               wpr_go_bin: LocalPath | None = None,
                inject_scripts: Iterable[LocalPath] | None = None,
                key_file: LocalPath | None = None,
                cert_file: LocalPath | None = None,
                use_test_root_certificate: bool = False,
                record_setup: bool = True) -> None:
     super().__init__()
-    host_platform = plt.PLATFORM
-    if not wpr_go_bin:
-      wpr_go_bin = WprGoFinder(host_platform).local_path
-    if not wpr_go_bin:
-      raise RuntimeError(f"Could not find wpr.go on {host_platform}")
-    self._wpr_go_bin: LocalPath = host_platform.parse_local_binary_path(
-        wpr_go_bin, "wpr binary/source")
-
     self._recorder_kwargs: immutabledict[str, Any] = immutabledict(
-        bin_path=wpr_go_bin,
         http_port=http_port,
         https_port=https_port,
         inject_scripts=inject_scripts,
@@ -166,17 +152,13 @@ class WebPageReplayProbe(Probe):
 
   def httparchive_merge(self, input_archive: LocalPath,
                         output_archive: LocalPath) -> None:
-    cmd: list[str | LocalPath] = [
-        "go",
-        "run",
-        self._wpr_go_bin.parent / "httparchive.go",
+    self.host_platform.sh(
+        WprGoFinder(self.host_platform).httparchive(),
         "merge",
         output_archive,
         input_archive,
         output_archive,
-    ]
-    with change_cwd(self._wpr_go_bin.parent):
-      self.host_platform.sh(*cmd)
+    )
 
   @override
   def log_run_result(self, run: Run) -> None:
@@ -208,6 +190,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
         "platform": run.host_platform,
         "log_path": self._wprgo_log,
         "archive_path": self.result_path,
+        "bin_path": WprGoFinder(run.host_platform).wpr(run.browser_platform),
     })
     self._recorder = WprRecorder(**kwargs)
     self._browser_platform = run.browser_platform

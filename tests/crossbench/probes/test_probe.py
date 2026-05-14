@@ -104,7 +104,7 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
     yield V8RCSProbe()
     yield V8TurbolizerProbe()
     yield VideoProbe()
-    yield WebPageReplayProbe(wpr_go_bin=self.create_file("wpr"))
+    yield WebPageReplayProbe()
 
   def probe_classes(self):
     yield from INTERNAL_PROBES

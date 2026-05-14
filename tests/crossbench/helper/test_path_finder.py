@@ -5,20 +5,19 @@ from __future__ import annotations
 
 import os
 import pathlib
+import sys
 from unittest import mock
 
 from typing_extensions import override
 
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder, \
     ChromiumCheckoutFinder, TraceboxFinder, TraceconvFinder, \
-    TraceProcessorFinder, V8CheckoutFinder, V8ToolsFinder, WprCloudBinary, \
-    WprGoFinder
-from crossbench.plt import PLATFORM
+    TraceProcessorFinder, V8CheckoutFinder, V8ToolsFinder, WprGoFinder
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
-    ChromeOsSshMockPlatform, LinuxMockPlatform, MacOsMockPlatform, MockAdb, \
-    ShResult, WinMockPlatform
+    LinuxMockPlatform, MacOsMockPlatform, MockAdb, WinMockPlatform
+from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
 
 
 class BaseCheckoutTestCase(BaseCrossbenchTestCase):
@@ -195,77 +194,85 @@ class V8ToolsFinderTestCase(BaseCheckoutTestCase):
     self.assertEqual(finder.v8_logviewer, checkout_dir / "tools/v8-logviewer")
 
 
-class WprToolsFinderTestCase(BaseCheckoutTestCase):
+class WprToolsFinderTestCase(BasePosixMockPlatformTestCase):
 
   __test__ = True
 
   @override
-  def setUp(self):
-    # Only one of these directories exists, depending on whether crossbench is
-    # checked out standalone or within a different repo. The bots only run tests
-    # on the first case, but it's best to make them pass in both cases to avoid
-    # user surprise.
-    third_party_inside = test_helper.root_dir() / "third_party"
-    third_party_outside = test_helper.root_dir().parents[1] / "third_party"
-    # Must be computed before super().setUp(), otherwise the fake filesystem
-    # will be checked.
-    using_third_party_inside = third_party_inside.exists()
-    super().setUp()
-    if using_third_party_inside:
-      self.fs.add_real_directory(third_party_inside)
-    else:
-      self.fs.add_real_directory(third_party_outside)
+  def setup_host_platform(self) -> LinuxMockPlatform:
+    return LinuxMockPlatform()
+
+  @override
+  def test_is_linux(self):
+    self.assertTrue(self.platform.is_linux)
 
   def _with_arch(self, platform, arch):
     platform.machine = arch
     platform.use_mock_name = False
     return platform
 
-  def test_path_exists(self):
-    finder = WprGoFinder(PLATFORM)
-    self.assertTrue(finder.local_path.exists(),
-                    f"{finder.local_path} not found")
-
-  def test_cloud_binary(self):
+  def _setup_adb(self):
     self.fs.create_file("/usr/bin/adb", contents="adb")
-    for _ in range(3):
-      if self.platform.is_macos:
-        self.platform.expect_sh(
-            "brew", "--prefix", result=ShResult(returncode=1))
-      self.platform.expect_sh(
-          "/usr/bin/adb",
-          "devices",
-          "-l",
-          result="List of devices attached\n123 device usb:0 product:a model:b")
-    platforms = [
-        self._with_arch(
-            AndroidAdbMockPlatform(self.platform, adb=MockAdb(self.platform)),
-            "arm64"),
-        self._with_arch(
-            AndroidAdbMockPlatform(self.platform, adb=MockAdb(self.platform)),
-            "arm32"),
-        self._with_arch(
-            AndroidAdbMockPlatform(self.platform, adb=MockAdb(self.platform)),
-            "x64"),
-        self._with_arch(
-            ChromeOsSshMockPlatform(self.platform, "host", 0, 22, "user"),
-            "arm64"),
-        self._with_arch(
-            ChromeOsSshMockPlatform(self.platform, "host", 0, 22, "user"),
-            "x64"),
-        self._with_arch(LinuxMockPlatform(), "x64"),
-        self._with_arch(MacOsMockPlatform(), "arm64"),
-        self._with_arch(MacOsMockPlatform(), "x64"),
-        self._with_arch(WinMockPlatform(), "x64"),
-    ]
-    self.assertSetEqual({p.key for p in platforms},
-                        set(WprGoFinder.WPR_PREBUILT_LOOKUP.keys()),
-                        "Please add any new platform(s) to the list above")
-    for platform in platforms:
-      cloud_binary: WprCloudBinary = WprGoFinder(
-          self.platform).cloud_binary(platform)
-      self.assertTrue(cloud_binary.file_hash, f"Empty file hash for {platform}")
-      self.assertTrue(cloud_binary.url, f"Empty url for {platform}")
+    self.platform.expect_sh(
+        "/usr/bin/adb",
+        "devices",
+        "-l",
+        result="List of devices attached\n123 device usb:0 product:a model:b")
+
+  def test_httparchive_and_wpr_bins(self):
+    self._with_arch(self.platform, "x64")
+    self._setup_adb()
+    android_platform = self._with_arch(
+        AndroidAdbMockPlatform(self.platform, adb=MockAdb(self.platform)),
+        "arm64")
+    self.assertIsNone(WprGoFinder(self.platform).local_path)
+    with self.assertRaises(FileNotFoundError):
+      WprGoFinder(self.platform).httparchive()
+    with self.assertRaises(FileNotFoundError):
+      WprGoFinder(self.platform).wpr(android_platform)
+
+    root = test_helper.root_dir()
+    self.fs.create_dir(root / "third_party/webpagereplay")
+    self.assertIsNotNone(WprGoFinder(self.platform).local_path)
+    with self.assertRaises(FileNotFoundError):
+      WprGoFinder(self.platform).httparchive()
+    with self.assertRaises(FileNotFoundError):
+      WprGoFinder(self.platform).wpr(android_platform)
+
+    self.fs.create_file(root / "third_party/webpagereplay/scripts/build.py")
+    self.platform.expect_sh(
+        sys.executable,
+        root / "third_party/webpagereplay/scripts/build.py",
+        "--os",
+        "linux",
+        "--arch",
+        "x64",
+        "--out-dir",
+        root / "cache/webpagereplay/linux/x64",
+        "--binary",
+        "httparchive",
+        result="",
+    )
+    self.assertEqual(
+        WprGoFinder(self.platform).httparchive(),
+        root / "cache/webpagereplay/linux/x64/httparchive")
+
+    self.platform.expect_sh(
+        sys.executable,
+        root / "third_party/webpagereplay/scripts/build.py",
+        "--os",
+        "android",
+        "--arch",
+        "arm64",
+        "--out-dir",
+        root / "cache/webpagereplay/android/arm64",
+        "--binary",
+        "wpr",
+        result="",
+    )
+    self.assertEqual(
+        WprGoFinder(self.platform).wpr(android_platform),
+        root / "cache/webpagereplay/android/arm64/wpr")
 
 
 if __name__ == "__main__":

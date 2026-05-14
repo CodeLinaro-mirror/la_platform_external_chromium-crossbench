@@ -61,7 +61,6 @@ class NetworkConfig(ConfigObject):
   speed: NetworkSpeedConfig = NetworkSpeedConfig.default()
   path: pth.LocalPath | None = None
   url: str | None = None
-  wpr_go_bin: pth.LocalPath | None = None
   persist_server: bool = False
   run_on_device: bool = False
   skip_deterministic_script_injection: bool = False
@@ -94,12 +93,6 @@ class NetworkConfig(ConfigObject):
         help=("Path to a local directory for 'local' file server network, "
               "or path to a archive.wprgo for a 'wpr' replay network"))
     parser.add_argument("url", type=str)
-    parser.add_argument(
-        "wpr_go_bin",
-        type=PathParser.existing_file_path,
-        help=("Location of the wpr binary or wpr.go source, "
-              "used for WPR replay network. "
-              "If not specified, a default lookup in known locations is used."))
     parser.add_argument("persist_server", type=bool, default=False)
     parser.add_argument(
         "run_on_device",
@@ -259,7 +252,7 @@ class NetworkConfig(ConfigObject):
             "a valid local dir path to serve files.")
       PathParser.non_empty_dir_path(self.path, "local-serve dir")
 
-    wpr_only_options = ("wpr_go_bin", "persist_server", "run_on_device",
+    wpr_only_options = ("persist_server", "run_on_device",
                         "skip_deterministic_script_injection", "host",
                         "no_archive_certificates",
                         "response_transformations_file", "cross_platform_mode",
@@ -295,7 +288,6 @@ class NetworkConfig(ConfigObject):
           return RemoteWprReplayNetwork(
               self.url or str(self.path),
               traffic_shaper,
-              self.wpr_go_bin,
               browser_platform,
               self.persist_server,
               no_archive_certificates=self.no_archive_certificates,
@@ -308,7 +300,6 @@ class NetworkConfig(ConfigObject):
         return LocalWprReplayNetwork(
             self.url or str(self.path),
             traffic_shaper,
-            self.wpr_go_bin,
             browser_platform,
             self.persist_server,
             no_archive_certificates=self.no_archive_certificates,

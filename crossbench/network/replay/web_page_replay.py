@@ -63,10 +63,15 @@ class WprBase(abc.ABC):
     self._host_http_port: int = 0
     self._host_https_port: int = 0
 
-    (wpr_root, go_cmd) = self._validate_wpr()
-    if run_as_root:
-      go_cmd = ("sudo", *go_cmd)
-    self._go_cmd: Final[TupleCmdArgs] = go_cmd
+    # Pre-existing issue: for non-local platforms, the empty LocalPath() happens
+    # to not be used by any other method below. Could probably be improved by
+    # moving to a helper wpr_root() function that asserts this fact.
+    wpr_root: LocalPath = LocalPath()
+    if self._platform.is_local:
+      local_path: LocalPath | None = WprGoFinder(self._platform).local_path
+      # The directory exists because `bin_path` does.
+      assert local_path is not None
+      wpr_root = local_path
 
     self._archive_path: Final[AnyPath] = self._validate_archive_path(
         archive_path)
@@ -85,29 +90,6 @@ class WprBase(abc.ABC):
     if log_path:
       return PathParser.not_existing_path(log_path)
     return log_path
-
-  def _validate_wpr(self) -> tuple[LocalPath, TupleCmdArgs]:
-    go_cmd: TupleCmdArgs = ()
-    wpr_root: LocalPath = LocalPath()
-
-    if self._bin_path.suffix == ".go":
-      # `go` binary is required to run a Go source file (`wpr.go`).
-      assert self._platform.is_local
-      if local_go := self._platform.which("go"):
-        go_cmd = (local_go, "run", self._bin_path)
-      else:
-        raise ValueError(f"'go' binary not available on {self._platform}")
-      wpr_root = self._platform.local_path(self._bin_path.parents[1])
-      return wpr_root, go_cmd
-
-    # Assuming the binary path is precompiled and executable.
-    go_cmd = (self._bin_path,)
-    if self._platform.is_local:
-      if local_wpr_go := WprGoFinder(self._platform).local_path:
-        wpr_root = local_wpr_go.parents[1]
-      else:
-        raise ValueError(f"Could not find webpagereplay on {self._platform}")
-    return wpr_root, go_cmd
 
   def _validate_ports(self, http_port: int, https_port: int) -> tuple[int, int]:
     if http_port == 0:
@@ -225,9 +207,13 @@ class WprBase(abc.ABC):
       raise
 
   def _start_wpr(self) -> None:
-    go_cmd: TupleCmdArgs = self._go_cmd + self.cmd
+    cmd: TupleCmdArgs = ()
+    if self._run_as_root:
+      cmd += ("sudo",)
+    cmd += (self._bin_path,)
+    cmd += self.cmd
     logging.info("STARTING WPR on %s: %s", self._platform,
-                 shlex.join(map(str, go_cmd)))
+                 shlex.join(map(str, cmd)))
     self._num_parsed_ports = 0
     if self._log_path:
       self._log_file = self._log_path.open("w", encoding="utf-8")
@@ -237,7 +223,7 @@ class WprBase(abc.ABC):
     with change_cwd(work_dir):
       logging.debug("Logging to %s", self._log_path)
       self._process = self._platform.popen(
-          *go_cmd,
+          *cmd,
           stdout=self._log_file,
           stderr=self._log_file,
           stdin=subprocess.DEVNULL)
