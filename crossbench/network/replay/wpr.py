@@ -54,7 +54,7 @@ class WprReplayNetwork(ReplayNetwork):
         LocalPath | None] = response_transformations_file
     self._cross_platform_mode: Final[bool] = cross_platform_mode
     self._wpr_go_bin: Final[LocalPath] = WprGoFinder(self.host_platform).wpr(
-        self.browser_platform)
+        self._wpr_platform)
     self._host: Final[str | None] = host
     self._http_port: Final[int | None] = http_port
     self._https_port: Final[int | None] = https_port
@@ -134,12 +134,22 @@ class WprReplayNetwork(ReplayNetwork):
     assert self._server, "WPR is not running"
     return self._server.host
 
+  @property
+  @abc.abstractmethod
+  def _wpr_platform(self) -> Platform:
+    pass
+
   @override
   def __str__(self) -> str:
     return f"WPR(archive={self.archive_path}, speed={self.traffic_shaper})"
 
 
 class LocalWprReplayNetwork(WprReplayNetwork):
+
+  @property
+  @override
+  def _wpr_platform(self) -> Platform:
+    return self.host_platform
 
   @contextlib.contextmanager
   @override
@@ -221,6 +231,11 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         host=host,
         http_port=http_port,
         https_port=https_port)
+
+  @property
+  @override
+  def _wpr_platform(self) -> Platform:
+    return self.browser_platform
 
   @classmethod
   def is_compatible(cls, platform: Platform) -> bool:

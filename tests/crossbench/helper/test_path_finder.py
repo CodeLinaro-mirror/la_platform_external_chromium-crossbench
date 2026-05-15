@@ -233,13 +233,14 @@ class WprToolsFinderTestCase(BasePosixMockPlatformTestCase):
 
     root = test_helper.root_dir()
     self.fs.create_dir(root / "third_party/webpagereplay")
-    self.assertIsNotNone(WprGoFinder(self.platform).local_path)
+    self.assertIsNone(WprGoFinder(self.platform).local_path)
     with self.assertRaises(FileNotFoundError):
       WprGoFinder(self.platform).httparchive()
     with self.assertRaises(FileNotFoundError):
       WprGoFinder(self.platform).wpr(android_platform)
 
     self.fs.create_file(root / "third_party/webpagereplay/scripts/build.py")
+    self.assertIsNotNone(WprGoFinder(self.platform).local_path)
     self.platform.expect_sh(
         sys.executable,
         root / "third_party/webpagereplay/scripts/build.py",

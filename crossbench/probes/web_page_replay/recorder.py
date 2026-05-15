@@ -190,7 +190,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
         "platform": run.host_platform,
         "log_path": self._wprgo_log,
         "archive_path": self.result_path,
-        "bin_path": WprGoFinder(run.host_platform).wpr(run.browser_platform),
+        "bin_path": WprGoFinder(run.host_platform).wpr(run.host_platform),
     })
     self._recorder = WprRecorder(**kwargs)
     self._browser_platform = run.browser_platform

@@ -418,7 +418,7 @@ class WprGoFinder(BaseCrossbenchPathFinder):
 
   @override
   def is_valid_path(self, candidate: pth.AnyPath) -> bool:
-    return self._platform.is_dir(candidate)
+    return self._platform.is_file(candidate / "scripts/build.py")
 
   @classmethod
   @override
