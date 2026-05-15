@@ -1,3 +1,10 @@
+*** note
+## LoadLine benchmark was superseded by LoadLine 2
+This doc page is outdated. Please refer to
+[LoadLine 2 page](/config/benchmark/loadline2/README.md) for up-to-date
+instructions.
+***
+
 # LoadLine Benchmark
 
 This folder contains configs for the LoadLine benchmark. The goal of the

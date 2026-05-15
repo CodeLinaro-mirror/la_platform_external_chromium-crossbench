@@ -1,10 +1,16 @@
 # LoadLine 2 Benchmark
 
-LoadLine 2 is the next generation of the LoadLine benchmark. See
-[LoadLine page](/config/benchmark/loadline/README.md)
-for background and motivation. Compared to the first version, version 2
-offers shorter execution time, more stable metrics and (some form of)
-cross-platform support.
+LoadLine 2 is the next generation of the LoadLine benchmark. The goal of the
+benchmark is to facilitate web performance optimization based on a realistic
+workload. The benchmark has two workload variants:
+
+*   General-purpose workload representative of the web usage on mobile phones
+    ("phone");
+
+*   Android Tablet web performance workload ("tablet").
+
+Compared to the first version, version 2 offers shorter execution time, more
+stable metrics and (some form of) cross-platform support.
 
 See the
 [LoadLine component](https://g-issues.chromium.org/issues?q=status:open%20componentid:1670299)
@@ -27,13 +33,135 @@ Run "tablet" workload:
 The browser can be `android:chrome-canary`, `android:chrome-stable` etc. See
 [crossbench docs](/README.md#browsers) for the full list of options.
 
-*** note
-Note: the benchmark requires read access to the `chrome-partner-loadline`
-GCP bucket. If you are a new partner, please refer to the
-[LoadLine page](/config/benchmark/loadline/README.md#cloud-bucket-access)
-for instructions on getting access.
-***
+## Cloud bucket access
 
+To maintain reproducibility, the benchmark uses the
+[web page replay](https://chromium.googlesource.com/webpagereplay/+/HEAD/README.md)
+mechanism. Archives of the web pages are stored in the
+`chrome-partner-loadline` cloud bucket, so access to that bucket is required
+to run LoadLine 2. Please request access
+[here](https://docs.google.com/forms/d/e/1FAIpQLSdCb1LYPlDEKuOd1lP21yZ9YDEvjq-9W0a5X9k7QxM_YjskzA/viewform?usp=header).
+
+After getting access, run
+
+```
+gcloud auth application-default login
+```
+
+on your workstation (has to be done only once).
+
+If you observe "Can't reach this page" or similar errors, try the following
+alternative commands:
+
+```
+gcloud auth application-default login --no-launch-browser
+```
+or
+```
+gcloud auth application-default login --no-browser
+```
+
+## Technical details
+
+### Background
+
+Web is one of the most important use cases on mobile devices. Page loading speed
+represents a crucial part of user experience, and is not well covered by
+existing benchmarks (Speedometer, Jetstream, MotionMark). Experiments show that
+raw CPU performance does not always result in faster web loading speeds, since
+it's a complex highly parallelized process that stresses a lot of browser and OS
+components and their interactions. Hence the need for a dedicated web loading
+benchmark that will enable us to compare devices, track improvements across OS
+and browser releases.
+
+### Workload
+
+We aimed for two configurations:
+
+*   **Representative mobile Web on Android usage (~5 pages)**
+
+    Aimed at covering loading scenarios representative of real web workloads and
+    user environments on Android mobile phones.
+
+*   **Android Tablet web performance (~5 pages)**
+
+    A set of larger desktop-class workloads intended for tablet/large screen
+    devices running Android.
+
+The biggest challenges we faced in achieving this goal were:
+
+*   **Representativeness**: How do we determine a representative set of web
+    sites given the humongous corpus of websites whose overall distribution is
+    not thoroughly understood.
+*   **Metrics** Existing page load metrics generalize well for O(millions) of
+    page loads across a variety of sites, but are poor fit to judge performance
+    of a specific site
+*   **Noise**: The web evolves. To ensure the benchmark workloads stay
+    consistent over time, we chose to use recorded & replayed workloads.
+    However, page load is very complex and indeterministic so naive replays are
+    often not consistent.
+
+### Site Selection
+
+We did a thorough analysis to ensure we select relevant and representative
+sites. Our aspiration was to understand the distribution of the most important
+CUJs and performance characteristics on the web and use this knowledge to elect
+a small number of representative CUJs, such that their performance
+characteristics maximize coverage of the distribution.
+
+Practically, we evaluated ~50 prominent sites across a number of different
+characteristics (dimensions) via trace-based analysis, cross-checking via field
+data. We clustered similar pages and selected representatives for important
+clusters. In the end, this was a manual selection aided by algorithmic
+clustering/correlation analysis.
+
+We looked at over 20 dimensions for suitability and relevance to our site
+selection, and low correlation between dimensions. Of these, we chose 6 primary
+metrics that we optimized coverage on: Website type, workload size (CPU time),
+DOM/Layout complexity (#nodes), JavaScript heap size, time spent in V8, time
+spent in V8 callbacks into Blink. Secondarily, we included utilization of web
+features and relevant mojo interfaces, e.g. Video, cookies, main/subframe
+communication, input events, frame production, network requests, etc.
+
+In the end we selected 5 sites for each configuration which we plan to extend in
+the future.
+
+#### Mobile
+
+| Page (mobile version)      | CUJ               | Performance characteristics |
+| -------------------------- | ------------------ | -------------------------- |
+| amazon.co.uk <br> (product page) | Shopping           | * average page load, large workload, large DOM/JS (but heavier on DOM) <br> * high on OOPIFs, input, http(s) resources, frame production |
+| cnn.com <br> (article)           | News               | * slow page load, large workload, large DOM/JS (but heavier on JS) <br> * high on iframes, main frame, local storage, cookies, http(s) resources |
+| wikipedia.org <br> (article)     | Reference work     | * fast page load, small workload, large DOM, small JS <br> * high on input <br> * low on iframes, http(s) resources, frame production |
+| globo.com <br> (homepage)        | News / web portal  | * slow page load, large workload, small DOM, large JS <br> * high on iframes, OOPIFs, http(s) resources, frame production, cookies |
+| google.com <br> (results)        | Search             | * fast page load, average workload, average DOM + JS <br> * high on main frame, local storage, video |
+
+#### Tablet
+
+| Page (desktop version)     | CUJ          | Performance characteristics      |
+| -------------------------- | ------------ | -------------------------------- |
+| amazon.co.uk <br> (product page) | Shopping     | * average page load, large workload, large DOM, average JS <br> * high on OOPIFs, http(s) resources, frame production |
+| cnn.com <br> (article)           | News         | * slow page load, large workload, large DOM/JS (but heavier on JS) <br> * high on iframes, local storage, video, frame production, cookies |
+| docs.google.com <br> (document)  | Productivity | * slow page load, large workload, large DOM + JS (heavier on JS) <br> * high on main frame <br> * high on font resources |
+| google.com <br> (results)        | Search       | * fast page load, low workload, low DOM + JS <br> * high on main frame, local storage <br> * low on video |
+| youtube.com<br> (video)         | Media        | * slow page load, very high workload, large DOM, small JS heap, average JS time <br> * high on video |
+
+### Metrics and the final score
+
+There can be different definitions of what it means for the page to be "fully
+loaded". Some of them involve being visually complete, others require being able
+to interact with the page. We think that both are important, so in LoadLine 2,
+we track two moments for each page: one when an important element on the page
+(it can be the element that triggers LCP but not necessarily) becomes visible
+("visual mark"), another when an interactive element (usually a button) on the
+page becomes functional ("interactive mark").
+
+For each mark, we then compute a score. The score equals **(60 seconds) /
+(mark time - navigation time)**, so the faster the load the higher the score.
+
+Each page's scores are averaged over all runs using an arithmetic mean. Finally,
+the total benchmark score is computed as a geomean of visual and interactive
+metrics from all 5 pages.
 
 ## Running LoadLine 2 on iOS devices
 
@@ -50,23 +178,6 @@ performance between iOS and Android, run LoadLine 2 WebAPI on both iOS and
 Android device.
 
 See [LoadLine 2 WebAPI](loadline2-webapi.md) for running instructions.
-
-## Metric Details
-
-There can be different definitions of what it means for the page to be "fully
-loaded". Some of them involve being visually complete, others require being able
-to interact with the page. We think that both are important, so in LoadLine 2,
-we track two moments for each page: one when an important element on the page
-(it can be the element that triggers LCP but not necessarily) becomes visible
-("visual mark"), another when an interactive element (usually a button) on the
-page becomes functional ("interactive mark").
-
-For each mark, we then compute a score. The score equals **(60 seconds) /
-(mark time - navigation time)**, so the faster the load the higher the score.
-
-Each page's scores are averaged over all runs using an arithmetic mean. Finally,
-the total benchmark score is computed as a geomean of visual and interactive
-metrics from all 5 pages.
 
 ## Thermals
 
@@ -98,7 +209,7 @@ traces, run a debug version of the benchmark with the following command:
 Note that collecting detailed traces incurs some overhead, so the benchmark
 scores will likely be lower than in the default configuration.
 
-## Debugging / Alternative running options
+## Alternative running options
 
 Crossbench is a powerful tool that supports many knobs to control benchmark
 execution. Note that while LoadLine 2 can be run in multiple different
