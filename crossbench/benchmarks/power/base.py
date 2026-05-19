@@ -51,6 +51,12 @@ class PowerStory(Story):
           "url": "https://msn.com/en-us",
           "archive": _LEGACY_WPR_RECORDING,
       },
+      "youtube": {
+          "url":
+              "https://www.youtube.com/watch?v=XITHbsUUlYI",
+          "archive":
+              "gs://chrome-partner-loadline/power/youtube_2026_05_18.wprgo",
+      },
   }
 
   _NON_CANONICAL_SITES: ClassVar[dict[str, dict[str, str]]] = {
@@ -95,6 +101,7 @@ class PowerBenchmarkBase(Benchmark):
   """Base class for Power benchmarks to share common logic."""
 
   NAME: ClassVar = "power"  # Subclasses expected to extend to "power-xyz"
+  SITE_REQUIRED: ClassVar[bool] = True
 
   def __init__(
       self,
@@ -116,6 +123,7 @@ class PowerBenchmarkBase(Benchmark):
   def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes)
     if browser_attributes.is_chromium_based:
+      flags.set("--autoplay-policy", "no-user-gesture-required")
       flags.set("--remote-allow-origins", "*")
       for flag in (
           "--disable-background-timer-throttling",
@@ -124,6 +132,7 @@ class PowerBenchmarkBase(Benchmark):
           "--disable-optimization-guide-model-downloads-for-benchmarking",
           "--disable-renderer-backgrounding",
           "--disable-stack-profiler",
+          "--disable-gesture-requirement-for-presentation",
       ):
         flags.set(flag)
     return flags
@@ -144,7 +153,7 @@ class PowerBenchmarkBase(Benchmark):
   @classmethod
   @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    if not args.site and not args.url:
+    if cls.SITE_REQUIRED and not args.site and not args.url:
       raise argparse.ArgumentTypeError(
           "One of the arguments --site --url is required")
     kwargs = super().kwargs_from_cli(args)

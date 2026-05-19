@@ -5,7 +5,10 @@
 from __future__ import annotations
 
 from crossbench.benchmarks.power.idle import PowerIdleBenchmark
+from crossbench.benchmarks.power.media_playback import \
+    PowerMediaPlaybackBenchmark
 
 __all__: list[str] = [
     "PowerIdleBenchmark",
+    "PowerMediaPlaybackBenchmark",
 ]

@@ -170,6 +170,7 @@ class CrossBenchCLI:
       benchmarks.MotionMarkMainBenchmark,
       # Power
       benchmarks.PowerIdleBenchmark,
+      benchmarks.PowerMediaPlaybackBenchmark,
       # Powerline
       benchmarks.PowerlineBenchmark,
       # Speedometer:
