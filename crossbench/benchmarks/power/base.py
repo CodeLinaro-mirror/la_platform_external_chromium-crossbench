@@ -4,9 +4,11 @@
 
 from __future__ import annotations
 
+import argparse
 import dataclasses
 import datetime as dt
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, Sequence, \
+    TypeVar
 
 from typing_extensions import override
 
@@ -15,12 +17,19 @@ from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  import argparse
-
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.flags.base import Flags
+
+
+_T = TypeVar("_T")
+
+
+# Equivalent to C++'s std::optional::value_or. The Pythonic alternative of
+# `value or default` would be thrown off by 0s - hence this helper.
+def _value_or(value: Optional[_T], alternative: _T) -> _T:
+  return value if value is not None else alternative
 
 
 class PowerStory(Story):
@@ -123,7 +132,7 @@ class PowerBenchmarkBase(Benchmark):
   @override
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     parser = super().add_cli_arguments(parser)
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument(
         "--site",
         choices=cls.DEFAULT_STORY_CLS.all_story_names(),
@@ -135,6 +144,9 @@ class PowerBenchmarkBase(Benchmark):
   @classmethod
   @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+    if not args.site and not args.url:
+      raise argparse.ArgumentTypeError(
+          "One of the arguments --site --url is required")
     kwargs = super().kwargs_from_cli(args)
     cls._select_network(args)
     kwargs["site_key"] = args.site

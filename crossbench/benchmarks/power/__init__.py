@@ -4,5 +4,8 @@
 
 from __future__ import annotations
 
-# TODO: Export concrete power benchmark runners here as they are ported.
-__all__: list[str] = []
+from crossbench.benchmarks.power.idle import PowerIdleBenchmark
+
+__all__: list[str] = [
+    "PowerIdleBenchmark",
+]

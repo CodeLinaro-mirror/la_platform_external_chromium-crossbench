@@ -25,6 +25,7 @@ from crossbench.benchmarks.memory.memory_benchmark import MemoryBenchmark
 from crossbench.benchmarks.motionmark import MotionMark10Benchmark, \
     MotionMark11Benchmark, MotionMark12Benchmark, MotionMark13Benchmark, \
     MotionMark131Benchmark, MotionMarkMainBenchmark
+from crossbench.benchmarks.power import PowerIdleBenchmark
 from crossbench.benchmarks.powerline import PowerlineBenchmark
 from crossbench.benchmarks.speedometer import Speedometer10Benchmark, \
     Speedometer20Benchmark, Speedometer21Benchmark, Speedometer30Benchmark, \
@@ -62,6 +63,7 @@ __all__ = [
     "MotionMark131Benchmark",
     "MotionMark13Benchmark",
     "MotionMarkMainBenchmark",
+    "PowerIdleBenchmark",
     "PowerlineBenchmark",
     "Speedometer10Benchmark",
     "Speedometer20Benchmark",
