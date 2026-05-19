@@ -267,12 +267,16 @@ class RunnerEnv(BaseEnv):
     if platform.is_android or platform.is_ios:
       return
 
+    platform_browsers = [
+        b for b in platform_browsers if not b.allow_existing_process
+    ]
+    if not platform_browsers:
+      return
+
     browser_binaries: dict[str, list[Browser]] = collection_helper.group_by(
         platform_browsers, key=lambda browser: os.fspath(browser.path))
     own_pid = os.getpid()
     for proc_info in platform.processes(["cmdline", "exe", "pid", "name"]):
-      if not browser_binaries:
-        return
       # Skip over this python script which might have the binary path as
       # part of the command line invocation.
       if proc_info["pid"] == own_pid:

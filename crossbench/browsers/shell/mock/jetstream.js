@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-globalThis.document ??= {
+globalThis.document = {
   readyState: 'complete',
-  querySelectorAll() {
-    return [
-      ,
-    ];
+  querySelectorAll(selector) {
+    if (selector === "#results>.benchmark") {
+      return [{}];
+    }
+    return [];
   },
   getElementById(name) {
     return {
@@ -22,4 +23,4 @@ globalThis.document ??= {
 globalThis.isInBrowser ??= false;
 globalThis.readFile ??= read;
 globalThis.isD8 ??= true;
-globalThis.testList ??= [];
+globalThis.testList ??= undefined;

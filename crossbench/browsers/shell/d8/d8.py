@@ -13,9 +13,9 @@ from typing_extensions import override
 
 from crossbench import exception
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.browser import Browser
 from crossbench.browsers.shell.d8.shell import D8Shell
 from crossbench.browsers.shell.d8.version import D8Version
+from crossbench.browsers.shell.shell_browser import ShellBrowser
 from crossbench.browsers.shell.url_mapper import D8URLMapper, DummyURLMapper
 from crossbench.browsers.viewport import Viewport
 from crossbench.flags.chrome import ChromeFlags
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
-class D8(Browser):
+class D8(ShellBrowser):
 
   @classmethod
   @override
@@ -50,8 +50,9 @@ class D8(Browser):
                settings: Settings | None = None) -> None:
     super().__init__(label, path, settings)
     if not self.network.is_local_file_server:
-      raise RuntimeError("D8 wrapper only works with --local-file-server"
-                         f"but got {self.network} network.")
+      raise RuntimeError(
+          f"{self.type_name()} wrapper only works with --local-file-server "
+          f"but got {self.network} network.")
     self._d8_shell: D8Shell | None = None
     self._url_mapper: D8URLMapper = DummyURLMapper(self)
 

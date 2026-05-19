@@ -250,6 +250,12 @@ class Browser(abc.ABC):
     return self.platform.is_remote
 
   @property
+  def allow_existing_process(self) -> bool:
+    """ Per browser class setting to eng-validate whether we already have
+    the same browser running"""
+    return False
+
+  @property
   def cache_dir(self) -> pth.AnyPath | None:
     """Default caching dir, if possible for profile independent data"""
     return self._cache_dir

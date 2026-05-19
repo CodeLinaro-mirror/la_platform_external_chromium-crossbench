@@ -29,7 +29,7 @@ class BackgroundReader(threading.Thread):
 
   def __init__(self, stream: IO[str], read_len: int) -> None:
     super().__init__()
-    self.print_output: bool = False
+    self.print_output: bool = logging.getLogger().isEnabledFor(logging.DEBUG)
     self.daemon = True
     self._queue: Final[queue.Queue[str]] = queue.Queue()
     self._stream: Final[IO[str]] = stream
@@ -38,10 +38,11 @@ class BackgroundReader(threading.Thread):
   def run(self) -> None:
     while True:
       data = self._stream.readline(self._read_len)
-      if data:
-        if self.print_output:
-          print(data, end="")
-        self._queue.put(data)
+      if not data:
+        break
+      if self.print_output:
+        print(data, end="")
+      self._queue.put(data)
 
   def get(self, timeout: float | None = None) -> str:
     return self._queue.get(timeout=timeout)
