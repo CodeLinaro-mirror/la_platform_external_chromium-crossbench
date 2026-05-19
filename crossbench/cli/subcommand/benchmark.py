@@ -611,6 +611,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       sys.exit(0)
 
   def _process_args(self, args: argparse.Namespace) -> None:
+    args.has_explicit_network = (
+        bool(args.network) or bool(args.network_config))
     if args.config:
       self._process_config_args(args)
     else:
@@ -670,6 +672,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     if network_config_data := config_data.get("network"):
       # TODO: migrate all --config helper to this format
       args.network = NetworkConfig.parse(network_config_data)
+      args.has_explicit_network = True
       found_any_config = True
     else:
       logging.warning("Skipping network config: no 'network' property in %s",
