@@ -4,48 +4,48 @@
 
 from __future__ import annotations
 
-import argparse
 import dataclasses
-import enum
+import datetime as dt
 import math
-import sys
-from typing import ClassVar, Sequence
+from typing import ClassVar
 
-
-class ScrollDirection(enum.Enum):
-  DOWN = enum.auto()
-  UP = enum.auto()
-
-
-SWIPE_DURATION_SEC = 0.75
-SETTLE_DURATION_SEC = 0.15
-LIFT_DURATION_SEC = 0.10
-SWIPES_PER_DIRECTION = 5
-SINGLE_CYCLE_DURATION = (
-    SWIPE_DURATION_SEC + SETTLE_DURATION_SEC + LIFT_DURATION_SEC)
-SINGLE_SEQUENCE_DURATION = 2 * SWIPES_PER_DIRECTION * SINGLE_CYCLE_DURATION
+__all__ = ["GeneratorConfig", "generate_scroll_commands"]
 
 
 @dataclasses.dataclass(frozen=True)
 class GeneratorConfig:
-  frequency: int
-  max_x: int
-  max_y: int
-  repetitions: int
+  """Configuration for physical touch scroll generation.
 
-  def y_top(self) -> int:
-    return int(0.2 * self.max_y)
+  The session performs `scroll_count` iterations of scrolling down then up.
+  Each iteration consists of `swipes_per_direction` swipes down, followed
+  by the inverse swipes back up.
+  """
+  input_rate: int = 240
+  scroll_count: int = 5
+  swipes_per_direction: int = 5
+  swipe_duration: dt.timedelta = dt.timedelta(milliseconds=750)
+  settle_duration: dt.timedelta = dt.timedelta(milliseconds=150)
+  lift_duration: dt.timedelta = dt.timedelta(milliseconds=100)
 
-  def y_bottom(self) -> int:
-    return int(0.8 * self.max_y)
+  def __post_init__(self) -> None:
+    assert self.input_rate > 0
+    assert self.scroll_count > 0
+    assert self.swipes_per_direction > 0
 
-  def fixed_x(self) -> int:
-    return int(0.5 * self.max_x)
+  @property
+  def single_cycle(self) -> dt.timedelta:
+    return self.swipe_duration + self.settle_duration + self.lift_duration
+
+  @property
+  def single_sequence(self) -> dt.timedelta:
+    return 2 * self.swipes_per_direction * self.single_cycle
+
+  def sequence_duration(self) -> dt.timedelta:
+    return self.scroll_count * self.single_sequence
 
 
 class EvemuEvent:
-  """Helper to construct and print EVEMU event groups."""
-
+  """Helper to construct and emit EVEMU synthetic touch events."""
   PRESSURE: ClassVar[int] = 50
   TOUCH_MAJOR: ClassVar[int] = 30
 
@@ -88,44 +88,14 @@ class EvemuEvent:
   def set_touch_major(self, value: int) -> None:
     self._add(self.EV_ABS, self.ABS_MT_TOUCH_MAJOR, value)
 
-  def emit(self) -> None:
-    """Outputs formatted event lines to stdout, followed by sync report."""
+  def emit(self, out: list[str]) -> None:
     for etype, code, value in self.events:
-      print(f"E: {self.time:.6f} {etype:04x} {code:04x} {value:04d}")
-    print(f"E: {self.time:.6f} {self.EV_SYN:04x} {self.SYN_REPORT:04x} 0000")
+      out.append(f"E: {self.time:.6f} {etype:04x} {code:04x} {value:04d}")
+    out.append(
+        f"E: {self.time:.6f} {self.EV_SYN:04x} {self.SYN_REPORT:04x} 0000")
 
 
-def parse_arguments(argv: Sequence[str]) -> GeneratorConfig:
-  parser = argparse.ArgumentParser(description="EVEMU Swipe Generator")
-  parser.add_argument(
-      "--max_x", type=int, default=-1, help="The maximum of the X coordinate.")
-  parser.add_argument(
-      "--max_y", type=int, default=-1, help="The maximum of the Y coordinate.")
-  parser.add_argument(
-      "--rate", type=int, default=120, help="The refresh frequency.")
-  parser.add_argument(
-      "--repetitions",
-      type=int,
-      default=18,
-      help="Number of scroll repetitions.")
-
-  args = parser.parse_args(argv)
-
-  frequency = args.rate
-  assert frequency > 0, f"Frequency must be > 0, got {frequency}"
-
-  max_x = args.max_x
-  max_y = args.max_y
-  assert max_x > 0, f"MAX_X must be > 0, got {max_x}"
-  assert max_y > 0, f"MAX_Y must be > 0, got {max_y}"
-
-  repetitions = args.repetitions
-  assert repetitions > 0, f"Repetitions must be > 0, got {repetitions}"
-
-  return GeneratorConfig(frequency, max_x, max_y, repetitions)
-
-
-def print_header(config: GeneratorConfig) -> None:
+def emit_header(max_x: int, max_y: int, out: list[str]) -> None:
   header = f"""# EVEMU 1.2
 N: synaptics_tcm_touch
 I: 0000 0000 0001 0001
@@ -149,24 +119,23 @@ B: 04 00 00 00 00 00 00 00 00
 B: 05 00 00 00 00 00 00 00 00
 B: 11 00 00 00 00 00 00 00 00
 B: 12 00 00 00 00 00 00 00 00
-A: 00 0 {config.max_x} 0 0 0
-A: 01 0 {config.max_y} 0 0 0
+A: 00 0 {max_x} 0 0 0
+A: 01 0 {max_y} 0 0 0
 A: 18 0 255 0 0 0
 A: 2f 0 9 0 0 0
-A: 30 0 {config.max_y} 0 0 0
-A: 31 0 {config.max_x} 0 0 0
+A: 30 0 {max_y} 0 0 0
+A: 31 0 {max_x} 0 0 0
 A: 34 -4096 4096 0 0 0
-A: 35 0 {config.max_x} 0 0 0
-A: 36 0 {config.max_y} 0 0 0
+A: 35 0 {max_x} 0 0 0
+A: 36 0 {max_y} 0 0 0
 A: 37 0 2 0 0 0
 A: 39 0 65535 0 0 0
 A: 3a 0 255 0 0 0"""
-  print(header)
-  sys.stdout.flush()
+  out.append(header)
 
 
-def generate_event(time: float, x: int, y: int,
-                   finger_down: bool) -> EvemuEvent:
+def generate_event(time: float, x: int, y: int, finger_down: bool,
+                   out: list[str]) -> None:
   event = EvemuEvent(time)
   event.set_btn_touch(1 if finger_down else 0)
   event.set_tracking_id(0 if finger_down else -1)
@@ -175,27 +144,27 @@ def generate_event(time: float, x: int, y: int,
   if finger_down:
     event.set_pressure(EvemuEvent.PRESSURE)
     event.set_touch_major(EvemuEvent.TOUCH_MAJOR)
-  return event
+  event.emit(out)
 
 
-def generate_swipes(time: float, direction: ScrollDirection,
-                    config: GeneratorConfig) -> float:
-  if direction is ScrollDirection.DOWN:
-    start_y = config.y_bottom()
-    end_y = config.y_top()
-  else:
-    start_y = config.y_top()
-    end_y = config.y_bottom()
+def generate_swipes(
+    time: float,
+    start_y: int,
+    end_y: int,
+    fixed_x: int,
+    config: GeneratorConfig,
+    out: list[str],
+) -> float:
+  period = 1.0 / config.input_rate
+  input_frames = int(config.swipe_duration.total_seconds() * config.input_rate)
+  settle_frames = int(config.settle_duration.total_seconds() *
+                      config.input_rate)
 
-  period = 1.0 / config.frequency
-  input_frames = int(SWIPE_DURATION_SEC * config.frequency)
-  settle_frames = int(SETTLE_DURATION_SEC * config.frequency)
-
-  for _ in range(SWIPES_PER_DIRECTION):
+  for _ in range(config.swipes_per_direction):
     cycle_start_time = time
 
     # 1. Touch down (1 frame)
-    generate_event(time, config.fixed_x(), start_y, finger_down=True).emit()
+    generate_event(time, fixed_x, start_y, finger_down=True, out=out)
     time += period
 
     # 2. Move (sinusoidal y-axis, no x-axis) (input_frames - 1)
@@ -205,35 +174,42 @@ def generate_swipes(time: float, direction: ScrollDirection,
       multiplier = (1 - math.cos(math.pi * progress)) / 2
       current_y_pos = start_y + (end_y - start_y) * multiplier
       generate_event(
-          time, config.fixed_x(), int(current_y_pos), finger_down=True).emit()
+          time, fixed_x, int(current_y_pos), finger_down=True, out=out)
       time += period
 
     # Frames generated: 1 Touch Down Frame + (input_frames - 1) = input_frames
     # 3. Settle Time (Idle with finger on screen to prevent fling effect)
     for _ in range(settle_frames):
-      generate_event(time, config.fixed_x(), end_y, finger_down=True).emit()
+      generate_event(time, fixed_x, end_y, finger_down=True, out=out)
       time += period
 
     # 4. Lift finger (Idle with finger off screen)
-    generate_event(time, config.fixed_x(), end_y, finger_down=False).emit()
+    generate_event(time, fixed_x, end_y, finger_down=False, out=out)
 
     # 5. User's finger moves while NOT touching the screen,
     # reaching its new location, from which it will swipe again.
-    time = cycle_start_time + SINGLE_CYCLE_DURATION
+    time = cycle_start_time + config.single_cycle.total_seconds()
 
   return time
 
 
-def main(argv: Sequence[str]) -> None:
-  config = parse_arguments(argv)
-  print_header(config)
+def generate_scroll_commands(config: GeneratorConfig,
+                             display_resolution: tuple[int, int]) -> str:
+  max_x, max_y = display_resolution
+  assert max_x > 0
+  assert max_y > 0
 
+  fixed_x = int(0.5 * max_x)
+  y_top = int(0.2 * max_y)
+  y_bottom = int(0.8 * max_y)
+
+  out: list[str] = []
+  emit_header(max_x, max_y, out)
   time = 0.0
+  for _ in range(config.scroll_count):
+    # Scroll Down (swipe starts at y_bottom and moves to y_top)
+    time = generate_swipes(time, y_bottom, y_top, fixed_x, config, out)
+    # Scroll Up (swipe starts at y_top and moves to y_bottom)
+    time = generate_swipes(time, y_top, y_bottom, fixed_x, config, out)
 
-  for _ in range(config.repetitions):
-    time = generate_swipes(time, ScrollDirection.DOWN, config)
-    time = generate_swipes(time, ScrollDirection.UP, config)
-
-
-if __name__ == "__main__":
-  main(sys.argv[1:])
+  return "\n".join(out) + "\n"
