@@ -611,8 +611,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       sys.exit(0)
 
   def _process_args(self, args: argparse.Namespace) -> None:
-    args.has_explicit_network = (
-        bool(args.network) or bool(args.network_config))
     if args.config:
       self._process_config_args(args)
     else:
@@ -622,13 +620,16 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       self._process_network_args(args)
 
   def _process_network_args(self, args: argparse.Namespace) -> None:
+    args.has_explicit_network = False
+
     # The order of preference of flags is as follows:
     # Explicitly specified network config > explicitly specified network >
     # benchmark-specific network config > default network.
     if network_config := args.network_config:
       args.network = network_config
+      args.has_explicit_network = True
     elif args.network:
-      pass
+      args.has_explicit_network = True
     elif network_config := self._benchmark_cls.default_network_config_path():
       args.network = network_config
     else:
@@ -659,6 +660,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     config_file = args.config
     config_data = ObjectParser.hjson_file(config_file)
     found_any_config = False
+    args.has_explicit_network = bool(args.network)
 
     if env_config_data := config_data.get("env"):
       args.env = EnvConfig.parse(env_config_data)
@@ -666,6 +668,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     else:
       logging.warning("Skipping env config: no 'env' property in %s",
                       config_file)
+
     if not args.env:
       args.env = EnvConfig.default()
 
