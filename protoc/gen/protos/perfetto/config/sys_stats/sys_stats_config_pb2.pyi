@@ -9,7 +9,7 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class SysStatsConfig(_message.Message):
-    __slots__ = ("meminfo_period_ms", "meminfo_counters", "vmstat_period_ms", "vmstat_counters", "stat_period_ms", "stat_counters", "devfreq_period_ms", "cpufreq_period_ms", "buddyinfo_period_ms", "diskstat_period_ms", "psi_period_ms", "thermal_period_ms", "cpuidle_period_ms", "gpufreq_period_ms")
+    __slots__ = ("meminfo_period_ms", "meminfo_counters", "vmstat_period_ms", "vmstat_counters", "stat_period_ms", "stat_counters", "devfreq_period_ms", "cpufreq_period_ms", "buddyinfo_period_ms", "diskstat_period_ms", "psi_period_ms", "thermal_period_ms", "cpuidle_period_ms", "gpufreq_period_ms", "slab_period_ms")
     class StatCounters(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         STAT_UNSPECIFIED: _ClassVar[SysStatsConfig.StatCounters]
@@ -36,6 +36,7 @@ class SysStatsConfig(_message.Message):
     THERMAL_PERIOD_MS_FIELD_NUMBER: _ClassVar[int]
     CPUIDLE_PERIOD_MS_FIELD_NUMBER: _ClassVar[int]
     GPUFREQ_PERIOD_MS_FIELD_NUMBER: _ClassVar[int]
+    SLAB_PERIOD_MS_FIELD_NUMBER: _ClassVar[int]
     meminfo_period_ms: int
     meminfo_counters: _containers.RepeatedScalarFieldContainer[_sys_stats_counters_pb2.MeminfoCounters]
     vmstat_period_ms: int
@@ -50,4 +51,5 @@ class SysStatsConfig(_message.Message):
     thermal_period_ms: int
     cpuidle_period_ms: int
     gpufreq_period_ms: int
-    def __init__(self, meminfo_period_ms: _Optional[int] = ..., meminfo_counters: _Optional[_Iterable[_Union[_sys_stats_counters_pb2.MeminfoCounters, str]]] = ..., vmstat_period_ms: _Optional[int] = ..., vmstat_counters: _Optional[_Iterable[_Union[_sys_stats_counters_pb2.VmstatCounters, str]]] = ..., stat_period_ms: _Optional[int] = ..., stat_counters: _Optional[_Iterable[_Union[SysStatsConfig.StatCounters, str]]] = ..., devfreq_period_ms: _Optional[int] = ..., cpufreq_period_ms: _Optional[int] = ..., buddyinfo_period_ms: _Optional[int] = ..., diskstat_period_ms: _Optional[int] = ..., psi_period_ms: _Optional[int] = ..., thermal_period_ms: _Optional[int] = ..., cpuidle_period_ms: _Optional[int] = ..., gpufreq_period_ms: _Optional[int] = ...) -> None: ...
+    slab_period_ms: int
+    def __init__(self, meminfo_period_ms: _Optional[int] = ..., meminfo_counters: _Optional[_Iterable[_Union[_sys_stats_counters_pb2.MeminfoCounters, str]]] = ..., vmstat_period_ms: _Optional[int] = ..., vmstat_counters: _Optional[_Iterable[_Union[_sys_stats_counters_pb2.VmstatCounters, str]]] = ..., stat_period_ms: _Optional[int] = ..., stat_counters: _Optional[_Iterable[_Union[SysStatsConfig.StatCounters, str]]] = ..., devfreq_period_ms: _Optional[int] = ..., cpufreq_period_ms: _Optional[int] = ..., buddyinfo_period_ms: _Optional[int] = ..., diskstat_period_ms: _Optional[int] = ..., psi_period_ms: _Optional[int] = ..., thermal_period_ms: _Optional[int] = ..., cpuidle_period_ms: _Optional[int] = ..., gpufreq_period_ms: _Optional[int] = ..., slab_period_ms: _Optional[int] = ...) -> None: ...

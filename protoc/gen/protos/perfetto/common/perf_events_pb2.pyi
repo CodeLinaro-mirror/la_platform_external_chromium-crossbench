@@ -104,16 +104,18 @@ class PerfEvents(_message.Message):
         filter: str
         def __init__(self, name: _Optional[str] = ..., filter: _Optional[str] = ...) -> None: ...
     class RawEvent(_message.Message):
-        __slots__ = ("type", "config", "config1", "config2")
+        __slots__ = ("type", "config", "config1", "config2", "pmu_name")
         TYPE_FIELD_NUMBER: _ClassVar[int]
         CONFIG_FIELD_NUMBER: _ClassVar[int]
         CONFIG1_FIELD_NUMBER: _ClassVar[int]
         CONFIG2_FIELD_NUMBER: _ClassVar[int]
+        PMU_NAME_FIELD_NUMBER: _ClassVar[int]
         type: int
         config: int
         config1: int
         config2: int
-        def __init__(self, type: _Optional[int] = ..., config: _Optional[int] = ..., config1: _Optional[int] = ..., config2: _Optional[int] = ...) -> None: ...
+        pmu_name: str
+        def __init__(self, type: _Optional[int] = ..., config: _Optional[int] = ..., config1: _Optional[int] = ..., config2: _Optional[int] = ..., pmu_name: _Optional[str] = ...) -> None: ...
     def __init__(self) -> None: ...
 
 class FollowerEvent(_message.Message):

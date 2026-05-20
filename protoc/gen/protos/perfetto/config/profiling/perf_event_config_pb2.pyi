@@ -9,7 +9,7 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class PerfEventConfig(_message.Message):
-    __slots__ = ("timebase", "followers", "callstack_sampling", "target_cpu", "ring_buffer_read_period_ms", "ring_buffer_pages", "max_enqueued_footprint_kb", "max_daemon_memory_kb", "remote_descriptor_timeout_ms", "unwind_state_clear_period_ms", "target_installed_by", "all_cpus", "sampling_frequency", "kernel_frames", "target_pid", "target_cmdline", "exclude_pid", "exclude_cmdline", "additional_cmdline_count")
+    __slots__ = ("timebase", "followers", "callstack_sampling", "target_cpu", "ignore_open_failure", "cpuid", "ring_buffer_read_period_ms", "ring_buffer_pages", "max_enqueued_footprint_kb", "max_daemon_memory_kb", "remote_descriptor_timeout_ms", "unwind_state_clear_period_ms", "target_installed_by", "all_cpus", "sampling_frequency", "kernel_frames", "target_pid", "target_cmdline", "exclude_pid", "exclude_cmdline", "additional_cmdline_count")
     class UnwindMode(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         UNWIND_UNKNOWN: _ClassVar[PerfEventConfig.UnwindMode]
@@ -48,6 +48,8 @@ class PerfEventConfig(_message.Message):
     FOLLOWERS_FIELD_NUMBER: _ClassVar[int]
     CALLSTACK_SAMPLING_FIELD_NUMBER: _ClassVar[int]
     TARGET_CPU_FIELD_NUMBER: _ClassVar[int]
+    IGNORE_OPEN_FAILURE_FIELD_NUMBER: _ClassVar[int]
+    CPUID_FIELD_NUMBER: _ClassVar[int]
     RING_BUFFER_READ_PERIOD_MS_FIELD_NUMBER: _ClassVar[int]
     RING_BUFFER_PAGES_FIELD_NUMBER: _ClassVar[int]
     MAX_ENQUEUED_FOOTPRINT_KB_FIELD_NUMBER: _ClassVar[int]
@@ -67,6 +69,8 @@ class PerfEventConfig(_message.Message):
     followers: _containers.RepeatedCompositeFieldContainer[_perf_events_pb2.FollowerEvent]
     callstack_sampling: PerfEventConfig.CallstackSampling
     target_cpu: _containers.RepeatedScalarFieldContainer[int]
+    ignore_open_failure: bool
+    cpuid: _containers.RepeatedScalarFieldContainer[str]
     ring_buffer_read_period_ms: int
     ring_buffer_pages: int
     max_enqueued_footprint_kb: int
@@ -82,4 +86,4 @@ class PerfEventConfig(_message.Message):
     exclude_pid: _containers.RepeatedScalarFieldContainer[int]
     exclude_cmdline: _containers.RepeatedScalarFieldContainer[str]
     additional_cmdline_count: int
-    def __init__(self, timebase: _Optional[_Union[_perf_events_pb2.PerfEvents.Timebase, _Mapping]] = ..., followers: _Optional[_Iterable[_Union[_perf_events_pb2.FollowerEvent, _Mapping]]] = ..., callstack_sampling: _Optional[_Union[PerfEventConfig.CallstackSampling, _Mapping]] = ..., target_cpu: _Optional[_Iterable[int]] = ..., ring_buffer_read_period_ms: _Optional[int] = ..., ring_buffer_pages: _Optional[int] = ..., max_enqueued_footprint_kb: _Optional[int] = ..., max_daemon_memory_kb: _Optional[int] = ..., remote_descriptor_timeout_ms: _Optional[int] = ..., unwind_state_clear_period_ms: _Optional[int] = ..., target_installed_by: _Optional[_Iterable[str]] = ..., all_cpus: _Optional[bool] = ..., sampling_frequency: _Optional[int] = ..., kernel_frames: _Optional[bool] = ..., target_pid: _Optional[_Iterable[int]] = ..., target_cmdline: _Optional[_Iterable[str]] = ..., exclude_pid: _Optional[_Iterable[int]] = ..., exclude_cmdline: _Optional[_Iterable[str]] = ..., additional_cmdline_count: _Optional[int] = ...) -> None: ...
+    def __init__(self, timebase: _Optional[_Union[_perf_events_pb2.PerfEvents.Timebase, _Mapping]] = ..., followers: _Optional[_Iterable[_Union[_perf_events_pb2.FollowerEvent, _Mapping]]] = ..., callstack_sampling: _Optional[_Union[PerfEventConfig.CallstackSampling, _Mapping]] = ..., target_cpu: _Optional[_Iterable[int]] = ..., ignore_open_failure: _Optional[bool] = ..., cpuid: _Optional[_Iterable[str]] = ..., ring_buffer_read_period_ms: _Optional[int] = ..., ring_buffer_pages: _Optional[int] = ..., max_enqueued_footprint_kb: _Optional[int] = ..., max_daemon_memory_kb: _Optional[int] = ..., remote_descriptor_timeout_ms: _Optional[int] = ..., unwind_state_clear_period_ms: _Optional[int] = ..., target_installed_by: _Optional[_Iterable[str]] = ..., all_cpus: _Optional[bool] = ..., sampling_frequency: _Optional[int] = ..., kernel_frames: _Optional[bool] = ..., target_pid: _Optional[_Iterable[int]] = ..., target_cmdline: _Optional[_Iterable[str]] = ..., exclude_pid: _Optional[_Iterable[int]] = ..., exclude_cmdline: _Optional[_Iterable[str]] = ..., additional_cmdline_count: _Optional[int] = ...) -> None: ...

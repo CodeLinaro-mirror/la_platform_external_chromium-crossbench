@@ -89,6 +89,8 @@ class RunnerStateMachine(StateMachine[RunnerState]):
     super().transition(*args, to=to)
     with self._status_lock:
       self._write_nolock()
+      if to >= RunnerState.DONE:
+        atexit.unregister(self._atexit_handler)
 
   def interrupt(self) -> None:
     with self._status_lock:

@@ -16,11 +16,13 @@ class SurfaceFlingerLayersConfig(_message.Message):
         MODE_GENERATED: _ClassVar[SurfaceFlingerLayersConfig.Mode]
         MODE_DUMP: _ClassVar[SurfaceFlingerLayersConfig.Mode]
         MODE_GENERATED_BUGREPORT_ONLY: _ClassVar[SurfaceFlingerLayersConfig.Mode]
+        MODE_PROTOVM: _ClassVar[SurfaceFlingerLayersConfig.Mode]
     MODE_UNSPECIFIED: SurfaceFlingerLayersConfig.Mode
     MODE_ACTIVE: SurfaceFlingerLayersConfig.Mode
     MODE_GENERATED: SurfaceFlingerLayersConfig.Mode
     MODE_DUMP: SurfaceFlingerLayersConfig.Mode
     MODE_GENERATED_BUGREPORT_ONLY: SurfaceFlingerLayersConfig.Mode
+    MODE_PROTOVM: SurfaceFlingerLayersConfig.Mode
     class TraceFlag(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         TRACE_FLAG_UNSPECIFIED: _ClassVar[SurfaceFlingerLayersConfig.TraceFlag]

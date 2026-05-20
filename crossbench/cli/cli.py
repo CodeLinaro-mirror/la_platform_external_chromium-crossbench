@@ -5,12 +5,15 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import logging
 import os
 import sys
 import textwrap
 import traceback
-from typing import IO, TYPE_CHECKING, Any, Sequence, Type, TypeAlias, TypeVar
+from typing import IO, TYPE_CHECKING, Any, Iterator, Sequence, Type, \
+    TypeAlias, TypeVar
 
 import tabulate as tbl
 from typing_extensions import override
@@ -26,6 +29,7 @@ from crossbench.cli.subcommand.devtools_recorder_proxy.subcommand import \
     DevtoolsRecorderProxySubcommand
 from crossbench.cli.subcommand.help import HelpSubcommand
 from crossbench.cli.subcommand.mcp import McpSubcommand
+from crossbench.cli.subcommand.perfetto import PerfettoCrossbenchSubcommand
 from crossbench.cli.subcommand.pinpoint import PinpointSubcommand
 from crossbench.cli.subcommand.setup_cross_platform_mode import \
     SetupCrossPlatformModeSubcommand
@@ -200,14 +204,23 @@ class CrossBenchCLI:
     self._setup_subcommands()
 
   def _setup_subcommands(self) -> None:
-    self._add_subcommand(DescribeSubcommand)
+    self._setup_core_subcommands()
+    self._setup_tools_subcommands()
+    self._setup_benchmark_subcommands()
+
+  def _setup_core_subcommands(self) -> None:
     self._add_subcommand(HelpSubcommand)
+    self._add_subcommand(DescribeSubcommand)
     self._add_subcommand(VersionSubcommand)
+
+  def _setup_tools_subcommands(self) -> None:
     self._add_subcommand(DevtoolsRecorderProxySubcommand)
+    self._add_subcommand(McpSubcommand)
+    self._add_subcommand(PerfettoCrossbenchSubcommand)
     self._add_subcommand(PinpointSubcommand)
     self._add_subcommand(SetupCrossPlatformModeSubcommand)
-    self._add_subcommand(McpSubcommand)
 
+  def _setup_benchmark_subcommands(self) -> None:
     for benchmark_cls in self.BENCHMARKS:
       subcommand = BenchmarkSubcommand(self, benchmark_cls)
       subcommand.register_subcommand(self.subparsers)
@@ -385,7 +398,7 @@ class CrossBenchCLI:
     else:
       parser.error(message)
 
-  def _init_logging(self, argv: Sequence[str]) -> None:
+  def _init_logging(self, argv: Sequence[str] | None = None) -> None:
     sys.excepthook = exception_formatter.excepthook
     assert self._console_handler is None
     if not self._enable_logging:
@@ -401,6 +414,8 @@ class CrossBenchCLI:
     logging.getLogger().handlers = []
     logging.getLogger().addHandler(self._console_handler)
 
+    if argv is None:
+      argv = sys.argv
     # Manually extract values to allow logging for failing arguments.
     if self._has_debug_logging_argv(argv):
       self._console_handler.setLevel(logging.DEBUG)
@@ -423,14 +438,15 @@ class CrossBenchCLI:
     if not self._enable_logging:
       return
     assert self._console_handler, "Missing console handler"
-    if self.args.verbosity == -1:
+    verbosity = getattr(self.args, "verbosity", 0)
+    if verbosity == -1:
       self._console_handler.setLevel(logging.ERROR)
-    elif self.args.verbosity == 0:
+    elif verbosity == 0:
       self._console_handler.setLevel(logging.INFO)
-    elif self.args.verbosity >= 1:
+    elif verbosity >= 1:
       self._console_handler.setLevel(logging.DEBUG)
       logging.getLogger().setLevel(logging.DEBUG)
-    if not self.args.color:
+    if not getattr(self.args, "color", True):
       ui.COLOR_LOGGING = False
     if ui.COLOR_LOGGING:
       self._console_handler.setFormatter(ui.ColoredLogFormatter())
@@ -445,3 +461,33 @@ class CrossBenchCLI:
     self._console_handler.flush()
     logging.getLogger().removeHandler(self._console_handler)
     self._console_handler = None
+
+  @contextlib.contextmanager
+  def silenced_logging(self, capture_stderr: bool = True) -> Iterator[None]:
+    """Temporarily silence all logging during a context block.
+
+    All stdout and stderr output is redirected and captured. The capture is
+    only written to sys.stderr if an exception occurs. This is useful for
+    background tasks to avoid cluttering the console.
+    """
+    log_capture_string = io.StringIO()
+    self._teardown_logging()
+    try:
+      with contextlib.ExitStack() as stack:
+        if capture_stderr:
+          stack.enter_context(contextlib.redirect_stderr(log_capture_string))
+        stack.enter_context(contextlib.redirect_stdout(log_capture_string))
+
+        self._init_logging()
+        self._setup_logging()
+        try:
+          yield
+        finally:
+          self._teardown_logging()
+    except Exception:
+      # Expose full log content on error.
+      sys.stderr.write(log_capture_string.getvalue())
+      raise
+    finally:
+      self._init_logging()
+      self._setup_logging()

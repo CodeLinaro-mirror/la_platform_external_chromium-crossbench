@@ -7,9 +7,11 @@ from typing import ClassVar as _ClassVar, Optional as _Optional
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class PackagesListConfig(_message.Message):
-    __slots__ = ("package_name_filter", "only_write_on_cpu_use_every_ms")
+    __slots__ = ("package_name_filter", "package_name_regex_filter", "only_write_on_cpu_use_every_ms")
     PACKAGE_NAME_FILTER_FIELD_NUMBER: _ClassVar[int]
+    PACKAGE_NAME_REGEX_FILTER_FIELD_NUMBER: _ClassVar[int]
     ONLY_WRITE_ON_CPU_USE_EVERY_MS_FIELD_NUMBER: _ClassVar[int]
     package_name_filter: _containers.RepeatedScalarFieldContainer[str]
+    package_name_regex_filter: _containers.RepeatedScalarFieldContainer[str]
     only_write_on_cpu_use_every_ms: int
-    def __init__(self, package_name_filter: _Optional[_Iterable[str]] = ..., only_write_on_cpu_use_every_ms: _Optional[int] = ...) -> None: ...
+    def __init__(self, package_name_filter: _Optional[_Iterable[str]] = ..., package_name_regex_filter: _Optional[_Iterable[str]] = ..., only_write_on_cpu_use_every_ms: _Optional[int] = ...) -> None: ...

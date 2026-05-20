@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import base64
 import datetime as dt
 import logging
 import os
@@ -31,6 +32,8 @@ from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper import wait
 from crossbench.helper.url_helper import get
+from protoc.gen.protos.perfetto.common.track_event_descriptor_pb2 import \
+    TrackEventDescriptor
 
 if TYPE_CHECKING:
   import re
@@ -78,6 +81,23 @@ class ChromiumBasedWebDriver(
         "cmd": cmd,
         "params": cmd_args
     })["value"]
+
+  def perfetto_categories(self) -> TrackEventDescriptor:
+    descriptor = TrackEventDescriptor()
+    response = self._execute_cdp_cmd(self._private_driver,
+                                     "Tracing.getTrackEventDescriptor", {})
+    if descriptor_b64 := response.get("descriptor", ""):
+      data = base64.b64decode(descriptor_b64)
+      descriptor.ParseFromString(data)
+      return descriptor
+
+    # Fallback to get plain category names without descriptions or tags.
+    res = self._execute_cdp_cmd(self._private_driver, "Tracing.getCategories",
+                                {})
+    for c in res.get("categories", []):
+      cat = descriptor.available_categories.add()
+      cat.name = c
+    return descriptor
 
   @override
   def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:

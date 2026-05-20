@@ -15,6 +15,7 @@ class BuiltinClock(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     BUILTIN_CLOCK_BOOTTIME: _ClassVar[BuiltinClock]
     BUILTIN_CLOCK_TSC: _ClassVar[BuiltinClock]
     BUILTIN_CLOCK_PERF: _ClassVar[BuiltinClock]
+    BUILTIN_CLOCK_TRACE_FILE: _ClassVar[BuiltinClock]
     BUILTIN_CLOCK_MAX_ID: _ClassVar[BuiltinClock]
 BUILTIN_CLOCK_UNKNOWN: BuiltinClock
 BUILTIN_CLOCK_REALTIME: BuiltinClock
@@ -25,4 +26,5 @@ BUILTIN_CLOCK_MONOTONIC_RAW: BuiltinClock
 BUILTIN_CLOCK_BOOTTIME: BuiltinClock
 BUILTIN_CLOCK_TSC: BuiltinClock
 BUILTIN_CLOCK_PERF: BuiltinClock
+BUILTIN_CLOCK_TRACE_FILE: BuiltinClock
 BUILTIN_CLOCK_MAX_ID: BuiltinClock

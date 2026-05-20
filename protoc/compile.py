@@ -26,6 +26,8 @@ PROTO_MODULES = [
     "frameworks.proto_logging.stats.enums.os.enums_pb2",
     "protos.perfetto.config.trace_config_pb2",
     "protos.perfetto.trace_summary.file_pb2",
+    "protos.perfetto.common.tracing_service_state_pb2",
+    "protos.perfetto.common.track_event_descriptor_pb2",
 ]
 
 
