@@ -66,7 +66,6 @@ use Ethernet connection.
 * Run `./cb.py setup_cross_platform_mode --interface <interface>`, it will guide
   you through the network setup process (requires root on the host). Keep it
   running in a separate terminal window for the entire benchmark run.
-* Run `./cb.py loadline2-phone-webapi --browser <browser>`, where browser can
+* Run `./cb.py loadline2-webapi-phone --browser <browser>`, where browser can
   be one of `android:chrome` or `ios:safari`. This command also requires root on
   the host.
-
