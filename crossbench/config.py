@@ -67,11 +67,10 @@ class ConfigArgParser:
     self.required: Final[bool] = required
     self.help: Final[str | None] = help
     self.is_list: Final[bool] = is_list
-    type_is_class = inspect.isclass(type)
+    type_is_class: bool = inspect.isclass(type)
     self.type_is_class: Final[bool] = type_is_class
     self.is_enum: Final[bool] = type_is_class and issubclass(
-        type,  # type: ignore
-        enum.Enum)
+        type, enum.Enum)  # type: ignore[arg-type]
     self.config_object_type: Final[builtins.type[ConfigObject]
                                    | None] = self._validate_config_object_type(
                                        type)

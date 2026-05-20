@@ -98,6 +98,20 @@ class MacOSPlatform(PosixPlatform):
   def name(self) -> str:
     return "macos"
 
+  @override
+  def _mktemp_sh(self,
+                 is_dir: bool,
+                 suffix: str | None = None,
+                 prefix: str | None = None,
+                 dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
+    temp_path = super()._mktemp_sh(is_dir, suffix=None, prefix=prefix, dir=dir)
+    if not suffix:
+      return temp_path
+    # BSD mktemp on macOS requires trailing Xs and does not support suffixes.
+    temp_path_with_suffix = temp_path.with_name(f"{temp_path.name}{suffix}")
+    self.rename(temp_path, temp_path_with_suffix)
+    return temp_path_with_suffix
+
   @property
   def signals(self) -> type[MacOSSignals]:
     return MacOSSignals

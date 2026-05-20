@@ -33,9 +33,7 @@ if TYPE_CHECKING:
 
 
 def get_all_subclasses(cls: type) -> set:
-  """
-    Recursively gets all subclasses of a given class.
-    """
+  """Recursively gets all subclasses of a given class."""
   all_subclasses = set()
   for subclass in cls.__subclasses__():
     if not is_abstract(subclass):
