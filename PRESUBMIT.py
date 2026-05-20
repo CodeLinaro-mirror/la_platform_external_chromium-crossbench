@@ -8,6 +8,7 @@ from __future__ import annotations
 import pathlib
 import platform
 import re
+import shutil
 import subprocess
 from typing import Any
 
@@ -53,6 +54,30 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
       excluded_paths=SOURCE_SKIP_RE,
       owners_check=False,
   )
+
+  # ---------------------------------------------------------------------------
+  # Poetry Lock Validation:
+  # ---------------------------------------------------------------------------
+  if shutil.which("poetry", path=input_api.environ.get("PATH")):
+    tests.append(
+        input_api.Command(
+            name="poetry check --lock",
+            cmd=[
+                "poetry",
+                "check",
+                "--no-interaction",
+                "--lock",
+                "-C",
+                str(root_path),
+            ],
+            message=output_api.PresubmitError,
+            kwargs={},
+            python3=True,
+        ))
+  else:
+    results.append(
+        output_api.PresubmitPromptWarning(
+            "poetry not found in PATH, skipping lock file validation."))
 
   # ---------------------------------------------------------------------------
   # Ruff:
