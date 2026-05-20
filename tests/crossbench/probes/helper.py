@@ -4,19 +4,46 @@
 
 from __future__ import annotations
 
+import abc
 import copy
 import json
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence
+
+from typing_extensions import override
 
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
-from tests.crossbench.base import BaseCrossbenchTestCase
+from tests.crossbench.base import BaseCrossbenchTestCase, \
+    CrossbenchFakeFsTestCase, CrossbenchPlatformMockMixin
+from tests.crossbench.mock_helper import MockPlatform
+from tests.crossbench.runner.helper import CrossbenchMagicMockMixin
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.probes.probe import Probe
+
+
+class BaseProbeTestCase(
+    CrossbenchPlatformMockMixin,
+    CrossbenchMagicMockMixin,
+    CrossbenchFakeFsTestCase,
+    metaclass=abc.ABCMeta):
+
+  @override
+  def setUp(self) -> None:
+    self.platform = self.setup_platform()
+    self.platform.use_fs = True
+    super().setUp()
+    self.setup_platform_mock()
+
+  def setup_platform(self) -> MockPlatform:
+    return MockPlatform()
+
+  def tearDown(self) -> None:
+    self.assertListEqual(self.platform.sh_results, [])
+    super().tearDown()
 
 
 class GenericProbeTestCase(BaseCrossbenchTestCase):

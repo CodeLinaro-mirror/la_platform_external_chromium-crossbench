@@ -10,13 +10,16 @@ from typing_extensions import override
 
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
     ProbeIncompatibleBrowser
-from crossbench.probes.results import LocalProbeResult, ProbeResult
+from crossbench.probes.probe_context import BaseProbeContext, \
+    ProbeSessionContext
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.plt.android_adb import AndroidAdbPlatform
-  from crossbench.runner.run import Run
+  from crossbench.probes.results import ProbeResult
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 class LogcatAndroidProbe(Probe):
@@ -55,11 +58,17 @@ class LogcatAndroidProbe(Probe):
   def get_context_cls(self) -> type[AndroidLogcatProbeContext]:
     return AndroidLogcatProbeContext
 
+  @override
+  def create_session_context(
+      self: Self,
+      session: BrowserSessionRunGroup) -> AndroidLogcatProbeSessionContext:
+    return AndroidLogcatProbeSessionContext(self, session)
 
-class AndroidLogcatProbeContext(ProbeContext[LogcatAndroidProbe]):
 
-  def __init__(self, probe: LogcatAndroidProbe, run: Run) -> None:
-    super().__init__(probe, run)
+class AndroidLogcatProbeContextMixin(BaseProbeContext[LogcatAndroidProbe]):
+
+  def __init__(self, *args, **kwargs) -> None:
+    super().__init__(*args, **kwargs)
     self._logcat_start_time: str | None = None
 
   def _get_browser_platform_time(self) -> str:
@@ -70,24 +79,15 @@ class AndroidLogcatProbeContext(ProbeContext[LogcatAndroidProbe]):
     self.browser_platform.sh("log", "-t", "crossbench", msg)
 
   @property
-  @override
   def browser_platform(self) -> AndroidAdbPlatform:
-    browser_platform = super().browser_platform
+    browser_platform = super().browser_platform  # type: ignore
     assert browser_platform.is_android, (
         f"Expected android platform, but got {browser_platform}")
     return cast("AndroidAdbPlatform", browser_platform)
 
-  def start(self) -> None:
-    self._logcat_start_time = self._get_browser_platform_time()
-    self._log_to_logcat("logcat probe start")
-
-  def stop(self) -> None:
-    self._log_to_logcat("logcat probe end")
-
-  def teardown(self) -> ProbeResult:
+  def _capture_logcat_file(self, dest_file: pth.LocalPath) -> None:
     assert self._logcat_start_time, "Missing logcat start time"
-    file = self.local_result_path.with_suffix(".txt")
-    with file.open("w", encoding="utf-8") as f:
+    with dest_file.open("w", encoding="utf-8") as f:
       self.browser_platform.sh(
           "logcat",
           "-t",
@@ -95,4 +95,38 @@ class AndroidLogcatProbeContext(ProbeContext[LogcatAndroidProbe]):
           *self.probe.filterspec,
           stdout=f)
 
-    return LocalProbeResult(perfetto=(file,))
+  def teardown(self) -> ProbeResult:
+    file = self.local_result_path.with_suffix(".txt")
+    self._capture_logcat_file(file)
+    return self.local_result(txt=(file,))
+
+
+class AndroidLogcatProbeContext(AndroidLogcatProbeContextMixin,
+                                ProbeContext[LogcatAndroidProbe]):
+
+  @override
+  def start(self) -> None:
+    self._logcat_start_time = self._get_browser_platform_time()
+    self._log_to_logcat("logcat probe start")
+
+  @override
+  def stop(self) -> None:
+    self._log_to_logcat("logcat probe end")
+
+
+class AndroidLogcatProbeSessionContext(AndroidLogcatProbeContextMixin,
+                                       ProbeSessionContext[LogcatAndroidProbe]):
+
+  @override
+  def get_default_result_path(self) -> pth.AnyPath:
+    path = super().get_default_result_path()
+    return path.with_name(f"{path.name}.session")
+
+  @override
+  def start(self) -> None:
+    self._logcat_start_time = self._get_browser_platform_time()
+    self._log_to_logcat("logcat session probe start")
+
+  @override
+  def stop(self) -> None:
+    self._log_to_logcat("logcat session probe end")

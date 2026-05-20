@@ -12,7 +12,7 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Final, Iterator, Sequence
+from typing import TYPE_CHECKING, Callable, Final, Iterator, Sequence
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -146,9 +146,26 @@ class CrossbenchConfigTestMixin:
     self.fs.add_real_directory(config_dir, lazy_read=True)
 
 
+class CrossbenchPlatformMockMixin:
+  if TYPE_CHECKING:
+    platform: plt.Platform
+    addCleanup: Callable[..., None]  # noqa: N815
+
+  def setup_platform_mock(self) -> None:
+    platform_id_patcher = mock.patch("crossbench.plt.base._NEXT_PLATFORM_ID",
+                                     777)
+    platform_id_patcher.start()
+    self.addCleanup(platform_id_patcher.stop)
+
+    mock_platform_patcher = mock.patch("crossbench.plt.PLATFORM", self.platform)
+    mock_platform_patcher.start()
+    self.addCleanup(mock_platform_patcher.stop)
+
+
 class BaseCrossbenchTestCase(
     CrossbenchConfigTestMixin,
     CrossbenchMockArgsMixin,
+    CrossbenchPlatformMockMixin,
     CrossbenchFakeFsTestCase,
     metaclass=abc.ABCMeta):
 
@@ -166,16 +183,10 @@ class BaseCrossbenchTestCase(
     # Reset the platform ID counter for each test
     # The PLATFORM singleton is created at import time, so we need to patch
     # the counter in the base module.
-    self.platform_id_patcher = mock.patch(
-        "crossbench.plt.base._NEXT_PLATFORM_ID", 777)
-    self.platform_id_patcher.start()
-    self.addCleanup(self.platform_id_patcher.stop)
+    self.setup_platform_mock()
 
     self._default_log_level = logging.getLogger().getEffectiveLevel()
     logging.getLogger().setLevel(logging.CRITICAL)
-    mock_platform_patcher = mock.patch("crossbench.plt.PLATFORM", self.platform)
-    mock_platform_patcher.start()
-    self.addCleanup(mock_platform_patcher.stop)
 
     for mock_browser_cls in mock_browser.ALL:
       mock_browser_cls.setup_fs(self.fs, self.platform)

@@ -9,20 +9,24 @@ import datetime as dt
 import json
 import pathlib
 from typing import TYPE_CHECKING, Any, Iterable, NamedTuple
+from unittest import mock
 
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
 from crossbench.env.runner_env import RunnerEnv
 from crossbench.exception import Annotator
+from crossbench.helper.durations import Durations
 from crossbench.helper.wait import WaitRange
 from crossbench.path import AnyPath, safe_filename
 from crossbench.probes.probe import Probe
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 from crossbench.runner.actions import Actions
+from crossbench.runner.result_origin import ResultOrigin
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -30,6 +34,7 @@ from tests.crossbench.mock_browser import MockChromeDev, MockFirefox
 from tests.crossbench.mock_helper import MockBenchmark, MockStory
 
 if TYPE_CHECKING:
+  from crossbench import plt
   from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
@@ -49,7 +54,7 @@ class MockBrowser:
     return self.unique_name
 
 
-class MockRun:
+class MockRun(ResultOrigin):
 
   def __init__(self,
                runner,
@@ -63,16 +68,17 @@ class MockRun:
                name="run 0",
                probe=None,
                probe_context=None) -> None:
-    self.runner = runner
+    self._runner = runner
     self.browser_session = browser_session
-    self.browser = browser_session.browser
-    self.browser_platform = self.browser.platform
+    self._browser = browser_session.browser
     self._exceptions = Annotator(False)
+    self._durations = Durations()
+    self._browser_tmp_dir = pth.AnyPath("/browser_tmp")
     self.repetition = repetition
     self.is_warmup = is_warmup
     self.temperature = temperature
     self.name = name
-    self.probes: list[Probe] = [probe]
+    self._probes: list[Probe] = [probe]
     self.probe_context: ProbeContext | None = probe_context
     self.timing = Timing()
     self.is_success = True
@@ -80,10 +86,10 @@ class MockRun:
     self.story = story
     self.action_runner: ActionRunner = action_runner or DefaultActionRunner()
     self.story_secrets = Secrets()
-    self.out_dir = (
-        browser_session.root_dir / safe_filename(self.browser.unique_name) /
+    self._out_dir = (
+        browser_session.root_dir / safe_filename(self._browser.unique_name) /
         "stories" / name / f"repetition={self.repetition}" / self.temperature)
-    self.group_dir = self.out_dir.parent
+    self.group_dir = self._out_dir.parent
     self.did_setup = False
     self.did_run = False
     self.did_teardown = False
@@ -109,8 +115,48 @@ class MockRun:
     self.probe_context = probe_context
 
   @property
+  def runner(self) -> Runner:
+    return self._runner
+
+  @runner.setter
+  def runner(self, value: Runner) -> None:
+    self._runner = value
+
+  @property
+  def probes(self) -> list[Probe]:
+    return self._probes
+
+  @probes.setter
+  def probes(self, value: list[Probe]) -> None:
+    self._probes = value
+
+  @property
+  def browser(self) -> Browser:
+    return self._browser
+
+  @browser.setter
+  def browser(self, value: Browser) -> None:
+    self._browser = value
+
+  @property
+  def out_dir(self) -> pth.LocalPath:
+    return self._out_dir
+
+  @out_dir.setter
+  def out_dir(self, value: pth.LocalPath) -> None:
+    self._out_dir = value
+
+  @property
   def exceptions(self) -> Annotator:
     return self._exceptions
+
+  @property
+  def durations(self) -> Durations:
+    return self._durations
+
+  @property
+  def browser_tmp_dir(self) -> pth.AnyPath:
+    return self._browser_tmp_dir
 
   @property
   def secrets(self) -> Secrets:
@@ -151,6 +197,10 @@ class MockRun:
   def get_default_probe_result_path(self, probe: Probe) -> AnyPath:
     del probe
     return AnyPath("/")
+
+  def get_local_probe_result_path(self, probe: Probe) -> pth.LocalPath:
+    del probe
+    return pth.LocalPath("/")
 
   def _teardown_browser(self, is_dry_run: bool) -> None:
     assert self.is_dry_run is is_dry_run
@@ -237,7 +287,41 @@ class MockProbeContext(ProbeContext):
     return LocalProbeResult(json=(self.result_path,))
 
 
-class BaseRunnerTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
+class CrossbenchMagicMockMixin:
+  if TYPE_CHECKING:
+    platform: plt.Platform
+    magic_mock_session: mock.MagicMock
+
+  @property
+  def magic_mock_platform(self) -> mock.MagicMock:
+    return mock.MagicMock(name="magic_mock_platform")
+
+  @property
+  def magic_mock_browser(self) -> mock.MagicMock:
+    browser = mock.MagicMock(name="magic_mock_browser")
+    browser.unique_name = "mock_browser"
+    browser.platform = self.magic_mock_platform
+    browser.host_platform = self.platform
+    return browser
+
+  @property
+  def magic_mock_session(self) -> mock.MagicMock:
+    session = mock.MagicMock(name="magic_mock_session")
+    session.browser = self.magic_mock_browser
+    session.root_dir = pth.LocalPath("/path/to/root")
+    return session
+
+  def mock_run(self,
+               result_path: str | AnyPath = "/results/logcat.txt") -> MockRun:
+    local_path = pth.LocalPath(result_path)
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    run = MockRun(mock.MagicMock(), self.magic_mock_session)
+    run.get_default_probe_result_path = mock.MagicMock(return_value=local_path)
+    return run
+
+
+class BaseRunnerTestCase(
+    CrossbenchMagicMockMixin, BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 
   @override
   def setUp(self):
