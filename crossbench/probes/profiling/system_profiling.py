@@ -267,7 +267,7 @@ class ProfilingProbe(Probe):
   def sample_browser_process(self) -> bool:
     return self._sample_browser_process
 
-  @functools.lru_cache(maxsize=None)
+  @functools.cache
   def run_pprof(self, browser: Browser) -> bool:
     if self._run_pprof is not None:
       return self._run_pprof

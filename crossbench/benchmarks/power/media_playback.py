@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import override
 
@@ -36,9 +36,9 @@ class PowerMediaPlaybackStory(PowerStory):
   def __init__(self,
                name_suffix: str,
                url: str,
-               playback_duration: Optional[dt.timedelta] = None,
-               stabilization_time: Optional[dt.timedelta] = None,
-               stats: Optional[bool] = None) -> None:
+               playback_duration: dt.timedelta | None = None,
+               stabilization_time: dt.timedelta | None = None,
+               stats: bool | None = None) -> None:
     self.playback_duration = _value_or(playback_duration, self.DEFAULT_DURATION)
     self.stabilization_time = _value_or(stabilization_time,
                                         self.DEFAULT_STABILIZATION_TIME)

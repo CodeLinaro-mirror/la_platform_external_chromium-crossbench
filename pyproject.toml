@@ -136,6 +136,7 @@ extend-select = [
     "PLC",  # pylint refactor
     "PLW",  # pylint warnings
     "RUF010", # explicit-f-string-type-conversion
+    "UP",     # pyupgrade rules
 ]
 ignore = [
     "TC006", # Allow non-string type in casts

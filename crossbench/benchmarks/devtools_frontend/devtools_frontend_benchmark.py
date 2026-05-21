@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Sequence, \
-    Type, cast
+    cast
 
 from typing_extensions import override
 
@@ -153,7 +153,7 @@ class DevToolsFrontendBenchmark(Benchmark):
   }
   PANEL_NAMES: ClassVar[Sequence[str]] = ("elements", "console", "network",
                                           "sources", "resources")
-  PROBES: ClassVar[tuple[Type[DevToolsFrontendLoadTimeProbe],
+  PROBES: ClassVar[tuple[type[DevToolsFrontendLoadTimeProbe],
                          ...]] = (DevToolsFrontendLoadTimeProbe,)
   DEFAULT_REPETITIONS: ClassVar[int] = 2
 

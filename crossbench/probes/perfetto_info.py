@@ -9,7 +9,7 @@ import json
 import logging
 import pathlib
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Type, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from typing_extensions import Self, override
 
@@ -77,7 +77,7 @@ class PerfettoInfoProbe(Probe):
   RESULT_LOCATION: ClassVar[ResultLocation] = ResultLocation.LOCAL
 
   @override
-  def get_context_cls(self) -> Type[PerfettoInfoProbeContext]:
+  def get_context_cls(self) -> type[PerfettoInfoProbeContext]:
     return PerfettoInfoProbeContext
 
   @property

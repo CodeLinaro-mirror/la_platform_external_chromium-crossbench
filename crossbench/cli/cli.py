@@ -12,8 +12,8 @@ import os
 import sys
 import textwrap
 import traceback
-from typing import IO, TYPE_CHECKING, Any, Iterator, Sequence, Type, \
-    TypeAlias, TypeVar
+from typing import IO, TYPE_CHECKING, Any, Iterator, Sequence, TypeAlias, \
+    TypeVar
 
 import tabulate as tbl
 from typing_extensions import override
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
   from crossbench.parse import LateArgumentError
 
   BenchmarkClass: TypeAlias = type[Benchmark]
-  BrowserLookupTable: TypeAlias = dict[str, tuple[Type[Browser], pth.LocalPath]]
+  BrowserLookupTable: TypeAlias = dict[str, tuple[type[Browser], pth.LocalPath]]
   SubcommandT = TypeVar("SubcommandT", bound=CrossbenchSubcommand)
 
 
@@ -303,7 +303,7 @@ class CrossBenchCLI:
 
   def _add_subcommand(
       self,
-      subcommand_cls: Type[SubcommandT],
+      subcommand_cls: type[SubcommandT],
   ) -> SubcommandT:
     subcommand = subcommand_cls(self)
     subcommand.register_subcommand(self.subparsers)

@@ -7,8 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import datetime as dt
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, Sequence, \
-    TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self, Sequence, TypeVar
 
 from typing_extensions import override
 
@@ -28,7 +27,7 @@ _T = TypeVar("_T")
 
 # Equivalent to C++'s std::optional::value_or. The Pythonic alternative of
 # `value or default` would be thrown off by 0s - hence this helper.
-def _value_or(value: Optional[_T], alternative: _T) -> _T:
+def _value_or(value: _T | None, alternative: _T) -> _T:
   return value if value is not None else alternative
 
 
@@ -105,9 +104,9 @@ class PowerBenchmarkBase(Benchmark):
 
   def __init__(
       self,
-      action_runner_config: Optional[ActionRunnerConfig] = None,
-      site_key: Optional[str] = None,
-      url: Optional[str] = None,
+      action_runner_config: ActionRunnerConfig | None = None,
+      site_key: str | None = None,
+      url: str | None = None,
       **story_kwargs: Any,
   ) -> None:
     story_cls = getattr(self.__class__, "DEFAULT_STORY_CLS", None)
