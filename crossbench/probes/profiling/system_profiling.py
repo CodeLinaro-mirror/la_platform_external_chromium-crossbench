@@ -420,15 +420,15 @@ class ProfilingProbe(Probe):
             "browser version >= M124 https://crrev.com/c/5374765 is required.")
 
   def _validate_pprof(self, env: RunnerEnv, browser: Browser) -> None:
-    assert self._run_pprof
+    assert self._run_pprof is not False, "Invalid pprof setting"
     host_platform = browser.host_platform
-    self._run_pprof = host_platform.which("gcert") is not None
-    if not self.run_pprof(browser):
+    if host_platform.which("gcert") is None:
       logging.warning(
           "Disabled automatic pprof uploading for non-googler machine.")
       return
     if browser.platform.is_macos:
-      # Converting xctrace to pprof is not supported on macos
+      assert self._run_pprof is None, (
+          "Converting xctrace to pprof is not supported on macos")
       return
     try:
       if gcertstatus := host_platform.which("gcertstatus"):

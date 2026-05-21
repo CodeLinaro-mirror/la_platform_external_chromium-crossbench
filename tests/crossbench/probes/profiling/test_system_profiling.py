@@ -291,6 +291,22 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     mock_browser6.platform.install_mock_binary("pprof", "/usr/bin/pprof6")
     self.assertFalse(probe.run_pprof(mock_browser6))
 
+  def test_validate_pprof(self):
+    probe = ProfilingProbe(pprof=None)
+    mock_browser = mock.Mock()
+    mock_browser.attributes().is_chromium_based = False
+    mock_browser.platform = LinuxMockPlatform(fake_fs=self.fs)
+    mock_browser.platform.install_mock_binary("pprof", "/usr/bin/pprof")
+    mock_browser.platform.install_mock_binary("gcert", "/usr/bin/gcert")
+    mock_browser.platform.install_mock_binary("gcertstatus",
+                                              "/usr/bin/gcertstatus")
+    mock_browser.platform.install_mock_binary("perf", "/usr/bin/perf")
+    mock_browser.platform.expect_sh("/usr/bin/gcertstatus")
+    mock_browser.host_platform = mock_browser.platform
+    mock_env = mock.Mock()
+    probe.validate_browser(mock_env, mock_browser)
+    self.assertTrue(probe.run_pprof(mock_browser))
+
   def test_resolve_target_mode(self):
     probe = ProfilingProbe()
     self.assertEqual(probe.target, TargetMode.AUTO)
