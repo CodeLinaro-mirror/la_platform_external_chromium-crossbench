@@ -50,14 +50,19 @@ class WprReplayNetwork(ReplayNetwork):
     self._persist_server: Final[bool] = persist_server
     self._inject_deterministic_script: Final[bool] = inject_deterministic_script
     self._no_archive_certificates: Final[bool] = no_archive_certificates
-    self._response_transformations_file: Final[
-        LocalPath | None] = response_transformations_file
+    self._response_transformations_file: (
+        LocalPath | None) = response_transformations_file
     self._cross_platform_mode: Final[bool] = cross_platform_mode
     self._wpr_go_bin: Final[LocalPath] = WprGoFinder(self.host_platform).wpr(
         self._wpr_platform)
     self._host: Final[str | None] = host
     self._http_port: Final[int | None] = http_port
     self._https_port: Final[int | None] = https_port
+
+  def set_response_transformations_file(self, file: LocalPath) -> None:
+    assert not self._server
+    assert self._response_transformations_file is None
+    self._response_transformations_file = file
 
   @override
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:

@@ -7,12 +7,16 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import datetime as dt
+import sys
 from typing import TYPE_CHECKING, Any, ClassVar, Self, Sequence, TypeVar
 
 from typing_extensions import override
 
 from crossbench.benchmarks.base import Benchmark
+from crossbench.benchmarks.power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.network import NetworkConfig, NetworkType
+from crossbench.helper.path_finder import WprGoFinder
+from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -20,6 +24,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.flags.base import Flags
+  from crossbench.path import LocalPath
+  from crossbench.runner.runner import Runner
 
 
 _T = TypeVar("_T")
@@ -116,6 +122,41 @@ class PowerBenchmarkBase(Benchmark):
     else:
       stories = [story_cls.from_site(site_key or "", **story_kwargs)]
     super().__init__(stories, action_runner_config)
+
+  @override
+  def setup(self, runner: Runner) -> None:
+    super().setup(runner)
+    self._setup_wpr_transformations(runner)
+
+  def _setup_wpr_transformations(self, runner: Runner) -> None:
+    wpr_go_finder = WprGoFinder(runner.platform)
+    wpr_root = wpr_go_finder.local_path
+    assert wpr_root is not None
+    run_httparchive_path = wpr_root / "scripts/run_httparchive.py"
+
+    for browser in runner.browsers:
+      network = browser.network
+      if isinstance(network, WprReplayNetwork):
+        self._setup_single_wpr_transformation(
+            runner, network, run_httparchive_path)
+
+  def _setup_single_wpr_transformation(
+      self,
+      runner: Runner,
+      network: WprReplayNetwork,
+      run_httparchive_path: LocalPath,
+  ) -> None:
+    metadata = runner.platform.sh_stdout(
+        sys.executable,
+        run_httparchive_path,
+        "read-metadata",
+        network.archive_path,
+    )
+    if res := WprBannerDismisser.create_rules(metadata):
+      js_payload, target_url = res
+      rules_file = WprBannerDismisser.serialize_rules(js_payload, target_url)
+      network.set_response_transformations_file(rules_file)
+
 
   @classmethod
   @override
