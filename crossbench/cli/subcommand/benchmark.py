@@ -229,8 +229,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     browser_group = parser.add_argument_group(
         "Browser Options", "Any other browser option can be passed "
         "after the '--' arguments separator.")
-    browser_config_group = browser_group.add_mutually_exclusive_group()
-    browser_config_group.add_argument(
+    browser_group.add_argument(
         "--browser",
         "-b",
         type=BrowserConfig.parse_with_range,
@@ -259,17 +258,15 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
             "Repeat for adding multiple browsers. "
             "The browser result dir's name is "
             "'${BROWSER}_${PLATFORM}_${INDEX}' "
-            "$INDEX corresponds to the order on the command line."
-            "Cannot be used together with --browser-config"))
-    browser_config_group.add_argument(
+            "$INDEX corresponds to the order on the command line."))
+    browser_group.add_argument(
         "--browser-config",
         type=PathParser.hjson_file_path,
         help=("Browser configuration.json file. "
               "Use this to run multiple browsers and/or multiple "
               "flag configurations. "
               "See config/doc/browser.config.hjson on how to set up a complex "
-              "configuration file. "
-              "Cannot be used together with --browser."))
+              "configuration file."))
     browser_group.add_argument(
         "--driver-path",
         type=PathParser.file_path,
