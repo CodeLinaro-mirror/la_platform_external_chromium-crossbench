@@ -26,7 +26,7 @@ from crossbench.benchmarks.motionmark import MotionMark10Benchmark, \
     MotionMark11Benchmark, MotionMark12Benchmark, MotionMark13Benchmark, \
     MotionMark131Benchmark, MotionMarkMainBenchmark
 from crossbench.benchmarks.power import PowerIdleBenchmark, \
-    PowerMediaPlaybackBenchmark
+    PowerMediaPlaybackBenchmark, PowerScrollBenchmark
 from crossbench.benchmarks.powerline import PowerlineBenchmark
 from crossbench.benchmarks.speedometer import Speedometer10Benchmark, \
     Speedometer20Benchmark, Speedometer21Benchmark, Speedometer30Benchmark, \
@@ -66,6 +66,7 @@ __all__ = [
     "MotionMarkMainBenchmark",
     "PowerIdleBenchmark",
     "PowerMediaPlaybackBenchmark",
+    "PowerScrollBenchmark",
     "PowerlineBenchmark",
     "Speedometer10Benchmark",
     "Speedometer20Benchmark",
