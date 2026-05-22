@@ -234,6 +234,12 @@ class ChromiumBasedWebDriver(
             f"browser={self.version} ({self})",)
 
   @override
+  def clear_cache(self) -> None:
+    self._execute_cdp_cmd(self._private_driver, "Network.clearBrowserCache", {})
+    self._execute_cdp_cmd(self._private_driver, "Network.clearBrowserCookies",
+                          {})
+
+  @override
   def run_script_on_new_document(self, script: str) -> None:
     window_id = self.current_window_id()
     if window_id in self._script_id_kwargs_by_window_id:

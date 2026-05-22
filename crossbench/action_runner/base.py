@@ -160,6 +160,10 @@ class ActionRunner:
     del run
     raise ActionNotImplementedError(self, action)
 
+  def clear_cache(self, run: Run, action: i_action.ClearCacheAction) -> None:
+    del run
+    raise ActionNotImplementedError(self, action)
+
   def text_input(self, run: Run, action: i_action.TextInputAction) -> None:
     input_source = action.input_source
     if input_source is InputSource.KEYBOARD:

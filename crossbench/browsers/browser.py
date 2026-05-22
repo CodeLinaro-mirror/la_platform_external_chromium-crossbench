@@ -453,6 +453,9 @@ class Browser(abc.ABC):
       arguments: Sequence[object] = ()) -> Any:
     pass
 
+  def clear_cache(self) -> None:
+    raise NotImplementedError(f"Cache clearing is not supported by {self}")
+
   def run_script_on_new_document(self, script: str) -> None:
     del script
     raise NotImplementedError(

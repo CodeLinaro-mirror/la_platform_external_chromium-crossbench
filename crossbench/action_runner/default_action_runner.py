@@ -145,6 +145,11 @@ class DefaultActionRunner(ActionRunner):
                          action.timeout)
 
   @override
+  def clear_cache(self, run: Run, action: i_action.ClearCacheAction) -> None:
+    with run.actions("ClearCacheAction", measure=False):
+      run.browser.clear_cache()
+
+  @override
   def click_js(self, run: Run, action: i_action.ClickAction) -> None:
 
     if action.duration > dt.timedelta():

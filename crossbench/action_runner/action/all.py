@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from crossbench.action_runner.action.action import ACTIONS, Action
+from crossbench.action_runner.action.clear_cache import ClearCacheAction
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.close_all_tabs import CloseAllTabsAction
 from crossbench.action_runner.action.close_tab import CloseTabAction
@@ -34,6 +35,7 @@ from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
 
 ACTIONS_TUPLE: tuple[type[Action], ...] = (
+    ClearCacheAction,
     ClickAction,
     CloseTabAction,
     CloseAllTabsAction,

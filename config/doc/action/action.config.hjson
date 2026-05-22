@@ -192,5 +192,10 @@
         "panel_name": "elements"
       }
     ]
+    "clear_cache": [
+      {
+        "action": "clear_cache"
+      }
+    ]
   }
 }
