@@ -172,11 +172,6 @@ class CrossBenchCLI:
       benchmarks.MotionMark13Benchmark,
       benchmarks.MotionMark131Benchmark,
       benchmarks.MotionMarkMainBenchmark,
-      # Power
-      benchmarks.PowerIdleBenchmark,
-      benchmarks.PowerMediaPlaybackBenchmark,
-      benchmarks.PowerPageLoadBenchmark,
-      benchmarks.PowerScrollBenchmark,
       # Powerline
       benchmarks.PowerlineBenchmark,
       # Speedometer:
@@ -186,6 +181,11 @@ class CrossBenchCLI:
       benchmarks.Speedometer30Benchmark,
       benchmarks.Speedometer31Benchmark,
       benchmarks.SpeedometerMainBenchmark,
+      # Web Power
+      benchmarks.WebPowerIdleBenchmark,
+      benchmarks.WebPowerMediaPlaybackBenchmark,
+      benchmarks.WebPowerPageLoadBenchmark,
+      benchmarks.WebPowerScrollBenchmark,
       # WebAI
       benchmarks.WebAIBenchmark,
   )

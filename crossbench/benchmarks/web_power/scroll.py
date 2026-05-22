@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.benchmarks.power.base import PowerBenchmarkBase, PowerStory, \
-    _value_or
-from crossbench.benchmarks.power.scroll_gen import GeneratorConfig, \
+from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
+    WebPowerStory, _value_or
+from crossbench.benchmarks.web_power.scroll_gen import GeneratorConfig, \
     generate_scroll_commands
 from crossbench.parse import DurationParser
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-class PowerScrollStory(PowerStory):
+class WebPowerScrollStory(WebPowerStory):
   DEFAULT_SCROLL_COUNT: ClassVar[int] = 5
   DEFAULT_INPUT_RATE: ClassVar[int] = 240
   # Enforce a minimum of 3s wait time before scrolling. Otherwise the page does
@@ -59,10 +59,10 @@ class PowerScrollStory(PowerStory):
       min_s = self.MIN_LEAD_WAIT_TIME.total_seconds()
       req_s = self.lead_wait_time.total_seconds()
       raise ValueError(
-          f"The power-scroll benchmark requires a minimum lead-wait time of "
-          f"{min_s:.0f}s. (Requested {req_s:.1f}s.) This ensures the page "
-          f"fully loads, the up/down scroll positions balance out, "
-          f"and subsequent repetitions do not trigger pull-to-refresh.")
+          "The web-power-scroll benchmark requires a minimum lead-wait "
+          f"time of {min_s:.0f}s. (Requested {req_s:.1f}s.) This ensures "
+          "the page fully loads, the up/down scroll positions balance out, "
+          "and subsequent repetitions do not trigger pull-to-refresh.")
 
     self.config = GeneratorConfig(
         input_rate=_value_or(input_rate, self.DEFAULT_INPUT_RATE),
@@ -70,14 +70,14 @@ class PowerScrollStory(PowerStory):
 
     total_duration = (
         self.lead_wait_time + self.config.sequence_duration() +
-        PowerStory.DEFAULT_GRACE_PERIOD)
+        WebPowerStory.DEFAULT_GRACE_PERIOD)
     super().__init__(name_suffix, url, total_duration)
 
   @override
   def run(self, run: Run) -> None:
     if not run.browser_platform.is_android:
       raise RuntimeError(
-          "The power-scroll benchmark is only supported on Android.")
+          "The web-power-scroll benchmark is only supported on Android.")
 
     local_file = None
     remote_file = None
@@ -111,11 +111,11 @@ class PowerScrollStory(PowerStory):
         run.browser_platform.rm(remote_file, missing_ok=True)
 
 
-class PowerScrollBenchmark(PowerBenchmarkBase):
+class WebPowerScrollBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Scroll scenario using legacy EVEMU emulation."""
 
-  NAME: ClassVar = f"{PowerBenchmarkBase.NAME}-scroll"
-  DEFAULT_STORY_CLS: ClassVar = PowerScrollStory
+  NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-scroll"
+  DEFAULT_STORY_CLS: ClassVar = WebPowerScrollStory
 
   @classmethod
   @override

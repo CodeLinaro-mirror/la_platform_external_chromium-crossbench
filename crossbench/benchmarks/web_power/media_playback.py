@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import override
 
-from crossbench.benchmarks.power.base import PowerBenchmarkBase, PowerStory, \
-    _value_or
+from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
+    WebPowerStory, _value_or
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.parse import DurationParser
 
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-class PowerMediaPlaybackStory(PowerStory):
+class WebPowerMediaPlaybackStory(WebPowerStory):
   DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=120)
   DEFAULT_STABILIZATION_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
   DEFAULT_STATS: ClassVar[bool] = False
@@ -46,7 +46,7 @@ class PowerMediaPlaybackStory(PowerStory):
 
     total_duration = (
         self.stabilization_time + self.setup_max_duration +
-        self.playback_duration + PowerStory.DEFAULT_GRACE_PERIOD)
+        self.playback_duration + WebPowerStory.DEFAULT_GRACE_PERIOD)
     super().__init__(name_suffix, url, total_duration)
 
   # This property guesstimates the maximum total duration of setup.
@@ -168,11 +168,11 @@ class PowerMediaPlaybackStory(PowerStory):
       actions.wait(self.playback_duration)
 
 
-class PowerMediaPlaybackBenchmark(PowerBenchmarkBase):
+class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Media Playback scenario."""
 
-  NAME: ClassVar = f"{PowerBenchmarkBase.NAME}-media-playback"
-  DEFAULT_STORY_CLS: ClassVar = PowerMediaPlaybackStory
+  NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-media-playback"
+  DEFAULT_STORY_CLS: ClassVar = WebPowerMediaPlaybackStory
   SITE_REQUIRED: ClassVar[bool] = False
 
   @classmethod

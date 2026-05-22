@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import override
 
-from crossbench.benchmarks.power.base import PowerBenchmarkBase, PowerStory, \
-    _value_or
+from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
+    WebPowerStory, _value_or
 from crossbench.parse import DurationParser
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-class PowerIdleStory(PowerStory):
+class WebPowerIdleStory(WebPowerStory):
   DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=80)
   DEFAULT_STABILIZATION_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
 
@@ -45,7 +45,7 @@ class PowerIdleStory(PowerStory):
     else:
       total_duration = (
           idle_duration + self.stabilization_time +
-          PowerStory.DEFAULT_GRACE_PERIOD)
+          WebPowerStory.DEFAULT_GRACE_PERIOD)
 
     self._idle_duration = idle_duration
     super().__init__(name_suffix, url, total_duration)
@@ -62,11 +62,11 @@ class PowerIdleStory(PowerStory):
       actions.wait(self._idle_duration)
 
 
-class PowerIdleBenchmark(PowerBenchmarkBase):
+class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Idle scenario."""
 
-  NAME: ClassVar = f"{PowerBenchmarkBase.NAME}-idle"
-  DEFAULT_STORY_CLS: ClassVar = PowerIdleStory
+  NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-idle"
+  DEFAULT_STORY_CLS: ClassVar = WebPowerIdleStory
 
   @classmethod
   @override

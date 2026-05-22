@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from typing_extensions import override
 
 from crossbench.action_runner.action.clear_cache import ClearCacheAction
-from crossbench.benchmarks.power.base import PowerBenchmarkBase, PowerStory, \
-    _value_or
+from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
+    WebPowerStory, _value_or
 from crossbench.parse import DurationParser
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
-class PowerPageLoadStory(PowerStory):
+class WebPowerPageLoadStory(WebPowerStory):
   DEFAULT_PAGE_LOAD_COUNT: ClassVar[int] = 40
   # TODO: Test all other sites with 10 page loads and converge on a single
   # default value once it's proven that the variance is low.
@@ -53,7 +53,8 @@ class PowerPageLoadStory(PowerStory):
 
     total_duration = (
         self.lead_wait_time + self.cool_off_time +
-        self.page_load_count * self.interval + PowerStory.DEFAULT_GRACE_PERIOD)
+        self.page_load_count * self.interval +
+        WebPowerStory.DEFAULT_GRACE_PERIOD)
     super().__init__(name_suffix, url, total_duration)
 
   @override
@@ -83,11 +84,11 @@ class PowerPageLoadStory(PowerStory):
           run.action_runner.clear_cache(run, ClearCacheAction())
 
 
-class PowerPageLoadBenchmark(PowerBenchmarkBase):
+class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Page-Load scenario."""
 
-  NAME: ClassVar = f"{PowerBenchmarkBase.NAME}-page-load"
-  DEFAULT_STORY_CLS: ClassVar = PowerPageLoadStory
+  NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-page-load"
+  DEFAULT_STORY_CLS: ClassVar = WebPowerPageLoadStory
 
   @classmethod
   @override

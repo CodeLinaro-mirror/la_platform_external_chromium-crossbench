@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Self, Sequence, TypeVar
 from typing_extensions import override
 
 from crossbench.benchmarks.base import Benchmark
-from crossbench.benchmarks.power.wpr_helpers import WprBannerDismisser
+from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.wpr import WprReplayNetwork
@@ -37,7 +37,7 @@ def _value_or(value: _T | None, alternative: _T) -> _T:
   return value if value is not None else alternative
 
 
-class PowerStory(Story):
+class WebPowerStory(Story):
   DEFAULT_GRACE_PERIOD: ClassVar[dt.timedelta] = dt.timedelta(seconds=20)
 
   _LEGACY_WPR_RECORDING = ("gs://chrome-partner-loadline/power/"
@@ -81,7 +81,7 @@ class PowerStory(Story):
     site_config = cls.SITES.get(site_key, {})
     url = site_config.get("url", "")
     if not url:
-      raise ValueError(f"Unknown power benchmark site key: {site_key}")
+      raise ValueError(f"Unknown web power benchmark site key: {site_key}")
     return cls(site_key, url, *args, **kwargs)
 
   @classmethod
@@ -91,7 +91,8 @@ class PowerStory(Story):
   def __init__(self, name_suffix: str, url: str,
                total_duration: dt.timedelta) -> None:
     self.url = url
-    super().__init__(f"power-{self.story_name}-{name_suffix}", total_duration)
+    super().__init__(
+        f"web-power-{self.story_name}-{name_suffix}", total_duration)
 
   @property
   def story_name(self) -> str:
@@ -102,10 +103,10 @@ class PowerStory(Story):
     return sorted(cls.SITES.keys())
 
 
-class PowerBenchmarkBase(Benchmark):
+class WebPowerBenchmarkBase(Benchmark):
   """Base class for Power benchmarks to share common logic."""
 
-  NAME: ClassVar = "power"  # Subclasses expected to extend to "power-xyz"
+  NAME: ClassVar = "web-power"
   SITE_REQUIRED: ClassVar[bool] = True
 
   def __init__(
@@ -228,7 +229,7 @@ class PowerBenchmarkBase(Benchmark):
     wpr_url = site_config.get("archive")
     if not wpr_url:
       raise ValueError(
-          f"Power benchmarks require an explicit, known '--site' to use a "
+          f"Web Power benchmarks require an explicit, known '--site' to use a "
           f"mapped WPR recording. Got: {args.site}")
     args.network = NetworkConfig(
         type=NetworkType.WPR, url=wpr_url, no_archive_certificates=True)
