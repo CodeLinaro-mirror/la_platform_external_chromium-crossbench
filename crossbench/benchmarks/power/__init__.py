@@ -7,10 +7,12 @@ from __future__ import annotations
 from crossbench.benchmarks.power.idle import PowerIdleBenchmark
 from crossbench.benchmarks.power.media_playback import \
     PowerMediaPlaybackBenchmark
+from crossbench.benchmarks.power.page_load import PowerPageLoadBenchmark
 from crossbench.benchmarks.power.scroll import PowerScrollBenchmark
 
 __all__: list[str] = [
     "PowerIdleBenchmark",
     "PowerMediaPlaybackBenchmark",
+    "PowerPageLoadBenchmark",
     "PowerScrollBenchmark",
 ]
