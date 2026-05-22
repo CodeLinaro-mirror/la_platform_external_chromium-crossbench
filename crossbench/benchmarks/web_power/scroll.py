@@ -27,8 +27,8 @@ if TYPE_CHECKING:
 class WebPowerScrollStory(WebPowerStory):
   DEFAULT_SCROLL_COUNT: ClassVar[int] = 5
   DEFAULT_INPUT_RATE: ClassVar[int] = 240
-  # Enforce a minimum of 3s wait time before scrolling. Otherwise the page does
-  # not fully load, the down/up scrolls do not end up in the same place, and
+  # Enforce a minimum time before scrolling. Otherwise the page does not
+  # fully load, the down/up scrolls do not end up in the same place, and
   # subsequent repetitions might accidentally trigger pull-to-refresh.
   MIN_LEAD_WAIT_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=3)
   DEFAULT_LEAD_WAIT_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
