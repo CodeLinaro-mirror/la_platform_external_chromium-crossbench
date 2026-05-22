@@ -11,6 +11,8 @@ from typing_extensions import override
 
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
     WebPowerStory, _value_or
+from crossbench.benchmarks.web_power.volume_helper import \
+    AndroidVolumeController, VolumeMode
 from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.parse import DurationParser
 
@@ -27,6 +29,7 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
   DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=120)
   DEFAULT_STABILIZATION_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
   DEFAULT_STATS: ClassVar[bool] = False
+  DEFAULT_VOLUME: ClassVar[VolumeMode] = VolumeMode.ON
 
   @property
   @override
@@ -38,11 +41,13 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
                url: str,
                playback_duration: dt.timedelta | None = None,
                stabilization_time: dt.timedelta | None = None,
-               stats: bool | None = None) -> None:
+               stats: bool | None = None,
+               volume: VolumeMode | str | None = None) -> None:
     self.playback_duration = _value_or(playback_duration, self.DEFAULT_DURATION)
     self.stabilization_time = _value_or(stabilization_time,
                                         self.DEFAULT_STABILIZATION_TIME)
     self.stats = _value_or(stats, self.DEFAULT_STATS)
+    self.volume = _value_or(volume, self.DEFAULT_VOLUME)
 
     total_duration = (
         self.stabilization_time + self.setup_max_duration +
@@ -118,6 +123,17 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
 
   def _resume_video(self, actions: Actions) -> None:
     self._control_video(actions, "play")
+
+  @override
+  def setup(self, run: Run) -> None:
+    super().setup(run)
+    if self.volume != VolumeMode.UNCHANGED:
+      if not run.browser_platform.is_android:
+        raise ValueError(
+            f"The --volume={self.volume} option is only supported on Android, "
+            f"but the active platform is {run.browser_platform}.")
+      AndroidVolumeController(run.browser_platform).configure_volume(
+          self.volume)
 
   @override
   def run(self, run: Run) -> None:
@@ -217,6 +233,13 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
         default=story_cls.DEFAULT_STATS,
         help="Enable 'Stats for Nerds' overlay during playback. "
         f"(Default: {str(story_cls.DEFAULT_STATS).lower()})")
+    parser.add_argument(
+        "--volume",
+        type=VolumeMode,
+        choices=tuple(VolumeMode),
+        default=story_cls.DEFAULT_VOLUME,
+        help="Configure device music stream volume. "
+        f"(Default: {story_cls.DEFAULT_VOLUME})")
     return parser
 
   @classmethod
@@ -228,4 +251,5 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
     kwargs["playback_duration"] = args.playback_duration
     kwargs["stabilization_time"] = args.stabilization_time
     kwargs["stats"] = args.stats
+    kwargs["volume"] = args.volume
     return kwargs
