@@ -87,10 +87,14 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
   def _video_selector(self) -> str:
     return "document.querySelector('video')"
 
-  # Toggles the main player UI overlay containing basic interaction buttons
-  # (e.g. play/pause, volume, settings cog, fullscreen toggles).
+  # Shows the main player UI overlay containing basic interaction buttons.
+  # If the overlay is already visible, avoid toggling it off.
   def _show_controls(self, actions: Actions) -> None:
-    self._click_element(actions, self._video_selector())
+    settings = "document.querySelector('button[aria-label*=\"Settings\"]')"
+    # If the Settings button is hidden, click the video to show controls.
+    if actions.js(f"let el = {settings}; "
+                  f"return !el || el.offsetParent === null;"):
+      self._click_element(actions, self._video_selector())
 
   # Opens the settings bottom sheet menu containing playback parameters
   # (e.g. video quality, stats for nerds, ambient mode toggles).
