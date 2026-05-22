@@ -125,7 +125,14 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
         actions.wait(self.stabilization_time)
 
     with run.actions("Consent_Banner", verbose=True) as actions:
+      # Wait for the initial page to load, click 'Accept', and programmatically
+      # block until the cookie-save page reload fully completes.
+      # The reload context-switch naturally clears window.__waiting_for_reload.
+      self._wait_js_condition(actions,
+                              "return document.readyState === 'complete';")
+      actions.js("window.__waiting_for_reload = true;")
       self._click_element(actions, self._by_aria_label("button", "Accept"))
+      self._wait_js_condition(actions, "return !window.__waiting_for_reload;")
       self._wait_js_condition(actions,
                               "return document.readyState === 'complete';")
 
