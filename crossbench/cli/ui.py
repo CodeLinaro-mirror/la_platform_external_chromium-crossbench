@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final, Iterator
 import colorama
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.helper import terminal
 from crossbench.helper.spinner import Spinner
 
@@ -159,3 +160,18 @@ def prompt(message: str = "",
            hint: str = "",
            color: str = colorama.Fore.RESET) -> str:
   return input(f"{color}{message}{colorama.Fore.RESET} {hint}")
+
+
+def link(path_or_url: pth.AnyPathLike, text: str | None = None) -> str:
+  path_str = str(path_or_url)
+  if text is None:
+    text = path_str
+  if not IS_ATTY:
+    return text
+  if path_str.startswith(("http://", "https://", "file://")):
+    url = path_str
+  else:
+    url = pth.LocalPath(path_or_url).absolute().as_uri()
+  osc8_start = "\x1b]8;;"
+  osc8_end = "\x1b\\"
+  return f"{osc8_start}{url}{osc8_end}{text}{osc8_start}{osc8_end}"

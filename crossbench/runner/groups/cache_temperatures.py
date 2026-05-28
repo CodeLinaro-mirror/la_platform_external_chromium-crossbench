@@ -64,6 +64,17 @@ class CacheTemperaturesRunGroup(RunGroup):
     return iter(self._runs)
 
   @property
+  @override
+  def all_exceptions(self) -> exception.Annotator:
+    combined = type(self._exceptions)(throw=False)
+    combined.extend(self._exceptions)
+    for run in self.runs:
+      if browser_session := run.browser_session:
+        combined.extend(browser_session.exceptions)
+      combined.extend(run.exceptions)
+    return combined
+
+  @property
   def first_run(self) -> Run:
     return self._runs[0]
 

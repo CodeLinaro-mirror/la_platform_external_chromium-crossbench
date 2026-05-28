@@ -90,6 +90,11 @@ class RepetitionsRunGroup(RunGroup):
 
   @property
   @override
+  def children(self) -> Iterable[RunGroup]:
+    return self._cache_temperatures_groups
+
+  @property
+  @override
   def runs(self) -> Iterable[Run]:
     for group in self._cache_temperatures_groups:
       yield from group.runs
@@ -152,6 +157,17 @@ class CacheTemperatureRepetitionsRunGroup(RunGroup):
   @override
   def runs(self) -> Iterable[Run]:
     return iter(self._runs)
+
+  @property
+  @override
+  def all_exceptions(self) -> exception.Annotator:
+    combined = type(self._exceptions)(throw=False)
+    combined.extend(self._exceptions)
+    for run in self.runs:
+      if browser_session := run.browser_session:
+        combined.extend(browser_session.exceptions)
+      combined.extend(run.exceptions)
+    return combined
 
   @property
   @override

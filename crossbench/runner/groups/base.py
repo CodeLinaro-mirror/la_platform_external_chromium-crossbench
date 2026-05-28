@@ -53,6 +53,18 @@ class RunGroup(abc.ABC):
     return self._exceptions.is_success
 
   @property
+  def children(self) -> Iterable[RunGroup]:
+    return ()
+
+  @property
+  def all_exceptions(self) -> exception.Annotator:
+    combined = exception.Annotator(throw=False)
+    combined.extend(self._exceptions)
+    for child in self.children:
+      combined.extend(child.all_exceptions)
+    return combined
+
+  @property
   @abc.abstractmethod
   def info_stack(self) -> exception.TInfoStack:
     pass

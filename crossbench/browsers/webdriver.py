@@ -18,6 +18,7 @@ import urllib3
 from selenium import webdriver
 from typing_extensions import override
 
+from crossbench import exception
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
@@ -153,7 +154,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   @override
   def validate_env(self, env: RunnerEnv) -> None:
     super().validate_env(env)
-    self._validate_driver_version()
+    with exception.annotate("Validate driver version"):
+      self._validate_driver_version()
 
   @override
   def start(self, session: BrowserSessionRunGroup) -> None:

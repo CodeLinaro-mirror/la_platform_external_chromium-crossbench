@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, ClassVar, Iterable, Self
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
@@ -15,15 +15,14 @@ from crossbench.probes.probe_context import ProbeSessionContext
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 
 if TYPE_CHECKING:
-  from crossbench.probes.results import ProbeResult, ProbeResultDict
+  from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
-  from crossbench.types import Json, JsonList
-
+  from crossbench.types import Json
 
 class ErrorsProbe(InternalJsonResultProbe):
   """
@@ -34,43 +33,25 @@ class ErrorsProbe(InternalJsonResultProbe):
 
   @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
-    return self._merge_group(group, (run.results for run in group.runs))
+    return self._merge_group(group)
 
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
-    return self._merge_group(
-        group, (rep_group.results for rep_group in group.repetitions_groups))
+    return self._merge_group(group)
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
-    return self._merge_group(
-        group, (story_group.results for story_group in group.story_groups))
+    return self._merge_group(group)
 
-  def _merge_group(self, group: RunGroup,
-                   results_iter: Iterable[ProbeResultDict]) -> ProbeResult:
-    merged_errors: JsonList = []
-
-    for results in results_iter:
-      result = results[self]
-      if not result:
-        continue
-      source_file = result.json
-      assert source_file.is_file(), "Missing source file"
-      with source_file.open(encoding="utf-8") as f:
-        repetition_errors = json.load(f)
-        assert isinstance(repetition_errors, list)
-        merged_errors.extend(repetition_errors)
-
-    group_errors = group.exceptions.to_json()
-    assert isinstance(group_errors, list)
-    merged_errors.extend(group_errors)
-
-    if not merged_errors:
+  def _merge_group(self, group: RunGroup) -> ProbeResult:
+    all_exceptions = group.all_exceptions
+    if all_exceptions.is_success:
       return EmptyProbeResult()
 
-    result = self.write_group_result(group, merged_errors, csv_formatter=None)
+    result = self.write_group_result(
+        group, all_exceptions.to_json(), csv_formatter=None)
     txt_path = result.json.with_suffix(".txt")
-    if group.exceptions.write_txt(txt_path):
+    if all_exceptions.write_txt(txt_path):
       return result.merge(LocalProbeResult(txt=(txt_path,)))
     return result
 

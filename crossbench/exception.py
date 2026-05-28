@@ -13,6 +13,8 @@ import traceback as tb
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Iterator, Self
 
+from ordered_set import OrderedSet
+
 from crossbench.helper import collection_helper, txt_helper
 
 if TYPE_CHECKING:
@@ -33,6 +35,15 @@ class Entry:
   traceback: list[str]
   exception: BaseException
   info_stack: TInfoStack
+
+  def __hash__(self) -> int:
+    return hash((str(self.exception), self.info_stack))
+
+  def __eq__(self, other: object) -> bool:
+    if not isinstance(other, Entry):
+      return False
+    return str(self.exception) == str(
+        other.exception) and self.info_stack == other.info_stack
 
 
 class MultiException(ValueError):
@@ -125,7 +136,7 @@ class ExceptionAnnotator:
   def __init__(self,
                throw: bool = False,
                throw_cls: type[BaseException] | None = None) -> None:
-    self._exceptions: list[Entry] = []
+    self._exceptions: OrderedSet[Entry] = OrderedSet()
     self.throw: Final[bool] = throw
     self._throw_cls: Final[type[BaseException] | None] = throw_cls
     # The info_stack adds additional meta information to handle exceptions.
@@ -148,7 +159,7 @@ class ExceptionAnnotator:
 
   @property
   def exceptions(self) -> list[Entry]:
-    return self._exceptions
+    return list(self._exceptions)
 
   @property
   def depth(self) -> int:
@@ -161,6 +172,9 @@ class ExceptionAnnotator:
 
   def __len__(self) -> int:
     return len(self._exceptions)
+
+  def __iter__(self) -> Iterator[Entry]:
+    return iter(self._exceptions)
 
   def enter(self, added_info_stack_entries: tuple[str, ...]) -> tuple[str, ...]:
     self._depth += 1
@@ -238,7 +252,7 @@ class ExceptionAnnotator:
     if is_nested:
       self._extend_with_prepended_stack_info(annotator)
     else:
-      self._exceptions.extend(annotator.exceptions)
+      self._exceptions.update(annotator.exceptions)
 
   def _extend_with_prepended_stack_info(self,
                                         annotator: ExceptionAnnotator) -> None:
@@ -247,7 +261,7 @@ class ExceptionAnnotator:
     for entry in annotator.exceptions:
       merged_info_stack = self.info_stack + entry.info_stack
       merged_entry = Entry(entry.traceback, entry.exception, merged_info_stack)
-      self._exceptions.append(merged_entry)
+      self._exceptions.add(merged_entry)
 
   def append(self, exception: BaseException) -> None:
     traceback_str = tb.format_exc()
@@ -264,7 +278,7 @@ class ExceptionAnnotator:
       stack = self.info_stack
       if exception in self._pending_exceptions:
         stack = self._pending_exceptions[exception]
-      self._exceptions.append(Entry(traceback, exception, stack))
+      self._exceptions.add(Entry(traceback, exception, stack))
     if self.throw:
       raise  # noqa: PLE0704
 

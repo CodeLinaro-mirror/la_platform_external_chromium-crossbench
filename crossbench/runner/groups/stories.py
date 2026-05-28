@@ -64,6 +64,11 @@ class StoriesRunGroup(RunGroup):
 
   @property
   @override
+  def children(self) -> Iterable[RunGroup]:
+    return self._repetitions_groups
+
+  @property
+  @override
   def runs(self) -> Iterable[Run]:
     for group in self._repetitions_groups:
       yield from group.runs

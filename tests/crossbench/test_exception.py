@@ -52,6 +52,18 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     with self.assertRaises(IndexError):
       _ = annotator[2]
 
+  def test_iter(self):
+    annotator = ExceptionAnnotator()
+    with annotator.capture("exception"):
+      raise CustomException("AAA")
+    with annotator.capture("exception"):
+      raise CustomException("BBB")
+    self.assertEqual(len(annotator), 2)
+    entries = list(annotator)
+    self.assertEqual(len(entries), 2)
+    self.assertIs(entries[0], annotator[0])
+    self.assertIs(entries[1], annotator[1])
+
   def test_annotate(self):
     with self.assertRaises(MultiException) as cm:
       with annotate("BBB"):
@@ -370,6 +382,32 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertIn("assert False", formatted)
     self.assertIn("Custom", formatted)
     self.assertIn("Message", formatted)
+
+  def test_extend_deduplication(self):
+    annotator_1 = ExceptionAnnotator()
+    annotator_2 = ExceptionAnnotator()
+    exception_1 = ValueError("shared_error")
+    exception_2 = TypeError("unique_error")
+
+    with annotator_1.capture("info 1"):
+      raise exception_1
+
+    with annotator_2.capture("info 1"):
+      raise exception_1
+    with annotator_2.capture("info 2"):
+      raise exception_1
+    with annotator_2.capture("info 3"):
+      raise exception_2
+
+    self.assertEqual(len(annotator_1), 1)
+    self.assertEqual(len(annotator_2), 3)
+
+    annotator_1.extend(annotator_2)
+    self.assertEqual(len(annotator_1), 3)
+    self.assertIsInstance(annotator_1[0].exception, ValueError)
+    self.assertIsInstance(annotator_1[1].exception, ValueError)
+    self.assertIsInstance(annotator_1[2].exception, TypeError)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

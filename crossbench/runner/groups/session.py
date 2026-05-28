@@ -143,6 +143,11 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._get_session_dir()
 
   @property
+  @override
+  def results(self) -> ProbeResultDict:
+    return self._probe_results
+
+  @property
   def browser_dir(self) -> LocalPath:
     return self.root_dir / self.browser.unique_name
 

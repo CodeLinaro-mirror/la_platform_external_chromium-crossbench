@@ -46,6 +46,11 @@ class BrowsersRunGroup(RunGroup):
 
   @property
   @override
+  def children(self) -> Iterable[RunGroup]:
+    return self._story_groups
+
+  @property
+  @override
   def runs(self) -> Iterable[Run]:
     for group in self._story_groups:
       yield from group.runs

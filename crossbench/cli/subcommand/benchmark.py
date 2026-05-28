@@ -19,6 +19,7 @@ from crossbench import plt
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport, ViewportMode
+from crossbench.cli import ui
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BrowserVariantsConfig
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig, \
@@ -710,10 +711,15 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     error_message = f"{message} FAILED WITH {e.__class__.__name__}"
     self._log_benchmark_subcommand_exception(error_message, e)
     logging.error("-" * 80)
-    if runner and runner.runs:
-      self._log_runner_debug_hints(runner)
-    else:
-      logging.error("- Check %s.json detailed backtraces", ErrorsProbe.NAME)
+    if runner:
+      if runner.runs:
+        self._log_runner_debug_hints(runner)
+      if out_dir := runner.out_dir:
+        errors_path = out_dir / f"{ErrorsProbe.NAME}.json"
+        if errors_path.exists():
+          errors_link = ui.link(
+              errors_path, text=f"results/latest/{errors_path.name}")
+          logging.error("- Check %s detailed backtraces", errors_link)
     logging.error(
         "- Use --debug for very verbose output (equivalent to --throw -vvv)")
     logging.error("#" * 80)
