@@ -49,7 +49,7 @@
             SELECT
               dur / 1e6 AS duration_ms
             FROM slice
-            WHERE name = 'Startup.BrowserWindow.FirstPaint'
+            WHERE name LIKE '%Startup.BrowserWindow.FirstPaint'
             LIMIT 1
             '''
         }
