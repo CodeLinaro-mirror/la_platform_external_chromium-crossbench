@@ -152,7 +152,9 @@ class DevToolsFrontendBenchmark(Benchmark):
                         "newssite/news-next/dist/index.html",
   }
   PANEL_NAMES: ClassVar[Sequence[str]] = ("elements", "console", "network",
-                                          "sources", "resources")
+                                          "sources", "resources", "timeline",
+                                          "chrome-recorder", "heap-profiler",
+                                          "lighthouse", "security")
   PROBES: ClassVar[tuple[type[DevToolsFrontendLoadTimeProbe],
                          ...]] = (DevToolsFrontendLoadTimeProbe,)
   DEFAULT_REPETITIONS: ClassVar[int] = 2
