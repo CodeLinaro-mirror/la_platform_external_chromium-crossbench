@@ -101,8 +101,10 @@ class WebPowerScrollStory(WebPowerStory):
         actions.wait(self.lead_wait_time)
 
       with run.actions("Run", verbose=True):
+        run.browser.performance_mark("power-measurement-start")
         with run.actions("Scroll"):
           run.browser_platform.sh("uinput", f"{remote_file}")
+        run.browser.performance_mark("power-measurement-stop")
 
     finally:
       if local_file is not None:

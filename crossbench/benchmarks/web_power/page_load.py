@@ -73,6 +73,7 @@ class WebPowerPageLoadStory(WebPowerStory):
       run.action_runner.clear_cache(run, ClearCacheAction())
 
     logging.info("Starting page-load loop.")
+    run.browser.performance_mark("power-measurement-start")
     with run.actions("Run", verbose=True):
       for i in range(1, self.page_load_count + 1):
         logging.info("Page load %d / %d", i, self.page_load_count)
@@ -82,6 +83,7 @@ class WebPowerPageLoadStory(WebPowerStory):
         logging.info("Clearing cache.")
         with run.actions(f"Cache_Clear_{i}"):
           run.action_runner.clear_cache(run, ClearCacheAction())
+    run.browser.performance_mark("power-measurement-stop")
 
 
 class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):

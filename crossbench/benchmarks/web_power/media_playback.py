@@ -191,8 +191,10 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
     with run.actions("Resume_Playback", verbose=True) as actions:
       self._resume_video(actions)
 
+    run.browser.performance_mark("power-measurement-start")
     with run.actions("Media_Playback", verbose=True) as actions:
       actions.wait(self.playback_duration)
+    run.browser.performance_mark("power-measurement-stop")
 
 
 class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):

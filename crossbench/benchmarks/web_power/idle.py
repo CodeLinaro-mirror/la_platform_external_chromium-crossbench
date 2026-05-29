@@ -58,8 +58,10 @@ class WebPowerIdleStory(WebPowerStory):
     with run.actions("Stabilization", verbose=True) as actions:
       actions.wait(self.stabilization_time)
 
+    run.browser.performance_mark("power-measurement-start")
     with run.actions("Idle", verbose=True) as actions:
       actions.wait(self._idle_duration)
+    run.browser.performance_mark("power-measurement-stop")
 
 
 class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
