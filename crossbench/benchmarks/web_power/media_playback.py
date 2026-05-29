@@ -201,6 +201,7 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
   NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-media-playback"
   DEFAULT_STORY_CLS: ClassVar = WebPowerMediaPlaybackStory
   SITE_REQUIRED: ClassVar[bool] = False
+  REQUIRES_AUTOPLAY: ClassVar[bool] = True
 
   @classmethod
   @override

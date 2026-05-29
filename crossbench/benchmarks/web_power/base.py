@@ -108,6 +108,7 @@ class WebPowerBenchmarkBase(Benchmark):
 
   NAME: ClassVar = "web-power"
   SITE_REQUIRED: ClassVar[bool] = True
+  REQUIRES_AUTOPLAY: ClassVar[bool] = False
 
   def __init__(
       self,
@@ -164,7 +165,8 @@ class WebPowerBenchmarkBase(Benchmark):
   def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes)
     if browser_attributes.is_chromium_based:
-      flags.set("--autoplay-policy", "no-user-gesture-required")
+      if cls.REQUIRES_AUTOPLAY:
+        flags.set("--autoplay-policy", "no-user-gesture-required")
       flags.set("--remote-allow-origins", "*")
       for flag in (
           "--disable-background-timer-throttling",
