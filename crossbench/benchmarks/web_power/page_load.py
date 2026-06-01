@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from typing_extensions import override
 
 from crossbench.action_runner.action.clear_cache import ClearCacheAction
+from crossbench.benchmarks.loading.playback_controller import \
+    PeriodicPlaybackController
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
     WebPowerStory, _value_or
 from crossbench.parse import DurationParser
@@ -74,15 +76,13 @@ class WebPowerPageLoadStory(WebPowerStory):
 
     logging.info("Starting page-load loop.")
     run.browser.performance_mark("power-measurement-start")
+    playback = PeriodicPlaybackController(self.page_load_count, self.interval)
     with run.actions("Run", verbose=True):
-      for i in range(1, self.page_load_count + 1):
-        logging.info("Page load %d / %d", i, self.page_load_count)
-        with run.actions(f"Page_Load_{i}") as actions:
-          actions.show_url(self.url)
-          actions.wait(self.interval)
-        logging.info("Clearing cache.")
+      for i in playback:
         with run.actions(f"Cache_Clear_{i}"):
           run.action_runner.clear_cache(run, ClearCacheAction())
+        with run.actions(f"Page_Load_{i}") as actions:
+          actions.show_url(self.url)
     run.browser.performance_mark("power-measurement-stop")
 
 
