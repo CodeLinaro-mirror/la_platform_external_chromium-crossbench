@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import pathlib
 import unittest
 from typing import TYPE_CHECKING, ClassVar
 
@@ -173,6 +174,32 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     with self.assertRaisesRegex(
         ValueError, "Specifying '--site' is mutually exclusive with explicit"):
       MockWebPowerBenchmark.kwargs_from_cli(args)
+
+  def test_default_probe_config_path(self) -> None:
+    path = MockWebPowerBenchmark.default_probe_config_path()
+    self.assertIsNotNone(path)
+    assert path is not None
+    self.assertEqual(path.name, "probe_config.hjson")
+
+  def test_probe_config_default_and_override(self) -> None:
+    parser = CBArgumentParser()
+    parser.add_argument(
+        "--probe-config",
+        type=pathlib.Path,
+        default=MockWebPowerBenchmark.default_probe_config_path(),
+    )
+
+    # Scenario A: Default config path resolved when flag is omitted
+    args_default = parser.parse_args([])
+    self.assertEqual(
+        args_default.probe_config,
+        MockWebPowerBenchmark.default_probe_config_path(),
+    )
+
+    # Scenario B: Custom non-default config path successfully overrides default
+    custom_path = pathlib.Path("/path/to/custom.hjson")
+    args_custom = parser.parse_args(["--probe-config", str(custom_path)])
+    self.assertEqual(args_custom.probe_config, custom_path)
 
 
 if __name__ == "__main__":

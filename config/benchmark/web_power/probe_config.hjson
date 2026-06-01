@@ -1,0 +1,7 @@
+{
+  "probes": {
+    "perfetto": {
+      "textproto": "perfetto_basic.txtpb"
+    }
+  }
+}

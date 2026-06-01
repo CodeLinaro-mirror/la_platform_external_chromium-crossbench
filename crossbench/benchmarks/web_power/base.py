@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, Self, Sequence, TypeVar
 
 from typing_extensions import override
 
+from crossbench import config
+from crossbench import path as pth
 from crossbench.benchmarks.base import Benchmark
 from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.network import NetworkConfig, NetworkType
@@ -235,3 +237,8 @@ class WebPowerBenchmarkBase(Benchmark):
           f"mapped WPR recording. Got: {args.site}")
     args.network = NetworkConfig(
         type=NetworkType.WPR, url=wpr_url, no_archive_certificates=True)
+
+  @classmethod
+  @override
+  def default_probe_config_path(cls) -> pth.LocalPath | None:
+    return (config.config_dir() / "benchmark/web_power/probe_config.hjson")
