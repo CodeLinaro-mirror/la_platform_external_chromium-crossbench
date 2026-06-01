@@ -13,7 +13,7 @@ from math import ceil
 from typing import TYPE_CHECKING, ClassVar, Final, Self
 
 import crossbench.path as pth
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
+from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
@@ -257,7 +257,7 @@ E: <time> 0000 0000 0
         "<y>", str(round(position.y))).replace("<time>", f"{time:.6f}")
 
 
-class ChromeOSInputActionRunner(DefaultActionRunner):
+class ChromeOSInputActionRunner(ActionRunner):
   """Custom ActionRunner for chromeOS devices."""
 
   def __init__(self) -> None:

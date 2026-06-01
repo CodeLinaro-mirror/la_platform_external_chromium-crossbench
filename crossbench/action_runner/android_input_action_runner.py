@@ -9,8 +9,8 @@ import logging
 import re
 from typing import TYPE_CHECKING, Final, cast
 
-from crossbench.action_runner.base import InputSourceNotImplementedError
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
+from crossbench.action_runner.base import ActionRunner, \
+    InputSourceNotImplementedError
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
@@ -87,7 +87,7 @@ class ViewportInfo:
     return distance * self.actual_pixel_ratio
 
 
-class AndroidInputActionRunner(DefaultActionRunner):
+class AndroidInputActionRunner(ActionRunner):
   """Custom ActionRunner for Android."""
 
   _BOUNDS_RE: Final[re.Pattern] = re.compile(

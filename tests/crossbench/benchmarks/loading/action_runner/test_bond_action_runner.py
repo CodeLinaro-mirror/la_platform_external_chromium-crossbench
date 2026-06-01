@@ -1,4 +1,4 @@
-# Copyright 2025 The Chromium Authors
+# Copyright 2026 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -11,9 +11,8 @@ from crossbench.action_runner.action.enums import ReadyState
 from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.meet_create import MeetCreateAction
 from crossbench.action_runner.action.meet_script import MeetScriptAction
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
-from crossbench.action_runner.default_bond_action_runner import \
-    DefaultBondActionRunner
+from crossbench.action_runner.base import ActionRunner
+from crossbench.action_runner.bond_action_runner import BondActionRunner
 from crossbench.cli.config.secrets import ServiceAccount
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -21,7 +20,7 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 NOW_EPOCH = dt.datetime.now()
 
 
-class DefaultBondActionRunnerTestCase(BaseCrossbenchTestCase):
+class BondActionRunnerTestCase(BaseCrossbenchTestCase):
 
   SECRET = ServiceAccount.parse_dict({
       "type": "fake",
@@ -58,7 +57,7 @@ class DefaultBondActionRunnerTestCase(BaseCrossbenchTestCase):
     mock_action_runner = MagicMock(name="Mock ActionRunner")
     mock_action_runner.get.side_effect = [None]
 
-    bond_action_runner = DefaultBondActionRunner(mock_action_runner)
+    bond_action_runner = BondActionRunner(mock_action_runner)
 
     mock_run = self._make_mock_run()
 
@@ -79,16 +78,16 @@ class DefaultBondActionRunnerTestCase(BaseCrossbenchTestCase):
             action)
 
   def test_get_current_conference_code(self):
-    action_runner = DefaultActionRunner()
-    bond_action_runner = DefaultBondActionRunner(action_runner)
+    action_runner = ActionRunner()
+    bond_action_runner = BondActionRunner(action_runner)
     for browser in self.browsers:
       browser.set_current_url("https://meet.google.com/abc-def-ghi")
       code = bond_action_runner.get_current_conference_code(browser=browser)
       self.assertEqual(code, "abc-def-ghi")
 
   def test_get_current_conference_code_invalid(self):
-    action_runner = DefaultActionRunner()
-    bond_action_runner = DefaultBondActionRunner(action_runner)
+    action_runner = ActionRunner()
+    bond_action_runner = BondActionRunner(action_runner)
     for browser in self.browsers:
       browser.set_current_url("https://www.google.com")
       with self.assertRaisesRegex(RuntimeError,
@@ -96,9 +95,8 @@ class DefaultBondActionRunnerTestCase(BaseCrossbenchTestCase):
         bond_action_runner.get_current_conference_code(browser=browser)
 
   @patch(
-      "crossbench.action_runner.default_bond_action_runner.BondClient",
-      autospec=True)
-  @patch("crossbench.action_runner.default_bond_action_runner.dt.datetime")
+      "crossbench.action_runner.bond_action_runner.BondClient", autospec=True)
+  @patch("crossbench.action_runner.bond_action_runner.dt.datetime")
   def test_meet_create(self, mock_datetime, mock_bond_client_cls):
     (mock_run, mock_bond_client, mock_action_runner, bond_action_runner,
      action) = self._make_meet_create_mocks(mock_datetime, mock_bond_client_cls)
@@ -118,9 +116,8 @@ class DefaultBondActionRunnerTestCase(BaseCrossbenchTestCase):
             timeout=dt.timedelta(seconds=27)))
 
   @patch(
-      "crossbench.action_runner.default_bond_action_runner.BondClient",
-      autospec=True)
-  @patch("crossbench.action_runner.default_bond_action_runner.dt.datetime")
+      "crossbench.action_runner.bond_action_runner.BondClient", autospec=True)
+  @patch("crossbench.action_runner.bond_action_runner.dt.datetime")
   def test_meet_create_create_meeting_timeout(self, mock_datetime,
                                               mock_bond_client_cls):
     (mock_run, mock_bond_client, mock_action_runner, bond_action_runner,
@@ -138,9 +135,8 @@ class DefaultBondActionRunnerTestCase(BaseCrossbenchTestCase):
     mock_action_runner.get.assert_not_called()
 
   @patch(
-      "crossbench.action_runner.default_bond_action_runner.BondClient",
-      autospec=True)
-  @patch("crossbench.action_runner.default_bond_action_runner.dt.datetime")
+      "crossbench.action_runner.bond_action_runner.BondClient", autospec=True)
+  @patch("crossbench.action_runner.bond_action_runner.dt.datetime")
   def test_meet_create_add_bots_timeout(self, mock_datetime,
                                         mock_bond_client_cls):
     (mock_run, mock_bond_client, mock_action_runner, bond_action_runner,
@@ -160,11 +156,9 @@ class DefaultBondActionRunnerTestCase(BaseCrossbenchTestCase):
     mock_action_runner.get.assert_not_called()
 
   @patch(
-      "crossbench.action_runner.default_bond_action_runner.BondClient",
-      autospec=True)
+      "crossbench.action_runner.bond_action_runner.BondClient", autospec=True)
   def test_meet_script(self, mock_bond_client_cls):
-    bond_action_runner = DefaultBondActionRunner(
-        MagicMock(name="Mock ActionRunner"))
+    bond_action_runner = BondActionRunner(MagicMock(name="Mock ActionRunner"))
 
     mock_run = self._make_mock_run()
     mock_run.browser.current_url = "https://meet.google.com/abc-def-ghi"

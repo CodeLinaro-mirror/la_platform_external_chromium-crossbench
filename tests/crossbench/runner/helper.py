@@ -14,7 +14,7 @@ from unittest import mock
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
+from crossbench.action_runner.base import ActionRunner
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
 from crossbench.env.runner_env import RunnerEnv
@@ -35,7 +35,6 @@ from tests.crossbench.mock_helper import MockBenchmark, MockStory
 
 if TYPE_CHECKING:
   from crossbench import plt
-  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import ProbeT
@@ -84,7 +83,7 @@ class MockRun(ResultOrigin):
     self.is_success = True
     self.index = index
     self.story = story
-    self.action_runner: ActionRunner = action_runner or DefaultActionRunner()
+    self.action_runner: ActionRunner = action_runner or ActionRunner()
     self.story_secrets = Secrets()
     self._out_dir = (
         browser_session.root_dir / safe_filename(self._browser.unique_name) /

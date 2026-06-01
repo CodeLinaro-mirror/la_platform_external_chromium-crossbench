@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pathlib
 
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
+from crossbench.action_runner.base import ActionRunner
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import LoadingPageFilter
 from crossbench.browsers.settings import Settings
@@ -61,7 +61,7 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
     self.session = BrowserSessionRunGroup(self.runner.env,
                                           self.runner.probes, self.browser,
                                           Flags(), 1, self.root_dir, True, True)
-    self.action_runner = DefaultActionRunner()
+    self.action_runner = ActionRunner()
     self.mock_run = MockRun(self.runner, self.session, "run 1",
                             self.action_runner)
 

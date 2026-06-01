@@ -1,4 +1,4 @@
-# Copyright 2025 The Chromium Authors
+# Copyright 2026 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -7,22 +7,36 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING
 
-from typing_extensions import override
-
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.action_runner.action.get import GetAction
-from crossbench.action_runner.bond_base import BondActionRunner
 from crossbench.bond.bond import BondClient
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
+  from crossbench.action_runner.action.bond import BondAction
   from crossbench.action_runner.base import ActionRunner
   from crossbench.browsers.browser import Browser
   from crossbench.runner.run import Run
 
 
-class DefaultBondActionRunner(BondActionRunner):
+class BondActionNotImplementedError(NotImplementedError):
+
+  def __init__(self,
+               runner: BondActionRunner,
+               action: BondAction,
+               msg_context: str = "") -> None:
+    self.runner = runner
+    self.action = action
+
+    if msg_context:
+      msg_context = f", context: {msg_context}"
+    message = (f"{action.TYPE!s}-action "
+               f"not implemented in {type(runner).__name__}{msg_context}")
+    super().__init__(message)
+
+
+class BondActionRunner:
 
   def __init__(self, action_runner: ActionRunner) -> None:
     self._action_runner: ActionRunner = action_runner
@@ -56,7 +70,6 @@ class DefaultBondActionRunner(BondActionRunner):
       raise TimeoutError("A previous request used up the timeout")
     return timeout
 
-  @override
   def meet_create(self, run: Run, action: i_action.MeetCreateAction) -> None:
     deadline = dt.datetime.now() + action.timeout
     bond_client = self.bond_client(run)

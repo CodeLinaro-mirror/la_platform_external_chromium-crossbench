@@ -1,13 +1,16 @@
-# Copyright 2025 The Chromium Authors
+# Copyright 2026 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 from __future__ import annotations
 
 import pathlib
-from typing import TYPE_CHECKING, Any
+import unittest
+from typing import TYPE_CHECKING, Any, cast
+from unittest.mock import MagicMock, call
 
+from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.probe import ProbeAction
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
+from crossbench.action_runner.base import ActionRunner
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.browsers.settings import Settings
 from crossbench.exception import MultiException
@@ -19,6 +22,7 @@ from crossbench.probes.meminfo import MeminfoProbe
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.probes.shell import ShellProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
+from crossbench.runner.run import Run
 from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import \
     ActionRunnerTestCase
@@ -30,13 +34,83 @@ if TYPE_CHECKING:
   from crossbench.probes.probe import Probe, ProbeContext
 
 
+class MockActionRunner(ActionRunner):
+
+  def __init__(self):
+    super().__init__()
+    self.click_js = MagicMock(name="Mock click_js")
+
+
+class BaseActionRunnerTestCase(unittest.TestCase):
+
+  def test_click_attempts_first_success(self):
+    mock_run = MagicMock(name="Mock Run")
+    mock_action_runner = MockActionRunner()
+
+    config_dict = {"action": "click", "selector": "#button", "attempts": 3}
+    action = ClickAction.config_parser().parse(config_dict)
+
+    mock_action_runner.click_js.side_effect = [None]
+
+    mock_action_runner.click(mock_run, action)
+
+    mock_action_runner.click_js.assert_called_once_with(mock_run, action)
+
+  def test_click_attempts_last_success(self):
+    mock_run = MagicMock(name="Mock Run")
+    mock_action_runner = MockActionRunner()
+
+    config_dict = {"action": "click", "selector": "#button", "attempts": 3}
+    action = ClickAction.config_parser().parse(config_dict)
+
+    mock_action_runner.click_js.side_effect = [
+        Exception("fail first"),
+        Exception("and second"),
+        None,
+    ]
+
+    mock_action_runner.click(mock_run, action)
+
+    mock_action_runner.click_js.assert_has_calls([
+        call(mock_run, action),
+        call(mock_run, action),
+        call(mock_run, action),
+    ])
+
+  def test_click_attempts_fail(self):
+    mock_run = MagicMock(name="Mock Run")
+    mock_action_runner = MockActionRunner()
+
+    config_dict = {"action": "click", "selector": "#button", "attempts": 3}
+    action = ClickAction.config_parser().parse(config_dict)
+
+    class TestException(Exception):
+      pass
+
+    mock_action_runner.click_js.side_effect = [
+        TestException("fail first"),
+        TestException("and second"),
+        TestException("and third"),
+    ]
+
+    with self.assertRaises(TestException):
+      mock_action_runner.click(mock_run, action)
+
+    mock_action_runner.click_js.assert_has_calls([
+        call(mock_run, action),
+        call(mock_run, action),
+        call(mock_run, action),
+    ])
+
+
 class DefaultActionRunnerTestCase(ActionRunnerTestCase):
 
   def set_up_with_probe(
       self,
       probe: Probe,
       probe_context_cls: type[ProbeContext] | None = None,
-      probe_context_args: dict[str, Any] | None = None) -> None:
+      probe_context_args: dict[str, Any] | None = None,
+  ) -> None:
     self.fs.create_file(
         "/usr/bin/google-chrome", contents="definitely a browser")
 
@@ -47,23 +121,33 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
     self.probe = probe
     self.runner = MockRunner(probes=[self.probe])
     self.root_dir = pathlib.Path()
-    self.session = BrowserSessionRunGroup(self.runner.env,
-                                          self.runner.probes, self.browser,
-                                          Flags(), 1, self.root_dir, True, True)
-    self.action_runner = DefaultActionRunner()
-    self.mock_run = MockRun(
+    self.session = BrowserSessionRunGroup(
+        self.runner.env,
+        self.runner.probes,
+        self.browser,
+        Flags(),
+        1,
+        self.root_dir,
+        True,
+        True,
+    )
+    self.action_runner = ActionRunner()
+    self.mock_run: Any = MockRun(
         self.runner,
         self.session,
         "run 1",
         self.action_runner,
-        probe=self.probe)
+        probe=self.probe,
+    )
 
     if not probe_context_cls:
-      self.probe_context = self.probe.create_context(self.mock_run)
+      self.probe_context = self.probe.create_context(cast(Run, self.mock_run))
     else:
       self.probe_context = probe_context_cls(
-          self.probe, self.mock_run,
-          **(probe_context_args if probe_context_args else {}))
+          self.probe,
+          cast(Run, self.mock_run),
+          **(probe_context_args if probe_context_args else {}),
+      )
 
     self.mock_run.set_probe_context(self.probe_context)
 
@@ -83,8 +167,11 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
     self.assertEqual(len(self.platform.screenshots), 1)
 
   def test_probe_action_wait_for_download_missing_pattern(self):
-    self.set_up_with_probe(DownloadsProbe(), FileWatchDownloadsProbeContext,
-                           {"downloads_dir": "/Downloads"})
+    self.set_up_with_probe(
+        DownloadsProbe(),
+        FileWatchDownloadsProbeContext,
+        {"downloads_dir": "/Downloads"},
+    )
     action_block = ActionBlock(
         actions=(ProbeAction(probe="downloads", kwargs={}),))
 
@@ -94,8 +181,11 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
   def test_probe_action_wait_for_download(self):
     downloads_dir = pathlib.Path("/Downloads")
     downloads_dir.mkdir()
-    self.set_up_with_probe(DownloadsProbe(), FileWatchDownloadsProbeContext,
-                           {"downloads_dir": downloads_dir})
+    self.set_up_with_probe(
+        DownloadsProbe(),
+        FileWatchDownloadsProbeContext,
+        {"downloads_dir": downloads_dir},
+    )
     action_block = ActionBlock(
         actions=(
             ProbeAction(probe="downloads", kwargs={"pattern": "a_download"}),))
@@ -120,8 +210,9 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
                 "browser": False,
                 "system": False,
                 "packages": [],
-                "title": ""
-            }),))
+                "title": "",
+            },
+        ),))
 
     self.action_runner.run_block(self.mock_run, action_block)
     self.assertEqual(self.browser.performance_marks[-1], "crossbench-meminfo")
@@ -132,8 +223,10 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
         actions=(ProbeAction(probe="dump_html", kwargs={}),))
     self.browser.set_default_js_return(True)
     self.action_runner.run_block(self.mock_run, action_block)
-    self.assertEqual(self.browser.invoked_js[-1].script,
-                     "return document.children[0].outerHTML")
+    self.assertEqual(
+        self.browser.invoked_js[-1].script,
+        "return document.children[0].outerHTML",
+    )
 
 
 if __name__ == "__main__":

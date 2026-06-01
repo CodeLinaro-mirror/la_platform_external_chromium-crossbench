@@ -9,13 +9,12 @@ from typing import TYPE_CHECKING, Self
 
 from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
+from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.chromeos_input_action_runner import \
     ChromeOSInputActionRunner
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 
 if TYPE_CHECKING:
-  from crossbench.action_runner.base import ActionRunner
   from crossbench.plt.base import Platform
 
 
@@ -23,7 +22,7 @@ class ActionRunnerType(ConfigEnum):
   AUTO = (
       "auto",
       "Uses the best-fit default action runner based on the browser platform.")
-  BASIC = ("basic", str(DefaultActionRunner.__doc__))
+  BASIC = ("basic", str(ActionRunner.__doc__))
   ANDROID = ("android", str(AndroidInputActionRunner.__doc__))
   CHROMEOS = ("chromeos", str(ChromeOSInputActionRunner.__doc__))
 
@@ -52,7 +51,7 @@ class ActionRunnerConfig(ConfigObject):
         return ChromeOSInputActionRunner()
       case ActionRunnerType.BASIC:
         # TODO: rename
-        return DefaultActionRunner()
+        return ActionRunner()
       case ActionRunnerType.AUTO:
         return self.instantiate_default(platform)
       case _:
@@ -63,4 +62,4 @@ class ActionRunnerConfig(ConfigObject):
       return AndroidInputActionRunner()
     if platform.is_chromeos:
       return ChromeOSInputActionRunner()
-    return DefaultActionRunner()
+    return ActionRunner()

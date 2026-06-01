@@ -4,11 +4,11 @@
 from __future__ import annotations
 
 import pathlib
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from typing_extensions import override
 
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
+from crossbench.action_runner.base import ActionRunner
 from crossbench.probes.probe import Probe
 from crossbench.probes.results import BrowserProbeResult, \
     DuplicateProbeResult, EmptyProbeResult, LocalProbeResult, \
@@ -16,9 +16,6 @@ from crossbench.probes.results import BrowserProbeResult, \
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase, \
     CrossbenchFakeFsTestCase
-
-if TYPE_CHECKING:
-  from crossbench.action_runner.base import ActionRunner
 
 
 class ProbeResultTestCase(CrossbenchFakeFsTestCase):
@@ -304,7 +301,7 @@ class MockRun:
     self.browser = browser
     self.browser_platform = browser_platform
     self.is_remote = False
-    self.action_runner: ActionRunner = action_runner or DefaultActionRunner()
+    self.action_runner: ActionRunner = action_runner or ActionRunner()
 
 
 class BrowserProbeResultTestCase(BaseCrossbenchTestCase):

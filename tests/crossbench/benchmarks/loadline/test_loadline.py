@@ -12,7 +12,7 @@ from typing import Sequence
 import pandas as pd
 from typing_extensions import override
 
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
+from crossbench.action_runner.base import ActionRunner
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
@@ -42,9 +42,10 @@ class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
         about_blank_duration=dt.timedelta(),
         playback=PlaybackController.default(),
         tabs=TabController.default(),
-        action_runner=DefaultActionRunner(),
+        action_runner=ActionRunner(),
         run_login=True,
-        run_setup=True)
+        run_setup=True,
+    )
     story_filter = super().story_filter(patterns, args=args, separate=separate)
     assert isinstance(story_filter, LoadLinePageFilter)
     return story_filter
@@ -67,7 +68,7 @@ class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
   def test_get_pages_config_variants(self):
     configs = [
         LoadLine1TabletBenchmark.get_pages_config(),
-        LoadLine1PhoneBenchmark.get_pages_config()
+        LoadLine1PhoneBenchmark.get_pages_config(),
     ]
     self.assertNotEqual(configs[0], configs[1])
 
@@ -104,8 +105,13 @@ class TestLoadLine1Helpers(BaseCrossbenchTestCase):
   def test_process_scores(self):
     query_result = pd.DataFrame(
         columns=["score", "cb_browser", "cb_story", "cb_temperature", "cb_run"],
-        data=[[4, "chrome", "story1", 0, 0], [6, "chrome", "story1", 0, 1],
-              [19, "chrome", "story2", 0, 0], [21, "chrome", "story2", 0, 1]])
+        data=[
+            [4, "chrome", "story1", 0, 0],
+            [6, "chrome", "story1", 0, 1],
+            [19, "chrome", "story2", 0, 0],
+            [21, "chrome", "story2", 0, 1],
+        ],
+    )
     scores = loadline_1.process_scores(query_result)
 
     self.assertEqual(scores.shape, (1, 3))
@@ -116,14 +122,24 @@ class TestLoadLine1Helpers(BaseCrossbenchTestCase):
   def test_process_breakdown(self):
     query_result = pd.DataFrame(
         columns=[
-            "network", "process_launch", "renderer", "compositor", "gpu",
-            "surfaceflinger", "cb_browser", "cb_story", "cb_temperature",
-            "cb_run"
+            "network",
+            "process_launch",
+            "renderer",
+            "compositor",
+            "gpu",
+            "surfaceflinger",
+            "cb_browser",
+            "cb_story",
+            "cb_temperature",
+            "cb_run",
         ],
-        data=[[5, 3, 9, 11, 10, 10, "chrome", "story1", 0, 0],
-              [5, 3, 11, 9, 10, 10, "chrome", "story1", 0, 1],
-              [7, 10, 19, 21, 20, 20, "chrome", "story2", 0, 0],
-              [7, 10, 21, 19, 20, 20, "chrome", "story2", 0, 1]])
+        data=[
+            [5, 3, 9, 11, 10, 10, "chrome", "story1", 0, 0],
+            [5, 3, 11, 9, 10, 10, "chrome", "story1", 0, 1],
+            [7, 10, 19, 21, 20, 20, "chrome", "story2", 0, 0],
+            [7, 10, 21, 19, 20, 20, "chrome", "story2", 0, 1],
+        ],
+    )
     breakdown = loadline_1.process_breakdown(query_result)
 
     self.assertEqual(breakdown.shape, (2, 5))

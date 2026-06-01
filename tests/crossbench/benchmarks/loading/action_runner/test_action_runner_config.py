@@ -10,11 +10,11 @@ import unittest
 from crossbench import plt
 from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
+from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.chromeos_input_action_runner import \
     ChromeOSInputActionRunner
 from crossbench.action_runner.config import ActionRunnerConfig, \
     ActionRunnerType
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
 from tests import test_helper
 
 
@@ -30,15 +30,13 @@ class ActionRunnerConfigTest(unittest.TestCase):
     action_runner = ActionRunnerConfig.parse("basic")
     self.assertIsInstance(action_runner, ActionRunnerConfig)
     self.assertEqual(action_runner.type, ActionRunnerType.BASIC)
-    self.assertIsInstance(
-        action_runner.instantiate(plt.PLATFORM), DefaultActionRunner)
+    self.assertIsInstance(action_runner.instantiate(plt.PLATFORM), ActionRunner)
 
   def test_parse_auto(self):
     action_runner = ActionRunnerConfig.parse("auto")
     self.assertIsInstance(action_runner, ActionRunnerConfig)
     self.assertEqual(action_runner.type, ActionRunnerType.AUTO)
-    self.assertIsInstance(
-        action_runner.instantiate(plt.PLATFORM), DefaultActionRunner)
+    self.assertIsInstance(action_runner.instantiate(plt.PLATFORM), ActionRunner)
 
   def test_parse_auto_android(self):
     action_runner = ActionRunnerConfig.parse("auto")

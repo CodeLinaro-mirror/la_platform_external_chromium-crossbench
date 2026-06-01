@@ -10,13 +10,13 @@ import json
 import pathlib
 import re
 import unittest
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import Any, Sequence
 from unittest import mock
 
 from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
-from crossbench.action_runner.default_action_runner import DefaultActionRunner
+from crossbench.action_runner.base import ActionRunner
 from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.google import GOOGLE_LOGIN_URL
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
@@ -37,9 +37,6 @@ from tests.crossbench.base import BaseCliTestCase
 from tests.crossbench.benchmarks.helper import SubStoryTestCase
 from tests.crossbench.mock_browser import JsInvocation
 
-if TYPE_CHECKING:
-  from crossbench.action_runner.base import ActionRunner
-
 
 class TestPageLoadBenchmark(SubStoryTestCase):
 
@@ -54,10 +51,12 @@ class TestPageLoadBenchmark(SubStoryTestCase):
                    separate: bool = True,
                    playback: PlaybackController = PlaybackController.default(),
                    tabs: TabController = TabController.default(),
-                   action_runner: ActionRunner = DefaultActionRunner(),
+                   action_runner: ActionRunner | None = None,
                    about_blank_duration: dt.timedelta = dt.timedelta(),
                    run_login: bool = True,
                    run_setup: bool = True) -> LoadingPageFilter:
+    if action_runner is None:
+      action_runner = ActionRunner()
     args = argparse.Namespace(
         about_blank_duration=about_blank_duration,
         playback=playback,
