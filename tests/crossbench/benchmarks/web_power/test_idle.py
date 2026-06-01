@@ -67,14 +67,21 @@ class WebPowerIdleBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(kwargs["site_key"], "cnn")
     self.assertEqual(kwargs["idle_duration"],
                      WebPowerIdleStory.DEFAULT_DURATION)
+    self.assertEqual(kwargs["stabilization_time"],
+                     WebPowerIdleStory.DEFAULT_STABILIZATION_TIME)
 
   def test_kwargs_from_cli_custom(self) -> None:
     parser = CBArgumentParser()
     parser = WebPowerIdleBenchmark.add_cli_arguments(parser)
-    args = parser.parse_args(["--site=cnn", "--idle-duration=45s"])
+    args = parser.parse_args([
+        "--site=cnn",
+        "--idle-duration=45s",
+        "--stabilization-time=15s",
+    ])
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
     self.assertEqual(kwargs["site_key"], "cnn")
     self.assertEqual(kwargs["idle_duration"], dt.timedelta(seconds=45))
+    self.assertEqual(kwargs["stabilization_time"], dt.timedelta(seconds=15))
 
 
 if __name__ == "__main__":

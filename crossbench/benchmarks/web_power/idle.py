@@ -85,6 +85,17 @@ class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
         default=cls.DEFAULT_STORY_CLS.DEFAULT_DURATION,
         help="How long to run the idle phase for. (0 indicates forever.) "
         f"(Default: {default_s:.0f}s)")
+    default_stabilization_s = (
+        cls.DEFAULT_STORY_CLS.DEFAULT_STABILIZATION_TIME.total_seconds())
+    parser.add_argument(
+        "--stabilization",
+        "--stabilization-time",
+        dest="stabilization_time",
+        type=DurationParser.positive_or_zero_duration,
+        default=cls.DEFAULT_STORY_CLS.DEFAULT_STABILIZATION_TIME,
+        help="How long to wait after setting up the page to stabilize. "
+        f"(Default: {default_stabilization_s:.0f}s)",
+    )
     return parser
 
   @classmethod
@@ -92,4 +103,5 @@ class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["idle_duration"] = args.idle_duration
+    kwargs["stabilization_time"] = args.stabilization_time
     return kwargs
