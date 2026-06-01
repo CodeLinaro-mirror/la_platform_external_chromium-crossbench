@@ -338,6 +338,8 @@ class BrowserConfig(ConfigObject):
       return all_browsers.Firefox.nightly_path(platform)
     if identifier in ("webview", "org.chromium.webview_shell"):
       return pth.AnyPosixPath("org.chromium.webview_shell")
+    if identifier == "webview_embedder":
+      return pth.AnyPosixPath("webview_embedder")
     return None
 
   @classmethod

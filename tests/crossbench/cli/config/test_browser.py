@@ -394,6 +394,16 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
     ]
     self.assertEqual(
+        BrowserConfig.parse("adb:webview_embedder"),
+        BrowserConfig(
+            pth.AnyPosixPath("webview_embedder"),
+            DriverConfig(BrowserDriverType.ANDROID)))
+    self.assertListEqual(self.platform.sh_results, [])
+
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+    ]
+    self.assertEqual(
         BrowserConfig.parse("adb:com.google.android.googlequicksearchbox"),
         BrowserConfig(
             pth.AnyPosixPath("com.google.android.googlequicksearchbox"),

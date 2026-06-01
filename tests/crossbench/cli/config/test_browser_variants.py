@@ -1355,6 +1355,16 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     # valid embedder short name should take precedence over "webview" in path
     self.assertIs(variants.get_browser_cls(config), WebviewEmbedder)
 
+  def test_get_browser_cls_webview_embedder_short_name(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT,
+    ]
+    variants = BrowserVariantsConfig()
+    config = BrowserConfig(
+        browser=pth.AnyPath("webview_embedder"),
+        driver=DriverConfig(driver_type=BrowserDriverType.ANDROID))
+    self.assertIs(variants.get_browser_cls(config), WebviewEmbedder)
+
   def test_get_browser_cls_chromeos_ssh_default(self):
     self.platform.sh_results = []
     variants = BrowserVariantsConfig()

@@ -38,6 +38,8 @@ EMBEDDER_SHORT_NAME_TO_PACKAGE: Final[immutabledict[str, str]] = immutabledict({
         "com.google.android.libraries.ads.mobile.maitier.testapps.webview",
     "webview_test_app":
         "com.google.android.libraries.ads.mobile.maitier.testapps.webview",
+    "webview_embedder":
+        "org.chromium.webview_shell",
 })
 
 
@@ -151,10 +153,13 @@ class WebviewEmbedder(Webview):
 
   @override
   def _lookup_android_package(self, path: pth.AnyPath) -> str:
+    path_str = str(path)
+    if path_str in EMBEDDER_SHORT_NAME_TO_PACKAGE:
+      return EMBEDDER_SHORT_NAME_TO_PACKAGE[path_str]
     if path.suffix == ".apk":
-      path_str = str(path).lower()
+      path_str_lower = path_str.lower()
       for short_name, package_name in EMBEDDER_SHORT_NAME_TO_PACKAGE.items():
-        if short_name in path_str:
+        if short_name in path_str_lower:
           return package_name
     return super()._lookup_android_package(path)
 
