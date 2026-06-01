@@ -1,8 +1,12 @@
 # Gemini Workspace Configuration
 
-Read "./README.md" for all instructions.
-Use `poetry run cb` instead of just running `./cb.py`
-Use `poetry run help` to gather all details.
+Read `./README.md` for all instructions.
+
+If running `./cb.py` fails, try the following:
+
+1. Look for a local `depot_tools` installation and add it to `$PATH`.
+
+2. If no `depot_tools` found, try running with `poetry`: `poetry run cb`.
 
 # Python Code Style Guide
 - You must follow the google style guide for python coding.
@@ -42,10 +46,10 @@ Use `poetry run help` to gather all details.
   config/* folder.
 
 # Crossbench Sanity Checks
-- Always do `poetry run ruff check` after completing a change to validate
+- Always do `vpython3 -m ruff check` after completing a change to validate
   all results.
-- Run `poetry run mypy crossbench` after finishing a larger change.
-- Run tests with `poetry run pytest tests/crossbench -x -n 7`.
+- Run `vpython3 -m mypy crossbench` after finishing a larger change.
+- Run tests with `vpython3 -m pytest tests/crossbench -x -n 7`.
 
 # Running Performance Investigations
 - **Environment Validation**: When running `cb.py` automatically, it might
