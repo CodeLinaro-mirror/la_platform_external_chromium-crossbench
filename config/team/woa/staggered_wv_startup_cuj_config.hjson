@@ -1,0 +1,34 @@
+{
+  "cujs": {
+    "staggered-wv-startup": [
+      {
+        "action": "wait"
+        "duration": "2s"
+      }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "clazz": "android.widget.Button"
+          "text": "STARTUP WEBVIEW"
+        }
+      }
+      {
+        "action": "wait"
+        "duration": "5s"
+      }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "clazz": "android.widget.Button"
+          "text": "STARTUP WEBVIEW"
+        }
+      }
+      {
+        "action": "wait"
+        "duration": "5s"
+      }
+    ]
+  }
+}
