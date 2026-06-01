@@ -1,6 +1,7 @@
 {
   "probes": {
     "perfetto": {
+      "trace_browser_startup": true
       "textproto":
         '''
         buffers {
