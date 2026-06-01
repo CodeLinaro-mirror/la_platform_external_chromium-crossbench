@@ -23,6 +23,20 @@ data_sources {
 }
 data_sources {
   config {
+    name: "org.chromium.trace_metadata2"
+  }
+}
+data_sources {
+  config {
+    name: "track_event"
+    track_event_config {
+      disabled_categories: "*"
+      enabled_categories: "blink.user_timing"
+    }
+  }
+}
+data_sources {
+  config {
     name: "linux.sys_stats"
     sys_stats_config {
       stat_period_ms: 1000
@@ -56,4 +70,3 @@ data_sources: {
   }
 }
 duration_ms: 500000
-
