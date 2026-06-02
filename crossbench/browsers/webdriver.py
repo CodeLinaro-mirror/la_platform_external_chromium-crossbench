@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
 import selenium.common.exceptions
 import urllib3
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from typing_extensions import override
 
 from crossbench import exception
@@ -282,6 +283,17 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   @override
   def switch_to_new_tab(self) -> None:
     self._private_driver.switch_to.new_window("tab")
+
+  def trusted_click(self, selector: str) -> None:
+    # Triggers a native click, generating a trusted user gesture in the browser.
+    logging.debug("WebDriverBrowser.trusted_click(%s)", selector)
+    assert self._is_running
+    try:
+      element = self._private_driver.find_element(By.CSS_SELECTOR, selector)
+      element.click()
+    except selenium.common.exceptions.WebDriverException as e:
+      raise DriverException(f"Failed to click element '{selector}': {e.msg}",
+                            self) from e
 
   @override
   def screenshot(self, path: LocalPath) -> None:

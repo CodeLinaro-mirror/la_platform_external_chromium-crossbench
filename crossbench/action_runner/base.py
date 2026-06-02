@@ -269,6 +269,8 @@ class ActionRunner:
       do_click = self.click_touch
     elif input_source is InputSource.MOUSE:
       do_click = self.click_mouse
+    elif input_source is InputSource.DRIVER:
+      do_click = self.click_driver
     else:
       raise RuntimeError(f"Unsupported input source: '{input_source}'")
 
@@ -356,6 +358,27 @@ class ActionRunner:
   def click_mouse(self, action: i_action.ClickAction) -> None:
     raise InputSourceNotImplementedError(self, action, action.input_source)
 
+  def click_driver(self, action: i_action.ClickAction) -> None:
+    if action.duration > dt.timedelta():
+      raise InputSourceNotImplementedError(self, action, action.input_source,
+                                           "Non-zero duration not implemented")
+    selector_config = action.position.selector
+    if not selector_config:
+      raise RuntimeError("Missing selector")
+
+    with self.actions("ClickAction (Driver)", measure=False) as actions:
+      if selector_config.wait:
+        self.wait_for_element_impl(
+            actions,
+            selector=selector_config.selector,
+            timeout=action.timeout,
+            required=selector_config.required)
+
+      self.browser.trusted_click(selector_config.selector)
+
+      if action.verify:
+        self.wait_for_element_impl(
+            actions, selector=action.verify, timeout=action.timeout)
   def scroll_js(self, action: i_action.ScrollAction) -> None:
     with self.actions("ScrollAction", measure=False) as actions:
       selector = ""

@@ -15,3 +15,7 @@ class InputSource(ConfigEnum):
   TOUCH = ("touch", "Use the touchscreen to perform the action")
   MOUSE = ("mouse", "Use the mouse to perform the action")
   KEYBOARD = ("keyboard", "Use the keyboard to perform the action")
+  DRIVER = (
+      "driver",
+      "Use webdriver to perform the action (e.g. trusted click)",
+  )

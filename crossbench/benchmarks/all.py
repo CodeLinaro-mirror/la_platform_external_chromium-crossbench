@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from crossbench.benchmarks.blink_ai import BlinkAIBenchmark
 from crossbench.benchmarks.devtools_frontend.devtools_frontend_benchmark import \
     DevToolsFrontendBenchmark
 from crossbench.benchmarks.embedder import EmbedderBenchmark
@@ -35,6 +36,7 @@ from crossbench.benchmarks.web_power import WebPowerIdleBenchmark, \
 from crossbench.benchmarks.webai import WebAIBenchmark
 
 __all__ = [
+    "BlinkAIBenchmark",
     "DevToolsFrontendBenchmark",
     "EmbedderBenchmark",
     "JetStream11Benchmark",

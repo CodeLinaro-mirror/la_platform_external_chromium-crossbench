@@ -512,6 +512,9 @@ class Browser(abc.ABC):
   def switch_to_new_tab(self) -> None:
     raise NotImplementedError(f"New tab is not supported by {self}")
 
+  def trusted_click(self, selector: str) -> None:
+    raise NotImplementedError(f"Trusted click is not supported by {self}")
+
   def screenshot(self, path: pth.LocalPath) -> None:
     # TODO: implement screenshot on browser and platform.
     raise NotImplementedError(f"Taking screenshots is not supported by {self}")

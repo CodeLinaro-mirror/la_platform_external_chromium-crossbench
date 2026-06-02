@@ -163,6 +163,9 @@ return [
   def click_mouse(self, action: i_action.ClickAction) -> None:
     self._click_impl(action, True)
 
+  def click_driver(self, action: i_action.ClickAction) -> None:
+    self._click_impl(action, False)
+
   def swipe(self, action: i_action.SwipeAction) -> None:
     with self.actions("SwipeAction", measure=False):
       self._swipe_impl(action.start_x, action.start_y, action.end_x,

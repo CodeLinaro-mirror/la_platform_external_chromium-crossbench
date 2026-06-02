@@ -102,7 +102,8 @@ class ClickAction(InputSourceAction):
 
   @override
   def supported_input_sources(self) -> tuple[InputSource, ...]:
-    return (InputSource.JS, InputSource.TOUCH, InputSource.MOUSE)
+    return (InputSource.JS, InputSource.TOUCH, InputSource.MOUSE,
+            InputSource.DRIVER)
 
   @override
   def to_json(self) -> JsonDict:

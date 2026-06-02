@@ -164,6 +164,12 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
   def show_url(self, url, target: str | None = None) -> None:
     self.url_list.append(url)
 
+  def trusted_click(self, selector: str) -> None:
+    self.js(
+        "const el = document.querySelector(arguments[0]); "
+        "if (el) el.click();",
+        arguments=[selector])
+
   @override
   def current_window_id(self) -> str:
     return str(self.tab_list[-1])

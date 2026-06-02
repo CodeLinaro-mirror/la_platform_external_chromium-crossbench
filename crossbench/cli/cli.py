@@ -135,6 +135,7 @@ class MainCrossBenchArgumentParser(CBArgumentParser):
 
 class CrossBenchCLI:
   BENCHMARKS: tuple[BenchmarkClass, ...] = (
+      benchmarks.BlinkAIBenchmark,
       benchmarks.BrowserStartupBenchmark,
       benchmarks.DevToolsFrontendBenchmark,
       benchmarks.EmbedderBenchmark,
