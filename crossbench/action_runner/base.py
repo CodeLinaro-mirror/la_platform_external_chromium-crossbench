@@ -297,7 +297,7 @@ class ActionRunner:
   def get(self, action: i_action.GetAction) -> None:
     with self.actions(f"Get {action.url}", measure=False) as actions:
       with actions.wait_until(action.duration):
-        actions.show_url(action.url, str(action.target), action.ready_state,
+        actions.show_url(action.url, action.target, action.ready_state,
                          action.timeout)
 
   def clear_cache(self, action: i_action.ClearCacheAction) -> None:

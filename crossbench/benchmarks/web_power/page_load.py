@@ -70,7 +70,7 @@ class WebPowerPageLoadStory(WebPowerStory):
     # (which starts by closing tab_index=0) always has a tab to close.
     logging.info("Initial setup page load (new tab).")
     with run.actions("Initial_Setup_Load", verbose=True) as actions:
-      actions.show_url(self.url, target=WindowTarget.NEW_TAB.value)
+      actions.show_url(self.url, target=WindowTarget.NEW_TAB)
       if self.cool_off_time.total_seconds() > 0:
         actions.wait(self.cool_off_time)
 
@@ -84,7 +84,7 @@ class WebPowerPageLoadStory(WebPowerStory):
         with run.actions(f"Close_Tab_{i}"):
           run.browser.close_tab(tab_index=0, timeout=dt.timedelta(seconds=1))
         with run.actions(f"Page_Load_{i}") as actions:
-          actions.show_url(self.url, target=WindowTarget.NEW_TAB.value)
+          actions.show_url(self.url, target=WindowTarget.NEW_TAB)
     run.browser.performance_mark("power-measurement-stop")
 
 

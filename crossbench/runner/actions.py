@@ -11,7 +11,7 @@ import sys
 import time as py_time
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Self, Sequence
 
-from crossbench.action_runner.action.enums import ReadyState
+from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.cli import ui
 from crossbench.helper.durations import TimeScope
 from crossbench.parse import ObjectParser
@@ -162,11 +162,13 @@ class Actions(TimeScope):
   def show_url(
       self,
       url: str,
-      target: str | None = None,
+      target: str | WindowTarget | None = None,
       ready_state: ReadyState = ReadyState.ANY,
       timeout: dt.timedelta = dt.timedelta()
   ) -> None:
     self._assert_is_active()
+    if target is not None:
+      target = str(target)
     if target and target in ("_blank", "_parent", "_top"):
       # TODO: use target in the driver instead.
       self.js(f"window.open('{url}','{target}');")
