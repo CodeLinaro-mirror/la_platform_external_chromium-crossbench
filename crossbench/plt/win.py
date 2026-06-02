@@ -84,7 +84,6 @@ class WinPlatform(Platform):
     # https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/taskkill
     self.sh("taskkill", "/F", "/IM", process_name, check=False)
 
-  @functools.lru_cache(maxsize=1)
   @override
   def _raw_machine_arch(self) -> str:
     self.assert_is_local()

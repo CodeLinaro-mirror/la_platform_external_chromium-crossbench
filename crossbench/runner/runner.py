@@ -41,7 +41,6 @@ if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
-  from crossbench.plt.base import Platform
   from crossbench.probes.thermal_monitor import ThermalStatus
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.timing import AnyTimeUnit
@@ -89,7 +88,7 @@ class ThreadMode(StrEnumWithHelp):
           runs, key=lambda run: run.browser_session, sort_key=None)
     elif self == ThreadMode.PLATFORM:
       groups = collection_helper.group_by(
-          runs, key=lambda run: run.browser_platform, sort_key=None)
+          runs, key=lambda run: run.browser_platform.key, sort_key=None)
     elif self == ThreadMode.BROWSER:
       groups = collection_helper.group_by(
           runs, key=lambda run: run.browser, sort_key=None)
@@ -621,8 +620,9 @@ class Runner:
   def has_only_single_run_platforms(self) -> bool:
     if not self.runs:
       raise RuntimeError(f"{type(self)} has no runs")
-    platform_runs: dict[Platform, list[Run]] = collection_helper.group_by(
-        self.runs, key=lambda run: run.browser_platform)
+    platform_runs: dict[tuple[Any, ...],
+                        list[Run]] = collection_helper.group_by(
+                            self.runs, key=lambda run: run.browser_platform.key)
     return all(len(runs) <= 1 for runs in platform_runs.values())
 
   def _get_runs(self) -> Iterable[Run]:

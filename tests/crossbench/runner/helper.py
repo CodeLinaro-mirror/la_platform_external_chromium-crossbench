@@ -222,6 +222,10 @@ class MockPlatform:
   def __str__(self):
     return self.name
 
+  @property
+  def key(self) -> str:
+    return self.name
+
 
 class MockWait(NamedTuple):
   time: AnyTimeUnit

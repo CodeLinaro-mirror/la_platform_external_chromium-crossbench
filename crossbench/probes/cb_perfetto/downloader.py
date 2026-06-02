@@ -49,7 +49,7 @@ class PerfettoToolDownloader:
   @property
   def url(self) -> str:
     # TODO: use new platform.lookup helper.
-    platform_name = PLATFORM_LOOKUP[self._platform.key]
+    platform_name = PLATFORM_LOOKUP[self._platform.type_key]
     return f"{_BASE_STORAGE_URL}/{self._version}/{platform_name}/{self._tool}"
 
   @property

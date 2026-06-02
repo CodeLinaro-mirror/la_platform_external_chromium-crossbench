@@ -668,6 +668,11 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def serial_id(self) -> str:
     return self._adb.serial_id
 
+  @property
+  @override
+  def key(self) -> tuple[Any, ...]:
+    return ("android", self.serial_id)
+
   @functools.cached_property
   def _uiautomator_device(self) -> android_device.AndroidDevice:
     ad = android_device.AndroidDevice(self.serial_id)

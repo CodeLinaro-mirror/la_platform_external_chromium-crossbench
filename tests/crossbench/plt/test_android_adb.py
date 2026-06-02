@@ -165,8 +165,6 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     })
 
   def test_unique_name(self):
-    self.expect_sh("getprop ro.product.cpu.abi", result="arm64-v8a")
-    self.expect_sh("getprop ro.product.cpu.abi", result="arm64-v8a")
     platform_2 = AndroidAdbPlatform(
         self.host_platform, "SomeDeviceId", adb=self.adb)
     self.assertNotEqual(self.platform.unique_name, platform_2.unique_name)

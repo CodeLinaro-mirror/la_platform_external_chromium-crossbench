@@ -149,7 +149,6 @@ class IOSPlatform(RemotePlatformMixin, Platform):
     # TODO: Can we get actual iOS uptime?
     return dt.timedelta()
 
-  @functools.lru_cache(maxsize=1)
   @override
   def _raw_machine_arch(self) -> str:
     return "arm64"

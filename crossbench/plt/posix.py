@@ -70,7 +70,6 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   def version(self) -> PlatformVersion:
     return PosixVersion.parse(self.version_str)
 
-  @functools.lru_cache(maxsize=1)
   def _raw_machine_arch(self) -> str:
     if self.is_local:
       return super()._raw_machine_arch()

@@ -465,8 +465,15 @@ class RunnerTestCase(BaseRunnerTestCase):
 
   def test_has_only_single_run_platforms_multi_platform(self):
     benchmark = MockBenchmark((self.stories[0],))
+
+    class RemoteMockPlatform(FullMockPlatform):
+
+      @property
+      def key(self) -> tuple[str, ...]:
+        return ("remote", "remote-mock-platform")
+
     mock_remote_chrome = MockChromeDev(
-        "chrome-dev_remote", settings=Settings(platform=FullMockPlatform()))
+        "chrome-dev_remote", settings=Settings(platform=RemoteMockPlatform()))
     browsers = (self.browsers[0], mock_remote_chrome)
     runner = self.default_runner(browsers=browsers, benchmark=benchmark)
     runner.run()
@@ -474,8 +481,15 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertTrue(runner.has_only_single_run_platforms())
 
   def test_has_only_single_run_platforms_multi_platform_stories(self):
+
+    class RemoteMockPlatform(FullMockPlatform):
+
+      @property
+      def key(self) -> tuple[str, ...]:
+        return ("remote", "remote-mock-platform")
+
     mock_remote_chrome = MockChromeDev(
-        "chrome-dev_remote", settings=Settings(platform=FullMockPlatform()))
+        "chrome-dev_remote", settings=Settings(platform=RemoteMockPlatform()))
     browsers = (self.browsers[0], mock_remote_chrome)
     runner = self.default_runner(browsers=browsers)
     runner.run()

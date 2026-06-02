@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Final, Mapping
+from typing import TYPE_CHECKING, Any, Final, Mapping
 
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.remote import RemotePlatformMixin
@@ -55,6 +55,10 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
   @property
   def is_remote_ssh(self) -> bool:
     return True
+
+  @property
+  def key(self) -> tuple[Any, ...]:
+    return ("ssh", self.host, str(self.port))
 
   @abc.abstractmethod
   def build_ssh_cmd(self,

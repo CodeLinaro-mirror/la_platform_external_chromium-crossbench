@@ -151,8 +151,7 @@ class Platform(abc.ABC):
   def unique_name(self) -> str:
     """Unique id per platform."""
     key_str = ".".join(self.key)
-    remote_str = "remote" if self.is_remote else "local"
-    return f"{key_str}.{remote_str}.{self.id}"
+    return f"{key_str}.{self.id}"
 
   @property
   @abc.abstractmethod
@@ -198,6 +197,11 @@ class Platform(abc.ABC):
     return self.unique_name
 
   @property
+  def key(self) -> tuple[Any, ...]:
+    return ("local", self.name, str(self.machine))
+
+  @property
+
   def is_remote(self) -> bool:
     return False
 
@@ -222,7 +226,6 @@ class Platform(abc.ABC):
       return MachineArch.ARM_32
     raise NotImplementedError(f"Unsupported machine type: {raw}")
 
-  @functools.lru_cache(maxsize=1)
   def _raw_machine_arch(self) -> str:
     self.assert_is_local()
     return py_platform.machine()
@@ -240,7 +243,7 @@ class Platform(abc.ABC):
     return self.machine == MachineArch.ARM_64
 
   @property
-  def key(self) -> tuple[str, str]:
+  def type_key(self) -> tuple[str, str]:
     """Key used for looking up platform specific objects."""
     return (self.name, str(self.machine))
 

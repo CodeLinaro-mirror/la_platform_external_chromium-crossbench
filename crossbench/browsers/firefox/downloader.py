@@ -74,7 +74,7 @@ class FirefoxDownloader(Downloader):
                reinstall: bool = False) -> None:
     assert not browser_type, f"Unexpected browser_type: {browser_type}"
     assert not platform_name, f"Unexpected platform_name: {platform_name}"
-    firefox_platform_name = _PLATFORM_NAME_LOOKUP.get(browser_platform.key)
+    firefox_platform_name = _PLATFORM_NAME_LOOKUP.get(browser_platform.type_key)
     if not firefox_platform_name:
       raise ValueError(
           "Unsupported macOS architecture for downloading Firefox: "

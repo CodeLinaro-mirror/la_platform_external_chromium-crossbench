@@ -180,10 +180,12 @@ class ChromeDriverFinder:
 
   def _get_cft_url(self, milestone: int) -> tuple[str, str | None]:
     logging.debug("ChromeDriverFinder: Looking up chrome-for-testing version.")
-    platform_name: str | None = self.CFT_PLATFORM.get(self.host_platform.key)
+    platform_name: str | None = self.CFT_PLATFORM.get(
+        self.host_platform.type_key)
     if not platform_name:
       raise DriverNotFoundError(
-          f"Unsupported platform {self.host_platform.key} for chromedriver.")
+          f"Unsupported platform {self.host_platform.type_key} "
+          "for chromedriver.")
     listing_url, version_data = self._get_cft_version_data(milestone)
     download_url: str | None = None
     if version_data:
@@ -332,10 +334,10 @@ class ChromeDriverFinder:
   def _get_canary_url(self) -> tuple[str, str | None]:
     logging.debug(
         "ChromeDriverFinder: Try downloading the chromedriver canary version")
-    properties = self.CHROMIUM_DASH_PARAMS.get(self.host_platform.key)
+    properties = self.CHROMIUM_DASH_PARAMS.get(self.host_platform.type_key)
     if not properties:
-      raise DriverNotFoundError(
-          f"Unsupported platform={self.platform}, key={self.host_platform.key}")
+      raise DriverNotFoundError(f"Unsupported platform={self.platform}, "
+                                f"type_key={self.host_platform.type_key}")
     dash_platform = properties["dash_platform"]
     dash_channel = properties.get("dash_channel", "canary")
     # Limit should be > len(canary_versions) so we also get potentially
@@ -384,7 +386,8 @@ class ChromeDriverFinder:
                                 f"for {self.browser.version}")
     # Use prefixes to limit listing results and increase chances of finding
     # a matching version
-    listing_prefix = self.CHROMIUM_LISTING_PREFIX.get(self.host_platform.key)
+    listing_prefix = self.CHROMIUM_LISTING_PREFIX.get(
+        self.host_platform.type_key)
     if not listing_prefix:
       raise NotImplementedError(
           f"Unsupported chromedriver platform {self.host_platform}")

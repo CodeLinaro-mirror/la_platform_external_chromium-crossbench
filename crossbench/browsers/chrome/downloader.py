@@ -115,7 +115,8 @@ class ChromeDownloader(Downloader):
     return self._find_milestone_archive_url()
 
   def _find_milestone_archive_url(self) -> tuple[BrowserVersion, str | None]:
-    platform = self.VERSION_URL_PLATFORM_LOOKUP.get(self._browser_platform.key)
+    platform = self.VERSION_URL_PLATFORM_LOOKUP.get(
+        self._browser_platform.type_key)
     if not platform:
       raise ValueError(f"Unsupported platform {self._browser_platform}")
     # Version ordering is: stable < beta < dev < canary < canary_asan

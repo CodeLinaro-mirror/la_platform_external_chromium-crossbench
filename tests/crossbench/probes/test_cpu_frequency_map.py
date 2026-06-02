@@ -61,7 +61,8 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
     self._create_cpu_dir("cpu1", [42])
 
     with self.assertRaisesRegex(
-        ValueError, r"Target frequency 42 for cpu0 not allowed in linux.*. "
+        ValueError,
+        r"Target frequency 42 for cpu0 not allowed in local.linux.*. "
         r"Available frequencies: \[1, 2\]"):
       frequency_map.get_target_frequencies(self.platform)
 
@@ -71,7 +72,8 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
     self._create_cpu_dir("cpu0", [1, 2])
 
     with self.assertRaisesRegex(
-        ValueError, r"Target frequency 42 for cpu0 not allowed in linux.*. "
+        ValueError,
+        r"Target frequency 42 for cpu0 not allowed in local.linux.*. "
         r"Available frequencies: \[1, 2\]"):
       frequency_map.get_target_frequencies(self.platform)
 
