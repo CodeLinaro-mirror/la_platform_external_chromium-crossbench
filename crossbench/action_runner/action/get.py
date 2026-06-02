@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
-  from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
 
@@ -96,8 +95,8 @@ class GetAction(BaseDurationAction):
     return self._target
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.get(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.get(self)
 
   @override
   def to_json(self) -> JsonDict:

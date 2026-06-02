@@ -139,12 +139,13 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.session = BrowserSessionRunGroup(self.runner.env,
                                           self.runner.probes, self.browser,
                                           Flags(), 1, self.root_dir, True, True)
-    self.action_runner = AndroidInputActionRunner()
-    self.mock_run = MockRun(self.runner, self.session, "run 1",
-                            self.action_runner)
+    self.mock_run = MockRun(self.runner, self.session, "run 1")
+    self.action_runner = AndroidInputActionRunner(self.mock_run)
+    self.mock_run.action_runner = self.action_runner
+
 
   def run_action(self, action: Action) -> None:
-    action.run_with(self.mock_run, self.action_runner)
+    action.run_with(self.action_runner)
 
   def expect_action_setup(
       self,

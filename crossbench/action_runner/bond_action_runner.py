@@ -38,13 +38,18 @@ class BondActionNotImplementedError(NotImplementedError):
 
 class BondActionRunner:
 
-  def __init__(self, action_runner: ActionRunner) -> None:
+  def __init__(self, action_runner: ActionRunner, run: Run) -> None:
     self._action_runner: ActionRunner = action_runner
+    self._run: Run = run
     self._bond_client: BondClient | None = None
 
-  def bond_client(self, run: Run) -> BondClient:
+  @property
+  def run(self) -> Run:
+    return self._run
+
+  def bond_client(self) -> BondClient:
     if not self._bond_client:
-      secret = run.secrets.bond
+      secret = self.run.secrets.bond
       if not secret:
         raise RuntimeError("No bond service account secret provided")
       self._bond_client = BondClient(secret)
@@ -70,9 +75,9 @@ class BondActionRunner:
       raise TimeoutError("A previous request used up the timeout")
     return timeout
 
-  def meet_create(self, run: Run, action: i_action.MeetCreateAction) -> None:
+  def meet_create(self, action: i_action.MeetCreateAction) -> None:
     deadline = dt.datetime.now() + action.timeout
-    bond_client = self.bond_client(run)
+    bond_client = self.bond_client()
     conference_code = bond_client.create_meeting(timeout=action.timeout)
     if action.bots:
       bond_client.add_bots(
@@ -81,14 +86,13 @@ class BondActionRunner:
           timeout=self._timeout_from_deadline(deadline))
     url = f"https://meet.google.com/{conference_code}"
     self._action_runner.get(
-        run,
         GetAction(
             url,
             ready_state=ReadyState.COMPLETE,
             target=action.target,
             timeout=self._timeout_from_deadline(deadline)))
 
-  def meet_script(self, run: Run, action: i_action.MeetScriptAction) -> None:
-    conference_code = self.get_current_conference_code(run.browser)
-    bond_client = self.bond_client(run)
+  def meet_script(self, action: i_action.MeetScriptAction) -> None:
+    conference_code = self.get_current_conference_code(self.run.browser)
+    bond_client = self.bond_client()
     bond_client.run_script(conference_code, action.script, action.timeout)

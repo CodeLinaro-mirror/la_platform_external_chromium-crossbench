@@ -13,7 +13,6 @@ from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_tab_action import BaseTabAction
 from crossbench.parse import ObjectParser
-from crossbench.runner.run import Run
 
 if TYPE_CHECKING:
   import datetime as dt
@@ -22,7 +21,6 @@ if TYPE_CHECKING:
   from crossbench.action_runner.action.action import ActionT
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
-  from crossbench.runner.run import Run
 
 
 class OpenDevToolsAction(BaseTabAction):
@@ -52,5 +50,5 @@ class OpenDevToolsAction(BaseTabAction):
     return parser
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.open_devtools(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.open_devtools(self)

@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
-  from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
 
@@ -47,8 +46,8 @@ class WaitForConditionAction(Action):
     return self._condition
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.wait_for_condition(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.wait_for_condition(self)
 
   @override
   def validate(self) -> None:

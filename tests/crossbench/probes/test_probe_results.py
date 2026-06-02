@@ -301,7 +301,7 @@ class MockRun:
     self.browser = browser
     self.browser_platform = browser_platform
     self.is_remote = False
-    self.action_runner: ActionRunner = action_runner or ActionRunner()
+    self.action_runner: ActionRunner = action_runner or ActionRunner(self)
 
 
 class BrowserProbeResultTestCase(BaseCrossbenchTestCase):

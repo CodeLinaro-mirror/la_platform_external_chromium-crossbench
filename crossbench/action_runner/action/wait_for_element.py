@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
-  from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
 
@@ -72,8 +71,8 @@ class WaitForElementAction(Action):
     return self._check_rect
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.wait_for_element(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.wait_for_element(self)
 
   @override
   def validate(self) -> None:

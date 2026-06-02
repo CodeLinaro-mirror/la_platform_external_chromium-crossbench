@@ -29,7 +29,7 @@ class RunTestCase(BaseRunGroupTestCase):
   def test_find_probe_context(self):
     self.runner.attach_probe(MockProbe())
     session = self.default_session()
-    run = Run(self.runner, session, MockStory("mock story"), None, 1, False,
+    run = Run(self.runner, session, MockStory("mock story"), 1, False,
               "1_default", 1, "test run", dt.timedelta(minutes=1), True)
     session.set_ready()
     with session.open():
@@ -38,7 +38,7 @@ class RunTestCase(BaseRunGroupTestCase):
 
   def test_annotate(self):
     session = self.default_session()
-    run = Run(self.runner, session, MockStory("mock story"), None, 1, False,
+    run = Run(self.runner, session, MockStory("mock story"), 1, False,
               "1_default", 1, "test run", dt.timedelta(minutes=1), True)
     self.assertFalse(list(run.annotations))
     annotation = RunAnnotation.warning("Some warning")

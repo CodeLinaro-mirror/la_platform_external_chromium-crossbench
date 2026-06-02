@@ -16,7 +16,6 @@ if TYPE_CHECKING:
   from crossbench.action_runner.action.action import ActionT
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
-  from crossbench.runner.run import Run
 
 
 class CloseTabAction(BaseTabAction):
@@ -30,5 +29,5 @@ class CloseTabAction(BaseTabAction):
     return parser
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.close_tab(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.close_tab(self)

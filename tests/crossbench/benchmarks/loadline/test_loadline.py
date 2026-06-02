@@ -42,7 +42,7 @@ class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
         about_blank_duration=dt.timedelta(),
         playback=PlaybackController.default(),
         tabs=TabController.default(),
-        action_runner=ActionRunner(),
+        action_runner=ActionRunner(self.mock_run()),
         run_login=True,
         run_setup=True,
     )

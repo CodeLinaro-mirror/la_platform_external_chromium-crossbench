@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
-  from crossbench.runner.run import Run
 
 
 # This action is different from the `JsAction` in that it is not executed on the
@@ -49,5 +48,6 @@ class MeetScriptAction(BondAction):
   def script(self) -> str:
     return self._script
 
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.bond.meet_script(run, self)
+  @override
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.bond.meet_script(self)

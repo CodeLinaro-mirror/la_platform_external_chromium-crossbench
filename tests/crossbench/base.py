@@ -12,7 +12,7 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Callable, Final, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Final, Iterator, Sequence
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -35,10 +35,13 @@ from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.config import config_dir
+from crossbench.flags.base import Flags
 from crossbench.probes.cb_perfetto.perfetto import TraceConfig
+from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.runner import Runner
 from tests.crossbench import mock_browser
 from tests.crossbench.mock_helper import MockCLI, MockPlatform
+from tests.crossbench.runner.mocks import MockRun, MockRunner
 
 if TYPE_CHECKING:
   from pyfakefs import fake_filesystem
@@ -210,6 +213,26 @@ class BaseCrossbenchTestCase(
     logging.getLogger().setLevel(self._default_log_level)
     self.assertListEqual(self.platform.sh_results, [])
     super().tearDown()
+
+  def mock_run(
+      self,
+      runner: Any | None = None,
+      browser: Any | None = None,
+      story: str = "story",
+  ) -> MockRun:
+    runner = runner or MockRunner()
+    browser = browser or self.browsers[0]
+    session = BrowserSessionRunGroup(
+        runner.env,
+        runner.probes,
+        browser,
+        Flags(),
+        1,
+        pathlib.Path(),
+        True,
+        True,
+    )
+    return MockRun(runner, session, story)
 
 
 class SysExitTestException(Exception):

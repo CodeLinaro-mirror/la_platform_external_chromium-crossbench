@@ -57,9 +57,8 @@ class BondActionRunnerTestCase(BaseCrossbenchTestCase):
     mock_action_runner = MagicMock(name="Mock ActionRunner")
     mock_action_runner.get.side_effect = [None]
 
-    bond_action_runner = BondActionRunner(mock_action_runner)
-
     mock_run = self._make_mock_run()
+    bond_action_runner = BondActionRunner(mock_action_runner, mock_run)
 
     mock_bond_client = mock_bond_client_cls.return_value
     mock_bond_client.create_meeting.side_effect = ["mock-conference-code"]
@@ -78,16 +77,18 @@ class BondActionRunnerTestCase(BaseCrossbenchTestCase):
             action)
 
   def test_get_current_conference_code(self):
-    action_runner = ActionRunner()
-    bond_action_runner = BondActionRunner(action_runner)
+    mock_run = self._make_mock_run()
+    action_runner = ActionRunner(mock_run)
+    bond_action_runner = BondActionRunner(action_runner, mock_run)
     for browser in self.browsers:
       browser.set_current_url("https://meet.google.com/abc-def-ghi")
       code = bond_action_runner.get_current_conference_code(browser=browser)
       self.assertEqual(code, "abc-def-ghi")
 
   def test_get_current_conference_code_invalid(self):
-    action_runner = ActionRunner()
-    bond_action_runner = BondActionRunner(action_runner)
+    mock_run = self._make_mock_run()
+    action_runner = ActionRunner(mock_run)
+    bond_action_runner = BondActionRunner(action_runner, mock_run)
     for browser in self.browsers:
       browser.set_current_url("https://www.google.com")
       with self.assertRaisesRegex(RuntimeError,
@@ -101,14 +102,13 @@ class BondActionRunnerTestCase(BaseCrossbenchTestCase):
     (mock_run, mock_bond_client, mock_action_runner, bond_action_runner,
      action) = self._make_meet_create_mocks(mock_datetime, mock_bond_client_cls)
 
-    bond_action_runner.meet_create(mock_run, action)
+    bond_action_runner.meet_create(action)
 
     mock_bond_client.create_meeting.assert_called_once_with(
         timeout=dt.timedelta(seconds=30))
     mock_bond_client.add_bots.assert_called_once_with(
         "mock-conference-code", action.bots, timeout=dt.timedelta(seconds=29))
     mock_action_runner.get.assert_called_once_with(
-        mock_run,
         GetAction(
             "https://meet.google.com/mock-conference-code",
             ready_state=ReadyState.COMPLETE,
@@ -127,7 +127,7 @@ class BondActionRunnerTestCase(BaseCrossbenchTestCase):
          create_meeting_duration=dt.timedelta(seconds=30))
 
     with self.assertRaises(TimeoutError):
-      bond_action_runner.meet_create(mock_run, action)
+      bond_action_runner.meet_create(action)
 
     mock_bond_client.create_meeting.assert_called_once_with(
         timeout=dt.timedelta(seconds=30))
@@ -147,7 +147,7 @@ class BondActionRunnerTestCase(BaseCrossbenchTestCase):
          add_bots_duration=dt.timedelta(seconds=29))
 
     with self.assertRaises(TimeoutError):
-      bond_action_runner.meet_create(mock_run, action)
+      bond_action_runner.meet_create(action)
 
     mock_bond_client.create_meeting.assert_called_once_with(
         timeout=dt.timedelta(seconds=30))
@@ -158,9 +158,10 @@ class BondActionRunnerTestCase(BaseCrossbenchTestCase):
   @patch(
       "crossbench.action_runner.bond_action_runner.BondClient", autospec=True)
   def test_meet_script(self, mock_bond_client_cls):
-    bond_action_runner = BondActionRunner(MagicMock(name="Mock ActionRunner"))
-
     mock_run = self._make_mock_run()
+    bond_action_runner = BondActionRunner(
+        MagicMock(name="Mock ActionRunner"), mock_run)
+
     mock_run.browser.current_url = "https://meet.google.com/abc-def-ghi"
 
     action = MeetScriptAction.parse_dict({
@@ -172,7 +173,7 @@ class BondActionRunnerTestCase(BaseCrossbenchTestCase):
     mock_bond_client = mock_bond_client_cls.return_value
     mock_bond_client.run_script.side_effect = [None]
 
-    bond_action_runner.meet_script(mock_run, action)
+    bond_action_runner.meet_script(action)
 
     mock_bond_client.run_script.assert_called_once_with(
         "abc-def-ghi", "test script", dt.timedelta(seconds=17))

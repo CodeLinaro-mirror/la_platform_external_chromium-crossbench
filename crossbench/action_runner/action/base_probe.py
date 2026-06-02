@@ -21,7 +21,6 @@ if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
   from crossbench.probes.probe import Probe
-  from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
 
@@ -52,8 +51,8 @@ class BaseProbeAction(Action):
     return self._kwargs
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.invoke_probe(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.invoke_probe(self)
 
   def kwargs_to_json(self) -> JsonDict:
     return dict(self.kwargs)

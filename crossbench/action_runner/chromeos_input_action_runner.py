@@ -260,8 +260,8 @@ E: <time> 0000 0000 0
 class ChromeOSInputActionRunner(ActionRunner):
   """Custom ActionRunner for chromeOS devices."""
 
-  def __init__(self) -> None:
-    super().__init__()
+  def __init__(self, run: Run, step_by_step_mode: bool = False) -> None:
+    super().__init__(run, step_by_step_mode)
     self._touch_device: TouchDevice | None = None
     self._mouse_process: subprocess.Popen | None = None
 
@@ -272,11 +272,11 @@ class ChromeOSInputActionRunner(ActionRunner):
       self._mouse_process.kill()
       self._mouse_process.wait()
 
-  def click_touch(self, run: Run, action: i_action.ClickAction) -> None:
+  def click_touch(self, action: i_action.ClickAction) -> None:
     if not self._touch_device:
-      self._touch_device = self._setup_touch_device(run)
+      self._touch_device = self._setup_touch_device()
 
-    with run.actions("ClickAction", measure=False) as actions:
+    with self.actions("ClickAction", measure=False) as actions:
 
       click_location, viewport = self._get_click_location(actions, action)
 
@@ -284,7 +284,6 @@ class ChromeOSInputActionRunner(ActionRunner):
         return
 
       self._execute_touch_playback(
-          run,
           ChromeOSTouchEvent(
               self._touch_device,
               viewport.native_screen,
@@ -299,14 +298,14 @@ class ChromeOSInputActionRunner(ActionRunner):
             timeout=action.timeout,
             check_element_rect=True)
 
-  def click_mouse(self, run: Run, action: i_action.ClickAction) -> None:
-    with run.actions("ClickAction", measure=False) as actions:
+  def click_mouse(self, action: i_action.ClickAction) -> None:
+    with self.actions("ClickAction", measure=False) as actions:
 
       click_location, viewport = self._get_click_location(actions, action)
 
       if not self._mouse_process:
         self._mouse_process = self._setup_mouse_process(
-            run, viewport.native_screen.width, viewport.native_screen.height)
+            viewport.native_screen.width, viewport.native_screen.height)
 
       if not click_location:
         return
@@ -332,11 +331,11 @@ class ChromeOSInputActionRunner(ActionRunner):
             timeout=action.timeout,
             check_element_rect=True)
 
-  def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
+  def scroll_touch(self, action: i_action.ScrollAction) -> None:
     if not self._touch_device:
-      self._touch_device = self._setup_touch_device(run)
+      self._touch_device = self._setup_touch_device()
 
-    with run.actions("ScrollAction", measure=False) as actions:
+    with self.actions("ScrollAction", measure=False) as actions:
 
       viewport_info: ChromeOSViewportInfo = self._get_viewport_info(
           actions, action.selector, False)
@@ -373,7 +372,6 @@ class ChromeOSInputActionRunner(ActionRunner):
           y_end = round(scrollable_top + swipe_distance)
 
         self._execute_touch_playback(
-            run,
             ChromeOSTouchEvent(
                 self._touch_device,
                 viewport_info.native_screen,
@@ -381,12 +379,11 @@ class ChromeOSInputActionRunner(ActionRunner):
                 end_position=Point(scroll_area.middle.x, y_end),
                 duration=swipe_duration))
 
-  def text_input_keyboard(self, run: Run,
-                          action: i_action.TextInputAction) -> None:
+  def text_input_keyboard(self, action: i_action.TextInputAction) -> None:
     if action.keyevent:
       raise ValueError("Keyevents are currently not supported on ChromeOS")
 
-    browser_platform = run.browser_platform
+    browser_platform = self.browser_platform
 
     script = (SCRIPTS_DIR / "text_input.py").read_text()
 
@@ -400,8 +397,8 @@ class ChromeOSInputActionRunner(ActionRunner):
         assert typing_stdin, "Got no stdin"
 
         self._rate_limit_keystrokes(
-            run, action,
-            lambda run, actions, text: typing_stdin.write(text.encode("utf-8")))
+            action,
+            lambda actions, text: typing_stdin.write(text.encode("utf-8")))
       finally:
         if typing_stdin:
           typing_stdin.close()
@@ -481,21 +478,21 @@ class ChromeOSInputActionRunner(ActionRunner):
 
     return viewport_info
 
-  def _query_touch_device(self, run: Run) -> str:
+  def _query_touch_device(self) -> str:
     try:
       with (SCRIPTS_DIR / "query_touch_device.py").open() as file:
-        return run.browser_platform.sh_stdout("python3", "-", stdin=file)
+        return self.browser_platform.sh_stdout("python3", "-", stdin=file)
     except Exception as e:
       raise RuntimeError(
           "Failed to query touchscreen information from device.") from e
 
-  def _setup_touch_device(self, run: Run) -> TouchDevice:
-    touch_device_output = self._query_touch_device(run)
+  def _setup_touch_device(self) -> TouchDevice:
+    touch_device_output = self._query_touch_device()
     return TouchDevice.parse_str(touch_device_output)
 
-  def _setup_mouse_process(self, run: Run, screen_width: int,
+  def _setup_mouse_process(self, screen_width: int,
                            screen_height: int) -> subprocess.Popen:
-    browser_platform = run.browser_platform
+    browser_platform = self.browser_platform
     script = (SCRIPTS_DIR / "mouse.py").read_text()
 
     with browser_platform.NamedTemporaryFile() as script_file:
@@ -520,8 +517,7 @@ class ChromeOSInputActionRunner(ActionRunner):
 
       return mouse_process
 
-  def _execute_touch_playback(self, run: Run,
-                              touch_event: ChromeOSTouchEvent) -> None:
+  def _execute_touch_playback(self, touch_event: ChromeOSTouchEvent) -> None:
     # Ideally the touch event data could just be sent to |input| of evemu-play,
     # but after a lot of testing, evemu-play *only* behaves when input is
     # redirected from a file such as with:
@@ -535,12 +531,12 @@ class ChromeOSInputActionRunner(ActionRunner):
 
     touch_event_cmds = str(touch_event)
 
-    browser_platform = run.browser_platform
+    browser_platform = self.browser_platform
 
     with browser_platform.NamedTemporaryFile() as playback_file:
       browser_platform.write_text(playback_file, touch_event_cmds)
       # Then run evemu-play with the input redirected from the temp file.
-      run.browser_platform.sh(  # noqa: S604
+      self.browser_platform.sh(  # noqa: S604
           f"evemu-play --insert-slot0 "
           f"{shlex.quote(self._touch_device.device_path)} < "
           f"{playback_file}",

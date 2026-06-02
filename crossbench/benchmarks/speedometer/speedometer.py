@@ -289,7 +289,7 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
     action = ClickAction(InputSource.TOUCH,
                          PositionConfig(selector=selector_config))
     try:
-      run.action_runner.click_touch(run, action)
+      run.action_runner.click_touch(action)
       return True
     except ElementNotFoundError:
       return False

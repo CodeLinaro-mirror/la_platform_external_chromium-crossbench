@@ -36,8 +36,8 @@ if TYPE_CHECKING:
 
 class MockActionRunner(ActionRunner):
 
-  def __init__(self):
-    super().__init__()
+  def __init__(self, run: Run) -> None:
+    super().__init__(run)
     self.click_js = MagicMock(name="Mock click_js")
 
 
@@ -45,20 +45,20 @@ class BaseActionRunnerTestCase(unittest.TestCase):
 
   def test_click_attempts_first_success(self):
     mock_run = MagicMock(name="Mock Run")
-    mock_action_runner = MockActionRunner()
+    mock_action_runner = MockActionRunner(mock_run)
 
     config_dict = {"action": "click", "selector": "#button", "attempts": 3}
     action = ClickAction.config_parser().parse(config_dict)
 
     mock_action_runner.click_js.side_effect = [None]
 
-    mock_action_runner.click(mock_run, action)
+    mock_action_runner.click(action)
 
-    mock_action_runner.click_js.assert_called_once_with(mock_run, action)
+    mock_action_runner.click_js.assert_called_once_with(action)
 
   def test_click_attempts_last_success(self):
     mock_run = MagicMock(name="Mock Run")
-    mock_action_runner = MockActionRunner()
+    mock_action_runner = MockActionRunner(mock_run)
 
     config_dict = {"action": "click", "selector": "#button", "attempts": 3}
     action = ClickAction.config_parser().parse(config_dict)
@@ -69,17 +69,17 @@ class BaseActionRunnerTestCase(unittest.TestCase):
         None,
     ]
 
-    mock_action_runner.click(mock_run, action)
+    mock_action_runner.click(action)
 
     mock_action_runner.click_js.assert_has_calls([
-        call(mock_run, action),
-        call(mock_run, action),
-        call(mock_run, action),
+        call(action),
+        call(action),
+        call(action),
     ])
 
   def test_click_attempts_fail(self):
     mock_run = MagicMock(name="Mock Run")
-    mock_action_runner = MockActionRunner()
+    mock_action_runner = MockActionRunner(mock_run)
 
     config_dict = {"action": "click", "selector": "#button", "attempts": 3}
     action = ClickAction.config_parser().parse(config_dict)
@@ -94,12 +94,12 @@ class BaseActionRunnerTestCase(unittest.TestCase):
     ]
 
     with self.assertRaises(TestException):
-      mock_action_runner.click(mock_run, action)
+      mock_action_runner.click(action)
 
     mock_action_runner.click_js.assert_has_calls([
-        call(mock_run, action),
-        call(mock_run, action),
-        call(mock_run, action),
+        call(action),
+        call(action),
+        call(action),
     ])
 
 
@@ -131,14 +131,15 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
         True,
         True,
     )
-    self.action_runner = ActionRunner()
     self.mock_run: Any = MockRun(
         self.runner,
         self.session,
         "run 1",
-        self.action_runner,
         probe=self.probe,
     )
+    self.action_runner = ActionRunner(self.mock_run)
+    self.mock_run.action_runner = self.action_runner
+
 
     if not probe_context_cls:
       self.probe_context = self.probe.create_context(cast(Run, self.mock_run))

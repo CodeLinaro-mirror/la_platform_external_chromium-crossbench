@@ -144,31 +144,31 @@ class GoogleLogin(PresetLoginBlock):
 
         if current_url.startswith(ADD_PASSKEY_REDIRECT):
           logging.info("Dismissing passkey enrollment page.")
-          self._dismiss_login_page(action, runner, run, SKIP_PASSKEY_ACTION,
+          self._dismiss_login_page(action, runner, SKIP_PASSKEY_ACTION,
                                    ADD_PASSKEY_REDIRECT, time_left)
 
         if current_url.startswith(ADD_RECOVERY_PHONE_REDIRECT):
           logging.info("Dismissing account recovery page.")
-          self._dismiss_login_page(action, runner, run, SKIP_RECOVERY_PHONE,
+          self._dismiss_login_page(action, runner, SKIP_RECOVERY_PHONE,
                                    ADD_RECOVERY_PHONE_REDIRECT, time_left)
 
         if current_url.startswith(ADD_HOME_ADDRESS_REDIRECT):
           logging.info("Dismissing add home address page.")
-          self._dismiss_login_page(action, runner, run, SKIP_HOME_ADDRESS,
+          self._dismiss_login_page(action, runner, SKIP_HOME_ADDRESS,
                                    ADD_HOME_ADDRESS_REDIRECT, time_left)
 
-      self._clear_suspicious_activity(action, runner, run)
+      self._clear_suspicious_activity(action, runner)
 
-  def _dismiss_login_page(self, action: Actions, runner: ActionRunner, run: Run,
+  def _dismiss_login_page(self, action: Actions, runner: ActionRunner,
                           click_action: ClickAction, current_url: str,
                           timeout: dt.timedelta) -> None:
-    runner.click(run, click_action)
+    runner.click(click_action)
     action.wait_js_condition(
         f"return !document.URL.startsWith('{current_url}');", 0.2, timeout)
     action.wait_for_ready_state(ReadyState.COMPLETE, timeout)
 
-  def _clear_suspicious_activity(self, action: Actions, runner: ActionRunner,
-                                 run: Run) -> None:
+  def _clear_suspicious_activity(self, action: Actions,
+                                 runner: ActionRunner) -> None:
     has_suspicious_activity = action.js(
         "return document.querySelector("
         "\"[aria-label='Check activity']\") != null;")
@@ -176,5 +176,5 @@ class GoogleLogin(PresetLoginBlock):
     if not has_suspicious_activity:
       return
 
-    runner.click(run, CHECK_SUSPICIOUS_ACTIVITY)
-    runner.click(run, CLICK_YES_IT_WAS_ME)
+    runner.click(CHECK_SUSPICIOUS_ACTIVITY)
+    runner.click(CLICK_YES_IT_WAS_ME)

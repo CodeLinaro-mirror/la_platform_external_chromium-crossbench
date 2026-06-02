@@ -22,7 +22,6 @@ if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
-  from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
 
@@ -69,8 +68,8 @@ class JsAction(Action):
     return self._final_script
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.js(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.js(self)
 
   @override
   def validate(self) -> None:

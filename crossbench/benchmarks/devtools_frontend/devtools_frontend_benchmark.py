@@ -113,7 +113,7 @@ class DevToolsFrontendStory(Story):
     with run.actions("Show URL") as actions:
       actions.show_url(DevToolsFrontendBenchmark.STORY_URLS[site])
       actions.wait(1.0)  # Wait for page load.
-      action_runner.open_devtools(run, OpenDevToolsAction(panel_name=panel))
+      action_runner.open_devtools(OpenDevToolsAction(panel_name=panel))
       actions.wait(1.5)  # Let DevTools settle.
     logging.info("Stopping benchmark...")
 

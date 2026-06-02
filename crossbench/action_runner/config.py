@@ -16,6 +16,7 @@ from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
+  from crossbench.runner.run import Run
 
 
 class ActionRunnerType(ConfigEnum):
@@ -43,23 +44,29 @@ class ActionRunnerConfig(ConfigObject):
         "type", type=ActionRunnerType, default=ActionRunnerType.AUTO)
     return parser
 
-  def instantiate(self, platform: Platform) -> ActionRunner:
+  def instantiate(self,
+                  platform: Platform,
+                  run: Run,
+                  step_by_step_mode: bool = False) -> ActionRunner:
     match self.type:
       case ActionRunnerType.ANDROID:
-        return AndroidInputActionRunner()
+        return AndroidInputActionRunner(run, step_by_step_mode)
       case ActionRunnerType.CHROMEOS:
-        return ChromeOSInputActionRunner()
+        return ChromeOSInputActionRunner(run, step_by_step_mode)
       case ActionRunnerType.BASIC:
         # TODO: rename
-        return ActionRunner()
+        return ActionRunner(run, step_by_step_mode)
       case ActionRunnerType.AUTO:
-        return self.instantiate_default(platform)
+        return self.instantiate_default(platform, run, step_by_step_mode)
       case _:
         raise ValueError(f"Unsupported action runner type: {self.type}")
 
-  def instantiate_default(self, platform: Platform) -> ActionRunner:
+  def instantiate_default(self,
+                          platform: Platform,
+                          run: Run,
+                          step_by_step_mode: bool = False) -> ActionRunner:
     if platform.is_android:
-      return AndroidInputActionRunner()
+      return AndroidInputActionRunner(run, step_by_step_mode)
     if platform.is_chromeos:
-      return ChromeOSInputActionRunner()
-    return ActionRunner()
+      return ChromeOSInputActionRunner(run, step_by_step_mode)
+    return ActionRunner(run, step_by_step_mode)

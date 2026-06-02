@@ -500,6 +500,10 @@ class Runner:
   def has_browser_group(self) -> bool:
     return self._browser_group is not None
 
+  def new_action_runner(self, platform: plt.Platform, run: Run) -> ActionRunner:
+    return self._benchmark.new_action_runner(platform, run,
+                                             self._step_by_step_mode)
+
   def wait_range(self,
                  min_interval: AnyTimeUnit,
                  timeout: AnyTimeUnit,
@@ -650,12 +654,9 @@ class Runner:
             if len(self.cache_temperatures) > 1:
               name_parts.append(f"temperature={temperature_icon(temperature)}")
             name_parts.append(f"index={index}")
-            action_runner = self.benchmark.new_action_runner(browser.platform)
-            action_runner.set_step_by_step_mode(self._step_by_step_mode)
             yield self.create_run(
                 browser_session,
                 story,
-                action_runner,
                 repetition,
                 is_warmup,
                 f"{t_index}_{temperature}",
@@ -667,13 +668,21 @@ class Runner:
             index += 1
           browser_session.set_ready()
 
-  def create_run(self, browser_session: BrowserSessionRunGroup, story: Story,
-                 action_runner: ActionRunner, repetition: int, is_warmup: bool,
-                 temperature: str, index: int, name: str, timeout: dt.timedelta,
-                 throw: bool, env_validation_mode: ValidationMode) -> Run:
-    return Run(self, browser_session, story, action_runner, repetition,
-               is_warmup, temperature, index, name, timeout, throw,
-               env_validation_mode)
+  def create_run(
+      self,
+      browser_session: BrowserSessionRunGroup,
+      story: Story,
+      repetition: int,
+      is_warmup: bool,
+      temperature: str,
+      index: int,
+      name: str,
+      timeout: dt.timedelta,
+      throw: bool,
+      env_validation_mode: ValidationMode,
+  ) -> Run:
+    return Run(self, browser_session, story, repetition, is_warmup, temperature,
+               index, name, timeout, throw, env_validation_mode)
 
   def assert_successful_sessions_and_runs(self) -> None:
     if self._exceptions.is_success:

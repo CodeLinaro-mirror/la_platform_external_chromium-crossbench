@@ -13,12 +13,11 @@ from crossbench.action_runner.action.action_type import ActionType
 
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
-  from crossbench.runner.run import Run
 
 
 class CloseAllTabsAction(Action):
   TYPE: ClassVar[ActionType] = ActionType.CLOSE_ALL_TABS
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.close_all_tabs(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.close_all_tabs(self)

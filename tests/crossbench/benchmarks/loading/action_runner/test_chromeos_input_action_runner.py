@@ -358,11 +358,13 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.session = BrowserSessionRunGroup(self.runner.env,
                                           self.runner.probes, self.browser,
                                           Flags(), 1, self.root_dir, True, True)
-    self.action_runner = ChromeOSInputActionRunner()
-    self.run = MockRun(self.runner, self.session, "run 1", self.action_runner)
+    self.run = MockRun(self.runner, self.session, "run 1")
+    self.action_runner = ChromeOSInputActionRunner(self.run)
+    self.run.action_runner = self.action_runner
+
 
   def run_action(self, action: Action) -> None:
-    action.run_with(self.run, self.action_runner)
+    action.run_with(self.action_runner)
 
   def expect_touch_setup(self, expected_js: JsInvocation, touch_count: int = 1):
 

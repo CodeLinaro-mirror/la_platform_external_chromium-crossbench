@@ -13,12 +13,11 @@ from crossbench.action_runner.action.js import JsAction
 
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
-  from crossbench.runner.run import Run
 
 
 class InjectNewDocumentScriptAction(JsAction):
   TYPE: ClassVar[ActionType] = ActionType.INJECT_NEW_DOCUMENT_SCRIPT
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.inject_new_document_script(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.inject_new_document_script(self)

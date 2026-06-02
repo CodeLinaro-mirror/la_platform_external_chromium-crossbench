@@ -56,7 +56,8 @@ class TestPageLoadBenchmark(SubStoryTestCase):
                    run_login: bool = True,
                    run_setup: bool = True) -> LoadingPageFilter:
     if action_runner is None:
-      action_runner = ActionRunner()
+      action_runner = ActionRunner(self.mock_run())
+
     args = argparse.Namespace(
         about_blank_duration=about_blank_duration,
         playback=playback,

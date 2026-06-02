@@ -80,7 +80,7 @@ class WebPowerPageLoadStory(WebPowerStory):
     with run.actions("Run", verbose=True):
       for i in playback:
         with run.actions(f"Cache_Clear_{i}"):
-          run.action_runner.clear_cache(run, ClearCacheAction())
+          run.action_runner.clear_cache(ClearCacheAction())
         with run.actions(f"Close_Tab_{i}"):
           run.browser.close_tab(tab_index=0, timeout=dt.timedelta(seconds=1))
         with run.actions(f"Page_Load_{i}") as actions:

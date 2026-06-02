@@ -24,7 +24,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.plt.android_adb import AndroidAdbPlatform
   from crossbench.runner.actions import Actions
-  from crossbench.runner.run import Run
 
 
 class ViewportInfo:
@@ -108,10 +107,10 @@ return [
   rect.height
 ];"""
 
-  def scroll_touch(self, run: Run, action: i_action.ScrollAction) -> None:
-    with run.actions("ScrollAction", measure=False) as actions:
+  def scroll_touch(self, action: i_action.ScrollAction) -> None:
+    with self.actions("ScrollAction", measure=False) as actions:
 
-      viewport_info = self._get_viewport_info(run, actions, action.selector)
+      viewport_info = self._get_viewport_info(actions, action.selector)
 
       # The scroll distance is specified in terms of css pixels so adjust to the
       # native pixel density.
@@ -152,37 +151,35 @@ return [
           y_start = scrollable_top
           y_end = scrollable_top + current_distance
 
-        self._swipe_impl(run, round(scroll_area.mid_x), round(y_start),
-                         round(scroll_area.mid_x), round(y_end),
-                         current_duration)
+        self._swipe_impl(
+            round(scroll_area.mid_x), round(y_start), round(scroll_area.mid_x),
+            round(y_end), current_duration)
 
         remaining_distance -= current_distance
 
-  def click_touch(self, run: Run, action: i_action.ClickAction) -> None:
-    self._click_impl(run, action, False)
+  def click_touch(self, action: i_action.ClickAction) -> None:
+    self._click_impl(action, False)
 
-  def click_mouse(self, run: Run, action: i_action.ClickAction) -> None:
-    self._click_impl(run, action, True)
+  def click_mouse(self, action: i_action.ClickAction) -> None:
+    self._click_impl(action, True)
 
-  def swipe(self, run: Run, action: i_action.SwipeAction) -> None:
-    with run.actions("SwipeAction", measure=False):
-      self._swipe_impl(run, action.start_x, action.start_y, action.end_x,
+  def swipe(self, action: i_action.SwipeAction) -> None:
+    with self.actions("SwipeAction", measure=False):
+      self._swipe_impl(action.start_x, action.start_y, action.end_x,
                        action.end_y, action.duration)
 
-  def text_input_keyboard(self, run: Run,
-                          action: i_action.TextInputAction) -> None:
+  def text_input_keyboard(self, action: i_action.TextInputAction) -> None:
     if action.text:
-      self._rate_limit_keystrokes(run, action, self._type_characters)
+      self._rate_limit_keystrokes(action, self._type_characters)
     elif keyevent := action.keyevent:
-      self._send_keyevent(run, keyevent)
+      self._send_keyevent(keyevent)
 
-  def _click_impl(self, run: Run, action: i_action.ClickAction,
-                  use_mouse: bool) -> None:
+  def _click_impl(self, action: i_action.ClickAction, use_mouse: bool) -> None:
     if action.duration > dt.timedelta():
       raise InputSourceNotImplementedError(self, action, action.input_source,
                                            "Non-zero duration not implemented")
     coordinates: Point | None = None
-    with run.actions("ClickAction", measure=False) as actions:
+    with self.actions("ClickAction", measure=False) as actions:
 
       if coordinates_config := action.position.coordinates:
         coordinates = coordinates_config.point()
@@ -191,7 +188,7 @@ return [
           raise InputSourceNotImplementedError(
               self, action, action.input_source,
               "Mouse actions not implemented for UiSelectorConfig")
-        self._click_ui_selector(run, ui_selector, action.timeout)
+        self._click_ui_selector(ui_selector, action.timeout)
       elif selector_config := action.position.selector:
         if selector_config.wait:
           self.wait_for_element_impl(
@@ -203,8 +200,7 @@ return [
               required=selector_config.required)
 
         viewport_info = self._get_viewport_info(
-            run, actions, selector_config.selector,
-            selector_config.scroll_into_view)
+            actions, selector_config.selector, selector_config.scroll_into_view)
 
         rect = viewport_info.element_rect()
         if not rect:
@@ -231,7 +227,7 @@ return [
             ScreenshotPointAnnotation(label="click", point=coordinates))
         cmd.extend(["tap", str(coordinates.x), str(coordinates.y)])
 
-        run.browser_platform.sh(*cmd)
+        self.browser_platform.sh(*cmd)
 
       if action.verify:
         self.wait_for_element_impl(
@@ -240,16 +236,15 @@ return [
             timeout=action.timeout,
             check_element_rect=True)
 
-  def _swipe_impl(self, run: Run, start_x: int, start_y: int, end_x: int,
-                  end_y: int, duration: dt.timedelta) -> None:
+  def _swipe_impl(self, start_x: int, start_y: int, end_x: int, end_y: int,
+                  duration: dt.timedelta) -> None:
 
     duration_millis = round(duration // dt.timedelta(milliseconds=1))
 
-    run.browser_platform.sh("input", "swipe", str(start_x), str(start_y),
-                            str(end_x), str(end_y), str(duration_millis))
+    self.browser_platform.sh("input", "swipe", str(start_x), str(start_y),
+                             str(end_x), str(end_y), str(duration_millis))
 
   def _get_viewport_info(self,
-                         run: Run,
                          actions: Actions,
                          selector: str | None = None,
                          scroll_into_view: bool = False) -> ViewportInfo:
@@ -265,8 +260,7 @@ return [
      height) = actions.js(
          script, arguments=[selector, scroll_into_view])
 
-    raw_chrome_window_bounds: DisplayRectangle = self._find_chrome_window_size(
-        run)
+    raw_chrome_window_bounds: DisplayRectangle = self._find_chrome_window_size()
 
     element_rect: DisplayRectangle | None = None
     if found_element:
@@ -284,7 +278,7 @@ return [
 
     raise RuntimeError("Unsupported browser for android action runner.")
 
-  def _find_chrome_window_size(self, run: Run) -> DisplayRectangle:
+  def _find_chrome_window_size(self) -> DisplayRectangle:
     # Find the chrome app window position by dumping the android app window
     # list. The list is sorted from highest to lowest z-order, so the first
     # Chrome window is the focused window.
@@ -298,10 +292,10 @@ return [
     #
     # mAppBounds=Rect(0, 0 - 480, 800)
     browser_main_window_name = self._get_browser_window_name(
-        run.browser.attributes())
+        self.browser.attributes())
 
-    raw_window_config = run.browser_platform.sh_stdout("dumpsys", "window",
-                                                       "windows")
+    raw_window_config = self.browser_platform.sh_stdout("dumpsys", "window",
+                                                        "windows")
 
     raw_window_config = raw_window_config[raw_window_config
                                           .find(browser_main_window_name):]
@@ -316,20 +310,20 @@ return [
     return DisplayRectangle(
         Point(int(match["left"]), int(match["top"])), width, height)
 
-  def _type_characters(self, run: Run, _: Actions, characters: str) -> None:
+  def _type_characters(self, _: Actions, characters: str) -> None:
     # TODO(kalutes) handle special characters and other whitespaces like '\t'
 
     # The 'input text' command cannot handle spaces directly. Replace space
     # characters with the encoding '%s'.
     characters = characters.replace(" ", "%s")
-    run.browser_platform.sh("input", "keyboard", "text", characters)
+    self.browser_platform.sh("input", "keyboard", "text", characters)
 
-  def _send_keyevent(self, run: Run, keyevent: str) -> None:
-    run.browser_platform.sh("input", "keyevent", keyevent)
+  def _send_keyevent(self, keyevent: str) -> None:
+    self.browser_platform.sh("input", "keyevent", keyevent)
 
-  def _click_ui_selector(self, run: Run, ui_selector: UiSelectorConfig,
+  def _click_ui_selector(self, ui_selector: UiSelectorConfig,
                          timeout: dt.timedelta) -> None:
-    adb_platform = cast("AndroidAdbPlatform", run.browser_platform)
+    adb_platform = cast("AndroidAdbPlatform", self.browser_platform)
     with adb_platform.uiautomator_device() as ad:
       selector_dict = ui_selector.to_json()
       ui_object = ad.ui(**ui_selector.to_json())

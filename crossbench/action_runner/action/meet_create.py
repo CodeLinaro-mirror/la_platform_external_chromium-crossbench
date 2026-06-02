@@ -20,7 +20,6 @@ if TYPE_CHECKING:
 
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
-  from crossbench.runner.run import Run
 
 
 class MeetCreateAction(BondAction):
@@ -54,5 +53,5 @@ class MeetCreateAction(BondAction):
     return self._target
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.bond.meet_create(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.bond.meet_create(self)

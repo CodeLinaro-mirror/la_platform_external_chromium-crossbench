@@ -100,7 +100,7 @@ class InteractivePage(Page):
       logging.error("Failed to take a failure screenshot: %s", e)
 
     try:
-      action_runner.invoke_probe(run, DumpHtmlAction(suffix=message))
+      action_runner.invoke_probe(DumpHtmlAction(suffix=message))
     except ProbeContextLookupError:
       pass
     except Exception as e:  # noqa: BLE001

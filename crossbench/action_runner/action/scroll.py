@@ -19,7 +19,6 @@ from crossbench.parse import DurationParser, NumberParser, ObjectParser
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
-  from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
 
@@ -68,8 +67,8 @@ class ScrollAction(InputSourceAction):
     return self._required
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.scroll(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.scroll(self)
 
   @override
   def validate(self) -> None:

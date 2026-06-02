@@ -21,7 +21,6 @@ if TYPE_CHECKING:
   import urllib.parse as urlparse
 
   from crossbench.action_runner.base import ActionRunner
-  from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
 
@@ -121,7 +120,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
     return self._timeout != dt.timedelta.max
 
   @abc.abstractmethod
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
+  def run_with(self, action_runner: ActionRunner) -> None:
     pass
 
   @override

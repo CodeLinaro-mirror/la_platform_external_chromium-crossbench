@@ -30,6 +30,7 @@ if TYPE_CHECKING:
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.cli.types import Subparsers
   from crossbench.plt.base import Platform
+  from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
 VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
@@ -155,8 +156,12 @@ class Benchmark(abc.ABC):
           f"class as {self.DEFAULT_STORY_CLS}")
     return list(stories)
 
-  def new_action_runner(self, platform: Platform) -> ActionRunner:
-    return self._action_runner_config.instantiate(platform)
+  def new_action_runner(self,
+                        platform: Platform,
+                        run: Run,
+                        step_by_step_mode: bool = False) -> ActionRunner:
+    return self._action_runner_config.instantiate(platform, run,
+                                                  step_by_step_mode)
 
   def setup(self, runner: Runner) -> None:
     del runner

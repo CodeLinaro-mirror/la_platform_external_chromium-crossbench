@@ -13,12 +13,11 @@ from crossbench.action_runner.action.base_duration import DurationAction
 
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
-  from crossbench.runner.run import Run
 
 
 class WaitAction(DurationAction):
   TYPE: ClassVar[ActionType] = ActionType.WAIT
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.wait(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.wait(self)

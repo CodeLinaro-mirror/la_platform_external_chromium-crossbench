@@ -19,7 +19,6 @@ from crossbench.parse import DurationParser, ObjectParser
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
-  from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
 
@@ -64,8 +63,8 @@ class TextInputAction(InputSourceAction):
     return self._keyevent
 
   @override
-  def run_with(self, run: Run, action_runner: ActionRunner) -> None:
-    action_runner.text_input(run, self)
+  def run_with(self, action_runner: ActionRunner) -> None:
+    action_runner.text_input(self)
 
   @override
   def validate(self) -> None:
