@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from typing_extensions import override
 
 from crossbench.action_runner.action.clear_cache import ClearCacheAction
+from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.loading.playback_controller import \
     PeriodicPlaybackController
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
@@ -65,14 +66,13 @@ class WebPowerPageLoadStory(WebPowerStory):
     with run.actions("Lead_Wait", verbose=True) as actions:
       actions.wait(self.lead_wait_time)
 
-    if self.cool_off_time.total_seconds() > 0:
-      logging.info("Cooling off for %s (loading once without measuring).",
-                   self.cool_off_time)
-      with run.actions("Cool_Off_Load", verbose=True) as actions:
-        actions.show_url(self.url)
+    # The initial setup load in a new tab guarantees that the page-load loop
+    # (which starts by closing tab_index=0) always has a tab to close.
+    logging.info("Initial setup page load (new tab).")
+    with run.actions("Initial_Setup_Load", verbose=True) as actions:
+      actions.show_url(self.url, target=WindowTarget.NEW_TAB.value)
+      if self.cool_off_time.total_seconds() > 0:
         actions.wait(self.cool_off_time)
-      logging.info("Clearing cache post cool-off.")
-      run.action_runner.clear_cache(run, ClearCacheAction())
 
     logging.info("Starting page-load loop.")
     run.browser.performance_mark("power-measurement-start")
@@ -81,8 +81,10 @@ class WebPowerPageLoadStory(WebPowerStory):
       for i in playback:
         with run.actions(f"Cache_Clear_{i}"):
           run.action_runner.clear_cache(run, ClearCacheAction())
+        with run.actions(f"Close_Tab_{i}"):
+          run.browser.close_tab(tab_index=0, timeout=dt.timedelta(seconds=1))
         with run.actions(f"Page_Load_{i}") as actions:
-          actions.show_url(self.url)
+          actions.show_url(self.url, target=WindowTarget.NEW_TAB.value)
     run.browser.performance_mark("power-measurement-stop")
 
 
