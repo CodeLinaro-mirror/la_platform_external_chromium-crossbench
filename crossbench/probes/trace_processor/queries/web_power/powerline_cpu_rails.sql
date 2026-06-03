@@ -11,8 +11,8 @@ INCLUDE PERFETTO MODULE android.power_rails;
 DROP VIEW IF EXISTS measured_interval;
 CREATE VIEW measured_interval AS
 SELECT
-  (SELECT ts FROM slice WHERE name = 'crossbench-power-measurement-start' LIMIT 1) AS start_ts,
-  (SELECT ts FROM slice WHERE name = 'crossbench-power-measurement-stop' LIMIT 1) AS end_ts;
+  (SELECT ts FROM slice WHERE name = 'crossbench-web-power-start' LIMIT 1) AS start_ts,
+  (SELECT ts FROM slice WHERE name = 'crossbench-web-power-stop' LIMIT 1) AS end_ts;
 
 SELECT
   SUM(energy_delta) as total_energy,

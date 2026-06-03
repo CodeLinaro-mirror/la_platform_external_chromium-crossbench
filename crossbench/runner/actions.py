@@ -38,16 +38,17 @@ def _default_success_condition(js_result: Any) -> bool:
 class Actions(TimeScope):
 
   _max_end_datetime: dt.datetime
+  _performance_mark: str
 
-  def __init__(
-      self,
-      message: str,
-      run: Run,
-      runner: Runner | None = None,
-      browser: Browser | None = None,
-      verbose: bool = False,
-      measure: bool = True,
-      timeout: dt.timedelta = dt.timedelta()) -> None:
+  def __init__(self,
+               message: str,
+               run: Run,
+               runner: Runner | None = None,
+               browser: Browser | None = None,
+               verbose: bool = False,
+               measure: bool = True,
+               timeout: dt.timedelta = dt.timedelta(),
+               performance_mark: str = "") -> None:
     assert message, "Actions need a name"
     super().__init__(message)
     self._exception_annotation: ExceptionAnnotationScope = run.exceptions.info(
@@ -63,6 +64,7 @@ class Actions(TimeScope):
                                    run.max_end_datetime())
     else:
       self._max_end_datetime = run.max_end_datetime()
+    self._performance_mark : str = performance_mark
 
   @property
   def timing(self) -> Timing:
@@ -82,12 +84,16 @@ class Actions(TimeScope):
     else:
       # Print message that doesn't overlap with helper.Spinner
       sys.stdout.write(f"   {self._message.ljust(30)}\r")
+    if self._performance_mark:
+      self._browser.performance_mark(f"{self._performance_mark}-start")
     return self
 
   def __exit__(self, exc_type: type[BaseException] | None,
                exc_value: BaseException | None,
                exc_traceback: TracebackType | None) -> None:
     self._is_active = False
+    if self._performance_mark:
+      self._browser.performance_mark(f"{self._performance_mark}-stop")
     self._exception_annotation.__exit__(exc_type, exc_value, exc_traceback)
     super().__exit__(exc_type, exc_value, exc_traceback)
     logging.debug("Action end: %s", self._message)

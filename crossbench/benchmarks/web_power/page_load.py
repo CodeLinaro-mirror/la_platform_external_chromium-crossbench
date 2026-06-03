@@ -75,9 +75,9 @@ class WebPowerPageLoadStory(WebPowerStory):
         actions.wait(self.cool_off_time)
 
     logging.info("Starting page-load loop.")
-    run.browser.performance_mark("power-measurement-start")
     playback = PeriodicPlaybackController(self.page_load_count, self.interval)
-    with run.actions("Run", verbose=True):
+    with run.actions(
+        "Run", verbose=True, performance_mark=WebPowerStory.MEASUREMENT_MARK):
       for i in playback:
         with run.actions(f"Cache_Clear_{i}"):
           run.action_runner.clear_cache(ClearCacheAction())
@@ -85,7 +85,6 @@ class WebPowerPageLoadStory(WebPowerStory):
           run.browser.close_tab(tab_index=0, timeout=dt.timedelta(seconds=1))
         with run.actions(f"Page_Load_{i}") as actions:
           actions.show_url(self.url, target=WindowTarget.NEW_TAB)
-    run.browser.performance_mark("power-measurement-stop")
 
 
 class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):

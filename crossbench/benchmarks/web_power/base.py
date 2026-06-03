@@ -41,6 +41,7 @@ def _value_or(value: _T | None, alternative: _T) -> _T:
 
 class WebPowerStory(Story):
   DEFAULT_GRACE_PERIOD: ClassVar[dt.timedelta] = dt.timedelta(seconds=20)
+  MEASUREMENT_MARK: ClassVar[str] = "web-power"
 
   _LEGACY_WPR_RECORDING = ("gs://chrome-partner-loadline/power/"
                            "CHROME_EFFICIENCY_KPI_2026_04_03.wprgo")

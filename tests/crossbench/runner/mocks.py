@@ -102,8 +102,14 @@ class MockRun(ResultOrigin):
   def actions(self,
               name: str,
               verbose: bool = False,
-              measure: bool = True) -> Actions:
-    return Actions(name, self, verbose=verbose, measure=measure)
+              measure: bool = True,
+              performance_mark: str = "") -> Actions:
+    return Actions(
+        name,
+        self,
+        verbose=verbose,
+        measure=measure,
+        performance_mark=performance_mark)
 
   def set_probe_context(self, probe_context: ProbeContext) -> None:
     self.probe_context = probe_context
