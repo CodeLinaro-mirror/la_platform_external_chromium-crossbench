@@ -82,6 +82,17 @@
       "sleep"
       "3"
     ]
+    // Grant notification permission to prevent permission prompt dialog on Android 13+
+    "grant_notification_permission": [
+      "sh"
+      "-c"
+      "pm grant com.google.android.apps.dummyvpn android.permission.POST_NOTIFICATIONS || true"
+    ]
+    // Let the system fully process the grant permission command.
+    "wait_after_grant": [
+      "sleep"
+      "3"
+    ]
     // Open the app: com.google.android.apps.dummyvpn
     "open_vpn_app": [
       "am"
@@ -102,12 +113,19 @@
       "sleep"
       "3"
     ]
-    // Click "OK" if a dialog pops up, based on Pixel 4 coordinates from uiautomator dump
-    "confirm_dialog": [
+    // Click "OK" if a dialog pops up (Pixel 4 Y coordinate fallback)
+    "confirm_dialog_pixel4": [
       "input"
       "tap"
       "887"
       "1410"
+    ]
+    // Click "OK" if a dialog pops up (Pixel 10 Y coordinate fallback)
+    "confirm_dialog_pixel10": [
+      "input"
+      "tap"
+      "887"
+      "1530"
     ]
   }
 }
