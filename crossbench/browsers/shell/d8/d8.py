@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Sequence, cast
 from typing_extensions import override
 
 from crossbench import exception
+from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.shell.d8.shell import D8Shell
 from crossbench.browsers.shell.d8.version import D8Version
@@ -168,7 +169,11 @@ class D8(ShellBrowser):
     return result
 
   @override
-  def show_url(self, url: str, target: str | None = None) -> None:
+  def show_url(self,
+               url: str,
+               target: WindowTarget = WindowTarget.SELF) -> None:
+    if target != WindowTarget.SELF:
+      raise NotImplementedError(f"D8 show_url does not support target {target}")
     if url.startswith("data:text/html;"):
       self._print_data_url(url)
       return

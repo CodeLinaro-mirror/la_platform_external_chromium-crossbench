@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, ClassVar, Final, Generic, Self, TypeVar
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.enums import ReadyState
+from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 
@@ -126,7 +126,7 @@ chrome.send(
       actions.show_url(
           url,
           ready_state=ReadyState.COMPLETE,
-          target="_new_tab",
+          target=WindowTarget.NEW_TAB,
           timeout=dt.timedelta(seconds=10))
       actions.js(self.STRUCTURED_METRICS_SEND)
       actions.wait_js_condition(self.STRUCTURED_METRICS_WAIT, 0.1, timeout=10.0)

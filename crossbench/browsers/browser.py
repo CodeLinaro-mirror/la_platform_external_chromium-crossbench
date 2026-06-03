@@ -15,6 +15,7 @@ from ordered_set import OrderedSet
 
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
 from crossbench.flags.base import Flags, FlagsData, FlagsT
@@ -506,7 +507,9 @@ class Browser(abc.ABC):
     raise NotImplementedError(f"Getting current url is not supported by {self}")
 
   @abc.abstractmethod
-  def show_url(self, url: str, target: str | None = None) -> None:
+  def show_url(self,
+               url: str,
+               target: WindowTarget = WindowTarget.SELF) -> None:
     pass
 
   def switch_to_new_tab(self) -> None:

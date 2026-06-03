@@ -14,6 +14,7 @@ import psutil
 from typing_extensions import override
 
 from crossbench import plt
+from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.browsers.browser import Browser
 from crossbench.env.base import ValidationError
 
@@ -190,8 +191,10 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
     return result
 
   @override
-  def show_url(self, url: str, target: str | None = None) -> None:
-    if target not in (None, "_self"):
+  def show_url(self,
+               url: str,
+               target: WindowTarget = WindowTarget.SELF) -> None:
+    if target != WindowTarget.SELF:
       raise NotImplementedError(
           f"AppleScriptBrowser show_url does not support target {target}")
     self._exec_apple_script(self.APPLE_SCRIPT_SET_URL, url=url)

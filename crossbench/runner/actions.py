@@ -168,20 +168,19 @@ class Actions(TimeScope):
   def show_url(
       self,
       url: str,
-      target: str | WindowTarget | None = None,
+      target: WindowTarget = WindowTarget.SELF,
       ready_state: ReadyState = ReadyState.ANY,
       timeout: dt.timedelta = dt.timedelta()
   ) -> None:
     self._assert_is_active()
-    if target is not None:
-      target = str(target)
-    if target and target in ("_blank", "_parent", "_top"):
+    if target in (WindowTarget.BLANK, WindowTarget.PARENT, WindowTarget.TOP):
       # TODO: use target in the driver instead.
-      self.js(f"window.open('{url}','{target}');")
-    else:
-      if target not in (None, "_self", "_new_tab", "_new_window"):
-        raise ValueError(f"Invalid target: {target}")
+      self.js(f"window.open('{url}','{target.value}');")
+    elif target in (WindowTarget.SELF, WindowTarget.NEW_TAB,
+                    WindowTarget.NEW_WINDOW):
       self._browser.show_url(url, target=target)
+    else:
+      raise ValueError(f"Unknown window target: {target}")
 
     if ready_state != ReadyState.ANY:
       self.wait_for_ready_state(ready_state, timeout)

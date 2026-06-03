@@ -8,12 +8,14 @@ import abc
 import contextlib
 import copy
 import dataclasses
+import datetime as dt
 from typing import TYPE_CHECKING, Any, Iterator, cast
 
 from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.version import ChromiumVersion
@@ -23,7 +25,6 @@ from crossbench.network.base import Network
 from crossbench.plt.android_adb import AndroidAdbPlatform
 
 if TYPE_CHECKING:
-  import datetime as dt
   import re
 
   from crossbench.browsers.version import BrowserVersion
@@ -161,7 +162,13 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     return f"Mock Browser {self.type_name()}, {self.VERSION}"
 
   @override
-  def show_url(self, url, target: str | None = None) -> None:
+  def show_url(
+      self,
+      url,
+      target: WindowTarget = WindowTarget.SELF,
+      ready_state: ReadyState = ReadyState.ANY,
+      timeout: dt.timedelta = dt.timedelta(),
+  ) -> None:
     self.url_list.append(url)
 
   def trusted_click(self, selector: str) -> None:

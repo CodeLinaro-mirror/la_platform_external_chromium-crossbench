@@ -20,6 +20,7 @@ from selenium.webdriver.common.by import By
 from typing_extensions import override
 
 from crossbench import exception
+from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
@@ -262,15 +263,17 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     return details
 
   @override
-  def show_url(self, url: str, target: str | None = None) -> None:
+  def show_url(self,
+               url: str,
+               target: WindowTarget = WindowTarget.SELF) -> None:
     logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
     try:
-      if target in ("_self", None):
+      if target == WindowTarget.SELF:
         # Do the navigation in the active tab.
         pass
-      elif target == "_new_tab":
+      elif target == WindowTarget.NEW_TAB:
         self._private_driver.switch_to.new_window("tab")
-      elif target == "_new_window":
+      elif target == WindowTarget.NEW_WINDOW:
         self._private_driver.switch_to.new_window("window")
       else:
         raise RuntimeError(f"unexpected target {target}")
