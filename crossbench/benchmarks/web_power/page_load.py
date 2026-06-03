@@ -79,6 +79,10 @@ class WebPowerPageLoadStory(WebPowerStory):
     with run.actions(
         "Run", verbose=True, performance_mark=WebPowerStory.MEASUREMENT_MARK):
       for i in playback:
+        # Clearing the cache from inside of the power-measured window is the
+        # lesser evil given current technical difficulties with:
+        #  1. Currently available cache-clearing mechanisms.
+        #  2. The resolution of power-measuring instruments such as ODPM.
         with run.actions(f"Cache_Clear_{i}"):
           run.action_runner.clear_cache(ClearCacheAction())
         with run.actions(f"Close_Tab_{i}"):
