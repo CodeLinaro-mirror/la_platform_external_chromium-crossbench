@@ -13,6 +13,7 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 class BenchmarksTest(BaseCrossbenchTestCase):
 
   def test_pinpoint_benchmark_name(self):
+    self.assertEqual(pinpoint_benchmark_name("blink-ai"), "blink-ai.crossbench")
     self.assertEqual(
         pinpoint_benchmark_name("devtools_frontend"),
         "devtools_frontend.crossbench")

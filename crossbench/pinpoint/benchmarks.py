@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 _BENCHMARK_BY_PINPOINT_NAME: Final[immutabledict[
     str, Benchmark]] = immutabledict({
+        "blink-ai.crossbench": benchmarks.BlinkAIBenchmark,
         "devtools_frontend.crossbench": benchmarks.DevToolsFrontendBenchmark,
         "embedder.crossbench": benchmarks.EmbedderBenchmark,
         "jetstream2.crossbench": benchmarks.JetStream22Benchmark,
