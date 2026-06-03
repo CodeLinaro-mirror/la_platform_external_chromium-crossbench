@@ -16,7 +16,7 @@ from crossbench.benchmarks.loading.playback_controller import \
     PeriodicPlaybackController
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
     WebPowerStory, _value_or
-from crossbench.parse import DurationParser
+from crossbench.parse import DurationParser, NumberParser
 
 if TYPE_CHECKING:
   import argparse
@@ -109,7 +109,7 @@ class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
     parser.add_argument(
         "--page-loads",
         dest="page_loads",
-        type=int,
+        type=NumberParser.positive_int,
         default=None,
         help="Number of times to reload the page. "
         f"(Default: {story_cls.DEFAULT_PAGE_LOAD_COUNT}, "

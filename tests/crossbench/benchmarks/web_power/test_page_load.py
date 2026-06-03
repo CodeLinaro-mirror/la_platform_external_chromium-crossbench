@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 
 from typing_extensions import override
@@ -91,6 +92,16 @@ class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(kwargs["interval"], dt.timedelta(seconds=10))
     self.assertEqual(kwargs["lead_wait_time"], dt.timedelta(seconds=5))
     self.assertEqual(kwargs["cool_off_time"], dt.timedelta(seconds=30))
+
+  def test_kwargs_from_cli_invalid(self) -> None:
+    parser = CBArgumentParser()
+    parser = WebPowerPageLoadBenchmark.add_cli_arguments(parser)
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--page-loads=-1"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--page-loads=0"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--page-loads=foo"])
 
 
 if __name__ == "__main__":

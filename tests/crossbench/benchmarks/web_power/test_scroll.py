@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 
 from typing_extensions import override
@@ -83,6 +84,26 @@ class WebPowerScrollBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(kwargs["scroll_count"], 12)
     self.assertEqual(kwargs["input_rate"], 100)
     self.assertEqual(kwargs["lead_wait_time"], dt.timedelta(seconds=5))
+
+  def test_kwargs_from_cli_invalid(self) -> None:
+    parser = CBArgumentParser()
+    parser = WebPowerScrollBenchmark.add_cli_arguments(parser)
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--scrolls=-1"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--scrolls=0"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--scrolls=foo"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--input-rate=-100"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--input-rate=0"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--input-rate=bar"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--lead-wait-time=0s"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--lead-wait-time=-5s"])
 
 
 if __name__ == "__main__":

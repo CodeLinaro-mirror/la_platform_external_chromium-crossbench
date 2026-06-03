@@ -15,7 +15,7 @@ from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
     WebPowerStory, _value_or
 from crossbench.benchmarks.web_power.scroll_gen import GeneratorConfig, \
     generate_scroll_commands
-from crossbench.parse import DurationParser
+from crossbench.parse import DurationParser, NumberParser
 
 if TYPE_CHECKING:
   import argparse
@@ -129,7 +129,7 @@ class WebPowerScrollBenchmark(WebPowerBenchmarkBase):
         "--scrolls",
         "--scroll-count",
         dest="scroll_count",
-        type=int,
+        type=NumberParser.positive_int,
         default=None,
         help="Number of times to repeat the up/down scroll sequence "
         f"(Default: {story_cls.DEFAULT_SCROLL_COUNT})")
@@ -137,7 +137,7 @@ class WebPowerScrollBenchmark(WebPowerBenchmarkBase):
         "--input-rate",
         "--rate",
         dest="input_rate",
-        type=int,
+        type=NumberParser.positive_int,
         default=None,
         help="Frequency of synthetic scroll touch events in Hz. "
         f"(Default: {story_cls.DEFAULT_INPUT_RATE}Hz)")
@@ -145,7 +145,7 @@ class WebPowerScrollBenchmark(WebPowerBenchmarkBase):
         "--lead-wait-time",
         "--wait",
         dest="lead_wait_time",
-        type=DurationParser.positive_or_zero_duration,
+        type=DurationParser.positive_duration,
         default=story_cls.DEFAULT_LEAD_WAIT_TIME,
         help="Initial wait time after starting browser. Allow time to recover "
         "from the excitement of launching the browser. "
