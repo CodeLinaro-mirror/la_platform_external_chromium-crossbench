@@ -80,13 +80,19 @@ class Safari(Browser):
         find_safaridriver(self.path, self.platform))
     return SafariVersion.parse(f"{app_version} {driver_version}")
 
+  @property
+  @override
+  def cache_dir(self) -> pth.AnyPath:
+    """Returns the Safari-specific cache directory."""
+    assert self.bundle_name, "Missing bundle_name"
+    return self.platform.home() / (
+        f"Library/Containers/com.apple.{self.bundle_name}/Data/Library/Caches")
+
   @override
   def _setup_cache_dir(self) -> pth.AnyPath | None:
     assert self.settings.cache_dir is None, (
         "Cannot set custom cache dir for Safari")
-    assert self.bundle_name, "Missing bundle_name"
-    cache_dir = self.platform.home() / (
-        f"Library/Containers/com.apple.{self.bundle_name}/Data/Library/Caches")
+    cache_dir = self.cache_dir
     if not self.platform.exists(cache_dir.parent):
       logging.warning("Could not find existing config dir for %s.", self)
       return None

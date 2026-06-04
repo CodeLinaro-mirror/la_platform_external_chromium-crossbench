@@ -402,19 +402,26 @@ class RunnerEnv(BaseEnv):
 
   def _check_file_access(self) -> None:
     if self._platform.is_macos:
-      has_desktop_safari = any(
-          browser.attributes().is_safari and not browser.platform.is_ios
-          for browser in self.browsers)
-      if has_desktop_safari:
-        self._check_safari_cache_dir_access()
+      self._check_macos_file_access()
     self._check_results_dir_access()
 
-  def _check_safari_cache_dir_access(self) -> None:
-    safari_cache_dir = (
-        self.platform.home() /
-        "Library/Containers/com.apple.Safari/Data/Library/Caches")
-    if not self._has_read_write_access(safari_cache_dir):
-      self._file_access_access_warning("Safari's cache directory")
+  def _check_macos_file_access(self) -> None:
+    checked_dirs = set()
+    for browser in self.browsers:
+      if not browser.attributes().is_safari:
+        continue
+      if browser.platform.is_ios:
+        continue
+      if cache_dir := browser.cache_dir:
+        if cache_dir in checked_dirs:
+          continue
+        checked_dirs.add(cache_dir)
+        self._check_safari_cache_dir_access(browser, cache_dir)
+
+  def _check_safari_cache_dir_access(self, browser: Browser,
+                                     cache_dir: pth.AnyPath) -> None:
+    if not self._has_read_write_access(cache_dir):
+      self._file_access_access_warning(f"{browser.app_name}'s cache directory")
 
   def _check_results_dir_access(self) -> None:
     out_dir = self._out_dir.parent

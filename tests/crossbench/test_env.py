@@ -18,7 +18,8 @@ from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import url_helper
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
-from tests.crossbench.mock_browser import MockSafari
+from tests.crossbench.mock_browser import MockSafari, \
+    MockSafariTechnologyPreview
 from tests.crossbench.mock_helper import LinuxMockPlatform, \
     MacOsMockPlatform, MockPlatform, RemoteLinuxMockPlatform
 
@@ -194,6 +195,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
         EnvConfig(browser_is_headless=EnvConfig.IGNORE),
         validation_mode=ValidationMode.THROW)
     mock_browser = mock.Mock(platform=self.platform)
+    mock_browser.attributes.return_value.is_safari = False
     self.mock_runner.browsers = [mock_browser]
 
     mock_browser.viewport.is_headless = False
@@ -205,6 +207,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
   def test_request_is_headless_true(self):
     mock_browser = mock.Mock(
         platform=self.platform, path=pathlib.Path("bin/browser_a"))
+    mock_browser.attributes.return_value.is_safari = False
     self.mock_runner.browsers = [mock_browser]
     env = self.create_env(
         EnvConfig(browser_is_headless=True),
@@ -231,6 +234,7 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     self.platform.use_fs = True
     mock_browser = mock.Mock(
         platform=self.platform, path=pathlib.Path("bin/browser_a"))
+    mock_browser.attributes.return_value.is_safari = False
     self.mock_runner.browsers = [mock_browser]
     env = self.create_env(
         EnvConfig(browser_is_headless=False),
@@ -352,6 +356,22 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     with mock.patch.object(self.platform, "read_text", side_effect=""):
       env = self.create_env()
       with self.assertRaisesRegex(ValidationError, "Safari"):
+        env.validate()
+    # success otherwise
+    env.validate()
+
+  def test_macos_safari_tp_cache_dir(self):
+    self.platform = MacOsMockPlatform()
+    self.platform.use_fs = True
+    MockSafariTechnologyPreview.setup_fs(self.fs, self.platform)
+
+    mock_browser = MockSafariTechnologyPreview(
+        "tp", settings=Settings(platform=self.platform))
+    self.mock_runner.browsers = [mock_browser]
+
+    with mock.patch.object(self.platform, "read_text", side_effect=""):
+      env = self.create_env()
+      with self.assertRaisesRegex(ValidationError, "Safari Technology Preview"):
         env.validate()
     # success otherwise
     env.validate()

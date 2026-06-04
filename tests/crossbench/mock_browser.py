@@ -511,6 +511,11 @@ class MockSafariBrowser(MockBrowser, metaclass=abc.ABCMeta):
   def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes.SAFARI
 
+  @property
+  @override
+  def cache_dir(self) -> pth.AnyPath:
+    return self.platform.home() / f"Library/Caches/{self.app_name}"
+
 
 class MockSafari(MockSafariBrowser):
 
