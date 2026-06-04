@@ -50,22 +50,26 @@ class BlinkAIStory(PressBenchmarkStory):
   @property
   @override
   def substory_duration(self) -> dt.timedelta:
-    return dt.timedelta(minutes=5)
+    return dt.timedelta(seconds=15)
 
   @property
   @override
   def slow_duration(self) -> dt.timedelta:
-    return dt.timedelta(hours=2)
+    return dt.timedelta(minutes=15)
 
   @override
   def setup(self, run: Run) -> None:
     with run.actions("Setup") as actions:
       actions.show_url(self.url)
       logging.info("Waiting for window.LanguageModel to become available...")
-      actions.wait_js_condition(
-          "return !!window.LanguageModel",
-          2.0,
-          timeout=dt.timedelta(minutes=10))
+      try:
+        actions.wait_js_condition(
+            "return !!window.LanguageModel",
+            0.5,
+            timeout=dt.timedelta(seconds=45))
+      except Exception as e:
+        raise RuntimeError("Built-in AI API (window.LanguageModel) failed to"
+                           " initialize within 30 seconds.") from e
 
   @override
   def run(self, run: Run) -> None:
