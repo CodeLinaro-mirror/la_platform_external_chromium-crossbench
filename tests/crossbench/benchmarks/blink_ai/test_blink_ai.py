@@ -47,7 +47,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
   def _setup_run_js_expect(self,
                            browser: MockBrowser,
                            probe_results: dict,
-                           status: str = "success") -> None:
+                           status: str = "completed") -> None:
     # wait_js_condition for window.LanguageModel
     browser.expect_js(result=True)
     # JS click for #start-button
@@ -56,7 +56,10 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     browser.expect_js(result=True)
     # window.testStatus check
     browser.expect_js(result=status)
-    # window.metrics in probe
+    if status == "completed":
+      # window.metrics check in story run()
+      browser.expect_js(result=probe_results)
+    # window.metrics in probe (JsonResultProbeContext)
     browser.expect_js(result=json.dumps(probe_results))
 
   def test_run_default(self):
@@ -179,7 +182,8 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
       with self.assertRaises(ValueError) as cm_err:
         runner.run()
-      self.assertIn("Blink-AI Benchmark failed", str(cm_err.exception))
+      self.assertIn("Blink-AI Benchmark did not finish successfully",
+                    str(cm_err.exception))
     cm.assert_called_once()
 
     for browser in active_browsers:

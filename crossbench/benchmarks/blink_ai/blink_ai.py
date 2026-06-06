@@ -91,8 +91,14 @@ class BlinkAIStory(PressBenchmarkStory):
           timeout=self.slow_duration)
 
       status = actions.js("return window.testStatus;")
-      if status == "failed":
-        raise ValueError("Blink-AI Benchmark failed")
+      if status != "completed":
+        raise ValueError("Blink-AI Benchmark did not finish successfully. "
+                         f"Final testStatus: '{status}'. ")
+
+      metrics = actions.js("return window.metrics;")
+      if not metrics or not isinstance(metrics, dict):
+        raise RuntimeError("Benchmark finished without metrics. Check for a "
+                           "browser tab or Mojo IPC crash.")
 
 
 class BlinkAIBenchmark(PressBenchmark):
