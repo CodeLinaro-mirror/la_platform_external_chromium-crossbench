@@ -48,14 +48,16 @@ SUPPORTED_BROWSER: Final = ("chrome", "chromium", "d8", "edge", "firefox",
 # - "applescript:/out/x64.release/chrome:4G"
 # - "selenium:C:\out\x64.release\chrome"
 # - "selenium:C:\out\x64.release\chrome:4G"
+# - "localhost:5555:chrome"
 # - "192.168.0.1:5555:chrome"
 # - "192.168.0.1:5555:chrome:4G"
 NETWORK_PRESETS: str = "|".join(
     re.escape(preset.value) for preset in NetworkSpeedPreset)
 ENV_PRESETS: str = "|".join(re.escape(preset) for preset in ENV_CONFIG_PRESETS)
+HOST_PATTERN = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|localhost)"
 
 SHORT_FORM_RE: re.Pattern[str] = re.compile(
-    r"((?P<driver>(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+|[\w.-]+)):)??"
+    fr"((?P<driver>({HOST_PATTERN}:\d+|[\w.-]+)):)??"
     r"(?P<path>([A-Z]:[/\\])?[^:]+)"
     f"(:(?P<network>{NETWORK_PRESETS}))?"
     f"(:(?P<env>{ENV_PRESETS}))?")
