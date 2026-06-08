@@ -47,7 +47,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
   def _setup_run_js_expect(self,
                            browser: MockBrowser,
                            probe_results: dict,
-                           status: str = "completed") -> None:
+                           status: str = "success") -> None:
     # wait_js_condition for window.LanguageModel
     browser.expect_js(result=True)
     # JS click for #start-button
@@ -56,7 +56,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     browser.expect_js(result=True)
     # window.testStatus check
     browser.expect_js(result=status)
-    if status == "completed":
+    if status == "success":
       # window.metrics check in story run()
       browser.expect_js(result=probe_results)
     # window.metrics in probe (JsonResultProbeContext)
@@ -109,7 +109,6 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       self.assertEqual(len(urls), repetitions)
       self.assertIn(self.story_cls.URL, urls)
       self.assertListEqual(browser.expected_js, [])
-
   def test_run_custom_url(self):
     custom_url = "http://test.example.com/blink_ai"
     stories = self.story_cls.from_names(["language_model"], url=custom_url)

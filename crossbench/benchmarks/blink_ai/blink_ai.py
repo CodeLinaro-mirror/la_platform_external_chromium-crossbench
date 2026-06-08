@@ -91,9 +91,11 @@ class BlinkAIStory(PressBenchmarkStory):
           timeout=self.slow_duration)
 
       status = actions.js("return window.testStatus;")
-      if status != "completed":
-        raise ValueError("Blink-AI Benchmark did not finish successfully. "
-                         f"Final testStatus: '{status}'. ")
+      if status != "success":
+        raise ValueError(
+            "Blink-AI Benchmark did not finish successfully. "
+            f"Final testStatus: '{status}'. "
+        )
 
       metrics = actions.js("return window.metrics;")
       if not metrics or not isinstance(metrics, dict):
