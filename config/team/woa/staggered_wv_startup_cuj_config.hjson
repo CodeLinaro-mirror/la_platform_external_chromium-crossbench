@@ -22,7 +22,7 @@
         "source": "touch"
         "position": {
           "clazz": "android.widget.Button"
-          "text": "STARTUP WEBVIEW"
+          "text": "CREATE WEBVIEW INSTANCE"
         }
       }
       {
