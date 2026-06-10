@@ -1125,6 +1125,31 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
     return (width, height)
 
+  @override
+  def set_display_refresh_rate(self,
+                               refresh_rate: int,
+                               retry: int = 3) -> tuple[bool, str]:
+    rate_str = str(float(refresh_rate))
+    for _ in range(retry):
+      self.sh("settings", "put", "system", "min_refresh_rate", rate_str)
+      self.sh("settings", "put", "system", "peak_refresh_rate", rate_str)
+      self.sleep(1)
+      output = self.adb.dumpsys("display")
+      for line in output.splitlines():
+        if "mActiveRenderFrameRate" in line and "=" in line:
+          val_str = line.split("=", maxsplit=1)[1].strip()
+          try:
+            if round(float(val_str)) == refresh_rate:
+              return True, f"Refresh rate successfully set to {refresh_rate}Hz"
+          except ValueError:
+            pass
+    return False, f"Failed to set display refresh rate to {refresh_rate}Hz"
+
+  @override
+  def reset_display_refresh_rate(self) -> None:
+    self.sh("settings", "delete", "system", "min_refresh_rate", check=False)
+    self.sh("settings", "delete", "system", "peak_refresh_rate", check=False)
+
   def user_id(self) -> int:
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))
 

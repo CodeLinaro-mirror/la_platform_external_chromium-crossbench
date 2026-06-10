@@ -529,8 +529,12 @@ class Runner:
     with self._platform.wakelock():
       with self._exceptions.annotate("Preparing"):
         self._setup()
-      with self._exceptions.capture("Running"):
-        self._run(is_dry_run)
+      try:
+        with self._exceptions.capture("Running"):
+          self._run(is_dry_run)
+      finally:
+        with self._exceptions.capture("Benchmark teardown"):
+          self._benchmark.teardown(self)
 
     if self._exceptions.throw:
       # Ensure that we bail out on the first exception.

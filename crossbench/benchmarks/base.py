@@ -166,6 +166,9 @@ class Benchmark(abc.ABC):
   def setup(self, runner: Runner) -> None:
     del runner
 
+  def teardown(self, runner: Runner) -> None:
+    del runner
+
   def log_stories(self, stories: Sequence[StoryT]) -> None:
     substory_names = [name for story in stories for name in story.substories]
     stories_str = ", ".join(substory_names)

@@ -1062,7 +1062,11 @@ class Platform(abc.ABC):
                                refresh_rate: int,
                                retry: int = 3) -> tuple[bool, str]:
     raise NotImplementedError(
-        "'set_display_refresh_rate' is only available on MacOS for now")
+        "'set_display_refresh_rate' is only available on MacOS and "
+        "Android for now")
+
+  def reset_display_refresh_rate(self) -> None:
+    pass
 
   def check_autobrightness(self) -> bool:
     raise NotImplementedError(

@@ -88,6 +88,10 @@ class MacOSPlatform(PosixPlatform):
   LSAPPINFO_IN_FRONT_LINE_RE: Final = r".*\(in front\)\s*"
   LSAPPINFO_PID_LINE_RE: Final = r"\s*pid = ([0-9]+).*"
 
+  def __init__(self) -> None:
+    super().__init__()
+    self._default_display_mode: ctypes.c_void_p | None = None
+
   @property
   @override
   def is_macos(self) -> bool:
@@ -563,6 +567,8 @@ class MacOSPlatform(PosixPlatform):
 
     # Get the current refresh rate and verify if it needs to be set.
     display_mode = core_graphics.CGDisplayCopyDisplayMode(main_display)
+    if self._default_display_mode is None:
+      self._default_display_mode = display_mode
     main_refresh_rate = core_graphics.CGDisplayModeGetRefreshRate(display_mode)
     if main_refresh_rate == refresh_rate:
       return True, f"The display refresh rate is already {refresh_rate}Hz"
@@ -615,6 +621,16 @@ class MacOSPlatform(PosixPlatform):
       log_msg += "\nFailed to find a match for display size and refresh rate!"
 
     return False, log_msg
+
+  @override
+  def reset_display_refresh_rate(self) -> None:
+    if self._default_display_mode is None:
+      return
+    main_display, core_graphics = self._get_main_display()
+    self._core_graphics_types(core_graphics)
+    core_graphics.CGDisplaySetDisplayMode(main_display,
+                                          self._default_display_mode, None)
+    self._default_display_mode = None
 
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencapture", "-x", result_path)
