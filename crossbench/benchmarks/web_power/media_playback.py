@@ -135,8 +135,6 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
       AndroidVolumeController(run.browser_platform).configure_volume(
           self.volume)
 
-  @override
-  def run(self, run: Run) -> None:
     with run.actions("Show_URL", verbose=True) as actions:
       actions.show_url(self.url)
 
@@ -191,6 +189,8 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
     with run.actions("Resume_Playback", verbose=True) as actions:
       self._resume_video(actions)
 
+  @override
+  def run(self, run: Run) -> None:
     with run.actions(
         "Media_Playback",
         verbose=True,

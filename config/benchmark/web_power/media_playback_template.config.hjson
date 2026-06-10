@@ -1,0 +1,109 @@
+{
+  // Example Template Probe Configuration for the web-power-media-playback
+  // workload.
+  // 1. Captures a light Perfetto trace (Chrome basic, SurfaceFlinger/Gfx, Power
+  //    Rails). The Perfetto config is inlined below.
+  // 2. Automatically runs the Pixel 10 power rails SQL query on the trace.
+  //
+  // We use "start_tracing_sequence": "story_run" to delay the start of the
+  // Perfetto trace until after the story setup (navigation, cookie banners,
+  // quality settings) is complete. This ensures we capture a clean trace
+  // of only the steady-state media playback.
+
+  "probes": {
+    "perfetto": {
+      "start_tracing_sequence": "story_run"
+      "textproto":
+        '''
+        # Perfetto config for web-power-media-playback (Template)
+        # Captures: Power Rails, Basic Chrome (toplevel, media, loading), and
+        #           ATrace (gfx/SurfaceFlinger, video, view).
+        # Suitable for clean steady-state measurements with moderate overhead.
+
+        buffers {
+          size_kb: 600000
+          fill_policy: DISCARD
+        }
+        buffers {
+          size_kb: 4096
+          fill_policy: DISCARD
+        }
+        data_sources {
+          config {
+            name: "android.packages_list"
+            target_buffer: 1
+          }
+        }
+        data_sources {
+          config {
+            name: "linux.process_stats"
+            target_buffer: 1
+            process_stats_config {
+              scan_all_processes_on_start: true
+            }
+          }
+        }
+        data_sources {
+          config {
+            name: "org.chromium.trace_metadata2"
+          }
+        }
+        data_sources {
+          config {
+            name: "track_event"
+            track_event_config {
+              disabled_categories: "*"
+              enabled_categories: "blink.user_timing"
+              enabled_categories: "toplevel"
+              enabled_categories: "media"
+              enabled_categories: "loading"
+            }
+          }
+        }
+        data_sources {
+          config {
+            name: "linux.sys_stats"
+            sys_stats_config {
+              stat_period_ms: 1000
+              stat_counters: STAT_CPU_TIMES
+              stat_counters: STAT_FORK_COUNT
+              cpufreq_period_ms: 1000
+            }
+          }
+        }
+        data_sources {
+          config {
+            name: "linux.ftrace"
+            ftrace_config {
+              ftrace_events: "sched/sched_switch"
+              ftrace_events: "sched/sched_waking"
+              ftrace_events: "task/task_newtask"
+              ftrace_events: "task/task_rename"
+              symbolize_ksyms: true
+
+              # ATrace categories for SurfaceFlinger and media
+              atrace_categories: "gfx"     # Includes SurfaceFlinger
+              atrace_categories: "video"   # Video hardware
+              atrace_categories: "view"    # View system
+            }
+          }
+        }
+        data_sources: {
+          config {
+            name: "android.power"
+            android_power_config {
+              battery_poll_ms: 250
+              collect_power_rails: true
+            }
+          }
+        }
+        duration_ms: 200000
+        '''
+    }
+    "trace_processor": {
+      "queries": [
+        "web_power/power_rails_p10.sql"
+      ]
+    }
+  }
+}
