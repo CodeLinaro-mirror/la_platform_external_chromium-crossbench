@@ -127,13 +127,13 @@ class McpSubcommand(CrossbenchSubcommand):
           explicitly stop the benchmark.
       """)
 
+    mcp.tool()(self.describe_benchmark)
+    mcp.tool()(self.describe_probes)
+    mcp.tool()(self.describe_configs)
     mcp.tool()(self.start_benchmark)
     mcp.tool()(self.status)
     mcp.tool()(self.stop)
     mcp.tool()(self.results)
-    mcp.tool()(self.describe_benchmark)
-    mcp.tool()(self.describe_probes)
-    mcp.tool()(self.describe_configs)
 
     mcp.run(transport="stdio")
 
