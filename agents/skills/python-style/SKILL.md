@@ -102,6 +102,15 @@ catch issues early.
   `config/doc/` or under `config/*`.
 - Every new `ConfigObject` or parsing helper **must** have dedicated unit tests.
 
+### ConfigParser & `add_default_argument`
+
+When implementing configuration parsing for a probe or component via
+`config_parser()`, you can allow users to specify configuration using a compact
+string shorthand (e.g., `--probe=v8.log:all`) instead of requiring full
+dictionary/HJSON syntax (`--probe=v8.log:{categories: ['all']}`) by using
+`parser.add_default_argument(...)`. This default argument is then automatically
+used by `parse_str` .
+
 ______________________________________________________________________
 
 ## Design Patterns
