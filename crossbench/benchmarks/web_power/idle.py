@@ -51,13 +51,15 @@ class WebPowerIdleStory(WebPowerStory):
     super().__init__(name_suffix, url, total_duration)
 
   @override
-  def run(self, run: Run) -> None:
+  def setup(self, run: Run) -> None:
     with run.actions("Show URL", verbose=True) as actions:
       actions.show_url(self.url)
 
     with run.actions("Stabilization", verbose=True) as actions:
       actions.wait(self.stabilization_time)
 
+  @override
+  def run(self, run: Run) -> None:
     with run.actions(
         "Idle", verbose=True,
         performance_mark=WebPowerStory.MEASUREMENT_MARK) as actions:

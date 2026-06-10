@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import atexit
 import datetime as dt
 import tempfile
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -73,14 +74,21 @@ class WebPowerScrollStory(WebPowerStory):
         WebPowerStory.DEFAULT_GRACE_PERIOD)
     super().__init__(name_suffix, url, total_duration)
 
+    self.local_file: pth.LocalPath | None = None
+    self.remote_file: pth.AnyPath | None = None
+
   @override
-  def run(self, run: Run) -> None:
+  def setup(self, run: Run) -> None:
+    assert (self.local_file is None)
+    assert (self.remote_file is None)
+
     if not run.browser_platform.is_android:
       raise RuntimeError(
           "The web-power-scroll benchmark is only supported on Android.")
 
-    local_file = None
-    remote_file = None
+    # Register cleanup at exit, in case an exception is raised in between
+    # setup() and run() being called.
+    atexit.register(self.clear_files, run)
 
     try:
       with run.actions("Generate_Scrolls", verbose=True) as actions:
@@ -89,27 +97,43 @@ class WebPowerScrollStory(WebPowerStory):
         with tempfile.NamedTemporaryFile(
             mode="w", encoding="utf-8", suffix=".evemu", delete=False) as f:
           f.write(evemu_data)
-          local_file = pth.LocalPath(f.name)
+          self.local_file = pth.LocalPath(f.name)
 
       with run.actions("Push_Scrolls", verbose=True) as actions:
-        remote_file = run.browser_platform.path(
+        self.remote_file = run.browser_platform.path(
             "/data/local/tmp/scrolling_sequence.evemu")
-        run.browser_platform.push(local_file, remote_file)
+        run.browser_platform.push(self.local_file, self.remote_file)
 
       with run.actions("Lead_Wait", verbose=True) as actions:
         actions.show_url(self.url)
         actions.wait(self.lead_wait_time)
 
+    except Exception:
+      self.clear_files(run)
+      raise
+
+  @override
+  def run(self, run: Run) -> None:
+    assert (self.local_file is not None)
+    assert (self.remote_file is not None)
+
+    try:
       with run.actions(
           "Run", verbose=True, performance_mark=WebPowerStory.MEASUREMENT_MARK):
         with run.actions("Scroll"):
-          run.browser_platform.sh("uinput", f"{remote_file}")
+          run.browser_platform.sh("uinput", f"{self.remote_file}")
 
     finally:
-      if local_file is not None:
-        local_file.unlink(missing_ok=True)
-      if remote_file is not None:
-        run.browser_platform.rm(remote_file, missing_ok=True)
+      self.clear_files(run)
+
+  def clear_files(self, run: Run) -> None:
+    atexit.unregister(self.clear_files)
+    if self.local_file is not None:
+      self.local_file.unlink(missing_ok=True)
+      self.local_file = None
+    if self.remote_file is not None:
+      run.browser_platform.rm(self.remote_file, missing_ok=True)
+      self.remote_file = None
 
 
 class WebPowerScrollBenchmark(WebPowerBenchmarkBase):

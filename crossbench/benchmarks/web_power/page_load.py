@@ -61,7 +61,7 @@ class WebPowerPageLoadStory(WebPowerStory):
     super().__init__(name_suffix, url, total_duration)
 
   @override
-  def run(self, run: Run) -> None:
+  def setup(self, run: Run) -> None:
     logging.info("Initial lead wait time: %s", self.lead_wait_time)
     with run.actions("Lead_Wait", verbose=True) as actions:
       actions.wait(self.lead_wait_time)
@@ -74,6 +74,8 @@ class WebPowerPageLoadStory(WebPowerStory):
       if self.cool_off_time.total_seconds() > 0:
         actions.wait(self.cool_off_time)
 
+  @override
+  def run(self, run: Run) -> None:
     logging.info("Starting page-load loop.")
     playback = PeriodicPlaybackController(self.page_load_count, self.interval)
     with run.actions(
