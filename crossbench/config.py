@@ -359,11 +359,14 @@ class ConfigArgParser:
   def parse_list_data(
       self, data: object, depending_kwargs: dict[str,
                                                  object]) -> tuple[object, ...]:
-    if isinstance(data, str):
-      data = data.split(",")
-    if not isinstance(data, (list, tuple)):
+    try:
+      if isinstance(data, str):
+        data = ObjectParser.str_list(data)
+      else:
+        data = ObjectParser.sequence(data)
+    except Exception as e:
       raise ValueError(f"{self.cls_name}.{self.name}: "
-                       f"Expected sequence got {type(data).__name__}")
+                       f"Expected sequence got {type(data).__name__}") from e
     return tuple(self.parse_data(value, depending_kwargs) for value in data)
 
   def parse_data(self, data: object, depending_kwargs: dict[str,

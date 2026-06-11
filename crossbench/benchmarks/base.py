@@ -220,7 +220,8 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
 
   @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    return {"patterns": args.stories.split(","), "args": args}
+    patterns: list[str] = ObjectParser.str_list(args.stories, "stories")
+    return {"patterns": patterns, "args": args}
 
   @classmethod
   def from_cli_args(cls, story_cls: type[StoryT],

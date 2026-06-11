@@ -10,6 +10,7 @@ from typing import Any, Final, Iterable
 from ordered_set import OrderedSet
 
 from crossbench.flags.base import Freezable
+from crossbench.parse import ObjectParser
 
 
 @enum.unique
@@ -87,7 +88,7 @@ class ChromeExtensions(Freezable):
     self.assert_not_frozen()
     if not extensions:
       raise ValueError("Cannot enable empty extensions")
-    for extension in extensions.split(","):
+    for extension in ObjectParser.str_list(extensions):
       self.add(extension, should_override=should_override)
     if selective:
       assert self._mode in (ExtensionsMode.DEFAULT, ExtensionsMode.ENABLED)

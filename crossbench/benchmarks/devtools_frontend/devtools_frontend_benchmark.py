@@ -13,6 +13,7 @@ from typing_extensions import override
 from crossbench.action_runner.action.open_devtools import OpenDevToolsAction
 from crossbench.benchmarks.base import Benchmark
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
+from crossbench.parse import ObjectParser
 from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.metrics_internals import ChromeMetricsInternalsProbe, \
     ChromeMetricsInternalsProbeContext
@@ -185,15 +186,16 @@ class DevToolsFrontendBenchmark(Benchmark):
   @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
-    sites = [site for site in args.sites.split(",") if site in cls.STORY_URLS
+    arg_sites = ObjectParser.str_list(args.sites, "sites")
+    sites = [site for site in arg_sites if site in cls.STORY_URLS
             ] or cls.STORY_URLS.keys()
-    panels = [
-        panel for panel in args.panels.split(",") if panel in cls.PANEL_NAMES
-    ] or cls.PANEL_NAMES
-    if args.sites and len(args.sites.split(",")) != len(sites):
+    arg_panels = ObjectParser.str_list(args.panels, "panels")
+    panels = [panel for panel in arg_panels if panel in cls.PANEL_NAMES
+             ] or cls.PANEL_NAMES
+    if args.sites and len(arg_sites) != len(sites):
       logging.warning("Some specified sites are invalid. Using valid sites: %s",
                       sites)
-    if args.panels and len(args.panels.split(",")) != len(panels):
+    if args.panels and len(arg_panels) != len(panels):
       logging.warning(
           "Some specified panels are invalid. Using valid panels: %s", panels)
     kwargs["sites"] = sites

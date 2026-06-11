@@ -262,7 +262,7 @@ class PerfettoProbe(Probe):
   def parse_tags(cls, value: str) -> Self:
     enabled_tags: list[str] = []
     disabled_tags: list[str] = []
-    for tag in value.split(","):
+    for tag in ObjectParser.str_list(value):
       if tag.startswith("-"):
         disabled_tags.append(tag[1:])
       elif tag.startswith("+"):

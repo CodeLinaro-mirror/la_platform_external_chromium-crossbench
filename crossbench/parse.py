@@ -204,6 +204,24 @@ ProtoClassT = TypeVar("ProtoClassT", bound=google.protobuf.message.Message)
 class ObjectParser:
 
   @classmethod
+  def str_list(
+      cls,
+      value: Any,
+      name: str = "list",
+      error_cls: type[Exception] = argparse.ArgumentTypeError) -> list[str]:
+    if not value:
+      return []
+    if isinstance(value, str):
+      return [x.strip() for x in value.split(",")]
+    try:
+      list_value = list(value)
+    except Exception as e:
+      raise error_cls(f"Expected iterable for {name}, "
+                      f"but got {type_str(value)}: {value!r}") from e
+    str_list_value: list[str] = [str(item) for item in list_value]
+    return str_list_value
+
+  @classmethod
   def enum(cls, label: str, enum_cls: type[EnumT], data: Any,
            choices: type[EnumT] | Iterable[EnumT]) -> EnumT:
     try:
@@ -234,19 +252,10 @@ class ObjectParser:
     if choices is None:
       choices = enum_cls
     if isinstance(data, str):
-      if not data:
-        return []
-      if "," in data:
-        data = [x.strip() for x in data.split(",")]
-      else:
-        data = [data]
-    elif isinstance(data, (list, tuple, set)):
-      pass
-    elif isinstance(data, Iterable):
-      data = list(data)
-    else:
-      raise argparse.ArgumentTypeError(f"Expected iterable for {label} list, "
-                                       f"but got {type_str(data)}: {data!r}")
+      data = cls.str_list(data)
+    elif not isinstance(data, Iterable):
+      raise argparse.ArgumentTypeError(
+          f"Expected iterable for {label}, but got {type(data)}")
     return [cls.enum(label, enum_cls, item, choices) for item in data]
 
   @classmethod

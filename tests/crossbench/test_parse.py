@@ -710,6 +710,23 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
       ObjectParser.unique_sequence([1, 1], name="custom test name")
     self.assertIn("custom test name", str(cm.exception))
 
+  def test_str_list(self):
+    self.assertListEqual(ObjectParser.str_list([]), [])
+    self.assertListEqual(ObjectParser.str_list(""), [])
+    self.assertListEqual(ObjectParser.str_list(None), [])
+    self.assertListEqual(ObjectParser.str_list("a,b, c"), ["a", "b", "c"])
+    self.assertListEqual(ObjectParser.str_list("a"), ["a"])
+    self.assertListEqual(ObjectParser.str_list(["a", "b, c"]), ["a", "b, c"])
+    self.assertListEqual(ObjectParser.str_list([1, 2]), ["1", "2"])
+    self.assertListEqual(ObjectParser.str_list((1, "2, 3")), ["1", "2, 3"])
+
+  def test_str_list_invalid(self):
+    invalid: Any
+    for invalid in (1, 1.2):
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          ObjectParser.str_list(invalid)
+
   def test_parse_sequence(self):
     self.assertListEqual(ObjectParser.sequence([]), [])
     self.assertListEqual(ObjectParser.sequence([1, 2]), [1, 2])

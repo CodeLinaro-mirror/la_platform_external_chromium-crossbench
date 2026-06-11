@@ -56,7 +56,7 @@ class PagesConfig(ConfigObject):
     value = ObjectParser.non_empty_str(value)
     values: list[str] = []
     previous_part: str | None = None
-    for part in value.strip().split(","):
+    for part in ObjectParser.str_list(value):
       part = ObjectParser.non_empty_str(part, "url or duration")
       try:
         DurationParser.positive_duration(part)

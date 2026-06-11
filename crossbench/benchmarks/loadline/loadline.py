@@ -19,6 +19,7 @@ from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
     LoadingPageFilter
+from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbePriority
 from crossbench.probes.results import LocalProbeResult
 from crossbench.probes.trace_processor.trace_processor import \
@@ -204,7 +205,8 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
       all_page_labels = [str(page.label) for page in config.pages]
       regex_filter = RegexFilter(
           all_names=all_page_labels, default_names=all_page_labels)
-      filtered_page_labels = regex_filter.process_all(args.stories.split(","))
+      filtered_page_labels = regex_filter.process_all(
+          ObjectParser.str_list(args.stories, "stories"))
       filtered_pages = tuple(
           page for page in config.pages if page.label in filtered_page_labels)
       config = PagesConfig(
