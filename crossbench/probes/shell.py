@@ -89,7 +89,7 @@ class ShellProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("setup_cmd", tuple(map(str, self.stop_cmd))),
+    return (*super().key, ("setup_cmd", tuple(map(str, self.setup_cmd))),
             ("start_cmd", tuple(map(str, self.start_cmd))),
             ("start_story_run_cmd", tuple(map(str, self.start_story_run_cmd))),
             ("stop_story_run_cmd", tuple(map(str, self.stop_story_run_cmd))),

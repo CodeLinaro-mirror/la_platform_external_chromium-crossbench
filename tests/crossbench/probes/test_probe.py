@@ -242,6 +242,20 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
         else:
           self.assertEqual(probe_cls.PRIORITY, ProbePriority.USER)
 
+  def test_shell_probe_key(self):
+    probe = ShellProbe(stop_cmd=["stop"])
+    cmd_keys = [k for k, _ in probe.key if k.endswith("_cmd")]
+
+    base_kwargs = {k: (k,) for k in cmd_keys}
+    probe = ShellProbe(**base_kwargs)
+
+    self.assertEqual(probe.key[0], ("name", "shell"))
+
+    key_dict = dict(probe.key)
+    for k, val in base_kwargs.items():
+      self.assertIn(k, key_dict)
+      self.assertEqual(key_dict[k], val)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
