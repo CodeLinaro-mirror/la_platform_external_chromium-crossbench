@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import datetime as dt
 import sys
-from typing import TYPE_CHECKING, Any, ClassVar, Self, Sequence, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar
 
 from typing_extensions import override
 
@@ -102,8 +102,8 @@ class WebPowerStory(Story):
     raise NotImplementedError("Subclasses must implement story_name")
 
   @classmethod
-  def all_story_names(cls) -> Sequence[str]:
-    return sorted(cls.SITES.keys())
+  def all_story_names(cls) -> tuple[str, ...]:
+    return tuple(sorted(cls.SITES.keys()))
 
 
 class WebPowerBenchmarkBase(Benchmark):

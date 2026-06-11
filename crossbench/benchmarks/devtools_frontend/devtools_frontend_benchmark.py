@@ -120,7 +120,7 @@ class DevToolsFrontendStory(Story):
 
   @classmethod
   @override
-  def all_story_names(cls) -> Sequence[str]:
+  def all_story_names(cls) -> tuple[str, ...]:
     return ()
 
   def reporting_prefixes(self) -> Sequence[tuple[str, ...]]:

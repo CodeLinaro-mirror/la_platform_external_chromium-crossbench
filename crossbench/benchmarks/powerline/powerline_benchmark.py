@@ -121,8 +121,8 @@ class PowerlineStory(Story):
 
   @classmethod
   @override
-  def all_story_names(cls) -> Sequence[str]:
-    return sorted(cls.STORY_URLS)
+  def all_story_names(cls) -> tuple[str, ...]:
+    return tuple(sorted(cls.STORY_URLS))
 
 
 class PowerlineStoryFilter(StoryFilter[PowerlineStory]):

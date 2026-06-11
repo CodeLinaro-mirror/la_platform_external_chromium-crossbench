@@ -8,8 +8,8 @@ import abc
 import argparse
 import logging
 import re
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Mapping, Sequence, \
-    TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Iterable, Mapping, \
+    Sequence, TypeAlias, TypeVar, cast
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -310,8 +310,8 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
         cls.DEFAULT_STORY_CLS, ["all"], args=all_args, separate=True).stories
 
   @classmethod
-  def all_story_names(cls) -> Sequence[str]:
-    return sorted(cls.DEFAULT_STORY_CLS.all_story_names())
+  def all_story_names(cls) -> tuple[str, ...]:
+    return tuple(sorted(cls.DEFAULT_STORY_CLS.all_story_names()))
 
 
 PressBenchmarkStoryT = TypeVar(
@@ -487,6 +487,70 @@ class RegexFilter:
       logging.error(error_message)
       return [alternative]
     raise ValueError(error_message)
+
+
+class TagsFilter:
+
+  def __init__(self, story_tags: Mapping[str, Iterable[str]],
+               default_names: Sequence[str]) -> None:
+    self._story_tags: Mapping[str, Iterable[str]] = story_tags
+    self._available_tags: OrderedSet[str] = OrderedSet(
+        tag for tags in self._story_tags.values() for tag in tags)
+    self._default_names: OrderedSet[str] = OrderedSet(default_names)
+
+  def process_all(self, tags: Sequence[str]) -> Sequence[str]:
+    if not tags:
+      return self._default_names
+
+    if not self._available_tags:
+      raise ValueError(f"No tags available, ignoring tags: {tags}")
+
+    include_tags, exclude_tags = self._parse_tags(tags)
+    return self._filter_story_names(tags, include_tags, exclude_tags)
+
+  def _parse_tags(self, tags: Sequence[str]) -> tuple[set[str], set[str]]:
+    include_tags = set()
+    exclude_tags = set()
+    for tag in tags:
+      is_exclude = tag.startswith("-")
+      if is_exclude:
+        tag = tag[1:]
+      if not tag:
+        raise ValueError("Empty tag")
+      if tag not in self._available_tags:
+        error_message, alternative = close_matches_message(
+            tag, self._available_tags, "story tag")
+        if not alternative:
+          raise ValueError(error_message)
+        logging.error(error_message)
+        tag = alternative
+
+      if is_exclude:
+        exclude_tags.add(tag)
+      else:
+        include_tags.add(tag)
+
+    intersection = include_tags.intersection(exclude_tags)
+    if intersection:
+      raise ValueError(
+          f"Tags cannot be both included and excluded: {intersection}")
+
+    return include_tags, exclude_tags
+
+  def _filter_story_names(self, tags: Sequence[str], include_tags: set[str],
+                          exclude_tags: set[str]) -> Sequence[str]:
+    filtered_names = []
+    for story_name, tags_list in self._story_tags.items():
+      story_tags_set = set(tags_list)
+      if exclude_tags.intersection(story_tags_set):
+        continue
+      if include_tags and not include_tags.intersection(story_tags_set):
+        continue
+      filtered_names.append(story_name)
+
+    if not filtered_names:
+      raise ValueError(f"No stories left after filtering for tags: {tags}")
+    return filtered_names
 
 
 class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],

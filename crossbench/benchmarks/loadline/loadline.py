@@ -225,5 +225,5 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def all_story_names(cls) -> Sequence[str]:
+  def all_story_names(cls) -> tuple[str, ...]:
     return tuple(page.any_label for page in cls.get_pages_config().pages)

@@ -33,12 +33,27 @@ class PageConfig(ConfigObject):
   VALID_SCHEMES: ClassVar[tuple[str, ...]] = ObjectParser.COMMON_URL_SCHEMES
 
   label: str | None = None
+  tags: frozenset[str] = frozenset()
   playback: PlaybackController | None = None
   secrets: Secrets = Secrets()
   login: LoginBlock | None = None
   setup: ActionBlock | None = None
   blocks: tuple[ActionBlock, ...] = ()
   teardown: ActionBlock | None = None
+
+  @classmethod
+  def parse_label(cls, value: Any) -> str:
+    label = ObjectParser.non_empty_str(value, "label")
+    if label == "all":
+      raise ValueError("PageConfig label cannot be 'all'")
+    return label
+
+  @classmethod
+  def parse_tags(cls, tags: Any) -> frozenset[str]:
+    tags_list = ObjectParser.str_list(tags, name="tags", error_cls=ValueError)
+    return frozenset(
+        ObjectParser.unique_sequence(
+            tags_list, name="tags", error_cls=ValueError))
 
   @classmethod
   def parse_other(cls, value: Any, **kwargs) -> Self:
@@ -73,7 +88,7 @@ class PageConfig(ConfigObject):
     value = ObjectParser.non_empty_sequence(value, "story actions or blocks")
     blocks = ActionBlockListConfig.parse_sequence(value)
     if label is not None:
-      label = ObjectParser.non_empty_str(label, "label")
+      label = cls.parse_label(label)
     secrets = secrets or Secrets()
     return cls(label, secrets=secrets, blocks=blocks.blocks)
 
@@ -93,7 +108,8 @@ class PageConfig(ConfigObject):
   @override
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
-    parser.add_argument("label", type=ObjectParser.non_empty_str)
+    parser.add_argument("label", type=cls.parse_label)
+    parser.add_argument("tags", type=cls.parse_tags, default=())
     parser.add_argument("playback", type=PlaybackController.parse)
     parser.add_argument("secrets", type=Secrets, default=Secrets())
     parser.add_argument("login", type=LoginBlock)

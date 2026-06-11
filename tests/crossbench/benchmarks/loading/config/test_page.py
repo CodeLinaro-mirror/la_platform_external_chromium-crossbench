@@ -39,6 +39,23 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertIsNone(config.label)
     self.assertEqual(config.any_label, "custom.html")
     self.assertEqual(config.first_url, "file://foo/bar/custom.html")
+    self.assertEqual(config.tags, frozenset())
+
+  def test_parse_tags(self):
+    config = PageConfig.parse({
+        "actions": ["http://a.com"],
+        "tags": "tag1,tag2"
+    })
+    self.assertEqual(config.tags, frozenset(["tag1", "tag2"]))
+
+    config2 = PageConfig.parse({
+        "actions": ["http://a.com"],
+        "tags": ["tag1", "tag2"]
+    })
+    self.assertEqual(config2.tags, frozenset(["tag1", "tag2"]))
+
+    with self.assertRaises(argparse.ArgumentTypeError):
+      PageConfig.parse({"actions": ["http://a.com"], "tags": ["tag1", "tag1"]})
 
   def test_parse_url(self):
     config = PageConfig.parse("http://www.a.com")

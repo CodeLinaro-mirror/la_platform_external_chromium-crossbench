@@ -201,12 +201,15 @@ class LoadingPageFilter(StoryFilter[Page]):
       stories.append(cls._story_from_config(args, page_config, use_labels))
 
     if not use_labels:
-      # Double check that the urls are unique
-      urls: set[str] = {page_config.first_url for page_config in config.pages}
-      if len(urls) != len(config.pages):
-        raise argparse.ArgumentTypeError(
-            "Got non-unique story labels and urls.")
+      cls._validate_unique_urls(config)
     return stories
+
+  @classmethod
+  def _validate_unique_urls(cls, config: PagesConfig) -> None:
+    # Double check that the urls are unique
+    urls: set[str] = {page_config.first_url for page_config in config.pages}
+    if len(urls) != len(config.pages):
+      raise argparse.ArgumentTypeError("Got non-unique story labels and urls.")
 
   @classmethod
   def _story_from_config(cls, args: argparse.Namespace, config: PageConfig,
@@ -345,9 +348,10 @@ class LoadingBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def all_story_names(cls) -> Sequence[str]:
+  def all_story_names(cls) -> tuple[str, ...]:
     # TODO: Use StoryFilter for listing stories everywhere.
-    return sorted(story.name for story in cls.STORY_FILTER_CLS.all_stories())
+    return tuple(
+        sorted(story.name for story in cls.STORY_FILTER_CLS.all_stories()))
 
   def __init__(self,
                stories: Sequence[Page],

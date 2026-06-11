@@ -47,7 +47,7 @@ class PerfettoInfoStory(Story):
   """A minimal story to keep the browser alive for querying Perfetto info."""
 
   @classmethod
-  def all_story_names(cls) -> Sequence[str]:
+  def all_story_names(cls) -> tuple[str, ...]:
     return ("perfetto_info",)
 
   def __init__(self) -> None:

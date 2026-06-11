@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from crossbench.benchmarks.base import PressBenchmarkStoryFilter, \
-    RangePatternError, RegexFilter
+    RangePatternError, RegexFilter, TagsFilter
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 from tests import test_helper
 
@@ -180,6 +180,81 @@ class RegexFilterTestCase(unittest.TestCase):
                                ["A", "B", "C", "D", "E"])
     selected = regex_filter.process_all(["B...C", "E"])
     self.assertSequenceEqual(selected, ["B", "C", "E"])
+
+
+class TagsFilterTestCase(unittest.TestCase):
+
+  def test_empty_tags(self):
+    story_tags = {"story1": ["tag1"], "story2": ["tag2"]}
+    tags_filter = TagsFilter(story_tags, ["story1"])
+    selected = tags_filter.process_all([])
+    self.assertSequenceEqual(selected, ["story1"])
+
+  def test_no_tags_available(self):
+    tags_filter = TagsFilter({}, ["story1"])
+    with self.assertRaisesRegex(ValueError, "No tags available"):
+      tags_filter.process_all(["tag1"])
+
+  def test_empty_tag_string(self):
+    story_tags = {"story1": ["tag1"]}
+    tags_filter = TagsFilter(story_tags, ["story1"])
+    with self.assertRaisesRegex(ValueError, "Empty tag"):
+      tags_filter.process_all([""])
+
+  def test_minus_tag_string(self):
+    story_tags = {"story1": ["tag1"]}
+    tags_filter = TagsFilter(story_tags, ["story1"])
+    with self.assertRaisesRegex(ValueError, "Empty tag"):
+      tags_filter.process_all(["-"])
+
+  def test_invalid_tag(self):
+    story_tags = {"story1": ["tag1"]}
+    tags_filter = TagsFilter(story_tags, ["story1"])
+    with self.assertRaisesRegex(ValueError, "story tag"):
+      tags_filter.process_all(["invalid_tag"])
+
+  def test_include_tag(self):
+    story_tags = {
+        "story1": ["tag1"],
+        "story2": ["tag2"],
+        "story3": ["tag1", "tag3"]
+    }
+    tags_filter = TagsFilter(story_tags, ["story1"])
+    selected = tags_filter.process_all(["tag1"])
+    self.assertSequenceEqual(selected, ["story1", "story3"])
+
+  def test_exclude_tag(self):
+    story_tags = {
+        "story1": ["tag1"],
+        "story2": ["tag2"],
+        "story3": ["tag1", "tag3"]
+    }
+    tags_filter = TagsFilter(story_tags, ["story1"])
+    selected = tags_filter.process_all(["-tag1"])
+    self.assertSequenceEqual(selected, ["story2"])
+
+  def test_include_and_exclude_tag(self):
+    story_tags = {
+        "story1": ["tag1"],
+        "story2": ["tag2"],
+        "story3": ["tag1", "tag3"]
+    }
+    tags_filter = TagsFilter(story_tags, ["story1"])
+    selected = tags_filter.process_all(["tag1", "-tag3"])
+    self.assertSequenceEqual(selected, ["story1"])
+
+  def test_include_and_exclude_same_tag(self):
+    story_tags = {"story1": ["tag1"], "story2": ["tag2"]}
+    tags_filter = TagsFilter(story_tags, ["story1"])
+    with self.assertRaisesRegex(ValueError,
+                                "Tags cannot be both included and excluded"):
+      tags_filter.process_all(["tag1", "-tag1"])
+
+  def test_no_stories_left(self):
+    story_tags = {"story1": ["tag1"], "story2": ["tag2"]}
+    tags_filter = TagsFilter(story_tags, ["story1"])
+    with self.assertRaisesRegex(ValueError, "No stories left after filtering"):
+      tags_filter.process_all(["-tag1", "-tag2"])
 
 
 if __name__ == "__main__":
