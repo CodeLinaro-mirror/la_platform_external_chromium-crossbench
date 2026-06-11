@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Iterable, Self
+import abc
+from typing import TYPE_CHECKING, ClassVar, Generic, Iterable, Self, TypeVar
 
 from typing_extensions import override
 
@@ -15,17 +16,16 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench import path as pth
+  from crossbench import plt
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.plt.types import CmdArg, TupleCmdArgs
   from crossbench.runner.run import Run
 
 
-class ShellProbe(Probe):
+class ShellProbeBase(Probe):
   """
-  Run an arbitrary shell command on the browser platform and store the
-  stdout and stderr of the command as a result file.
+  Base class for probes executing shell commands at lifecycle hooks.
   """
-  NAME: ClassVar = "shell"
 
   @classmethod
   @override
@@ -86,6 +86,11 @@ class ShellProbe(Probe):
     self._teardown_cmd: TupleCmdArgs = (
         tuple(teardown_cmd) if teardown_cmd else ())
 
+  @abc.abstractmethod
+  @override
+  def get_context_cls(self: Self) -> type[ProbeContext[Self]]:
+    pass
+
   @property
   @override
   def key(self) -> ProbeKeyT:
@@ -127,16 +132,35 @@ class ShellProbe(Probe):
       env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
                          f"repetitions={env.repetitions}.")
 
+
+class ShellProbe(ShellProbeBase):
+  """
+  Run an arbitrary shell command on the browser platform and store the
+  stdout and stderr of the command as a result file.
+  """
+  NAME: ClassVar = "shell"
+
   @override
   def get_context_cls(self) -> type[ShellProbeContext]:
     return ShellProbeContext
 
 
-class ShellProbeContext(ProbeContext[ShellProbe]):
+ProbeT = TypeVar("ProbeT", bound="ShellProbeBase")
 
-  def __init__(self, probe: ShellProbe, run: Run) -> None:
+
+class ShellProbeContextBase(ProbeContext[ProbeT], Generic[ProbeT]):
+  """
+  Base ProbeContext for executing shell commands at lifecycle hooks.
+  """
+
+  def __init__(self, probe: ProbeT, run: Run) -> None:
     super().__init__(probe, run)
     self._result_files: list[pth.LocalPath] = []
+
+  @property
+  @abc.abstractmethod
+  def target_platform(self) -> plt.Platform:
+    pass
 
   def _maybe_run_cmd(self, name: str, cmd: TupleCmdArgs) -> None:
     if not cmd:
@@ -148,7 +172,7 @@ class ShellProbeContext(ProbeContext[ShellProbe]):
     self.host_platform.touch(stderr_path)
     self._result_files.append(stderr_path)
     with stdout_path.open("w") as stdout, stderr_path.open("w") as stderr:
-      self.browser_platform.sh(*cmd, stdout=stdout, stderr=stderr)
+      self.target_platform.sh(*cmd, stdout=stdout, stderr=stderr)
 
   @override
   def setup(self) -> None:
@@ -172,3 +196,37 @@ class ShellProbeContext(ProbeContext[ShellProbe]):
   def teardown(self) -> ProbeResult:
     self._maybe_run_cmd("teardown", self.probe.teardown_cmd)
     return LocalProbeResult(file=tuple(self._result_files))
+
+
+class ShellProbeContext(ShellProbeContextBase[ShellProbe]):
+  """
+  ProbeContext for running shell commands on the browser platform.
+  """
+
+  @property
+  @override
+  def target_platform(self) -> plt.Platform:
+    return self.browser_platform
+
+
+class LocalShellProbe(ShellProbeBase):
+  """
+  Run an arbitrary shell command on the host platform and store the
+  stdout and stderr of the command as a result file.
+  """
+  NAME: ClassVar[str] = "local_shell"
+
+  @override
+  def get_context_cls(self) -> type[LocalShellProbeContext]:
+    return LocalShellProbeContext
+
+
+class LocalShellProbeContext(ShellProbeContextBase[LocalShellProbe]):
+  """
+  ProbeContext for running shell commands on the host platform.
+  """
+
+  @property
+  @override
+  def target_platform(self) -> plt.Platform:
+    return self.host_platform

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import inspect
+from typing import TYPE_CHECKING
 
 import crossbench.path as pth
 from crossbench.cli.config.probe_list import ProbeListConfig
@@ -33,8 +34,9 @@ from crossbench.probes.powermetrics import PowerMetricsProbe
 from crossbench.probes.probe import Probe, ProbeKeyT, ProbePriority
 from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
+from crossbench.probes.results import LocalProbeResult
 from crossbench.probes.screenshot import ScreenshotProbe
-from crossbench.probes.shell import ShellProbe
+from crossbench.probes.shell import LocalShellProbe, ShellProbe, ShellProbeBase
 from crossbench.probes.system_stats import SystemStatsProbe
 from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
@@ -47,6 +49,11 @@ from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 from tests import test_helper
 from tests.crossbench.base import CrossbenchConfigTestMixin, \
     CrossbenchFakeFsTestCase
+from tests.crossbench.probes.helper import BaseProbeTestCase
+
+if TYPE_CHECKING:
+  from tests.crossbench.mock_helper import MockPlatform
+  from tests.crossbench.runner.helper import MockRun
 
 
 class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
@@ -189,6 +196,7 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
         PollingShellProbe,
         # TODO: provide default settings
         ShellProbe,
+        LocalShellProbe,
         # TODO: missing wpr, download precompiled wpr from storage
         WebPageReplayProbe,
         WebviewEmbedderProbe,
@@ -242,19 +250,80 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
         else:
           self.assertEqual(probe_cls.PRIORITY, ProbePriority.USER)
 
-  def test_shell_probe_key(self):
-    probe = ShellProbe(stop_cmd=["stop"])
+  def _verify_shell_probe_key(self, probe_cls: type[ShellProbeBase]) -> None:
+    probe = probe_cls()
     cmd_keys = [k for k, _ in probe.key if k.endswith("_cmd")]
 
     base_kwargs = {k: (k,) for k in cmd_keys}
-    probe = ShellProbe(**base_kwargs)
+    probe = probe_cls(**base_kwargs)
 
-    self.assertEqual(probe.key[0], ("name", "shell"))
+    self.assertEqual(probe.key[0], ("name", probe_cls.NAME))
 
     key_dict = dict(probe.key)
     for k, val in base_kwargs.items():
       self.assertIn(k, key_dict)
       self.assertEqual(key_dict[k], val)
+
+  def test_shell_probe_key(self):
+    self._verify_shell_probe_key(ShellProbe)
+
+  def test_local_shell_probe_key(self):
+    self._verify_shell_probe_key(LocalShellProbe)
+
+
+class ShellProbeExecutionTestCase(BaseProbeTestCase):
+
+  def _verify_shell_probe_execution(self, probe_cls: type[ShellProbeBase],
+                                    run: MockRun,
+                                    target_platform: MockPlatform) -> None:
+    cmds = {
+        "setup_cmd": ["setup-cmd", "1", "2"],
+        "start_cmd": ["start-cmd", "3", "4"],
+        "start_story_run_cmd": ["start-story-cmd", "5", "6"],
+        "stop_story_run_cmd": ["stop-story-cmd", "7", "8"],
+        "stop_cmd": ["stop-cmd", "9", "10"],
+        "teardown_cmd": ["teardown-cmd", "11", "12"],
+    }
+    probe = probe_cls(**cmds)
+
+    # MockPlatform.expect_sh pre-registers expected commands in a FIFO queue.
+    # MockPlatform.sh() will assert that these commands are executed in this
+    # exact sequential order at runtime, failing immediately on any mismatch.
+    # That is, reordering these WILL result in a failure, as expected.
+    for cmd in cmds.values():
+      target_platform.expect_sh(*cmd)
+
+    context = probe.create_context(run)
+
+    context.setup()
+    context.start()
+    context.start_story_run()
+    context.stop_story_run()
+    context.stop()
+    result = context.teardown()
+
+    self.assertIsInstance(result, LocalProbeResult)
+
+    # Verify the exact filenames are constructed correctly from hook names.
+    expected_filenames = [
+        f"{key.removesuffix('_cmd')}.{suffix}.txt" for key in cmds
+        for suffix in ("stdout", "stderr")
+    ]
+    actual_filenames = [f.name for f in result.file_list]
+    self.assertListEqual(actual_filenames, expected_filenames)
+
+    # Verify that no pending expected commands remain unexecuted.
+    self.assertListEqual(target_platform.sh_results, [])
+
+  def test_browser_shell_probe_execution(self):
+    run = self.mock_run()
+    browser_platform = self.setup_platform()
+    run.browser_session.browser.platform = browser_platform
+    self._verify_shell_probe_execution(ShellProbe, run, browser_platform)
+
+  def test_local_shell_probe_execution(self):
+    run = self.mock_run()
+    self._verify_shell_probe_execution(LocalShellProbe, run, self.platform)
 
 
 if __name__ == "__main__":
