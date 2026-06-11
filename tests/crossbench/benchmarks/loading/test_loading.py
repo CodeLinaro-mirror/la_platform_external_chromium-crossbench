@@ -17,7 +17,8 @@ from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.base import ActionRunner
-from crossbench.benchmarks.loading.config.blocks import ActionBlockListConfig
+from crossbench.benchmarks.loading.config.blocks import ActionBlock, \
+    ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.google import GOOGLE_LOGIN_URL
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
     LoadingPageFilter
@@ -76,6 +77,17 @@ class TestPageLoadBenchmark(SubStoryTestCase):
       self.assertIsInstance(page, InteractivePage)
     for page in PAGE_LIST_SMALL:
       self.assertIsInstance(page, InteractivePage)
+
+  def test_interactive_page_empty(self):
+    with self.assertRaises(AssertionError):
+      InteractivePage("test")
+
+  def test_interactive_page_setup_only(self):
+    setup = ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1))
+    page = InteractivePage("test", setup=setup)
+    self.assertTrue(page.has_any_blocks)
+    self.assertTrue(bool(page))
+    self.assertEqual(len(page.blocks), 0)
 
   def test_all_stories(self):
     stories = self.story_filter(["all"]).stories

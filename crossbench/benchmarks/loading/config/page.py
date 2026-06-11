@@ -114,8 +114,15 @@ class PageConfig(ConfigObject):
     return cls(label=label, blocks=blocks)
 
   def actions(self) -> Iterator[Action]:
-    for block in self.blocks:
+    for block in self.blocks or ():
       yield from block
+
+  @property
+  def has_any_blocks(self) -> bool:
+    return bool(self.blocks or self.setup or self.teardown)
+
+  def __bool__(self) -> bool:
+    return self.has_any_blocks
 
   @property
   def duration(self) -> dt.timedelta:

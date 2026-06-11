@@ -226,12 +226,12 @@ class LoadingPageFilter(StoryFilter[Page]):
     label: str = config.any_label if use_labels else config.first_url
     duration = duration or DEFAULT_DURATION
 
-    if not config.blocks:
+    if not config.has_any_blocks:
       return LivePage(label, config.first_url, duration, playback, tabs,
                       args.about_blank_duration)
     return InteractivePage(
         name=label,
-        blocks=config.blocks,
+        blocks=config.blocks or (),
         login=config.login,
         setup=config.setup,
         teardown=config.teardown,

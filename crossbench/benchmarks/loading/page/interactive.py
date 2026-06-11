@@ -35,7 +35,7 @@ class InteractivePage(Page):
 
   def __init__(self,
                name: str,
-               blocks: tuple[ActionBlock, ...],
+               blocks: tuple[ActionBlock, ...] = (),
                login: LoginBlock | None = None,
                setup: ActionBlock | None = None,
                teardown: ActionBlock | None = None,
@@ -54,8 +54,9 @@ class InteractivePage(Page):
     self._setup_block: ActionBlock | None = setup
     assert isinstance(blocks, tuple)
     self._blocks: tuple[ActionBlock, ...] = blocks
-    assert self._blocks, "Must have at least 1 valid action"
     self._teardown_block: ActionBlock | None = teardown
+    assert self.has_any_blocks, (
+        "Must have at least 1 valid action in blocks, setup, or teardown")
 
     self._run_login: bool = run_login
     self._run_setup: bool = run_setup
@@ -80,6 +81,13 @@ class InteractivePage(Page):
   @property
   def teardown_block(self) -> ActionBlock | None:
     return self._teardown_block
+
+  @property
+  def has_any_blocks(self) -> bool:
+    return bool(self._blocks or self._setup_block or self._teardown_block)
+
+  def __bool__(self) -> bool:
+    return self.has_any_blocks
 
   @property
   @override
