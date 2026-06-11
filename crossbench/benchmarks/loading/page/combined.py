@@ -13,6 +13,7 @@ from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
+from crossbench.cli.config.secrets import Secrets, SecretsMergeError
 
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
@@ -36,10 +37,16 @@ class CombinedPage(Page):
     self._tabs = tabs
 
     duration = dt.timedelta()
+    secrets = Secrets()
     for page in self._pages:
       page.set_parent(self)
       duration += page.duration
-    super().__init__(name, duration, playback, tabs, about_blank_duration)
+      try:
+        secrets = secrets.merge(page.secrets, strict=True)
+      except SecretsMergeError as e:
+        raise ValueError(f"{e}. Please use --separate.") from e
+    super().__init__(
+        name, duration, playback, tabs, about_blank_duration, secrets=secrets)
     self.url = None
 
   @property

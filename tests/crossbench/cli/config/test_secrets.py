@@ -11,12 +11,30 @@ import unittest
 import hjson
 
 from crossbench.cli.config.secrets import CycledUsernamePassword, \
-    GoogleUsernamePassword, Secrets, ServiceAccount, UsernamePassword
+    GoogleUsernamePassword, Secrets, SecretsMergeError, ServiceAccount, \
+    UsernamePassword
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 
 
 class SecretsConfigTestCase(BaseConfigTestCase):
+
+  def bond_config_dict(self):
+    return {
+        "bond": {
+            "type": "service_account",
+            "project_id": "my-project",
+            "private_key_id": "0BADC0DE",
+            "private_key": "-----BEGIN PRIVATE KEY-----\n...",
+            "client_email": "name@example.com",
+            "client_id": "7",
+            "auth_uri": "https://example.com/oauth",
+            "token_uri": "https://example.com/token",
+            "auth_provider_x509_cert_url": "https://example.com/certs",
+            "client_x509_cert_url": "https://example.com/x509/my-project.cert",
+            "universe_domain": "example.com",
+        }
+    }
 
   def test_parse_empty(self):
     secrets = Secrets.parse({})
@@ -44,21 +62,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
                      GoogleUsernamePassword("user@test.com", ""))
 
   def test_parse_bond(self):
-    secrets = Secrets.parse({
-        "bond": {
-            "type": "service_account",
-            "project_id": "my-project",
-            "private_key_id": "0BADC0DE",
-            "private_key": "-----BEGIN PRIVATE KEY-----\n...",
-            "client_email": "name@example.com",
-            "client_id": "7",
-            "auth_uri": "https://example.com/oauth",
-            "token_uri": "https://example.com/token",
-            "auth_provider_x509_cert_url": "https://example.com/certs",
-            "client_x509_cert_url": "https://example.com/x509/my-project.cert",
-            "universe_domain": "example.com",
-        }
-    })
+    secrets = Secrets.parse(self.bond_config_dict())
     self.assertEqual(
         secrets.bond,
         ServiceAccount(
@@ -116,6 +120,27 @@ class SecretsConfigTestCase(BaseConfigTestCase):
         }})
     self.assertNotEqual(secrets_1, secrets_2)
 
+  def test_equal_bond_item(self):
+    secrets_empty = Secrets.parse({})
+    bond_config = self.bond_config_dict()
+    secrets_1 = Secrets.parse(bond_config)
+    secrets_2 = Secrets.parse(bond_config)
+    self.assertEqual(secrets_1, secrets_1)
+    self.assertEqual(secrets_1, secrets_2)
+    self.assertEqual(secrets_2, secrets_1)
+    self.assertNotEqual(secrets_1, secrets_empty)
+    self.assertNotEqual(secrets_empty, secrets_1)
+    self.assertNotEqual(secrets_2, secrets_empty)
+    self.assertNotEqual(secrets_empty, secrets_2)
+
+  def test_not_equal_bond_item(self):
+    bond_config_1 = self.bond_config_dict()
+    bond_config_2 = self.bond_config_dict()
+    bond_config_2["bond"]["private_key_id"] = "1BADBEEF"
+    secrets_1 = Secrets.parse(bond_config_1)
+    secrets_2 = Secrets.parse(bond_config_2)
+    self.assertNotEqual(secrets_1, secrets_2)
+
   def test_parse_inline_hjson(self):
     config_data = {"google": {"password": "pw", "account": "user@test.com"}}
     secrets_inline_hjson = Secrets.parse(hjson.dumps(config_data))
@@ -137,6 +162,24 @@ class SecretsConfigTestCase(BaseConfigTestCase):
         }})
     merged = secrets_1.merge(fallback=secrets_2)
     self.assertEqual(secrets_1, merged)
+
+  def test_merge_strict(self):
+    secrets_1 = Secrets.parse(
+        {"google": {
+            "password": "pw",
+            "account": "user1@test.com"
+        }})
+    secrets_2 = Secrets.parse(
+        {"google": {
+            "password": "PASSWORD",
+            "account": "user2@test.com"
+        }})
+    merged = secrets_1.merge(fallback=secrets_1, strict=True)
+    self.assertEqual(secrets_1, merged)
+
+    with self.assertRaisesRegex(SecretsMergeError,
+                                "Conflicting Google secrets"):
+      secrets_1.merge(fallback=secrets_2, strict=True)
 
   def test_cycled_account_default(self):
     cycled_account = CycledUsernamePassword.parse({
@@ -183,6 +226,65 @@ class UsernamePasswordTestCase(unittest.TestCase):
     self.assertFalse(secret.is_interactive)
     self.assertEqual(secret.username, "user@test.com")
     self.assertEqual(secret.password, "pw")
+
+  def test_equality(self):
+    secret_1 = GoogleUsernamePassword("user@test.com", "pw")
+    self.assertEqual(secret_1, secret_1)
+
+    secret_2 = GoogleUsernamePassword("user@test.com", "pw")
+    self.assertEqual(secret_1, secret_2)
+
+    secret_3 = GoogleUsernamePassword("other@test.com", "pw")
+    self.assertNotEqual(secret_1, secret_3)
+
+
+class ServiceAccountTestCase(unittest.TestCase):
+
+  def test_equality(self):
+    account_1 = ServiceAccount(
+        type="service_account",
+        project_id="my-project",
+        private_key_id="0BADC0DE",
+        private_key="-----BEGIN PRIVATE KEY-----\n...",
+        client_email="name@example.com",
+        client_id="7",
+        auth_uri="https://example.com/oauth",
+        token_uri="https://example.com/token",
+        auth_provider_x509_cert_url="https://example.com/certs",
+        client_x509_cert_url="https://example.com/x509/my-project.cert",
+        universe_domain="example.com",
+    )
+    self.assertEqual(account_1, account_1)
+
+    account_2 = ServiceAccount(
+        type="service_account",
+        project_id="my-project",
+        private_key_id="0BADC0DE",
+        private_key="-----BEGIN PRIVATE KEY-----\n...",
+        client_email="name@example.com",
+        client_id="7",
+        auth_uri="https://example.com/oauth",
+        token_uri="https://example.com/token",
+        auth_provider_x509_cert_url="https://example.com/certs",
+        client_x509_cert_url="https://example.com/x509/my-project.cert",
+        universe_domain="example.com",
+    )
+    self.assertEqual(account_1, account_2)
+
+    account_3 = ServiceAccount(
+        type="service_account_other",
+        project_id="my-project",
+        private_key_id="0BADC0DE",
+        private_key="-----BEGIN PRIVATE KEY-----\n...",
+        client_email="name@example.com",
+        client_id="7",
+        auth_uri="https://example.com/oauth",
+        token_uri="https://example.com/token",
+        auth_provider_x509_cert_url="https://example.com/certs",
+        client_x509_cert_url="https://example.com/x509/my-project.cert",
+        universe_domain="example.com",
+    )
+    self.assertNotEqual(account_1, account_3)
 
 
 if __name__ == "__main__":

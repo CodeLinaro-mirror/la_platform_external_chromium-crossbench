@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import secrets
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from typing_extensions import override
 
@@ -15,6 +15,15 @@ from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
+
+
+class SecretsMergeError(ValueError):
+
+  def __init__(self, name: str, primary: Secret, fallback: Secret) -> None:
+    super().__init__(f"Conflicting {name} secrets: {primary} vs {fallback}")
+    self.name = name
+    self.primary = primary
+    self.fallback = fallback
 
 
 @dataclasses.dataclass(frozen=True)
@@ -37,9 +46,17 @@ class Secrets(ConfigObject):
   def parse_str(cls, value: str) -> Self:
     raise NotImplementedError("Cannot create secrets from string")
 
-  def merge(self, fallback: Secrets) -> Self:
-    return type(self)(self.google or fallback.google, self.bond or
-                      fallback.bond)
+  def merge(self, fallback: Secrets, strict: bool = False) -> Self:
+    return type(self)(
+        self._merge_secret("Google", self.google, fallback.google, strict),
+        self._merge_secret("Bond", self.bond, fallback.bond, strict),
+    )
+
+  def _merge_secret(self, name: str, primary: Secret | None,
+                    fallback: Secret | None, strict: bool) -> Any:
+    if strict and primary and fallback and primary != fallback:
+      raise SecretsMergeError(name, primary, fallback)
+    return primary or fallback
 
 
 class Secret(ConfigObject):

@@ -180,6 +180,88 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     page = CombinedPage([page_2, page_3])
     self.assertSequenceEqual(page.substories, ["test_0", "test_1", "test_3"])
 
+  def test_substories_combined_conflicting_secrets(self):
+    secrets1 = Secrets.parse(
+        {"google": {
+            "password": "pw1",
+            "account": "user1@test.com"
+        }})
+    secrets2 = Secrets.parse(
+        {"google": {
+            "password": "pw2",
+            "account": "user2@test.com"
+        }})
+    page_0 = InteractivePage(
+        "test_0",
+        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+        secrets=secrets1)
+    page_1 = InteractivePage(
+        "test_1",
+        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+        secrets=secrets2)
+    with self.assertRaisesRegex(ValueError, "Conflicting Google secrets"):
+      CombinedPage([page_0, page_1])
+
+  def test_substories_combined_same_secrets(self):
+    secrets1 = Secrets.parse(
+        {"google": {
+            "password": "pw1",
+            "account": "user1@test.com"
+        }})
+    secrets2 = Secrets.parse(
+        {"google": {
+            "password": "pw1",
+            "account": "user1@test.com"
+        }})
+    self.assertEqual(secrets1, secrets2)
+    page_0 = InteractivePage(
+        "test_0",
+        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+        secrets=secrets1)
+    page_1 = InteractivePage(
+        "test_1",
+        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+        secrets=secrets2)
+    combined = CombinedPage([page_0, page_1])
+    self.assertEqual(combined.secrets, secrets1)
+    self.assertEqual(combined.secrets, secrets2)
+
+  def test_substories_combined_compatible_secrets(self):
+    secrets1 = Secrets.parse(
+        {"google": {
+            "password": "pw1",
+            "account": "user1@test.com"
+        }})
+    secrets2 = Secrets.parse({
+        "bond": {
+            "type": "service_account",
+            "project_id": "my-project",
+            "private_key_id": "0BADC0DE",
+            "private_key": "-----BEGIN PRIVATE KEY-----\n...",
+            "client_email": "name@example.com",
+            "client_id": "7",
+            "auth_uri": "https://example.com/oauth",
+            "token_uri": "https://example.com/token",
+            "auth_provider_x509_cert_url": "https://example.com/certs",
+            "client_x509_cert_url": "https://example.com/x509/my-project.cert",
+            "universe_domain": "example.com",
+        }
+    })
+    self.assertNotEqual(secrets1, secrets2)
+    page_0 = InteractivePage(
+        "test_0",
+        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+        secrets=secrets1)
+    page_1 = InteractivePage(
+        "test_1",
+        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+        secrets=secrets2)
+    combined = CombinedPage([page_0, page_1])
+    self.assertNotEqual(combined.secrets, secrets1)
+    self.assertNotEqual(combined.secrets, secrets2)
+    self.assertEqual(combined.secrets.google, secrets1.google)
+    self.assertEqual(combined.secrets.bond, secrets2.bond)
+
   def test_run_default(self):
     stories = PAGE_LIST_SMALL
     self._test_run(stories)
