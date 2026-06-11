@@ -185,6 +185,14 @@ class ChromiumBasedWebDriver(
     options.set_capability("browserVersion", str(self.version.major))
     # Don't wait for document-ready.
     options.set_capability("pageLoadStrategy", "none")
+    if "--allow-background-interventions" in args:
+      # chromedriver will silently add additional args that interfere
+      # with background optimizations. Disable those args when the test is
+      # run with background interventions allowed.
+      options.add_experimental_option("excludeSwitches", [
+          "disable-background-timer-throttling",
+          "disable-backgrounding-occluded-windows",
+      ])
     for arg in args:
       options.add_argument(arg)
     options.binary_location = os.fspath(self.path)
