@@ -56,7 +56,7 @@ class ShellProbeBase(Probe):
               "of a story has ended."))
     parser.add_argument(
         "stop_cmd",
-        aliases=("cmd", "stop"),
+        aliases=("stop",),
         type=ObjectParser.sh_cmd,
         required=True,
         help=("CMD is run right after the workload ended and the browser "
