@@ -27,6 +27,7 @@ from crossbench.probes.etm import EtmProbe
 from crossbench.probes.frequency import FrequencyProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
+from crossbench.probes.metrics_internals import ChromeMetricsInternalsProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
 from crossbench.probes.polling import PollingShellProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe
@@ -125,10 +126,14 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
     for probe_sub_cls in probe_cls.__subclasses__():
       if "Mock" in str(probe_sub_cls):
         continue
-      # Filter out abstract helper classes.
-      if probe_sub_cls in (ChromiumProbe, EnvModifier, JsonResultProbe):
-        continue
-      if not inspect.isabstract(probe_sub_cls):
+      # Only yield concrete probe classes (while still recursing into their
+      # subclasses).
+      # We must also manually exclude specific helper base classes that are
+      # "conceptually abstract" but technically concrete. (Not ever expected
+      # to be instantiated, but don't actually possess @abc.abstractmethod
+      # methods that'd trigger isabstract.)
+      if (not inspect.isabstract(probe_sub_cls) and
+          probe_sub_cls not in (ChromiumProbe, EnvModifier, JsonResultProbe)):
         yield probe_sub_cls
       yield from self.all_probe_subclasses(probe_sub_cls)
     yield from OPTIONAL_INTERNAL_PROBES
@@ -185,6 +190,7 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
     # TODO(crbug.com/383572680): provide more default settings
     requires_configuration = {
         ChromeHistogramsProbe,
+        ChromeMetricsInternalsProbe,
         DTraceProbe,
         # Reason: missing lldb binary on some platforms
         DebuggerProbe,

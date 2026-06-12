@@ -41,6 +41,7 @@ class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
   chrome://metrics-internals/structured.
   """
   NAME: ClassVar = "devtools_frontend_load_time"
+  IS_GENERAL_PURPOSE: ClassVar[bool] = BenchmarkProbeMixin.IS_GENERAL_PURPOSE
 
   def __init__(self, *args, **kwargs) -> None:
     BenchmarkProbeMixin.__init__(self, *args, **kwargs)

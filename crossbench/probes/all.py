@@ -31,6 +31,7 @@ from crossbench.probes.internal.system_details import SystemDetailsProbe
 from crossbench.probes.js import JSProbe
 from crossbench.probes.json import JsonResultProbe
 from crossbench.probes.meminfo import MeminfoProbe
+from crossbench.probes.metrics_internals import ChromeMetricsInternalsProbe
 from crossbench.probes.netlog import NetLogProbe
 from crossbench.probes.perfetto_info import PerfettoInfoProbe
 from crossbench.probes.performance_entries import PerformanceEntriesProbe
@@ -98,6 +99,7 @@ GENERAL_PURPOSE_PROBES: tuple[type[Probe], ...] = (
     BrowserProfilingProbe,
     CDPEndpointProbe,
     ChromeHistogramsProbe,
+    ChromeMetricsInternalsProbe,
     ChromiumPgoProbe,
     DebuggerProbe,
     DownloadsProbe,
