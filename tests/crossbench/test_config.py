@@ -17,7 +17,7 @@ from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser, \
-    UnusedPropertiesMode
+    UnusedPropertiesMode, root_dir
 from crossbench.exception import MultiException
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.str_enum_with_help import StrEnumWithHelp
@@ -1588,6 +1588,23 @@ class ConfigEnumTestCase(unittest.TestCase):
                           (CustomConfigEnum.B,
                            CustomConfigEnum.B), ("c", CustomConfigEnum.C)):
       self.assertIs(CustomConfigEnum.parse(value), result)
+
+
+class ConfigRootDirTestCase(CrossbenchFakeFsTestCase):
+
+  def test_root_dir_standard(self):
+    with mock.patch(
+        "crossbench.config.__file__",
+        "/path/to/root/crossbench/config.py"):
+      self.fs.create_file("/path/to/root/crossbench/config.py")
+      self.assertEqual(str(root_dir()), "/path/to/root")
+
+  def test_root_dir_flattened(self):
+    with mock.patch(
+        "crossbench.config.__file__", "/path/to/root/config.py"):
+      self.fs.create_file("/path/to/root/config.py")
+      self.fs.create_dir("/path/to/root/config")
+      self.assertEqual(str(root_dir()), "/path/to/root")
 
 
 if __name__ == "__main__":

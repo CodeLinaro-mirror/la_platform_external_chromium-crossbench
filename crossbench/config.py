@@ -1358,6 +1358,9 @@ class ConfigParser(Generic[ConfigResultObjectT]):
 
 
 def root_dir() -> pth.LocalPath:
+  parent = pth.LocalPath(__file__).parent.absolute()
+  if (parent / "config").is_dir():
+    return parent
   return pth.LocalPath(__file__).parents[1].absolute()
 
 
