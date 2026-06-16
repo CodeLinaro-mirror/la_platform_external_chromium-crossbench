@@ -85,6 +85,21 @@ class MotionMark1BaseTestCase(
       "scoreUpperBound": 1210.464520355893
   }]
 
+  @override
+  def setUp(self):
+    super().setUp()
+    self.set_display_refresh_rate_patcher = mock.patch.object(
+        self.platform,
+        "set_display_refresh_rate",
+        return_value=(True, "mocked"))
+    self.addCleanup(self.set_display_refresh_rate_patcher.stop)
+    self.set_display_refresh_rate_patcher.start()
+
+    self.reset_display_refresh_rate_patcher = mock.patch.object(
+        self.platform, "reset_display_refresh_rate")
+    self.addCleanup(self.reset_display_refresh_rate_patcher.stop)
+    self.reset_display_refresh_rate_patcher.start()
+
   def test_all_stories(self):
     stories = self.story_filter(["all"], separate=True).stories
     self.assertGreater(len(stories), 1)

@@ -579,9 +579,38 @@ class MacOSPlatform(PosixPlatform):
                f"main_refresh_rate={refresh_rate}, "
                f"refresh_rate={refresh_rate}")
 
+    core_foundation = self._get_core_foundation()
+    set_mode, find_log = self._find_display_mode(core_graphics, core_foundation,
+                                                 main_display, main_width,
+                                                 main_height, refresh_rate)
+    log_msg += find_log
+
+    if set_mode is not None:
+      success, set_log = self._apply_display_mode(core_graphics, main_display,
+                                                  set_mode, refresh_rate, retry)
+      if success:
+        return True, (f"The refresh rate was successfully set!\n"
+                      f"{log_msg}{set_log}")
+      log_msg += set_log
+    else:
+      log_msg += "\nFailed to find a match for display size and refresh rate!"
+
+    return False, log_msg
+
+  def _get_core_foundation(self) -> ctypes.CDLL:
     core_foundation = ctypes.CDLL(ctypes.util.find_library("CoreFoundation"))
     self._core_foundation_types(core_foundation)
+    return core_foundation
 
+  def _find_display_mode(
+      self,
+      core_graphics: ctypes.CDLL,
+      core_foundation: ctypes.CDLL,
+      main_display: Any,
+      main_width: int,
+      main_height: int,
+      refresh_rate: int,
+  ) -> tuple[ctypes.c_void_p | None, str]:
     # Finding all available display modes.
     keys = (ctypes.c_void_p * 1)()
     keys[0] = ctypes.c_void_p.in_dll(
@@ -595,6 +624,7 @@ class MacOSPlatform(PosixPlatform):
 
     # Finding a display with original size and capable of the refresh rate.
     set_mode = None
+    log_msg = ""
     for idx in range(core_foundation.CFArrayGetCount(display_modes)):
       display_mode = core_foundation.CFArrayGetValueAtIndex(display_modes, idx)
       width = round(core_graphics.CGDisplayModeGetWidth(display_mode))
@@ -607,19 +637,25 @@ class MacOSPlatform(PosixPlatform):
           refresh_rate == rate):
         set_mode = display_mode
         break
+    return set_mode, log_msg
 
-    # Set the refresh rate if the suitable display mode is found.
-    if set_mode is not None:
-      for _ in range(retry):
-        core_graphics.CGDisplaySetDisplayMode(main_display, set_mode, None)
-        rate = int(core_graphics.CGDisplayModeGetRefreshRate(display_mode))
-        if refresh_rate == rate:
-          return True, f"The refresh rate was successfully set!\n{log_msg}"
-        log_msg += "\nFailed to set the refresh rate!"
-        self.sleep(2)
-    else:
-      log_msg += "\nFailed to find a match for display size and refresh rate!"
-
+  def _apply_display_mode(
+      self,
+      core_graphics: ctypes.CDLL,
+      main_display: Any,
+      set_mode: ctypes.c_void_p,
+      refresh_rate: int,
+      retry: int,
+  ) -> tuple[bool, str]:
+    log_msg = ""
+    for _ in range(retry):
+      core_graphics.CGDisplaySetDisplayMode(main_display, set_mode, None)
+      current_mode = core_graphics.CGDisplayCopyDisplayMode(main_display)
+      rate = int(core_graphics.CGDisplayModeGetRefreshRate(current_mode))
+      if refresh_rate == rate:
+        return True, log_msg
+      log_msg += "\nFailed to set the refresh rate!"
+      self.sleep(2)
     return False, log_msg
 
   @override

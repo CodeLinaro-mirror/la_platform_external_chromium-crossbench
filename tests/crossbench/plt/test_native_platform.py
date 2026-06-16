@@ -15,6 +15,7 @@ import sys
 import tempfile
 import unittest
 from typing import TYPE_CHECKING
+from unittest import mock
 
 from typing_extensions import override
 
@@ -835,6 +836,21 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     super().setUp()
     assert isinstance(plt.PLATFORM, plt.MacOSPlatform)
     self.platform = plt.PLATFORM
+
+  def test_set_display_refresh_rate(self):
+    if not self.platform.has_display:
+      self.skipTest("No display")
+    displays = self.platform.display_details()
+    if not displays:
+      self.skipTest("No displays")
+    rate = displays[0].get("refresh_rate")
+    if rate is None or rate <= 0:
+      self.skipTest("Refresh rate not supported")
+
+    with mock.patch.object(self.platform, "sleep") as mock_sleep:
+      success, _ = self.platform.set_display_refresh_rate(rate)
+      self.assertTrue(success)
+      mock_sleep.assert_not_called()
 
   def test_search_app_binary_not_found(self):
     binary = self.platform.search_binary(pathlib.Path("Invalid App Name"))
