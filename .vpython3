@@ -25,7 +25,7 @@ wheel: <
 
 wheel: <
   name: "infra/python/wheels/selenium-py3"
-  version: "version:4.41.0"
+  version: "version:4.44.0"
 >
 
 wheel: <
