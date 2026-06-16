@@ -6,13 +6,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self
 
-from sqlalchemy import orm
 from sqlalchemy import types as orm_types
-from sqlalchemy.orm import Mapped
 from sqlalchemy.sql import schema as orm_schema
 
+from crossbench.results_db import sqlalchemy_helpers as orm
 from crossbench.results_db.records.base import BaseRecord
 from crossbench.results_db.records.platform import PlatformRecord
+from crossbench.results_db.sqlalchemy_helpers import Mapped
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser

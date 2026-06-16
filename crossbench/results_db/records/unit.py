@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import enum
 
-from sqlalchemy import orm
 from sqlalchemy import types as orm_types
-from sqlalchemy.orm import Mapped
 
+from crossbench.results_db import sqlalchemy_helpers as orm
 from crossbench.results_db.records.base import BaseRecord
+from crossbench.results_db.sqlalchemy_helpers import Mapped
 
 
 class ImprovementDirection(enum.IntEnum):

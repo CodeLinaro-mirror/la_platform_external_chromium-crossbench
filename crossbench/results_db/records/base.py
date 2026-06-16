@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import orm
+from crossbench.results_db import sqlalchemy_helpers as orm
 
 
 class BaseRecord(orm.DeclarativeBase):
