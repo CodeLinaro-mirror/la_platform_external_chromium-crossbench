@@ -48,10 +48,9 @@
           "sql":
             '''
             SELECT
-              (paint.ts - start.ts) / 1e6 AS duration_ms
-            FROM slice AS paint, slice AS start
+              (paint.ts - (SELECT min(ts) FROM slice)) / 1e6 AS duration_ms
+            FROM slice AS paint
             WHERE paint.name LIKE '%Startup.BrowserWindow.FirstPaint'
-              AND start.name = 'Startup.BrowserMainEntryPoint'
             LIMIT 1
             '''
         }
