@@ -14,8 +14,8 @@ from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.probes.all import TraceProcessorProbe
 from crossbench.probes.trace_processor.constants import QUERIES_DIR
-from crossbench.probes.trace_processor.trace_processor import \
-    TraceProcessorQueryConfig
+from crossbench.probes.trace_processor.query_config import \
+    DeviceSpecificTraceProcessorQuery, TraceProcessorQueryConfig
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase, \
     CrossbenchFakeFsTestCase
@@ -96,6 +96,11 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(str(config.trace_processor_bin), str(trace_processor_path))
 
 
+TARGET_P9 = "web_power/power_rails_p9"
+TARGET_P10 = "web_power/power_rails_p10"
+TARGET_P1 = "web_power/power_rails_p1"
+TARGET_FALLBACK = "web_power/powerline_cpu_rails"
+
 class TraceProcessorQueryConfigTestCase(unittest.TestCase):
 
   def test_invalid_name_raises(self):
@@ -157,6 +162,125 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     })
     self.assertEqual(query.name, "comment")
     self.assertEqual(query.sql, "'new value'")
+
+  def test_device_specific_query_parsing(self):
+    query = TraceProcessorQueryConfig.parse({
+        "name": "web_power_power_rails",
+        "device_override": {
+            r"Pixel 9.*": TARGET_P9,
+            r"Pixel 10.*": TARGET_P10,
+        },
+        "sql": TARGET_FALLBACK
+    })
+    self.assertIsInstance(query, DeviceSpecificTraceProcessorQuery)
+
+  def test_device_specific_query_invalid_regex_raises(self):
+    with self.assertRaisesRegex(ValueError, "Invalid regular expression"):
+      TraceProcessorQueryConfig.parse({
+          "name": "web_power_power_rails",
+          "device_override": {
+              "[Pixel 9": TARGET_P9,
+          },
+          "sql": TARGET_FALLBACK
+      })
+
+  def test_device_specific_query_unresolved_sql_access_raises(self):
+    query = TraceProcessorQueryConfig.parse({
+        "name": "web_power_power_rails",
+        "device_override": {
+            r"Pixel 9.*": TARGET_P9,
+        }
+    })
+    # Accessing the SQL of an unresolved device-specific query must fail fast
+    # since the final query contents are bound to a device platform at runtime.
+    with self.assertRaises(RuntimeError):
+      _ = query.sql
+
+  def _verify_resolution(
+      self,
+      device_override: dict[str, str],
+      model: str,
+      expected_sql_path: str,
+      sql: str | None = TARGET_FALLBACK,
+      replacements: dict[str, str] | None = None,
+  ) -> None:
+    config_dict: dict = {
+        "name": "web_power_power_rails",
+        "device_override": device_override,
+    }
+    if sql is not None:
+      config_dict["sql"] = sql
+    if replacements is not None:
+      config_dict["replacements"] = replacements
+
+    query = TraceProcessorQueryConfig.parse(config_dict)
+    platform = unittest.mock.MagicMock()
+    platform.model = model
+
+    resolved = query.resolve_for_platform(platform)
+    expected_sql = read_query_sql(expected_sql_path)
+    if replacements:
+      for k, v in replacements.items():
+        expected_sql = expected_sql.replace(k, v)
+    self.assertEqual(resolved.sql, expected_sql)
+
+  def test_device_specific_query_resolution_match(self):
+    self._verify_resolution(
+        device_override={
+            r"Pixel 9.*": TARGET_P9,
+            r"Pixel 10.*": TARGET_P10,
+        },
+        model="Pixel 10 Pro XL",
+        expected_sql_path=f"{TARGET_P10}.sql")
+
+  def test_device_specific_query_resolution_no_substring_match(self):
+    device_override = {
+        r"Pixel 1\b.*": TARGET_P1,
+        r"Pixel 10\b.*": TARGET_P10,
+    }
+    self._verify_resolution(
+        device_override=device_override,
+        model="Pixel 10 Pro",
+        expected_sql_path=f"{TARGET_P10}.sql")
+
+    # If the device is entirely missing from the overrides, we fallback
+    self._verify_resolution(
+        device_override=device_override,
+        model="Pixel 11",
+        expected_sql_path=f"{TARGET_FALLBACK}.sql")
+
+  def test_device_specific_query_resolution_fallback(self):
+    self._verify_resolution(
+        device_override={
+            r"Pixel 9.*": TARGET_P9,
+        },
+        model="Pixel 10 Pro",
+        expected_sql_path=f"{TARGET_FALLBACK}.sql")
+
+  def test_device_specific_query_with_replacements(self):
+    self._verify_resolution(
+        device_override={
+            r"Pixel 9.*": TARGET_P9,
+        },
+        model="Pixel 10 Pro",
+        expected_sql_path=f"{TARGET_FALLBACK}.sql",
+        replacements={"Chromium": "ReplacedChromium"})
+
+  def test_device_specific_query_resolution_unsupported_raises(self):
+    query = TraceProcessorQueryConfig.parse({
+        "name": "web_power_power_rails",
+        "device_override": {
+            r"Pixel 9.*": TARGET_P9,
+        }
+    })
+
+    platform = unittest.mock.MagicMock()
+    platform.model = "Pixel 10 Pro"
+
+    with self.assertRaisesRegex(ValueError,
+                                "Unsupported device model for query"):
+      query.resolve_for_platform(platform)
+
 
 
 class TraceProcessorResultTestCase(BaseCrossbenchTestCase):

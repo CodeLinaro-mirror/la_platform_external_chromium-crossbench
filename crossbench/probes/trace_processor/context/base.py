@@ -122,7 +122,9 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
 
   @property
   def queries(self) -> tuple[TraceProcessorQueryConfig, ...]:
-    return self._probe.queries
+    return tuple(
+        query.resolve_for_platform(self.run.browser.platform)
+        for query in self._probe.queries)
 
   def _run_metrics(self, tp: TraceProcessor,
                    exceptions: ExceptionAnnotator) -> LocalProbeResult:

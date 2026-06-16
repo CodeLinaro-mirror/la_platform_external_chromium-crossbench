@@ -265,12 +265,13 @@ class TraceProcessorProbe(Probe):
   @override
   def validate_env(self, env: RunnerEnv) -> None:
     super().validate_env(env)
+    platforms = {browser.platform for browser in self._browsers}
     with ExceptionAnnotator().annotate(
         "Validating metrics and queries") as exceptions:
-      self._validate_metrics_and_queries(exceptions)
+      self._validate_metrics_and_queries(exceptions, platforms)
 
-  def _validate_metrics_and_queries(self,
-                                    exceptions: ExceptionAnnotator) -> None:
+  def _validate_metrics_and_queries(self, exceptions: ExceptionAnnotator,
+                                    platforms: Iterable[plt.Platform]) -> None:
     """
     Runs all metrics and queries on an empty trace. This will ensure that they
     are correctly defined in trace processor.
@@ -281,7 +282,10 @@ class TraceProcessorProbe(Probe):
           tp.metric([metric])
       for query in self.queries:
         with exceptions.capture(f"query: {query.name!r}"):
-          tp.query(query.sql)
+          for platform in platforms:
+            with exceptions.capture(f"platform: {platform.name}"):
+              resolved_query = query.resolve_for_platform(platform)
+              tp.query(resolved_query.sql)
 
       if summary_metrics := self.summary_metrics:
         with exceptions.capture("summary metrics:"):
