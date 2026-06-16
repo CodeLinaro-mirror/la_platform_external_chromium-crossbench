@@ -25,6 +25,7 @@ from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.webkit.downloader import WebKitDownloader
 from crossbench.cli.config.browser import SUPPORTED_EMBEDDER, BrowserConfig
+from crossbench.cli.config.browser import BrowserType
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.flags import DEFAULT_LABEL, FlagsConfig, \
     FlagsGroupConfig, FlagsVariantConfig
@@ -201,6 +202,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
 
   @classmethod
   def get_browser_cls(cls, browser_config: BrowserConfig) -> type[Browser]:
+    if browser_config.browser_type:
+      return cls.get_browser_cls_from_type(browser_config)
     driver = browser_config.driver.driver_type
     path: pth.AnyPath = browser_config.path
     assert not isinstance(path, str), "Invalid path"
@@ -231,6 +234,35 @@ class BaseBrowserVariantsConfig(abc.ABC):
     if "d8" in path_str:
       return all_browsers.D8
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
+
+  @classmethod
+  def get_browser_cls_from_type(cls,
+                                browser_config: BrowserConfig) -> type[Browser]:
+    browser_type = browser_config.browser_type
+    assert browser_type, "Missing explicit browser type"
+    if browser_type == BrowserType.WEBKIT:
+      return all_browsers.WebKitWebDriver
+    if browser_type == BrowserType.SAFARI:
+      return cls.get_safari_browser_cls(browser_config)
+    if browser_type == BrowserType.WEBVIEW_EMBEDDER:
+      return all_browsers.WebviewEmbedder
+    if browser_type == BrowserType.WEBVIEW:
+      return all_browsers.WebviewBrowser
+    if browser_type == BrowserType.CHROME:
+      return cls.get_chrome_browser_cls(browser_config)
+    if browser_type == BrowserType.CHROMIUM:
+      return cls.get_chromium_browser_cls(browser_config)
+    if browser_type == BrowserType.FIREFOX:
+      if browser_config.driver.driver_type == BrowserDriverType.WEB_DRIVER:
+        return all_browsers.FirefoxWebDriver
+      raise argparse.ArgumentTypeError(
+          f"Unsupported Firefox driver: {browser_config.driver.driver_type}")
+    if browser_type == BrowserType.EDGE:
+      return all_browsers.EdgeWebDriver
+    if browser_type == BrowserType.D8:
+      return all_browsers.D8
+    raise argparse.ArgumentTypeError(
+        f"Unsupported browser type: {browser_type}")
 
   @classmethod
   def get_safari_browser_cls(cls,

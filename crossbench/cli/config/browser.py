@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import enum
 import logging
 import os
 import re
@@ -32,6 +33,7 @@ from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import adb_devices
 from crossbench.plt.ios import ios_devices
+from crossbench.str_enum_with_help import StrEnumWithHelp
 
 SUPPORTED_EMBEDDER: Final = tuple(EMBEDDER_SHORT_NAME_TO_PACKAGE)
 
@@ -66,6 +68,20 @@ VERSION_FOR_RANGE_RE: re.Pattern[str] = re.compile(
     r"(?P<prefix>[^\d]*)(?P<milestone>\d+)")
 
 
+@enum.unique
+class BrowserType(StrEnumWithHelp):
+  CHROME = ("chrome", "Use the Chrome browser implementation.")
+  CHROMIUM = ("chromium", "Use the Chromium browser implementation.")
+  EDGE = ("edge", "Use the Edge browser implementation.")
+  FIREFOX = ("firefox", "Use the Firefox browser implementation.")
+  SAFARI = ("safari", "Use the Safari browser implementation.")
+  WEBKIT = ("webkit", "Use the WebKit browser implementation.")
+  WEBVIEW = ("webview", "Use the Android WebView browser implementation.")
+  WEBVIEW_EMBEDDER = ("webview-embedder",
+                      "Use the Android WebView embedder implementation.")
+  D8 = ("d8", "Use the d8 shell implementation.")
+
+
 @dataclasses.dataclass(frozen=True)
 class BrowserConfig(ConfigObject):
   browser: pth.AnyPathLike
@@ -81,6 +97,7 @@ class BrowserConfig(ConfigObject):
   extensions: tuple[ExtensionConfig, ...] = ()
   apk: ApkConfig | None = None
   reinstall: bool | None = None
+  browser_type: BrowserType | None = None
 
   def __post_init__(self) -> None:
     if not self.browser:
@@ -219,7 +236,8 @@ class BrowserConfig(ConfigObject):
       cls,
       maybe_path_or_identifier: str,
       driver_type: BrowserDriverType | None = None,
-      driver: DriverConfig | None = None) -> pth.AnyPathLike:
+      driver: DriverConfig | None = None,
+      browser_type: BrowserType | None = None) -> pth.AnyPathLike:
     if not maybe_path_or_identifier:
       raise argparse.ArgumentTypeError("Got empty browser identifier.")
     if not driver_type:
@@ -261,6 +279,8 @@ class BrowserConfig(ConfigObject):
       if not path:
         raise argparse.ArgumentTypeError(
             f"Unknown browser path or short name: '{maybe_path_or_identifier}'")
+    if browser_type:
+      return path
     if cls.is_supported_browser_path(path):
       return path
     if driver_type == BrowserDriverType.ANDROID:
@@ -391,11 +411,17 @@ class BrowserConfig(ConfigObject):
 
     parser = BrowserConfigParser(cls)
     parser.add_argument(
+        "browser_type",
+        aliases=("type",),
+        type=BrowserType,
+        help="Explicit browser implementation type. If set, the browser path "
+        "does not have to contain a known browser product name.")
+    parser.add_argument(
         "browser",
         aliases=("path",),
         type=cls._parse_path_or_identifier,
         required=True,
-        depends_on=("driver",))
+        depends_on=("driver", "browser_type"))
     parser.add_argument(
         "driver", type=DriverConfig, default=DriverConfig.default())
     parser.add_argument("network", type=NetworkConfig)

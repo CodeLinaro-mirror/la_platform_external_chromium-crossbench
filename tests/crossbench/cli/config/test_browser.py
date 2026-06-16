@@ -18,7 +18,7 @@ from crossbench.browsers.apk_config import ApkConfig
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.safari.safari import Safari
 from crossbench.cli.config.browser import ENV_PRESETS, NETWORK_PRESETS, \
-    BrowserConfig
+    BrowserConfig, BrowserType
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS
@@ -130,6 +130,12 @@ class BrowserConfigTestCase(BaseConfigTestCase):
       BrowserConfig.parse("selenium/bar")
     self.assertIn("selenium", str(cm.exception))
     self.assertIn("bar", str(cm.exception))
+
+  def test_parse_explicit_browser_type_custom_path(self):
+    path = self.create_file("/Applications/Custom.app/Contents/MacOS/Custom")
+    config = BrowserConfig.parse({"path": str(path), "type": "chromium"})
+    self.assertEqual(config.path, path)
+    self.assertEqual(config.browser_type, BrowserType.CHROMIUM)
 
   def test_parse_invalid_windows_path(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:

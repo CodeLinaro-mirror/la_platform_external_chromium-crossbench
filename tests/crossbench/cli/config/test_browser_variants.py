@@ -30,7 +30,7 @@ from crossbench.browsers.safari.safari import Safari
 from crossbench.browsers.webkit.webdriver import WebKitWebDriver
 from crossbench.browsers.webview.browser import WebviewBrowser
 from crossbench.browsers.webview.embedder import WebviewEmbedder
-from crossbench.cli.config.browser import BrowserConfig
+from crossbench.cli.config.browser import BrowserConfig, BrowserType
 from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig, \
     BrowserVariantsConfig, BrowserVariantsConfigDict
 from crossbench.cli.config.driver import DriverConfig
@@ -1268,6 +1268,12 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     config = BrowserConfig(browser=pth.AnyPath("Chromium.app"))
     self.assertIs(variants.get_browser_cls(config), ChromiumWebDriver)
     config = BrowserConfig(browser=pth.AnyPath("Chromium.exe"))
+    self.assertIs(variants.get_browser_cls(config), ChromiumWebDriver)
+
+  def test_get_browser_cls_explicit_chromium_custom_path(self):
+    variants = BrowserVariantsConfig()
+    config = BrowserConfig(
+        browser=pth.AnyPath("Custom.app"), browser_type=BrowserType.CHROMIUM)
     self.assertIs(variants.get_browser_cls(config), ChromiumWebDriver)
 
   def test_get_browser_cls_chrome_driver_types(self):
