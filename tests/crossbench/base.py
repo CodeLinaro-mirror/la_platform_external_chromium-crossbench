@@ -127,6 +127,7 @@ class CrossbenchMockArgsMixin:
         run_login=kwargs.pop("run_login", True),
         run_setup=kwargs.pop("run_setup", True),
         env=EnvConfig.default(),
+        binary_overrides=kwargs.pop("binary_overrides", []),
         action_runner_config=kwargs.pop("action_runner_config", None))
     assert not kwargs, f"got unused kwargs: {kwargs}"
     return args

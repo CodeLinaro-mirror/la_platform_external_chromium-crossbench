@@ -592,6 +592,28 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertIn("--browser", str(cm.exception))
     self.assertIn(str(browser_bin), str(cm.exception))
 
+  def test_bin_override(self):
+    bin_path = pathlib.Path("/custom/my_bin")
+    bin_path.parent.mkdir(parents=True, exist_ok=True)
+    bin_path.touch()
+
+    self.assertIsNone(plt.PLATFORM.lookup_binary_override("my_bin"))
+    self.addCleanup(plt.PLATFORM.set_binary_lookup_override, "my_bin", None)
+
+    with unittest.mock.patch(
+        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run"):
+      self.run_cli("loading", "--browser=chrome",
+                   f"--bin-override=my_bin={bin_path}")
+
+    self.assertEqual(
+        plt.PLATFORM.lookup_binary_override("my_bin"),
+        plt.PLATFORM.path(str(bin_path)))
+
+  def test_invalid_bin_override_format(self):
+    _, _, stderr = self.run_cli_output(
+        "loading", "--bin-override=my_bin_no_path", raises=SysExitTestException)
+    self.assertIn("Invalid --bin-override format", stderr)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -19,6 +19,7 @@ import tabulate as tbl
 from typing_extensions import override
 
 import crossbench.benchmarks.all as benchmarks
+import crossbench.plt as plt
 from crossbench import __version__
 from crossbench import path as pth
 from crossbench.cli import exception_formatter, ui
@@ -269,6 +270,16 @@ class CrossBenchCLI:
     parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}")
 
+    env_group = parser.add_argument_group("Environment Options")
+    env_group.add_argument(
+        "--bin-override",
+        "--binary-override",
+        dest="binary_overrides",
+        action="append",
+        default=[],
+        help=("Override binary lookup paths. Format: name=path. "
+              "Example: --bin-override wpr=/path/to/wpr"))
+
   def add_debugging_arguments(
       self, parser: argparse.ArgumentParser) -> argparse._ArgumentGroup:
     debug_group = parser.add_argument_group("Verbosity / Debugging Options")
@@ -349,6 +360,17 @@ class CrossBenchCLI:
                  "for more details.")
     # Properly initialize logging after having parsed all args
     self._setup_logging()
+
+    for bin_override in self.args.binary_overrides:
+      try:
+        name, path_str = bin_override.split("=", 1)
+        plt.PLATFORM.set_binary_lookup_override(name,
+                                                plt.PLATFORM.path(path_str))
+      except ValueError:
+        self.error(
+            f"Invalid --bin-override format: {bin_override}. Expected name=path"
+        )
+
     try:
       self._last_subcommand = self.args.crossbench_subcommand
       self.args.crossbench_subcommand.run(self.args)

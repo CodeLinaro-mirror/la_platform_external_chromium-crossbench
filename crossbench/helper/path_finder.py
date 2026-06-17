@@ -383,11 +383,22 @@ class BaseCrossbenchPathFinder(BaseChromiumPathFinder):
 
 class WprGoFinder(BaseCrossbenchPathFinder):
 
+  @override
+  def candidates(self) -> tuple[pth.AnyPath, ...]:
+    candidates = super().candidates()
+    if override := self.platform.lookup_binary_override("wpr"):
+      candidates = (self.platform.path(override).parent, *candidates)
+    return candidates
+
   def wpr(self, browser_platform: Platform) -> pth.LocalPath:
+    if override := self.platform.lookup_binary_override("wpr"):
+      return self.platform.local_path(override)
     return self._build("wpr", browser_platform)
 
   def httparchive(self) -> pth.LocalPath:
     # httparchive always runs on the host.
+    if override := self.platform.lookup_binary_override("httparchive"):
+      return self.platform.local_path(override)
     return self._build("httparchive", self.platform)
 
   def _build(self, binary: str, target_platform: Platform) -> pth.LocalPath:
@@ -418,7 +429,9 @@ class WprGoFinder(BaseCrossbenchPathFinder):
 
   @override
   def is_valid_path(self, candidate: pth.AnyPath) -> bool:
-    return self._platform.is_file(candidate / "scripts/build.py")
+    if self._platform.is_file(candidate / "scripts/build.py"):
+      return True
+    return self._platform.is_file(candidate / "deterministic.js")
 
   @classmethod
   @override

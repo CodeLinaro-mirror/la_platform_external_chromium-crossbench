@@ -275,6 +275,28 @@ class WprToolsFinderTestCase(BasePosixMockPlatformTestCase):
         WprGoFinder(self.platform).wpr(android_platform),
         root / "cache/webpagereplay/android/arm64/wpr")
 
+  def test_httparchive_and_wpr_bins_with_overrides(self):
+    self._with_arch(self.platform, "x64")
+    self._setup_adb()
+    android_platform = self._with_arch(
+        AndroidAdbMockPlatform(self.platform, adb=MockAdb(self.platform)),
+        "arm64")
+
+    root = test_helper.root_dir()
+    override_dir = root / "custom_wpr"
+    self.fs.create_file(override_dir / "deterministic.js")
+    self.fs.create_file(override_dir / "my_wpr")
+    self.fs.create_file(override_dir / "my_httparchive")
+
+    self.platform.set_binary_lookup_override("wpr", override_dir / "my_wpr")
+    self.platform.set_binary_lookup_override("httparchive",
+                                             override_dir / "my_httparchive")
+
+    finder = WprGoFinder(self.platform)
+    self.assertEqual(finder.local_path, override_dir)
+    self.assertEqual(finder.wpr(android_platform), override_dir / "my_wpr")
+    self.assertEqual(finder.httparchive(), override_dir / "my_httparchive")
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
