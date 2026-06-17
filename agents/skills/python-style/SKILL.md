@@ -10,7 +10,18 @@ Crossbench codebase. These rules cover architectural patterns, custom
 abstractions, and design guidelines that are **not** automatically enforced by
 Ruff.
 
-For standard linting always rely on `poetry run ruff check`.
+## Linting with ruff:
+
+For standard linting always rely on `vpython3 -m ruff check` and use
+`vpython3 -m ruff check --fix`.
+
+Avoid adding skip rules like `# noqa: BLE001` but rather fix the surrounding
+code and look for better approaches.
+
+## Formatting:
+
+- Do not use `ruff format`
+- Use `git cl format` to format all sources
 
 ## Strict Import Discipline
 
@@ -20,12 +31,12 @@ Importing modules locally inside classes or methods is **strictly forbidden**.
 All imports must reside at the top level of the file.
 
 ```python
-# BAD - Forbidden local import
+# BAD: Forbidden local import
 class MyProbe(Probe):
   def setup(self) -> None:
     import subprocess  # FORBIDDEN
 
-# GOOD - Clean top-level import
+# GOOD: Clean top-level import
 import subprocess
 ```
 
@@ -70,11 +81,11 @@ system commands through `Platform` objects.
   browser's platform) to perform system operations:
 
 ```python
-# BAD
+# BAD: raw shell command only running on the local host
 import subprocess
 subprocess.run(["cp", src, dest])
 
-# GOOD
+# GOOD: high-level file helper that works in any platform
 self.host_platform.symlink_or_copy(src, dest)
 ```
 
@@ -82,9 +93,28 @@ If a new platform capability is needed, implement it in the most abstract
 platform base class (`Platform`) rather than writing platform-specific scripts
 directly.
 
+## Binary Lookup
+
+Use `path_finder.py` helpers to look up non-default binaries that might be in
+different places on the system. Using custom finder helpers makes the code more
+robust on different platforms.
+
+- Prefer using binaries provided with a chromium checkout
+- Use subclasses of BasePathFinder to implement more complex binary lookups if
+  they are not available on the default system paths by default
+
+```
+# BAD: hardcoded non-standard binary path
+self.platform.sh("path/to/custom/binary", "--test=foo")
+
+# GOOD: abstract finder
+binary = CustomBinaryFinder(self.platform).local_path
+self.platform.sh(binary, "--test=foo")
+```
+
 ______________________________________________________________________
 
-## Input Validation & `ConfigObject`s
+## Input Validation & `ConfigObject`
 
 All user-facing or configurable inputs must follow strict parsing patterns to
 catch issues early.
@@ -100,7 +130,8 @@ catch issues early.
   frozen `ConfigObject`.
 - Provide comprehensive documentation and example configurations in
   `config/doc/` or under `config/*`.
-- Every new `ConfigObject` or parsing helper **must** have dedicated unit tests.
+- Every new `ConfigObject` or parsing helper **must** have dedicated unit tests
+  covering short form parsing and full dict inputs.
 
 ### ConfigParser & `add_default_argument`
 
@@ -113,12 +144,63 @@ used by `parse_str` .
 
 ______________________________________________________________________
 
-## Design Patterns
+## Design Patterns and style
 
 - **Short Methods**: Keep methods short and break them into well-named helper
   functions.
 - **Reusability**: Check surrounding code and class hierarchies before
   implementing new functionality; reuse existing methods.
+- **Code Duplication**: Add reusable methods for repeated code snippets.
+- **Walrus Operator**: Use the walrus operator for simple code
+  ```
+  # BAD:
+  log_path = browser.log_path
+  if log_path:
+    self.do_stuff(log_path)
+
+  # GOOD: compact use of walrus operator
+  if log_path := browser.log_path:
+    self.do_stuff(log_path)
+  ```
+- **Early Returns**: Use early returns, continue and breaks to reduce nesting
+  levels. It's ok to duplicate simple return statements. Prefer separate early
+  bailout checks.
+  ```
+  # BAD: nested long blocks
+  def foo(value):
+    if value:
+      if value == "error":
+        return "error"
+      # large block here
+      ...
+    return "done"
+
+  # GOOD: shallow nesting with early returns
+  def foo(value):
+    if not value:
+      return "done"
+    if value == "error":
+      return "error"
+    # large block here
+    ...
+    return "done"
+  ```
+- **Reduce Code Comments**: Avoid inline code comments and prefer using
+  well-named constants and helper methods and helper classes. Code comments
+  bit-rod, it's better to have executable documentation like tests. Comments on
+  classes are good.
+- **Avoid getattr and hasattr**: The methods are generally an antipattern. For
+  accessing args, fix the tests first and add mock values to the test
+  Namespaces.
+  ```
+  # BAD: getattr on args
+  if browser_type := getattr(args, "browser_type"):
+    ...
+
+  # GOOD: directly accessing args attributes
+  if browser_type := args.browser_type:
+    ...
+  ```
 
 ______________________________________________________________________
 
