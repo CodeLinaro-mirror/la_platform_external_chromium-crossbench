@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from crossbench.probes.android_logcat import LogcatAndroidProbe
+from crossbench.probes.bits import BitsProbe
 from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
 from crossbench.probes.cb_perfetto.tracing import TracingProbe
 from crossbench.probes.cdp_endpoint import CDPEndpointProbe
@@ -96,6 +97,7 @@ assert DEFAULT_INTERNAL_PROBES[1] == DurationsProbe
 
 # Probes that can be used on arbitrary stories and may be user configurable.
 GENERAL_PURPOSE_PROBES: tuple[type[Probe], ...] = (
+    BitsProbe,
     BrowserProfilingProbe,
     CDPEndpointProbe,
     ChromeHistogramsProbe,

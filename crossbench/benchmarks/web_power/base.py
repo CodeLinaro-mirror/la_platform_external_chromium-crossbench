@@ -18,6 +18,8 @@ from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.wpr import WprReplayNetwork
+from crossbench.parse import DurationParser, PathParser
+from crossbench.probes.bits import BitsProbe
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -118,8 +120,10 @@ class WebPowerBenchmarkBase(Benchmark):
       action_runner_config: ActionRunnerConfig | None = None,
       site_key: str | None = None,
       url: str | None = None,
+      bits_probe: BitsProbe | None = None,
       **story_kwargs: Any,
   ) -> None:
+    self._bits_probe = bits_probe
     story_cls = getattr(self.__class__, "DEFAULT_STORY_CLS", None)
     assert story_cls is not None
     if url:
@@ -132,6 +136,8 @@ class WebPowerBenchmarkBase(Benchmark):
   def setup(self, runner: Runner) -> None:
     super().setup(runner)
     self._setup_wpr_transformations(runner)
+    if self._bits_probe:
+      runner.attach_probe(self._bits_probe)
 
   def _setup_wpr_transformations(self, runner: Runner) -> None:
     httparchive_path = WprGoFinder(runner.platform).httparchive()
@@ -189,6 +195,21 @@ class WebPowerBenchmarkBase(Benchmark):
         help="Specific pre-recorded site to run (from a closed list).",
     )
     group.add_argument("--url", help="Custom URL to run.")
+    parser.add_argument(
+        "--bits-path",
+        type=PathParser.existing_file_path,
+        help="Path to the BITS external tool binary on the host.",
+    )
+    parser.add_argument(
+        "--bits-out",
+        help="Output identifier for the BITS tool.",
+    )
+    parser.add_argument(
+        "--bits-duration",
+        type=DurationParser.positive_duration,
+        default=BitsProbe.DEFAULT_DURATION,
+        help="Duration for the BITS tool to run.",
+    )
     return parser
 
   @classmethod
@@ -201,6 +222,12 @@ class WebPowerBenchmarkBase(Benchmark):
     cls._select_network(args)
     kwargs["site_key"] = args.site
     kwargs["url"] = args.url
+    if args.bits_path or args.bits_out:
+      kwargs["bits_probe"] = BitsProbe.parse_dict({
+          "path": args.bits_path,
+          "out": args.bits_out,
+          "duration": args.bits_duration,
+      })
     return kwargs
 
   @classmethod

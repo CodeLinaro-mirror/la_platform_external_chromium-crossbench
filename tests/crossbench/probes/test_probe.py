@@ -11,6 +11,7 @@ from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.all import CONFIGURABLE_INTERNAL_PROBES, \
     DEFAULT_INTERNAL_PROBES, GENERAL_PURPOSE_PROBES, INTERNAL_PROBES, \
     NON_CONFIGURABLE_INTERNAL_PROBES, OPTIONAL_INTERNAL_PROBES
+from crossbench.probes.bits import BitsProbe
 from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe, TraceConfig
 from crossbench.probes.cb_perfetto.tracing import TracingProbe
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
@@ -207,6 +208,8 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
         WebPageReplayProbe,
         WebviewEmbedderProbe,
         EtmProbe,
+        # Reason: requires bits_path and bits_out parameters
+        BitsProbe,
     }
     for probe_cls in GENERAL_PURPOSE_PROBES:
       if probe_cls in requires_configuration:

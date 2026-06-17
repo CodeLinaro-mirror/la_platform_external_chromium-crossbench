@@ -9,13 +9,16 @@ import datetime as dt
 import pathlib
 import unittest
 from typing import TYPE_CHECKING, ClassVar
+from unittest import mock
 
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
     WebPowerStory, _value_or
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.parser import CBArgumentParser
+from crossbench.probes.bits import BitsProbe
 from tests import test_helper
 from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
 
@@ -173,6 +176,63 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
 
     with self.assertRaisesRegex(
         ValueError, "Specifying '--site' is mutually exclusive with explicit"):
+      MockWebPowerBenchmark.kwargs_from_cli(args)
+
+  def test_kwargs_from_cli_bits(self) -> None:
+    bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
+    self.fs.create_file(bits_path)
+
+    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
+    args = parser.parse_args([
+        "--site", "cnn", "--bits-path",
+        str(bits_path), "--bits-out", "custom_bits_run", "--bits-duration", "5m"
+    ])
+    kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
+    self.assertEqual(kwargs["site_key"], "cnn")
+
+    bits_probe = kwargs["bits_probe"]
+    self.assertIsInstance(bits_probe, BitsProbe)
+    self.assertEqual(bits_probe.bits_path, bits_path)
+    self.assertEqual(bits_probe.bits_out, "custom_bits_run")
+    self.assertEqual(bits_probe.duration, dt.timedelta(minutes=5))
+
+  def test_setup_bits_probe(self) -> None:
+    bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
+    self.fs.create_file(bits_path)
+
+    # Both flags provided: BitsProbe should be attached
+    bits_probe = BitsProbe(
+        bits_path=bits_path,
+        bits_out="run_id",
+        duration=dt.timedelta(seconds=120),
+    )
+    benchmark = MockWebPowerBenchmark(
+        site_key="cnn",
+        bits_probe=bits_probe,
+        total_duration=dt.timedelta(seconds=123),
+    )
+    runner = mock.MagicMock()
+    benchmark.setup(runner)
+    runner.attach_probe.assert_called_once()
+    attached_probe = runner.attach_probe.call_args.args[0]
+    self.assertIsInstance(attached_probe, BitsProbe)
+    self.assertEqual(attached_probe.bits_path, bits_path)
+    self.assertEqual(attached_probe.bits_out, "run_id")
+    self.assertEqual(attached_probe.duration, dt.timedelta(seconds=120))
+
+  def test_kwargs_from_cli_bits_only_path_fails(self) -> None:
+    bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
+    self.fs.create_file(bits_path)
+
+    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
+    args = parser.parse_args(["--site", "cnn", "--bits-path", str(bits_path)])
+    with self.assertRaises(argparse.ArgumentTypeError):
+      MockWebPowerBenchmark.kwargs_from_cli(args)
+
+  def test_kwargs_from_cli_bits_only_out_fails(self) -> None:
+    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
+    args = parser.parse_args(["--site", "cnn", "--bits-out", "run_id"])
+    with self.assertRaises(argparse.ArgumentTypeError):
       MockWebPowerBenchmark.kwargs_from_cli(args)
 
   def test_default_probe_config_path(self) -> None:
