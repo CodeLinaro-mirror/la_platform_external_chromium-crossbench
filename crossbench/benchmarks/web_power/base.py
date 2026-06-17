@@ -23,12 +23,12 @@ from crossbench.probes.bits import BitsProbe
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
-  from crossbench.plt.types import ListCmdArgs
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.flags.base import Flags
   from crossbench.path import LocalPath
+  from crossbench.plt.types import ListCmdArgs
   from crossbench.runner.runner import Runner
 
 
@@ -205,6 +205,11 @@ class WebPowerBenchmarkBase(Benchmark):
         help="Output identifier for the BITS tool.",
     )
     parser.add_argument(
+        "--bits-device",
+        default="",
+        help="Device identifier for the BITS tool.",
+    )
+    parser.add_argument(
         "--bits-duration",
         type=DurationParser.positive_duration,
         default=BitsProbe.DEFAULT_DURATION,
@@ -226,6 +231,7 @@ class WebPowerBenchmarkBase(Benchmark):
       kwargs["bits_probe"] = BitsProbe.parse_dict({
           "path": args.bits_path,
           "out": args.bits_out,
+          "device": args.bits_device,
           "duration": args.bits_duration,
       })
     return kwargs

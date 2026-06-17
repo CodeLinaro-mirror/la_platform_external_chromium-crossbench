@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Self, cast
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
@@ -20,7 +20,6 @@ if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.plt.android_adb import AndroidAdbPlatform
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -54,6 +53,12 @@ class BitsProbe(Probe):
         required=True,
         help="Output identifier for the BITS tool.")
     parser.add_argument(
+        "bits_device",
+        aliases=("device",),
+        type=str,
+        default="",
+        help="Device identifier for the BITS tool.")
+    parser.add_argument(
         "duration",
         type=DurationParser.positive_duration,
         default=cls.DEFAULT_DURATION,
@@ -64,6 +69,7 @@ class BitsProbe(Probe):
       self,
       bits_path: pth.LocalPath,
       bits_out: str,
+      bits_device: str = "",
       duration: dt.timedelta = DEFAULT_DURATION,
   ) -> None:
     super().__init__()
@@ -74,6 +80,7 @@ class BitsProbe(Probe):
       raise ValueError(f"Duration must be at least 1s, but got: {duration}")
     self._bits_path: pth.LocalPath = bits_path
     self._bits_out: str = bits_out
+    self._bits_device: str = bits_device
     self._duration: dt.timedelta = duration
 
   @property
@@ -83,6 +90,10 @@ class BitsProbe(Probe):
   @property
   def bits_out(self) -> str:
     return self._bits_out
+
+  @property
+  def bits_device(self) -> str:
+    return self._bits_device
 
   @property
   def duration(self) -> dt.timedelta:
@@ -107,20 +118,18 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
     self._process: subprocess.Popen | None = None
 
   def _start_collection(self) -> None:
-    device_serial = cast("AndroidAdbPlatform", self.browser_platform).serial_id
-    logging.debug("BITS: Starting collection (ID: %r) on device %s",
-                  self.probe.bits_out, device_serial)
-
-    args = (
+    logging.debug("BITS: Starting collection (ID: %r)", self.probe.bits_out)
+    device_args: tuple[str, ...] = ()
+    if self.probe.bits_device:
+      device_args += ("--device", self.probe.bits_device)
+    self._process = self.host_platform.popen(
         self.probe.bits_path,
         "--create",
         self.probe.bits_out,
         "--duration",
         f"{self.probe.duration.total_seconds():.0f}s",
-        "--device",
-        device_serial,
+        *device_args,
     )
-    self._process = self.host_platform.popen(*args)
 
   def _stop_collection(self) -> None:
     logging.debug("BITS: Stopping collection (ID: %r)", self.probe.bits_out)

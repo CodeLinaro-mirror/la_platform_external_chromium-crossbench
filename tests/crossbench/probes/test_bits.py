@@ -79,6 +79,23 @@ class BitsProbeTestCase(BaseProbeTestCase):
     self.assertEqual(probe.bits_path, self.bits_path)
     self.assertEqual(probe.bits_out, "test_run_id")
     self.assertEqual(probe.duration, dt.timedelta(minutes=2))
+    self.assertEqual(probe.bits_device, "")
+
+  def test_bits_probe_parsing_device(self) -> None:
+    probe = BitsProbe.parse_dict({
+        "bits_path": str(self.bits_path),
+        "bits_out": "test_run_id",
+        "device": "custom_id",
+    })
+    self.assertEqual(probe.bits_device, "custom_id")
+
+  def test_bits_probe_parsing_device_empty(self) -> None:
+    probe_empty = BitsProbe.parse_dict({
+        "bits_path": str(self.bits_path),
+        "bits_out": "test_run_id",
+        "device": "",
+    })
+    self.assertEqual(probe_empty.bits_device, "")
 
   def test_validate_browser_incompatible(self) -> None:
     probe = BitsProbe(self.bits_path, "test_run_id")
@@ -88,9 +105,13 @@ class BitsProbeTestCase(BaseProbeTestCase):
     with self.assertRaises(ProbeIncompatibleBrowser):
       probe.validate_browser(env, browser)
 
-  def test_probe_lifecycle(self) -> None:
+  def _check_probe_lifecycle(self, bits_device: str) -> None:
     probe = BitsProbe(
-        self.bits_path, "test_run_id", duration=dt.timedelta(seconds=120))
+        self.bits_path,
+        "test_run_id",
+        bits_device=bits_device,
+        duration=dt.timedelta(seconds=120),
+    )
     run = self.mock_run()
     run.browser_session.browser.platform.serial_id = "serial"
 
@@ -106,14 +127,20 @@ class BitsProbeTestCase(BaseProbeTestCase):
 
     # 2. start_story_run() should spawn BITS
     context.start_story_run()
+    host_platform.popen.assert_called_once()
+    call_args = host_platform.popen.call_args.args
+    if bits_device:
+      self.assertEqual(call_args[-2:], ("--device", bits_device))
+    else:
+      self.assertNotIn("--device", call_args)
+
     host_platform.popen.assert_called_once_with(
         self.bits_path,
         "--create",
         "test_run_id",
         "--duration",
         "120s",
-        "--device",
-        "serial",
+        *(("--device", bits_device) if bits_device else []),
     )
 
     # 3. stop_story_run() should stop BITS
@@ -134,6 +161,12 @@ class BitsProbeTestCase(BaseProbeTestCase):
     host_platform.sh.assert_not_called()
 
     self.assertIsInstance(context.teardown(), EmptyProbeResult)
+
+  def test_probe_lifecycle(self) -> None:
+    self._check_probe_lifecycle(bits_device="")
+
+  def test_probe_lifecycle_with_device(self) -> None:
+    self._check_probe_lifecycle(bits_device="device_id_123")
 
 
 if __name__ == "__main__":

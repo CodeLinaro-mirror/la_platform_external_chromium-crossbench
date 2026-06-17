@@ -195,6 +195,22 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     self.assertEqual(bits_probe.bits_path, bits_path)
     self.assertEqual(bits_probe.bits_out, "custom_bits_run")
     self.assertEqual(bits_probe.duration, dt.timedelta(minutes=5))
+    self.assertEqual(bits_probe.bits_device, "")
+
+  def test_kwargs_from_cli_bits_with_device(self) -> None:
+    bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
+    self.fs.create_file(bits_path)
+
+    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
+    args = parser.parse_args([
+        "--site", "cnn", "--bits-path",
+        str(bits_path), "--bits-out", "custom_bits_run", "--bits-device",
+        "dev_123", "--bits-duration", "5m"
+    ])
+    kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
+    bits_probe = kwargs["bits_probe"]
+    self.assertEqual(bits_probe.bits_device, "dev_123")
+
 
   def test_setup_bits_probe(self) -> None:
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
