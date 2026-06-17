@@ -9,7 +9,7 @@ from __future__ import annotations
 import datetime
 import logging
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from typing_extensions import override
 
@@ -80,11 +80,12 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
           results and artifacts.
     """
     # Map from minidump path to minidump_dump output (string).
-    self._minidump_dump_output: dict[pth.LocalPath, str] = {}
+    self._minidump_dump_output: Final[dict[pth.LocalPath, str]] = {}
     # Map from minidump path to the directory that should be used when
     # looking for symbol binaries.
-    self._minidump_symbol_binaries_directories: dict[pth.LocalPath,
-                                                     pth.LocalPath | None] = {}
+    self._minidump_symbol_binaries_directories: Final[dict[pth.LocalPath,
+                                                           pth.LocalPath
+                                                           | None]] = {}
     super().__init__(
         platform.host_platform,
         dump_finder,

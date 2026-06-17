@@ -54,14 +54,14 @@ class ChromeDriverFinder:
   }
 
   def __init__(self, browser: ChromiumBasedWebDriver) -> None:
-    self.browser = browser
-    self.platform: Platform = browser.platform
-    self.host_platform: Platform = browser.platform.host_platform
+    self.browser: Final[ChromiumBasedWebDriver] = browser
+    self.platform: Final[Platform] = browser.platform
+    self.host_platform: Final[Platform] = browser.platform.host_platform
     extension: str = ""
     if self.host_platform.is_win:
       extension = ".exe"
     cache_dir = self.host_platform.local_cache_dir("driver")
-    self.driver_path: pth.LocalPath = (
+    self.driver_path: Final[pth.LocalPath] = (
         cache_dir / f"chromedriver-{self.browser.version.major}{extension}")
     self._validate_browser()
 

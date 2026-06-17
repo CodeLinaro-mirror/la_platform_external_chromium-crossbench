@@ -9,7 +9,7 @@ import os
 import shutil
 import stat
 import tempfile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from selenium import webdriver
 from selenium.webdriver.edge.options import Options as EdgeOptions
@@ -62,15 +62,14 @@ class EdgeWebDriverDownloader:
   BASE_URL = "https://msedgedriver.microsoft.com"
 
   def __init__(self, browser: EdgeWebDriver) -> None:
-    self.browser = browser
-    self.platform: plt.Platform = browser.platform
+    self.browser: Final[EdgeWebDriver] = browser
+    self.platform: Final[plt.Platform] = browser.platform
     assert self.browser.is_local, (
         "Cannot download chromedriver for remote browser yet")
-    self.extension: str = ""
-    if self.platform.is_win:
-      self.extension = ".exe"
+    extension: str = ".exe" if self.platform.is_win else ""
+    self.extension: Final[str] = extension
     cache_dir = self.platform.host_platform.local_cache_dir("driver")
-    self.driver_path: pth.LocalPath = (
+    self.driver_path: Final[pth.LocalPath] = (
         cache_dir / f"edgedriver-{self.browser.version.major}{self.extension}")
 
   def download(self) -> pth.LocalPath:

@@ -81,19 +81,19 @@ class Downloader(abc.ABC):
     self._browser_platform: Final[Platform] = browser_platform
     self._platform_name: str = platform_name
     assert platform_name, "Missing platform_name"
-    self._reinstall: bool = reinstall
+    self._reinstall: Final[bool] = reinstall
     self._archive_url: str = ""
     self._archive_path: pth.LocalPath = pth.LocalPath()
     self._out_dir: pth.LocalPath = (
         self.host_platform.local_cache_dir("browser_bin"))
-    self._archive_dir: pth.LocalPath = (
+    self._archive_dir: Final[pth.LocalPath] = (
         self.host_platform.local_cache_dir("browser_archive"))
     self._archive_dir.mkdir(parents=True, exist_ok=True)
-    self._app_path: pth.LocalPath = pth.LocalPath()
     self._requested_version: BrowserVersion = UnknownBrowserVersion()
     with ui.spinner(title="BROWSER: ") as spinner:
-      self._spinner = spinner
-      self._app_path = self.find(archive_path_or_version_identifier)
+      self._spinner: Final = spinner
+      self._app_path: Final[pth.LocalPath] = self.find(
+          archive_path_or_version_identifier)
     self._validate()
 
   def info(self, message: str) -> None:
@@ -157,7 +157,7 @@ class Downloader(abc.ABC):
     if (not self._reinstall and
         (app_path := self._find_matching_installed_version())):
       if cached_version := self._validate_installed(app_path):
-        self.info(f"CACHED: {cached_version} {self._app_path}")
+        self.info(f"CACHED: {cached_version} {app_path}")
         return app_path
 
     self._requested_version_validation()

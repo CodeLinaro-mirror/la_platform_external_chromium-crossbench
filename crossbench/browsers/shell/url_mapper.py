@@ -28,11 +28,11 @@ class D8URLMapper:
     raise ValueError(f"D8: Unsupported benchmark: {benchmark_name}")
 
   def __init__(self, d8: D8):
-    self._d8 = d8
+    self._d8: Final[D8] = d8
     network: Network = d8.network
     assert isinstance(
         network, LocalFileNetwork), (f"Expected LocalFileNetwork got {network}")
-    self._network: LocalFileNetwork = network
+    self._network: Final[LocalFileNetwork] = network
 
   @property
   def path(self) -> pth.LocalPath:
@@ -58,11 +58,12 @@ class JetStreamURLMapper(D8URLMapper):
 
   def __init__(self, d8: D8):
     super().__init__(d8)
-    self._driver_js: pth.LocalPath = self.path / "JetStreamDriver.js"
-    if not self._driver_js.is_file():
-      self._driver_js = self.path / "driver.js"
-    if not self._driver_js.is_file():
-      raise ValueError(f"{self._driver_js} does not exist.")
+    driver_js: pth.LocalPath = self.path / "JetStreamDriver.js"
+    if not driver_js.is_file():
+      driver_js = self.path / "driver.js"
+    if not driver_js.is_file():
+      raise ValueError(f"{driver_js} does not exist.")
+    self._driver_js: Final[pth.LocalPath] = driver_js
 
   @property
   def setup_file(self) -> pth.LocalPath:

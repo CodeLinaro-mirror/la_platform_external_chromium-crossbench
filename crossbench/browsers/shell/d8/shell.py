@@ -62,18 +62,18 @@ class D8Shell:
                d8_bin: pth.LocalPath,
                flags: Sequence[str] = (),
                cwd: pth.LocalPath | None = None):
-    self._state = StateMachine(State.INITIAL)
-    self._platform = platform
+    self._state: Final = StateMachine(State.INITIAL)
+    self._platform: Final[plt.Platform] = platform
     assert platform.is_local, (
         f"D8 only works on local platforms, but got {platform}")
-    self._d8_bin: pth.LocalPath = d8_bin
-    self._flags: Sequence[str] = flags
-    self._cwd: pth.LocalPath | None = cwd
-    self._poll_interval: float = 0.01
+    self._d8_bin: Final[pth.LocalPath] = d8_bin
+    self._flags: Final[Sequence[str]] = flags
+    self._cwd: Final[pth.LocalPath | None] = cwd
+    self._poll_interval: Final[float] = 0.01
     cmd = [str(d8_bin), *flags]
     logging.debug("SHELL: %s", shlex.join(map(str, cmd)))
     logging.debug("CWD: %s", cwd)
-    self._process = subprocess.Popen(
+    self._process: Final = subprocess.Popen(
         cmd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
@@ -83,15 +83,15 @@ class D8Shell:
     )
     self._state.transition(State.INITIAL, to=State.WAIT_FOR_OUTPUT)
     if stdin := self._process.stdin:
-      self._stdin = stdin
+      self._stdin: Final[IO[str]] = stdin
     else:
       raise RuntimeError("Could not start d8 with active stdin")
     if stdout := self._process.stdout:
-      self._reader = BackgroundReader(stdout, READ_LEN)
+      self._reader: Final = BackgroundReader(stdout, READ_LEN)
     else:
       raise RuntimeError("Could not start d8 with active stdout")
     self._reader.start()
-    self._version: str = self.read().strip()
+    self._version: Final[str] = self.read().strip()
 
   @property
   def version(self) -> str:

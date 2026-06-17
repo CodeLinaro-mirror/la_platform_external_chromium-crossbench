@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import datetime
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from crossbench.browsers.chromium_based.crash import helper
 from crossbench.helper import path_finder
@@ -38,11 +38,11 @@ class MinidumpFinder:
   def __init__(self,
                platform: Platform,
                build_dir: pth.LocalPath | None = None) -> None:
-    self._platform: Platform = platform
-    self._build_dir: pth.LocalPath | None = build_dir
-    self._os: str = platform.name
-    self._arch: str = str(platform.machine)
-    self._minidump_path_crashpad_retrieval: dict[pth.AnyPath, bool] = {}
+    self._platform: Final[Platform] = platform
+    self._build_dir: Final[pth.LocalPath | None] = build_dir
+    self._os: Final[str] = platform.name
+    self._arch: Final[str] = str(platform.machine)
+    self._minidump_path_crashpad_retrieval: Final[dict[pth.AnyPath, bool]] = {}
     self._explanation: list[str] = []
 
   def minidump_obtained_from_crashpad(self, minidump: pth.AnyPath) -> bool:

@@ -112,7 +112,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     self._previous_command_line_contents: str | None = None
     self._needs_restore_chrome_flags: bool = False
     super().__init__(label, path, settings)
-    self._android_package: str = self._lookup_android_package(self.path)
+    self._android_package: Final[str] = self._lookup_android_package(self.path)
     if not self._android_package:
       raise RuntimeError("Could not find matching adb package for "
                          f"{self.path} on {self.platform}")
@@ -312,8 +312,9 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
     if settings.apk_config:
       raise ValueError(f"{self.type_name()} cannot be used with "
                        "an additional apk_config settings.")
-    self._package_info: immutabledict[str, Any] = self._parse_package_info(
-        settings.platform, path)
+    self._package_info: Final[immutabledict[str,
+                                            Any]] = self._parse_package_info(
+                                                settings.platform, path)
     super().__init__(label, path, settings)
 
   @override

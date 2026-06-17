@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import base64
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from crossbench.helper.wait import WaitRange
 
@@ -21,8 +21,8 @@ class DevToolsTracer:
 
   def __init__(self, driver: webdriver.Remote) -> None:
     module_and_socket = driver.start_devtools()
-    self._devtools: ModuleType = module_and_socket[0]
-    self._websocket: WebSocketConnection = module_and_socket[1]
+    self._devtools: Final[ModuleType] = module_and_socket[0]
+    self._websocket: Final[WebSocketConnection] = module_and_socket[1]
     # It's a devtools.io.StreamHandle. The devtools module is imported
     # dynamically so adding a type annotation is infeasible.
     self._out_stream: Any | None = None

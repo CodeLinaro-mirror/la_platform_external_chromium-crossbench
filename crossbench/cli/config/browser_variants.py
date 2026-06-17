@@ -24,8 +24,8 @@ from crossbench.browsers.chrome.downloader import ChromeDownloader
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.webkit.downloader import WebKitDownloader
-from crossbench.cli.config.browser import SUPPORTED_EMBEDDER, BrowserConfig
-from crossbench.cli.config.browser import BrowserType
+from crossbench.cli.config.browser import SUPPORTED_EMBEDDER, BrowserConfig, \
+    BrowserType
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.flags import DEFAULT_LABEL, FlagsConfig, \
     FlagsGroupConfig, FlagsVariantConfig
@@ -202,43 +202,50 @@ class BaseBrowserVariantsConfig(abc.ABC):
 
   @classmethod
   def get_browser_cls(cls, browser_config: BrowserConfig) -> type[Browser]:
-    if browser_config.browser_type:
-      return cls.get_browser_cls_from_type(browser_config)
-    driver = browser_config.driver.driver_type
+    browser_type = cls.get_browser_type(browser_config)
+    return cls.get_browser_cls_from_type(browser_type, browser_config)
+
+  @classmethod
+  def get_browser_type(cls, browser_config: BrowserConfig) -> BrowserType:
+    if browser_type := browser_config.browser_type:
+      return browser_type
+    return cls.get_browser_type_from_path(browser_config)
+
+  @classmethod
+  def get_browser_type_from_path(cls,
+                                 browser_config: BrowserConfig) -> BrowserType:
     path: pth.AnyPath = browser_config.path
     assert not isinstance(path, str), "Invalid path"
     if not BrowserConfig.is_supported_browser_path(path):
       raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
     path_str = str(browser_config.path).lower()
     if "webkit" in path_str:
-      return all_browsers.WebKitWebDriver
+      return BrowserType.WEBKIT
     if "safari" in path_str:
-      return cls.get_safari_browser_cls(browser_config)
+      return BrowserType.SAFARI
     # Embedder needs to be checked before Webview, as production embedder
     # APKs might also contain "webview" in the path.
     if any(embedder in path_str for embedder in SUPPORTED_EMBEDDER):
-      return all_browsers.WebviewEmbedder
+      return BrowserType.WEBVIEW_EMBEDDER
     # Webview needs to be checked before Chromium, as WebviewShell package name
     # contains "chromium".
     if "webview" in path_str:
-      return all_browsers.WebviewBrowser
+      return BrowserType.WEBVIEW
     if "chrome" in path_str:
-      return cls.get_chrome_browser_cls(browser_config)
+      return BrowserType.CHROME
     if "chromium" in path_str:
-      return cls.get_chromium_browser_cls(browser_config)
+      return BrowserType.CHROMIUM
     if "firefox" in path_str:
-      if driver == BrowserDriverType.WEB_DRIVER:
-        return all_browsers.FirefoxWebDriver
+      return BrowserType.FIREFOX
     if "edge" in path_str:
-      return all_browsers.EdgeWebDriver
+      return BrowserType.EDGE
     if "d8" in path_str:
-      return all_browsers.D8
+      return BrowserType.D8
     raise argparse.ArgumentTypeError(f"Unsupported browser path='{path}'")
 
   @classmethod
-  def get_browser_cls_from_type(cls,
+  def get_browser_cls_from_type(cls, browser_type: BrowserType,
                                 browser_config: BrowserConfig) -> type[Browser]:
-    browser_type = browser_config.browser_type
     assert browser_type, "Missing explicit browser type"
     if browser_type == BrowserType.WEBKIT:
       return all_browsers.WebKitWebDriver

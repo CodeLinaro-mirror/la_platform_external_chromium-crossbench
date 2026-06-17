@@ -9,7 +9,7 @@ import datetime as dt
 import json
 import logging
 from contextlib import closing
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Self
+from typing import TYPE_CHECKING, Any, Callable, Final, Iterator, Self
 
 import websocket
 from websocket import create_connection
@@ -50,9 +50,9 @@ class DevToolsRemoteClient:
                platform: Platform,
                requested_local_port: int = 0,
                remote_devtools_identifier: str = "chrome_devtools_remote"):
-    self._platform: Platform = platform
-    self._requested_local_port: int = requested_local_port
-    self._remote_devtools_identifier: str = remote_devtools_identifier
+    self._platform: Final[Platform] = platform
+    self._requested_local_port: Final[int] = requested_local_port
+    self._remote_devtools_identifier: Final[str] = remote_devtools_identifier
     self._ws: websocket.WebSocket | None = None
     self._devtools_port: int = 0
 

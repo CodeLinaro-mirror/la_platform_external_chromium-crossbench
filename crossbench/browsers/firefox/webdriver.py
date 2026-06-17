@@ -9,7 +9,7 @@ import os
 import shutil
 import stat
 import tempfile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
@@ -91,13 +91,11 @@ class FirefoxDriverFinder:
   RELEASES_URL = "https://api.github.com/repos/mozilla/geckodriver/releases"
 
   def __init__(self, browser: FirefoxWebDriver) -> None:
-    self.browser = browser
-    self.platform = browser.platform
-    self.extension = ""
-    if self.platform.is_win:
-      self.extension = ".exe"
+    self.browser: Final[FirefoxWebDriver] = browser
+    self.platform: Final = browser.platform
+    self.extension: Final[str] = ".exe" if self.platform.is_win else ""
     cache_dir = self.platform.host_platform.local_cache_dir("driver")
-    self.driver_path = (
+    self.driver_path: Final[pth.LocalPath] = (
         cache_dir / f"geckodriver-{self.browser.version.major}{self.extension}")
 
   def download(self) -> pth.LocalPath:

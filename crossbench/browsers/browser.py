@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Any, Iterable, Sequence
+from typing import TYPE_CHECKING, Any, Final, Iterable, Sequence
 
 from ordered_set import OrderedSet
 
@@ -59,9 +59,9 @@ class Browser(abc.ABC):
                label: str,
                path: pth.AnyPath | None = None,
                settings: Settings | None = None) -> None:
-    self._settings = settings or Settings()
-    self._platform = self._settings.platform
-    self.label: str = label
+    self._settings: Final[Settings] = settings or Settings()
+    self._platform: Final[plt.Platform] = self._settings.platform
+    self.label: Final[str] = label
     # Path to the executable binary on all platforms.
     self._path = pth.AnyPath()
     self._app_name: str = self.type_name()
@@ -73,7 +73,7 @@ class Browser(abc.ABC):
     self._init_path_and_version(path)
     self._is_running: bool = False
     self._pid: int | None = None
-    self._probes: OrderedSet[Probe] = OrderedSet()
+    self._probes: Final[OrderedSet[Probe]] = OrderedSet()
     self._flags: Flags = self._init_flags(self._settings)
     self.log_file: pth.AnyPath | None = None
     # Optional location of the browser's main cache dir.

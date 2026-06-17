@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Final, Sequence
 
 from typing_extensions import override
 
@@ -30,7 +30,7 @@ class WebviewBrowser(Webview):
     super().__init__(label, path, settings)
     # TODO: crbug.com/408236113 - Read the activity name from config
     # or command line to replace "WebViewBrowserActivity".
-    self._android_activity: str = (
+    self._android_activity: Final[str] = (
         f"{self._android_package}.WebViewBrowserActivity")
 
   @override

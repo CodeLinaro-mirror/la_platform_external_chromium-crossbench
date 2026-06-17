@@ -11,7 +11,7 @@ import os
 import time
 import traceback
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
+from typing import TYPE_CHECKING, Any, Final, Iterator, Sequence, cast
 
 import selenium.common.exceptions
 import urllib3
@@ -44,8 +44,8 @@ class DriverException(RuntimeError):
   WebDriver exceptions."""
 
   def __init__(self, msg: str, browser: Browser | None = None) -> None:
-    self._browser = browser
-    self._msg = msg
+    self._browser: Final[Browser | None] = browser
+    self._msg: Final[str] = msg
     super().__init__(msg)
 
   def __str__(self) -> str:

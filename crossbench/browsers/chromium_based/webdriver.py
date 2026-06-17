@@ -9,7 +9,7 @@ import base64
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Iterable, Sequence, TextIO
+from typing import TYPE_CHECKING, Any, Final, Iterable, Sequence, TextIO
 
 import requests
 import selenium.common.exceptions
@@ -54,7 +54,7 @@ class ChromiumBasedWebDriver(
 
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
-    self._script_id_kwargs_by_window_id: dict[str, Any] = {}
+    self._script_id_kwargs_by_window_id: Final[dict[str, Any]] = {}
     self._tracer: DevToolsTracer | None = None
     self._stdout_log_file: TextIO | None = None
 

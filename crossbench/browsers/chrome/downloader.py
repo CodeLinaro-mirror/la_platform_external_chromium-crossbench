@@ -583,13 +583,13 @@ class ChromeDownloaderWin(ChromeDownloader):
                reinstall: bool = False) -> None:
     assert not browser_type, f"Unexpected browser_type: {browser_type}"
     assert browser_platform.is_win, f"{type(self)} can only be used on windows"
-    self._archive_stem: str
     if browser_platform.is_arm64:
       platform_name = "win-arm64-clang"
-      self._archive_stem = self.ARCHIVE_STEM_ARM
+      archive_stem = self.ARCHIVE_STEM_ARM
     else:
       platform_name = "win64-clang"
-      self._archive_stem = self.ARCHIVE_STEM_X64
+      archive_stem = self.ARCHIVE_STEM_X64
+    self._archive_stem: Final[str] = archive_stem
     super().__init__(version_identifier, "chrome", platform_name,
                      browser_platform, reinstall)
 

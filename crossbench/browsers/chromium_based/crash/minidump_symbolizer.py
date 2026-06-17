@@ -12,7 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from crossbench import path as pth
 from crossbench.browsers.chromium_based.crash import helper
@@ -51,11 +51,11 @@ class MinidumpSymbolizer(abc.ABC):
     # TODO: move arguments to be non-optional.
     if not result_dir:
       raise ValueError("result_dir must be provided for MinidumpSymbolizer")
-    self._platform: Platform = platform
-    self._dump_finder: MinidumpFinder = dump_finder
-    self._build_dir: pth.LocalPath = build_dir
-    self._symbols_dir: pth.LocalPath | None = symbols_dir
-    self._result_dir: pth.LocalPath = result_dir
+    self._platform: Final[Platform] = platform
+    self._dump_finder: Final[MinidumpFinder] = dump_finder
+    self._build_dir: Final[pth.LocalPath] = build_dir
+    self._symbols_dir: Final[pth.LocalPath | None] = symbols_dir
+    self._result_dir: Final[pth.LocalPath] = result_dir
 
   def symbolize_minidump(self, minidump: pth.LocalPath) -> str | None:
     """Gets the stack trace from the given minidump.
