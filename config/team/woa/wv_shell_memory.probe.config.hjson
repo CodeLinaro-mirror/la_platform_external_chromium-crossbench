@@ -1,0 +1,15 @@
+// Perfetto tracing probe for WV Shell memory metrics.
+{
+  "probes": {
+    "trace_processor": {
+      "queries": [
+        "wv_renderer_memory",
+        "wv_startup_memory"
+      ]
+    }
+    "perfetto": {
+      "textproto": "syshealth_plus_webview"
+      "config_via_stdin": true
+    }
+  }
+}
