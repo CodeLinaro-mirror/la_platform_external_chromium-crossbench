@@ -29,6 +29,52 @@
         "action": "wait"
         "duration": "5s"
       }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "res": "org.chromium.webview_shell:id/url_field"
+        }
+      }
+      {
+        "action": "wait"
+        "duration": "2s"
+      }
+      {
+        "action": "text_input"
+        "duration": "1s"
+        "text":
+          '''
+          https://cnn.com/
+
+          '''
+        "source": "keyboard"
+      }
+      {
+        "action": "wait"
+        "duration": "5s"
+      }
+      {
+        // Click on the kebab menu
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "x": 1027
+          "y": 205
+        }
+      }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "clazz": "android.widget.TextView"
+          "text": "Destroy WebView"
+        }
+      }
+      {
+        "action": "wait"
+        "duration": "5s"
+      }
     ]
   }
 }
