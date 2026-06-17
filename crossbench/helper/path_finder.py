@@ -413,7 +413,7 @@ class WprGoFinder(BaseCrossbenchPathFinder):
     arch = str(target_platform.machine)
     out_dir = self.platform.local_cache_dir("webpagereplay") / os_name / arch
     self.platform.sh(
-        sys.executable,
+        sys.executable or "python3",
         build_script,
         "--os",
         os_name,

@@ -196,7 +196,7 @@ class TsProxyProcess:
     self._platform = platform
     """Start TsProxy server and verify that it started."""
     cmd: ListCmdArgs = [
-        sys.executable,
+        sys.executable or "python3",
         ts_proxy_path,
     ]
     self._socks_proxy_port: int | None = socks_proxy_port
