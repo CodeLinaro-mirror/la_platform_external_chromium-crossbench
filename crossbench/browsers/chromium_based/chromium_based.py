@@ -76,7 +76,10 @@ class ChromiumBased(Browser):
   def _extract_version(self) -> BrowserVersion:
     if path := self.path:
       self._is_local_build = helper.is_in_build_dir(path, self.platform)
-    version = self.version_cls().parse(self.platform.app_version(self.path))
+    version_str = self.settings.browser_version
+    if not version_str:
+      version_str = self.platform.app_version(self.path)
+    version = self.version_cls().parse(version_str)
     # Locally-built chrome versions should not have a channel
     if self.is_local_build:
       version = version.with_channel(BrowserVersionChannel.ANY)

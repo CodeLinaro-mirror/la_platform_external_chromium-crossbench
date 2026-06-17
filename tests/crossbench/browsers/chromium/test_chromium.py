@@ -319,6 +319,20 @@ class ChromiumPathLinuxTest(BaseCrossbenchTestCase):
     self.assertEqual(str(browser.app_path), str(bin_path))
     self.assertEqual(str(browser.path), str(bin_path))
 
+  def test_explicit_browser_version(self):
+    bin_path = pth.AnyPath("/usr/bin/chromium")
+    self.fs.create_file(bin_path, st_size=1000)
+    self.platform.app_version = mock.MagicMock(
+        side_effect=AssertionError("app_version should not be called"))
+
+    browser = ChromiumWebDriver(
+        "test-label",
+        path=bin_path,
+        settings=Settings(
+            platform=self.platform, browser_version="120.0.6099.224"))
+    self.assertEqual(browser.version.parts_str, "120.0.6099.224")
+    self.platform.app_version.assert_not_called()
+
   def test_linux_driver_lookup(self):
     out_dir = pth.AnyPath("/home/user/chromium/src/out/Default")
     bin_path = out_dir / "chrome"

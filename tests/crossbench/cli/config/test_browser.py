@@ -137,6 +137,19 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.path, path)
     self.assertEqual(config.browser_type, BrowserType.CHROMIUM)
 
+  def test_parse_explicit_browser_version(self):
+    path = Chrome.stable_path(self.platform)
+    config = BrowserConfig.parse({
+        "path": str(path),
+        "version": "120.0.6099.224"
+    })
+    self.assertEqual(config.path, path)
+    self.assertEqual(config.version, "120.0.6099.224")
+
+  def test_parse_empty_browser_version(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      BrowserConfig.parse({"path": "chrome", "version": ""})
+
   def test_parse_invalid_windows_path(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       BrowserConfig.parse("selenium\\bar")

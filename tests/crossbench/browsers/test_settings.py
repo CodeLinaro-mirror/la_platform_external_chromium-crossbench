@@ -33,6 +33,7 @@ class SettingsTestCase(unittest.TestCase):
     self.assertFalse(settings.wipe_system_user_data)
     self.assertEqual(settings.platform, plt.PLATFORM)
     self.assertEqual(settings.env_config, EnvConfig.default())
+    self.assertIsNone(settings.browser_version)
 
   def test_custom(self):
     flags = Flags({"--one": "1", "--two": "2"}).freeze()
@@ -45,7 +46,8 @@ class SettingsTestCase(unittest.TestCase):
         viewport=Viewport.FULLSCREEN,
         driver_path=pth.LocalPath("driver"),
         splash_screen=SplashScreen.DETAILED,
-        env_config=EnvConfig(cpu_max_usage_percent=10))
+        env_config=EnvConfig(cpu_max_usage_percent=10),
+        browser_version="120.0.6099.224")
     self.assertEqual(settings.flags, flags)
     self.assertEqual(settings.js_flags, js_flags)
     self.assertEqual(settings.cache_dir, pth.LocalPath("cache"))
@@ -55,6 +57,7 @@ class SettingsTestCase(unittest.TestCase):
     self.assertEqual(settings.splash_screen, SplashScreen.DETAILED)
     self.assertTrue(settings.network.is_live)
     self.assertEqual(settings.env_config, EnvConfig(cpu_max_usage_percent=10))
+    self.assertEqual(settings.browser_version, "120.0.6099.224")
 
   def test_js_flags_alone(self):
     js_flags = Flags({"--js-one": "js-1", "--js-two": "js-2"}).freeze()

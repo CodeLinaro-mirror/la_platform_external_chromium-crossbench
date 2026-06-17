@@ -98,6 +98,7 @@ class BrowserConfig(ConfigObject):
   apk: ApkConfig | None = None
   reinstall: bool | None = None
   browser_type: BrowserType | None = None
+  version: str | None = None
 
   def __post_init__(self) -> None:
     if not self.browser:
@@ -416,6 +417,11 @@ class BrowserConfig(ConfigObject):
         type=BrowserType,
         help="Explicit browser implementation type. If set, the browser path "
         "does not have to contain a known browser product name.")
+    parser.add_argument(
+        "version",
+        type=ObjectParser.non_empty_str,
+        help="Explicit browser version string. If set, compatible browser "
+        "implementations can use it instead of auto-detecting the version.")
     parser.add_argument(
         "browser",
         aliases=("path",),

@@ -1276,6 +1276,23 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser=pth.AnyPath("Custom.app"), browser_type=BrowserType.CHROMIUM)
     self.assertIs(variants.get_browser_cls(config), ChromiumWebDriver)
 
+  def test_browser_version_settings(self):
+    path = self.create_file("/Applications/Custom.app/Contents/MacOS/Custom")
+    config = BrowserVariantsConfigDict(
+        {
+            "browsers": {
+                "custom-browser": {
+                    "type": "chromium",
+                    "path": str(path),
+                    "version": "120.0.6099.224"
+                }
+            }
+        },
+        args=self.mock_args())
+    variant = config.variants[0]
+    self.assertEqual(variant.browser_config.version, "120.0.6099.224")
+    self.assertEqual(variant.settings.browser_version, "120.0.6099.224")
+
   def test_get_browser_cls_chrome_driver_types(self):
     variants = BrowserVariantsConfig()
     expected_classes = (

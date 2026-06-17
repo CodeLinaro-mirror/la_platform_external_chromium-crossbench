@@ -44,6 +44,7 @@ class Settings:
       env_config: EnvConfig | None = None,
       extensions: tuple[ExtensionConfig, ...] | None = None,
       apk_config: ApkConfig | None = None,
+      browser_version: str | None = None,
   ) -> None:
     self._flags = self._convert_flags(flags, "flags")
     self._js_flags = self._extract_js_flags(self._flags, js_flags)
@@ -61,6 +62,7 @@ class Settings:
     self._env_config = env_config or EnvConfig.default()
     self._extensions = extensions or ()
     self._apk_config = apk_config
+    self._browser_version = browser_version
 
   def _extract_js_flags(self, flags: Flags,
                         js_flags: FlagsData | None) -> Flags:
@@ -142,6 +144,10 @@ class Settings:
   @property
   def apk_config(self) -> ApkConfig | None:
     return self._apk_config
+
+  @property
+  def browser_version(self) -> str | None:
+    return self._browser_version
 
   @property
   def viewport(self) -> Viewport:

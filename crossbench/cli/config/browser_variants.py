@@ -382,7 +382,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
         http_request_timeout=args.http_request_timeout,
         env_config=env_config,
         extensions=browser_config.extensions,
-        apk_config=apk_config)
+        apk_config=apk_config,
+        browser_version=browser_config.version)
     browser_variant = BrowserVariantConfig(label, browser_cls, browser_config,
                                            settings, apk_config)
     if not self._check_unique_label(label):
