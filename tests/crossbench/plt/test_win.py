@@ -44,6 +44,12 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
   def test_is_win(self):
     self.assertTrue(self.platform.is_win)
 
+  def test_name(self):
+    self.assertEqual(self.platform.name, "mock.win")
+
+  def test_os_name(self):
+    self.assertEqual(self.platform.os_name, "mock.win")
+
   def test_version(self):
     self.platform.mock_version_str = None
     ver_output = "\nMicrosoft Windows [Version 10.0.22631.3593]\n"

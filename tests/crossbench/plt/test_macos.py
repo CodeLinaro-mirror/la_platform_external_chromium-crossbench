@@ -35,6 +35,9 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
   def test_name(self):
     self.assertEqual(self.platform.name, "mock.macos")
 
+  def test_os_name(self):
+    self.assertEqual(self.platform.os_name, "mock.macos")
+
   def test_is_macos(self):
     self.assertTrue(self.platform.is_macos)
 

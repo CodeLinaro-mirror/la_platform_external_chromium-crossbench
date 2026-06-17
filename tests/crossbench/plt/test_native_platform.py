@@ -922,6 +922,9 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
   def test_name(self):
     self.assertEqual(self.platform.name, "macos")
 
+  def test_os_name(self):
+    self.assertEqual(self.platform.os_name, "macos")
+
   def test_version(self):
     self.assertTrue(self.platform.version_str)
     self.assertRegex(self.platform.version_str, r"[0-9]+\.[0-9]")

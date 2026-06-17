@@ -250,10 +250,10 @@ class MockPlatformMixin:
     return list(self._expected_sh_cmds)
 
   @property
-  def name(self) -> str:
+  def os_name(self) -> str:
     if self.use_mock_name:
-      return f"mock.{super().name}"
-    return super().name
+      return f"mock.{super().os_name}"
+    return super().os_name
 
   @property
   def machine(self) -> MachineArch:

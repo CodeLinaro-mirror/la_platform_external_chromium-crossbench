@@ -72,6 +72,9 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
   def test_name(self):
     self.assertEqual(self.platform.name, "linux_ssh")
 
+  def test_os_name(self):
+    self.assertEqual(self.platform.os_name, "linux")
+
   def test_version(self):
     self._expect_sh_ssh("uname -r", result="999")
     self.assertEqual(self.platform.version_str, "999")

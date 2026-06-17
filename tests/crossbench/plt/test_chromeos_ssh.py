@@ -31,6 +31,9 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
   def test_name(self):
     self.assertEqual(self.platform.name, "chromeos_ssh")
 
+  def test_os_name(self):
+    self.assertEqual(self.platform.os_name, "chromeos")
+
   def test_is_chromeos(self):
     self.assertTrue(self.platform.is_chromeos)
 

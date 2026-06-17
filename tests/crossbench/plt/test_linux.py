@@ -40,6 +40,9 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
   def test_name(self):
     self.assertEqual(self.platform.name, "mock.linux")
 
+  def test_os_name(self):
+    self.assertEqual(self.platform.os_name, "mock.linux")
+
   def test_is_linux(self):
     self.assertTrue(self.platform.is_linux)
 

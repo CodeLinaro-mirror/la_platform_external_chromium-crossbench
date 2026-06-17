@@ -147,6 +147,9 @@ class IOsMockPlatformTestCase(BaseMockPlatformTestCase):
   def test_name(self):
     self.assertEqual(self.platform.name, "ios")
 
+  def test_os_name(self):
+    self.assertEqual(self.platform.os_name, "ios")
+
   def test_is_ios(self):
     self.assertTrue(self.platform.is_ios)
 

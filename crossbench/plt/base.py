@@ -154,9 +154,16 @@ class Platform(abc.ABC):
     return f"{key_str}.{self.id}"
 
   @property
-  @abc.abstractmethod
   def name(self) -> str:
     """Descriptive name e.g. macos of the platform. non-unique."""
+    if self.is_remote_ssh:
+      return f"{self.os_name}_ssh"
+    return self.os_name
+
+  @property
+  @abc.abstractmethod
+  def os_name(self) -> str:
+    """Base descriptive OS name e.g. macos."""
 
   @property
   @abc.abstractmethod
@@ -245,7 +252,7 @@ class Platform(abc.ABC):
   @property
   def type_key(self) -> tuple[str, str]:
     """Key used for looking up platform specific objects."""
-    return (self.name, str(self.machine))
+    return (self.os_name, str(self.machine))
 
   @property
   def is_macos(self) -> bool:

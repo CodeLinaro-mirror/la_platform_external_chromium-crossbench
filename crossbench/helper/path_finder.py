@@ -409,8 +409,7 @@ class WprGoFinder(BaseCrossbenchPathFinder):
     if not self.platform.is_file(build_script):
       raise FileNotFoundError("WebPageReplay build script not found")
 
-    os_name = target_platform.name.removesuffix("_ssh")
-    arch = str(target_platform.machine)
+    os_name, arch = target_platform.type_key
     out_dir = self.platform.local_cache_dir("webpagereplay") / os_name / arch
     self.platform.sh(
         sys.executable or "python3",

@@ -146,6 +146,12 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   def test_is_android(self):
     self.assertTrue(self.platform.is_android)
 
+  def test_name(self):
+    self.assertEqual(self.platform.name, "android")
+
+  def test_os_name(self):
+    self.assertEqual(self.platform.os_name, "android")
+
   def test_is_battery_powered(self):
     self.expect_sh("dumpsys battery --proto", result=AC_POWERED_OUTPUT)
     self.assertFalse(self.platform.is_battery_powered)

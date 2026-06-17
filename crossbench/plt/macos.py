@@ -99,7 +99,7 @@ class MacOSPlatform(PosixPlatform):
 
   @property
   @override
-  def name(self) -> str:
+  def os_name(self) -> str:
     return "macos"
 
   @override

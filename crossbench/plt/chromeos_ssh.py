@@ -42,8 +42,8 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
 
   @property
   @override
-  def name(self) -> str:
-    return "chromeos_ssh"
+  def os_name(self) -> str:
+    return "chromeos"
 
   @property
   def username(self) -> str | None:

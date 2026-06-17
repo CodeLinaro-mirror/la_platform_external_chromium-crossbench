@@ -35,8 +35,8 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
 
   @property
   @override
-  def name(self) -> str:
-    return "linux_ssh"
+  def os_name(self) -> str:
+    return "linux"
 
   def build_ssh_cmd(self,
                     *args: CmdArg,
