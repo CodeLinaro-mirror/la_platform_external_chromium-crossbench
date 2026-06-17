@@ -31,6 +31,7 @@ if TYPE_CHECKING:
   from types import TracebackType
 
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.browsers.browser import Browser
   from crossbench.network.base import Network
   from crossbench.path import AnyPath, LocalPath
   from crossbench.plt.base import Platform
@@ -400,6 +401,14 @@ class TsProxyTrafficShaper(TrafficShaper):
   def ts_proxy(self) -> TsProxyServer:
     return self._ts_proxy
 
+  @override
+  def validate(self, browser: Browser) -> None:
+    super().validate(browser)
+    if not browser.attributes().is_chromium_based:
+      raise ValueError(
+          f"Browser {browser.unique_name} is not supported. "
+          "Only chromium-based browsers are supported with ts_proxy.")
+
   @contextlib.contextmanager
   @override
   def open(self, network: Network,
@@ -460,9 +469,6 @@ class TsProxyTrafficShaper(TrafficShaper):
 
   @override
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
-    if not browser_attributes.is_chromium_based:
-      raise ValueError(
-          "Only chromium-based browsers are supported with ts_proxy.")
     # TODO: support port forwarding to remote device
     browser_attributes.assert_is_local()
     assert self.is_running, "TrafficShaper is not running."

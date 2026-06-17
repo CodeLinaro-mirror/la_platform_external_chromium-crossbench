@@ -12,6 +12,7 @@ from crossbench.flags.base import Flags
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.browsers.browser import Browser
   from crossbench.network.base import Network
   from crossbench.plt.base import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -39,6 +40,9 @@ class TrafficShaper(abc.ABC):  # noqa: B024
   @property
   def is_running(self) -> bool:
     return self._is_running
+
+  def validate(self, browser: Browser) -> None:
+    pass
 
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
     del browser_attributes

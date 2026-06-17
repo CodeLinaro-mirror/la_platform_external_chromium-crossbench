@@ -19,6 +19,7 @@ from crossbench.network.replay.web_page_replay import WprReplayServer
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.browsers.browser import Browser
   from crossbench.network.base import TrafficShaper
   from crossbench.path import AnyPath, LocalPath
   from crossbench.plt import Platform
@@ -65,15 +66,20 @@ class WprReplayNetwork(ReplayNetwork):
     self._response_transformations_file = file
 
   @override
+  def validate(self, browser: Browser) -> None:
+    super().validate(browser)
+    if not browser.attributes().is_chromium_based:
+      raise ValueError(
+          f"Browser {browser.unique_name} is not supported. "
+          "Only chromium-based browsers are supported for wpr replay.")
+
+  @override
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
     if self._cross_platform_mode:
       return Flags()
 
     assert self.is_running, "Extra network flags are not valid"
     assert self._server, "WPR server is not running"
-    if not browser_attributes.is_chromium_based:
-      raise ValueError(
-          "Only chromium-based browsers are supported for wpr replay.")
     # TODO: make ports configurable.
     extra_flags = super().extra_flags(browser_attributes)
     # TODO: read this from wpr_public_hash.txt like in the recorder probe

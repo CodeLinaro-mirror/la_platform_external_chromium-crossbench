@@ -329,6 +329,7 @@ class Browser(abc.ABC):
   def validate(self) -> None:
     self.validate_flags()
     self.validate_binary()
+    self.validate_network()
 
   def validate_flags(self) -> None:
     """ Helper method is called from the Runner before any Runs / Sessions
@@ -337,6 +338,11 @@ class Browser(abc.ABC):
   def validate_binary(self) -> None:
     """ Helper method is called from the Runner before any Runs / Sessions
     have started."""
+
+  def validate_network(self) -> None:
+    """ Helper method is called from the Runner before any Runs / Sessions
+    have started."""
+    self.network.validate(self)
 
   def setup(self) -> None:
     assert not self._is_running, "setup() called in wrong order."

@@ -73,6 +73,17 @@ class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
     ts_proxy = TsProxyTrafficShaper(self.platform, self.ts_proxy_path)
     self.assertFalse(ts_proxy.is_running)
 
+  def test_ts_proxy_traffic_shaper_validate(self):
+    ts_proxy = TsProxyTrafficShaper(self.platform, self.ts_proxy_path)
+    browser = mock.Mock()
+    browser.attributes().is_chromium_based = True
+    ts_proxy.validate(browser)
+
+    browser.attributes().is_chromium_based = False
+    with self.assertRaises(ValueError) as cm:
+      ts_proxy.validate(browser)
+    self.assertIn("chromium-based browsers are supported", str(cm.exception))
+
   def test_ts_proxy_open(self):
     ts_proxy = TsProxyTrafficShaper(self.platform, self.ts_proxy_path)
     network = LiveNetwork(ts_proxy, self.platform)

@@ -19,6 +19,13 @@ class LiveNetworkTestCase(BaseCrossbenchTestCase):
     self.assertFalse(network.is_running)
     self.assertIn("live", str(network).lower())
 
+  def test_validate(self):
+    network = LiveNetwork(browser_platform=self.platform)
+    browser = mock.Mock()
+    with mock.patch.object(network.traffic_shaper, "validate") as mock_validate:
+      network.validate(browser)
+      mock_validate.assert_called_once_with(browser)
+
   def test_open(self):
     network = LiveNetwork(browser_platform=self.platform)
     mock_browser_session = mock.Mock()

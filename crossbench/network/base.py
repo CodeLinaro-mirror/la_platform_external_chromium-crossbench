@@ -13,6 +13,7 @@ from crossbench.network.traffic_shaping.live import NoTrafficShaper
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
+  from crossbench.browsers.browser import Browser
   from crossbench.flags.base import Flags
   from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -78,6 +79,9 @@ class Network(abc.ABC):
   def host(self) -> str | None:
     """Host for non-live server-based networks."""
     return None
+
+  def validate(self, browser: Browser) -> None:
+    self.traffic_shaper.validate(browser)
 
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
     assert self.is_running, "Network is not running."
