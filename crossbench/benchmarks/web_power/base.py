@@ -7,7 +7,6 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import datetime as dt
-import sys
 from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar
 
 from typing_extensions import override
@@ -22,6 +21,7 @@ from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
+  from crossbench.plt.types import ListCmdArgs
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
@@ -134,29 +134,24 @@ class WebPowerBenchmarkBase(Benchmark):
     self._setup_wpr_transformations(runner)
 
   def _setup_wpr_transformations(self, runner: Runner) -> None:
-    wpr_go_finder = WprGoFinder(runner.platform)
-    wpr_root = wpr_go_finder.local_path
-    assert wpr_root is not None
-    run_httparchive_path = wpr_root / "scripts/run_httparchive.py"
+    httparchive_path = WprGoFinder(runner.platform).httparchive()
 
     for browser in runner.browsers:
       network = browser.network
       if isinstance(network, WprReplayNetwork):
         self._setup_single_wpr_transformation(
-            runner, network, run_httparchive_path)
+            runner, network, httparchive_path)
 
   def _setup_single_wpr_transformation(
       self,
       runner: Runner,
       network: WprReplayNetwork,
-      run_httparchive_path: LocalPath,
+      httparchive_path: LocalPath,
   ) -> None:
-    metadata = runner.platform.sh_stdout(
-        sys.executable,
-        run_httparchive_path,
-        "read-metadata",
-        network.archive_path,
-    )
+    args: ListCmdArgs = [
+        httparchive_path, "read-metadata", network.archive_path
+    ]
+    metadata = runner.platform.sh_stdout(*args)
     if res := WprBannerDismisser.create_rules(metadata):
       js_payload, target_url = res
       rules_file = WprBannerDismisser.serialize_rules(js_payload, target_url)
