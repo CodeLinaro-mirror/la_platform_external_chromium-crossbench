@@ -7,7 +7,7 @@ from __future__ import annotations
 import collections
 import json
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self
+from typing import TYPE_CHECKING, ClassVar, Final, Hashable, Iterable, Self
 
 import pandas as pd
 from google.protobuf.json_format import MessageToJson
@@ -177,6 +177,14 @@ class TraceProcessorProbe(Probe):
     self._llvm_symbolizer_bin: Final[
         pth.LocalPath
         | None] = LlvmSymbolizerFinder.local_binary(llvm_symbolizer_bin)
+
+  @property
+  @override
+  def key(self) -> tuple[tuple[str, Hashable], ...]:
+    return super().key + (
+        ("metrics", self._metrics),
+        ("queries", self._queries),
+    )
 
   @property
   def batch(self) -> bool:

@@ -7,6 +7,7 @@ import json
 import pathlib
 import unittest
 from argparse import ArgumentTypeError
+from typing import Any
 
 from crossbench import path as pth
 from crossbench import plt
@@ -356,6 +357,42 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     self.assertTrue("foo/bar" in metrics)
     self.assertTrue("values" in metrics["foo/bar"])
     self.assertEqual([7, 9], metrics["foo/bar"]["values"])
+
+  def _assert_independent_results(self, config1: dict[str, Any],
+                                  config2: dict[str, Any]) -> None:
+    probe1 = TraceProcessorProbe.parse_dict(config1)
+    probe2 = TraceProcessorProbe.parse_dict(config2)
+    res1 = unittest.mock.MagicMock()
+    res2 = unittest.mock.MagicMock()
+
+    run = unittest.mock.MagicMock()
+    run.results = {probe1: res1, probe2: res2}
+
+    self.assertIs(run.results[probe1], res1)
+    self.assertIs(run.results[probe2], res2)
+
+  def test_multiple_probes_preserve_independent_results(self):
+    self._assert_independent_results(
+        {"metrics": ["metric_cpu"]},
+        {"metrics": ["metric_memory"]},
+    )
+    self._assert_independent_results(
+        {"queries": [{
+            "name": "query_cpu",
+            "sql": "SELECT 1"
+        }]},
+        {"queries": [{
+            "name": "query_memory",
+            "sql": "SELECT 2"
+        }]},
+    )
+    self._assert_independent_results(
+        {"metrics": ["metric_cpu"]},
+        {"queries": [{
+            "name": "query_cpu",
+            "sql": "SELECT 1"
+        }]},
+    )
 
 
 if __name__ == "__main__":
