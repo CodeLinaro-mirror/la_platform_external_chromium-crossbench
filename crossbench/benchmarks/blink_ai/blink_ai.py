@@ -16,6 +16,7 @@ from crossbench.benchmarks.base import PressBenchmark, \
     PressBenchmarkStoryFilter
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.flags.chrome import ChromeFlags
+from crossbench.helper import url_helper
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 from .probe import BlinkAIProbe
@@ -33,7 +34,12 @@ class BlinkAIStory(PressBenchmarkStory):
   URL_OFFICIAL: ClassVar[str] = (
       "https://chromium-workloads.web.app/blink-ai/main/")
   URL_LOCAL: ClassVar[str] = "http://localhost:8000/"
-  SUBSTORIES: ClassVar[tuple[str, ...]] = ("language_model",)
+  SUBSTORIES: ClassVar[tuple[str, ...]] = (
+      "language_model",
+      "multimodal_image",
+      "multimodal_images",
+      "multimodal_audio",
+  )
 
   @classmethod
   @override
@@ -58,13 +64,22 @@ class BlinkAIStory(PressBenchmarkStory):
     return dt.timedelta(minutes=15)
 
   @override
+  def get_run_url(self, run: Run) -> str:
+    url = super().get_run_url(run)
+    if self.substories:
+      url = url_helper.update_url_query(url,
+                                        {"stories": ",".join(self.substories)})
+    return url
+
+  @override
   def setup(self, run: Run) -> None:
+    url = self.get_run_url(run)
     with run.actions("Setup") as actions:
-      actions.show_url(self.url)
+      actions.show_url(url)
       logging.info("Waiting for window.LanguageModel to become available...")
       try:
         actions.wait_js_condition(
-            "return !!window.LanguageModel",
+            "return !!window.LanguageModel && window.testStatus === 'waiting'",
             0.5,
             timeout=dt.timedelta(seconds=45))
       except Exception as e:
