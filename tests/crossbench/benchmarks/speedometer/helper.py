@@ -74,6 +74,7 @@ class SpeedometerBaseTestCase(
     separate: bool = False
     custom_benchmark_url: str | None = None
     action_runner_config: ActionRunnerConfig | None = None
+    story_tags: Sequence[str] | None = None
 
   def test_iterations_kwargs(self):
     args = self.Namespace()
@@ -576,6 +577,13 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     for story in benchmark.stories:
       assert isinstance(story, self.story_cls)
       self.assertDictEqual(story.url_params, {"warmupBeforeSync": "123400"})
+
+  def test_all_stories_have_tags(self):
+    for story_name in self.story_cls.all_story_names():
+      story = self.story_cls.from_names([story_name])[0]
+      self.assertIsNotNone(story.tags)
+      # Some tags should be present, e.g. "all", "default"
+      self.assertTrue(len(story.tags) > 0, f"Story {story_name} has no tags")
 
   def test_viewport_kwargs(self):
     args = self.Namespace()

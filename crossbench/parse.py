@@ -204,6 +204,15 @@ ProtoClassT = TypeVar("ProtoClassT", bound=google.protobuf.message.Message)
 class ObjectParser:
 
   @classmethod
+  def str_tuple(
+      cls,
+      value: Any,
+      name: str = "tuple",
+      error_cls: type[Exception] = argparse.ArgumentTypeError
+  ) -> tuple[str, ...]:
+    return tuple(cls.str_list(value, name, error_cls))
+
+  @classmethod
   def str_list(
       cls,
       value: Any,

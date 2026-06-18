@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Iterator, cast
+from typing import TYPE_CHECKING, Iterable, Iterator, cast
 
 from typing_extensions import override
 
@@ -33,19 +33,22 @@ if TYPE_CHECKING:
 
 class InteractivePage(Page):
 
-  def __init__(self,
-               name: str,
-               blocks: tuple[ActionBlock, ...] = (),
-               login: LoginBlock | None = None,
-               setup: ActionBlock | None = None,
-               teardown: ActionBlock | None = None,
-               secrets: Secrets | None = None,
-               playback: PlaybackController = PlaybackController.default(),
-               tabs: TabController = TabController.default(),
-               about_blank_duration: dt.timedelta = dt.timedelta(),
-               run_login: bool = True,
-               run_setup: bool = True,
-               run_teardown: bool = True) -> None:
+  def __init__(
+      self,
+      name: str,
+      blocks: tuple[ActionBlock, ...] = (),
+      login: LoginBlock | None = None,
+      setup: ActionBlock | None = None,
+      teardown: ActionBlock | None = None,
+      secrets: Secrets | None = None,
+      playback: PlaybackController = PlaybackController.default(),
+      tabs: TabController = TabController.default(),
+      about_blank_duration: dt.timedelta = dt.timedelta(),
+      tags: Iterable[str] = (),
+      run_login: bool = True,
+      run_setup: bool = True,
+      run_teardown: bool = True,
+  ) -> None:
     assert name, "missing name"
     self._name: str = name
     assert not any(block.is_login for block in blocks), (
@@ -64,7 +67,7 @@ class InteractivePage(Page):
 
     duration = self._get_duration()
     super().__init__(self._name, duration, playback, tabs, about_blank_duration,
-                     secrets)
+                     secrets, tags)
 
   @property
   def login_block(self) -> ActionBlock | None:

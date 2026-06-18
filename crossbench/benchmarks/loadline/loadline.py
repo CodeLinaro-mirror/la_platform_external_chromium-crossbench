@@ -8,7 +8,7 @@ import abc
 import argparse
 import logging
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Mapping, Sequence
+from typing import TYPE_CHECKING, ClassVar, Mapping
 
 import pandas as pd
 from tabulate import tabulate
@@ -197,7 +197,7 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
+  def stories_from_cli_args(cls, args: argparse.Namespace) -> tuple[Page, ...]:
     config = cls.get_pages_config(args)
     assert cls._page_config, "Missing page config"
 
@@ -212,7 +212,10 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
       config = PagesConfig(
           pages=filtered_pages, secrets=cls._page_config.secrets)
 
-    return cls.STORY_FILTER_CLS.stories_from_config(args, config)
+    return cls.STORY_FILTER_CLS.from_config(
+        cls.DEFAULT_STORY_CLS,  # type: ignore[type-abstract]
+        args,
+        config).stories
 
   @classmethod
   @override

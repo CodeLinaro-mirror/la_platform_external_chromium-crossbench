@@ -7,7 +7,8 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterable, Mapping, \
+    Sequence
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -105,12 +106,15 @@ class JetStream2Story(JetStreamStory, metaclass=abc.ABCMeta):
       "3d-cube-SP",
   )
 
-  def __init__(self,
-               substories: Sequence[str] = (),
-               url: str | None = None,
-               url_params: Mapping[str, str] | None = None) -> None:
+  def __init__(
+      self,
+      substories: Sequence[str] = (),
+      url: str | None = None,
+      url_params: Mapping[str, str] | None = None,
+      tags: Iterable[str] = (),
+  ) -> None:
     self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
-    super().__init__(substories=substories, url=url)
+    super().__init__(substories=substories, url=url, tags=tags)
 
   @property
   def url_params(self) -> dict[str, str]:
@@ -204,22 +208,28 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
       url_params["iterationCount"] = str(iteration_count)
     return url_params
 
-  def __init__(self,
-               story_cls: type[JetStream2Story],
-               patterns: Sequence[str],
-               args: argparse.Namespace,
-               separate: bool = False,
-               url: str | None = None,
-               url_params: Mapping[str, str] | None = None) -> None:
+  def __init__(
+      self,
+      story_cls: type[JetStream2Story],
+      patterns: Sequence[str],
+      args: argparse.Namespace,
+      separate: bool = False,
+      url: str | None = None,
+      url_params: Mapping[str, str] | None = None,
+      tags: Sequence[str] = (),
+  ) -> None:
     self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
     assert issubclass(story_cls, JetStream2Story)
-    super().__init__(story_cls, patterns, args, separate, url)
+    super().__init__(story_cls, patterns, args, separate, url, tags)
 
   @override
-  def create_stories_from_names(self, names: list[str],
-                                separate: bool) -> Sequence[JetStream2Story]:
+  def stories_from_names(self,
+                         names: Sequence[str]) -> tuple[JetStream2Story, ...]:
     return self.story_cls.from_names(
-        names, separate=separate, url=self.url, url_params=self._url_params)
+        names,
+        separate=self.separate,
+        url=self.url,
+        url_params=self._url_params)
 
 
 class JetStream2Benchmark(JetStreamBenchmark):

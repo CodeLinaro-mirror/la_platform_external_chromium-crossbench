@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 from typing_extensions import override
 
@@ -34,7 +34,8 @@ class LivePage(InteractivePage):
       duration: dt.timedelta = DEFAULT_DURATION,
       playback: PlaybackController = PlaybackController.default(),
       tabs: TabController = TabController.default(),
-      about_blank_duration: dt.timedelta = dt.timedelta()
+      about_blank_duration: dt.timedelta = dt.timedelta(),
+      tags: Iterable[str] = (),
   ) -> None:
     self.url: str = url
     blocks = (ActionBlock.from_url(url, duration),)
@@ -43,7 +44,8 @@ class LivePage(InteractivePage):
         blocks=blocks,
         playback=playback,
         tabs=tabs,
-        about_blank_duration=about_blank_duration)
+        about_blank_duration=about_blank_duration,
+        tags=tags)
 
   @override
   def details_json(self) -> JsonDict:

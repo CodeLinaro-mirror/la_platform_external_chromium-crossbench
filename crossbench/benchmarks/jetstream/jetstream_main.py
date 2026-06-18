@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Final, Mapping
 
 from typing_extensions import override
 
@@ -37,7 +37,7 @@ class JetStreamMainProbeContext(JetStream3ProbeContext):
      return data}, {}),
   undefined, "  ").replaceAll("[", "(").replaceAll("]", ")");
 """
-JETSTREAM_MAIN_STORY_DATA = {
+JETSTREAM_MAIN_STORY_DATA: Final[Mapping[str, tuple[str, ...]]] = {
     "zlib-wasm": ("all", "default", "wasm"),
     "WSL": ("all", "default", "js", "wsl"),
     "web-ssr": ("all", "default", "js", "ssr", "web"),

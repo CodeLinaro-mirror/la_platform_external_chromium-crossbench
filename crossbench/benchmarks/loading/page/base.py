@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Iterable
 
 from typing_extensions import override
 
@@ -37,17 +37,20 @@ class Page(Story, metaclass=abc.ABCMeta):
     # Use module instead of direct import to avoid import cycle
     return tuple(page.name for page in PAGE_LIST)
 
-  def __init__(self,
-               name: str,
-               duration: dt.timedelta = DEFAULT_DURATION,
-               playback: PlaybackController = PlaybackController.default(),
-               tabs: TabController = TabController.default(),
-               about_blank_duration: dt.timedelta = dt.timedelta(),
-               secrets: Secrets | None = None) -> None:
+  def __init__(
+      self,
+      name: str,
+      duration: dt.timedelta = DEFAULT_DURATION,
+      playback: PlaybackController = PlaybackController.default(),
+      tabs: TabController = TabController.default(),
+      about_blank_duration: dt.timedelta = dt.timedelta(),
+      secrets: Secrets | None = None,
+      tags: Iterable[str] = (),
+  ) -> None:
     self._playback: PlaybackController = playback
     self._tabs: TabController = tabs
     self._about_blank_duration = about_blank_duration
-    super().__init__(name, duration, secrets)
+    super().__init__(name, duration, secrets, tags=tags)
 
   @property
   def about_blank_duration(self) -> dt.timedelta:

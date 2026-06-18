@@ -8,7 +8,8 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterable, Mapping, \
+    Sequence
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -157,17 +158,20 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
   BUTTON_SELECTOR: ClassVar[str] = \
       "#runSuites, start-tests-button, .buttons button"
 
-  def __init__(self,
-               substories: Sequence[str] = (),
-               iterations: int | None = None,
-               url_params: Mapping[str, str] | None = None,
-               url: str | None = None) -> None:
+  def __init__(
+      self,
+      substories: Sequence[str] = (),
+      iterations: int | None = None,
+      url_params: Mapping[str, str] | None = None,
+      url: str | None = None,
+      tags: Iterable[str] = (),
+  ) -> None:
     self._iterations: Final[int] = NumberParser.positive_int(
         iterations or self.DEFAULT_ITERATIONS,
         "iteration count",
         parse_str=False)
     self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
-    super().__init__(substories=substories, url=url)
+    super().__init__(substories=substories, url=url, tags=tags)
 
   @property
   def iterations(self) -> int:
@@ -343,25 +347,28 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
     del args
     return {}
 
-  def __init__(self,
-               story_cls: type[SpeedometerStory],
-               patterns: Sequence[str],
-               args: argparse.Namespace,
-               separate: bool = False,
-               url: str | None = None,
-               iterations: int | None = None,
-               url_params: Mapping[str, str] | None = None) -> None:
+  def __init__(
+      self,
+      story_cls: type[SpeedometerStory],
+      patterns: Sequence[str],
+      args: argparse.Namespace,
+      separate: bool = False,
+      url: str | None = None,
+      iterations: int | None = None,
+      url_params: Mapping[str, str] | None = None,
+      tags: Sequence[str] = (),
+  ) -> None:
+    assert issubclass(story_cls, SpeedometerStory)
     self._iterations: Final[int | None] = iterations
     self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
-    assert issubclass(story_cls, SpeedometerStory)
-    super().__init__(story_cls, patterns, args, separate, url)
+    super().__init__(story_cls, patterns, args, separate, url, tags)
 
   @override
-  def create_stories_from_names(self, names: list[str],
-                                separate: bool) -> Sequence[SpeedometerStory]:
+  def stories_from_names(self,
+                         names: Sequence[str]) -> tuple[SpeedometerStory, ...]:
     return self.story_cls.from_names(
         names,
-        separate=separate,
+        separate=self.separate,
         url=self.url,
         iterations=self._iterations,
         url_params=self._url_params)

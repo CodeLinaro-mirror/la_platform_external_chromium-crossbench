@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import TYPE_CHECKING, Any, ClassVar, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Self, \
+    Sequence
 
 from typing_extensions import override
 
@@ -43,7 +44,6 @@ class LoadingPageFilter(StoryFilter[Page]):
   These patterns can be combined:
     ["http://foo.com", 5, "http://bar.co.jp", "amazon"]
   """
-  stories: Sequence[Page]
 
   @classmethod
   @override
@@ -165,21 +165,8 @@ class LoadingPageFilter(StoryFilter[Page]):
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["separate"] = args.separate
+    kwargs["pages_config"] = args.pages_config
     return kwargs
-
-  @override
-  def process_all(self, patterns: Sequence[str]) -> None:
-    name_or_url_list = patterns
-    if len(name_or_url_list) == 1:
-      if name_or_url_list[0] == "all":
-        self.stories = self.all_stories()
-        return
-      if name_or_url_list[0] == "default":
-        self.stories = self.default_stories()
-        return
-    # Let the PageConfig handle the arg splitting again:
-    config = PagesConfig.parse(",".join(patterns))
-    self.stories = self.stories_from_config(self.args, config)
 
   @classmethod
   def all_stories(cls) -> tuple[Page, ...]:
@@ -190,30 +177,77 @@ class LoadingPageFilter(StoryFilter[Page]):
     return PAGE_LIST_SMALL
 
   @classmethod
-  def stories_from_config(cls, args: argparse.Namespace,
-                          config: PagesConfig) -> Sequence[Page]:
+  def from_config(cls, story_cls: type[Page], args: argparse.Namespace,
+                  config: PagesConfig) -> Self:
+    kwargs = cls.kwargs_from_cli(args)
+    kwargs["pages_config"] = config
+    return cls(story_cls, **kwargs)
+
+  def __init__(
+      self,
+      story_cls: type[Page],
+      patterns: Sequence[str],
+      args: argparse.Namespace,
+      separate: bool = False,
+      tags: Iterable[str] = (),
+      pages_config: PagesConfig | None = None,
+  ) -> None:
+    self._pages_config = pages_config
+    super().__init__(story_cls, patterns, args, separate, tags)
+
+  @property
+  def pages_config(self) -> PagesConfig | None:
+    return self._pages_config
+
+  @override
+  def filter(self) -> tuple[Page, ...]:
+    if page_config := self.pages_config:
+      stories = self.stories_from_config(page_config)
+    else:
+      stories = super().filter()
+
+    if self.separate:
+      return stories
+
+    combined_name = "_".join(story.name for story in stories)
+    args = self.args
+    return (CombinedPage(stories, combined_name, args.playback, args.tabs),)
+
+  @override
+  def filter_by_name(self, patterns: Sequence[str]) -> tuple[Page, ...]:
+    if len(patterns) == 1:
+      if patterns[0] == "all":
+        return self.all_stories()
+      if patterns[0] == "default":
+        return self.default_stories()
+    return self.stories_from_names(patterns)
+
+  @override
+  def stories_from_names(self, names: Sequence[str]) -> tuple[Page, ...]:
+    # Let the PageConfig handle the arg splitting again:
+    config = PagesConfig.parse(",".join(names))
+    return self.stories_from_config(config)
+
+  def stories_from_config(self, config: PagesConfig) -> tuple[Page, ...]:
     labels: set[str
                 | None] = {page_config.label for page_config in config.pages}
     use_labels = len(labels) == len(config.pages)
 
     stories: list[Page] = []
     for page_config in config.pages:
-      stories.append(cls._story_from_config(args, page_config, use_labels))
+      stories.append(self._story_from_config(page_config, use_labels))
 
     if not use_labels:
-      cls._validate_unique_urls(config)
-    return stories
+      self._validate_unique_urls(config)
+    return tuple(stories)
 
-  @classmethod
-  def _validate_unique_urls(cls, config: PagesConfig) -> None:
-    # Double check that the urls are unique
+  def _validate_unique_urls(self, config: PagesConfig) -> None:
     urls: set[str] = {page_config.first_url for page_config in config.pages}
     if len(urls) != len(config.pages):
       raise argparse.ArgumentTypeError("Got non-unique story labels and urls.")
 
-  @classmethod
-  def _story_from_config(cls, args: argparse.Namespace, config: PageConfig,
-                         use_labels: bool) -> Page:
+  def _story_from_config(self, config: PageConfig, use_labels: bool) -> Page:
+    args = self.args
     playback: PlaybackController = args.playback
     tabs: TabController = args.tabs
     if config.playback:
@@ -223,15 +257,27 @@ class LoadingPageFilter(StoryFilter[Page]):
     if config.label in PAGES:
       page = PAGES[config.label]
       duration = duration or page.duration
-      return LivePage(page.name, page.url, duration, playback, tabs,
-                      args.about_blank_duration)
+      return LivePage(
+          page.name,
+          page.url,
+          duration,
+          playback,
+          tabs,
+          args.about_blank_duration,
+          tags=config.tags)
 
     label: str = config.any_label if use_labels else config.first_url
     duration = duration or DEFAULT_DURATION
 
-    if not config.has_any_blocks:
-      return LivePage(label, config.first_url, duration, playback, tabs,
-                      args.about_blank_duration)
+    if not config.blocks:
+      return LivePage(
+          label,
+          config.first_url,
+          duration,
+          playback,
+          tabs,
+          args.about_blank_duration,
+          tags=config.tags)
     return InteractivePage(
         name=label,
         blocks=config.blocks or (),
@@ -242,17 +288,9 @@ class LoadingPageFilter(StoryFilter[Page]):
         playback=playback,
         tabs=tabs,
         about_blank_duration=args.about_blank_duration,
+        tags=config.tags,
         run_login=args.run_login,
         run_setup=args.run_setup)
-
-  @override
-  def create_stories(self, separate: bool) -> Sequence[Page]:
-    if not separate and len(self.stories) > 1:
-      combined_name = "_".join(page.name for page in self.stories)
-      args = self.args
-      self.stories = (CombinedPage(self.stories, combined_name, args.playback,
-                                   args.tabs),)
-    return self.stories
 
 
 class LoadingBenchmark(SubStoryBenchmark):
@@ -292,13 +330,11 @@ class LoadingBenchmark(SubStoryBenchmark):
         raise argparse.ArgumentTypeError(
             f"Cannot specify --stories={args.stories!r} "
             "with any other page config option.")
-      pages = cls.STORY_FILTER_CLS.stories_from_config(args, config)
-      if args.separate:
-        return pages
-      if len(pages) == 1:
-        return pages
-      return (CombinedPage(pages, "Page Scenarios - Combined", args.playback,
-                           args.tabs),)
+      return cls.STORY_FILTER_CLS.from_config(
+          cls.DEFAULT_STORY_CLS,  # type: ignore[type-abstract]
+          args,
+          config,
+      ).stories
 
     if args.urls:
       # TODO: make urls and stories mutually exclusive.

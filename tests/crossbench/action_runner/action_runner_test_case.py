@@ -29,6 +29,14 @@ class ActionRunnerTestCase(CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase):
 
     self.sleep_mock.side_effect = sleep_side_effect
 
+  def mock_args(self):
+    args = super().mock_args()
+    args.stories = None
+    args.story_tags = None
+    args.separate = False
+    args.pages_config = None
+    return args
+
   def tearDown(self):
     expected_sh_cmds = self.platform.expected_sh_cmds
     if expected_sh_cmds is not None:

@@ -229,7 +229,6 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
   """
   URL: ClassVar = (
       "https://chromium-workloads.web.app/web-tests/main/synthetic/memory")
-  stories: Sequence[Page]
 
   @classmethod
   @override
@@ -293,11 +292,11 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
     return parser
 
   @override
-  def process_all(self, patterns: Sequence[str]) -> None:
-    self.stories = self.stories_from_cli_args(self.args)
+  def filter_by_name(self, patterns: Sequence[str]) -> tuple[Page, ...]:
+    return self.stories_from_cli_args(self.args)
 
   @classmethod
-  def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
+  def stories_from_cli_args(cls, args: argparse.Namespace) -> tuple[Page, ...]:
     url_params: MutableMapping[str, str] = {
         "alloc": str(args.alloc_count),
         "blocksize": str(args.block_size),
@@ -310,12 +309,7 @@ class MemoryBenchmarkStoryFilter(StoryFilter[Page]):
     stories: Sequence[Page] = []
     page = LivePage("memory", url, dt.timedelta(seconds=2), tabs=args.tabs)
     stories = [page]
-    return stories
-
-  @override
-  def create_stories(self, separate: bool) -> Sequence[Page]:
-    return self.stories
-
+    return tuple(stories)
 
 class MemoryBenchmark(SubStoryBenchmark):
   """
@@ -355,7 +349,7 @@ class MemoryBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
+  def stories_from_cli_args(cls, args: argparse.Namespace) -> tuple[Page, ...]:
     super().stories_from_cli_args(args)
     stories = MemoryBenchmarkStoryFilter.stories_from_cli_args(args)
     return stories

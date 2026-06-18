@@ -168,6 +168,7 @@ class JetStream2BaseTestCase(
     custom_benchmark_url: str | None = None
     detailed_metrics: bool = False
     action_runner_config: ActionRunnerConfig | None = None
+    story_tags: Sequence[str] | None = None
 
   def namespace(self) -> argparse.Namespace:
     return self.Namespace()
@@ -196,10 +197,15 @@ class JetStream2BaseTestCase(
 # TODO: introduce JetStreamBaseTestCase
 class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
 
+  def test_all_stories_have_tags(self):
+    for story_name in self.story_cls.all_story_names():
+      story = self.story_cls.from_names([story_name])[0]
+      self.assertIsNotNone(story.tags)
+      self.assertTrue(len(story.tags) > 0, f"Story {story_name} has no tags")
+
   @dataclass
   class Namespace(JetStream2BaseTestCase.Namespace):
     prefetch_resources: bool = True
-    story_tags: Sequence[str] | None = None
 
   @override
   def _test_run_browser_expectations(self, browser,
@@ -270,27 +276,27 @@ class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
     assert isinstance(story, self.story_cls)
     self.assertDictEqual(story.url_params, {"test": "lebab-wtb,espree-wtb"})
 
-  def test_story_tags_wasm(self):
+  def test_tags_wasm(self):
     args = self.Namespace()
     args.story_tags = ["wasm"]
     benchmark = self.benchmark_cls.from_cli_args(args)
     self.assertTrue(benchmark.stories)
     for story in benchmark.stories:
       for substory in story.substories:
-        self.assertIn("wasm", self.story_data[substory])
+        tags = self.story_data[substory]
+        self.assertIn("wasm", tags, f"missing wasm tag for {substory}: {tags}")
 
-  def test_story_tags_wasm_default(self):
+  def test_tags_wasm_default(self):
     args = self.Namespace()
-    args.story_tags = ["wasm,default"]
+    args.story_tags = ["wasm", "default"]
     benchmark = self.benchmark_cls.from_cli_args(args)
     self.assertTrue(benchmark.stories)
     for story in benchmark.stories:
       for substory in story.substories:
         tags = self.story_data[substory]
-        self.assertIn("wasm", tags)
-        self.assertIn("default", tags)
+        self.assertTrue("wasm" in tags or "default" in tags)
 
-  def test_story_tags_default(self):
+  def test_tags_default(self):
     args = self.Namespace()
     args.story_tags = ["default"]
     benchmark = self.benchmark_cls.from_cli_args(args)
@@ -301,7 +307,7 @@ class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
     self.assertSetEqual(substory_names,
                         set(self.story_cls.default_story_names()))
 
-  def test_story_tags_invalid(self):
+  def test_tags_invalid(self):
     args = self.Namespace()
     args.story_tags = ["non-existent-tag"]
     with self.assertRaises(ValueError):

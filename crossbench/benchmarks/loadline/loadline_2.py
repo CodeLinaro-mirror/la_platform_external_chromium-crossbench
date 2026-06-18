@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 import numpy as np
 import pandas as pd
@@ -212,7 +212,7 @@ class LoadLine2Benchmark(LoadLineBenchmark):
 
   @classmethod
   @override
-  def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
+  def stories_from_cli_args(cls, args: argparse.Namespace) -> tuple[Page, ...]:
     pages = super().stories_from_cli_args(args)
     return (CombinedPage(pages, playback=args.playback),)
 

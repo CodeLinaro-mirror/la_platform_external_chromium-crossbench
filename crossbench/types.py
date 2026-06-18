@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from typing import Mapping, MutableMapping, Sequence, TypeAlias, Union
+from typing import Iterable, Mapping, MutableMapping, Sequence, TypeAlias, \
+    Union
 
 Json: TypeAlias = Union["JsonMapping", "JsonSequence", str, int, float, bool,
                         None]
@@ -14,3 +15,4 @@ JsonDict: TypeAlias = dict[str, Json]
 JsonSequence: TypeAlias = Sequence[Json]
 JsonList: TypeAlias = list[Json]
 JsonTuple: TypeAlias = tuple[Json, ...]
+StoryTagLookupT: TypeAlias = Mapping[str, Iterable[str]]

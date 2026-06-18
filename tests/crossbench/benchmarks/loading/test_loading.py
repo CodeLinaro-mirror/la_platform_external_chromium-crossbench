@@ -47,6 +47,13 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     return LoadingBenchmark
 
   @override
+  def mock_args(self) -> argparse.Namespace:
+    args = super().mock_args()
+    args.pages_config = None
+    return args
+
+
+  @override
   def story_filter(self,
                    patterns: Sequence[str],
                    separate: bool = True,
@@ -59,13 +66,13 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     if action_runner is None:
       action_runner = ActionRunner(self.mock_run())
 
-    args = argparse.Namespace(
-        about_blank_duration=about_blank_duration,
-        playback=playback,
-        tabs=tabs,
-        action_runner=action_runner,
-        run_login=run_login,
-        run_setup=run_setup)
+    args = self.mock_args()
+    args.about_blank_duration = about_blank_duration
+    args.playback = playback
+    args.tabs = tabs
+    args.action_runner = action_runner
+    args.run_login = run_login
+    args.run_setup = run_setup
     story_filter = super().story_filter(patterns, args=args, separate=separate)
     assert isinstance(story_filter, LoadingPageFilter)
     return story_filter

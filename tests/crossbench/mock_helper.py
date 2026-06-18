@@ -602,8 +602,8 @@ class MockStory(Story):
 
   @classmethod
   @override
-  def all_story_names(cls):
-    return ["story_1", "story_2"]
+  def all_story_names(cls) -> tuple[str, ...]:
+    return ("story_1", "story_2")
 
   def run(self, run: Run) -> None:
     pass

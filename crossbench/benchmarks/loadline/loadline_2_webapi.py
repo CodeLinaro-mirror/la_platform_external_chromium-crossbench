@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from enum import StrEnum
-from typing import TYPE_CHECKING, ClassVar, Final, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final
 
 import pandas as pd
 from typing_extensions import override
@@ -160,7 +160,7 @@ class LoadLine2WebApiBenchmark(LoadLineBenchmark):
 
   @classmethod
   @override
-  def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Page]:
+  def stories_from_cli_args(cls, args: argparse.Namespace) -> tuple[Page, ...]:
     pages = super().stories_from_cli_args(args)
     return (CombinedPage(pages, playback=args.playback),)
 

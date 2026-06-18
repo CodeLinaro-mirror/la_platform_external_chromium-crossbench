@@ -11,8 +11,7 @@ from typing_extensions import override
 
 from crossbench import config
 from crossbench.action_runner.action.enums import ReadyState
-from crossbench.benchmarks.base import RegexFilter, StoryFilter, \
-    SubStoryBenchmark
+from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.cli.ui import timer
 from crossbench.flags.base import Flags
 from crossbench.parse import DurationParser
@@ -134,23 +133,17 @@ class PowerlineStoryFilter(StoryFilter[PowerlineStory]):
       patterns: Sequence[str],
       args: argparse.Namespace,
       separate: bool = False,
-      run_for: dt.timedelta | None = dt.timedelta()
+      run_for: dt.timedelta | None = dt.timedelta(),
+      tags: Sequence[str] = (),
   ) -> None:
     assert issubclass(story_cls, PowerlineStory)
     self._run_for = run_for
-    super().__init__(story_cls, patterns, args, separate)
+    super().__init__(story_cls, patterns, args, separate, tags)
 
   @override
-  def process_all(self, patterns: Sequence[str]) -> None:
-    regex_filter = RegexFilter(
-        all_names=self.story_cls.all_story_names(),
-        default_names=self.story_cls.all_story_names())
-    self._selected_names = regex_filter.process_all(patterns)
-
-  @override
-  def create_stories(self, separate: bool) -> Sequence[PowerlineStory]:
-    return tuple(
-        self.story_cls(name, self._run_for) for name in self._selected_names)
+  def stories_from_names(self,
+                         names: Sequence[str]) -> tuple[PowerlineStory, ...]:
+    return tuple(self.story_cls(name, self._run_for) for name in names)
 
   @classmethod
   @override

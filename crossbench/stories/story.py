@@ -7,15 +7,14 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Final, Iterable, Mapping
+from typing import TYPE_CHECKING, Final, Iterable
 
 from crossbench.cli.config.secrets import Secrets
 from crossbench.path import safe_filename
 
 if TYPE_CHECKING:
   from crossbench.runner.run import Run
-  from crossbench.types import JsonDict
-
+  from crossbench.types import JsonDict, StoryTagLookupT
 
 
 class Story(abc.ABC):
@@ -32,21 +31,31 @@ class Story(abc.ABC):
     return tuple(cls.all_story_names())
 
   @classmethod
-  def all_story_tags(cls) -> Mapping[str, Iterable[str]]:
+  def all_tags_lookup(cls) -> StoryTagLookupT:
     return {}
 
   @classmethod
+  def all_tags(cls) -> tuple[str, ...]:
+    tags: set[str] = set()
+    for story_tags in cls.all_tags_lookup().values():
+      tags.update(story_tags)
+    return tuple(sorted(tags))
+
+  @classmethod
   def verify_story_name(cls, name: str) -> None:
-    if not name or name.startswith(("-", "#")):
+    if not name:
+      raise ValueError("Invalid story name: story name cannot be empty.")
+    if name.startswith(("-", "#")):
       raise ValueError(
-          f"Invalid story name; cannot start with '-' or '#': {name}")
+          f"Invalid story name: cannot start with '-' or '#': {name!r}")
 
   def __init__(
       self,
       name: str,
       duration: dt.timedelta = dt.timedelta(seconds=15),
       secrets: Secrets | None = None,
-      tags: Iterable[str] = ()) -> None:
+      tags: Iterable[str] = (),
+  ) -> None:
     self.verify_story_name(name)
     self._name: str = safe_filename(name)
     self._duration: Final[dt.timedelta] = duration

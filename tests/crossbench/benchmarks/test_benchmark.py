@@ -17,6 +17,7 @@ from tests import test_helper
 
 if TYPE_CHECKING:
   from crossbench.runner.run import Run
+  from crossbench.types import StoryTagLookupT
 
 
 class MockStory(PressBenchmarkStory):
@@ -36,6 +37,25 @@ class MockStory(PressBenchmarkStory):
 
   def run(self, run: Run) -> None:
     pass
+
+
+class MockStoryWithTags(MockStory):
+
+  @classmethod
+  def all_story_names(cls) -> tuple[str, ...]:
+    return ("Story-1", "Story-2", "Story-3")
+
+  @classmethod
+  def all_tags_lookup(cls) -> StoryTagLookupT:
+    return {
+        "Story-1": ["tag1"],
+        "Story-2": ["tag2"],
+        "Story-3": ["tag3"],
+    }
+
+  @property
+  def tags(self) -> frozenset[str]:
+    return frozenset(self.all_tags_lookup()[self.name])
 
 
 class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
@@ -83,6 +103,22 @@ class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
     story: MockStory = stories[0]
     self.assertSequenceEqual(story.substories, MockStory.SUBSTORIES)
 
+  def test_story_tags_include(self):
+    args = argparse.Namespace(stories="all", story_tags="tag1")
+    filter = PressBenchmarkStoryFilter(
+        MockStoryWithTags, [], args=args, tags=["tag1"], separate=True)
+    self.assertEqual(len(filter.stories), 1)
+    self.assertIn("Story-1", filter.stories[0].name)
+
+  def test_story_tags_exclude(self):
+    args = argparse.Namespace(stories="all", story_tags="-tag1")
+    filter = PressBenchmarkStoryFilter(
+        MockStoryWithTags, [], args=args, tags=["-tag1"], separate=True)
+    self.assertEqual(len(filter.stories), 2)
+    names = [s.name for s in filter.stories]
+    self.assertTrue(any("Story-2" in name for name in names))
+    self.assertTrue(any("Story-3" in name for name in names))
+
 
 class RegexFilterTestCase(unittest.TestCase):
 
@@ -95,6 +131,12 @@ class RegexFilterTestCase(unittest.TestCase):
     regex_filter = RegexFilter(["story1", "story2"], ["story1"])
     selected = regex_filter.process_all(["default"])
     self.assertSequenceEqual(selected, ["story1"])
+
+  def test_verify_story_name_reserved(self):
+    with self.assertRaisesRegex(ValueError, "default"):
+      RegexFilter(["default"], [])
+    with self.assertRaisesRegex(ValueError, "all"):
+      RegexFilter(["all"], [])
 
   def test_match_regexp_none(self):
     regex_filter = RegexFilter(["story1", "story2"], ["story1"])

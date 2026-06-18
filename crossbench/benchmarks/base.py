@@ -8,8 +8,8 @@ import abc
 import argparse
 import logging
 import re
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Iterable, Mapping, \
-    Sequence, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Generic, Iterable, \
+    Mapping, Sequence, TypeAlias, TypeVar, cast
 
 from ordered_set import OrderedSet
 from typing_extensions import override
@@ -32,6 +32,7 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
+  from crossbench.types import StoryTagLookupT
 
 VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
 
@@ -180,6 +181,23 @@ StoryT = TypeVar("StoryT", bound=Story)
 
 
 class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
+  """
+  Filter stories by name or regexp.
+
+  Syntax:
+    "all"     Include all stories (defaults to story_names).
+    "name"    Include story with the given name.
+    "-name"   Exclude story with the given name'
+    "foo.*"   Include stories whose name matches the regexp.
+    "-foo.*"  Exclude stories whose name matches the regexp.
+    "A...B"   Include all default stories from A to B (inclusive).
+    "A..."    Include all default stories from the first A.
+    "...B"    Include all default stories up to the last B.
+
+  These patterns can be combined:
+    [".*", "-foo", "-bar"] Includes all except the "foo" and "bar" story
+  """
+
   DEFAULT_STORY_NAME: ClassVar[str] = "default"
 
   @classmethod
@@ -202,7 +220,13 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
         default=cls.DEFAULT_STORY_NAME,
         help="Comma-separated list of story names. "
         "Use 'all' for selecting all available stories. "
-        "Use 'default' for the standard selection of stories.")
+        "Use 'default' for the standard selection of stories. "
+        "Use '#tag' to include and '-#tag' to exclude stories by tag.")
+    group.add_argument(
+        "--story-tags",
+        dest="story_tags",
+        help="Comma-separated list of tags to include/exclude stories "
+        "(e.g., 'tag1,tag2,-tag3'). Mutually exclusive with --stories.")
 
   @classmethod
   def _add_story_grouping_arguments(
@@ -220,8 +244,59 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
 
   @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    patterns: list[str] = ObjectParser.str_list(args.stories, "stories")
-    return {"patterns": patterns, "args": args}
+    if story_tags := args.story_tags:
+      tags: tuple[str, ...] = ObjectParser.str_tuple(story_tags, "story_tags")
+      patterns: tuple[str, ...] = ()
+    else:
+      patterns_and_tags = ObjectParser.str_tuple(args.stories, "stories")
+      patterns, tags = cls._split_patterns_and_tags(patterns_and_tags, args)
+    return {
+        "patterns": patterns,
+        "args": args,
+        "tags": tags,
+    }
+
+  @classmethod
+  def _split_patterns_and_tags(
+      cls, patterns_and_tags: tuple[str, ...],
+      args: argparse.Namespace) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    if not patterns_and_tags:
+      return ("all",), ()
+
+    if cls._is_tag_pattern(patterns_and_tags[0]):
+      return cls._split_patterns_as_tags(patterns_and_tags, args)
+    return cls._split_patterns_as_names(patterns_and_tags, args)
+
+  @classmethod
+  def _is_tag_pattern(cls, pattern: str) -> bool:
+    return pattern.startswith(("#", "-#"))
+
+  @classmethod
+  def _split_patterns_as_tags(
+      cls, patterns_and_tags: tuple[str, ...],
+      args: argparse.Namespace) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    tags = []
+    for pattern in patterns_and_tags:
+      if not cls._is_tag_pattern(pattern):
+        raise argparse.ArgumentTypeError(
+            f"Cannot mix tags and story names in --stories: {args.stories}")
+      tags.append(cls._sanitize_tag(pattern))
+    return ("all",), tuple(tags)
+
+  @classmethod
+  def _split_patterns_as_names(
+      cls, patterns_and_tags: tuple[str, ...],
+      args: argparse.Namespace) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    for pattern in patterns_and_tags:
+      if cls._is_tag_pattern(pattern):
+        raise argparse.ArgumentTypeError(
+            f"Cannot mix tags and story names in --stories: {args.stories}")
+    return patterns_and_tags, ()
+
+  @classmethod
+  def _sanitize_tag(cls, tag: str) -> str:
+    # The hash is not part of the tag name.
+    return tag.replace("#", "", 1)
 
   @classmethod
   def from_cli_args(cls, story_cls: type[StoryT],
@@ -229,35 +304,69 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
     kwargs = cls.kwargs_from_cli(args)
     return cls(story_cls, **kwargs)
 
-  def __init__(self,
-               story_cls: type[StoryT],
-               patterns: Sequence[str],
-               args: argparse.Namespace,
-               separate: bool = False) -> None:
+  def __init__(
+      self,
+      story_cls: type[StoryT],
+      patterns: Sequence[str],
+      args: argparse.Namespace,
+      separate: bool = False,
+      tags: Iterable[str] = (),
+  ) -> None:
     self._args = args
     assert args, "Missing args"
-    self.story_cls: type[StoryT] = story_cls
+    self.story_cls: Final[type[StoryT]] = story_cls
     assert issubclass(
         story_cls, Story), (f"Subclass of {Story} expected, found {story_cls}")
-    # Using order-preserving dict instead of set
-    self._known_names: dict[str,
-                            None] = dict.fromkeys(story_cls.all_story_names())
-    self.stories: Sequence[StoryT] = []
-    # TODO: only use one method.
-    self.process_all(patterns)
-    self.stories = self.create_stories(separate)
+    self._separate: Final[bool] = separate
+    self._known_names: Final[OrderedSet[str]] = OrderedSet(
+        story_cls.all_story_names())
+    assert not (tags and patterns), "Cannot have both tags and names"
+    self._patterns: Final[tuple[str, ...]] = tuple(patterns)
+    self._tags: Final[tuple[str, ...]] = tuple(tags)
+    self.stories: Final[tuple[StoryT, ...]] = self.filter()
+    if not self.separate:
+      assert len(self.stories) <= 1, "Invalid combined stories count"
 
   @property
   def args(self) -> argparse.Namespace:
     return self._args
 
-  @abc.abstractmethod
-  def process_all(self, patterns: Sequence[str]) -> None:
-    pass
+  @property
+  def separate(self) -> bool:
+    return self._separate
+
+  @property
+  def patterns(self) -> tuple[str, ...]:
+    return self._patterns
+
+  @property
+  def tags(self) -> tuple[str, ...]:
+    return self._tags
+
+  def filter(self) -> tuple[StoryT, ...]:
+    if self.tags:
+      return self.filter_by_tags(self.tags)
+    return self.filter_by_name(self.patterns)
+
+  def filter_by_name(self, patterns: Sequence[str]) -> tuple[StoryT, ...]:
+    regex_filter = RegexFilter(self.story_cls.all_story_names(),
+                               self.story_cls.default_story_names())
+    selected_names = regex_filter.process_all(patterns)
+    return self.stories_from_names(selected_names)
+
+  def filter_by_tags(self, tags: Sequence[str]) -> tuple[StoryT, ...]:
+    tags_filter = TagsFilter(self.story_cls.all_tags_lookup(),
+                             self.story_cls.default_story_names())
+    selected_names = tags_filter.process_all(tags)
+    return self.stories_from_names(selected_names)
+
+  def create_stories(self) -> Sequence[StoryT]:
+    return self.stories
 
   @abc.abstractmethod
-  def create_stories(self, separate: bool) -> Sequence[StoryT]:
-    pass
+  def stories_from_names(self, names: Sequence[str]) -> tuple[StoryT, ...]:
+    del names
+    return ()
 
 
 class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
@@ -296,6 +405,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
   def describe(cls) -> dict[str, Any]:
     data = super().describe()
     data["stories"] = cls.describe_stories()
+    data["tags"] = cls.DEFAULT_STORY_CLS.all_tags()
     return data
 
   @classmethod
@@ -313,6 +423,14 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
   def all_story_names(cls) -> tuple[str, ...]:
     return tuple(sorted(cls.DEFAULT_STORY_CLS.all_story_names()))
 
+  @classmethod
+  def all_story_tags_lookup(cls) -> StoryTagLookupT:
+    return cls.DEFAULT_STORY_CLS.all_tags_lookup()
+
+  @classmethod
+  def all_story_tags(cls) -> tuple[str, ...]:
+    return cls.DEFAULT_STORY_CLS.all_tags()
+
 
 PressBenchmarkStoryT = TypeVar(
     "PressBenchmarkStoryT", bound=PressBenchmarkStory)
@@ -327,14 +445,19 @@ class RangePatternError(argparse.ArgumentTypeError):
 class RegexFilter:
 
   def __init__(self, all_names: Sequence[str], default_names: Sequence[str]):
-    self._all_names: dict[str, None] = dict.fromkeys(all_names)
-    self._default_names: dict[str, None] = dict.fromkeys(default_names)
+    self._all_names: OrderedSet[str] = OrderedSet(all_names)
+    self._default_names: OrderedSet[str] = OrderedSet(default_names)
     self._selected_names: OrderedSet[str] = OrderedSet()
     for name in self._all_names:
-      assert name, "Invalid empty story name"
-      assert not name.startswith("-"), (
-          f"Known story names cannot start with '-', but got {name!r}.")
-      assert name != "all", "Known story name cannot match 'all'."
+      self.verify_story_name(name)
+
+  def verify_story_name(self, name: str) -> None:
+    # TODO: make story_cls configurable.
+    Story.verify_story_name(name)
+    if name in ("default", "all"):
+      raise ValueError(
+          f"Cannot use reserved identifier for default story names: "
+          f"{name!r}")
 
   def process_all(self, patterns: Sequence[str]) -> OrderedSet[str]:
     if not isinstance(patterns, (list, tuple)):
@@ -368,7 +491,7 @@ class RegexFilter:
       raise RangePatternError(
           pattern, f"End pattern {end_pattern!r} must not be negative.")
 
-    default_names_list = list(self._default_names.keys())
+    default_names_list = list(self._default_names)
     if not default_names_list:
       return
 
@@ -491,9 +614,9 @@ class RegexFilter:
 
 class TagsFilter:
 
-  def __init__(self, story_tags: Mapping[str, Iterable[str]],
+  def __init__(self, story_tags: StoryTagLookupT,
                default_names: Sequence[str]) -> None:
-    self._story_tags: Mapping[str, Iterable[str]] = story_tags
+    self._story_tags: StoryTagLookupT = story_tags
     self._available_tags: OrderedSet[str] = OrderedSet(
         tag for tags in self._story_tags.values() for tag in tags)
     self._default_names: OrderedSet[str] = OrderedSet(default_names)
@@ -555,22 +678,7 @@ class TagsFilter:
 
 class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
                                 Generic[PressBenchmarkStoryT]):
-  """
-  Filter stories by name or regexp.
-
-  Syntax:
-    "all"     Include all stories (defaults to story_names).
-    "name"    Include story with the given name.
-    "-name"   Exclude story with the given name'
-    "foo.*"   Include stories whose name matches the regexp.
-    "-foo.*"  Exclude stories whose name matches the regexp.
-    "A...B"   Include all default stories from A to B (inclusive).
-    "A..."    Include all default stories from the first A.
-    "...B"    Include all default stories up to the last B.
-
-  These patterns can be combined:
-    [".*", "-foo", "-bar"] Includes all except the "foo" and "bar" story
-  """
+  __doc__ = StoryFilter.__doc__
 
   @classmethod
   @override
@@ -580,37 +688,28 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
     kwargs["url"] = args.custom_benchmark_url
     return kwargs
 
-  def __init__(self,
-               story_cls: type[PressBenchmarkStoryT],
-               patterns: Sequence[str],
-               args: argparse.Namespace,
-               separate: bool = False,
-               url: str | None = None) -> None:
+  def __init__(
+      self,
+      story_cls: type[PressBenchmarkStoryT],
+      patterns: Sequence[str],
+      args: argparse.Namespace,
+      separate: bool = False,
+      url: str | None = None,
+      tags: Iterable[str] = (),
+  ) -> None:
     self.url: str | None = url
-    self._selected_names: OrderedSet[str] = OrderedSet()
-    super().__init__(story_cls, patterns, args, separate)
+    super().__init__(story_cls, patterns, args, separate, tags)
     assert issubclass(self.story_cls, PressBenchmarkStory)
 
-  @override
-  def process_all(self, patterns: Sequence[str]) -> None:
-    regex_filter = RegexFilter(
-        all_names=self.story_cls.all_story_names(),
-        default_names=self.story_cls.default_story_names())
-    self._selected_names = regex_filter.process_all(patterns)
-
-  @override
-  def create_stories(self, separate: bool) -> Sequence[PressBenchmarkStoryT]:
-    names = list(self._selected_names)
-    stories = self.create_stories_from_names(names, separate)
-    return stories
-
-  def create_stories_from_names(
-      self, names: list[str], separate: bool) -> Sequence[PressBenchmarkStoryT]:
-    return self.story_cls.from_names(names, separate=separate, url=self.url)
+  def stories_from_names(
+      self, names: Sequence[str]) -> tuple[PressBenchmarkStoryT, ...]:
+    return self.story_cls.from_names(
+        names, separate=self.separate, url=self.url)
 
 
 class PressBenchmark(SubStoryBenchmark):
-  STORY_FILTER_CLS: ClassVar = PressBenchmarkStoryFilter
+  STORY_FILTER_CLS: ClassVar[
+      type[PressBenchmarkStoryFilter]] = PressBenchmarkStoryFilter
   DEFAULT_STORY_CLS: ClassVar[
       type[PressBenchmarkStory]] = PressBenchmarkStory  # type: ignore
 

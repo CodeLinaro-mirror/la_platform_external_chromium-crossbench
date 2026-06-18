@@ -32,23 +32,17 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     return cls.SUBSTORIES
 
   @classmethod
-  def default_story_names(cls) -> tuple[str, ...]:
-    """Override this method to use a subset of all_story_names as default
-    selection if no story names are provided."""
-    return cls.all_story_names()
-
-  @classmethod
   def all(cls,
           separate: bool = False,
           url: str | None = None,
-          **kwargs) -> list[Self]:
+          **kwargs) -> tuple[Self, ...]:
     return cls.from_names(cls.all_story_names(), separate, url, **kwargs)
 
   @classmethod
   def default(cls,
               separate: bool = False,
               url: str | None = None,
-              **kwargs) -> list[Self]:
+              **kwargs) -> tuple[Self, ...]:
     return cls.from_names(cls.default_story_names(), separate, url, **kwargs)
 
   @classmethod
@@ -56,15 +50,14 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
                  substories: Sequence[str],
                  separate: bool = False,
                  url: str | None = None,
-                 **kwargs) -> list[Self]:
+                 **kwargs) -> tuple[Self, ...]:
     if not substories:
       raise ValueError("No substories provided")
     if separate:
-      return [
+      return tuple(
           cls(url=url, substories=[substory], **kwargs)
-          for substory in substories
-      ]
-    return [cls(url=url, substories=substories, **kwargs)]
+          for substory in substories)
+    return (cls(url=url, substories=substories, **kwargs),)
 
   def __init__(self,
                *args,
@@ -163,6 +156,9 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     if self.substories == self.SUBSTORIES:
       return
     for substory in self.substories:
+      if substory == "all":
+        raise ValueError("Substory name cannot be 'all'")
+      self.verify_story_name(substory)
       if substory not in self.SUBSTORIES:
         raise ValueError(f"Unknown {self.NAME} substory %s" % substory)
 
