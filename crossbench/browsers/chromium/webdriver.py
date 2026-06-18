@@ -172,7 +172,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
   def _start_driver(self, session: BrowserSessionRunGroup,
                     driver_path: pth.AnyPath) -> webdriver.Remote:
     self.adb_force_stop()
-    if session.browser.wipe_system_user_data:
+    if session.browser.wipe_system_user_data or self.clear_cache_dir:
       self.adb_force_clear()
       self._setup_binary_permissions()
     self._backup_chrome_flags()
@@ -272,7 +272,11 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     options.add_experimental_option("androidPackage", self.android_package)
     options.add_experimental_option("androidDeviceSerial",
                                     self.platform.adb.serial_id)
-    if not self.clear_cache_dir:
+    # Always pass this to prevent Chromedriver
+    # from attempting (and failing) to clear data.
+    # However, this option is only supported on M98+ (crrev.com/c/3243690).
+    if not self.clear_cache_dir or (session.browser.version and
+                                    session.browser.version.major >= 98):
       options.add_experimental_option("androidKeepAppDataDir", True)
     return options
 

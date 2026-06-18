@@ -820,12 +820,25 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("input keyevent KEYCODE_MENU")
     self.platform.unlock_screen()
 
+  def test_users(self):
+    self.expect_sh(
+        "pm list users",
+        result="Users:\n\tUserInfo{0:Owner:13}\
+         running\n\tUserInfo{10:Guest:10} running")
+    self.assertListEqual(self.platform.adb.users(), ["0", "10"])
+
+  def test_users_fallback(self):
+    self.expect_sh("pm list users", result=ShResult(returncode=1))
+    self.expect_sh("am get-current-user", result="10")
+    self.assertListEqual(self.platform.adb.users(), ["10"])
+
   def test_force_stop(self):
-    self.expect_sh("am force-stop com.example.app")
+    self.expect_sh("pm list users", result="UserInfo{0:Owner:13}")
+    self.expect_sh("am force-stop --user 0 com.example.app")
     self.platform.adb.force_stop("com.example.app")
 
   def test_force_clear(self):
-    self.expect_sh("am get-current-user", result="10")
+    self.expect_sh("pm list users", result="UserInfo{10:Owner:13}")
     self.expect_sh("pm clear --user 10 com.example.app")
     self.platform.adb.force_clear("com.example.app")
 

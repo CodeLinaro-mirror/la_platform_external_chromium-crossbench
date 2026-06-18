@@ -466,19 +466,37 @@ class Adb:
     packages.sort()
     return packages
 
+  def users(self) -> list[str]:
+    try:
+      output = self.shell_stdout("pm", "list", "users")
+      users = re.findall(r"UserInfo\{([0-9]+):", output)
+      if users:
+        return users
+    except SubprocessError as e:
+      logging.debug("pm list users failed: %s", e)
+
+    if current_user := self._get_current_user():
+      return [current_user]
+    return []
+
   def force_stop(self, package_name: str) -> None:
     if not package_name:
       raise ValueError("Got empty package name")
-    self.shell("am", "force-stop", package_name)
+    if users := self.users():
+      for user in users:
+        self.shell("am", "force-stop", "--user", user, package_name)
+    else:
+      self.shell("am", "force-stop", package_name)
 
   def force_clear(self, package_name: str) -> None:
     if not package_name:
       raise ValueError("Got empty package name")
-    cmd: ListCmdArgs = ["pm", "clear"]
-    if user := self._get_current_user():
-      cmd.extend(["--user", user])
-    cmd.extend([package_name])
-    self.shell(*cmd)
+    users = self.users()
+    if not users:
+      self.shell("pm", "clear", package_name)
+    else:
+      for user in users:
+        self.shell("pm", "clear", "--user", user, package_name)
 
   def is_installed(self, package_name: str) -> bool:
     if not package_name:
