@@ -484,19 +484,33 @@ class Adb:
       raise ValueError("Got empty package name")
     if users := self.users():
       for user in users:
-        self.shell("am", "force-stop", "--user", user, package_name)
+        try:
+          self.shell("am", "force-stop", "--user", user, package_name)
+        except SubprocessError as e:
+          logging.warning("Could not force-stop %s for user %s: %s",
+                          package_name, user, e)
     else:
-      self.shell("am", "force-stop", package_name)
+      try:
+        self.shell("am", "force-stop", package_name)
+      except SubprocessError as e:
+        logging.warning("Could not force-stop %s: %s", package_name, e)
 
   def force_clear(self, package_name: str) -> None:
     if not package_name:
       raise ValueError("Got empty package name")
     users = self.users()
     if not users:
-      self.shell("pm", "clear", package_name)
+      try:
+        self.shell("pm", "clear", package_name)
+      except SubprocessError as e:
+        logging.warning("Could not clear %s: %s", package_name, e)
     else:
       for user in users:
-        self.shell("pm", "clear", "--user", user, package_name)
+        try:
+          self.shell("pm", "clear", "--user", user, package_name)
+        except SubprocessError as e:
+          logging.warning("Could not clear %s for user %s: %s", package_name,
+                          user, e)
 
   def is_installed(self, package_name: str) -> bool:
     if not package_name:
