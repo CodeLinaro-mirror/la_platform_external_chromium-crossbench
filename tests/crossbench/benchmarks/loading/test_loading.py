@@ -601,6 +601,38 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                        ["first_page"] * 2 + ["second_page"] * 2 + [0, 0] +
                        ["first_page"] * 2 + ["second_page"] * 2)
 
+  def multiple_pages_with_setup_only_config(self):
+    config = {
+        "pages": {
+            "setup_only_page": {
+                "setup": [{
+                    "action": "js",
+                    "script": "SETUP ONLY",
+                }],
+            },
+        }
+    }
+    return config
+
+  def test_pages_with_setup_only(self):
+    for browser in self.browsers:
+      browser.expect_js(JsInvocation(None, "SETUP ONLY"))
+
+    config = self.multiple_pages_with_setup_only_config()
+    config_file = pathlib.Path("test/page_config.json")
+    self.fs.create_file(config_file, contents=json.dumps(config))
+    with self._patch_get_browser():
+      self.run_cli("loading", "run", f"--page-config={config_file}",
+                   "--env-validation=skip", "--throw")
+
+    for browser in self.browsers:
+      self.assertEqual(
+          browser.performance_marks,
+          ["crossbench-setup-start", "crossbench-setup-end"] +
+          ["crossbench-iteration-start", "crossbench-iteration-end"])
+      self.assertEqual(browser.performance_marks_details,
+                       ["setup_only_page"] * 2 + [0, 0])
+
   def setup_expected_google_login_js(self):
     expected_scripts: list[JsInvocation] = [
         # Wait for readystate interactive
