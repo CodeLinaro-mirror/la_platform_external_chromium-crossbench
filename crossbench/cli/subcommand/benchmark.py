@@ -432,7 +432,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         "--cooldown-time",
         "--cooldown",
         type=DurationParser.duration_or_user_input,
-        default=dt.timedelta(seconds=2),
+        default=self._benchmark_cls.DEFAULT_COOL_DOWN,
         help=("Wait between repetitions for a fixed amount of time. "
               f"Format: {DurationParser.help()}"))
     cooldown_group.add_argument(

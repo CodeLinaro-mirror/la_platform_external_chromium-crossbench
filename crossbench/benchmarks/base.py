@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import argparse
+import datetime as dt
 import logging
 import re
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Generic, Iterable, \
@@ -42,6 +43,7 @@ class Benchmark(abc.ABC):
   DEFAULT_STORY_CLS: ClassVar[type[Story]] = Story  # type: ignore
   PROBES: ClassVar[tuple[type[BenchmarkProbeMixin], ...]] = ()
   DEFAULT_REPETITIONS: ClassVar[int] = 1
+  DEFAULT_COOL_DOWN: ClassVar[dt.timedelta] = dt.timedelta(seconds=2)
 
   @classmethod
   def cli_help(cls) -> str:

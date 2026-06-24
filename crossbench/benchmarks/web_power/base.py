@@ -113,6 +113,7 @@ class WebPowerBenchmarkBase(Benchmark):
 
   NAME: ClassVar = "web-power"
   DEFAULT_REPETITIONS: ClassVar[int] = 5
+  DEFAULT_COOL_DOWN: ClassVar[dt.timedelta] = dt.timedelta(minutes=2)
   SITE_REQUIRED: ClassVar[bool] = True
   REQUIRES_AUTOPLAY: ClassVar[bool] = False
 
