@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, ClassVar, Iterable
 
 from typing_extensions import override
 
+from crossbench.cli import ui
 from crossbench.helper.wait import WaitRange
 from crossbench.probes.internal.base import InternalJsonResultProbe, \
     InternalJsonResultProbeContext
@@ -178,7 +179,10 @@ class ThermalMonitorProbeContext(
     return self._probe
 
   def setup(self) -> None:
-    self.run.runner.wait(self.probe.cool_down_time, absolute_time=True)
+    cool_down_time = self.probe.cool_down_time
+    if cool_down_time:
+      with ui.countdown(cool_down_time, msg="Cooling down"):
+        self.run.runner.wait(cool_down_time, absolute_time=True)
 
     if not self.browser_platform.is_thermal_throttled():
       return
