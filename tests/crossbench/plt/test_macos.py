@@ -12,11 +12,11 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.helper.version import VersionParseError
-from crossbench.plt.macos import MacOsVersion
+from crossbench.plt.macos import MacOSPlatform, MacOsVersion
 from tests import test_helper
 from tests.crossbench.mock_helper import MacOsMockPlatform
 from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
-    BasePosixMockPlatformTestCase
+    BasePosixMockPlatformTestCase, PlatformClipboardTestCase
 
 
 class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
@@ -29,7 +29,7 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.fs.os = OSType.MACOS
 
   @override
-  def setup_host_platform(self) -> None:
+  def setup_host_platform(self) -> MacOsMockPlatform:
     return MacOsMockPlatform()
 
   def test_name(self):
@@ -298,6 +298,19 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
   def test_killall(self):
     self.expect_sh("killall", "-9", "Google Chrome", result="")
     self.platform.killall("Google Chrome")
+
+
+class MacOSPlatformClipboardTestCase(PlatformClipboardTestCase):
+  __test__ = True
+
+  @override
+  def create_platform(self) -> MacOSPlatform:
+    return MacOSPlatform()
+
+  @override
+  def clipboard_tool_configs(
+      self,) -> list[tuple[str, pth.LocalPath, list[str]]]:
+    return [("pbcopy", pth.LocalPath("/usr/bin/pbcopy"), [])]
 
 
 if __name__ == "__main__":

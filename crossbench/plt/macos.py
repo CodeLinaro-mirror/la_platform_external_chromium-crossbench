@@ -671,6 +671,23 @@ class MacOSPlatform(PosixPlatform):
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencapture", "-x", result_path)
 
+  @functools.cached_property
+  def _clipboard_bin(self) -> pth.AnyPath | None:
+    self.assert_is_local()
+    return self.which("pbcopy")
+
+  @property
+  @override
+  def has_clipboard(self) -> bool:
+    return self._clipboard_bin is not None
+
+  @override
+  def set_clipboard(self, text: str) -> None:
+    assert self._clipboard_bin
+    subprocess.run((self._clipboard_bin,),
+                   input=text.encode("utf-8"),
+                   check=True)
+
   @override
   def is_port_used(self, port: int) -> bool:
     # We need a custom solution for macos:

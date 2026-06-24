@@ -9,6 +9,7 @@ import datetime as dt
 import functools
 import os
 import re
+import subprocess
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterator
 
 from typing_extensions import override
@@ -57,9 +58,9 @@ def parse_display_xrandr(xrandr_str: str) -> Iterator[DisplayInfo]:
   """ Parse xrandr output:
   Screen 0: minimum 64 x 64, current 1728 x 946, maximum 32767 x 32767
   DUMMY0 connected primary 1728x946+0+0 456mm x 249mm
-    1024x768      60.00  
+    1024x768      60.00
     1024x576      59.90
-    CRD_78       120.00* 
+    CRD_78       120.00*
     ...
   DUMMY1 disconnected
     1600x1200_60  60.00
@@ -228,6 +229,27 @@ class LinuxPlatform(PosixPlatform):
                 rss_total=int(match["rss_total"]),
                 swap_total=int(match["swap_total"])))
       return meminfos
+
+  @functools.cached_property
+  def _clipboard_bin(self) -> tuple[pth.AnyPath, *tuple[str, ...]] | None:
+    self.assert_is_local()
+    if path := self.which("xclip"):
+      return (path, "-selection", "clipboard")
+    if path := self.which("wl-copy"):
+      return (path,)
+    if path := self.which("xsel"):
+      return (path, "--clipboard", "--input")
+    return None
+
+  @property
+  @override
+  def has_clipboard(self) -> bool:
+    return self._clipboard_bin is not None
+
+  @override
+  def set_clipboard(self, text: str) -> None:
+    assert self._clipboard_bin
+    subprocess.run(self._clipboard_bin, input=text.encode("utf-8"), check=True)
 
 
 class RemoteLinuxPlatform(RemotePlatformMixin, LinuxPlatform):

@@ -152,9 +152,17 @@ class MockPlatformMixin:
     self.popens: list[MockPopen] = []
     self.mkdir_calls: int = 0
     self.screenshots: list[pth.AnyPath] = []
+    self.clipboard: str | None = None
     self.fake_fs = fake_fs
     self.use_fs = bool(fake_fs)
     super().__init__(*args, **kwargs)
+
+  @property
+  def has_clipboard(self) -> bool:
+    return True
+
+  def set_clipboard(self, text: str) -> None:
+    self.clipboard = text
 
   def install_mock_binary(self, name, path: pth.AnyPathLike) -> pth.AnyPath:
     binary = self.path(path)

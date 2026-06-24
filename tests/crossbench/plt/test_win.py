@@ -8,21 +8,18 @@ import datetime as dt
 import os
 import pathlib
 import textwrap
-from typing import TYPE_CHECKING
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.helper.version import VersionParseError
-from crossbench.plt.win import WinVersion
+from crossbench.plt.win import WinPlatform, WinVersion
 from tests import test_helper
 from tests.crossbench.mock_helper import WinMockPlatform
 from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
-    BaseMockPlatformTestCase
-
-if TYPE_CHECKING:
-  from crossbench import path as pth
+    BaseMockPlatformTestCase, PlatformClipboardTestCase
 
 
 class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
@@ -182,6 +179,19 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertEqual(version.version_str, ver_output)
     with self.assertRaises(VersionParseError):
       WinVersion.parse("foo")
+
+
+class WinPlatformClipboardTestCase(PlatformClipboardTestCase):
+  __test__ = True
+
+  @override
+  def create_platform(self) -> WinPlatform:
+    return WinPlatform()
+
+  @override
+  def clipboard_tool_configs(
+      self,) -> list[tuple[str, pth.LocalPath, list[str]]]:
+    return [("clip", pth.LocalPath("C:/Windows/System32/clip.exe"), [])]
 
 
 if __name__ == "__main__":

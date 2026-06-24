@@ -1092,6 +1092,14 @@ class Platform(abc.ABC):
   def low_power_mode(self) -> Generator[None, Any, None]:
     raise NotImplementedError("'low_power_mode' is only supported on Android")
 
+  @property
+  def has_clipboard(self) -> bool:
+    return False
+
+  def set_clipboard(self, text: str) -> None:
+    raise NotImplementedError(
+        f"'set_clipboard' is not supported on {self.name}")
+
   def user_id(self) -> int:
     self.assert_is_local()
     return os.getuid()

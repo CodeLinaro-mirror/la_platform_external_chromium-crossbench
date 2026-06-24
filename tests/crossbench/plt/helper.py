@@ -173,3 +173,50 @@ class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
                 "load average: 1.62, 2.15, 2.07\n"))
     uptime = self.platform.uptime()
     self.assertEqual(uptime, dt.timedelta(days=5, hours=2, minutes=48))
+
+
+class PlatformClipboardTestCase(
+    CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
+  __test__ = False
+
+  @abc.abstractmethod
+  def create_platform(self) -> plt.Platform:
+    pass
+
+  @abc.abstractmethod
+  def clipboard_tool_configs(
+      self,) -> list[tuple[str, pth.LocalPath, list[str]]]:
+    pass
+
+  def test_clipboard_not_found(self) -> None:
+    platform = self.create_platform()
+    self.assertFalse(platform.has_clipboard)
+    with self.assertRaises(AssertionError):
+      platform.set_clipboard("test")
+
+  def test_set_clipboard(self) -> None:
+    for tool_name, bin_path, extra_args in self.clipboard_tool_configs():
+      with self.subTest(tool=tool_name):
+        platform = self.create_platform()
+        with mock.patch.object(platform, "which") as mock_which:
+          # mock_which.side_effect handles calls to platform.which(name)
+          # and returns bin_path only if name matches tool_name,
+          # otherwise returning None.
+          mock_which.side_effect = {tool_name: bin_path}.get
+          self._test_set_clipboard(platform, bin_path, extra_args)
+
+  def _test_set_clipboard(
+      self,
+      platform: plt.Platform,
+      bin_path: pth.LocalPath,
+      extra_args: list[str],
+  ) -> None:
+    self.assertTrue(platform.has_clipboard)
+    with mock.patch("subprocess.run") as mock_run:
+      platform.set_clipboard("hello")
+
+      mock_run.assert_called_once_with(
+          (bin_path, *extra_args),
+          input=b"hello",
+          check=True,
+      )

@@ -11,6 +11,7 @@ from unittest import mock
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.helper.version import VersionParseError
 from crossbench.plt.linux import SCRIPTS_DIR, LinuxPlatform, \
     parse_display_xrandr
@@ -20,7 +21,7 @@ from tests import test_helper
 from tests.crossbench.mock_helper import LinuxMockPlatform, MockPlatform, \
     RemoteLinuxMockPlatform, ShResult
 from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
-    BasePosixMockPlatformTestCase
+    BasePosixMockPlatformTestCase, PlatformClipboardTestCase
 
 NOW_EPOCH = dt.datetime.now()
 
@@ -237,7 +238,22 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
     pass
 
 
-del _LinuxMockPlatformTestCase
+class LinuxPlatformClipboardTestCase(PlatformClipboardTestCase):
+  __test__ = True
+
+  @override
+  def create_platform(self) -> LinuxPlatform:
+    return LinuxPlatform()
+
+  @override
+  def clipboard_tool_configs(
+      self,) -> list[tuple[str, pth.LocalPath, list[str]]]:
+    return [
+        ("xclip", pth.LocalPath("/usr/bin/xclip"), ["-selection", "clipboard"]),
+        ("wl-copy", pth.LocalPath("/usr/bin/wl-copy"), []),
+        ("xsel", pth.LocalPath("/usr/bin/xsel"), ["--clipboard", "--input"]),
+    ]
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

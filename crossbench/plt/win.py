@@ -9,6 +9,7 @@ import functools
 import logging
 import os
 import shutil
+import subprocess
 
 from typing_extensions import override
 
@@ -181,3 +182,20 @@ class WinPlatform(Platform):
     dst_path = self.path(dst)
     shutil.copy(os.fspath(self.path(src)), os.fspath(dst_path))
     return dst_path
+
+  @functools.cached_property
+  def _clipboard_bin(self) -> pth.AnyPath | None:
+    self.assert_is_local()
+    return self.which("clip")
+
+  @property
+  @override
+  def has_clipboard(self) -> bool:
+    return self._clipboard_bin is not None
+
+  @override
+  def set_clipboard(self, text: str) -> None:
+    assert self._clipboard_bin
+    subprocess.run((self._clipboard_bin,),
+                   input=text.encode("utf-8"),
+                   check=True)
