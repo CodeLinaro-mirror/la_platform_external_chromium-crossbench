@@ -7,6 +7,7 @@ from __future__ import annotations
 import collections
 import json
 import logging
+from enum import StrEnum, unique
 from typing import TYPE_CHECKING, ClassVar, Final, Hashable, Iterable, Self
 
 import pandas as pd
@@ -45,6 +46,12 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
+
+
+@unique
+class TraceProcessorOutputFormat(StrEnum):
+  JSON = "json"
+  CSV = "csv"
 
 
 class TraceProcessorProbe(Probe):
@@ -135,6 +142,15 @@ class TraceProcessorProbe(Probe):
         default=True,
         help=("Enables trace_processor dev features via the --dev flags. "
               "Enabled by default."))
+    parser.add_argument(
+        "output_to_stdout",
+        aliases=("stdout",),
+        type=TraceProcessorOutputFormat,
+        is_list=True,
+        default=(),
+        help=("Print query and metric results to stdout. Options: 'json' "
+              "(prints contents of generated .json files), 'csv' (prints "
+              "contents of .csv files)."))
     return parser
 
   def __init__(
@@ -151,6 +167,7 @@ class TraceProcessorProbe(Probe):
       perfetto_binary_path: pth.LocalPath | None = None,
       llvm_symbolizer_bin: pth.LocalPath | None = None,
       dev_features: bool = True,
+      output_to_stdout: Iterable[TraceProcessorOutputFormat] = (),
   ) -> None:
     super().__init__()
     self._platform: Final[plt.Platform] = plt.PLATFORM
@@ -177,6 +194,8 @@ class TraceProcessorProbe(Probe):
     self._llvm_symbolizer_bin: Final[
         pth.LocalPath
         | None] = LlvmSymbolizerFinder.local_binary(llvm_symbolizer_bin)
+    self._output_to_stdout: Final[tuple[TraceProcessorOutputFormat, ...]] = (
+        tuple(TraceProcessorOutputFormat(f) for f in output_to_stdout))
 
   @property
   @override
@@ -189,6 +208,10 @@ class TraceProcessorProbe(Probe):
   @property
   def batch(self) -> bool:
     return self._batch
+
+  @property
+  def output_to_stdout(self) -> tuple[TraceProcessorOutputFormat, ...]:
+    return self._output_to_stdout
 
   @property
   def metrics(self) -> tuple[str, ...]:
@@ -428,9 +451,33 @@ class TraceProcessorProbe(Probe):
       for result_file in [*results.get_all("pprof"), *results.perfetto_list]:
         logging.critical("  - %s : %s", result_file,
                          fs_helper.get_file_size(result_file))
+    self._print_stdout(group.results.get(self))
+
+  def _print_stdout(self, results: ProbeResult | None) -> None:
+    for output_format in self.output_to_stdout:
+      if text := self._get_formatted_output(results, output_format):
+        print(text)
+
+  def _get_formatted_output(self, results: ProbeResult | None,
+                            output_format: TraceProcessorOutputFormat) -> str:
+    if not results:
+      return ""
+
+    file_list: list[pth.LocalPath] = []
+    match output_format:
+      case TraceProcessorOutputFormat.JSON:
+        file_list = results.json_list
+      case TraceProcessorOutputFormat.CSV:
+        file_list = results.csv_list
+      case _:
+        raise ValueError(f"Unknown value: {output_format}")
+
+    return "\n".join(f.read_text(encoding="utf-8").strip() for f in file_list)
+
 
 __all__ = [
     "TraceProcessorProbe",
+    "TraceProcessorOutputFormat",
     "QUERIES_DIR",
     "MODULES_DIR",
 ]

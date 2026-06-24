@@ -3,11 +3,12 @@
 # found in the LICENSE file.
 from __future__ import annotations
 
+import io
 import json
 import pathlib
 import unittest
 from argparse import ArgumentTypeError
-from typing import Any
+from typing import Any, Final
 
 from crossbench import path as pth
 from crossbench import plt
@@ -82,6 +83,7 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
 
 
 class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
+  _QUERIES: Final = [{"name": "q", "sql": "select 1"}]
 
   def test_custom_trace_processor_path(self):
     trace_processor_dir = pathlib.Path("/path/to")
@@ -91,10 +93,32 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
 
     config = TraceProcessorProbe.parse_dict({
         "trace_processor_bin": str(trace_processor_path),
-        "queries": [],
+        "queries": self._QUERIES,
     })
 
     self.assertEqual(str(config.trace_processor_bin), str(trace_processor_path))
+
+  def test_parse_output_to_stdout(self):
+    for key in ("output_to_stdout", "stdout"):
+      for values in ("json", "csv", ["json"], ["csv"], ["json", "csv"]):
+        probe = TraceProcessorProbe.parse_dict({
+            "queries": self._QUERIES,
+            key: values,
+        })
+        expected = (values,) if isinstance(values, str) else tuple(values)
+        self.assertEqual(probe.output_to_stdout, expected)
+
+  def test_parse_invalid_stdout_option(self):
+    with self.assertRaises(
+        (ArgumentTypeError, ValueError, ArgumentTypeMultiException)):
+      TraceProcessorProbe.parse_dict({
+          "queries": self._QUERIES,
+          "stdout": "invalid_choice",
+      })
+
+  def test_init_invalid_output_to_stdout_option(self):
+    with self.assertRaises(ValueError):
+      TraceProcessorProbe(output_to_stdout=["invalid_choice"])
 
 
 TARGET_P9 = "web_power/power_rails_p9"
@@ -393,6 +417,75 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
             "sql": "SELECT 1"
         }]},
     )
+
+  def _capture_stdout(self, group: unittest.mock.MagicMock, *probes:
+                      TraceProcessorProbe) -> str:
+    with unittest.mock.patch(
+        "sys.stdout", new_callable=io.StringIO) as mock_out:
+      for p in probes:
+        p.log_browsers_result(group)
+      return mock_out.getvalue()
+
+  def test_log_browsers_result_stdout(self):
+    probe = TraceProcessorProbe.parse_dict({
+        "stdout": ["json"],
+    })
+    merged_result = unittest.mock.MagicMock(is_empty=False)
+    json_file = self.create_file("out/query.json", contents='{"test": 123}')
+    merged_result.json_list = [json_file]
+
+    browsers_run_group = unittest.mock.MagicMock(runs=[])
+    browsers_run_group.results = {probe: merged_result}
+
+    out = self._capture_stdout(browsers_run_group, probe)
+    self.assertIn('{"test": 123}', out)
+
+  def test_log_browsers_result_multiple_runs(self):
+    probe = TraceProcessorProbe.parse_dict({
+        "output_to_stdout": ["json"],
+    })
+    merged_result = unittest.mock.MagicMock(is_empty=False)
+    f1 = self.create_file("out/q1.json", contents='{"run": 1}')
+    f2 = self.create_file("out/q2.json", contents='{"run": 2}')
+    merged_result.json_list = [f1, f2]
+    group = unittest.mock.MagicMock(runs=[], results={probe: merged_result})
+
+    out = self._capture_stdout(group, probe)
+    self.assertIn('{"run": 1}', out)
+    self.assertIn('{"run": 2}', out)
+
+  def test_log_browsers_result_multiple_probes(self):
+    probe_silent = TraceProcessorProbe.parse_dict({})
+    probe_stdout = TraceProcessorProbe.parse_dict({
+        "output_to_stdout": ["json"],
+    })
+    res_silent = unittest.mock.MagicMock(is_empty=False)
+    res_stdout = unittest.mock.MagicMock(is_empty=False)
+    f1 = self.create_file("out1/q.json", contents='{"silent": 1}')
+    f2 = self.create_file("out2/q.json", contents='{"printed": 2}')
+    res_silent.json_list = [f1]
+    res_stdout.json_list = [f2]
+    group = unittest.mock.MagicMock(runs=[])
+    group.results = {probe_silent: res_silent, probe_stdout: res_stdout}
+
+    out = self._capture_stdout(group, probe_silent, probe_stdout)
+    self.assertNotIn("silent", out)
+    self.assertIn('{"printed": 2}', out)
+
+  def test_log_browsers_result_multiple_outputs(self):
+    probe = TraceProcessorProbe.parse_dict({
+        "output_to_stdout": ["json", "csv"],
+    })
+    merged_result = unittest.mock.MagicMock(is_empty=False)
+    json_file = self.create_file("out/q.json", contents='{"metric": 1}')
+    csv_file = self.create_file("out/q.csv", contents="col1,col2\n1,2")
+    merged_result.json_list = [json_file]
+    merged_result.csv_list = [csv_file]
+    group = unittest.mock.MagicMock(runs=[], results={probe: merged_result})
+
+    out = self._capture_stdout(group, probe)
+    self.assertIn('{"metric": 1}', out)
+    self.assertIn("col1,col2", out)
 
 
 if __name__ == "__main__":
