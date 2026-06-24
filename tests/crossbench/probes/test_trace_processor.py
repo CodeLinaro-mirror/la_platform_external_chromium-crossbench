@@ -85,6 +85,14 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
 class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
   _QUERIES: Final = [{"name": "q", "sql": "select 1"}]
 
+  def setUp(self) -> None:
+    super().setUp()
+    for b in ("pbcopy", "xclip", "wl-copy", "xsel", "clip"):
+      if plt.PLATFORM.is_win:
+        self.fs.create_file(f"C:/Windows/System32/{b}.exe")
+      else:
+        self.fs.create_file(f"/usr/bin/{b}", st_mode=0o755)
+
   def test_custom_trace_processor_path(self):
     trace_processor_dir = pathlib.Path("/path/to")
     trace_processor_path = trace_processor_dir / "trace_processor_shell"
@@ -98,15 +106,22 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
 
     self.assertEqual(str(config.trace_processor_bin), str(trace_processor_path))
 
-  def test_parse_output_to_stdout(self):
-    for key in ("output_to_stdout", "stdout"):
+  def _assert_parse_output_option(self, key: str, aliases: list[str]) -> None:
+    for config_key in (key, *aliases):
       for values in ("json", "csv", ["json"], ["csv"], ["json", "csv"]):
         probe = TraceProcessorProbe.parse_dict({
             "queries": self._QUERIES,
-            key: values,
+            config_key: values,
         })
         expected = (values,) if isinstance(values, str) else tuple(values)
-        self.assertEqual(probe.output_to_stdout, expected)
+        self.assertEqual(getattr(probe, key), expected)
+
+  def test_parse_output_to_stdout(self):
+    self._assert_parse_output_option(key="output_to_stdout", aliases=["stdout"])
+
+  def test_parse_output_to_clipboard(self):
+    self._assert_parse_output_option(
+        key="output_to_clipboard", aliases=["pbcopy", "clipboard"])
 
   def test_parse_invalid_stdout_option(self):
     with self.assertRaises(
@@ -116,9 +131,29 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
           "stdout": "invalid_choice",
       })
 
+  def test_parse_invalid_clipboard_option(self):
+    with self.assertRaises(
+        (ArgumentTypeError, ValueError, ArgumentTypeMultiException)):
+      TraceProcessorProbe.parse_dict({
+          "queries": self._QUERIES,
+          "clipboard": "invalid_choice",
+      })
+
   def test_init_invalid_output_to_stdout_option(self):
     with self.assertRaises(ValueError):
       TraceProcessorProbe(output_to_stdout=["invalid_choice"])
+
+  def test_init_invalid_output_to_clipboard_option(self):
+    with self.assertRaises(ValueError):
+      TraceProcessorProbe(output_to_clipboard=["invalid_choice"])
+
+  def test_init_clipboard_missing_raises(self):
+    mock_platform = unittest.mock.MagicMock()
+    mock_platform.has_clipboard = False
+    with unittest.mock.patch.object(plt, "PLATFORM", mock_platform):
+      with self.assertRaisesRegex(
+          RuntimeError, "Clipboard tool unavailable on current platform."):
+        TraceProcessorProbe(output_to_clipboard=["json"])
 
 
 TARGET_P9 = "web_power/power_rails_p9"
@@ -426,9 +461,19 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
         p.log_browsers_result(group)
       return mock_out.getvalue()
 
-  def test_log_browsers_result_stdout(self):
+  def _capture_clipboard(self, group: unittest.mock.MagicMock, *probes:
+                         TraceProcessorProbe) -> str:
+    with unittest.mock.patch.object(plt.PLATFORM, "set_clipboard") as mock_set:
+      for p in probes:
+        p.log_browsers_result(group)
+      if mock_set.called:
+        text, = mock_set.call_args.args
+        return text
+    return ""
+
+  def _test_log_browsers_result(self, key: str, output_capturer):
     probe = TraceProcessorProbe.parse_dict({
-        "stdout": ["json"],
+        key: ["json"],
     })
     merged_result = unittest.mock.MagicMock(is_empty=False)
     json_file = self.create_file("out/query.json", contents='{"test": 123}')
@@ -437,12 +482,18 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     browsers_run_group = unittest.mock.MagicMock(runs=[])
     browsers_run_group.results = {probe: merged_result}
 
-    out = self._capture_stdout(browsers_run_group, probe)
+    out = output_capturer(browsers_run_group, probe)
     self.assertIn('{"test": 123}', out)
 
-  def test_log_browsers_result_multiple_runs(self):
+  def test_log_browsers_result_stdout(self):
+    self._test_log_browsers_result("stdout", self._capture_stdout)
+
+  def test_log_browsers_result_clipboard(self):
+    self._test_log_browsers_result("clipboard", self._capture_clipboard)
+
+  def _test_log_browsers_result_multiple_runs(self, key: str, output_capturer):
     probe = TraceProcessorProbe.parse_dict({
-        "output_to_stdout": ["json"],
+        key: ["json"],
     })
     merged_result = unittest.mock.MagicMock(is_empty=False)
     f1 = self.create_file("out/q1.json", contents='{"run": 1}')
@@ -450,31 +501,59 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     merged_result.json_list = [f1, f2]
     group = unittest.mock.MagicMock(runs=[], results={probe: merged_result})
 
-    out = self._capture_stdout(group, probe)
+    out = output_capturer(group, probe)
     self.assertIn('{"run": 1}', out)
     self.assertIn('{"run": 2}', out)
 
+  def test_log_browsers_result_multiple_runs_stdout(self):
+    self._test_log_browsers_result_multiple_runs("stdout", self._capture_stdout)
+
+  def test_log_browsers_result_multiple_runs_clipboard(self):
+    self._test_log_browsers_result_multiple_runs("clipboard",
+                                                 self._capture_clipboard)
+
   def test_log_browsers_result_multiple_probes(self):
-    probe_silent = TraceProcessorProbe.parse_dict({})
-    probe_stdout = TraceProcessorProbe.parse_dict({
+    probe_silent = TraceProcessorProbe.parse_dict({"metrics": ["silent"]})
+    probe_print = TraceProcessorProbe.parse_dict({
+        "metrics": ["printed"],
         "output_to_stdout": ["json"],
     })
-    res_silent = unittest.mock.MagicMock(is_empty=False)
-    res_stdout = unittest.mock.MagicMock(is_empty=False)
-    f1 = self.create_file("out1/q.json", contents='{"silent": 1}')
-    f2 = self.create_file("out2/q.json", contents='{"printed": 2}')
-    res_silent.json_list = [f1]
-    res_stdout.json_list = [f2]
-    group = unittest.mock.MagicMock(runs=[])
-    group.results = {probe_silent: res_silent, probe_stdout: res_stdout}
+    probe_copy = TraceProcessorProbe.parse_dict({
+        "metrics": ["clip"],
+        "output_to_clipboard": ["csv"],
+    })
 
-    out = self._capture_stdout(group, probe_silent, probe_stdout)
+    res_silent = unittest.mock.MagicMock(is_empty=False)
+    res_print = unittest.mock.MagicMock(is_empty=False)
+    res_copy = unittest.mock.MagicMock(is_empty=False)
+
+    f_silent = self.create_file("out_silent/q.json", contents='{"silent": 1}')
+    f_print = self.create_file("out_print/q.json", contents='{"printed": 2}')
+    f_copy = self.create_file("out_copy/q.csv", contents="clip,data\n1,2")
+
+    res_silent.json_list = [f_silent]
+    res_print.json_list = [f_print]
+    res_copy.csv_list = [f_copy]
+
+    group = unittest.mock.MagicMock(runs=[])
+    group.results = {
+        probe_silent: res_silent,
+        probe_print: res_print,
+        probe_copy: res_copy,
+    }
+
+    mock_platform = unittest.mock.MagicMock()
+    with unittest.mock.patch.object(probe_copy, "_platform", mock_platform):
+      out = self._capture_stdout(group, probe_copy, probe_silent, probe_print)
     self.assertNotIn("silent", out)
     self.assertIn('{"printed": 2}', out)
+    self.assertNotIn("clip", out)
+    mock_platform.set_clipboard.assert_called_once_with("clip,data\n1,2")
 
-  def test_log_browsers_result_multiple_outputs(self):
+  def _test_log_browsers_result_multiple_outputs(self, key: str,
+                                                 output_capturer):
     probe = TraceProcessorProbe.parse_dict({
-        "output_to_stdout": ["json", "csv"],
+        key: ["json", "csv"],
     })
     merged_result = unittest.mock.MagicMock(is_empty=False)
     json_file = self.create_file("out/q.json", contents='{"metric": 1}')
@@ -483,9 +562,34 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     merged_result.csv_list = [csv_file]
     group = unittest.mock.MagicMock(runs=[], results={probe: merged_result})
 
-    out = self._capture_stdout(group, probe)
+    out = output_capturer(group, probe)
     self.assertIn('{"metric": 1}', out)
     self.assertIn("col1,col2", out)
+
+  def test_log_browsers_result_multiple_outputs_stdout(self):
+    self._test_log_browsers_result_multiple_outputs("stdout",
+                                                    self._capture_stdout)
+
+  def test_log_browsers_result_multiple_outputs_clipboard(self):
+    self._test_log_browsers_result_multiple_outputs("clipboard",
+                                                    self._capture_clipboard)
+
+  def test_log_browsers_result_stdout_and_clipboard_same_file(self):
+    probe = TraceProcessorProbe.parse_dict({
+        "stdout": ["json"],
+        "clipboard": ["json"],
+    })
+    merged_result = unittest.mock.MagicMock(is_empty=False)
+    json_file = self.create_file("out/q.json", contents='{"metric": 1}')
+    merged_result.json_list = [json_file]
+    group = unittest.mock.MagicMock(runs=[], results={probe: merged_result})
+
+    mock_platform = unittest.mock.MagicMock()
+    with unittest.mock.patch.object(probe, "_platform", mock_platform):
+      out = self._capture_stdout(group, probe)
+
+    self.assertEqual(out, '{"metric": 1}\n')
+    mock_platform.set_clipboard.assert_called_once_with('{"metric": 1}')
 
 
 if __name__ == "__main__":

@@ -151,6 +151,15 @@ class TraceProcessorProbe(Probe):
         help=("Print query and metric results to stdout. Options: 'json' "
               "(prints contents of generated .json files), 'csv' (prints "
               "contents of .csv files)."))
+    parser.add_argument(
+        "output_to_clipboard",
+        aliases=("pbcopy", "clipboard"),
+        type=TraceProcessorOutputFormat,
+        is_list=True,
+        default=(),
+        help=("Copy query and metric results to clipboard. Options: 'json' "
+              "(copies contents of generated .json files), 'csv' (copies "
+              "contents of .csv files)."))
     return parser
 
   def __init__(
@@ -168,6 +177,7 @@ class TraceProcessorProbe(Probe):
       llvm_symbolizer_bin: pth.LocalPath | None = None,
       dev_features: bool = True,
       output_to_stdout: Iterable[TraceProcessorOutputFormat] = (),
+      output_to_clipboard: Iterable[TraceProcessorOutputFormat] = (),
   ) -> None:
     super().__init__()
     self._platform: Final[plt.Platform] = plt.PLATFORM
@@ -196,6 +206,10 @@ class TraceProcessorProbe(Probe):
         | None] = LlvmSymbolizerFinder.local_binary(llvm_symbolizer_bin)
     self._output_to_stdout: Final[tuple[TraceProcessorOutputFormat, ...]] = (
         tuple(TraceProcessorOutputFormat(f) for f in output_to_stdout))
+    if output_to_clipboard and not self._platform.has_clipboard:
+      raise RuntimeError("Clipboard tool unavailable on current platform.")
+    self._output_to_clipboard: Final[tuple[TraceProcessorOutputFormat, ...]] = (
+        tuple(TraceProcessorOutputFormat(f) for f in output_to_clipboard))
 
   @property
   @override
@@ -212,6 +226,10 @@ class TraceProcessorProbe(Probe):
   @property
   def output_to_stdout(self) -> tuple[TraceProcessorOutputFormat, ...]:
     return self._output_to_stdout
+
+  @property
+  def output_to_clipboard(self) -> tuple[TraceProcessorOutputFormat, ...]:
+    return self._output_to_clipboard
 
   @property
   def metrics(self) -> tuple[str, ...]:
@@ -451,12 +469,24 @@ class TraceProcessorProbe(Probe):
       for result_file in [*results.get_all("pprof"), *results.perfetto_list]:
         logging.critical("  - %s : %s", result_file,
                          fs_helper.get_file_size(result_file))
-    self._print_stdout(group.results.get(self))
-
-  def _print_stdout(self, results: ProbeResult | None) -> None:
-    for output_format in self.output_to_stdout:
-      if text := self._get_formatted_output(results, output_format):
+    if group_results := group.results.get(self):
+      if text := self._get_combined_output(group_results,
+                                           self.output_to_stdout):
         print(text)
+      if text := self._get_combined_output(group_results,
+                                           self.output_to_clipboard):
+        self._platform.set_clipboard(text)
+
+  def _get_combined_output(
+      self,
+      results: ProbeResult | None,
+      output_formats: Iterable[TraceProcessorOutputFormat],
+  ) -> str:
+    outputs: list[str] = []
+    for output_format in output_formats:
+      if text := self._get_formatted_output(results, output_format):
+        outputs.append(text)
+    return "\n".join(outputs)
 
   def _get_formatted_output(self, results: ProbeResult | None,
                             output_format: TraceProcessorOutputFormat) -> str:

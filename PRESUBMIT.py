@@ -87,7 +87,7 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   # separately in pyproject.toml.
   # TODO(crbug.com/526458857): The ruff presubmit is currently disabled on the
   # bots due to a "permission denied". Fix and re-enable.
-  if 'SWARMING_TASK_ID' not in os.environ:
+  if "SWARMING_TASK_ID" not in os.environ:
     tests.append(
         input_api.Command(
             name="ruff",
