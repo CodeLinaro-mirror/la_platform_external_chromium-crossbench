@@ -93,6 +93,9 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
   def benchmark_cls(self) -> type[MockWebPowerBenchmark]:
     return MockWebPowerBenchmark
 
+  def test_default_repetitions(self) -> None:
+    self.assertEqual(MockWebPowerBenchmark.DEFAULT_REPETITIONS, 5)
+
   def test_kwargs_from_cli_site(self) -> None:
     parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
     args = parser.parse_args(["--site", "cnn"])

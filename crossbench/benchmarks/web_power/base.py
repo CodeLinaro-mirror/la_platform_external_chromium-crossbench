@@ -112,6 +112,7 @@ class WebPowerBenchmarkBase(Benchmark):
   """Base class for Power benchmarks to share common logic."""
 
   NAME: ClassVar = "web-power"
+  DEFAULT_REPETITIONS: ClassVar[int] = 5
   SITE_REQUIRED: ClassVar[bool] = True
   REQUIRES_AUTOPLAY: ClassVar[bool] = False
 
