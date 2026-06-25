@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import os
 import pathlib
 import platform
 import re
@@ -85,23 +84,20 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   # ---------------------------------------------------------------------------
   # Ruff is fast, let's run it on all sources, excludes are configured
   # separately in pyproject.toml.
-  # TODO(crbug.com/526458857): The ruff presubmit is currently disabled on the
-  # bots due to a "permission denied". Fix and re-enable.
-  if "SWARMING_TASK_ID" not in os.environ:
-    tests.append(
-        input_api.Command(
-            name="ruff",
-            cmd=[
-                input_api.python3_executable,
-                "-m",
-                "ruff",
-                "check",
-                str(root_path),
-            ],
-            message=output_api.PresubmitError,
-            kwargs={},
-            python3=True,
-        ))
+  tests.append(
+      input_api.Command(
+          name="ruff",
+          cmd=[
+              input_api.python3_executable,
+              "-m",
+              "ruff",
+              "check",
+              str(root_path),
+          ],
+          message=output_api.PresubmitError,
+          kwargs={},
+          python3=True,
+      ))
 
   # ---------------------------------------------------------------------------
   # MyPy:
