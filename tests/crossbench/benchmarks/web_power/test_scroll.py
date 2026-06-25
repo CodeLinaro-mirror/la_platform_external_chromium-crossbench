@@ -9,6 +9,7 @@ import datetime as dt
 
 from typing_extensions import override
 
+from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.scroll import WebPowerScrollBenchmark, \
     WebPowerScrollStory
 from crossbench.cli.parser import CBArgumentParser
@@ -22,7 +23,7 @@ class WebPowerScrollStoryTestCase(BaseCrossbenchTestCase):
   def test_instantiate_default(self) -> None:
     story = WebPowerScrollStory(
         name_suffix="test",
-        url="https://www.cnn.com",
+        site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
     )
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.scroll_count, story.DEFAULT_SCROLL_COUNT)
@@ -33,7 +34,7 @@ class WebPowerScrollStoryTestCase(BaseCrossbenchTestCase):
     lead_wait = dt.timedelta(seconds=5)
     story = WebPowerScrollStory(
         name_suffix="test",
-        url="https://www.cnn.com",
+        site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
         scroll_count=10,
         input_rate=120,
         lead_wait_time=lead_wait,
@@ -47,7 +48,7 @@ class WebPowerScrollStoryTestCase(BaseCrossbenchTestCase):
     with self.assertRaisesRegex(ValueError, "requires a minimum lead-wait"):
       WebPowerScrollStory(
           name_suffix="test",
-          url="https://www.cnn.com",
+          site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
           lead_wait_time=dt.timedelta(seconds=2),
       )
 

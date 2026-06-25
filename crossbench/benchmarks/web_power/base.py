@@ -41,6 +41,12 @@ def _value_or(value: _T | None, alternative: _T) -> _T:
   return value if value is not None else alternative
 
 
+@dataclasses.dataclass(frozen=True)
+class WebPowerSiteConfig:
+  url: str
+  archive: str | None = None
+
+
 class WebPowerStory(Story):
   DEFAULT_GRACE_PERIOD: ClassVar[dt.timedelta] = dt.timedelta(seconds=20)
   MEASUREMENT_MARK: ClassVar[str] = "web-power"
@@ -48,56 +54,62 @@ class WebPowerStory(Story):
   _LEGACY_WPR_RECORDING = ("gs://chrome-partner-loadline/power/"
                            "CHROME_EFFICIENCY_KPI_2026_04_03.wprgo")
 
-  _CANONICAL_SITES: ClassVar[dict[str, dict[str, str]]] = {
-      "ajnews": {
-          "url": "https://aljazeera.com",
-          "archive": _LEGACY_WPR_RECORDING,
-      },
-      "cnn": {
-          "url": "https://www.cnn.com",
-          "archive": "gs://chrome-partner-loadline/power/cnn_20260513.wprgo",
-      },
-      "msn": {
-          "url": "https://msn.com/en-us",
-          "archive": _LEGACY_WPR_RECORDING,
-      },
-      "youtube": {
-          "url":
-              "https://www.youtube.com/watch?v=XITHbsUUlYI",
-          "archive":
-              "gs://chrome-partner-loadline/power/youtube_2026_05_18.wprgo",
-      },
+  _CANONICAL_SITES: ClassVar[dict[str, WebPowerSiteConfig]] = {
+      "ajnews":
+          WebPowerSiteConfig(
+              url="https://aljazeera.com",
+              archive=_LEGACY_WPR_RECORDING,
+          ),
+      "cnn":
+          WebPowerSiteConfig(
+              url="https://www.cnn.com",
+              archive=("gs://chrome-partner-loadline/power/cnn_20260513.wprgo"),
+          ),
+      "msn":
+          WebPowerSiteConfig(
+              url="https://msn.com/en-us",
+              archive=_LEGACY_WPR_RECORDING,
+          ),
+      "youtube":
+          WebPowerSiteConfig(
+              url="https://www.youtube.com/watch?v=XITHbsUUlYI",
+              archive=("gs://chrome-partner-loadline/power/"
+                       "youtube_2026_05_18.wprgo"),
+          ),
   }
 
-  _NON_CANONICAL_SITES: ClassVar[dict[str, dict[str, str]]] = {
-      "yahoo": {
-          "url": "https://www.yahoo.com",
-          "archive": _LEGACY_WPR_RECORDING,
-      },
+  _NON_CANONICAL_SITES: ClassVar[dict[str, WebPowerSiteConfig]] = {
+      "yahoo":
+          WebPowerSiteConfig(
+              url="https://www.yahoo.com",
+              archive=_LEGACY_WPR_RECORDING,
+          ),
   }
 
-  SITES: ClassVar[dict[str, dict[str, str]]] = {
+  SITES: ClassVar[dict[str, WebPowerSiteConfig]] = {
       **_CANONICAL_SITES,
       **_NON_CANONICAL_SITES,
   }
 
   @classmethod
   def from_site(cls, site_key: str, *args: Any, **kwargs: Any) -> Self:
-    site_config = cls.SITES.get(site_key, {})
-    url = site_config.get("url", "")
-    if not url:
+    if site_key not in cls.SITES:
       raise ValueError(f"Unknown web power benchmark site key: {site_key}")
-    return cls(site_key, url, *args, **kwargs)
+    return cls(site_key, cls.SITES[site_key], *args, **kwargs)
 
   @classmethod
   def from_url(cls, url: str, *args: Any, **kwargs: Any) -> Self:
-    return cls("custom", url, *args, **kwargs)
+    return cls("custom", WebPowerSiteConfig(url=url), *args, **kwargs)
 
-  def __init__(self, name_suffix: str, url: str,
+  def __init__(self, name_suffix: str, site_config: WebPowerSiteConfig,
                total_duration: dt.timedelta) -> None:
-    self.url = url
+    self.site_config = site_config
     super().__init__(
         f"web-power-{self.story_name}-{name_suffix}", total_duration)
+
+  @property
+  def url(self) -> str:
+    return self.site_config.url
 
   @property
   def story_name(self) -> str:
@@ -260,14 +272,16 @@ class WebPowerBenchmarkBase(Benchmark):
   @classmethod
   def _setup_pre_recorded_site_network(cls, args: argparse.Namespace) -> None:
     story_cls = cls.DEFAULT_STORY_CLS
-    site_config = getattr(story_cls, "SITES", {}).get(args.site, {})
-    wpr_url = site_config.get("archive")
-    if not wpr_url:
+    sites = getattr(story_cls, "SITES", {})
+    site_config = sites.get(args.site)
+    if not site_config or not site_config.archive:
       raise ValueError(
           f"Web Power benchmarks require an explicit, known '--site' to use a "
           f"mapped WPR recording. Got: {args.site}")
     args.network = NetworkConfig(
-        type=NetworkType.WPR, url=wpr_url, no_archive_certificates=True)
+        type=NetworkType.WPR,
+        url=site_config.archive,
+        no_archive_certificates=True)
 
   @classmethod
   @override

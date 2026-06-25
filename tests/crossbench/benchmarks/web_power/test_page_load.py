@@ -9,6 +9,7 @@ import datetime as dt
 
 from typing_extensions import override
 
+from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.page_load import \
     WebPowerPageLoadBenchmark, WebPowerPageLoadStory
 from crossbench.cli.parser import CBArgumentParser
@@ -22,7 +23,7 @@ class WebPowerPageLoadStoryTestCase(BaseCrossbenchTestCase):
   def test_instantiate_default_youtube(self) -> None:
     story = WebPowerPageLoadStory(
         name_suffix="youtube",
-        url="https://youtube.com",
+        site_config=WebPowerSiteConfig(url="https://youtube.com"),
     )
     self.assertEqual(story.url, "https://youtube.com")
     self.assertEqual(story.page_load_count, story.DEFAULT_PAGE_LOAD_COUNT)
@@ -33,7 +34,7 @@ class WebPowerPageLoadStoryTestCase(BaseCrossbenchTestCase):
   def test_instantiate_default_cnn(self) -> None:
     story = WebPowerPageLoadStory(
         name_suffix="cnn",
-        url="https://cnn.com",
+        site_config=WebPowerSiteConfig(url="https://cnn.com"),
     )
     self.assertEqual(story.page_load_count, story.DEFAULT_CNN_PAGE_LOAD_COUNT)
 
@@ -43,7 +44,7 @@ class WebPowerPageLoadStoryTestCase(BaseCrossbenchTestCase):
     cool_off = dt.timedelta(seconds=30)
     story = WebPowerPageLoadStory(
         name_suffix="cnn",
-        url="https://www.cnn.com",
+        site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
         page_load_count=5,
         interval=interval,
         lead_wait_time=lead_wait,

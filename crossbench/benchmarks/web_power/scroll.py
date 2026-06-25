@@ -13,7 +13,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerStory, _value_or
+    WebPowerSiteConfig, WebPowerStory, _value_or
 from crossbench.benchmarks.web_power.scroll_gen import GeneratorConfig, \
     generate_scroll_commands
 from crossbench.parse import DurationParser, NumberParser
@@ -49,7 +49,7 @@ class WebPowerScrollStory(WebPowerStory):
 
   def __init__(self,
                name_suffix: str,
-               url: str,
+               site_config: WebPowerSiteConfig,
                scroll_count: int | None = None,
                input_rate: int | None = None,
                lead_wait_time: dt.timedelta | None = None) -> None:
@@ -72,7 +72,7 @@ class WebPowerScrollStory(WebPowerStory):
     total_duration = (
         self.lead_wait_time + self.config.sequence_duration() +
         WebPowerStory.DEFAULT_GRACE_PERIOD)
-    super().__init__(name_suffix, url, total_duration)
+    super().__init__(name_suffix, site_config, total_duration)
 
     self.local_file: pth.LocalPath | None = None
     self.remote_file: pth.AnyPath | None = None

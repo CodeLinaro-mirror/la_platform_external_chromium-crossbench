@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from typing_extensions import override
 
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerStory, _value_or
+    WebPowerSiteConfig, WebPowerStory, _value_or
 from crossbench.parse import DurationParser
 
 if TYPE_CHECKING:
@@ -31,7 +31,7 @@ class WebPowerIdleStory(WebPowerStory):
 
   def __init__(self,
                name_suffix: str,
-               url: str,
+               site_config: WebPowerSiteConfig,
                idle_duration: dt.timedelta | None = None,
                stabilization_time: dt.timedelta | None = None) -> None:
     self.stabilization_time = _value_or(stabilization_time,
@@ -48,7 +48,7 @@ class WebPowerIdleStory(WebPowerStory):
           WebPowerStory.DEFAULT_GRACE_PERIOD)
 
     self._idle_duration = idle_duration
-    super().__init__(name_suffix, url, total_duration)
+    super().__init__(name_suffix, site_config, total_duration)
 
   @override
   def setup(self, run: Run) -> None:

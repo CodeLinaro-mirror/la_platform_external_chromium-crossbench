@@ -15,7 +15,7 @@ from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.loading.playback_controller import \
     PeriodicPlaybackController
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerStory, _value_or
+    WebPowerSiteConfig, WebPowerStory, _value_or
 from crossbench.parse import DurationParser, NumberParser
 
 if TYPE_CHECKING:
@@ -41,7 +41,7 @@ class WebPowerPageLoadStory(WebPowerStory):
 
   def __init__(self,
                name_suffix: str,
-               url: str,
+               site_config: WebPowerSiteConfig,
                page_load_count: int | None = None,
                interval: dt.timedelta | None = None,
                lead_wait_time: dt.timedelta | None = None,
@@ -58,7 +58,7 @@ class WebPowerPageLoadStory(WebPowerStory):
         self.lead_wait_time + self.cool_off_time +
         self.page_load_count * self.interval +
         WebPowerStory.DEFAULT_GRACE_PERIOD)
-    super().__init__(name_suffix, url, total_duration)
+    super().__init__(name_suffix, site_config, total_duration)
 
   @override
   def setup(self, run: Run) -> None:

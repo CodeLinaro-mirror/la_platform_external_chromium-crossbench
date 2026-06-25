@@ -8,6 +8,7 @@ import datetime as dt
 
 from typing_extensions import override
 
+from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.idle import WebPowerIdleBenchmark, \
     WebPowerIdleStory
 from crossbench.cli.parser import CBArgumentParser
@@ -21,7 +22,7 @@ class WebPowerIdleStoryTestCase(BaseCrossbenchTestCase):
   def test_instantiate_default(self) -> None:
     story = WebPowerIdleStory(
         name_suffix="test",
-        url="https://www.cnn.com",
+        site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
     )
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story._idle_duration, story.DEFAULT_DURATION)
@@ -32,7 +33,7 @@ class WebPowerIdleStoryTestCase(BaseCrossbenchTestCase):
     stabilization = dt.timedelta(seconds=5)
     story = WebPowerIdleStory(
         name_suffix="test",
-        url="https://www.cnn.com",
+        site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
         idle_duration=duration,
         stabilization_time=stabilization,
     )
@@ -43,7 +44,7 @@ class WebPowerIdleStoryTestCase(BaseCrossbenchTestCase):
   def test_instantiate_forever(self) -> None:
     story = WebPowerIdleStory(
         name_suffix="test",
-        url="https://www.cnn.com",
+        site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
         idle_duration=dt.timedelta(seconds=0),
     )
     # A duration of 0s represents infinite/indefinite idling, which is

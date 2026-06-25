@@ -8,6 +8,7 @@ import datetime as dt
 
 from typing_extensions import override
 
+from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.media_playback import \
     WebPowerMediaPlaybackBenchmark, WebPowerMediaPlaybackStory
 from crossbench.cli.parser import CBArgumentParser
@@ -21,7 +22,7 @@ class WebPowerMediaPlaybackStoryTestCase(BaseCrossbenchTestCase):
   def test_instantiate_default(self) -> None:
     story = WebPowerMediaPlaybackStory(
         name_suffix="test",
-        url="https://youtube.com",
+        site_config=WebPowerSiteConfig(url="https://youtube.com"),
     )
     self.assertEqual(story.url, "https://youtube.com")
     self.assertEqual(story.playback_duration, story.DEFAULT_DURATION)
@@ -34,7 +35,7 @@ class WebPowerMediaPlaybackStoryTestCase(BaseCrossbenchTestCase):
     stabilization = dt.timedelta(seconds=5)
     story = WebPowerMediaPlaybackStory(
         name_suffix="test",
-        url="https://youtube.com",
+        site_config=WebPowerSiteConfig(url="https://youtube.com"),
         playback_duration=duration,
         stabilization_time=stabilization,
         stats=True,

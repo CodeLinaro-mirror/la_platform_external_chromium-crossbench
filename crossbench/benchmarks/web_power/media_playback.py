@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from typing_extensions import override
 
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerStory, _value_or
+    WebPowerSiteConfig, WebPowerStory, _value_or
 from crossbench.benchmarks.web_power.volume_helper import \
     AndroidVolumeController, VolumeMode
 from crossbench.browsers.webdriver import WebDriverBrowser
@@ -38,7 +38,7 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
 
   def __init__(self,
                name_suffix: str,
-               url: str,
+               site_config: WebPowerSiteConfig,
                playback_duration: dt.timedelta | None = None,
                stabilization_time: dt.timedelta | None = None,
                stats: bool | None = None,
@@ -52,7 +52,7 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
     total_duration = (
         self.stabilization_time + self.setup_max_duration +
         self.playback_duration + WebPowerStory.DEFAULT_GRACE_PERIOD)
-    super().__init__(name_suffix, url, total_duration)
+    super().__init__(name_suffix, site_config, total_duration)
 
   # This property guesstimates the maximum total duration of setup.
   # The alternative would have been to construct a self._recipe that consists
