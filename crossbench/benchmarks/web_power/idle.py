@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -14,13 +14,12 @@ from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
 from crossbench.parse import DurationParser
 
 if TYPE_CHECKING:
-  import argparse
-
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.runner.run import Run
 
 
 class WebPowerIdleStory(WebPowerStory):
+  IS_SCENARIO_CLASS = True
   DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=80)
   DEFAULT_STABILIZATION_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
 
@@ -73,22 +72,14 @@ class WebPowerIdleStory(WebPowerStory):
 class WebPowerIdleStoryFilter(WebPowerStoryFilter[WebPowerIdleStory]):
   """Story filter for Web Power idle stories."""
 
+  IS_SCENARIO_CLASS = True
   STORY_CLS = WebPowerIdleStory
-
-  @classmethod
-  @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["story_kwargs"] = {
-        "duration": args.duration,
-        "stabilization_time": args.stabilization_time,
-    }
-    return kwargs
 
 
 class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Idle scenario."""
 
+  IS_SCENARIO_CLASS = True
   NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-idle"
   DEFAULT_STORY_CLS: ClassVar = WebPowerIdleStory
   STORY_FILTER_CLS: ClassVar = WebPowerIdleStoryFilter
@@ -97,22 +88,30 @@ class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
   @override
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     parser = super().add_cli_arguments(parser)
-    default_s = cls.DEFAULT_STORY_CLS.DEFAULT_DURATION.total_seconds()
-    parser.add_argument(
-        "--duration",
-        type=DurationParser.positive_or_zero_duration,
-        default=cls.DEFAULT_STORY_CLS.DEFAULT_DURATION,
-        help="How long to run the idle phase for. (0 indicates forever.) "
-        f"(Default: {default_s:.0f}s)")
-    default_stabilization_s = (
-        cls.DEFAULT_STORY_CLS.DEFAULT_STABILIZATION_TIME.total_seconds())
-    parser.add_argument(
-        "--stabilization",
-        "--stabilization-time",
-        dest="stabilization_time",
-        type=DurationParser.positive_or_zero_duration,
-        default=cls.DEFAULT_STORY_CLS.DEFAULT_STABILIZATION_TIME,
-        help="How long to wait after setting up the page to stabilize. "
-        f"(Default: {default_stabilization_s:.0f}s)",
+    parser.set_defaults(
+        duration=cls.DEFAULT_STORY_CLS.DEFAULT_DURATION,
+        stabilization_time=cls.DEFAULT_STORY_CLS.DEFAULT_STABILIZATION_TIME,
     )
+    return parser
+
+  @classmethod
+  @override
+  def add_scenario_cli_arguments(cls,
+                                 parser: CBArgumentParser) -> CBArgumentParser:
+    # TODO(eladalon): Avoid accessing private _option_string_actions.
+    actions = parser._option_string_actions  # noqa: SLF001
+    if "--duration" not in actions:
+      parser.add_argument(
+          "--duration",
+          type=DurationParser.positive_or_zero_duration,
+          help="How long to run the idle phase for. (0 indicates forever.)",
+      )
+    if "--stabilization-time" not in actions:
+      parser.add_argument(
+          "--stabilization",
+          "--stabilization-time",
+          dest="stabilization_time",
+          type=DurationParser.positive_or_zero_duration,
+          help="How long to wait after setting up the page to stabilize.",
+      )
     return parser

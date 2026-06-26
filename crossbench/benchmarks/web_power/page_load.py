@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -19,13 +19,12 @@ from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
 from crossbench.parse import DurationParser, NumberParser
 
 if TYPE_CHECKING:
-  import argparse
-
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.runner.run import Run
 
 
 class WebPowerPageLoadStory(WebPowerStory):
+  IS_SCENARIO_CLASS = True
   DEFAULT_PAGE_LOAD_COUNT: ClassVar[int] = 40
   # TODO: Test all other sites with 10 page loads and converge on a single
   # default value once it's proven that the variance is low.
@@ -96,24 +95,14 @@ class WebPowerPageLoadStory(WebPowerStory):
 class WebPowerPageLoadStoryFilter(WebPowerStoryFilter[WebPowerPageLoadStory]):
   """Story filter for Web Power page-load stories."""
 
+  IS_SCENARIO_CLASS = True
   STORY_CLS = WebPowerPageLoadStory
-
-  @classmethod
-  @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["story_kwargs"] = {
-        "page_load_count": args.page_loads,
-        "interval": args.interval,
-        "lead_wait_time": args.lead_wait_time,
-        "cool_off_time": args.cool_off_time,
-    }
-    return kwargs
 
 
 class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Page-Load scenario."""
 
+  IS_SCENARIO_CLASS = True
   NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-page-load"
   DEFAULT_STORY_CLS: ClassVar = WebPowerPageLoadStory
   STORY_FILTER_CLS: ClassVar = WebPowerPageLoadStoryFilter
@@ -123,13 +112,31 @@ class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     parser = super().add_cli_arguments(parser)
     story_cls = cls.DEFAULT_STORY_CLS
+    parser.set_defaults(lead_wait_time=story_cls.DEFAULT_LEAD_WAIT_TIME)
+    return parser
+
+  @classmethod
+  @override
+  def add_scenario_cli_arguments(cls,
+                                 parser: CBArgumentParser) -> CBArgumentParser:
+    story_cls = cls.DEFAULT_STORY_CLS
     default_interval_s = story_cls.DEFAULT_INTERVAL.total_seconds()
     default_cool_s = story_cls.DEFAULT_COOL_OFF_TIME.total_seconds()
-    default_lead_s = story_cls.DEFAULT_LEAD_WAIT_TIME.total_seconds()
-
+    # TODO(eladalon): Avoid accessing private option_string_actions.
+    actions = parser._option_string_actions  # noqa: SLF001
+    if "--lead-wait-time" not in actions:
+      parser.add_argument(
+          "--lead-wait-time",
+          "--wait",
+          dest="lead_wait_time",
+          type=DurationParser.positive_or_zero_duration,
+          help=("Initial wait time after starting browser to "
+                "recover from launching."),
+      )
     parser.add_argument(
         "--page-loads",
-        dest="page_loads",
+        "--page-load-count",
+        dest="page_load_count",
         type=NumberParser.positive_int,
         default=None,
         help="Number of times to reload the page. "
@@ -141,15 +148,6 @@ class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
         default=story_cls.DEFAULT_INTERVAL,
         help="Wait time between page loads. "
         f"(Default: {default_interval_s:.0f}s)")
-    parser.add_argument(
-        "--lead-wait-time",
-        "--wait",
-        dest="lead_wait_time",
-        type=DurationParser.positive_or_zero_duration,
-        default=story_cls.DEFAULT_LEAD_WAIT_TIME,
-        help="Initial wait time after starting browser. Allow time to recover "
-        "from the excitement of launching the browser. "
-        f"(Default: {default_lead_s:.0f}s)")
     parser.add_argument(
         "--cool-off-time",
         "--cool-off",

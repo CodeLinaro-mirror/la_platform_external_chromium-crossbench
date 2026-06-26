@@ -17,8 +17,6 @@ from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.parse import DurationParser
 
 if TYPE_CHECKING:
-  import argparse
-
   from crossbench.browsers.browser import Browser
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.runner.actions import Actions
@@ -26,6 +24,7 @@ if TYPE_CHECKING:
 
 
 class WebPowerMediaPlaybackStory(WebPowerStory):
+  IS_SCENARIO_CLASS = True
   DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=120)
   DEFAULT_STABILIZATION_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
   DEFAULT_STATS: ClassVar[bool] = False
@@ -207,24 +206,14 @@ class WebPowerMediaPlaybackStoryFilter(
     WebPowerStoryFilter[WebPowerMediaPlaybackStory]):
   """Story filter for Web Power media-playback stories."""
 
+  IS_SCENARIO_CLASS = True
   STORY_CLS = WebPowerMediaPlaybackStory
-
-  @classmethod
-  @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["story_kwargs"] = {
-        "duration": args.duration,
-        "stabilization_time": args.stabilization_time,
-        "stats": args.stats,
-        "volume": args.volume,
-    }
-    return kwargs
 
 
 class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Media Playback scenario."""
 
+  IS_SCENARIO_CLASS = True
   NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-media-playback"
   DEFAULT_STORY_CLS: ClassVar = WebPowerMediaPlaybackStory
   STORY_FILTER_CLS: ClassVar = WebPowerMediaPlaybackStoryFilter
@@ -236,22 +225,33 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     parser = super().add_cli_arguments(parser)
     story_cls = cls.DEFAULT_STORY_CLS
-    default_duration_s = story_cls.DEFAULT_DURATION.total_seconds()
-    parser.add_argument(
-        "--duration",
-        type=DurationParser.positive_duration,
-        default=story_cls.DEFAULT_DURATION,
-        help="How long to play the video for. "
-        f"(Default: {default_duration_s:.0f}s)")
-    parser.add_argument(
-        "--stabilization",
-        "--stabilization-time",
-        dest="stabilization_time",
-        type=DurationParser.positive_or_zero_duration,
-        default=story_cls.DEFAULT_STABILIZATION_TIME,
-        help="How long to wait after setting up playback to stabilize. "
-        f"(Default: "
-        f"{story_cls.DEFAULT_STABILIZATION_TIME.total_seconds():.0f}s)")
+    parser.set_defaults(
+        duration=story_cls.DEFAULT_DURATION,
+        stabilization_time=story_cls.DEFAULT_STABILIZATION_TIME,
+    )
+    return parser
+
+  @classmethod
+  @override
+  def add_scenario_cli_arguments(cls,
+                                 parser: CBArgumentParser) -> CBArgumentParser:
+    story_cls = cls.DEFAULT_STORY_CLS
+    # TODO(eladalon): Avoid accessing private option_string_actions.
+    actions = parser._option_string_actions  # noqa: SLF001
+    if "--duration" not in actions:
+      parser.add_argument(
+          "--duration",
+          type=DurationParser.positive_duration,
+          help="How long to play the video for.",
+      )
+    if "--stabilization-time" not in actions:
+      parser.add_argument(
+          "--stabilization",
+          "--stabilization-time",
+          dest="stabilization_time",
+          type=DurationParser.positive_or_zero_duration,
+          help="How long to wait after setting up page/playback to stabilize.",
+      )
     parser.add_argument(
         "--stats",
         action="store_true",

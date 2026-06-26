@@ -184,6 +184,7 @@ class CrossBenchCLI:
       benchmarks.Speedometer31Benchmark,
       benchmarks.SpeedometerMainBenchmark,
       # Web Power
+      benchmarks.WebPowerBenchmark,
       benchmarks.WebPowerIdleBenchmark,
       benchmarks.WebPowerMediaPlaybackBenchmark,
       benchmarks.WebPowerPageLoadBenchmark,

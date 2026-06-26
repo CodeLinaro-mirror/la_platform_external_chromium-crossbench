@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
+import argparse
 import atexit
 import datetime as dt
 import tempfile
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
@@ -19,13 +20,12 @@ from crossbench.benchmarks.web_power.scroll_gen import GeneratorConfig, \
 from crossbench.parse import DurationParser, NumberParser
 
 if TYPE_CHECKING:
-  import argparse
-
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.runner.run import Run
 
 
 class WebPowerScrollStory(WebPowerStory):
+  IS_SCENARIO_CLASS = True
   DEFAULT_SCROLL_COUNT: ClassVar[int] = 5
   DEFAULT_INPUT_RATE: ClassVar[int] = 240
   # Enforce a minimum time before scrolling. Otherwise the page does not
@@ -139,34 +139,52 @@ class WebPowerScrollStory(WebPowerStory):
 class WebPowerScrollStoryFilter(WebPowerStoryFilter[WebPowerScrollStory]):
   """Story filter for Web Power scroll stories."""
 
+  IS_SCENARIO_CLASS = True
   STORY_CLS = WebPowerScrollStory
-
-  @classmethod
-  @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["story_kwargs"] = {
-        "scroll_count": args.scroll_count,
-        "input_rate": args.input_rate,
-        "lead_wait_time": args.lead_wait_time,
-    }
-    return kwargs
 
 
 class WebPowerScrollBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Scroll scenario using legacy EVEMU emulation."""
 
+  IS_SCENARIO_CLASS = True
   NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-scroll"
   DEFAULT_STORY_CLS: ClassVar = WebPowerScrollStory
   STORY_FILTER_CLS: ClassVar = WebPowerScrollStoryFilter
+
+  @classmethod
+  def _scroll_lead_wait_time(cls, value: str) -> dt.timedelta:
+    duration = DurationParser.positive_or_zero_duration(value)
+    if duration < WebPowerScrollStory.MIN_LEAD_WAIT_TIME:
+      min_s = WebPowerScrollStory.MIN_LEAD_WAIT_TIME.total_seconds()
+      raise argparse.ArgumentTypeError(
+          "The web-power-scroll benchmark requires a minimum lead-wait "
+          f"time of {min_s:.0f}s. (Requested {duration.total_seconds():.1f}s.)")
+    return duration
 
   @classmethod
   @override
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     parser = super().add_cli_arguments(parser)
     story_cls = cls.DEFAULT_STORY_CLS
-    default_lead_s = story_cls.DEFAULT_LEAD_WAIT_TIME.total_seconds()
-    min_lead_s = story_cls.MIN_LEAD_WAIT_TIME.total_seconds()
+    parser.set_defaults(lead_wait_time=story_cls.DEFAULT_LEAD_WAIT_TIME)
+    return parser
+
+  @classmethod
+  @override
+  def add_scenario_cli_arguments(cls,
+                                 parser: CBArgumentParser) -> CBArgumentParser:
+    story_cls = cls.DEFAULT_STORY_CLS
+    # TODO(eladalon): Avoid accessing private option_string_actions.
+    actions = parser._option_string_actions  # noqa: SLF001
+    if "--lead-wait-time" not in actions:
+      parser.add_argument(
+          "--lead-wait-time",
+          "--wait",
+          dest="lead_wait_time",
+          type=cls._scroll_lead_wait_time,
+          help=("Initial wait time after starting browser to "
+                "recover from launching."),
+      )
     parser.add_argument(
         "--scrolls",
         "--scroll-count",
@@ -183,14 +201,4 @@ class WebPowerScrollBenchmark(WebPowerBenchmarkBase):
         default=None,
         help="Frequency of synthetic scroll touch events in Hz. "
         f"(Default: {story_cls.DEFAULT_INPUT_RATE}Hz)")
-    parser.add_argument(
-        "--lead-wait-time",
-        "--wait",
-        dest="lead_wait_time",
-        type=DurationParser.positive_duration,
-        default=story_cls.DEFAULT_LEAD_WAIT_TIME,
-        help="Initial wait time after starting browser. Allow time to recover "
-        "from the excitement of launching the browser. "
-        f"(Default: {default_lead_s:.0f}s; Enforced minimum: {min_lead_s:.0f}s)"
-    )
     return parser

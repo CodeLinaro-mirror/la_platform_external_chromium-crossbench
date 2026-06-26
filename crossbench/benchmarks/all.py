@@ -30,9 +30,9 @@ from crossbench.benchmarks.powerline import PowerlineBenchmark
 from crossbench.benchmarks.speedometer import Speedometer10Benchmark, \
     Speedometer20Benchmark, Speedometer21Benchmark, Speedometer30Benchmark, \
     Speedometer31Benchmark, SpeedometerMainBenchmark
-from crossbench.benchmarks.web_power import WebPowerIdleBenchmark, \
-    WebPowerMediaPlaybackBenchmark, WebPowerPageLoadBenchmark, \
-    WebPowerScrollBenchmark
+from crossbench.benchmarks.web_power import WebPowerBenchmark, \
+    WebPowerIdleBenchmark, WebPowerMediaPlaybackBenchmark, \
+    WebPowerPageLoadBenchmark, WebPowerScrollBenchmark
 from crossbench.benchmarks.webai import WebAIBenchmark
 
 __all__ = [
@@ -75,6 +75,7 @@ __all__ = [
     "Speedometer31Benchmark",
     "SpeedometerMainBenchmark",
     "WebAIBenchmark",
+    "WebPowerBenchmark",
     "WebPowerIdleBenchmark",
     "WebPowerMediaPlaybackBenchmark",
     "WebPowerPageLoadBenchmark",

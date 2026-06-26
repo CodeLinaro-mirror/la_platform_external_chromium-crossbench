@@ -52,6 +52,8 @@ class MockWebPowerStory(WebPowerStory):
 class MockWebPowerStoryFilter(WebPowerStoryFilter[MockWebPowerStory]):
   """Mock story filter for testing."""
 
+  STORY_CLS = MockWebPowerStory
+
   @override
   def stories_from_names(self,
                          names: Sequence[str]) -> tuple[MockWebPowerStory, ...]:

@@ -25,7 +25,7 @@ class WebPowerIdleStoryTestCase(BaseCrossbenchTestCase):
         site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
     )
     self.assertEqual(story.url, "https://www.cnn.com")
-    self.assertEqual(story._idle_duration, story.DEFAULT_DURATION)
+    self.assertEqual(story.idle_duration, story.DEFAULT_DURATION)
     self.assertEqual(story.stabilization_time, story.DEFAULT_STABILIZATION_TIME)
 
   def test_instantiate_custom(self) -> None:
@@ -38,7 +38,7 @@ class WebPowerIdleStoryTestCase(BaseCrossbenchTestCase):
         stabilization_time=stabilization,
     )
     self.assertEqual(story.url, "https://www.cnn.com")
-    self.assertEqual(story._idle_duration, duration)
+    self.assertEqual(story.idle_duration, duration)
     self.assertEqual(story.stabilization_time, stabilization)
 
   def test_instantiate_forever(self) -> None:
@@ -49,7 +49,7 @@ class WebPowerIdleStoryTestCase(BaseCrossbenchTestCase):
     )
     # A duration of 0s represents infinite/indefinite idling, which is
     # mapped internally to a large value (at least a year) to avoid overflow.
-    self.assertGreaterEqual(story._idle_duration, dt.timedelta(days=365))
+    self.assertGreaterEqual(story.idle_duration, dt.timedelta(days=365))
     self.assertGreaterEqual(story.duration, dt.timedelta(days=365))
 
 
