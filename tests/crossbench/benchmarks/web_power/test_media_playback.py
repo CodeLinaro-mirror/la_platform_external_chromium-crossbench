@@ -36,7 +36,7 @@ class WebPowerMediaPlaybackStoryTestCase(BaseCrossbenchTestCase):
     story = WebPowerMediaPlaybackStory(
         name_suffix="test",
         site_config=WebPowerSiteConfig(url="https://youtube.com"),
-        playback_duration=duration,
+        duration=duration,
         stabilization_time=stabilization,
         stats=True,
         volume="off",
@@ -76,7 +76,7 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseBenchmarkTestCase):
     args = parser.parse_args([
         "--site=youtube",
         "--volume=off",
-        "--playback-duration=45s",
+        "--duration=45s",
         "--stabilization-time=15s",
         "--stats",
     ])

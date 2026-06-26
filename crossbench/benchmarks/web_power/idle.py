@@ -32,22 +32,22 @@ class WebPowerIdleStory(WebPowerStory):
   def __init__(self,
                name_suffix: str,
                site_config: WebPowerSiteConfig,
-               idle_duration: dt.timedelta | None = None,
+               duration: dt.timedelta | None = None,
                stabilization_time: dt.timedelta | None = None) -> None:
     self.stabilization_time = _value_or(stabilization_time,
                                         self.DEFAULT_STABILIZATION_TIME)
-    idle_duration = _value_or(idle_duration, self.DEFAULT_DURATION)
+    duration = _value_or(duration, self.DEFAULT_DURATION)
 
-    if idle_duration.total_seconds() == 0:
+    if duration.total_seconds() == 0:
       # Indefinite idling. (Mapped to 1 year to avoid overflow.)
-      idle_duration = dt.timedelta(days=365)
+      duration = dt.timedelta(days=365)
       total_duration = dt.timedelta(days=365)
     else:
       total_duration = (
-          idle_duration + self.stabilization_time +
+          duration + self.stabilization_time +
           WebPowerStory.DEFAULT_GRACE_PERIOD)
 
-    self._idle_duration = idle_duration
+    self._idle_duration = duration
     super().__init__(name_suffix, site_config, total_duration)
 
   @property
@@ -80,7 +80,7 @@ class WebPowerIdleStoryFilter(WebPowerStoryFilter[WebPowerIdleStory]):
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["story_kwargs"] = {
-        "idle_duration": args.idle_duration,
+        "duration": args.duration,
         "stabilization_time": args.stabilization_time,
     }
     return kwargs
@@ -100,10 +100,6 @@ class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
     default_s = cls.DEFAULT_STORY_CLS.DEFAULT_DURATION.total_seconds()
     parser.add_argument(
         "--duration",
-        "--idle-duration",
-        "--run-for",
-        "--stop-after",
-        dest="idle_duration",
         type=DurationParser.positive_or_zero_duration,
         default=cls.DEFAULT_STORY_CLS.DEFAULT_DURATION,
         help="How long to run the idle phase for. (0 indicates forever.) "

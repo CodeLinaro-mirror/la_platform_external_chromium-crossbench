@@ -34,7 +34,7 @@ class WebPowerIdleStoryTestCase(BaseCrossbenchTestCase):
     story = WebPowerIdleStory(
         name_suffix="test",
         site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
-        idle_duration=duration,
+        duration=duration,
         stabilization_time=stabilization,
     )
     self.assertEqual(story.url, "https://www.cnn.com")
@@ -45,7 +45,7 @@ class WebPowerIdleStoryTestCase(BaseCrossbenchTestCase):
     story = WebPowerIdleStory(
         name_suffix="test",
         site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
-        idle_duration=dt.timedelta(seconds=0),
+        duration=dt.timedelta(seconds=0),
     )
     # A duration of 0s represents infinite/indefinite idling, which is
     # mapped internally to a large value (at least a year) to avoid overflow.
@@ -77,7 +77,7 @@ class WebPowerIdleBenchmarkTestCase(BaseBenchmarkTestCase):
     parser = WebPowerIdleBenchmark.add_cli_arguments(parser)
     args = parser.parse_args([
         "--site=cnn",
-        "--idle-duration=45s",
+        "--duration=45s",
         "--stabilization-time=15s",
     ])
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)

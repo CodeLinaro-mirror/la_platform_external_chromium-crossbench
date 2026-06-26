@@ -44,11 +44,11 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
   def __init__(self,
                name_suffix: str,
                site_config: WebPowerSiteConfig,
-               playback_duration: dt.timedelta | None = None,
+               duration: dt.timedelta | None = None,
                stabilization_time: dt.timedelta | None = None,
                stats: bool | None = None,
                volume: VolumeMode | str | None = None) -> None:
-    self.playback_duration = _value_or(playback_duration, self.DEFAULT_DURATION)
+    self.playback_duration = _value_or(duration, self.DEFAULT_DURATION)
     self.stabilization_time = _value_or(stabilization_time,
                                         self.DEFAULT_STABILIZATION_TIME)
     self.stats = _value_or(stats, self.DEFAULT_STATS)
@@ -214,13 +214,12 @@ class WebPowerMediaPlaybackStoryFilter(
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["story_kwargs"] = {
-        "playback_duration": args.playback_duration,
+        "duration": args.duration,
         "stabilization_time": args.stabilization_time,
         "stats": args.stats,
         "volume": args.volume,
     }
     return kwargs
-
 
 
 class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
@@ -240,10 +239,6 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
     default_duration_s = story_cls.DEFAULT_DURATION.total_seconds()
     parser.add_argument(
         "--duration",
-        "--playback-duration",
-        "--run-for",
-        "--stop-after",
-        dest="playback_duration",
         type=DurationParser.positive_duration,
         default=story_cls.DEFAULT_DURATION,
         help="How long to play the video for. "
