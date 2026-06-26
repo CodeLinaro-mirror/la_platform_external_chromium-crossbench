@@ -90,6 +90,10 @@ class MockRun(ResultOrigin):
     self.did_teardown_browser = False
     self.is_dry_run: bool | None = None
 
+  @property
+  def benchmark(self) -> Any:
+    return self._runner.benchmark
+
   def validate_env(self, env: RunnerEnv):
     pass
 

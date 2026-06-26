@@ -322,6 +322,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
       yield
       return
     with self._exceptions.annotate(f"Starting Network: {self.network}"):
+      self.benchmark.setup_session_network(self)
       with self.network.open(self):
         yield
 

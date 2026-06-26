@@ -8,18 +8,22 @@ import argparse
 import datetime as dt
 import pathlib
 import unittest
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 from unittest import mock
 
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench import plt
+from crossbench.benchmarks.web_power import wpr_helpers
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
     WebPowerStory, _value_or
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.parser import CBArgumentParser
+from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.probes.bits import BitsProbe
 from tests import test_helper
+from tests.crossbench.base import BaseCrossbenchTestCase
 from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
 
 if TYPE_CHECKING:
@@ -283,6 +287,202 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     custom_path = pathlib.Path("/path/to/custom.hjson")
     args_custom = parser.parse_args(["--probe-config", str(custom_path)])
     self.assertEqual(args_custom.probe_config, custom_path)
+
+
+class FakeWprReplayNetwork(WprReplayNetwork):
+
+  def __init__(self, archive_path: pth.LocalPath,
+               platform: plt.Platform) -> None:
+    super().__init__(
+        archive=archive_path,
+        traffic_shaper=mock.MagicMock(),
+        browser_platform=platform,
+        persist_server=False,
+        inject_deterministic_script=False,
+        no_archive_certificates=True,
+        response_transformations_file=None,
+        cross_platform_mode=False,
+        host=None,
+    )
+    self._server = None
+
+  def _create_server(self, log_dir: Any) -> Any:
+    return mock.MagicMock()
+
+  @property
+  @override
+  def _wpr_platform(self) -> Any:
+    return mock.MagicMock()
+
+
+class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
+
+  def setUp(self) -> None:
+    super().setUp()
+    # Mock WprGoFinder.httparchive() to point to /tmp/httparchive
+    wpr_go_finder_patcher = mock.patch(
+        "crossbench.benchmarks.web_power.base.WprGoFinder")
+    self.mock_finder = wpr_go_finder_patcher.start()
+    self.addCleanup(wpr_go_finder_patcher.stop)
+    self.mock_finder.return_value.httparchive.return_value = self.platform.path(
+        "/tmp/httparchive")
+    self.fs.create_file(self.platform.path("/tmp/httparchive"))
+
+    # Mock prepare_gcs_request and download_gcs_file
+    prepare_gcs_patcher = mock.patch.object(self.platform,
+                                            "prepare_gcs_request")
+    self.mock_prepare = prepare_gcs_patcher.start()
+    self.addCleanup(prepare_gcs_patcher.stop)
+
+    mock_blob = mock.MagicMock()
+    mock_blob.md5_hash = "mock_hash"
+    self.mock_prepare.return_value = mock_blob
+
+    download_gcs_patcher = mock.patch.object(self.platform, "download_gcs_file")
+    self.mock_download = download_gcs_patcher.start()
+    self.addCleanup(download_gcs_patcher.stop)
+    self.mock_download.side_effect = (
+        lambda url, path: self.fs.create_file(path))
+
+  def _create_session(
+      self,
+      site_key: str | None = None,
+      url: str | None = None,
+  ) -> tuple[MockWebPowerBenchmark, FakeWprReplayNetwork, mock.MagicMock]:
+    archive_path = pth.LocalPath("/tmp/archive.wprgo")
+    if not self.fs.exists(str(archive_path)):
+      self.fs.create_file(archive_path)
+
+    with mock.patch("crossbench.network.replay.wpr.WprGoFinder") as mock_finder:
+      mock_finder.return_value.wpr.return_value = pth.LocalPath("/tmp/wpr")
+      network = FakeWprReplayNetwork(archive_path, self.platform)
+    browser = mock.MagicMock()
+    browser.network = network
+
+    if site_key:
+      benchmark = MockWebPowerBenchmark(
+          site_key=site_key, total_duration=dt.timedelta(seconds=10))
+    else:
+      benchmark = MockWebPowerBenchmark(
+          url=url, total_duration=dt.timedelta(seconds=10))
+
+    story = benchmark.stories[0]
+    run = mock.MagicMock()
+    run.story = story
+    run.browser = browser
+
+    session = mock.MagicMock()
+    session.runs = [run]
+    session.first_run = run
+    session.is_single_run = True
+    session.host_platform = self.platform
+    session.network = network
+    session.browser = browser
+
+    return benchmark, network, session
+
+  def test_setup_session_network(self) -> None:
+    benchmark, network, session = self._create_session(site_key="cnn")
+    self.fs.create_file(self.platform.path("/tmp/cnn_archive.wprgo"))
+
+    with mock.patch.object(
+        self.platform, "sh_stdout", return_value='{"Metadata": {}}'):
+      benchmark.setup_session_network(session)
+      expected_archive_path = self.platform.local_cache_dir(
+          "wpr") / "cnn_20260513_mock_hash.wprgo"
+      self.assertEqual(network.archive_path, expected_archive_path)
+      self.assertIsNone(network._response_transformations_file)
+
+  def test_setup_session_network_with_cookie_banner(self) -> None:
+    benchmark, network, session = self._create_session(site_key="cnn")
+    self.fs.create_file(self.platform.path("/tmp/cnn_archive.wprgo"))
+    dismisser_file = pathlib.Path(wpr_helpers.__file__).parent / "dismisser.js"
+    self.fs.add_real_file(dismisser_file)
+
+    with mock.patch.object(
+        self.platform,
+        "sh_stdout",
+        return_value=('Dismisser target: button,button,"Accept All",'
+                      'https://www.cnn.com')):
+      benchmark.setup_session_network(session)
+      expected_archive_path = self.platform.local_cache_dir(
+          "wpr") / "cnn_20260513_mock_hash.wprgo"
+      self.assertEqual(network.archive_path, expected_archive_path)
+      self.assertIsNotNone(network._response_transformations_file)
+      rules_file = network._response_transformations_file
+      assert rules_file is not None
+      self.assertTrue(pathlib.Path(rules_file).exists())
+
+  def test_setup_session_network_twice(self) -> None:
+    benchmark, network, session1 = self._create_session(site_key="cnn")
+    _, _, session2 = self._create_session(site_key="cnn")
+    session2.network = network
+
+    cnn_archive = self.platform.path("/tmp/cnn_archive.wprgo")
+    self.fs.create_file(cnn_archive)
+
+    with mock.patch.object(
+        self.platform, "sh_stdout", return_value='{"Metadata": {}}'):
+      benchmark.setup_session_network(session1)
+      with network.open(session1):
+        self.assertIsNotNone(network._server)
+      self.assertIsNone(network._server)
+
+      benchmark.setup_session_network(session2)
+      with network.open(session2):
+        self.assertIsNotNone(network._server)
+      self.assertIsNone(network._server)
+
+  def test_setup_session_network_different_predefined_sites(self) -> None:
+    benchmark1, network, session1 = self._create_session(site_key="cnn")
+    benchmark2, _, session2 = self._create_session(site_key="youtube")
+    session2.network = network
+
+    self.fs.create_file(self.platform.path("/tmp/cnn_archive.wprgo"))
+    self.fs.create_file(self.platform.path("/tmp/youtube_archive.wprgo"))
+
+    with mock.patch.object(
+        self.platform, "sh_stdout", return_value='{"Metadata": {}}'):
+      # Setup and run cnn
+      benchmark1.setup_session_network(session1)
+      expected_cnn_path = self.platform.local_cache_dir(
+          "wpr") / "cnn_20260513_mock_hash.wprgo"
+      self.assertEqual(network.archive_path, expected_cnn_path)
+      with network.open(session1):
+        self.assertIsNotNone(network._server)
+      self.assertIsNone(network._server)
+
+      # Setup and run youtube (should update archive path!)
+      benchmark2.setup_session_network(session2)
+      expected_youtube_path = self.platform.local_cache_dir(
+          "wpr") / "youtube_2026_05_18_mock_hash.wprgo"
+      self.assertEqual(network.archive_path, expected_youtube_path)
+      with network.open(session2):
+        self.assertIsNotNone(network._server)
+      self.assertIsNone(network._server)
+
+  def test_setup_session_network_custom_wpr(self) -> None:
+    archive_path = pth.LocalPath("/tmp/custom_archive.wprgo")
+    self.fs.create_file(archive_path)
+
+    benchmark, network, session = self._create_session(
+        url="https://www.google.com")
+    network.set_archive_path(archive_path)
+
+    dismisser_file = pathlib.Path(wpr_helpers.__file__).parent / "dismisser.js"
+    self.fs.add_real_file(dismisser_file)
+
+    with mock.patch.object(
+        self.platform,
+        "sh_stdout",
+        return_value=('Dismisser target: button,button,"Accept All",'
+                      'https://www.google.com')):
+      benchmark.setup_session_network(session)
+      self.assertEqual(network.archive_path, archive_path)
+      self.assertIsNotNone(network._response_transformations_file)
+      rules_file = network._response_transformations_file
+      assert rules_file is not None
+      self.assertTrue(pathlib.Path(rules_file).exists())
 
 
 if __name__ == "__main__":

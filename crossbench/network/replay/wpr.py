@@ -62,7 +62,6 @@ class WprReplayNetwork(ReplayNetwork):
 
   def set_response_transformations_file(self, file: LocalPath) -> None:
     assert not self._server
-    assert self._response_transformations_file is None
     self._response_transformations_file = file
 
   @override
@@ -125,7 +124,10 @@ class WprReplayNetwork(ReplayNetwork):
       yield
     finally:
       if not self._persist_server and self._server:
-        self._server.stop()
+        try:
+          self._server.stop()
+        finally:
+          self._server = None
 
   @property
   @override

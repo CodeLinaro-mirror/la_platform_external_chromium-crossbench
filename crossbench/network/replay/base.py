@@ -37,7 +37,7 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
                traffic_shaper: TrafficShaper | None = None,
                browser_platform: plt.Platform | None = None) -> None:
     super().__init__(traffic_shaper, browser_platform)
-    self._archive_path: Final[LocalPath] = self._ensure_archive(archive)
+    self._archive_path: pth.LocalPath = self.ensure_archive(archive)
 
   @property
   @override
@@ -45,8 +45,12 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
     return True
 
   @property
-  def archive_path(self) -> LocalPath:
+  def archive_path(self) -> pth.LocalPath:
     return self._archive_path
+
+  def set_archive_path(self, path: pth.LocalPath) -> None:
+    assert not self.is_running
+    self._archive_path = path
 
   @contextlib.contextmanager
   @override
@@ -91,7 +95,7 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
         self.host_platform.download_gcs_file(url, local_path)
     return local_path
 
-  def _ensure_archive(self, archive: pth.LocalPath | str) -> LocalPath:
+  def ensure_archive(self, archive: pth.LocalPath | str) -> LocalPath:
     if isinstance(archive, str) and archive.startswith(GS_PREFIX):
       return self._download_gcloud_archive(url=archive)
     return PathParser.existing_file_path(archive).resolve()

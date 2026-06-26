@@ -28,7 +28,9 @@ if TYPE_CHECKING:
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.flags.base import Flags
   from crossbench.path import LocalPath
+  from crossbench.plt.base import Platform
   from crossbench.plt.types import ListCmdArgs
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
 
 
@@ -149,29 +151,39 @@ class WebPowerBenchmarkBase(Benchmark):
   @override
   def setup(self, runner: Runner) -> None:
     super().setup(runner)
-    self._setup_wpr_transformations(runner)
     if self._bits_probe:
       runner.attach_probe(self._bits_probe)
 
-  def _setup_wpr_transformations(self, runner: Runner) -> None:
-    httparchive_path = WprGoFinder(runner.platform).httparchive()
+  @override
+  def setup_session_network(self, session: BrowserSessionRunGroup) -> None:
+    super().setup_session_network(session)
+    assert session.is_single_run
+    story = session.first_run.story
+    assert isinstance(story, WebPowerStory)
 
-    for browser in runner.browsers:
-      network = browser.network
-      if isinstance(network, WprReplayNetwork):
-        self._setup_single_wpr_transformation(
-            runner, network, httparchive_path)
+    network = session.network
+    if not isinstance(network, WprReplayNetwork):
+      return
+
+    if story.site_config.archive:
+      local_archive_path = network.ensure_archive(story.site_config.archive)
+      network.set_archive_path(local_archive_path)
+
+    if network.archive_path:
+      httparchive_path = WprGoFinder(session.host_platform).httparchive()
+      self._setup_single_wpr_transformation(session.host_platform, network,
+                                            httparchive_path)
 
   def _setup_single_wpr_transformation(
       self,
-      runner: Runner,
+      host_platform: Platform,
       network: WprReplayNetwork,
       httparchive_path: LocalPath,
   ) -> None:
     args: ListCmdArgs = [
         httparchive_path, "read-metadata", network.archive_path
     ]
-    metadata = runner.platform.sh_stdout(*args)
+    metadata = host_platform.sh_stdout(*args)
     if res := WprBannerDismisser.create_rules(metadata):
       js_payload, target_url = res
       rules_file = WprBannerDismisser.serialize_rules(js_payload, target_url)

@@ -14,7 +14,6 @@ import stat
 import sys
 import tempfile
 import unittest
-from unittest import mock
 from typing import TYPE_CHECKING
 from unittest import mock
 

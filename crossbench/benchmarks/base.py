@@ -31,6 +31,7 @@ if TYPE_CHECKING:
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.cli.types import Subparsers
   from crossbench.plt.base import Platform
+  from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
   from crossbench.types import StoryTagLookupT
@@ -168,6 +169,9 @@ class Benchmark(abc.ABC):
 
   def setup(self, runner: Runner) -> None:
     del runner
+
+  def setup_session_network(self, session: BrowserSessionRunGroup) -> None:
+    del session
 
   def teardown(self, runner: Runner) -> None:
     del runner
