@@ -65,10 +65,11 @@ class WebPowerIdleBenchmarkTestCase(BaseBenchmarkTestCase):
     parser = WebPowerIdleBenchmark.add_cli_arguments(parser)
     args = parser.parse_args(["--site", "cnn"])
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["site_key"], "cnn")
-    self.assertEqual(kwargs["idle_duration"],
-                     WebPowerIdleStory.DEFAULT_DURATION)
-    self.assertEqual(kwargs["stabilization_time"],
+    self.assertEqual(len(kwargs["stories"]), 1)
+    story = kwargs["stories"][0]
+    self.assertEqual(story.url, "https://www.cnn.com")
+    self.assertEqual(story.idle_duration, WebPowerIdleStory.DEFAULT_DURATION)
+    self.assertEqual(story.stabilization_time,
                      WebPowerIdleStory.DEFAULT_STABILIZATION_TIME)
 
   def test_kwargs_from_cli_custom(self) -> None:
@@ -80,9 +81,11 @@ class WebPowerIdleBenchmarkTestCase(BaseBenchmarkTestCase):
         "--stabilization-time=15s",
     ])
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["site_key"], "cnn")
-    self.assertEqual(kwargs["idle_duration"], dt.timedelta(seconds=45))
-    self.assertEqual(kwargs["stabilization_time"], dt.timedelta(seconds=15))
+    self.assertEqual(len(kwargs["stories"]), 1)
+    story = kwargs["stories"][0]
+    self.assertEqual(story.url, "https://www.cnn.com")
+    self.assertEqual(story.idle_duration, dt.timedelta(seconds=45))
+    self.assertEqual(story.stabilization_time, dt.timedelta(seconds=15))
 
 
 if __name__ == "__main__":

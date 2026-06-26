@@ -8,7 +8,7 @@ import argparse
 import datetime as dt
 import pathlib
 import unittest
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Sequence
 from unittest import mock
 
 from typing_extensions import override
@@ -17,7 +17,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.web_power import wpr_helpers
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerStory, _value_or
+    WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.parser import CBArgumentParser
 from crossbench.network.replay.wpr import WprReplayNetwork
@@ -37,14 +37,32 @@ class MockWebPowerStory(WebPowerStory):
   def story_name(self) -> str:
     return "mock-story"
 
+  def __init__(
+      self,
+      name_suffix: str,
+      site_config: WebPowerSiteConfig,
+      total_duration: dt.timedelta = dt.timedelta(seconds=123)
+  ) -> None:
+    super().__init__(name_suffix, site_config, total_duration)
+
   def run(self, run: Run) -> None:
     pass
+
+
+class MockWebPowerStoryFilter(WebPowerStoryFilter[MockWebPowerStory]):
+  """Mock story filter for testing."""
+
+  @override
+  def stories_from_names(self,
+                         names: Sequence[str]) -> tuple[MockWebPowerStory, ...]:
+    return tuple(self.story_cls.from_site(name) for name in names)
 
 
 class MockWebPowerBenchmark(WebPowerBenchmarkBase):
   """Mock WebPowerBenchmark for testing."""
 
   DEFAULT_STORY_CLS: ClassVar = MockWebPowerStory
+  STORY_FILTER_CLS: ClassVar = MockWebPowerStoryFilter
 
 
 class ValueOrTestCase(unittest.TestCase):
@@ -108,23 +126,17 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
     args = parser.parse_args(["--site", "cnn"])
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["site_key"], "cnn")
-    self.assertIsNone(kwargs["url"])
+    self.assertEqual(len(kwargs["stories"]), 1)
+    self.assertEqual(kwargs["stories"][0].url, "https://www.cnn.com")
+    self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-cnn")
 
   def test_kwargs_from_cli_url(self) -> None:
     parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
     args = parser.parse_args(["--url", "https://www.google.com"])
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
-    self.assertIsNone(kwargs["site_key"])
-    self.assertEqual(kwargs["url"], "https://www.google.com")
-
-  def test_kwargs_from_cli_missing_required(self) -> None:
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args([])
-    with self.assertRaisesRegex(
-        argparse.ArgumentTypeError,
-        "One of the arguments --site --url is required"):
-      MockWebPowerBenchmark.kwargs_from_cli(args)
+    self.assertEqual(len(kwargs["stories"]), 1)
+    self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-custom")
+    self.assertEqual(kwargs["stories"][0].url, "https://www.google.com")
 
   def test_kwargs_from_cli_help(self) -> None:
     parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
@@ -141,7 +153,8 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     args.has_explicit_network = False
 
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["site_key"], "cnn")
+    self.assertEqual(len(kwargs["stories"]), 1)
+    self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-cnn")
     # args.network should be mapped to WPR with the canonical cnn archive URL
     self.assertIsInstance(args.network, NetworkConfig)
     self.assertEqual(args.network.type, NetworkType.WPR)
@@ -157,7 +170,8 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     args.has_explicit_network = False
 
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["url"], "https://www.google.com")
+    self.assertEqual(len(kwargs["stories"]), 1)
+    self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-custom")
     self.assertEqual(args.network.type, NetworkType.LIVE)
 
   def test_kwargs_from_cli_url_with_explicit_network(self) -> None:
@@ -171,7 +185,8 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     args.has_explicit_network = True
 
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["url"], "https://www.google.com")
+    self.assertEqual(len(kwargs["stories"]), 1)
+    self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-custom")
     self.assertEqual(args.network.type, NetworkType.WPR)
     self.assertEqual(args.network.url, "gs://some/other.wprgo")
 
@@ -199,7 +214,8 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
         str(bits_path), "--bits-out", "custom_bits_run", "--bits-duration", "5m"
     ])
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["site_key"], "cnn")
+    self.assertEqual(len(kwargs["stories"]), 1)
+    self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-cnn")
 
     bits_probe = kwargs["bits_probe"]
     self.assertIsInstance(bits_probe, BitsProbe)
@@ -233,10 +249,11 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
         bits_out="run_id",
         duration=dt.timedelta(seconds=120),
     )
+    story = MockWebPowerStory.from_site(
+        "cnn", total_duration=dt.timedelta(seconds=123))
     benchmark = MockWebPowerBenchmark(
-        site_key="cnn",
+        stories=[story],
         bits_probe=bits_probe,
-        total_duration=dt.timedelta(seconds=123),
     )
     runner = mock.MagicMock()
     benchmark.setup(runner)
@@ -360,13 +377,13 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
     browser.network = network
 
     if site_key:
-      benchmark = MockWebPowerBenchmark(
-          site_key=site_key, total_duration=dt.timedelta(seconds=10))
+      story = MockWebPowerStory.from_site(
+          site_key, total_duration=dt.timedelta(seconds=10))
     else:
-      benchmark = MockWebPowerBenchmark(
-          url=url, total_duration=dt.timedelta(seconds=10))
-
-    story = benchmark.stories[0]
+      assert url is not None
+      story = MockWebPowerStory.from_url(
+          url, total_duration=dt.timedelta(seconds=10))
+    benchmark = MockWebPowerBenchmark(stories=[story])
     run = mock.MagicMock()
     run.story = story
     run.browser = browser

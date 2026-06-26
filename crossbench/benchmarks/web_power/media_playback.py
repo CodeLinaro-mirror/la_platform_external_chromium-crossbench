@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from typing_extensions import override
 
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerSiteConfig, WebPowerStory, _value_or
+    WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or
 from crossbench.benchmarks.web_power.volume_helper import \
     AndroidVolumeController, VolumeMode
 from crossbench.browsers.webdriver import WebDriverBrowser
@@ -35,6 +35,11 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
   @override
   def story_name(self) -> str:
     return "media-playback"
+
+  @classmethod
+  @override
+  def default_story_names(cls) -> tuple[str, ...]:
+    return ("youtube",)
 
   def __init__(self,
                name_suffix: str,
@@ -198,11 +203,32 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
       actions.wait(self.playback_duration)
 
 
+class WebPowerMediaPlaybackStoryFilter(
+    WebPowerStoryFilter[WebPowerMediaPlaybackStory]):
+  """Story filter for Web Power media-playback stories."""
+
+  STORY_CLS = WebPowerMediaPlaybackStory
+
+  @classmethod
+  @override
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+    kwargs = super().kwargs_from_cli(args)
+    kwargs["story_kwargs"] = {
+        "playback_duration": args.playback_duration,
+        "stabilization_time": args.stabilization_time,
+        "stats": args.stats,
+        "volume": args.volume,
+    }
+    return kwargs
+
+
+
 class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Media Playback scenario."""
 
   NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-media-playback"
   DEFAULT_STORY_CLS: ClassVar = WebPowerMediaPlaybackStory
+  STORY_FILTER_CLS: ClassVar = WebPowerMediaPlaybackStoryFilter
   SITE_REQUIRED: ClassVar[bool] = False
   REQUIRES_AUTOPLAY: ClassVar[bool] = True
 
@@ -245,15 +271,3 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
         help="Configure device music stream volume. "
         f"(Default: {story_cls.DEFAULT_VOLUME})")
     return parser
-
-  @classmethod
-  @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    if not args.site and not args.url:
-      args.site = "youtube"
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["playback_duration"] = args.playback_duration
-    kwargs["stabilization_time"] = args.stabilization_time
-    kwargs["stats"] = args.stats
-    kwargs["volume"] = args.volume
-    return kwargs

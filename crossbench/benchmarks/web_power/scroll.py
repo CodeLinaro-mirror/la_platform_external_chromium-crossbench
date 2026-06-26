@@ -13,7 +13,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerSiteConfig, WebPowerStory, _value_or
+    WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or
 from crossbench.benchmarks.web_power.scroll_gen import GeneratorConfig, \
     generate_scroll_commands
 from crossbench.parse import DurationParser, NumberParser
@@ -136,11 +136,29 @@ class WebPowerScrollStory(WebPowerStory):
       self.remote_file = None
 
 
+class WebPowerScrollStoryFilter(WebPowerStoryFilter[WebPowerScrollStory]):
+  """Story filter for Web Power scroll stories."""
+
+  STORY_CLS = WebPowerScrollStory
+
+  @classmethod
+  @override
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+    kwargs = super().kwargs_from_cli(args)
+    kwargs["story_kwargs"] = {
+        "scroll_count": args.scroll_count,
+        "input_rate": args.input_rate,
+        "lead_wait_time": args.lead_wait_time,
+    }
+    return kwargs
+
+
 class WebPowerScrollBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Scroll scenario using legacy EVEMU emulation."""
 
   NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-scroll"
   DEFAULT_STORY_CLS: ClassVar = WebPowerScrollStory
+  STORY_FILTER_CLS: ClassVar = WebPowerScrollStoryFilter
 
   @classmethod
   @override
@@ -176,12 +194,3 @@ class WebPowerScrollBenchmark(WebPowerBenchmarkBase):
         f"(Default: {default_lead_s:.0f}s; Enforced minimum: {min_lead_s:.0f}s)"
     )
     return parser
-
-  @classmethod
-  @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["scroll_count"] = args.scroll_count
-    kwargs["input_rate"] = args.input_rate
-    kwargs["lead_wait_time"] = args.lead_wait_time
-    return kwargs

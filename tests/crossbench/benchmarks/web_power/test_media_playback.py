@@ -60,13 +60,15 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseBenchmarkTestCase):
     parser = WebPowerMediaPlaybackBenchmark.add_cli_arguments(parser)
     args = parser.parse_args(["--site", "youtube"])
     kwargs = WebPowerMediaPlaybackBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["site_key"], "youtube")
-    self.assertEqual(kwargs["volume"], "on")
-    self.assertEqual(kwargs["playback_duration"],
+    self.assertEqual(len(kwargs["stories"]), 1)
+    story = kwargs["stories"][0]
+    self.assertEqual(story.url, "https://www.youtube.com/watch?v=XITHbsUUlYI")
+    self.assertEqual(story.volume, "on")
+    self.assertEqual(story.playback_duration,
                      WebPowerMediaPlaybackStory.DEFAULT_DURATION)
-    self.assertEqual(kwargs["stabilization_time"],
+    self.assertEqual(story.stabilization_time,
                      WebPowerMediaPlaybackStory.DEFAULT_STABILIZATION_TIME)
-    self.assertFalse(kwargs["stats"])
+    self.assertFalse(story.stats)
 
   def test_kwargs_from_cli_custom(self) -> None:
     parser = CBArgumentParser()
@@ -79,11 +81,13 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseBenchmarkTestCase):
         "--stats",
     ])
     kwargs = WebPowerMediaPlaybackBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["site_key"], "youtube")
-    self.assertEqual(kwargs["volume"], "off")
-    self.assertEqual(kwargs["playback_duration"], dt.timedelta(seconds=45))
-    self.assertEqual(kwargs["stabilization_time"], dt.timedelta(seconds=15))
-    self.assertTrue(kwargs["stats"])
+    self.assertEqual(len(kwargs["stories"]), 1)
+    story = kwargs["stories"][0]
+    self.assertEqual(story.url, "https://www.youtube.com/watch?v=XITHbsUUlYI")
+    self.assertEqual(story.volume, "off")
+    self.assertEqual(story.playback_duration, dt.timedelta(seconds=45))
+    self.assertEqual(story.stabilization_time, dt.timedelta(seconds=15))
+    self.assertTrue(story.stats)
 
 
 if __name__ == "__main__":

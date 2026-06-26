@@ -4,16 +4,16 @@
 
 from __future__ import annotations
 
-import argparse
 import dataclasses
 import datetime as dt
-from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Iterable, Self, \
+    Sequence, TypeVar, cast
 
 from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
-from crossbench.benchmarks.base import Benchmark
+from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.helper.path_finder import WprGoFinder
@@ -23,6 +23,8 @@ from crossbench.probes.bits import BitsProbe
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
+  import argparse
+
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
@@ -35,6 +37,7 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
+StoryT = TypeVar("StoryT", bound=Story)
 
 
 # Equivalent to C++'s std::optional::value_or. The Pythonic alternative of
@@ -121,8 +124,59 @@ class WebPowerStory(Story):
   def all_story_names(cls) -> tuple[str, ...]:
     return tuple(sorted(cls.SITES.keys()))
 
+  @classmethod
+  def default_story_names(cls) -> tuple[str, ...]:
+    return ("msn", "cnn", "ajnews")
 
-class WebPowerBenchmarkBase(Benchmark):
+
+WebPowerStoryT = TypeVar("WebPowerStoryT", bound=WebPowerStory)
+
+
+class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
+  """Base story filter for Web Power benchmarks."""
+
+  STORY_CLS: ClassVar[type[WebPowerStory]] = WebPowerStory  # type: ignore
+
+  def __init__(
+      self,
+      story_cls: type[WebPowerStoryT],
+      patterns: Sequence[str],
+      args: argparse.Namespace,
+      separate: bool = True,
+      tags: Iterable[str] = (),
+      story_kwargs: dict[str, Any] | None = None,
+  ) -> None:
+    self._story_kwargs = story_kwargs or {}
+    super().__init__(story_cls, patterns, args, separate, tags)
+
+  @classmethod
+  @override
+  def add_cli_arguments(
+      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser = super().add_cli_arguments(parser)
+    parser.set_defaults(separate=True)
+    return parser
+
+  @classmethod
+  @override
+  def _add_story_filtering_arguments(
+      cls, group: argparse._MutuallyExclusiveGroup) -> None:
+    super()._add_story_filtering_arguments(group)
+    group.add_argument(
+        "--site",
+        choices=cls.STORY_CLS.all_story_names(),
+        help="Specific pre-recorded site to run (from a closed list).",
+    )
+    group.add_argument("--url", help="Custom URL to run.")
+
+  @override
+  def stories_from_names(self,
+                         names: Sequence[str]) -> tuple[WebPowerStoryT, ...]:
+    return tuple(
+        self.story_cls.from_site(name, **self._story_kwargs) for name in names)
+
+
+class WebPowerBenchmarkBase(SubStoryBenchmark):
   """Base class for Power benchmarks to share common logic."""
 
   NAME: ClassVar = "web-power"
@@ -130,23 +184,28 @@ class WebPowerBenchmarkBase(Benchmark):
   DEFAULT_COOL_DOWN: ClassVar[dt.timedelta] = dt.timedelta(minutes=2)
   SITE_REQUIRED: ClassVar[bool] = True
   REQUIRES_AUTOPLAY: ClassVar[bool] = False
+  STORY_FILTER_CLS: ClassVar[type[StoryFilter]] = WebPowerStoryFilter
+  DEFAULT_STORY_CLS: ClassVar[type[WebPowerStory]]
 
   def __init__(
       self,
+      stories: Sequence[WebPowerStory],
       action_runner_config: ActionRunnerConfig | None = None,
-      site_key: str | None = None,
-      url: str | None = None,
       bits_probe: BitsProbe | None = None,
-      **story_kwargs: Any,
   ) -> None:
     self._bits_probe = bits_probe
-    story_cls = getattr(self.__class__, "DEFAULT_STORY_CLS", None)
-    assert story_cls is not None
-    if url:
-      stories = [story_cls.from_url(url, **story_kwargs)]
-    else:
-      stories = [story_cls.from_site(site_key or "", **story_kwargs)]
     super().__init__(stories, action_runner_config)
+
+  @classmethod
+  @override
+  def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Story]:
+    if args.url:
+      filter_kwargs = cls.STORY_FILTER_CLS.kwargs_from_cli(args)
+      story_kwargs = filter_kwargs.get("story_kwargs", {})
+      return [cls.DEFAULT_STORY_CLS.from_url(args.url, **story_kwargs)]
+    if args.site:
+      args.stories = args.site
+    return super().stories_from_cli_args(args)
 
   @override
   def setup(self, runner: Runner) -> None:
@@ -214,13 +273,8 @@ class WebPowerBenchmarkBase(Benchmark):
   @override
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     parser = super().add_cli_arguments(parser)
-    group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument(
-        "--site",
-        choices=cls.DEFAULT_STORY_CLS.all_story_names(),
-        help="Specific pre-recorded site to run (from a closed list).",
-    )
-    group.add_argument("--url", help="Custom URL to run.")
+    parser = cast("CBArgumentParser",
+                  cls.STORY_FILTER_CLS.add_cli_arguments(parser))
     parser.add_argument(
         "--bits-path",
         type=PathParser.existing_file_path,
@@ -246,13 +300,8 @@ class WebPowerBenchmarkBase(Benchmark):
   @classmethod
   @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    if cls.SITE_REQUIRED and not args.site and not args.url:
-      raise argparse.ArgumentTypeError(
-          "One of the arguments --site --url is required")
     kwargs = super().kwargs_from_cli(args)
     cls._select_network(args)
-    kwargs["site_key"] = args.site
-    kwargs["url"] = args.url
     if args.bits_path or args.bits_out:
       kwargs["bits_probe"] = BitsProbe.parse_dict({
           "path": args.bits_path,
@@ -278,18 +327,28 @@ class WebPowerBenchmarkBase(Benchmark):
           "of a specific WPR recording. Explicit networks are only "
           "supported when testing with '--url'.")
     network = getattr(args, "network", None)
-    if network and getattr(network, "type", None) == NetworkType.WPR:
+    if network and network.type == NetworkType.WPR:
       args.network = dataclasses.replace(network, no_archive_certificates=True)
 
   @classmethod
   def _setup_pre_recorded_site_network(cls, args: argparse.Namespace) -> None:
+    # This code executes once, before the first story, so choosing the
+    # first story is fine.
+    site = _value_or(args.site, cls.DEFAULT_STORY_CLS.default_story_names()[0])
+    site_key = site
+    # TODO(eladalon): Get subclasses to register themselves and derive this
+    # list of scenarios from that.
+    for scenario in ("idle", "scroll", "page-load", "media-playback"):
+      prefix = f"{scenario}-"
+      if site.startswith(prefix):
+        site_key = site[len(prefix):]
+        break
     story_cls = cls.DEFAULT_STORY_CLS
-    sites = getattr(story_cls, "SITES", {})
-    site_config = sites.get(args.site)
+    site_config = story_cls.SITES.get(site_key)
     if not site_config or not site_config.archive:
       raise ValueError(
-          f"Web Power benchmarks require an explicit, known '--site' to use a "
-          f"mapped WPR recording. Got: {args.site}")
+          "Web Power benchmarks require an explicit, known '--site' "
+          f"or '--story' to use a mapped WPR recording. Got: {site}")
     args.network = NetworkConfig(
         type=NetworkType.WPR,
         url=site_config.archive,

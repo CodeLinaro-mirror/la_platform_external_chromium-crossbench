@@ -65,10 +65,13 @@ class WebPowerScrollBenchmarkTestCase(BaseBenchmarkTestCase):
     parser = WebPowerScrollBenchmark.add_cli_arguments(parser)
     args = parser.parse_args(["--site", "cnn"])
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["site_key"], "cnn")
-    self.assertIsNone(kwargs["scroll_count"])
-    self.assertIsNone(kwargs["input_rate"])
-    self.assertEqual(kwargs["lead_wait_time"],
+    self.assertEqual(len(kwargs["stories"]), 1)
+    story = kwargs["stories"][0]
+    self.assertEqual(story.url, "https://www.cnn.com")
+    self.assertEqual(story.scroll_count,
+                     WebPowerScrollStory.DEFAULT_SCROLL_COUNT)
+    self.assertEqual(story.input_rate, WebPowerScrollStory.DEFAULT_INPUT_RATE)
+    self.assertEqual(story.lead_wait_time,
                      WebPowerScrollStory.DEFAULT_LEAD_WAIT_TIME)
 
   def test_kwargs_from_cli_custom(self) -> None:
@@ -81,10 +84,12 @@ class WebPowerScrollBenchmarkTestCase(BaseBenchmarkTestCase):
         "--lead-wait-time=5s",
     ])
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["site_key"], "cnn")
-    self.assertEqual(kwargs["scroll_count"], 12)
-    self.assertEqual(kwargs["input_rate"], 100)
-    self.assertEqual(kwargs["lead_wait_time"], dt.timedelta(seconds=5))
+    self.assertEqual(len(kwargs["stories"]), 1)
+    story = kwargs["stories"][0]
+    self.assertEqual(story.url, "https://www.cnn.com")
+    self.assertEqual(story.scroll_count, 12)
+    self.assertEqual(story.input_rate, 100)
+    self.assertEqual(story.lead_wait_time, dt.timedelta(seconds=5))
 
   def test_kwargs_from_cli_invalid(self) -> None:
     parser = CBArgumentParser()

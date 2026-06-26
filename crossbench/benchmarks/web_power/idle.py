@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from typing_extensions import override
 
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerSiteConfig, WebPowerStory, _value_or
+    WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or
 from crossbench.parse import DurationParser
 
 if TYPE_CHECKING:
@@ -50,6 +50,10 @@ class WebPowerIdleStory(WebPowerStory):
     self._idle_duration = idle_duration
     super().__init__(name_suffix, site_config, total_duration)
 
+  @property
+  def idle_duration(self) -> dt.timedelta:
+    return self._idle_duration
+
   @override
   def setup(self, run: Run) -> None:
     with run.actions("Show URL", verbose=True) as actions:
@@ -66,11 +70,28 @@ class WebPowerIdleStory(WebPowerStory):
       actions.wait(self._idle_duration)
 
 
+class WebPowerIdleStoryFilter(WebPowerStoryFilter[WebPowerIdleStory]):
+  """Story filter for Web Power idle stories."""
+
+  STORY_CLS = WebPowerIdleStory
+
+  @classmethod
+  @override
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+    kwargs = super().kwargs_from_cli(args)
+    kwargs["story_kwargs"] = {
+        "idle_duration": args.idle_duration,
+        "stabilization_time": args.stabilization_time,
+    }
+    return kwargs
+
+
 class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Idle scenario."""
 
   NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-idle"
   DEFAULT_STORY_CLS: ClassVar = WebPowerIdleStory
+  STORY_FILTER_CLS: ClassVar = WebPowerIdleStoryFilter
 
   @classmethod
   @override
@@ -99,11 +120,3 @@ class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
         f"(Default: {default_stabilization_s:.0f}s)",
     )
     return parser
-
-  @classmethod
-  @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["idle_duration"] = args.idle_duration
-    kwargs["stabilization_time"] = args.stabilization_time
-    return kwargs

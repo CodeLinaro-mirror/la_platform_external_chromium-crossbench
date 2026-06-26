@@ -15,7 +15,7 @@ from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.loading.playback_controller import \
     PeriodicPlaybackController
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerSiteConfig, WebPowerStory, _value_or
+    WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or
 from crossbench.parse import DurationParser, NumberParser
 
 if TYPE_CHECKING:
@@ -93,11 +93,30 @@ class WebPowerPageLoadStory(WebPowerStory):
           actions.show_url(self.url, target=WindowTarget.NEW_TAB)
 
 
+class WebPowerPageLoadStoryFilter(WebPowerStoryFilter[WebPowerPageLoadStory]):
+  """Story filter for Web Power page-load stories."""
+
+  STORY_CLS = WebPowerPageLoadStory
+
+  @classmethod
+  @override
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+    kwargs = super().kwargs_from_cli(args)
+    kwargs["story_kwargs"] = {
+        "page_load_count": args.page_loads,
+        "interval": args.interval,
+        "lead_wait_time": args.lead_wait_time,
+        "cool_off_time": args.cool_off_time,
+    }
+    return kwargs
+
+
 class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
   """Benchmark runner for Power Page-Load scenario."""
 
   NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-page-load"
   DEFAULT_STORY_CLS: ClassVar = WebPowerPageLoadStory
+  STORY_FILTER_CLS: ClassVar = WebPowerPageLoadStoryFilter
 
   @classmethod
   @override
@@ -145,13 +164,3 @@ class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
         # consistently not measure it, then to inconsistently measure it.
         f"(Default: {default_cool_s:.0f}s)")
     return parser
-
-  @classmethod
-  @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-    kwargs = super().kwargs_from_cli(args)
-    kwargs["page_load_count"] = args.page_loads
-    kwargs["interval"] = args.interval
-    kwargs["lead_wait_time"] = args.lead_wait_time
-    kwargs["cool_off_time"] = args.cool_off_time
-    return kwargs

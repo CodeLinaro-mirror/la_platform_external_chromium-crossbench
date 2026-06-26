@@ -69,12 +69,15 @@ class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
     parser = WebPowerPageLoadBenchmark.add_cli_arguments(parser)
     args = parser.parse_args(["--site", "cnn"])
     kwargs = WebPowerPageLoadBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["site_key"], "cnn")
-    self.assertIsNone(kwargs["page_load_count"])
-    self.assertEqual(kwargs["interval"], WebPowerPageLoadStory.DEFAULT_INTERVAL)
-    self.assertEqual(kwargs["lead_wait_time"],
+    self.assertEqual(len(kwargs["stories"]), 1)
+    story = kwargs["stories"][0]
+    self.assertEqual(story.url, "https://www.cnn.com")
+    self.assertEqual(story.page_load_count,
+                     WebPowerPageLoadStory.DEFAULT_CNN_PAGE_LOAD_COUNT)
+    self.assertEqual(story.interval, WebPowerPageLoadStory.DEFAULT_INTERVAL)
+    self.assertEqual(story.lead_wait_time,
                      WebPowerPageLoadStory.DEFAULT_LEAD_WAIT_TIME)
-    self.assertEqual(kwargs["cool_off_time"],
+    self.assertEqual(story.cool_off_time,
                      WebPowerPageLoadStory.DEFAULT_COOL_OFF_TIME)
 
   def test_kwargs_from_cli_custom(self) -> None:
@@ -88,11 +91,13 @@ class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
         "--cool-off-time=30s",
     ])
     kwargs = WebPowerPageLoadBenchmark.kwargs_from_cli(args)
-    self.assertEqual(kwargs["site_key"], "cnn")
-    self.assertEqual(kwargs["page_load_count"], 15)
-    self.assertEqual(kwargs["interval"], dt.timedelta(seconds=10))
-    self.assertEqual(kwargs["lead_wait_time"], dt.timedelta(seconds=5))
-    self.assertEqual(kwargs["cool_off_time"], dt.timedelta(seconds=30))
+    self.assertEqual(len(kwargs["stories"]), 1)
+    story = kwargs["stories"][0]
+    self.assertEqual(story.url, "https://www.cnn.com")
+    self.assertEqual(story.page_load_count, 15)
+    self.assertEqual(story.interval, dt.timedelta(seconds=10))
+    self.assertEqual(story.lead_wait_time, dt.timedelta(seconds=5))
+    self.assertEqual(story.cool_off_time, dt.timedelta(seconds=30))
 
   def test_kwargs_from_cli_invalid(self) -> None:
     parser = CBArgumentParser()
