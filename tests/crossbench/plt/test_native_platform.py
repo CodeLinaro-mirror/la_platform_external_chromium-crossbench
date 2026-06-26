@@ -14,6 +14,7 @@ import stat
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from typing import TYPE_CHECKING
 from unittest import mock
 
@@ -464,6 +465,31 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     self.assertTrue(processes)
     for process_info in processes:
       self.assertIn("name", process_info)
+
+  def test_processes_forwards_attrs_to_as_dict(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+
+    class FakeProcess:
+
+      def __init__(self) -> None:
+        self.attrs: list[str] | None = None
+
+      def as_dict(self, attrs: list[str] | None = None) -> dict[str, str]:
+        assert attrs
+        self.attrs = attrs
+        return {attr: attr for attr in attrs}
+
+    fake_process = FakeProcess()
+    attrs = ["name", "pid"]
+    with mock.patch(
+        "crossbench.plt.base.psutil.process_iter",
+        return_value=[fake_process]) as process_iter:
+      processes = self.platform.processes(attrs)
+
+    process_iter.assert_called_once_with(attrs=attrs)
+    self.assertEqual(fake_process.attrs, attrs)
+    self.assertEqual(processes, [{"name": "name", "pid": "pid"}])
 
   def test_process_running(self):
     if self.platform.is_remote:

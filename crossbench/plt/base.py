@@ -566,7 +566,7 @@ class Platform(abc.ABC):
   def processes(self, attrs: list[str] | None = None) -> list[dict[str, Any]]:
     # TODO(cbruni): support remote platforms
     assert self.is_local, "Only local platform supported"
-    return self._collect_process_dict(psutil.process_iter(attrs=attrs))
+    return self._collect_process_dict(psutil.process_iter(attrs=attrs), attrs)
 
   def process_running(self, process_name_list: list[str]) -> str | None:
     self.assert_is_local()
@@ -591,11 +591,13 @@ class Platform(abc.ABC):
     return self._collect_process_dict(process.children(recursive=recursive))
 
   def _collect_process_dict(
-      self, process_iterator: Iterable[psutil.Process]) -> list[dict[str, Any]]:
+      self,
+      process_iterator: Iterable[psutil.Process],
+      attrs: list[str] | None = None) -> list[dict[str, Any]]:
     process_info_list: list[dict[str, Any]] = []
     for process in process_iterator:
       with contextlib.suppress(*proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS):
-        process_info_list.append(process.as_dict())
+        process_info_list.append(process.as_dict(attrs=attrs))
     return process_info_list
 
   def process_info(self, process: ProcessLike) -> dict[str, Any] | None:
