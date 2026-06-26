@@ -119,6 +119,16 @@ class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
     self.assertTrue(any("Story-2" in name for name in names))
     self.assertTrue(any("Story-3" in name for name in names))
 
+  def test_story_tags_in_stories_list(self) -> None:
+    args = argparse.Namespace(
+        stories="#tag1",
+        story_tags=None,
+        separate=True,
+        custom_benchmark_url=None)
+    filter = PressBenchmarkStoryFilter.from_cli_args(MockStoryWithTags, args)
+    self.assertEqual(len(filter.stories), 1)
+    self.assertIn("Story-1", filter.stories[0].name)
+
 
 class RegexFilterTestCase(unittest.TestCase):
 

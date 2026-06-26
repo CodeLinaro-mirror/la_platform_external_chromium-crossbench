@@ -287,7 +287,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
         raise argparse.ArgumentTypeError(
             f"Cannot mix tags and story names in --stories: {args.stories}")
       tags.append(cls._sanitize_tag(pattern))
-    return ("all",), tuple(tags)
+    return (), tuple(tags)
 
   @classmethod
   def _split_patterns_as_names(
