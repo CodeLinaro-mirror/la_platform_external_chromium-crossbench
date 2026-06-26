@@ -34,9 +34,9 @@ class WebPowerPageLoadStory(WebPowerStory):
   DEFAULT_LEAD_WAIT_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
   DEFAULT_COOL_OFF_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=60)
 
-  @property
+  @classmethod
   @override
-  def story_name(self) -> str:
+  def story_name_cls(cls) -> str:
     return "page-load"
 
   def __init__(self,

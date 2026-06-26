@@ -32,9 +32,9 @@ if TYPE_CHECKING:
 
 class MockWebPowerStory(WebPowerStory):
 
-  @property
+  @classmethod
   @override
-  def story_name(self) -> str:
+  def story_name_cls(cls) -> str:
     return "mock-story"
 
   def __init__(

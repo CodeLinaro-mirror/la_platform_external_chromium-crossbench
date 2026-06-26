@@ -116,9 +116,13 @@ class WebPowerStory(Story):
   def url(self) -> str:
     return self.site_config.url
 
+  @classmethod
+  def story_name_cls(cls) -> str:
+    raise NotImplementedError("Subclasses must implement story_name_cls")
+
   @property
   def story_name(self) -> str:
-    raise NotImplementedError("Subclasses must implement story_name")
+    return self.story_name_cls()
 
   @classmethod
   def all_story_names(cls) -> tuple[str, ...]:

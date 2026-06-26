@@ -34,9 +34,9 @@ class WebPowerScrollStory(WebPowerStory):
   MIN_LEAD_WAIT_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=3)
   DEFAULT_LEAD_WAIT_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
 
-  @property
+  @classmethod
   @override
-  def story_name(self) -> str:
+  def story_name_cls(cls) -> str:
     return "scroll"
 
   @property

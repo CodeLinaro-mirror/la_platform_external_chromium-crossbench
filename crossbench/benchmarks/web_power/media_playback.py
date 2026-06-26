@@ -31,9 +31,9 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
   DEFAULT_STATS: ClassVar[bool] = False
   DEFAULT_VOLUME: ClassVar[VolumeMode] = VolumeMode.ON
 
-  @property
+  @classmethod
   @override
-  def story_name(self) -> str:
+  def story_name_cls(cls) -> str:
     return "media-playback"
 
   @classmethod

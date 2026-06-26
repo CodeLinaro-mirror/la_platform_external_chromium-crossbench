@@ -24,9 +24,9 @@ class WebPowerIdleStory(WebPowerStory):
   DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=80)
   DEFAULT_STABILIZATION_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
 
-  @property
+  @classmethod
   @override
-  def story_name(self) -> str:
+  def story_name_cls(cls) -> str:
     return "idle"
 
   def __init__(self,
