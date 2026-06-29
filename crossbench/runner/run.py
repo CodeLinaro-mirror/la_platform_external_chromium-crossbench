@@ -531,7 +531,7 @@ class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
 
   def stop_story(self) -> None:
     with self._measure("probes-stop_story_run"):
-      for probe_context in self._probe_contexts.values():
+      for probe_context in reversed(self._probe_contexts.values()):
         with self.run.exception_capture(
             f"Probe {probe_context.name} stop_story_run"):
           probe_context.stop_story_run()
