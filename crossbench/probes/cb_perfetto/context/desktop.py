@@ -42,8 +42,9 @@ class DesktopPerfettoProbeContext(PerfettoProbeContext):
 
   @override
   def setup(self) -> None:
-    super().setup()
+    self._setup_validate_bin()
     self._tracebox_proc = self._setup_tracebox()
+    super().setup()
 
   @override
   def _setup_validate_bin(self) -> None:
