@@ -95,18 +95,7 @@ class ChromiumBased(Browser):
     if not settings.extensions:
       self._flags.set("--disable-extensions")
 
-    if "--allow-background-interventions" in self._flags.data:
-      value = self._flags.get("--allow-background-interventions")
-      assert value is None, (
-          "The --allow-background-interventions flag should have no value, "
-          f"but got {value}")
-    else:
-      logging.warning(
-          "Disabling background interventions for chromium based browser. "
-          "Tests that rely on correct tab discarding or prioritization "
-          "behavior may not work as expected. Add "
-          "--allow-background-interventions to bypass this.")
-      self._flags.update(self.FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS)
+
 
     if self.version.major in self.WHATS_NEW_UI_VERSION_RANGE:
       whatsnew_ui_feature = "ChromeWhatsNewUI"
@@ -272,6 +261,24 @@ class ChromiumBased(Browser):
     flags_copy.update(session.extra_flags)
     flags_copy.update(self.network.extra_flags(self.attributes()))
     self._handle_viewport_flags(flags_copy)
+
+    if "--allow-background-interventions" in flags_copy:
+      value = flags_copy.get("--allow-background-interventions")
+      assert value is None, (
+          "The --allow-background-interventions flag should have no value, "
+          f"but got {value}")
+      for flag in self.FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS:
+        if flag in flags_copy:
+          del flags_copy[flag]
+    else:
+      if not getattr(self, "_warned_about_background_interventions", False):
+        logging.warning(
+            "Disabling background interventions for chromium based browser. "
+            "Tests that rely on correct tab discarding or prioritization "
+            "behavior may not work as expected. Add "
+            "--allow-background-interventions to bypass this.")
+        self._warned_about_background_interventions = True
+      flags_copy.update(self.FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS)
 
     if len(js_flags_copy):
       flags_copy["--js-flags"] = str(js_flags_copy)
