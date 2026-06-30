@@ -176,6 +176,13 @@ class MacOSPlatform(PosixPlatform):
     details.update(self._macos_system_details())
     return details
 
+  @property
+  @override
+  def system_memory_bytes(self) -> int:
+    if self.is_local:
+      return super().system_memory_bytes
+    return int(self.sh_stdout("sysctl", "-n", "hw.memsize").strip())
+
   def _macos_system_details(self) -> dict[str, Any]:
     return {
         "system_profiler":

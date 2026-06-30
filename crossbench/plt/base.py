@@ -336,6 +336,14 @@ class Platform(abc.ABC):
     cpu_freq = psutil.cpu_freq()
     return CPUFreqInfo(cpu_freq.min, cpu_freq.max, cpu_freq.current)
 
+  @property
+  def system_memory_bytes(self) -> int:
+    self.assert_is_local()
+    return psutil.virtual_memory().total
+
+  def total_memory_mb(self) -> int:
+    return self.system_memory_bytes // (1024 * 1024)
+
   @functools.lru_cache(maxsize=1)
   def system_details(self) -> dict[str, Any]:
     return {

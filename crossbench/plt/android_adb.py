@@ -1031,6 +1031,14 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         for [key, value] in groupdict.items()
     }
 
+  @property
+  @override
+  def system_memory_bytes(self) -> int:
+    meminfo = self.system_meminfo()
+    if "total_ram_kb" in meminfo:
+      return int(meminfo["total_ram_kb"] * 1024)
+    raise RuntimeError("Total RAM not found in system_meminfo")
+
   def system_meminfo(
       self,
       timeout: dt.timedelta = dt.timedelta(seconds=10)) -> dict[str, float]:

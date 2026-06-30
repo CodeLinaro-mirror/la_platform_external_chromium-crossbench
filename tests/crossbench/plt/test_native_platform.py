@@ -66,6 +66,18 @@ class BaseNativePlatformTestCase(unittest.TestCase):
   def test_cpu_usage(self):
     self.assertGreaterEqual(self.platform.cpu_usage(), 0)
 
+  def test_system_memory_bytes(self):
+    memory = self.platform.system_memory_bytes
+    self.assertIsInstance(memory, int)
+    self.assertGreater(memory, 0)
+
+  def test_total_memory_mb(self):
+    memory_mb = self.platform.total_memory_mb()
+    self.assertIsInstance(memory_mb, int)
+    self.assertGreater(memory_mb, 0)
+    self.assertEqual(memory_mb,
+                     self.platform.system_memory_bytes // (1024 * 1024))
+
   def test_system_details(self):
     self.assertIsNotNone(self.platform.system_details())
 

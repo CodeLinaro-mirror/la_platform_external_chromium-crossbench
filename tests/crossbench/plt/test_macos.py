@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import plistlib
 import textwrap
+from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
@@ -237,7 +238,7 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
                 "_spdisplays_resolution" : "1728 x 1117 @ 60.00Hz",
                 "spdisplays_ambient_brightness" : "spdisplays_no",
                 "spdisplays_connection_type" : "spdisplays_internal",
-                "spdisplays_display_type" : "spdisplays_built-in-liquid-retina-xdr",
+                "spdisplays_display_type" : "spdisplays_built-in",
                 "spdisplays_main" : "spdisplays_yes",
                 "spdisplays_mirror" : "spdisplays_off",
                 "spdisplays_online" : "spdisplays_yes",
@@ -287,6 +288,14 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
         self.platform.display_resolution(),
         (1728, 1117),
     )
+
+  def test_system_memory_bytes(self):
+    with mock.patch(
+        "crossbench.plt.macos.MacOSPlatform.is_local",
+        new_callable=mock.PropertyMock) as is_local:
+      is_local.return_value = False
+      self.expect_sh("sysctl", "-n", "hw.memsize", result="17179869184\n")
+      self.assertEqual(self.platform.system_memory_bytes, 17179869184)
 
   def test_platform_version_cls(self):
     version = MacOsVersion.parse("12.3.4")

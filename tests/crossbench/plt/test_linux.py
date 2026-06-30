@@ -105,7 +105,7 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
 ==== process 926961 ====
 /usr/bin/some_process -a
 ==== smaps_rollup ====
-00008000-7ffd0f5fe000 ---p 00000000 00:00 0                              [rollup]
+00008000-7ffd0f5fe000 ---p 00000000 00:00 0 [rollup]
 Rss:               80364 kB
 Pss:               17815 kB
 Pss_Dirty:          8715 kB
@@ -114,7 +114,7 @@ SwapPss:               0 kB
 ==== process 930293 ====
 /usr/bin/some_process -b
 ==== smaps_rollup ====
-85800000000-7ffd0f5fe000 ---p 00000000 00:00 0                           [rollup]
+85800000000-7ffd0f5fe000 ---p 00000000 00:00 0 [rollup]
 Rss:               44860 kB
 Pss:                5074 kB
 Private_Hugetlb:       0 kB
@@ -226,6 +226,19 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
     self.assertEqual(self.platform.cpu_cores(logical=False), 2)
     self.assertFalse(self.platform.expected_sh_cmds)
     self.assertEqual(self.platform.cpu_cores(logical=False), 2)
+
+  def test_system_memory_bytes(self):
+    self.expect_sh(
+        "grep",
+        "MemTotal",
+        "/proc/meminfo",
+        result="MemTotal:       16304400 kB\n")
+    self.assertEqual(self.platform.system_memory_bytes, 16304400 * 1024)
+
+  def test_system_memory_bytes_missing(self):
+    self.expect_sh("grep", "MemTotal", "/proc/meminfo", result="")
+    with self.assertRaisesRegex(RuntimeError, "Could not find MemTotal"):
+      self.platform.system_memory_bytes
 
   # TODO: implement more mock tests
   def test_local_reverse_port_forward_invalid(self):

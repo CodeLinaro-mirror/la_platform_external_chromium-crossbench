@@ -802,6 +802,16 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with self.assertRaises(TimeoutError):
       self.platform.system_meminfo()
 
+  def test_system_memory_bytes(self):
+    self.expect_sh(
+        "dumpsys -T 10000 meminfo", result=DUMPSYS_MEMINFO_SYSTEM_OUTPUT)
+    self.assertEqual(self.platform.system_memory_bytes, 7698860 * 1024)
+
+  def test_system_memory_bytes_missing(self):
+    self.expect_sh("dumpsys -T 10000 meminfo", result=b"")
+    with self.assertRaisesRegex(RuntimeError, "No 'Total RAM' line found"):
+      self.platform.system_memory_bytes
+
   def test_doze(self):
     self.expect_sh("dumpsys deviceidle force-idle")
     self.platform.doze()
@@ -823,8 +833,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_users(self):
     self.expect_sh(
         "pm list users",
-        result=("Users:\n\tUserInfo{0:Owner:13}\
-             running\n\tUserInfo{10:Guest:10} running"))
+        result=("Users:\n\tUserInfo{0:Owner:13} running\n\t"
+                "UserInfo{10:Guest:10} running"))
     self.assertListEqual(self.platform.adb.users(), ["0", "10"])
 
   def test_users_fallback(self):

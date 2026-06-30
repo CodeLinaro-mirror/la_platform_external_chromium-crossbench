@@ -158,6 +158,17 @@ class LinuxPlatform(PosixPlatform):
         details[info_bin] = self.sh_stdout(info_bin_path)
     return details
 
+  @property
+  @override
+  def system_memory_bytes(self) -> int:
+    if self.is_local:
+      return super().system_memory_bytes
+    output = self.sh_stdout("grep", "MemTotal", "/proc/meminfo")
+    match = re.search(r"MemTotal:\s+(\d+)\s+kB", output)
+    if match:
+      return int(match.group(1)) * 1024
+    raise RuntimeError("Could not find MemTotal in /proc/meminfo")
+
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
     app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
     if not app_or_bin_path.parts:
