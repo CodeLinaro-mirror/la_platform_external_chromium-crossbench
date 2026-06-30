@@ -337,12 +337,17 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def close_all_tabs(self) -> None:
     try:
       all_handles = self._private_driver.window_handles
-      for handle in all_handles:
+    except selenium.common.exceptions.WebDriverException as e:
+      logging.warning("%s: Could not get window handles: %s", self, e)
+      all_handles = []
+    for handle in all_handles:
+      try:
         self._private_driver.switch_to.window(handle)
         self._private_driver.close()
-    except (selenium.common.exceptions.InvalidSessionIdException,
-            urllib3.exceptions.MaxRetryError) as e:
-      logging.debug("%s: Got errors while closing all tabs: {%s}", self, e)
+      except (selenium.common.exceptions.WebDriverException,
+              urllib3.exceptions.MaxRetryError) as e:
+        logging.warning("%s: Got errors while closing tab %s: {%s}", self,
+                        handle, e)
 
   @override
   def quit(self) -> None:

@@ -347,20 +347,40 @@ class ChromiumBasedWebDriver(
     driver = self._private_driver
     try:
       current_handle = driver.current_window_handle
+    except selenium.common.exceptions.WebDriverException as e:
+      logging.warning("%s: Could not get current window handle: %s", self, e)
+      current_handle = None
 
-      for handle in driver.window_handles:
+    try:
+      handles = driver.window_handles
+    except selenium.common.exceptions.WebDriverException as e:
+      logging.warning("%s: Could not get window handles: %s", self, e)
+      handles = []
+
+    for handle in handles:
+      if handle == current_handle:
+        continue
+      try:
         driver.switch_to.window(handle)
-        if (handle != current_handle and
-            driver.current_url != "chrome://newtab-footer/"):
-          driver.close()
+        driver.close()
+      except (selenium.common.exceptions.WebDriverException,
+              urllib3.exceptions.MaxRetryError) as e:
+        logging.warning("%s: Got errors while closing tab %s: %s", self, handle,
+                        e)
 
+    try:
       # Closing every tab will cause the browser to exit.
       # As a workaround navigate the final tab to about:blank.
-      driver.switch_to.window(current_handle)
+      if current_handle:
+        driver.switch_to.window(current_handle)
+      elif driver.window_handles:
+        driver.switch_to.window(driver.window_handles[-1])
       self.show_url("about:blank")
     except (selenium.common.exceptions.WebDriverException,
             urllib3.exceptions.MaxRetryError) as e:
-      logging.debug("%s: Got errors while closing all tabs: %s", self, e)
+      logging.warning(
+          "%s: Got errors while navigating final tab to about:blank: %s", self,
+          e)
 
   @property
   def current_url(self) -> str:
