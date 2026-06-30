@@ -16,6 +16,7 @@ from unittest import mock
 from immutabledict import immutabledict
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser, \
     UnusedPropertiesMode, root_dir
 from crossbench.exception import MultiException
@@ -495,6 +496,15 @@ class ConfigParserTestCase(unittest.TestCase):
     parser.set_mutually_exclusive("foo", "bar")
     with self.assertRaisesRegex(ValueError, "mutually exclusive"):
       parser.parse({})
+
+  def test_parse_local_path(self):
+    parser = ConfigParser(dict)
+    parser.add_argument("path", type=pth.LocalPath)
+
+    # Test path resolution for relative paths
+    result = parser.parse({"path": "~/foo/bar"})
+    expected = pth.LocalPath("~/foo/bar").expanduser().resolve()
+    self.assertEqual(result["path"], expected)
 
 
 class ConfigObjectTestCase(CrossbenchFakeFsTestCase):

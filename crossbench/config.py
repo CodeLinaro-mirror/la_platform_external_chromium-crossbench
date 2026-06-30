@@ -390,6 +390,13 @@ class ConfigArgParser:
       if not isinstance(data, (float, int)):
         raise ValueError(
             f"{self.cls_name}.{self.name}: Expected number, got {data}")
+    elif isinstance(self.type, type) and issubclass(self.type, pth.LocalPath):
+      self._validate_type_without_depending_kwargs(depending_kwargs)
+      try:
+        return self.type(str(data)).expanduser().resolve()
+      except Exception as e:
+        raise ValueError(
+            f"{self.cls_name}.{self.name}: Expected path, got {data}") from e
     if config_object_type := self.config_object_type:
       # TODO: support custom depending kwargs with ConfigObject
       self._validate_type_without_depending_kwargs(depending_kwargs)
