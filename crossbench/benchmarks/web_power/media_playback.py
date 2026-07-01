@@ -55,7 +55,7 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
                duration: dt.timedelta | None = None,
                stabilization_time: dt.timedelta | None = None,
                stats: bool | None = None,
-               volume: VolumeMode | str | None = None,
+               volume: VolumeMode | None = None,
                ambient_mode: AmbientMode | None = None) -> None:
     self.playback_duration = _value_or(duration, self.DEFAULT_DURATION)
     self.stabilization_time = _value_or(stabilization_time,

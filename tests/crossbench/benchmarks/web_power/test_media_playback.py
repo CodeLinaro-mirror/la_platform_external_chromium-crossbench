@@ -11,6 +11,7 @@ from typing_extensions import override
 from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.media_playback import AmbientMode, \
     WebPowerMediaPlaybackBenchmark, WebPowerMediaPlaybackStory
+from crossbench.benchmarks.web_power.volume_helper import VolumeMode
 from crossbench.cli.parser import CBArgumentParser
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -40,14 +41,14 @@ class WebPowerMediaPlaybackStoryTestCase(BaseCrossbenchTestCase):
         duration=duration,
         stabilization_time=stabilization,
         stats=True,
-        volume="off",
+        volume=VolumeMode.OFF,
         ambient_mode=AmbientMode.UNCHANGED,
     )
     self.assertEqual(story.url, "https://youtube.com")
     self.assertEqual(story.playback_duration, duration)
     self.assertEqual(story.stabilization_time, stabilization)
     self.assertTrue(story.stats)
-    self.assertEqual(story.volume, "off")
+    self.assertEqual(story.volume, VolumeMode.OFF)
     self.assertEqual(story.ambient_mode, AmbientMode.UNCHANGED)
 
 

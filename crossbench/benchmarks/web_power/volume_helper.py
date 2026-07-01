@@ -28,7 +28,7 @@ class AndroidVolumeController:
   def __init__(self, platform: plt.Platform) -> None:
     self._platform = platform
 
-  def configure_volume(self, target_volume: VolumeMode | str) -> None:
+  def configure_volume(self, target_volume: VolumeMode) -> None:
     """Configures device music stream volume."""
     if target_volume == VolumeMode.UNCHANGED:
       logging.info("Keeping volume unchanged.")
