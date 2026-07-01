@@ -647,7 +647,7 @@ class Runner:
         for browser in self.browsers:
           # TODO: implement browser-session start/stop
           extra_benchmark_flags = self.benchmark.extra_flags(
-              browser.attributes())
+              browser.attributes(), story)
           browser_session = BrowserSessionRunGroup(self.env, self.probes,
                                                    browser,
                                                    extra_benchmark_flags,

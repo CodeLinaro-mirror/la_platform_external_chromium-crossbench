@@ -35,9 +35,11 @@ from tests.crossbench.runner.helper import BaseRunnerTestCase, MockBrowser, \
     MockPlatform, MockProbe, MockProbeContext, MockRun, MockRunner
 
 if TYPE_CHECKING:
+  from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.probes.probe import Probe
+  from crossbench.stories.story import Story
 
 
 # Skip strict type checks for better mocking
@@ -216,6 +218,40 @@ class RunnerTestCase(BaseRunnerTestCase):
       runs_symlinks = list(
           (runner.out_dir / browser.unique_name / "runs").iterdir())
       self.assertEqual(len(runs_symlinks), 2)
+
+  def test_story_specific_extra_flags(self) -> None:
+
+    class StoryCustomFlagsBenchmark(MockBenchmark):
+
+      @classmethod
+      @override
+      def extra_flags(cls, browser_attributes: BrowserAttributes,
+                      story: Story) -> Flags:
+        if story.name == "story_1":
+          return Flags({"--story-one-flag": None})
+        if story.name == "story_2":
+          return Flags({"--story-two-flag": "some-string-value"})
+        return Flags()
+
+    benchmark = StoryCustomFlagsBenchmark(self.stories)
+    runner = self.default_runner(benchmark=benchmark)
+    runner.run()
+
+    self.assertTrue(runner.is_success)
+    self.assertEqual(len(runner.runs), 4)
+
+    for run in runner.runs:
+      details = run.get_browser_details_json()
+      flags = details["flags"]
+      assert isinstance(flags, tuple)
+      self.assertEqual(
+          "--story-one-flag" in flags,
+          run.story.name == "story_1",
+      )
+      self.assertEqual(
+          "--story-two-flag=some-string-value" in flags,
+          run.story.name == "story_2",
+      )
 
   def test_run_remote_web_driver(self):
     driver = mock.Mock()

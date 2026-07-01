@@ -129,8 +129,10 @@ class Benchmark(abc.ABC):
     return None
 
   @classmethod
-  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
+  def extra_flags(cls, browser_attributes: BrowserAttributes,
+                  story: Story) -> Flags:
     del browser_attributes
+    del story
     return Flags()
 
   @classmethod

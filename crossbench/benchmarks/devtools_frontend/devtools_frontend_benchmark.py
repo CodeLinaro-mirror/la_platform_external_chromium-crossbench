@@ -205,8 +205,9 @@ class DevToolsFrontendBenchmark(Benchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
-    flags: Flags = super().extra_flags(browser_attributes)
+  def extra_flags(cls, browser_attributes: BrowserAttributes,
+                  story: Story) -> Flags:
+    flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       # Allows us to establish a CDP session with the browser
       flags.set("--remote-allow-origins", "*")

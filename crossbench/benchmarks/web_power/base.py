@@ -377,8 +377,9 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
-    flags: Flags = super().extra_flags(browser_attributes)
+  def extra_flags(cls, browser_attributes: BrowserAttributes,
+                  story: Story) -> Flags:
+    flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       if cls.REQUIRES_AUTOPLAY:
         flags.set("--autoplay-policy", "no-user-gesture-required")

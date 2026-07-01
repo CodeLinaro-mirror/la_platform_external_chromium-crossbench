@@ -29,6 +29,7 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.runner import Runner
+  from crossbench.stories.story import Story
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
@@ -218,8 +219,9 @@ class LoadLine2Benchmark(LoadLineBenchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
-    flags: Flags = super().extra_flags(browser_attributes)
+  def extra_flags(cls, browser_attributes: BrowserAttributes,
+                  story: Story) -> Flags:
+    flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       chrome_flags = ChromeFlags(flags)
       # By design, Loadline2 wants some stories to always use a new renderer
@@ -294,8 +296,9 @@ class LoadLine2TabletBenchmark(LoadLine2Benchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
-    flags: Flags = super().extra_flags(browser_attributes)
+  def extra_flags(cls, browser_attributes: BrowserAttributes,
+                  story: Story) -> Flags:
+    flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       flags.set("--request-desktop-sites")
     return flags

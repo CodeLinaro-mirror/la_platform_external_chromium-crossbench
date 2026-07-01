@@ -197,7 +197,9 @@ class PowerlineBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
+  def extra_flags(cls, browser_attributes: BrowserAttributes,
+                  story: Story) -> Flags:
+    del story
     # This flag is required because Chrome a) does not autoplay based on the
     #  HTML5 tag and b) it will not play from JavaScript if the user does not
     # interact with the page first. https://developer.chrome.com/blog/autoplay

@@ -26,6 +26,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.flags.base import Flags
   from crossbench.runner.run import Run
+  from crossbench.stories.story import Story
 
 
 class BlinkAIStory(PressBenchmarkStory):
@@ -144,8 +145,9 @@ class BlinkAIBenchmark(PressBenchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
-    flags: Flags = super().extra_flags(browser_attributes)
+  def extra_flags(cls, browser_attributes: BrowserAttributes,
+                  story: Story) -> Flags:
+    flags: Flags = super().extra_flags(browser_attributes, story)
     if not browser_attributes.is_chromium_based:
       return flags
 

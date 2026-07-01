@@ -46,6 +46,7 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
+  from crossbench.stories.story import Story
   from crossbench.types import JsonDict
 
 
@@ -476,8 +477,9 @@ class MemoryBenchmark(LoadingBenchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes) -> Flags:
-    flags: Flags = super().extra_flags(browser_attributes)
+  def extra_flags(cls, browser_attributes: BrowserAttributes,
+                  story: Story) -> Flags:
+    flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       flags.set("--allow-background-interventions")
     return flags
