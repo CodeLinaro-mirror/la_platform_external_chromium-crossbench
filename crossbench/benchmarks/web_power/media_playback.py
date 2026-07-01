@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import enum
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import override
@@ -23,6 +24,12 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 
+class AmbientMode(enum.StrEnum):
+  ON = "on"
+  OFF = "off"
+  UNCHANGED = "unchanged"
+
+
 class WebPowerMediaPlaybackStory(WebPowerStory):
   IS_SCENARIO_CLASS = True
   REQUIRES_AUTOPLAY: ClassVar[bool] = True
@@ -30,6 +37,7 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
   DEFAULT_STABILIZATION_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
   DEFAULT_STATS: ClassVar[bool] = False
   DEFAULT_VOLUME: ClassVar[VolumeMode] = VolumeMode.ON
+  DEFAULT_AMBIENT_MODE: ClassVar[AmbientMode] = AmbientMode.OFF
 
   @classmethod
   @override
@@ -47,12 +55,14 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
                duration: dt.timedelta | None = None,
                stabilization_time: dt.timedelta | None = None,
                stats: bool | None = None,
-               volume: VolumeMode | str | None = None) -> None:
+               volume: VolumeMode | str | None = None,
+               ambient_mode: AmbientMode | None = None) -> None:
     self.playback_duration = _value_or(duration, self.DEFAULT_DURATION)
     self.stabilization_time = _value_or(stabilization_time,
                                         self.DEFAULT_STABILIZATION_TIME)
     self.stats = _value_or(stats, self.DEFAULT_STATS)
     self.volume = _value_or(volume, self.DEFAULT_VOLUME)
+    self.ambient_mode = _value_or(ambient_mode, self.DEFAULT_AMBIENT_MODE)
 
     total_duration = (
         self.stabilization_time + self.setup_max_duration +
@@ -129,6 +139,17 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
   def _resume_video(self, actions: Actions) -> None:
     self._control_video(actions, "play")
 
+  def _is_ambient_mode_on(self, actions: Actions) -> bool:
+    selector = self._by_type_and_text("span", "Ambient mode")
+    js_code = f"""
+      const el = ({selector})?.closest('[aria-checked]');
+      return el ? el.getAttribute('aria-checked') === 'true' : null;
+    """
+    self._wait_js_condition(actions, f"return !!({selector});")
+    state = actions.js(js_code)
+    assert isinstance(state, bool)
+    return state
+
   @override
   def setup(self, run: Run) -> None:
     super().setup(run)
@@ -182,10 +203,18 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
       self._click_element(actions, self._by_type_and_text("span", "Quality"))
       self._click_element(actions, self._by_type_and_text("span", "1080p"))
 
-    with run.actions("Turn_Off_Ambient", verbose=True) as actions:
-      self._enter_settings(actions)
-      self._click_element(actions,
-                          self._by_type_and_text("span", "Ambient mode"))
+    if self.ambient_mode != AmbientMode.UNCHANGED:
+      assert self.ambient_mode in (AmbientMode.OFF, AmbientMode.ON)
+      is_on = self.ambient_mode == AmbientMode.ON
+      with run.actions("Set_Ambient_Mode", verbose=True) as actions:
+        self._enter_settings(actions)
+        if self._is_ambient_mode_on(actions) != is_on:
+          self._click_element(actions,
+                              self._by_type_and_text("span", "Ambient mode"))
+        else:
+          self._click_element(
+              actions,
+              self._by_aria_label("bottom-sheet-container button", "Close"))
 
     with run.actions("Seek_To_Start", verbose=True) as actions:
       self._show_controls(actions)
@@ -238,6 +267,14 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
     story_cls = cls.DEFAULT_STORY_CLS
     # TODO(eladalon): Avoid accessing private option_string_actions.
     actions = parser._option_string_actions  # noqa: SLF001
+
+    parser.add_argument(
+        "--ambient-mode",
+        type=AmbientMode,
+        choices=tuple(AmbientMode),
+        default=story_cls.DEFAULT_AMBIENT_MODE,
+        help="Configure YouTube ambient mode setting. "
+        f"(Default: {story_cls.DEFAULT_AMBIENT_MODE})")
     if "--duration" not in actions:
       parser.add_argument(
           "--duration",

@@ -12,7 +12,7 @@ from typing_extensions import override
 from crossbench.benchmarks.web_power.consolidated import WebPowerBenchmark, \
     WebPowerConsolidatedStoryFilter
 from crossbench.benchmarks.web_power.idle import WebPowerIdleStory
-from crossbench.benchmarks.web_power.media_playback import \
+from crossbench.benchmarks.web_power.media_playback import AmbientMode, \
     WebPowerMediaPlaybackStory
 from crossbench.benchmarks.web_power.page_load import WebPowerPageLoadStory
 from crossbench.benchmarks.web_power.scroll import WebPowerScrollStory
@@ -170,6 +170,7 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
         "--cool-off-time=20s",
         "--stats",
         "--volume=off",
+        "--ambient-mode=unchanged",
     ])
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
 
@@ -204,6 +205,7 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(stories[3].stabilization_time, dt.timedelta(seconds=5))
     self.assertTrue(stories[3].stats)
     self.assertEqual(stories[3].volume, VolumeMode.OFF)
+    self.assertEqual(stories[3].ambient_mode, AmbientMode.UNCHANGED)
 
   def test_extra_flags_story_autoplay_assignment(self) -> None:
     parser = CBArgumentParser()

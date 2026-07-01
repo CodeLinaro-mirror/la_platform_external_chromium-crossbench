@@ -9,7 +9,7 @@ import datetime as dt
 from typing_extensions import override
 
 from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
-from crossbench.benchmarks.web_power.media_playback import \
+from crossbench.benchmarks.web_power.media_playback import AmbientMode, \
     WebPowerMediaPlaybackBenchmark, WebPowerMediaPlaybackStory
 from crossbench.cli.parser import CBArgumentParser
 from tests import test_helper
@@ -29,6 +29,7 @@ class WebPowerMediaPlaybackStoryTestCase(BaseCrossbenchTestCase):
     self.assertEqual(story.stabilization_time, story.DEFAULT_STABILIZATION_TIME)
     self.assertEqual(story.stats, story.DEFAULT_STATS)
     self.assertEqual(story.volume, story.DEFAULT_VOLUME)
+    self.assertEqual(story.ambient_mode, story.DEFAULT_AMBIENT_MODE)
 
   def test_instantiate_custom(self) -> None:
     duration = dt.timedelta(seconds=30)
@@ -40,12 +41,14 @@ class WebPowerMediaPlaybackStoryTestCase(BaseCrossbenchTestCase):
         stabilization_time=stabilization,
         stats=True,
         volume="off",
+        ambient_mode=AmbientMode.UNCHANGED,
     )
     self.assertEqual(story.url, "https://youtube.com")
     self.assertEqual(story.playback_duration, duration)
     self.assertEqual(story.stabilization_time, stabilization)
     self.assertTrue(story.stats)
     self.assertEqual(story.volume, "off")
+    self.assertEqual(story.ambient_mode, AmbientMode.UNCHANGED)
 
 
 class WebPowerMediaPlaybackBenchmarkTestCase(BaseBenchmarkTestCase):
@@ -69,6 +72,7 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(story.stabilization_time,
                      WebPowerMediaPlaybackStory.DEFAULT_STABILIZATION_TIME)
     self.assertFalse(story.stats)
+    self.assertEqual(story.ambient_mode, AmbientMode.OFF)
 
   def test_kwargs_from_cli_custom(self) -> None:
     parser = CBArgumentParser()
@@ -79,6 +83,7 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseBenchmarkTestCase):
         "--duration=45s",
         "--stabilization-time=15s",
         "--stats",
+        "--ambient-mode=unchanged",
     ])
     kwargs = WebPowerMediaPlaybackBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
@@ -88,6 +93,7 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(story.playback_duration, dt.timedelta(seconds=45))
     self.assertEqual(story.stabilization_time, dt.timedelta(seconds=15))
     self.assertTrue(story.stats)
+    self.assertEqual(story.ambient_mode, AmbientMode.UNCHANGED)
 
 
 if __name__ == "__main__":
