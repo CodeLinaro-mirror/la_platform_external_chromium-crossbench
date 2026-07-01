@@ -584,7 +584,8 @@ class ActionRunner:
       self.run_blocks(run, page, page.blocks)
       self._maybe_navigate_to_about_blank(run, page)
     except Exception:
-      page.create_failure_artifacts(run)
+      with self._info_stack_annotate("failure"):
+        page.create_failure_artifacts(run)
       raise
 
   def run_interactive_page(self, run: Run, page: InteractivePage,
@@ -637,7 +638,8 @@ class ActionRunner:
         with self._info_stack_annotate(name):
           yield
     except Exception:
-      page.create_failure_artifacts(run, "failure")
+      with self._info_stack_annotate("failure"):
+        page.create_failure_artifacts(run, "failure")
       raise
 
   def switch_tab(self, action: i_action.SwitchTabAction) -> None:

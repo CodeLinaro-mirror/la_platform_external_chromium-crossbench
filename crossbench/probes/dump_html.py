@@ -13,7 +13,7 @@ from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 
 if TYPE_CHECKING:
   from crossbench import exception
-  from crossbench.path import AnyPath
+  from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -43,7 +43,7 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
 
   def __init__(self, probe: DumpHtmlProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._results: list[AnyPath] = []
+    self._results: list[LocalPath] = []
 
   @override
   def get_default_result_path(self) -> AnyPath:
@@ -73,7 +73,7 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
     if not suffix:
       suffix = str(dt.datetime.now().strftime("%Y-%m-%d_%H%M%S"))
     label = "_".join(info_stack) + f"_{suffix}"
-    path = self.result_path / f"{label}.html"
+    path = self.local_result_path / f"{label}.html"
     html = self.browser.js("return document.children[0].outerHTML",
                            dt.timedelta(seconds=10))
     self.host_platform.write_text(path, html)
@@ -81,6 +81,6 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
 
   @override
   def teardown(self) -> ProbeResult:
-    if not self.browser_platform.is_dir(self.result_path):
+    if not self.host_platform.is_dir(self.result_path):
       return self.empty_result()
-    return self.browser_result(file=tuple(self._results))
+    return self.local_result(file=tuple(self._results))
