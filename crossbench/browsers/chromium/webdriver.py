@@ -8,6 +8,7 @@ import atexit
 import logging
 import re
 import subprocess
+import time
 from typing import TYPE_CHECKING, Any, Final, Sequence
 
 from immutabledict import immutabledict
@@ -288,9 +289,45 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
 
   @override
   def _setup_window(self) -> None:
-    logging.debug("%s: Skipping viewport settings %s on %s",
-                  type(self).__name__, self.viewport, self)
+    if self.viewport.is_maximized:
+      self.maximize_window()
+    else:
+      logging.debug("%s: Skipping viewport settings %s on %s",
+                    type(self).__name__, self.viewport, self)
 
+  @override
+  def maximize_window(self) -> None:
+    try:
+      with self.platform.uiautomator_device() as device:
+        # TODO(b/417165220): Update to standard Android OS window management
+        # once available. UIAutomator widget hierarchy search is a placeholder.
+        buttons = device.ui.find(resourceIdMatches="(?i).*maximize_window")
+        if not buttons:
+          logging.debug("Could not find maximize button via UIAutomator.")
+          return
+
+        active_button = buttons[-1]
+        active_desc = active_button.get("contentDescription", "").lower()
+        if "restore" in active_desc:
+          logging.info("Active Android window is already maximized.")
+          return
+
+        if "maximize" in active_desc:
+          center = active_button.get("visibleCenter")
+          if center and "x" in center and "y" in center:
+            logging.info(
+                "Found maximize button for active window at (%d, %d), "
+                "clicking.",
+                center["x"],
+                center["y"],
+            )
+            device.ui.click(center["x"], center["y"])
+            time.sleep(1)
+            return
+        logging.info("Active Android window is already maximized.")
+        return
+    except subprocess.SubprocessError as e:
+      logging.warning("Could not maximize Android window: %s", e)
 
 class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
   """

@@ -350,6 +350,11 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
                         handle, e)
 
   @override
+  def maximize_window(self) -> None:
+    if self._private_driver:
+      self._private_driver.maximize_window()
+
+  @override
   def quit(self) -> None:
     try:
       assert self._is_running
