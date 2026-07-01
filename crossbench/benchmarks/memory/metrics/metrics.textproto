@@ -1,0 +1,102 @@
+# Copyright 2026 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+query {
+  id: "tab_timing_query"
+  table {
+    table_name: "tab_timing_by_tab_index"
+    module_name: "sql_packages.memory_pressure.tab_timing"
+    column_names: "it_id"
+    column_names: "tab_index"
+    column_names: "page_load_duration_ms"
+    column_names: "allocation_duration_ms"
+  }
+}
+
+metric_spec: {
+  id: "memory-pressure.page_load_duration_ms"
+  dimensions: "it_id"
+  value: "page_load_duration_ms"
+  query {
+    inner_query_id: "tab_timing_query"
+  }
+}
+
+metric_spec: {
+  id: "memory-pressure.allocation_duration_ms"
+  dimensions: "it_id"
+  value: "allocation_duration_ms"
+  query {
+    inner_query_id: "tab_timing_query"
+  }
+}
+
+metric_spec: {
+  id: "memory-pressure.page_load_duration_ms_by_tab_index"
+  dimensions: "it_id"
+  dimensions: "tab_index"
+  value: "page_load_duration_ms"
+  query {
+    inner_query_id: "tab_timing_query"
+  }
+}
+
+metric_spec: {
+  id: "memory-pressure.allocation_duration_ms_by_tab_index"
+  dimensions: "it_id"
+  dimensions: "tab_index"
+  value: "allocation_duration_ms"
+  query {
+    inner_query_id: "tab_timing_query"
+  }
+}
+
+metric_spec: {
+  id: "memory-pressure.alive_tabs_by_tab_index"
+  dimensions: "it_id"
+  dimensions: "tab_index"
+  dimensions: "pid"
+  dimensions: "process_name"
+  value: "alive_tabs"
+  query {
+    table {
+      table_name: "alive_tabs_by_tab_index"
+      module_name: "sql_packages.memory_pressure.tabs_alive"
+      column_names: "it_id"
+      column_names: "tab_index"
+      column_names: "pid"
+      column_names: "process_name"
+      column_names: "alive_tabs"
+    }
+  }
+}
+
+query {
+  id: "average_alive_tabs_after_first_kill"
+  table {
+    table_name: "average_alive_tabs_after_first_kill"
+    module_name: "sql_packages.memory_pressure.tabs_alive"
+    column_names: "it_id"
+    column_names: "tab_index_at_first_kill"
+    column_names: "average_alive_tabs_after_first_kill"
+  }
+}
+
+metric_spec: {
+  id: "memory-pressure.average_alive_tabs_after_first_kill"
+  dimensions: "it_id"
+  value: "average_alive_tabs_after_first_kill"
+  query {
+    inner_query_id: "average_alive_tabs_after_first_kill"
+  }
+}
+
+metric_spec: {
+  id: "memory-pressure.tab_index_at_first_kill"
+  dimensions: "it_id"
+  value: "tab_index_at_first_kill"
+  query {
+    inner_query_id: "average_alive_tabs_after_first_kill"
+  }
+}
