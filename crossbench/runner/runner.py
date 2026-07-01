@@ -524,6 +524,9 @@ class Runner:
       self._platform.sleep(delta)
 
   def run(self, is_dry_run: bool = False) -> None:
+    if is_dry_run:
+      self._repetitions = 1
+      self._warmup_repetitions = 0
     self._state.expect(RunnerState.INITIAL)
     logging.info("🏗️  STATUS FILE: %s", self.status.path)
     with self._platform.wakelock():
