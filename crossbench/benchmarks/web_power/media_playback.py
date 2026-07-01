@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 class WebPowerMediaPlaybackStory(WebPowerStory):
   IS_SCENARIO_CLASS = True
+  REQUIRES_AUTOPLAY: ClassVar[bool] = True
   DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=120)
   DEFAULT_STABILIZATION_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
   DEFAULT_STATS: ClassVar[bool] = False
@@ -218,7 +219,6 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
   DEFAULT_STORY_CLS: ClassVar = WebPowerMediaPlaybackStory
   STORY_FILTER_CLS: ClassVar = WebPowerMediaPlaybackStoryFilter
   SITE_REQUIRED: ClassVar[bool] = False
-  REQUIRES_AUTOPLAY: ClassVar[bool] = True
 
   @classmethod
   @override

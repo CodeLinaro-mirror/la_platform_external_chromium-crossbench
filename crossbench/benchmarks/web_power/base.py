@@ -60,6 +60,7 @@ class WebPowerStory(Story):
   MEASUREMENT_MARK: ClassVar[str] = "web-power"
 
   IS_SCENARIO_CLASS: ClassVar[bool] = False
+  REQUIRES_AUTOPLAY: ClassVar[bool] = False
 
   _scenario_classes: ClassVar[list[type[WebPowerStory]]] = []
 
@@ -303,7 +304,6 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
   DEFAULT_REPETITIONS: ClassVar[int] = 5
   DEFAULT_COOL_DOWN: ClassVar[dt.timedelta] = dt.timedelta(minutes=2)
   SITE_REQUIRED: ClassVar[bool] = True
-  REQUIRES_AUTOPLAY: ClassVar[bool] = False
   STORY_FILTER_CLS: ClassVar[type[StoryFilter]] = WebPowerStoryFilter
   DEFAULT_STORY_CLS: ClassVar[type[WebPowerStory]]
 
@@ -381,7 +381,8 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
                   story: Story) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
-      if cls.REQUIRES_AUTOPLAY:
+      assert isinstance(story, WebPowerStory)
+      if story.REQUIRES_AUTOPLAY:
         flags.set("--autoplay-policy", "no-user-gesture-required")
       flags.set("--remote-allow-origins", "*")
       for flag in (

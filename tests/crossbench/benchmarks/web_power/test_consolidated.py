@@ -17,6 +17,7 @@ from crossbench.benchmarks.web_power.media_playback import \
 from crossbench.benchmarks.web_power.page_load import WebPowerPageLoadStory
 from crossbench.benchmarks.web_power.scroll import WebPowerScrollStory
 from crossbench.benchmarks.web_power.volume_helper import VolumeMode
+from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.cli.parser import CBArgumentParser
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -203,6 +204,22 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(stories[3].stabilization_time, dt.timedelta(seconds=5))
     self.assertTrue(stories[3].stats)
     self.assertEqual(stories[3].volume, VolumeMode.OFF)
+
+  def test_extra_flags_story_autoplay_assignment(self) -> None:
+    parser = CBArgumentParser()
+    parser = WebPowerBenchmark.add_cli_arguments(parser)
+    args = parser.parse_args([
+        "--stories=idle-msn,page-load-cnn,media-playback-youtube",
+    ])
+    kwargs = WebPowerBenchmark.kwargs_from_cli(args)
+    benchmark = WebPowerBenchmark(**kwargs)
+
+    for story in benchmark.stories:
+      flags = benchmark.extra_flags(BrowserAttributes.CHROMIUM_BASED, story)
+      is_playback = isinstance(story, WebPowerMediaPlaybackStory)
+      self.assertEqual("--autoplay-policy" in flags, is_playback)
+      if is_playback:
+        self.assertEqual(flags["--autoplay-policy"], "no-user-gesture-required")
 
 
 if __name__ == "__main__":
