@@ -41,6 +41,18 @@ if TYPE_CHECKING:
   from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo
   from crossbench.types import JsonDict
 
+
+class _MoblyDebugFilter(logging.Filter):
+  """Filters out overly verbose debug logging from mobly/snippet_uiautomator."""
+
+  def filter(self, record: logging.LogRecord) -> bool:
+    if record.levelno <= logging.DEBUG and "mobly" in record.pathname:
+      return False
+    return True
+
+
+logging.getLogger().addFilter(_MoblyDebugFilter())
+
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
 ANDROID_PERMISSIONS: Final = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
