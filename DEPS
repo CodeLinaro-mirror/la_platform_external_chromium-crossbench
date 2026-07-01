@@ -48,6 +48,14 @@ vars = {
   # This variable is overridden in Chromium's DEPS file.
   'build_with_chromium': False,
 
+  'chrome_internal_url': 'https://chrome-internal.googlesource.com',
+  'checkout_crossbench_internal': False,
+
+  # Three lines of non-changing comments so that
+  # the commit queue can handle CLs rolling crossbench-internal
+  # and whatever else without interference from each other.
+  'crossbench_internal_revision': '8f302422f5e6f7f7aaa37eb9e5dd05bf29dd1d89',
+
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
@@ -73,6 +81,7 @@ vars = {
 # Only these hosts are allowed for dependencies in this DEPS file.
 # If you need to add a new host, contact chrome infrastructure team.
 allowed_hosts = [
+  'chrome-internal.googlesource.com',
   'chromium.googlesource.com',
   'chromium-nodejs',
 ]
@@ -146,6 +155,10 @@ deps = {
   'third_party/webpagereplay': {
     'url': Var('chromium_webpagereplay_git') + '@' + Var('webpagereplay_revision'),
     'condition': 'not build_with_chromium',
+  },
+  'internal': {
+    'url': Var('chrome_internal_url') + '/crossbench/crossbench-internal.git' + '@' + Var('crossbench_internal_revision'),
+    'condition': 'checkout_crossbench_internal',
   }
 }
 
