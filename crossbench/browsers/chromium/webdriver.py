@@ -218,6 +218,9 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
 
   def adb_force_stop(self) -> None:
     self.platform.adb.force_stop(self.android_package)
+    # Prevent background Chrome from intercepting the devtools abstract socket
+    if self.android_package != "com.android.chrome":
+      self.platform.adb.force_stop("com.android.chrome")
 
   def adb_force_clear(self) -> None:
     self.platform.adb.force_clear(self.android_package)
