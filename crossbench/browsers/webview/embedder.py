@@ -170,6 +170,7 @@ class WebviewEmbedder(Webview):
       if self.path not in self._INSTALLED_APK_PATHS[device_id]:
         title = f"Installing {self.path.name} on {self.platform}"
         with ui.spinner(title=title):
+          self.platform.adb.uninstall(self.android_package, missing_ok=True)
           self.platform.adb.install(self.path)
         self._INSTALLED_APK_PATHS[device_id].add(self.path)
     super()._setup_binary()
