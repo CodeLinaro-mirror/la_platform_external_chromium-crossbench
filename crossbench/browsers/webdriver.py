@@ -275,6 +275,9 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
         self._private_driver.switch_to.new_window("tab")
       elif target == WindowTarget.NEW_WINDOW:
         self._private_driver.switch_to.new_window("window")
+        # Allow the new window to settle before modifying the viewport, etc.
+        time.sleep(1)
+        self._setup_window()
       else:
         raise RuntimeError(f"unexpected target {target}")
       self._private_driver.get(url)

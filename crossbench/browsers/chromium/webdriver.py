@@ -309,25 +309,22 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
           logging.debug("Could not find maximize button via UIAutomator.")
           return
 
-        active_button = buttons[-1]
-        active_desc = active_button.get("contentDescription", "").lower()
-        if "restore" in active_desc:
-          logging.info("Active Android window is already maximized.")
-          return
+        for button in reversed(buttons):
+          desc = button.get("contentDescription", "").lower()
+          if "maximize" in desc:
+            center = button.get("visibleCenter")
+            if center and "x" in center and "y" in center:
+              logging.info(
+                  "Found maximize button for active window at (%d, %d), "
+                  "clicking.",
+                  center["x"],
+                  center["y"],
+              )
+              device.ui.click(center["x"], center["y"])
+              time.sleep(1)
+              return
 
-        if "maximize" in active_desc:
-          center = active_button.get("visibleCenter")
-          if center and "x" in center and "y" in center:
-            logging.info(
-                "Found maximize button for active window at (%d, %d), "
-                "clicking.",
-                center["x"],
-                center["y"],
-            )
-            device.ui.click(center["x"], center["y"])
-            time.sleep(1)
-            return
-        logging.info("Active Android window is already maximized.")
+        logging.info("No maximize button found or already maximized.")
         return
     except subprocess.SubprocessError as e:
       logging.warning("Could not maximize Android window: %s", e)
