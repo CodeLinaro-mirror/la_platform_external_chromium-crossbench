@@ -142,8 +142,8 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
   def _is_ambient_mode_on(self, actions: Actions) -> bool:
     selector = self._by_type_and_text("span", "Ambient mode")
     js_code = f"""
-      const el = ({selector})?.closest('[aria-checked]');
-      return el ? el.getAttribute('aria-checked') === 'true' : null;
+      const el = ({selector})?.closest('[aria-pressed]');
+      return el ? el.getAttribute('aria-pressed') === 'true' : null;
     """
     self._wait_js_condition(actions, f"return !!({selector});")
     state = actions.js(js_code)
