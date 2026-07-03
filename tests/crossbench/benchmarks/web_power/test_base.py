@@ -266,14 +266,26 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     self.assertEqual(attached_probe.bits_out, "run_id")
     self.assertEqual(attached_probe.duration, dt.timedelta(seconds=120))
 
-  def test_kwargs_from_cli_bits_only_path_fails(self) -> None:
+  def test_kwargs_from_cli_bits_only_path(self) -> None:
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
     self.fs.create_file(bits_path)
 
     parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
     args = parser.parse_args(["--site", "cnn", "--bits-path", str(bits_path)])
-    with self.assertRaises(argparse.ArgumentTypeError):
-      MockWebPowerBenchmark.kwargs_from_cli(args)
+
+    kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
+
+    bits_probe = kwargs["bits_probe"]
+    self.assertIsInstance(bits_probe, BitsProbe)
+    self.assertEqual(bits_probe.bits_path, bits_path)
+    self.assertEqual(bits_probe.bits_out, "")
+
+    run = self.mock_run()
+    now = dt.datetime(2026, 7, 2, 17, 0, 55)
+    with mock.patch("crossbench.probes.bits.dt.datetime") as mock_datetime:
+      mock_datetime.now.return_value = now
+      context = bits_probe.create_context(run)
+      self.assertEqual(context.bits_out_id, "20260702_170055")
 
   def test_kwargs_from_cli_bits_only_out_fails(self) -> None:
     parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())

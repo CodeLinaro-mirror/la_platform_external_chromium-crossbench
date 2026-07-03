@@ -33,6 +33,33 @@ class BitsProbeTestCase(BaseProbeTestCase):
     self.assertEqual(probe.bits_out, "run_id")
     self.assertEqual(probe.duration, dt.timedelta(seconds=1))
 
+  def test_bits_probe_parsing_default_out(self) -> None:
+    probe = BitsProbe.parse_dict({
+        "bits_path": str(self.bits_path),
+    })
+    self.assertEqual(probe.bits_out, "")
+    run = self.mock_run()
+    now = dt.datetime(2026, 7, 2, 17, 0, 55)
+    with mock.patch("crossbench.probes.bits.dt.datetime") as mock_datetime:
+      mock_datetime.now.return_value = now
+      context = probe.create_context(run)
+      self.assertEqual(context.bits_out_id, "20260702_170055")
+
+  def test_distinct_runs_have_distinct_ids(self) -> None:
+    probe = BitsProbe(self.bits_path)
+    run1 = self.mock_run()
+    run2 = self.mock_run()
+
+    now = dt.datetime(2026, 7, 2, 17, 0, 55)
+    later = dt.datetime(2026, 7, 2, 17, 1, 10)
+    with mock.patch("crossbench.probes.bits.dt.datetime") as mock_datetime:
+      mock_datetime.now.side_effect = [now, later]
+      context1 = probe.create_context(run1)
+      context2 = probe.create_context(run2)
+
+    self.assertEqual(context1.bits_out_id, "20260702_170055")
+    self.assertEqual(context2.bits_out_id, "20260702_170110")
+
   def test_bits_probe_parsing_missing_path(self) -> None:
     with self.assertRaises(argparse.ArgumentTypeError):
       BitsProbe.parse_dict({"bits_out": "run_id"})

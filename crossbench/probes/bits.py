@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.parse import DurationParser, ObjectParser, PathParser
+from crossbench.parse import DurationParser, PathParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
     ProbeIncompatibleBrowser
 
@@ -49,8 +49,9 @@ class BitsProbe(Probe):
             "out",
             "collection",
         ),
-        type=ObjectParser.non_empty_str,
-        required=True,
+        type=str,
+        required=False,
+        default="",
         help="Output identifier for the BITS tool.")
     parser.add_argument(
         "bits_device",
@@ -68,14 +69,11 @@ class BitsProbe(Probe):
   def __init__(
       self,
       bits_path: pth.LocalPath,
-      bits_out: str,
+      bits_out: str = "",
       bits_device: str = "",
       duration: dt.timedelta = DEFAULT_DURATION,
   ) -> None:
     super().__init__()
-    if not bits_path or not bits_out:
-      raise ValueError("Both bits_path and bits_out must be provided "
-                       "to enable BITS probe.")
     if duration < dt.timedelta(seconds=1):
       raise ValueError(f"Duration must be at least 1s, but got: {duration}")
     self._bits_path: pth.LocalPath = bits_path
@@ -116,27 +114,33 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
   def __init__(self, probe: BitsProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._process: subprocess.Popen | None = None
+    self._bits_out_id = self.probe.bits_out or dt.datetime.now().strftime(
+        "%Y%m%d_%H%M%S")
+
+  @property
+  def bits_out_id(self) -> str:
+    return self._bits_out_id
 
   def _start_collection(self) -> None:
-    logging.debug("BITS: Starting collection (ID: %r)", self.probe.bits_out)
+    logging.debug("BITS: Starting collection (ID: %r)", self.bits_out_id)
     device_args: tuple[str, ...] = ()
     if self.probe.bits_device:
       device_args += ("--device", self.probe.bits_device)
     self._process = self.host_platform.popen(
         self.probe.bits_path,
         "--create",
-        self.probe.bits_out,
+        self.bits_out_id,
         "--duration",
         f"{self.probe.duration.total_seconds():.0f}s",
         *device_args,
     )
 
   def _stop_collection(self) -> None:
-    logging.debug("BITS: Stopping collection (ID: %r)", self.probe.bits_out)
+    logging.debug("BITS: Stopping collection (ID: %r)", self.bits_out_id)
     stop_args = (
         self.probe.bits_path,
         "--stop",
-        self.probe.bits_out,
+        self.bits_out_id,
     )
     self.host_platform.sh(*stop_args)
 
