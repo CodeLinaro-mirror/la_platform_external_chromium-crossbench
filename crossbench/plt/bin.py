@@ -228,7 +228,6 @@ class Binaries:
   CPIO: ClassVar = LinuxBinary("cpio")
   FFMPEG: ClassVar = Binary("ffmpeg", posix="ffmpeg")
   GCERTSTATUS: ClassVar = Binary("gcertstatus", posix="gcertstatus")
-  GSUTIL: ClassVar = Binary("gsutil", posix="gsutil")
   LSCPU: ClassVar = LinuxBinary("lscpu")
   MONTAGE: ClassVar = Binary("montage", posix="montage")
   ON_AC_POWER: ClassVar = LinuxBinary("on_ac_power")

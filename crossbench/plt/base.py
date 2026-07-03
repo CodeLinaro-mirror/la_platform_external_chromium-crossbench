@@ -26,6 +26,7 @@ import urllib.request
 from typing import TYPE_CHECKING, Any, Callable, Final, Generator, Iterable, \
     Iterator, Mapping, Sequence
 
+import google.api_core.exceptions as gcloud_exceptions
 import google.cloud.storage as gcloud_storage
 import psutil
 
@@ -1025,7 +1026,7 @@ class Platform(abc.ABC):
     local_path.parent.mkdir(parents=True, exist_ok=True)
     blob.download_to_filename(str(local_path))
 
-  def prepare_gcs_request(self, gcs_url: str) -> gcloud_blob.Blob:
+  def get_gcs_blob(self, gcs_url: str) -> gcloud_blob.Blob:
     parsed = ObjectParser.url(gcs_url, schemes=("gs",))
     bucket_name = parsed.netloc
     object_name = parsed.path.lstrip("/")
@@ -1033,7 +1034,20 @@ class Platform(abc.ABC):
       raise ValueError(f"Missing bucket name in URL: {gcs_url}")
     client = gcloud_storage.Client(project="")
     bucket = client.bucket(bucket_name)
-    blob: gcloud_blob.Blob = bucket.blob(object_name)
+    return bucket.blob(object_name)
+
+  def check_gcs_file_exists(self, gcs_url: str) -> bool:
+    blob = self.get_gcs_blob(gcs_url)
+    try:
+      return blob.exists()
+    except gcloud_exceptions.Forbidden as e:
+      raise PermissionError(f"Access denied to {gcs_url}. "
+                            "Run 'gcloud auth login' to get access.") from e
+    except gcloud_exceptions.NotFound:
+      return False
+
+  def prepare_gcs_request(self, gcs_url: str) -> gcloud_blob.Blob:
+    blob = self.get_gcs_blob(gcs_url)
     blob.reload()
     return blob
 

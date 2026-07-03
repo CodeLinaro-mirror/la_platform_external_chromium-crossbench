@@ -26,26 +26,20 @@ if TYPE_CHECKING:
   from tests.test_helper import TestEnv
 
 
-def check_gsutil_access():
-  gsutil_path = plt.PLATFORM.which("gsutil")
-  if not gsutil_path:
-    pytest.skip("Could not find gsutil")
+def check_gcs_access():
   try:
-    plt.PLATFORM.sh_stdout(
-        gsutil_path, "ls",
-        "gs://chrome-signed/desktop-5c0tCh/111.0.5563.19/linux64")
-  except plt.SubprocessError as e:
-    logging.info("Could not access chrome bucket with gsutil: %s", e)
-    if "does not have storage.objects.list access" in str(e):
-      pytest.skip(
-          "gsutil likely has no access to gs://chrome-signed/desktop-5c0tCh")
-    raise e
+    plt.PLATFORM.check_gcs_file_exists(
+        "gs://chrome-signed/desktop-5c0tCh/111.0.5563.19/linux64/non-existent-file"
+    )
+  except PermissionError as e:
+    logging.info("Could not access chrome bucket: %s", e)
+    pytest.skip("GCS likely has no access to gs://chrome-signed/desktop-5c0tCh")
 
 
 def _load_and_check_version(output_dir: pathlib.Path, archive_dir: pathlib.Path,
                             version_or_archive: str | pathlib.Path,
                             version_str: str) -> pathlib.Path:
-  check_gsutil_access()
+  check_gcs_access()
   with tmp_platform_cache_dir(output_dir):
     app_path: pathlib.Path = ChromeDownloader.load(version_or_archive,
                                                    plt.PLATFORM)

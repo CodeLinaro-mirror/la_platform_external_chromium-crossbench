@@ -45,7 +45,7 @@ def adb_test_env(device_id, adb_path, test_env: TestEnv) -> None:
     # TODO(crbug/377290309): Remove this workaround when chrome preinstalled
     # in the emulator image is >=M126.
     local_apk = tmp_dir / "chrome.apk"
-    PLATFORM.sh("gsutil", "cp", CHROME_APK_URL, local_apk, check=True)
+    PLATFORM.download_gcs_file(CHROME_APK_URL, local_apk)
     assert check_hash(local_apk, CHROME_APK_HASH)
 
     assert adb_path, "Missing adb"

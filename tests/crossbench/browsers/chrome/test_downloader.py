@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import pathlib
+from unittest import mock
 
 from typing_extensions import override
 
@@ -40,7 +41,9 @@ class AbstractChromeDownloaderTestCase(
       ChromeDownloader.load(pathlib.Path("custom"), self.platform)
 
   def test_load_valid_non_googler(self) -> None:
-    self.platform.which = lambda binary_name: None
+    self.platform.search_app = lambda x: None
+    self.platform.check_gcs_file_exists = mock.Mock(
+        side_effect=PermissionError("Forbidden"))
     with self.assertRaises(ValueError):
       ChromeDownloader.load("chrome-111.0.5563.110", self.platform)
 

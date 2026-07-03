@@ -21,7 +21,6 @@ from crossbench.browsers.downloader import DMGArchiveHelper, Downloader, \
 from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
 from crossbench.helper import url_helper
 from crossbench.plt.android_adb import AndroidAdbPlatform
-from crossbench.plt.base import SubprocessError
 
 if TYPE_CHECKING:
   from crossbench.plt.android_adb import Adb
@@ -75,29 +74,6 @@ class ChromeDownloader(Downloader):
     if browser_platform.is_android:
       return ChromeDownloaderAndroid
     return None
-
-  def __init__(self, *args, **kwargs) -> None:
-    self._gsutil: pth.AnyPath | None = None
-    super().__init__(*args, **kwargs)
-
-  @override
-  def _pre_check(self, requested_version: BrowserVersion | None = None) -> None:
-    super()._pre_check(requested_version)
-    if not requested_version:
-      return
-    self._gsutil = self.host_platform.which("gsutil")
-    if not self._gsutil:
-      raise ValueError(
-          f"Cannot download chrome version {requested_version}: "
-          "please install gsutil.\n"
-          "- https://cloud.google.com/storage/docs/gsutil_install\n"
-          "- Run 'gcloud auth login' to get access to the archives "
-          "(googlers only).")
-
-  @property
-  def gsutil(self) -> pth.AnyPath:
-    assert self._gsutil, "gsutil not be found."
-    return self._gsutil
 
   @override
   def _requested_version_validation(self) -> None:
@@ -189,28 +165,22 @@ class ChromeDownloader(Downloader):
         continue
       for archive_version, archive_url in self._archive_urls(url, version):
         try:
-          result = self.host_platform.sh_stdout(self.gsutil, "ls", archive_url)
-        except SubprocessError as e:
-          logging.debug("gsutil failed: %s", e)
-          if stderr := e.stderr:
-            stderr_str = stderr.decode("utf-8")
-            if "AccessDeniedException" in stderr_str:
-              access_error = stderr_str
+          if self.host_platform.check_gcs_file_exists(archive_url):
+            return archive_version, archive_url
+        except PermissionError as e:
+          logging.debug("GCS access failed: %s", e)
+          access_error = str(e)
           continue
-        if result:
-          return archive_version, archive_url
     if access_error:
       raise ValueError(f"Could not load version: {access_error}")
     return self.requested_version, None
 
   @override
   def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
-    self.host_platform.sh(self.gsutil, "cp", archive_url, tmp_dir)
-    archive_candidates = list(tmp_dir.glob("*"))
-    assert len(archive_candidates) == 1, (
-        f"Download tmp dir contains more than one file: {tmp_dir}: "
-        f"{archive_candidates}")
-    candidate = archive_candidates[0]
+    filename = archive_url.rsplit("/", 1)[-1]
+    candidate = tmp_dir / filename
+    self.host_platform.download_gcs_file(archive_url, candidate)
+    assert self.host_platform.exists(candidate), f"Download failed: {candidate}"
     assert not self._archive_path.exists(), (
         f"Archive was already downloaded: {self._archive_path}")
     shutil.move(os.fspath(candidate), os.fspath(self._archive_path))

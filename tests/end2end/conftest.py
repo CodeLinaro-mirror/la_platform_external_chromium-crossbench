@@ -40,7 +40,7 @@ BUNDLETOOL_FLAG: Final = "--bundletool"
 CAS_ARCHIVE_FLAG: Final = "--cas-archive"
 TEST_BROWSER_FLAG: Final = "--test-browser-path"
 TEST_DRIVER_FLAG: Final = "--test-driver-path"
-TEST_GSUTIL_FLAG: Final = "--test-gsutil-path"
+
 
 
 def pytest_addoption(parser):
@@ -48,8 +48,13 @@ def pytest_addoption(parser):
       TEST_BROWSER_FLAG, "--browserpath", default=None, type=PathParser.path)
   parser.addoption(
       TEST_DRIVER_FLAG, "--driverpath", default=None, type=PathParser.path)
+  # TODO: Remove after bot configs are updated to no longer pass this flag
   parser.addoption(
-      TEST_GSUTIL_FLAG, "--gsutilpath", default=None, type=PathParser.path)
+      "--test-gsutil-path",
+      "--gsutilpath",
+      default=None,
+      type=PathParser.path,
+      help="Deprecated")
   parser.addoption(ADB_DEVICE_ID_FLAG, default=None, type=str)
   parser.addoption(ADB_PATH_FLAG, default=None, type=str)
   parser.addoption(BUNDLETOOL_FLAG, default=None, type=str)
@@ -180,26 +185,7 @@ def mock_patch_chrome_stable(browser_path) -> Iterator[None]:
     yield
 
 
-@pytest.fixture(scope="session", autouse=True)
-def gsutil_path(request) -> Iterator[pathlib.Path]:
-  if custom_gsutil := _get_app_path(request, TEST_GSUTIL_FLAG):
-    logging.info("gsutil path: %s", custom_gsutil)
-    assert custom_gsutil.exists()
-    with plt.PLATFORM.override_binary("gsutil", custom_gsutil):
-      yield custom_gsutil
-  else:
-    logging.info("Trying default gsutil path for local runs.")
-    yield default_gsutil_path()
 
-
-def default_gsutil_path() -> pathlib.Path:
-  if gsutil_path := plt.PLATFORM.which("gsutil"):
-    gsutil_path = plt.PLATFORM.local_path(gsutil_path)
-    assert gsutil_path, "could not find fallback gsutil"
-    assert gsutil_path.exists()
-    return gsutil_path
-  pytest.skip(f"Could not find gsutil on {plt.PLATFORM}")
-  return pathlib.Path()
 
 
 @pytest.fixture

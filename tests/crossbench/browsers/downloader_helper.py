@@ -28,6 +28,7 @@ class AbstractDownloaderTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
         path=pathlib.Path)
     self.platform.search_app = lambda x: x
     self.platform.which = pathlib.Path
+    self.platform.local_cache_dir = lambda x: self.cache_dir / x
     self.platform.host_platform = self.platform
     self.cache_dir = pathlib.Path("crossbench/binary_cache")
     self.fs.create_dir(self.cache_dir)
