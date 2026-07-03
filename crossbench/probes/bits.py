@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 import logging
 from typing import TYPE_CHECKING, ClassVar, Self
 
@@ -97,6 +98,11 @@ class BitsProbe(Probe):
   def duration(self) -> dt.timedelta:
     return self._duration
 
+  @property
+  @override
+  def result_path_name(self) -> str:
+    return f"{self.name}.json"
+
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     super().validate_browser(env, browser)
@@ -135,6 +141,12 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
         *device_args,
     )
 
+    assert not self.host_platform.exists(self.local_result_path)
+    self.host_platform.write_text(
+        self.local_result_path,
+        json.dumps({"bits_out_id": self.bits_out_id}, indent=2),
+    )
+
   def _stop_collection(self) -> None:
     logging.debug("BITS: Stopping collection (ID: %r)", self.bits_out_id)
     stop_args = (
@@ -162,4 +174,6 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
 
   @override
   def teardown(self) -> ProbeResult:
+    if self.host_platform.exists(self.local_result_path):
+      return self.local_result(file=(self.local_result_path,))
     return self.empty_result()

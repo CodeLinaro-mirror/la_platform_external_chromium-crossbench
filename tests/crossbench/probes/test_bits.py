@@ -6,12 +6,16 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
+from typing import Any
 from unittest import mock
 
+from typing_extensions import override
+
 from crossbench import path as pth
-from crossbench.probes.bits import BitsProbe
+from crossbench.probes.bits import BitsProbe, BitsProbeContext
 from crossbench.probes.probe import ProbeIncompatibleBrowser
-from crossbench.probes.results import EmptyProbeResult
+from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 from tests import test_helper
 from tests.crossbench.probes.helper import BaseProbeTestCase
 
@@ -187,13 +191,66 @@ class BitsProbeTestCase(BaseProbeTestCase):
     host_platform.popen.assert_not_called()
     host_platform.sh.assert_not_called()
 
-    self.assertIsInstance(context.teardown(), EmptyProbeResult)
+    self.assertIsInstance(context.teardown(), LocalProbeResult)
 
   def test_probe_lifecycle(self) -> None:
     self._check_probe_lifecycle(bits_device="")
 
   def test_probe_lifecycle_with_device(self) -> None:
     self._check_probe_lifecycle(bits_device="device_id_123")
+
+
+class BitsProbeResultsFileTestCase(BaseProbeTestCase):
+  MOCK_NOW = dt.datetime(2026, 7, 2, 17, 0, 55)
+  MOCK_NOW_STR = "20260702_170055"
+
+  @override
+  def setUp(self) -> None:
+    super().setUp()
+    tmp_dir = pth.LocalPath(self.platform.default_tmp_dir)
+    self.bits_path = tmp_dir / "bits"
+    self.fs.create_file(self.bits_path)
+    self.run = self.mock_run(result_path=tmp_dir / "bits.json")
+    self.host_platform = self.run.browser_session.browser.host_platform
+    self.host_platform.popen = mock.MagicMock()
+    self.host_platform.sh = mock.MagicMock()
+
+  def _create_context(self, bits_out: str) -> BitsProbeContext:
+    probe = BitsProbe(self.bits_path, bits_out=bits_out)
+    with mock.patch("crossbench.probes.bits.dt.datetime") as mock_datetime:
+      mock_datetime.now.return_value = self.MOCK_NOW
+      context = probe.create_context(self.run)
+    return context
+
+  def _teardown(self, context: BitsProbeContext) -> LocalProbeResult:
+    result = context.teardown()
+    self.assertIsInstance(result, LocalProbeResult)
+    self.assertTrue(context.local_result_path.exists())
+    return result
+
+  def _test_output(self, bits_out: str) -> Any:
+    context = self._create_context(bits_out)
+    self.assertFalse(context.local_result_path.exists())
+    context.start_story_run()
+    self.assertTrue(context.local_result_path.exists())
+    result = self._teardown(context)
+    with result.json.open("r", encoding="utf-8") as f:
+      return json.load(f)
+
+  def test_explicit_out_id(self) -> None:
+    output = self._test_output("explicit_id")
+    self.assertEqual(output, {"bits_out_id": "explicit_id"})
+
+  def test_auto_generated_out_id(self) -> None:
+    output = self._test_output("")
+    self.assertEqual(output, {"bits_out_id": self.MOCK_NOW_STR})
+
+  def test_without_start(self) -> None:
+    context = self._create_context("test_run_id")
+    self.assertFalse(context.local_result_path.exists())
+    result = context.teardown()
+    self.assertIsInstance(result, EmptyProbeResult)
+    self.assertFalse(context.local_result_path.exists())
 
 
 if __name__ == "__main__":
