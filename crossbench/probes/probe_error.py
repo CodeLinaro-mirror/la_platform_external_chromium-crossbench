@@ -28,4 +28,10 @@ class ProbeIncompatibleBrowser(ProbeValidationError):
                probe: Probe,
                browser: Browser,
                message: str = "Incompatible browser") -> None:
-    super().__init__(probe, f"{message}, got {browser.attributes()}")
+    # Note: The 6 spaces of explicit indentation on the second line matches the
+    # expected implied indentation from the runner's exception formatter.
+    # This is a bit hacky, but refactoring the exception formatter for this
+    # would be overkill.
+    super().__init__(
+        probe, f"{message}\n"
+        f"      Got: browser={browser}, platform={browser.platform}")

@@ -7,6 +7,7 @@ import inspect
 from typing import TYPE_CHECKING
 
 import crossbench.path as pth
+from crossbench.browsers.settings import Settings
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.all import CONFIGURABLE_INTERNAL_PROBES, \
     DEFAULT_INTERNAL_PROBES, GENERAL_PURPOSE_PROBES, INTERNAL_PROBES, \
@@ -34,6 +35,7 @@ from crossbench.probes.polling import PollingShellProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.powermetrics import PowerMetricsProbe
 from crossbench.probes.probe import Probe, ProbeKeyT, ProbePriority
+from crossbench.probes.probe_error import ProbeIncompatibleBrowser
 from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
 from crossbench.probes.results import LocalProbeResult
@@ -51,6 +53,8 @@ from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
 from tests import test_helper
 from tests.crossbench.base import CrossbenchConfigTestMixin, \
     CrossbenchFakeFsTestCase
+from tests.crossbench.mock_browser import MockChromeStable
+from tests.crossbench.mock_helper import LinuxMockPlatform
 from tests.crossbench.probes.helper import BaseProbeTestCase
 
 if TYPE_CHECKING:
@@ -278,6 +282,17 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
 
   def test_local_shell_probe_key(self):
     self._verify_shell_probe_key(LocalShellProbe)
+
+  def test_probe_incompatible_browser_message(self):
+    probe = BrowserProfilingProbe()
+    platform = LinuxMockPlatform()
+    MockChromeStable.setup_fs(self.fs, platform)
+    browser = MockChromeStable("stable", settings=Settings(platform=platform))
+    self.assertRegex(
+        str(ProbeIncompatibleBrowser(probe, browser, "Some error message")),
+        r"Probe\(browser-profiling\): Some error message\n"
+        r"      Got: browser=Chrome:stable, "
+        r"platform=local\.mock\.linux\.arm64\.\d+")
 
 
 class ShellProbeExecutionTestCase(BaseProbeTestCase):
