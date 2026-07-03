@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, ClassVar, Self
+from typing import IO, TYPE_CHECKING, Any, ClassVar, Iterator, Self
 
 from typing_extensions import override
 
@@ -98,10 +99,6 @@ class BitsProbe(Probe):
   def duration(self) -> dt.timedelta:
     return self._duration
 
-  @property
-  @override
-  def result_path_name(self) -> str:
-    return f"{self.name}.json"
 
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
@@ -127,25 +124,39 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
   def bits_out_id(self) -> str:
     return self._bits_out_id
 
+  @contextlib.contextmanager
+  def _log_files(self, mode: str) -> Iterator[tuple[IO[Any], IO[Any]]]:
+    stdout_path = self.local_result_path / "stdout.txt"
+    stderr_path = self.local_result_path / "stderr.txt"
+    with stdout_path.open(mode, encoding="utf-8") as stdout, \
+         stderr_path.open(mode, encoding="utf-8") as stderr:
+      yield stdout, stderr
+
   def _start_collection(self) -> None:
     logging.debug("BITS: Starting collection (ID: %r)", self.bits_out_id)
+    self.host_platform.mkdir(self.local_result_path)
+
+    json_path = self.local_result_path / "bits.json"
+    self.host_platform.write_text(
+        json_path,
+        json.dumps({"bits_out_id": self.bits_out_id}, indent=2),
+    )
+
     device_args: tuple[str, ...] = ()
     if self.probe.bits_device:
       device_args += ("--device", self.probe.bits_device)
-    self._process = self.host_platform.popen(
-        self.probe.bits_path,
-        "--create",
-        self.bits_out_id,
-        "--duration",
-        f"{self.probe.duration.total_seconds():.0f}s",
-        *device_args,
-    )
 
-    assert not self.host_platform.exists(self.local_result_path)
-    self.host_platform.write_text(
-        self.local_result_path,
-        json.dumps({"bits_out_id": self.bits_out_id}, indent=2),
-    )
+    with self._log_files("w") as (stdout, stderr):
+      self._process = self.host_platform.popen(
+          self.probe.bits_path,
+          "--create",
+          self.bits_out_id,
+          "--duration",
+          f"{self.probe.duration.total_seconds():.0f}s",
+          *device_args,
+          stdout=stdout,
+          stderr=stderr,
+      )
 
   def _stop_collection(self) -> None:
     logging.debug("BITS: Stopping collection (ID: %r)", self.bits_out_id)
@@ -154,7 +165,8 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
         "--stop",
         self.bits_out_id,
     )
-    self.host_platform.sh(*stop_args)
+    with self._log_files("a") as (stdout, stderr):
+      self.host_platform.sh(*stop_args, stdout=stdout, stderr=stderr)
 
   @override
   def start(self) -> None:
@@ -175,5 +187,9 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
   @override
   def teardown(self) -> ProbeResult:
     if self.host_platform.exists(self.local_result_path):
-      return self.local_result(file=(self.local_result_path,))
+      files = [
+          f for f in self.local_result_path.iterdir()
+          if self.host_platform.is_file(f)
+      ]
+      return self.local_result(file=files)
     return self.empty_result()

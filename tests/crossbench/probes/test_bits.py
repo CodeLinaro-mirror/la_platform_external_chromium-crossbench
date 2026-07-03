@@ -165,22 +165,34 @@ class BitsProbeTestCase(BaseProbeTestCase):
     else:
       self.assertNotIn("--device", call_args)
 
-    host_platform.popen.assert_called_once_with(
-        self.bits_path,
-        "--create",
-        "test_run_id",
-        "--duration",
-        "120s",
-        *(("--device", bits_device) if bits_device else []),
+    host_platform.popen.assert_called_once()
+    self.assertEqual(
+        host_platform.popen.call_args.args,
+        (
+            self.bits_path,
+            "--create",
+            "test_run_id",
+            "--duration",
+            "120s",
+            *(("--device", bits_device) if bits_device else []),
+        ),
     )
+    self.assertIn("stdout", host_platform.popen.call_args.kwargs)
+    self.assertIn("stderr", host_platform.popen.call_args.kwargs)
 
     # 3. stop_story_run() should stop BITS
     context.stop_story_run()
-    host_platform.sh.assert_called_once_with(
-        self.bits_path,
-        "--stop",
-        "test_run_id",
+    host_platform.sh.assert_called_once()
+    self.assertEqual(
+        host_platform.sh.call_args.args,
+        (
+            self.bits_path,
+            "--stop",
+            "test_run_id",
+        ),
     )
+    self.assertIn("stdout", host_platform.sh.call_args.kwargs)
+    self.assertIn("stderr", host_platform.sh.call_args.kwargs)
 
     # Reset mocks to verify that the final stop phase is a clean no-op
     host_platform.popen.reset_mock()
