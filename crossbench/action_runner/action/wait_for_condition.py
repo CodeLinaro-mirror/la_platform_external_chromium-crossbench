@@ -9,8 +9,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, \
-    ActionT
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, Self
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.parse import ObjectParser
 
@@ -28,7 +27,7 @@ class WaitForConditionAction(Action):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "condition", type=ObjectParser.non_empty_str, required=True)

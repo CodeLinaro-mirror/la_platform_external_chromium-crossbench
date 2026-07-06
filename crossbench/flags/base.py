@@ -104,7 +104,6 @@ class BasicFlags(Freezable, collections.UserDict):
       maybe_flag_name: str | None = groups.get("name")
       if not maybe_flag_name:
         raise ValueError(f"Invalid {msg}: {raw_flags!r}")
-      # Re-assign since pytype doesn't remove the Optional.
       flag_name: str = maybe_flag_name
       flag_value: str | None = (
           groups.get("value_single_quotes") or

@@ -71,10 +71,6 @@ ruff = "^0.15.4"
 types-protobuf = "6.32.1.20251105"
 types-psutil = "7.0.0.20250822"
 
-
-[tool.poetry.group.dev-pytype.dependencies]
-python = ">=3.11,<3.12"
-
 [build-system]
 requires = ["poetry_core>=1.1.5"]
 build-backend = "poetry.core.masonry.api"

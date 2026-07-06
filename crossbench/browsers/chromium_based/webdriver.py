@@ -19,7 +19,6 @@ from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from typing_extensions import override
 
-from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder, \
     DriverNotFoundError
@@ -40,6 +39,7 @@ if TYPE_CHECKING:
 
   from selenium import webdriver
 
+  from crossbench import path as pth
   from crossbench.browsers.version import BrowserVersion
   from crossbench.flags.base import FlagsT
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -130,8 +130,6 @@ class ChromiumBasedWebDriver(
       except DriverNotFoundError as e:
         logging.debug("Could not find fallback chromedriver: %s", e)
         raise original_download_error from e
-      # to make an old pytype version happy
-      return pth.LocalPath()
 
   @override
   def _start_driver(self, session: BrowserSessionRunGroup,

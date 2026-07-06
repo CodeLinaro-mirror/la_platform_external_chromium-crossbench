@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
@@ -15,7 +15,6 @@ from crossbench.cli.config.probe import PROBE_LOOKUP
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench.action_runner.action.action import ActionT
   from crossbench.config import ConfigParser
 
 
@@ -25,7 +24,7 @@ class ProbeAction(BaseProbeAction):
   @classmethod
   @override
   @functools.cache
-  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "probe",

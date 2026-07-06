@@ -54,7 +54,6 @@ crossbench tries to follow
 
 #### Typing-tools
 - Fix all mypy errors: `poetry run mypy crossbench --check-untyped-defs `.
-- Fix all pytype errors: `poetry run pytype -j auto crossbench`.
 
 ### ConfigObject and Input Validation
 Any non-trivial configuration should use a dedicate ConfigObject.

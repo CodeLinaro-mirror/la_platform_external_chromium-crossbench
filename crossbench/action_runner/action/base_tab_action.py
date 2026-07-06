@@ -10,8 +10,7 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, \
-    ActionT
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, Self
 from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
@@ -27,7 +26,7 @@ class BaseTabAction(Action, metaclass=abc.ABCMeta):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "tab_index",

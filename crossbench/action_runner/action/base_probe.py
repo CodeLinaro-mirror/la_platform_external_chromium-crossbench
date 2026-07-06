@@ -10,8 +10,7 @@ from typing import TYPE_CHECKING, Any
 from immutabledict import immutabledict
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, \
-    ActionT
+from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, Self
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.cli.config.probe import PROBE_LOOKUP
 
@@ -29,7 +28,7 @@ class BaseProbeAction(Action):
   @classmethod
   @override
   @functools.cache
-  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     return parser
 

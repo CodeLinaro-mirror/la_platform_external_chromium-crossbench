@@ -8,7 +8,7 @@ import abc
 import datetime as dt
 import functools
 import json
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Self, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Self
 
 from typing_extensions import override
 
@@ -49,9 +49,6 @@ ACTION_TIMEOUT: Final = dt.timedelta(seconds=20)
 # Lazily initialized Action class lookup.
 ACTIONS: dict[ActionType, type[Action]] = {}
 
-# TODO: remove once pytype is fixed/replaced since it gets confused with Self
-# annotations on classmethods with decorators.
-ActionT = TypeVar("ActionT", bound="Action")
 
 
 class Action(ConfigObject, metaclass=abc.ABCMeta):

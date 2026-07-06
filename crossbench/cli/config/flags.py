@@ -140,8 +140,7 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
     #  "--flag-c": (None, "value 2", "value 3"),
     # }
     cls._validate_variants_dict(data)
-    # TODO: Use list[Self] once pytype supports it.
-    per_flag_groups: list = []
+    per_flag_groups: list[Self] = []
     for flag_name, flag_data in data.items():
       group = cls._dict_variant_to_group(flag_name, flag_data)
       assert isinstance(group, cls)

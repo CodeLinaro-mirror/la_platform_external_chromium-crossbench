@@ -49,8 +49,6 @@ class MetaTestCase(unittest.TestCase):
         text = py_file.read_text()
         if FUTURE_ANNOTATIONS_SNIPPET in text:
           continue
-        if "pytype: skip-file" in text:
-          continue
         if py_file.name == "__init__.py" and COMMENTS_ONLY_RE.fullmatch(text):
           continue
         self.fail(f"{py_file} is missing future annotation")

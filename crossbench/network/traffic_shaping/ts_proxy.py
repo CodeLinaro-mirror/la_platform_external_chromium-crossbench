@@ -179,7 +179,7 @@ class TsProxyServer:
 
 
 class TsProxyProcess:
-  """Separate wrapper around the ts_proxy to simplify pytype testing."""
+  """Separate wrapper around the ts_proxy to simplify testing."""
 
   def __init__(self,
                platform: Platform,

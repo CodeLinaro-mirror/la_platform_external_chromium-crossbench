@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, ActionT
+from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_input_source import InputSourceAction
 from crossbench.action_runner.action.position import PositionConfig, \
@@ -30,7 +30,7 @@ class ClickAction(InputSourceAction):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
         "position",

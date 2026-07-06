@@ -327,10 +327,6 @@ Install the necessary dependencies from the lock file using poetry:
 # Select the python version you want to use (3.11):
 poetry env use 3.11
 poetry install
-
-# For windows you have to skip pytype support:
-poetry env use 3.11
-poetry install --without=dev-pytype
 ```
 
 ### Crossbench
@@ -356,7 +352,7 @@ Run detailed test coverage:
 poetry run pytest --cov=crossbench --cov-report=html
 ```
 
-Run [pytype](https://github.com/google/pytype) type checker:
+Run [mypy](http://mypy-lang.org/) type checker:
 ```bash
-poetry run pytype -j auto .
+poetry run mypy crossbench --check-untyped-defs
 ```

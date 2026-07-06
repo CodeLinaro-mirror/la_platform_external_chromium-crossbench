@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
@@ -13,7 +13,6 @@ from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_tab_action import BaseTabAction
 
 if TYPE_CHECKING:
-  from crossbench.action_runner.action.action import ActionT
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
 
@@ -24,7 +23,7 @@ class SwitchTabAction(BaseTabAction):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     return parser
 

@@ -353,7 +353,6 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
     with self.measure("browser-setup"):
       try:
-        # pytype somehow gets the package path wrong here, disabling for now.
         self._browser.start(self)
         assert self._browser.is_running, "Browser did not start up correctly"
       except Exception as e:

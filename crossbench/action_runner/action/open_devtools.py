@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
@@ -18,7 +18,6 @@ if TYPE_CHECKING:
   import datetime as dt
   import re
 
-  from crossbench.action_runner.action.action import ActionT
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
 
@@ -44,7 +43,7 @@ class OpenDevToolsAction(BaseTabAction):
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
-  def config_parser(cls: type[ActionT]) -> ConfigParser[ActionT]:
+  def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument("panel_name", type=ObjectParser.non_empty_str)
     return parser
