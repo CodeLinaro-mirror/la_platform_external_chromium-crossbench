@@ -1,4 +1,5 @@
 INCLUDE PERFETTO MODULE ext.webview_startup;
+INCLUDE PERFETTO MODULE linux.memory.high_watermark;
 INCLUDE PERFETTO MODULE linux.memory.process;
 
 WITH
@@ -29,6 +30,17 @@ WITH
     ORDER BY m.ts
     LIMIT 1
   ),
+  hwm_at_end AS (
+    -- Get rss high watermark value at the end of end_slice for the same process
+    SELECT
+      h.rss_high_watermark
+    FROM memory_rss_high_watermark_per_process h
+    JOIN webview_startup_start_slice AS start_slice ON h.upid = start_slice.upid
+    CROSS JOIN webview_startup_end_slice AS end_slice
+    WHERE h.ts >= end_slice.end_ts
+    ORDER BY h.ts
+    LIMIT 1
+  ),
   diffs AS (
     SELECT
       (mem_at_end.anon_rss - mem_at_start.anon_rss) AS rss_anon_startCL_diff_bytes,
@@ -42,5 +54,6 @@ SELECT
   rss_file_startCL_diff_bytes,
   rss_shmem_startCL_diff_bytes,
   swap_startCL_diff_bytes,
-  (rss_anon_startCL_diff_bytes + swap_startCL_diff_bytes) AS rss_anon_plus_swap_startCL_diff_bytes
-FROM diffs;
+  (rss_anon_startCL_diff_bytes + swap_startCL_diff_bytes) AS rss_anon_plus_swap_startCL_diff_bytes,
+  hwm_at_end.rss_high_watermark AS rss_hwm_startCL_bytes
+FROM diffs, hwm_at_end;
