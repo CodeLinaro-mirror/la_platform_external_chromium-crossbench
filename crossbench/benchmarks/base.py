@@ -232,9 +232,16 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
         "Use '#tag' to include and '-#tag' to exclude stories by tag.")
     group.add_argument(
         "--story-tags",
+        "--story-tag",
         dest="story_tags",
         help="Comma-separated list of tags to include/exclude stories "
         "(e.g., 'tag1,tag2,-tag3'). Mutually exclusive with --stories.")
+    group.add_argument(
+        "--all",
+        dest="stories",
+        const="all",
+        action="store_const",
+        help="Run all stories (shorthand for --stories=all).")
 
   @classmethod
   def _add_story_grouping_arguments(

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import argparse
 from typing import TYPE_CHECKING, ClassVar, Mapping, Sequence
 
 from typing_extensions import Self, override
@@ -81,6 +82,9 @@ class JetStream3Story(JetStream2Story, metaclass=abc.ABCMeta):
   @override
   def url_params(self) -> dict[str, str]:
     params: dict[str, str] = super().url_params
+    if self.name == "all":
+      params["tags"] = "all"
+      return params
     if self.substories != self.default_story_names():
       params["test"] = ",".join(self.substories)
     return params

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import argparse
 import datetime as dt
 import enum
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Mapping, Sequence, cast
@@ -195,6 +196,9 @@ class Speedometer3Story(SpeedometerStory, metaclass=abc.ABCMeta):
   @override
   def url_params(self) -> dict[str, str]:
     url_params: dict[str, str] = super().url_params
+    if self.name == "all":
+      url_params["tags"] = "all"
+      return url_params
     if tuple(self.substories) != self.default_story_names():
       url_params["suites"] = ",".join(self.substories)
     return url_params
