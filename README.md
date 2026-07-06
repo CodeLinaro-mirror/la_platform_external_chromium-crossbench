@@ -9,7 +9,7 @@ Issues/Bugs: [Tests > CrossBench](https://bugs.chromium.org/p/chromium/issues/li
 
 Supported Browsers: Chrome/Chromium, Firefox, Safari and Edge.
 
-Supported OS: MacOS, Android, Linux and Windows.
+Supported OS: MacOS, Android, iOS, Linux and Windows.
 
 ## Basic usage:
 ### Chromium Devs (with a full chromium checkout)
