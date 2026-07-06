@@ -181,6 +181,10 @@ class Probe(ProbeResultKey, abc.ABC):
   def is_attached(self) -> bool:
     return len(self._browsers) > 0
 
+  @property
+  def browsers(self) -> set[Browser]:
+    return self._browsers
+
   def attach(self, browser: Browser) -> None:
     assert browser not in self._browsers, (
         f"Probe={self.name} is attached multiple times to the same browser")

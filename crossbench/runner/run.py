@@ -508,7 +508,9 @@ class ProbeRunContextManager(ProbeContextManager[Run, ProbeContext]):
     return self._origin
 
   @override
-  def _create_probe_context(self, probe: Probe) -> ProbeContext:
+  def _create_probe_context(self, probe: Probe) -> ProbeContext | None:
+    if self.run.browser not in probe.browsers:
+      return None
     return probe.create_context(self.run)
 
   def setup_selenium_options(self, options: ArgOptions) -> None:

@@ -406,4 +406,6 @@ class ProbeSessionContextManager(ProbeContextManager[BrowserSessionRunGroup,
 
   @override
   def _create_probe_context(self, probe: Probe) -> ProbeSessionContext | None:
+    if self._origin.browser not in probe.browsers:
+      return None
     return probe.create_session_context(self._origin)

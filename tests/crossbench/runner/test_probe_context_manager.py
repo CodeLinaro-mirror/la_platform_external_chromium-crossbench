@@ -4,10 +4,18 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+from unittest import mock
+
 from typing_extensions import override
 
 from crossbench.helper.state import UnexpectedStateError
+from crossbench.runner.groups.session import ProbeSessionContextManager
 from crossbench.runner.run import ProbeRunContextManager
+
+if TYPE_CHECKING:
+  from crossbench.probes.probe_context import ProbeSessionContext
+
 from tests import test_helper
 from tests.crossbench.runner.helper import BaseRunnerTestCase, MockProbe, \
     MockProbeContext
@@ -19,6 +27,15 @@ class FailingMockProbeContext(MockProbeContext):
   @override
   def setup(self):
     raise CustomException("failing setup")
+
+
+class MockSessionProbe(MockProbe):
+
+  @override
+  def create_session_context(self, session) -> ProbeSessionContext | None:
+    mock_context = mock.MagicMock()
+    mock_context.name = "mock_session_context"
+    return mock_context
 
 
 class ProbeContextManagerTestCase(BaseRunnerTestCase):
@@ -152,6 +169,70 @@ class ProbeContextManagerTestCase(BaseRunnerTestCase):
 
     exception = self.cb_run.exceptions[0].exception
     self.assertIsInstance(exception, CustomException)
+
+
+class ProbeContextManagerSelectiveAttachmentTestCase(BaseRunnerTestCase):
+
+  def setUp(self) -> None:
+    super().setUp()
+    self.runner = self.default_runner()
+    self.runs = list(self.runner._get_runs())
+    for run in self.runs:
+      run.out_dir.mkdir(parents=True, exist_ok=True)
+    self.chrome_runs = [
+        run for run in self.runs if run.browser is self.mock_chrome_dev
+    ]
+    self.firefox_runs = [
+        run for run in self.runs if run.browser is self.mock_firefox
+    ]
+
+    self.chrome_session = self.chrome_runs[0].browser_session
+    self.chrome_session.path.mkdir(parents=True, exist_ok=True)
+    self.firefox_session = self.firefox_runs[0].browser_session
+    self.firefox_session.path.mkdir(parents=True, exist_ok=True)
+
+  def _get_probe_contexts_after_setup(self, context_manager, probe):
+    context_manager.setup([probe], is_dry_run=False)
+    self.assertTrue(context_manager.is_ready)
+    return context_manager._probe_contexts
+
+  def test_run_context_manager_selective_attachment(self):
+    probe = MockProbe("custom_probe_data")
+    # Probe is only attached to Chrome, not Firefox.
+    probe.attach(self.mock_chrome_dev)
+
+    # Verify context creation on the attached browser.
+    for run in self.chrome_runs:
+      manager = ProbeRunContextManager(run, run.results)
+      contexts = self._get_probe_contexts_after_setup(manager, probe)
+      self.assertEqual(len(contexts), 1)
+      self.assertIn(type(probe), contexts)
+
+    # Verify context is skipped on the unattached browser.
+    for run in self.firefox_runs:
+      manager = ProbeRunContextManager(run, run.results)
+      contexts = self._get_probe_contexts_after_setup(manager, probe)
+      self.assertEqual(len(contexts), 0)
+
+  def test_session_context_manager_selective_attachment(self):
+    probe = MockSessionProbe("custom_session_probe_data")
+    # Probe is only attached to Chrome, not Firefox.
+    probe.attach(self.mock_chrome_dev)
+
+    # Verify context creation on the attached browser session.
+    manager_chrome = ProbeSessionContextManager(self.chrome_session,
+                                                self.chrome_session.results)
+    contexts_chrome = self._get_probe_contexts_after_setup(
+        manager_chrome, probe)
+    self.assertEqual(len(contexts_chrome), 1)
+    self.assertIn(type(probe), contexts_chrome)
+
+    # Verify context is skipped on the unattached browser session.
+    manager_firefox = ProbeSessionContextManager(self.firefox_session,
+                                                 self.firefox_session.results)
+    contexts_firefox = self._get_probe_contexts_after_setup(
+        manager_firefox, probe)
+    self.assertEqual(len(contexts_firefox), 0)
 
 
 del BaseRunnerTestCase
