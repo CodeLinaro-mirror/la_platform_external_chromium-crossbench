@@ -7,13 +7,13 @@ from __future__ import annotations
 import atexit
 import logging
 import subprocess
-import time
 from typing import TYPE_CHECKING, Final
 
 from typing_extensions import override
 
 import crossbench.path as pth
 from crossbench.cli import ui
+from crossbench.helper.wait import WaitRange, wait_with_backoff
 from crossbench.probes.profiling.context.base import PosixProfilingContext
 from crossbench.probes.profiling.enum import TargetMode
 
@@ -61,10 +61,17 @@ class MacOSProfilingContext(PosixProfilingContext):
         "--output",
         self.result_path,
         stdin=subprocess.PIPE)
-    # xctrace takes some time to start up
-    time.sleep(3)
-    if self._profiling_process.poll():
-      raise ValueError("Could not start xctrace")
+    # xctrace takes some time to start up and create the initial trace directory
+    first_result_file = self.result_path / "Trace1.run"
+    try:
+      for _ in wait_with_backoff(WaitRange(timeout=10)):
+        if self._profiling_process.poll() is not None:
+          raise ValueError("Could not start xctrace")
+        if self.browser_platform.exists(first_result_file):
+          break
+    except TimeoutError:
+      logging.warning("xctrace took too long to start recording. "
+                      "Samples might be missing.")
 
   def start(self) -> None:
     pass
@@ -104,7 +111,12 @@ class MacOSProfilingContext(PosixProfilingContext):
                                "--output", trace_xml_path, "--xpath",
                                _XPATH_EXPRESSION)
       if self.browser_platform.file_size(trace_xml_path) < 100 * KB:
-        logging.error("Got empty %s file", trace_xml_path)
+        logging.error(
+            "Got an empty or very small %s file. "
+            "xctrace might not have captured any CPU samples because the "
+            "benchmark was too short (it takes a few seconds to attach), "
+            "or due to missing system permissions (SIP/Developer Tools).",
+            trace_xml_path.name)
       return trace_xml_path
 
   def stop_process(self) -> None:
@@ -116,5 +128,9 @@ class MacOSProfilingContext(PosixProfilingContext):
           self._profiling_process,
           signal=self.browser_platform.signals.SIGINT,
           timeout=60)
+    success_file = self.result_path / "open.creq"
+    if not self.browser_platform.exists(success_file):
+      logging.error("xctrace failed to flush cleanly. "
+                    "The trace bundle might be corrupted or empty.")
     self._profiling_process = None
     atexit.unregister(self.stop_process)

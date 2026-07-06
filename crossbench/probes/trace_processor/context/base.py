@@ -92,11 +92,24 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
         query_result = self._run_queries(tp, exceptions)
         metric_result = self._run_metrics(tp, exceptions)
         summary_result = self._summarize_trace(tp)
-    # Special-case for perfetto-generated pprof files:
-    pprof_results = LocalProbeResult(
-        pprof=self.local_result_path.glob("*.pprof"))
+    pprof_results = self.pprof_results()
     result = query_result.merge(metric_result, pprof_results, summary_result)
     return result
+
+  def pprof_results(self) -> LocalProbeResult:
+    # Special-case for perfetto-generated pprof files:
+    pprof_files = list(self.local_result_path.glob("*.pprof"))
+    if self.has_pprof_query(self.queries) and not pprof_files:
+      logging.warning(
+          "Probe %s: No .pprof files were generated. "
+          "This usually means no CPU samples were found in the trace or the "
+          "query failed", self.probe.name)
+    return LocalProbeResult(pprof=pprof_files)
+
+  @classmethod
+  def has_pprof_query(cls,
+                      queries: Iterable[TraceProcessorQueryConfig]) -> bool:
+    return any("pprof" in q.name or "perf_sample" in q.name for q in queries)
 
   def _run_queries(self, tp: TraceProcessor,
                    exceptions: ExceptionAnnotator) -> LocalProbeResult:

@@ -23,24 +23,24 @@ FROM
 
 SELECT
   'profile.pprof' AS file_name,
-  WRITE_FILE(
-    'profile.pprof',
-    (
-      SELECT
-        EXPERIMENTAL_PROFILE(
-          CAT_STACKS(
-            'profile',
-            IFNULL(p.name, 'Unknown Process'),
-            IFNULL(t.name, 'Unknown Thread'),
-            STACK_FROM_STACK_PROFILE_CALLSITE(callsite_id)
-          ),
-          'samples',
-          'count',
-          1
-        ) AS profile
-      FROM
-        cb_pprof_spans s
-        LEFT JOIN thread t ON s.utid = t.utid
-        LEFT JOIN process p ON t.upid = p.upid
-    )
-  );
+  WRITE_FILE('profile.pprof', profile) AS file_size
+FROM (
+  SELECT
+    EXPERIMENTAL_PROFILE(
+      CAT_STACKS(
+        'profile',
+        IFNULL(p.name, 'Unknown Process'),
+        IFNULL(t.name, 'Unknown Thread'),
+        STACK_FROM_STACK_PROFILE_CALLSITE(callsite_id)
+      ),
+      'samples',
+      'count',
+      1
+    ) AS profile
+  FROM
+    cb_pprof_spans s
+    LEFT JOIN thread t ON s.utid = t.utid
+    LEFT JOIN process p ON t.upid = p.upid
+)
+WHERE
+  profile IS NOT NULL;

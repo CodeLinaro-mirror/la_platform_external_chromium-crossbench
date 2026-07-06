@@ -43,6 +43,10 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
     super().__init__(probe, run)
 
   @property
+  def has_symbols(self) -> bool:
+    return self._has_symbols
+
+  @property
   def should_symbolize_profile(self) -> bool:
     if not self.probe.symbolize_profile:
       return False
@@ -59,8 +63,7 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
   @override
   def queries(self) -> tuple[TraceProcessorQueryConfig, ...]:
     queries = super().queries
-    if self._has_symbols and not any(query.name == "pprof"
-                                     for query in queries):
+    if self.has_symbols and not self.has_pprof_query(queries):
       logging.info("trace_processor probe: auto-adding pprof query")
       queries += (TraceProcessorQueryConfig.parse("pprof"),)
     return queries
@@ -71,7 +74,7 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
     # TODO: fix and respect needs_btp_run, add pprof query earlier.
     if super().needs_tp_run:
       return True
-    return self._has_symbols
+    return self.has_symbols
 
   def _symbolize_profile(self, result: LocalProbeResult) -> LocalProbeResult:
     llvm_symbolizer_bin = self.probe.llvm_symbolizer_bin

@@ -223,30 +223,30 @@ CREATE VIRTUAL TABLE jetstream_sample USING SPAN_JOIN (jetstream_measure, perf_s
 -- WRITE_FILE needs trace_processor's --dev flag.
 SELECT
   'jetstream.pprof' as file_name,
-  WRITE_FILE (
-    'jetstream.pprof',
-    (
-      SELECT
-        EXPERIMENTAL_PROFILE (
-          CAT_STACKS (
-            jetstream_sample.name,
-            jetstream_sample.subtest,
-            process.name,
-            IIF (
-              instr (thread.name, ' ') > 0,
-              substr (thread.name, 1, instr (thread.name, ' ') -1),
-              thread.name
-            ),
-            STACK_FROM_STACK_PROFILE_CALLSITE (callsite_id)
-          ),
-          'samples',
-          'count',
-          1
-        ) AS profile
-      FROM
-        jetstream_sample
-        JOIN thread ON jetstream_sample.utid = thread.utid
-        JOIN process ON thread.upid = process.upid
-        --WHERE thread.name LIKE "ThreadPoolForegroundWorker%"
-    )
-  ) as file_size
+  WRITE_FILE ('jetstream.pprof', profile) as file_size
+FROM (
+  SELECT
+    EXPERIMENTAL_PROFILE (
+      CAT_STACKS (
+        jetstream_sample.name,
+        jetstream_sample.subtest,
+        process.name,
+        IIF (
+          instr (thread.name, ' ') > 0,
+          substr (thread.name, 1, instr (thread.name, ' ') -1),
+          thread.name
+        ),
+        STACK_FROM_STACK_PROFILE_CALLSITE (callsite_id)
+      ),
+      'samples',
+      'count',
+      1
+    ) AS profile
+  FROM
+    jetstream_sample
+    JOIN thread ON jetstream_sample.utid = thread.utid
+    JOIN process ON thread.upid = process.upid
+    --WHERE thread.name LIKE "ThreadPoolForegroundWorker%"
+)
+WHERE
+  profile IS NOT NULL;

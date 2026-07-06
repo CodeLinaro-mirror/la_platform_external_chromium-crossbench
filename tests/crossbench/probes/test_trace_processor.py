@@ -16,6 +16,8 @@ from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.probes.all import TraceProcessorProbe
 from crossbench.probes.trace_processor.constants import QUERIES_DIR
+from crossbench.probes.trace_processor.context.symbolizing import \
+    TraceProcessorSymbolizingProbeContext
 from crossbench.probes.trace_processor.query_config import \
     DeviceSpecificTraceProcessorQuery, TraceProcessorQueryConfig
 from tests import test_helper
@@ -87,6 +89,8 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self) -> None:
     super().setUp()
+    self.fs.create_file(QUERIES_DIR / "pprof.sql")
+    self.fs.create_file(QUERIES_DIR / "jetstream_3/perf_sample_span.sql")
     for b in ("pbcopy", "xclip", "wl-copy", "xsel", "clip"):
       if plt.PLATFORM.is_win:
         self.fs.create_file(f"C:/Windows/System32/{b}.exe")
@@ -154,6 +158,76 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
       with self.assertRaisesRegex(
           RuntimeError, "Clipboard tool unavailable on current platform."):
         TraceProcessorProbe(output_to_clipboard=["json"])
+
+  def test_has_pprof_query(self):
+    run = unittest.mock.MagicMock()
+
+    probe = TraceProcessorProbe.parse_dict({
+        "queries": [
+            {
+                "name": "pprof",
+                "sql": "select 1"
+            },
+            {
+                "name": "other",
+                "sql": "select 2"
+            },
+        ]
+    })
+    context = probe.create_context(run)
+    self.assertTrue(context.has_pprof_query(context.queries))
+
+    probe2 = TraceProcessorProbe.parse_dict(
+        {"queries": [{
+            "name": "other",
+            "sql": "select 2"
+        },]})
+    context2 = probe2.create_context(run)
+    self.assertFalse(context2.has_pprof_query(context2.queries))
+
+    probe3 = TraceProcessorProbe.parse_dict(
+        {"queries": [{
+            "name": "my_perf_sample_query",
+            "sql": "select 3"
+        },]})
+    context3 = probe3.create_context(run)
+    self.assertTrue(context3.has_pprof_query(context3.queries))
+
+  def mock_has_symbols(self, return_value: bool = True):
+    return unittest.mock.patch.object(
+        TraceProcessorSymbolizingProbeContext,
+        "has_symbols",
+        new_callable=unittest.mock.PropertyMock,
+        return_value=return_value)
+
+  def test_symbolizing_context_auto_adds_pprof(self):
+    run = unittest.mock.MagicMock()
+    probe = TraceProcessorProbe.parse_dict(
+        {"queries": [{
+            "name": "other",
+            "sql": "select 1"
+        },]})
+
+    context = TraceProcessorSymbolizingProbeContext(probe, run)
+    with self.mock_has_symbols():
+      queries = context.queries
+    self.assertEqual(len(queries), 2)
+    self.assertEqual(queries[1].name, "pprof")
+
+  def test_symbolizing_context_skips_pprof_with_perf_sample(self):
+    run = unittest.mock.MagicMock()
+    probe = TraceProcessorProbe.parse_dict({
+        "queries": [{
+            "name": "jetstream_3/perf_sample_span",
+            "sql": "select 1"
+        },]
+    })
+
+    context = TraceProcessorSymbolizingProbeContext(probe, run)
+    with self.mock_has_symbols():
+      queries = context.queries
+    self.assertEqual(len(queries), 1)
+    self.assertEqual(queries[0].name, "jetstream_3_perf_sample_span")
 
 
 TARGET_P9 = "web_power/power_rails_p9"
