@@ -22,6 +22,8 @@ from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.parse import DurationParser, PathParser
 from crossbench.probes.bits import BitsProbe
+from crossbench.probes.junction_temperature import \
+    JunctionTemperatureProbe as JtProbe
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -338,6 +340,8 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     super().setup(runner)
     if self._bits_probe:
       runner.attach_probe(self._bits_probe)
+    if not runner.has_probe(JtProbe.NAME):
+      runner.attach_probe(JtProbe(), matching_browser_only=True)
 
   @override
   def setup_session_network(self, session: BrowserSessionRunGroup) -> None:

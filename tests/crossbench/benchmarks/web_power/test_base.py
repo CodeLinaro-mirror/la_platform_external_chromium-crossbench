@@ -22,6 +22,8 @@ from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.parser import CBArgumentParser
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.probes.bits import BitsProbe
+from crossbench.probes.junction_temperature import JunctionTemperatureProbe
+from crossbench.probes.probe import ProbeIncompatibleBrowser
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
@@ -318,6 +320,39 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     custom_path = pathlib.Path("/path/to/custom.hjson")
     args_custom = parser.parse_args(["--probe-config", str(custom_path)])
     self.assertEqual(args_custom.probe_config, custom_path)
+
+  def _verify_junction_temperature_setup(
+      self, is_supported: bool, already_has_probe: bool) -> mock.MagicMock:
+    with mock.patch(
+        "crossbench.probes.junction_temperature."
+        "JunctionTemperatureProbe.validate_browser") as mock_validate:
+      if not is_supported:
+        mock_validate.side_effect = ProbeIncompatibleBrowser(
+            JunctionTemperatureProbe(), mock.MagicMock(), "Not supported")
+      story = MockWebPowerStory.from_site(
+          "cnn", total_duration=dt.timedelta(seconds=123))
+      benchmark = MockWebPowerBenchmark(stories=[story])
+
+      runner = mock.MagicMock()
+      runner.has_probe.return_value = already_has_probe
+      runner.browsers = [mock.MagicMock()]
+
+      benchmark.setup(runner)
+      return runner
+
+  def test_setup_junction_temperature_probe_supported(self) -> None:
+    runner = self._verify_junction_temperature_setup(
+        is_supported=True, already_has_probe=False)
+    runner.attach_probe.assert_called_once()
+    attached_probe = runner.attach_probe.call_args.args[0]
+    self.assertIsInstance(attached_probe, JunctionTemperatureProbe)
+    self.assertTrue(
+        runner.attach_probe.call_args.kwargs.get("matching_browser_only"))
+
+  def test_setup_junction_temperature_probe_already_has_probe(self) -> None:
+    runner = self._verify_junction_temperature_setup(
+        is_supported=True, already_has_probe=True)
+    runner.attach_probe.assert_not_called()
 
 
 class FakeWprReplayNetwork(WprReplayNetwork):
