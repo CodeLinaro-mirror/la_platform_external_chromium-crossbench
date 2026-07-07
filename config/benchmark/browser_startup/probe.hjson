@@ -31,6 +31,9 @@
               histograms {
                 histogram_name: "Startup.FirstWebContents.NonEmptyPaint3"
               }
+              histograms {
+                histogram_name: "InitialWebUI.Startup.ReloadButton.FirstContentfulPaint"
+              }
             }
           }
         }
@@ -51,6 +54,22 @@
               (paint.ts - (SELECT min(ts) FROM slice)) / 1e6 AS duration_ms
             FROM slice AS paint
             WHERE paint.name LIKE '%Startup.BrowserWindow.FirstPaint'
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "reload_button_fcp"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS duration_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'InitialWebUI.Startup.ReloadButton.FirstContentfulPaint'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
             LIMIT 1
             '''
         }

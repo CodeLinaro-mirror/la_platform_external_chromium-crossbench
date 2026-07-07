@@ -1,9 +1,9 @@
 {
   "pages": {
-    "blank_page_startup": [
+    "newtab_startup": [
       {
         "action": "get"
-        "url": "about:blank"
+        "url": "chrome://newtab/"
         "ready_state": "complete"
       }
     ]
