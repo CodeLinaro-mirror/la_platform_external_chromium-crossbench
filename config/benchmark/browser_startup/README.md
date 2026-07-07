@@ -4,7 +4,13 @@ This benchmark measures the time to the first non-empty paint (`Startup.BrowserW
 
 ## Running the Benchmark
 
-This configuration uses the `loading` subcommand. To run the benchmark locally and compare the variants:
+This configuration uses the `loading` subcommand. To run the benchmark locally and compare the variants using Poetry, first install the required dependencies:
+
+```bash
+poetry install
+```
+
+Then run the benchmark:
 
 ```bash
 poetry run cb loading \
@@ -14,6 +20,9 @@ poetry run cb loading \
   --env-validation=warn \
   --repeat=30
 ```
+
+> [!NOTE]
+> If you are in a Chromium development environment with `depot_tools` (`vpython3`), you can run `./cb.py loading ...` directly without `poetry install`.
 
 ## Interpreting Results
 
