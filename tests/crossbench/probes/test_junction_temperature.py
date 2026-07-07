@@ -14,7 +14,6 @@ from crossbench.probes.junction_temperature import \
 from crossbench.probes.junction_temperature import \
     JunctionTemperatureProbeContext
 from crossbench.probes.probe import ProbeIncompatibleBrowser
-from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.results import LocalProbeResult
 from tests import test_helper
 from tests.crossbench.probes.helper import BaseProbeTestCase
@@ -54,13 +53,13 @@ class JunctionTemperatureProbeTestCase(BaseProbeTestCase):
   def test_validate_browser_root_failure_non_root(self):
     self.browser.platform.sh_stdout.return_value = (
         "uid=2000(shell) gid=2000(shell)")
-    with self.assertRaises(ProbeValidationError) as cm:
+    with self.assertRaises(ProbeIncompatibleBrowser) as cm:
       self.probe.validate_browser(self.env, self.browser)
     self.assertIn("Can't use root on this device", str(cm.exception))
 
   def test_validate_browser_root_failure_su_error(self):
     self.browser.platform.sh_stdout.side_effect = RuntimeError("su failed")
-    with self.assertRaises(ProbeValidationError) as cm:
+    with self.assertRaises(ProbeIncompatibleBrowser) as cm:
       self.probe.validate_browser(self.env, self.browser)
     self.assertIn("Can't use root on this device", str(cm.exception))
 
@@ -73,7 +72,7 @@ class JunctionTemperatureProbeTestCase(BaseProbeTestCase):
       return "uid=0(root) gid=0(root)"
 
     self.browser.platform.sh_stdout.side_effect = sh_stdout_mock
-    with self.assertRaises(ProbeValidationError) as cm:
+    with self.assertRaises(ProbeIncompatibleBrowser) as cm:
       self.probe.validate_browser(self.env, self.browser)
     self.assertIn("TMU path missing", str(cm.exception))
 

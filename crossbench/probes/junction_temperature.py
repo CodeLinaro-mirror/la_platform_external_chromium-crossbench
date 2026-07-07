@@ -13,7 +13,6 @@ from typing_extensions import override
 import crossbench.path as pth
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
     ProbeIncompatibleBrowser, ProbeKeyT
-from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
@@ -95,9 +94,11 @@ class JunctionTemperatureProbe(Probe):
     try:
       output = browser.platform.sh_stdout("su", "0", "id")
     except (subprocess.SubprocessError, RuntimeError) as e:
-      raise ProbeValidationError(self, "Can't use root on this device.") from e
+      raise ProbeIncompatibleBrowser(self, browser,
+                                     "Can't use root on this device.") from e
     if "uid=0(root)" not in output:
-      raise ProbeValidationError(self, "Can't use root on this device.")
+      raise ProbeIncompatibleBrowser(self, browser,
+                                     "Can't use root on this device.")
 
     # Verify the thermal metrics directory exists on the device.
     # For simplicity's sake, we assume all relevant files exist under this
@@ -105,7 +106,7 @@ class JunctionTemperatureProbe(Probe):
     try:
       browser.platform.sh_stdout("su", "0", "test", "-d", _TMU_PATH)
     except (subprocess.SubprocessError, RuntimeError) as e:
-      raise ProbeValidationError(self, "TMU path missing.") from e
+      raise ProbeIncompatibleBrowser(self, browser, "TMU path missing.") from e
 
   @override
   def get_context_cls(self) -> type[JunctionTemperatureProbeContext]:
