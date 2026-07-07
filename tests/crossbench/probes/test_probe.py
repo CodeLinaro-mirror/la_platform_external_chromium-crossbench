@@ -3,8 +3,12 @@
 # found in the LICENSE file.
 from __future__ import annotations
 
+import abc
 import inspect
 from typing import TYPE_CHECKING
+from unittest import mock
+
+from typing_extensions import override
 
 import crossbench.path as pth
 from crossbench.browsers.settings import Settings
@@ -35,7 +39,8 @@ from crossbench.probes.polling import PollingShellProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.powermetrics import PowerMetricsProbe
 from crossbench.probes.probe import Probe, ProbeKeyT, ProbePriority
-from crossbench.probes.probe_error import ProbeIncompatibleBrowser
+from crossbench.probes.probe_error import ProbeIncompatibleBrowser, \
+    ProbeValidationError
 from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
 from crossbench.probes.results import LocalProbeResult
@@ -348,6 +353,104 @@ class ShellProbeExecutionTestCase(BaseProbeTestCase):
   def test_local_shell_probe_execution(self):
     run = self.mock_run()
     self._verify_shell_probe_execution(LocalShellProbe, run, self.platform)
+
+
+class BaseShellProbeValidationTestCase(BaseProbeTestCase):
+  """The validation logic is mostly equivalent for both local and remote
+  platforms, so we share the test cases in this base class and specialize
+  the concrete subclasses for LocalShellProbe and ShellProbe.
+  """
+  __test__ = False
+
+  @property
+  @abc.abstractmethod
+  def probe_cls(self) -> type[ShellProbeBase]:
+    pass
+
+  def _create_file(self, path_str: str, st_mode: int) -> pth.AnyPath:
+    path = pth.AnyPath(path_str)
+    self.fs.create_file(path, st_mode=st_mode)
+    return path
+
+  @override
+  def setUp(self) -> None:
+    super().setUp()
+    self._local_exec_1 = self._create_file("/local/bin/local_exec_1", 0o755)
+    self._local_exec_2 = self._create_file("/local/bin/local_exec_2", 0o755)
+    self._local_non_exec = self._create_file("/local/bin/local_non_exec", 0o644)
+
+    self._remote_exec_1 = self._create_file("/remote/bin/remote_exec_1", 0o755)
+    self._remote_exec_2 = self._create_file("/remote/bin/remote_exec_2", 0o755)
+    self._remote_non_exec = self._create_file("/remote/bin/remote_non_exec",
+                                              0o644)
+
+    run = self.mock_run()
+    self.browser = run.browser
+    self.browser_platform = self.setup_platform()
+    self.browser_platform.use_fs = True
+    self.browser.platform = self.browser_platform
+
+    # Register lookups permanently for host platform.
+    self.browser.host_platform.set_binary_lookup_override(
+        "local_exec_1", self._local_exec_1)
+    self.browser.host_platform.set_binary_lookup_override(
+        "local_exec_2", self._local_exec_2)
+
+    # Register lookups permanently for browser/remote platform.
+    self.browser_platform.set_binary_lookup_override("remote_exec_1",
+                                                     self._remote_exec_1)
+    self.browser_platform.set_binary_lookup_override("remote_exec_2",
+                                                     self._remote_exec_2)
+
+    prefix = "local" if self.probe_cls is LocalShellProbe else "remote"
+    wrong_prefix = "remote" if self.probe_cls is LocalShellProbe else "local"
+
+    self.exec_1 = f"{prefix}_exec_1"
+    self.exec_2 = f"{prefix}_exec_2"
+    self.non_exec = getattr(self, f"_{prefix}_non_exec")
+    self.typo = f"{prefix}_exec_typo"
+    self.wrong_exec = f"{wrong_prefix}_exec_1"
+
+  def _verify_validation(self, probe: ShellProbeBase) -> None:
+    probe.validate_browser(mock.MagicMock(), self.browser)
+
+  def test_validation_success(self):
+    probe = self.probe_cls(setup_cmd=[self.exec_1], stop_cmd=[self.exec_2])
+    self._verify_validation(probe)
+
+  def test_validation_not_executable(self):
+    probe = self.probe_cls(setup_cmd=[self.non_exec], stop_cmd=[self.exec_2])
+    with self.assertRaises(ProbeValidationError) as cm:
+      self._verify_validation(probe)
+    self.assertIn("not executable or does not exist", str(cm.exception))
+
+  def test_validation_typo(self):
+    probe = self.probe_cls(setup_cmd=[self.typo], stop_cmd=[self.exec_2])
+    with self.assertRaises(ProbeValidationError) as cm:
+      self._verify_validation(probe)
+    self.assertIn("not executable or does not exist", str(cm.exception))
+
+  def test_validation_wrong_platform_path(self):
+    probe = self.probe_cls(setup_cmd=[self.wrong_exec], stop_cmd=[self.exec_2])
+    with self.assertRaises(ProbeValidationError) as cm:
+      self._verify_validation(probe)
+    self.assertIn("not executable or does not exist", str(cm.exception))
+
+
+class LocalShellProbeValidationTestCase(BaseShellProbeValidationTestCase):
+  __test__ = True
+
+  @property
+  def probe_cls(self) -> type[LocalShellProbe]:
+    return LocalShellProbe
+
+
+class RemoteShellProbeValidationTestCase(BaseShellProbeValidationTestCase):
+  __test__ = True
+
+  @property
+  def probe_cls(self) -> type[ShellProbe]:
+    return ShellProbe
 
 
 if __name__ == "__main__":

@@ -12,11 +12,13 @@ from typing_extensions import override
 from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench import plt
+  from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.plt.types import CmdArg, TupleCmdArgs
   from crossbench.runner.run import Run
@@ -125,6 +127,36 @@ class ShellProbeBase(Probe):
   def teardown_cmd(self) -> TupleCmdArgs:
     return self._teardown_cmd
 
+  @abc.abstractmethod
+  def target_platform(self, browser: Browser) -> plt.Platform:
+    pass
+
+  @override
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
+    super().validate_browser(env, browser)
+    target_platform = self.target_platform(browser)
+    for cmd_name in (
+        "setup_cmd",
+        "start_cmd",
+        "start_story_run_cmd",
+        "stop_story_run_cmd",
+        "stop_cmd",
+        "teardown_cmd",
+    ):
+      self._validate_cmd(target_platform, cmd_name)
+
+  def _validate_cmd(self, platform: plt.Platform, cmd_name: str) -> None:
+    cmd: TupleCmdArgs = getattr(self, cmd_name)
+    if not cmd:
+      return
+    program = str(cmd[0])
+    if platform.which(program):
+      return
+    # TODO: Support ~ expansion for local paths.
+    raise ProbeValidationError(
+        self, f"Command '{program}' in {cmd_name} is not executable or "
+        f"does not exist on the target platform '{platform}'.")
+
   @override
   def validate_env(self, env: RunnerEnv) -> None:
     super().validate_env(env)
@@ -139,6 +171,10 @@ class ShellProbe(ShellProbeBase):
   stdout and stderr of the command as a result file.
   """
   NAME: ClassVar = "shell"
+
+  @override
+  def target_platform(self, browser: Browser) -> plt.Platform:
+    return browser.platform
 
   @override
   def get_context_cls(self) -> type[ShellProbeContext]:
@@ -215,6 +251,10 @@ class LocalShellProbe(ShellProbeBase):
   stdout and stderr of the command as a result file.
   """
   NAME: ClassVar[str] = "local_shell"
+
+  @override
+  def target_platform(self, browser: Browser) -> plt.Platform:
+    return browser.host_platform
 
   @override
   def get_context_cls(self) -> type[LocalShellProbeContext]:
