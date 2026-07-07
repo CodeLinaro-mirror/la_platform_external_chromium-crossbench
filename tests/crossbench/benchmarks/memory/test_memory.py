@@ -114,6 +114,9 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
         return original_js(self, script, *args, **kwargs)
       except AssertionError as e:
         if "Not enough expected_js available" in str(e):
+          if isinstance(script, str) and ("performance.getEntriesByName"
+                                          in script):
+            return 1000.0
           return None
         raise
 

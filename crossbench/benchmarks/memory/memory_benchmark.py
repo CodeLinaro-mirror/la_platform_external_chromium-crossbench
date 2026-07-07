@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import datetime as dt
 import json
 import logging
@@ -32,7 +31,6 @@ from crossbench.parse import NumberParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
 from crossbench.replacements import Replacements
-from crossbench.runner.exception import StopStoryException
 
 if TYPE_CHECKING:
   import argparse
@@ -208,7 +206,7 @@ class MemoryProbeContext(ActionRunnerListener,
 
   def _record_navigation_time(self, run: Run) -> str:
     """
-    Record NavigationStart time for each handle.
+    Record NavigationStart time for the current handle.
     """
     with run.actions("_record_navigation_time", measure=False) as action:
       cur_handle: str = action.current_window_id()
@@ -219,31 +217,26 @@ class MemoryProbeContext(ActionRunnerListener,
       self._navigation_time_ms[cur_handle] = navigation_start_time
 
       tab_index = self._tab_count - 1
-      try:
-        page_loaded = float(
-            action.
-            js(f"return performance.getEntriesByName('page-loaded~{tab_index}')"
-               "[0].startTime"))
-        alloc_start = float(
-            action.js("return performance.getEntriesByName"
-                      f"('allocation-start~{tab_index}')[0].startTime"))
-        alloc_done = float(
-            action.js("return performance.getEntriesByName"
-                      f"('allocation-done~{tab_index}')[0].startTime"))
-        alloc_dur = alloc_done - alloc_start
-        self._page_load_duration_ms_by_tab_index[str(tab_index)] = page_loaded
-        self._allocation_duration_ms_by_tab_index[str(tab_index)] = alloc_dur
-        action.js(
-            "performance.mark('crossbench_tab_timing', { detail: {"
-            f" tab_index: {tab_index}, page_load_duration_ms: {page_loaded},"
-            f" allocation_duration_ms: {alloc_dur} }} }})")
-      except (ValueError, TypeError,
-              selenium.common.exceptions.WebDriverException) as e:
-        logging.debug("Failed to extract tab metrics for index %s: %s",
-                      tab_index, e)
+      page_loaded = float(
+          action.js(
+              f"return performance.getEntriesByName('page-loaded~{tab_index}')"
+              "[0].startTime"))
+      alloc_start = float(
+          action.js("return performance.getEntriesByName"
+                    f"('allocation-start~{tab_index}')[0].startTime"))
+      alloc_done = float(
+          action.js("return performance.getEntriesByName"
+                    f"('allocation-done~{tab_index}')[0].startTime"))
+      alloc_dur = alloc_done - alloc_start
+      self._page_load_duration_ms_by_tab_index[str(tab_index)] = page_loaded
+      self._allocation_duration_ms_by_tab_index[str(tab_index)] = alloc_dur
+      action.js(
+          "performance.mark('crossbench_tab_timing', { detail: {"
+          f" tab_index: {tab_index}, page_load_duration_ms: {page_loaded},"
+          f" allocation_duration_ms: {alloc_dur} }} }})")
       return cur_handle
 
-  def _check_liveness(self, run: Run, most_recent_handle: str) -> int:
+  def _check_liveness(self, run: Run) -> int:
     """
     Navigate each opened tab, and check if the navigation start time
     has changed. If so, then it means that page has been discarded
@@ -266,22 +259,16 @@ class MemoryProbeContext(ActionRunnerListener,
             logging.info("Tab discard detected during liveness check.")
             dead_handles.append(handle)
         except Exception as e:
-          if self._check_error_msg(e):
+          if self._error_msg_is_tab_kill(e):
             logging.info("Tab crash detected during liveness check: %s", e)
             dead_handles.append(handle)
           else:
             raise
-      if self._navigation_time_ms:
-        if most_recent_handle in dead_handles:
-          raise StopStoryException("Most recent tab was killed.")
-        with contextlib.suppress(ValueError,
-                                 selenium.common.exceptions.WebDriverException):
-          action.switch_window(most_recent_handle)
     for handle in dead_handles:
       del self._navigation_time_ms[handle]
     return alive_count
 
-  def _check_error_msg(self, e: Exception) -> bool:
+  def _error_msg_is_tab_kill(self, e: Exception) -> bool:
     if isinstance(e, selenium.common.exceptions.WebDriverException) and (
         "page crash" in str(e) or "tab crashed" in str(e)):
       return True
@@ -295,22 +282,10 @@ class MemoryProbeContext(ActionRunnerListener,
       return True
     return False
 
-  @override
-  def handle_error(self, run: Run, e: Exception) -> None:
-    """
-    If there is a page crash error or a http request time out
-    for the stress liveness test, directly exit the benchmark
-    and report the max alive tab count.
-    """
-    if self._check_error_msg(e):
-      logging.info(
-          "Browser: %s. The max num of tabs we can keep alive concurrently "
-          "is: %s ", run.browser, len(self._navigation_time_ms))
-      raise StopStoryException(f"Found a Tab Crash/Timeout: {e}")
 
   @override
   def handle_page_run(self, run: Run) -> None:
-    cur_handle = self._record_navigation_time(run)
+    self._record_navigation_time(run)
 
     story = run.story
     assert isinstance(story, MemoryPage)
@@ -320,7 +295,7 @@ class MemoryProbeContext(ActionRunnerListener,
       # Delay checking until we reach the threshold, assume all tabs are alive
       alive_count = self._tab_count
     else:
-      alive_count = self._check_liveness(run, cur_handle)
+      alive_count = self._check_liveness(run)
       if self._tab_count == skip_until + 1 and alive_count < self._tab_count:
         logging.warning(
             "A dead tab was found during the first liveness check! "
