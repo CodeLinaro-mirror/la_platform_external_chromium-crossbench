@@ -183,7 +183,8 @@ class ChromiumBasedWebDriver(
     options.set_capability("browserVersion", str(self.version.major))
     # Don't wait for document-ready.
     options.set_capability("pageLoadStrategy", "none")
-    if "--allow-background-interventions" in args:
+    if ("--allow-background-interventions" in args and
+        not self.platform.is_chromeos):
       # chromedriver will silently add additional args that interfere
       # with background optimizations. Disable those args when the test is
       # run with background interventions allowed.
