@@ -402,13 +402,13 @@ class BaseShellProbeValidationTestCase(BaseProbeTestCase):
     self.browser_platform.set_binary_lookup_override("remote_exec_2",
                                                      self._remote_exec_2)
 
-    prefix = "local" if self.probe_cls is LocalShellProbe else "remote"
+    self.prefix = "local" if self.probe_cls is LocalShellProbe else "remote"
     wrong_prefix = "remote" if self.probe_cls is LocalShellProbe else "local"
 
-    self.exec_1 = f"{prefix}_exec_1"
-    self.exec_2 = f"{prefix}_exec_2"
-    self.non_exec = getattr(self, f"_{prefix}_non_exec")
-    self.typo = f"{prefix}_exec_typo"
+    self.exec_1 = f"{self.prefix}_exec_1"
+    self.exec_2 = f"{self.prefix}_exec_2"
+    self.non_exec = getattr(self, f"_{self.prefix}_non_exec")
+    self.typo = f"{self.prefix}_exec_typo"
     self.wrong_exec = f"{wrong_prefix}_exec_1"
 
   def _verify_validation(self, probe: ShellProbeBase) -> None:
@@ -432,6 +432,29 @@ class BaseShellProbeValidationTestCase(BaseProbeTestCase):
 
   def test_validation_wrong_platform_path(self):
     probe = self.probe_cls(setup_cmd=[self.wrong_exec], stop_cmd=[self.exec_2])
+    with self.assertRaises(ProbeValidationError) as cm:
+      self._verify_validation(probe)
+    self.assertIn("not executable or does not exist", str(cm.exception))
+
+  def test_validation_tilde_success(self):
+    probe = self.probe_cls()
+    target_platform = probe.target_platform(self.browser)
+
+    home_dir = target_platform.home()
+    exec_path = home_dir / f"{self.prefix}_exec_tilde"
+    self._create_file(str(exec_path), 0o755)
+    # Binary lookup override is needed because shutil.which doesn't search
+    # outside PATH. We mock the lookup for the expanded path.
+    target_platform.set_binary_lookup_override(str(exec_path), exec_path)
+
+    probe = self.probe_cls(
+        setup_cmd=[f"~/{self.prefix}_exec_tilde"], stop_cmd=[self.exec_2])
+    self._verify_validation(probe)
+
+  def test_validation_tilde_failure_non_existent(self):
+    probe = self.probe_cls(
+        setup_cmd=[f"~/{self.prefix}_does_not_exist_tilde"],
+        stop_cmd=[self.exec_2])
     with self.assertRaises(ProbeValidationError) as cm:
       self._verify_validation(probe)
     self.assertIn("not executable or does not exist", str(cm.exception))

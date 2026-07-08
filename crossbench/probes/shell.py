@@ -150,9 +150,8 @@ class ShellProbeBase(Probe):
     if not cmd:
       return
     program = str(cmd[0])
-    if platform.which(program):
+    if platform.which(platform.expanduser(program)):
       return
-    # TODO: Support ~ expansion for local paths.
     raise ProbeValidationError(
         self, f"Command '{program}' in {cmd_name} is not executable or "
         f"does not exist on the target platform '{platform}'.")

@@ -19,6 +19,7 @@ from unittest import mock
 
 from typing_extensions import override
 
+import crossbench.path as pth
 from crossbench import plt
 from crossbench.path import LocalPath
 from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
@@ -327,6 +328,32 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.assertEqual(self.platform.home(), pathlib.Path.home())
     else:
       self.assertTrue(self.platform.is_dir(self.platform.home()))
+
+  def _compare_expanded(self, lhs: str, rhs: pth.AnyPath) -> None:
+    self.assertEqual(self.platform.expanduser(lhs), self.platform.path(rhs))
+
+  def test_expanduser(self) -> None:
+    home: pth.AnyPath | None
+    try:
+      home = self.platform.home()
+    except RuntimeError:
+      home = None
+
+    if home is not None:
+      self._compare_expanded("~", home)
+    else:
+      with self.assertRaises(RuntimeError):
+        self.platform.expanduser("~")
+
+    if home is not None:
+      self._compare_expanded("~/foo", home / "foo")
+    else:
+      with self.assertRaises(RuntimeError):
+        self.platform.expanduser("~/foo")
+
+    self._compare_expanded("~~", self.platform.path("~~"))
+    self._compare_expanded("~~/foo", self.platform.path("~~/foo"))
+    self._compare_expanded("foo", self.platform.path("foo"))
 
   def test_absolute_absolute(self):
     if self.platform.is_win:

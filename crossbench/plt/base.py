@@ -808,6 +808,20 @@ class Platform(abc.ABC):
     path = self.path(path)
     return path.is_absolute()
 
+  def expanduser(self, path: pth.AnyPathLike) -> pth.AnyPath:
+    platform_path = self.path(path)
+    if self.is_local:
+      try:
+        return self.local_path(platform_path).expanduser()
+      except RuntimeError:
+        return platform_path
+    path_str = os.fspath(platform_path)
+    if path_str == "~":
+      return self.home()
+    if path_str.startswith("~/"):
+      return self.home() / path_str[len("~/"):]
+    return platform_path
+
   def home(self) -> pth.AnyPath:
     return pathlib.Path.home()
 
