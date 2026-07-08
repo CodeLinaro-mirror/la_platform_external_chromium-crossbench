@@ -262,14 +262,15 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
     match args.enable_field_trial_config:
       case True:
         initial_flags.set("--enable-field-trial-config")
+      case "benchmarking":
+        initial_flags.set("--enable-field-trial-config", "benchmarking")
       case False:
         initial_flags.set("--disable-field-trial-config")
       case None:
         pass
       case _:
-        raise ValueError(
-            "Invalid field-trial-config value: {args.enable_field_trial_config}"
-        )
+        raise ValueError("Invalid field-trial-config value: "
+                         f"{args.enable_field_trial_config}")
     match args.sandbox:
       case False:
         initial_flags.set("--no-sandbox")

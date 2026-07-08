@@ -213,8 +213,10 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     field_trial_group.add_argument(
         "--enable-field-trial-config",
         "--enable-field-trials",
+        nargs="?",
+        const=True,
         default=None,
-        action="store_true",
+        choices=["benchmarking"],
         help=("Use chrome's field-trial configs, "
               "disabled by default by crossbench"))
     field_trial_group.add_argument(

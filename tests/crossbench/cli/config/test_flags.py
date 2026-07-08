@@ -596,6 +596,15 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(group_inline, group_a)
     self.assertEqual(group_inline, group_b)
 
+    args = self.mock_args(enable_field_trial_config="benchmarking")
+    group_inline = FlagsGroupConfig.parse_args(args)
+    self.assertEqual(len(group_inline), 1)
+    raw_flags = "--enable-field-trial-config=benchmarking"
+    group_a = FlagsGroupConfig.parse((raw_flags,))
+    group_b = FlagsGroupConfig.parse(raw_flags)
+    self.assertEqual(group_inline, group_a)
+    self.assertEqual(group_inline, group_b)
+
   def test_parse_args_disable_field_trials(self):
     args = self.mock_args(enable_field_trial_config=False)
     group_inline = FlagsGroupConfig.parse_args(args)
@@ -731,6 +740,12 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     group = FlagsGroupConfig.parse(args)
     self.assertEqual(len(group), 1)
     self.assertEqual(str(group[0].flags), "--enable-field-trial-config")
+
+    args = self.mock_args(enable_field_trial_config="benchmarking")
+    group = FlagsGroupConfig.parse(args)
+    self.assertEqual(len(group), 1)
+    self.assertEqual(
+        str(group[0].flags), "--enable-field-trial-config=benchmarking")
 
     args = self.mock_args(enable_field_trial_config=False)
     group = FlagsGroupConfig.parse(args)
