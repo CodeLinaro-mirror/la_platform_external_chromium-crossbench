@@ -28,7 +28,6 @@ class WebPowerPageLoadStoryTestCase(BaseCrossbenchTestCase):
     self.assertEqual(story.url, "https://youtube.com")
     self.assertEqual(story.page_load_count, story.DEFAULT_PAGE_LOAD_COUNT)
     self.assertEqual(story.interval, story.DEFAULT_INTERVAL)
-    self.assertEqual(story.lead_wait_time, story.DEFAULT_LEAD_WAIT_TIME)
     self.assertEqual(story.cool_off_time, story.DEFAULT_COOL_OFF_TIME)
 
   def test_instantiate_default_cnn(self) -> None:
@@ -40,20 +39,17 @@ class WebPowerPageLoadStoryTestCase(BaseCrossbenchTestCase):
 
   def test_instantiate_custom(self) -> None:
     interval = dt.timedelta(seconds=5)
-    lead_wait = dt.timedelta(seconds=15)
     cool_off = dt.timedelta(seconds=30)
     story = WebPowerPageLoadStory(
         name_suffix="cnn",
         site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
         page_load_count=5,
         interval=interval,
-        lead_wait_time=lead_wait,
         cool_off_time=cool_off,
     )
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.page_load_count, 5)
     self.assertEqual(story.interval, interval)
-    self.assertEqual(story.lead_wait_time, lead_wait)
     self.assertEqual(story.cool_off_time, cool_off)
 
 
@@ -75,8 +71,6 @@ class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(story.page_load_count,
                      WebPowerPageLoadStory.DEFAULT_CNN_PAGE_LOAD_COUNT)
     self.assertEqual(story.interval, WebPowerPageLoadStory.DEFAULT_INTERVAL)
-    self.assertEqual(story.lead_wait_time,
-                     WebPowerPageLoadStory.DEFAULT_LEAD_WAIT_TIME)
     self.assertEqual(story.cool_off_time,
                      WebPowerPageLoadStory.DEFAULT_COOL_OFF_TIME)
 
@@ -87,7 +81,6 @@ class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
         "--site=cnn",
         "--page-loads=15",
         "--interval=10s",
-        "--lead-wait-time=5s",
         "--cool-off-time=30s",
     ])
     kwargs = WebPowerPageLoadBenchmark.kwargs_from_cli(args)
@@ -96,7 +89,6 @@ class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.page_load_count, 15)
     self.assertEqual(story.interval, dt.timedelta(seconds=10))
-    self.assertEqual(story.lead_wait_time, dt.timedelta(seconds=5))
     self.assertEqual(story.cool_off_time, dt.timedelta(seconds=30))
 
   def test_kwargs_from_cli_invalid(self) -> None:

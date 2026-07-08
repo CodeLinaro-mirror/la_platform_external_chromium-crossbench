@@ -30,7 +30,6 @@ class WebPowerPageLoadStory(WebPowerStory):
   # default value once it's proven that the variance is low.
   DEFAULT_CNN_PAGE_LOAD_COUNT: ClassVar[int] = 10
   DEFAULT_INTERVAL: ClassVar[dt.timedelta] = dt.timedelta(seconds=3)
-  DEFAULT_LEAD_WAIT_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
   DEFAULT_COOL_OFF_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=60)
 
   @classmethod
@@ -43,28 +42,21 @@ class WebPowerPageLoadStory(WebPowerStory):
                site_config: WebPowerSiteConfig,
                page_load_count: int | None = None,
                interval: dt.timedelta | None = None,
-               lead_wait_time: dt.timedelta | None = None,
                cool_off_time: dt.timedelta | None = None) -> None:
     default_count = (
         self.DEFAULT_CNN_PAGE_LOAD_COUNT
         if name_suffix == "cnn" else self.DEFAULT_PAGE_LOAD_COUNT)
     self.page_load_count = _value_or(page_load_count, default_count)
     self.interval = _value_or(interval, self.DEFAULT_INTERVAL)
-    self.lead_wait_time = _value_or(lead_wait_time, self.DEFAULT_LEAD_WAIT_TIME)
     self.cool_off_time = _value_or(cool_off_time, self.DEFAULT_COOL_OFF_TIME)
 
     total_duration = (
-        self.lead_wait_time + self.cool_off_time +
-        self.page_load_count * self.interval +
+        self.cool_off_time + self.page_load_count * self.interval +
         WebPowerStory.DEFAULT_GRACE_PERIOD)
     super().__init__(name_suffix, site_config, total_duration)
 
   @override
   def setup(self, run: Run) -> None:
-    logging.info("Initial lead wait time: %s", self.lead_wait_time)
-    with run.actions("Lead_Wait", verbose=True) as actions:
-      actions.wait(self.lead_wait_time)
-
     # The initial setup load in a new tab guarantees that the page-load loop
     # (which starts by closing tab_index=0) always has a tab to close.
     logging.info("Initial setup page load (new tab).")
@@ -109,30 +101,11 @@ class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
 
   @classmethod
   @override
-  def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
-    parser = super().add_cli_arguments(parser)
-    story_cls = cls.DEFAULT_STORY_CLS
-    parser.set_defaults(lead_wait_time=story_cls.DEFAULT_LEAD_WAIT_TIME)
-    return parser
-
-  @classmethod
-  @override
   def add_scenario_cli_arguments(cls,
                                  parser: CBArgumentParser) -> CBArgumentParser:
     story_cls = cls.DEFAULT_STORY_CLS
     default_interval_s = story_cls.DEFAULT_INTERVAL.total_seconds()
     default_cool_s = story_cls.DEFAULT_COOL_OFF_TIME.total_seconds()
-    # TODO(eladalon): Avoid accessing private option_string_actions.
-    actions = parser._option_string_actions  # noqa: SLF001
-    if "--lead-wait-time" not in actions:
-      parser.add_argument(
-          "--lead-wait-time",
-          "--wait",
-          dest="lead_wait_time",
-          type=DurationParser.positive_or_zero_duration,
-          help=("Initial wait time after starting browser to "
-                "recover from launching."),
-      )
     parser.add_argument(
         "--page-loads",
         "--page-load-count",

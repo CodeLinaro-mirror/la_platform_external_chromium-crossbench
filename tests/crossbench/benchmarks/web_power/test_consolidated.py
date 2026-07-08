@@ -164,7 +164,6 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
         "--stabilization-time=5s",
         "--scrolls=12",
         "--input-rate=120",
-        "--lead-wait-time=6s",
         "--page-loads=15",
         "--interval=4s",
         "--cool-off-time=20s",
@@ -188,14 +187,12 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertTrue(isinstance(stories[1], WebPowerScrollStory))
     self.assertEqual(stories[1].scroll_count, 12)
     self.assertEqual(stories[1].input_rate, 120)
-    self.assertEqual(stories[1].lead_wait_time, dt.timedelta(seconds=6))
 
     # 3. WebPowerPageLoadStory
     self.assertEqual(stories[2].name, "web-power-page-load-cnn")
     self.assertTrue(isinstance(stories[2], WebPowerPageLoadStory))
     self.assertEqual(stories[2].page_load_count, 15)
     self.assertEqual(stories[2].interval, dt.timedelta(seconds=4))
-    self.assertEqual(stories[2].lead_wait_time, dt.timedelta(seconds=6))
     self.assertEqual(stories[2].cool_off_time, dt.timedelta(seconds=20))
 
     # 4. WebPowerMediaPlaybackStory
