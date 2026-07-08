@@ -67,6 +67,8 @@ class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(story.page_load_count,
                      WebPowerPageLoadStory.DEFAULT_CNN_PAGE_LOAD_COUNT)
     self.assertEqual(story.interval, WebPowerPageLoadStory.DEFAULT_INTERVAL)
+    self.assertEqual(story.stabilization_time,
+                     story.site_config.default_stabilization_time)
 
   def test_kwargs_from_cli_custom(self) -> None:
     parser = CBArgumentParser()
@@ -75,6 +77,7 @@ class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
         "--site=cnn",
         "--page-loads=15",
         "--interval=10s",
+        "--stabilization-time=15s",
     ])
     kwargs = WebPowerPageLoadBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
@@ -82,6 +85,7 @@ class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.page_load_count, 15)
     self.assertEqual(story.interval, dt.timedelta(seconds=10))
+    self.assertEqual(story.stabilization_time, dt.timedelta(seconds=15))
 
   def test_kwargs_from_cli_invalid(self) -> None:
     parser = CBArgumentParser()

@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 class WebPowerIdleStory(WebPowerStory):
   IS_SCENARIO_CLASS = True
   DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=80)
-  DEFAULT_STABILIZATION_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
 
   @classmethod
   @override
@@ -33,8 +32,8 @@ class WebPowerIdleStory(WebPowerStory):
                site_config: WebPowerSiteConfig,
                duration: dt.timedelta | None = None,
                stabilization_time: dt.timedelta | None = None) -> None:
-    self.stabilization_time = _value_or(stabilization_time,
-                                        self.DEFAULT_STABILIZATION_TIME)
+    stabilization_time = _value_or(stabilization_time,
+                                   site_config.default_stabilization_time)
     duration = _value_or(duration, self.DEFAULT_DURATION)
 
     if duration.total_seconds() == 0:
@@ -43,23 +42,16 @@ class WebPowerIdleStory(WebPowerStory):
       total_duration = dt.timedelta(days=365)
     else:
       total_duration = (
-          duration + self.stabilization_time +
-          WebPowerStory.DEFAULT_GRACE_PERIOD)
+          duration + stabilization_time + WebPowerStory.DEFAULT_GRACE_PERIOD)
 
     self._idle_duration = duration
-    super().__init__(name_suffix, site_config, total_duration)
+    super().__init__(name_suffix, site_config, total_duration,
+                     stabilization_time)
 
   @property
   def idle_duration(self) -> dt.timedelta:
     return self._idle_duration
 
-  @override
-  def setup(self, run: Run) -> None:
-    with run.actions("Show URL", verbose=True) as actions:
-      actions.show_url(self.url)
-
-    with run.actions("Stabilization", verbose=True) as actions:
-      actions.wait(self.stabilization_time)
 
   @override
   def run(self, run: Run) -> None:
@@ -90,7 +82,6 @@ class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
     parser = super().add_cli_arguments(parser)
     parser.set_defaults(
         duration=cls.DEFAULT_STORY_CLS.DEFAULT_DURATION,
-        stabilization_time=cls.DEFAULT_STORY_CLS.DEFAULT_STABILIZATION_TIME,
     )
     return parser
 
@@ -105,13 +96,5 @@ class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
           "--duration",
           type=DurationParser.positive_or_zero_duration,
           help="How long to run the idle phase for. (0 indicates forever.)",
-      )
-    if "--stabilization-time" not in actions:
-      parser.add_argument(
-          "--stabilization",
-          "--stabilization-time",
-          dest="stabilization_time",
-          type=DurationParser.positive_or_zero_duration,
-          help="How long to wait after setting up the page to stabilize.",
       )
     return parser

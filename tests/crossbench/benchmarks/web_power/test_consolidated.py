@@ -110,27 +110,87 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
   def benchmark_cls(self) -> type[WebPowerBenchmark]:
     return WebPowerBenchmark
 
-  def test_kwargs_from_cli_defaults(self) -> None:
+  def test_kwargs_from_cli_defaults_instantiates_all_types(self) -> None:
     parser = WebPowerBenchmark.add_cli_arguments(CBArgumentParser())
     kwargs = WebPowerBenchmark.kwargs_from_cli(parser.parse_args([]))
     stories = kwargs["stories"]
     self.assertEqual(len(stories), 10)
 
-    # Ensure at least one story of type `idle` and one of type `media-playback`.
-    # More importantly, ensure each one has the correct default.
-    has_idle = False
-    has_playback = False
+    counts = {
+        WebPowerIdleStory: 0,
+        WebPowerScrollStory: 0,
+        WebPowerPageLoadStory: 0,
+        WebPowerMediaPlaybackStory: 0,
+    }
     for story in stories:
-      if isinstance(story, WebPowerIdleStory):
-        has_idle = True
-        self.assertEqual(story.idle_duration,
-                         WebPowerIdleStory.DEFAULT_DURATION)
-      elif isinstance(story, WebPowerMediaPlaybackStory):
-        has_playback = True
-        self.assertEqual(story.playback_duration,
-                         WebPowerMediaPlaybackStory.DEFAULT_DURATION)
-    self.assertTrue(has_idle)
-    self.assertTrue(has_playback)
+      story_type = type(story)
+      counts[story_type] += 1
+
+    self.assertEqual(counts[WebPowerIdleStory], 3)
+    self.assertEqual(counts[WebPowerScrollStory], 3)
+    self.assertEqual(counts[WebPowerPageLoadStory], 3)
+    self.assertEqual(counts[WebPowerMediaPlaybackStory], 1)
+
+  def test_kwargs_from_cli_defaults_idle(self) -> None:
+    parser = WebPowerBenchmark.add_cli_arguments(CBArgumentParser())
+    kwargs = WebPowerBenchmark.kwargs_from_cli(parser.parse_args([]))
+    # We do not assert that a WebPowerIdleStory was found here;
+    # test_kwargs_from_cli_defaults_instantiates_all_types ensures
+    # we have at least one.
+    for story in kwargs["stories"]:
+      if not isinstance(story, WebPowerIdleStory):
+        continue
+      self.assertEqual(story.idle_duration, WebPowerIdleStory.DEFAULT_DURATION)
+      self.assertEqual(story.stabilization_time,
+                       story.site_config.default_stabilization_time)
+
+  def test_kwargs_from_cli_defaults_scroll(self) -> None:
+    parser = WebPowerBenchmark.add_cli_arguments(CBArgumentParser())
+    kwargs = WebPowerBenchmark.kwargs_from_cli(parser.parse_args([]))
+    # test_kwargs_from_cli_defaults_instantiates_all_types ensures
+    # we have at least one.
+    for story in kwargs["stories"]:
+      if not isinstance(story, WebPowerScrollStory):
+        continue
+      self.assertEqual(story.scroll_count,
+                       WebPowerScrollStory.DEFAULT_SCROLL_COUNT)
+      self.assertEqual(story.input_rate, WebPowerScrollStory.DEFAULT_INPUT_RATE)
+      self.assertEqual(story.stabilization_time,
+                       story.site_config.default_stabilization_time)
+
+  def test_kwargs_from_cli_defaults_page_load(self) -> None:
+    parser = WebPowerBenchmark.add_cli_arguments(CBArgumentParser())
+    kwargs = WebPowerBenchmark.kwargs_from_cli(parser.parse_args([]))
+    # test_kwargs_from_cli_defaults_instantiates_all_types ensures
+    # we have at least one.
+    for story in kwargs["stories"]:
+      if not isinstance(story, WebPowerPageLoadStory):
+        continue
+      expected_count = (
+          WebPowerPageLoadStory.DEFAULT_CNN_PAGE_LOAD_COUNT
+          if story.name.endswith("cnn") else
+          WebPowerPageLoadStory.DEFAULT_PAGE_LOAD_COUNT)
+      self.assertEqual(story.page_load_count, expected_count)
+      self.assertEqual(story.interval, WebPowerPageLoadStory.DEFAULT_INTERVAL)
+      self.assertEqual(story.stabilization_time,
+                       story.site_config.default_stabilization_time)
+
+  def test_kwargs_from_cli_defaults_media_playback(self) -> None:
+    parser = WebPowerBenchmark.add_cli_arguments(CBArgumentParser())
+    kwargs = WebPowerBenchmark.kwargs_from_cli(parser.parse_args([]))
+    # test_kwargs_from_cli_defaults_instantiates_all_types ensures
+    # we have at least one.
+    for story in kwargs["stories"]:
+      if not isinstance(story, WebPowerMediaPlaybackStory):
+        continue
+      self.assertEqual(story.playback_duration,
+                       WebPowerMediaPlaybackStory.DEFAULT_DURATION)
+      self.assertEqual(story.stabilization_time,
+                       story.site_config.default_stabilization_time)
+      self.assertEqual(story.stats, WebPowerMediaPlaybackStory.DEFAULT_STATS)
+      self.assertEqual(story.volume, WebPowerMediaPlaybackStory.DEFAULT_VOLUME)
+      self.assertEqual(story.ambient_mode,
+                       WebPowerMediaPlaybackStory.DEFAULT_AMBIENT_MODE)
 
   def test_kwargs_from_cli_custom_duration_override(self) -> None:
     parser = CBArgumentParser()
@@ -148,12 +208,13 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
 
     self.assertEqual(len(kwargs["stories"]), 10)
     for story in kwargs["stories"]:
-      if isinstance(story, WebPowerIdleStory):
-        self.assertEqual(story.idle_duration,
-                         dt.timedelta(seconds=expected_duration))
-      elif isinstance(story, WebPowerMediaPlaybackStory):
-        self.assertEqual(story.playback_duration,
-                         dt.timedelta(seconds=expected_duration))
+      match story:
+        case WebPowerIdleStory():
+          self.assertEqual(story.idle_duration,
+                           dt.timedelta(seconds=expected_duration))
+        case WebPowerMediaPlaybackStory():
+          self.assertEqual(story.playback_duration,
+                           dt.timedelta(seconds=expected_duration))
 
   def test_kwargs_from_cli_custom_scenario_arguments(self) -> None:
     parser = CBArgumentParser()
@@ -186,12 +247,15 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertTrue(isinstance(stories[1], WebPowerScrollStory))
     self.assertEqual(stories[1].scroll_count, 12)
     self.assertEqual(stories[1].input_rate, 120)
+    self.assertEqual(stories[1].stabilization_time, dt.timedelta(seconds=5))
 
     # 3. WebPowerPageLoadStory
     self.assertEqual(stories[2].name, "web-power-page-load-cnn")
     self.assertTrue(isinstance(stories[2], WebPowerPageLoadStory))
     self.assertEqual(stories[2].page_load_count, 15)
     self.assertEqual(stories[2].interval, dt.timedelta(seconds=4))
+    self.assertEqual(stories[2].stabilization_time, dt.timedelta(seconds=5))
+
     # 4. WebPowerMediaPlaybackStory
     self.assertEqual(stories[3].name, "web-power-media-playback-youtube")
     self.assertTrue(isinstance(stories[3], WebPowerMediaPlaybackStory))

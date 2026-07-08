@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 
 from typing_extensions import override
 
@@ -58,6 +59,8 @@ class WebPowerScrollBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(story.scroll_count,
                      WebPowerScrollStory.DEFAULT_SCROLL_COUNT)
     self.assertEqual(story.input_rate, WebPowerScrollStory.DEFAULT_INPUT_RATE)
+    self.assertEqual(story.stabilization_time,
+                     story.site_config.default_stabilization_time)
 
   def test_kwargs_from_cli_custom(self) -> None:
     parser = CBArgumentParser()
@@ -66,6 +69,7 @@ class WebPowerScrollBenchmarkTestCase(BaseBenchmarkTestCase):
         "--site=cnn",
         "--scrolls=12",
         "--input-rate=100",
+        "--stabilization-time=15s",
     ])
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
@@ -73,6 +77,7 @@ class WebPowerScrollBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.scroll_count, 12)
     self.assertEqual(story.input_rate, 100)
+    self.assertEqual(story.stabilization_time, dt.timedelta(seconds=15))
 
   def test_kwargs_from_cli_invalid(self) -> None:
     parser = CBArgumentParser()

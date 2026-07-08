@@ -40,25 +40,21 @@ class WebPowerPageLoadStory(WebPowerStory):
                name_suffix: str,
                site_config: WebPowerSiteConfig,
                page_load_count: int | None = None,
-               interval: dt.timedelta | None = None) -> None:
+               interval: dt.timedelta | None = None,
+               stabilization_time: dt.timedelta | None = None) -> None:
     default_count = (
         self.DEFAULT_CNN_PAGE_LOAD_COUNT
         if name_suffix == "cnn" else self.DEFAULT_PAGE_LOAD_COUNT)
     self.page_load_count = _value_or(page_load_count, default_count)
     self.interval = _value_or(interval, self.DEFAULT_INTERVAL)
+    stabilization_time = _value_or(stabilization_time,
+                                   site_config.default_stabilization_time)
 
     total_duration = (
-        self.page_load_count * self.interval +
+        stabilization_time + self.page_load_count * self.interval +
         WebPowerStory.DEFAULT_GRACE_PERIOD)
-    super().__init__(name_suffix, site_config, total_duration)
-
-  @override
-  def setup(self, run: Run) -> None:
-    # The initial setup load in a new tab guarantees that the page-load loop
-    # (which starts by closing tab_index=0) always has a tab to close.
-    logging.info("Initial setup page load (new tab).")
-    with run.actions("Initial_Setup_Load", verbose=True) as actions:
-      actions.show_url(self.url, target=WindowTarget.NEW_TAB)
+    super().__init__(name_suffix, site_config, total_duration,
+                     stabilization_time)
 
   @override
   def run(self, run: Run) -> None:

@@ -55,6 +55,7 @@ def _value_or(value: _T | None, alternative: _T) -> _T:
 class WebPowerSiteConfig:
   url: str
   archive: str | None = None
+  default_stabilization_time: dt.timedelta = dt.timedelta(seconds=10)
 
 
 class WebPowerStory(Story):
@@ -93,6 +94,7 @@ class WebPowerStory(Story):
           WebPowerSiteConfig(
               url="https://msn.com/en-us",
               archive=_LEGACY_WPR_RECORDING,
+              default_stabilization_time=dt.timedelta(seconds=60),
           ),
       "youtube":
           WebPowerSiteConfig(
@@ -126,8 +128,10 @@ class WebPowerStory(Story):
     return cls("custom", WebPowerSiteConfig(url=url), *args, **kwargs)
 
   def __init__(self, name_suffix: str, site_config: WebPowerSiteConfig,
-               total_duration: dt.timedelta) -> None:
+               total_duration: dt.timedelta,
+               stabilization_time: dt.timedelta) -> None:
     self.site_config = site_config
+    self.stabilization_time = stabilization_time
     super().__init__(
         f"web-power-{self.story_name}-{name_suffix}", total_duration)
 
@@ -142,6 +146,14 @@ class WebPowerStory(Story):
   @property
   def story_name(self) -> str:
     return self.story_name_cls()
+
+  @override
+  def setup(self, run: Run) -> None:
+    with run.actions("Show URL", verbose=True) as actions:
+      actions.show_url(self.url)
+    if self.stabilization_time.total_seconds() > 0:
+      with run.actions("Stabilization", verbose=True) as actions:
+        actions.wait(self.stabilization_time)
 
   @override
   def run(self, run: Run) -> None:
@@ -426,6 +438,14 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
         type=DurationParser.positive_duration,
         default=BitsProbe.DEFAULT_DURATION,
         help="Duration for the BITS tool to run.",
+    )
+    parser.add_argument(
+        "--stabilization",
+        "--stabilization-time",
+        dest="stabilization_time",
+        type=DurationParser.positive_or_zero_duration,
+        help=("How long to wait to stabilize after loading the page, "
+              "but before the story run starts."),
     )
     if cls.IS_SCENARIO_CLASS:
       return cls.add_scenario_cli_arguments(parser)

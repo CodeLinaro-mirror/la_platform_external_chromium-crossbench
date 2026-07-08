@@ -27,7 +27,8 @@ class WebPowerMediaPlaybackStoryTestCase(BaseCrossbenchTestCase):
     )
     self.assertEqual(story.url, "https://youtube.com")
     self.assertEqual(story.playback_duration, story.DEFAULT_DURATION)
-    self.assertEqual(story.stabilization_time, story.DEFAULT_STABILIZATION_TIME)
+    self.assertEqual(story.stabilization_time,
+                     story.site_config.default_stabilization_time)
     self.assertEqual(story.stats, story.DEFAULT_STATS)
     self.assertEqual(story.volume, story.DEFAULT_VOLUME)
     self.assertEqual(story.ambient_mode, story.DEFAULT_AMBIENT_MODE)
@@ -71,7 +72,7 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(story.playback_duration,
                      WebPowerMediaPlaybackStory.DEFAULT_DURATION)
     self.assertEqual(story.stabilization_time,
-                     WebPowerMediaPlaybackStory.DEFAULT_STABILIZATION_TIME)
+                     story.site_config.default_stabilization_time)
     self.assertFalse(story.stats)
     self.assertEqual(story.ambient_mode, AmbientMode.OFF)
 

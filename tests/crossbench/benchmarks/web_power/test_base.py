@@ -43,9 +43,13 @@ class MockWebPowerStory(WebPowerStory):
       self,
       name_suffix: str,
       site_config: WebPowerSiteConfig,
-      total_duration: dt.timedelta = dt.timedelta(seconds=123)
+      total_duration: dt.timedelta = dt.timedelta(seconds=123),
+      stabilization_time: dt.timedelta | None = dt.timedelta(seconds=0),
   ) -> None:
-    super().__init__(name_suffix, site_config, total_duration)
+    stabilization_time = _value_or(stabilization_time,
+                                   site_config.default_stabilization_time)
+    super().__init__(name_suffix, site_config, total_duration,
+                     stabilization_time)
 
   def run(self, run: Run) -> None:
     pass

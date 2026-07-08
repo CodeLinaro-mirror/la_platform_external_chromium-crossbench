@@ -18,6 +18,8 @@ from crossbench.benchmarks.web_power.scroll_gen import GeneratorConfig, \
 from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.runner.run import Run
 
@@ -26,7 +28,6 @@ class WebPowerScrollStory(WebPowerStory):
   IS_SCENARIO_CLASS = True
   DEFAULT_SCROLL_COUNT: ClassVar[int] = 5
   DEFAULT_INPUT_RATE: ClassVar[int] = 240
-
 
   @classmethod
   @override
@@ -45,14 +46,19 @@ class WebPowerScrollStory(WebPowerStory):
                name_suffix: str,
                site_config: WebPowerSiteConfig,
                scroll_count: int | None = None,
-               input_rate: int | None = None) -> None:
+               input_rate: int | None = None,
+               stabilization_time: dt.timedelta | None = None) -> None:
     self.config = GeneratorConfig(
         input_rate=_value_or(input_rate, self.DEFAULT_INPUT_RATE),
         scroll_count=_value_or(scroll_count, self.DEFAULT_SCROLL_COUNT))
+    stabilization_time = _value_or(stabilization_time,
+                                   site_config.default_stabilization_time)
 
     total_duration = (
-        self.config.sequence_duration() + WebPowerStory.DEFAULT_GRACE_PERIOD)
-    super().__init__(name_suffix, site_config, total_duration)
+        self.config.sequence_duration() + stabilization_time +
+        WebPowerStory.DEFAULT_GRACE_PERIOD)
+    super().__init__(name_suffix, site_config, total_duration,
+                     stabilization_time)
 
     self.local_file: pth.LocalPath | None = None
     self.remote_file: pth.AnyPath | None = None
@@ -83,10 +89,11 @@ class WebPowerScrollStory(WebPowerStory):
         self.remote_file = run.browser_platform.path(
             "/data/local/tmp/scrolling_sequence.evemu")
         run.browser_platform.push(self.local_file, self.remote_file)
-
     except Exception:
       self.clear_files(run)
       raise
+
+    super().setup(run)
 
   @override
   def run(self, run: Run) -> None:

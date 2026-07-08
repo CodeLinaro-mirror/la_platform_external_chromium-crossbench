@@ -26,7 +26,8 @@ class WebPowerIdleStoryTestCase(BaseCrossbenchTestCase):
     )
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.idle_duration, story.DEFAULT_DURATION)
-    self.assertEqual(story.stabilization_time, story.DEFAULT_STABILIZATION_TIME)
+    self.assertEqual(story.stabilization_time,
+                     story.site_config.default_stabilization_time)
 
   def test_instantiate_custom(self) -> None:
     duration = dt.timedelta(seconds=30)
@@ -70,7 +71,7 @@ class WebPowerIdleBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.idle_duration, WebPowerIdleStory.DEFAULT_DURATION)
     self.assertEqual(story.stabilization_time,
-                     WebPowerIdleStory.DEFAULT_STABILIZATION_TIME)
+                     story.site_config.default_stabilization_time)
 
   def test_kwargs_from_cli_custom(self) -> None:
     parser = CBArgumentParser()

@@ -34,7 +34,6 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
   IS_SCENARIO_CLASS = True
   REQUIRES_AUTOPLAY: ClassVar[bool] = True
   DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=120)
-  DEFAULT_STABILIZATION_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
   DEFAULT_STATS: ClassVar[bool] = False
   DEFAULT_VOLUME: ClassVar[VolumeMode] = VolumeMode.ON
   DEFAULT_AMBIENT_MODE: ClassVar[AmbientMode] = AmbientMode.OFF
@@ -58,16 +57,17 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
                volume: VolumeMode | None = None,
                ambient_mode: AmbientMode | None = None) -> None:
     self.playback_duration = _value_or(duration, self.DEFAULT_DURATION)
-    self.stabilization_time = _value_or(stabilization_time,
-                                        self.DEFAULT_STABILIZATION_TIME)
+    stabilization_time = _value_or(stabilization_time,
+                                   site_config.default_stabilization_time)
     self.stats = _value_or(stats, self.DEFAULT_STATS)
     self.volume = _value_or(volume, self.DEFAULT_VOLUME)
     self.ambient_mode = _value_or(ambient_mode, self.DEFAULT_AMBIENT_MODE)
 
     total_duration = (
-        self.stabilization_time + self.setup_max_duration +
-        self.playback_duration + WebPowerStory.DEFAULT_GRACE_PERIOD)
-    super().__init__(name_suffix, site_config, total_duration)
+        stabilization_time + self.setup_max_duration + self.playback_duration +
+        WebPowerStory.DEFAULT_GRACE_PERIOD)
+    super().__init__(name_suffix, site_config, total_duration,
+                     stabilization_time)
 
   # This property guesstimates the maximum total duration of setup.
   # The alternative would have been to construct a self._recipe that consists
@@ -152,7 +152,6 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
 
   @override
   def setup(self, run: Run) -> None:
-    super().setup(run)
     if self.volume != VolumeMode.UNCHANGED:
       if not run.browser_platform.is_android:
         raise ValueError(
@@ -161,12 +160,7 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
       AndroidVolumeController(run.browser_platform).configure_volume(
           self.volume)
 
-    with run.actions("Show_URL", verbose=True) as actions:
-      actions.show_url(self.url)
-
-    if self.stabilization_time.total_seconds() > 0:
-      with run.actions("Stabilization", verbose=True) as actions:
-        actions.wait(self.stabilization_time)
+    super().setup(run)
 
     with run.actions("Consent_Banner", verbose=True) as actions:
       # Wait for the initial page to load, click 'Accept', and programmatically
@@ -256,7 +250,6 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
     story_cls = cls.DEFAULT_STORY_CLS
     parser.set_defaults(
         duration=story_cls.DEFAULT_DURATION,
-        stabilization_time=story_cls.DEFAULT_STABILIZATION_TIME,
     )
     return parser
 
@@ -280,14 +273,6 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
           "--duration",
           type=DurationParser.positive_duration,
           help="How long to play the video for.",
-      )
-    if "--stabilization-time" not in actions:
-      parser.add_argument(
-          "--stabilization",
-          "--stabilization-time",
-          dest="stabilization_time",
-          type=DurationParser.positive_or_zero_duration,
-          help="How long to wait after setting up page/playback to stabilize.",
       )
     parser.add_argument(
         "--stats",
