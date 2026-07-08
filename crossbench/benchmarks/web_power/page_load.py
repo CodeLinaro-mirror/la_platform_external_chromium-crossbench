@@ -30,7 +30,6 @@ class WebPowerPageLoadStory(WebPowerStory):
   # default value once it's proven that the variance is low.
   DEFAULT_CNN_PAGE_LOAD_COUNT: ClassVar[int] = 10
   DEFAULT_INTERVAL: ClassVar[dt.timedelta] = dt.timedelta(seconds=3)
-  DEFAULT_COOL_OFF_TIME: ClassVar[dt.timedelta] = dt.timedelta(seconds=60)
 
   @classmethod
   @override
@@ -41,17 +40,15 @@ class WebPowerPageLoadStory(WebPowerStory):
                name_suffix: str,
                site_config: WebPowerSiteConfig,
                page_load_count: int | None = None,
-               interval: dt.timedelta | None = None,
-               cool_off_time: dt.timedelta | None = None) -> None:
+               interval: dt.timedelta | None = None) -> None:
     default_count = (
         self.DEFAULT_CNN_PAGE_LOAD_COUNT
         if name_suffix == "cnn" else self.DEFAULT_PAGE_LOAD_COUNT)
     self.page_load_count = _value_or(page_load_count, default_count)
     self.interval = _value_or(interval, self.DEFAULT_INTERVAL)
-    self.cool_off_time = _value_or(cool_off_time, self.DEFAULT_COOL_OFF_TIME)
 
     total_duration = (
-        self.cool_off_time + self.page_load_count * self.interval +
+        self.page_load_count * self.interval +
         WebPowerStory.DEFAULT_GRACE_PERIOD)
     super().__init__(name_suffix, site_config, total_duration)
 
@@ -62,8 +59,6 @@ class WebPowerPageLoadStory(WebPowerStory):
     logging.info("Initial setup page load (new tab).")
     with run.actions("Initial_Setup_Load", verbose=True) as actions:
       actions.show_url(self.url, target=WindowTarget.NEW_TAB)
-      if self.cool_off_time.total_seconds() > 0:
-        actions.wait(self.cool_off_time)
 
   @override
   def run(self, run: Run) -> None:
@@ -105,7 +100,6 @@ class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
                                  parser: CBArgumentParser) -> CBArgumentParser:
     story_cls = cls.DEFAULT_STORY_CLS
     default_interval_s = story_cls.DEFAULT_INTERVAL.total_seconds()
-    default_cool_s = story_cls.DEFAULT_COOL_OFF_TIME.total_seconds()
     parser.add_argument(
         "--page-loads",
         "--page-load-count",
@@ -121,17 +115,4 @@ class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
         default=story_cls.DEFAULT_INTERVAL,
         help="Wait time between page loads. "
         f"(Default: {default_interval_s:.0f}s)")
-    parser.add_argument(
-        "--cool-off-time",
-        "--cool-off",
-        dest="cool_off_time",
-        type=DurationParser.positive_or_zero_duration,
-        default=story_cls.DEFAULT_COOL_OFF_TIME,
-        help="Initial cooling-off period before measurement. "
-        "This is a workaround for the fact that service workers on some sites "
-        "do a lot of work during first iterations, and calm down later. "
-        # Ideally, we should be able to clear the service worker between
-        # iterations and measure this work too. But for now, it's better to
-        # consistently not measure it, then to inconsistently measure it.
-        f"(Default: {default_cool_s:.0f}s)")
     return parser

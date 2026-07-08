@@ -166,7 +166,6 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
         "--input-rate=120",
         "--page-loads=15",
         "--interval=4s",
-        "--cool-off-time=20s",
         "--stats",
         "--volume=off",
         "--ambient-mode=unchanged",
@@ -193,8 +192,6 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertTrue(isinstance(stories[2], WebPowerPageLoadStory))
     self.assertEqual(stories[2].page_load_count, 15)
     self.assertEqual(stories[2].interval, dt.timedelta(seconds=4))
-    self.assertEqual(stories[2].cool_off_time, dt.timedelta(seconds=20))
-
     # 4. WebPowerMediaPlaybackStory
     self.assertEqual(stories[3].name, "web-power-media-playback-youtube")
     self.assertTrue(isinstance(stories[3], WebPowerMediaPlaybackStory))
