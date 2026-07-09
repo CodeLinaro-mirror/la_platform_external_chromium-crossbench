@@ -51,7 +51,7 @@
           "sql":
             '''
             SELECT
-              (paint.ts - (SELECT min(ts) FROM slice)) / 1e6 AS duration_ms
+              (paint.ts - (SELECT min(ts) FROM slice)) / 1e6 AS browser_window_first_paint_ms
             FROM slice AS paint
             WHERE paint.name LIKE '%Startup.BrowserWindow.FirstPaint'
             LIMIT 1
@@ -62,7 +62,7 @@
           "sql":
             '''
             SELECT
-              a_sample.int_value AS duration_ms
+              a_sample.int_value AS reload_button_fcp_ms
             FROM slice s
             JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
             JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
