@@ -239,17 +239,24 @@ class PerfettoToolDownloaderTestCase(CrossbenchFakeFsTestCase):
     platform.machine = MachineArch.X64
     self._download_perfetto_tool(platform, "mac-amd64")
 
+  def test_download_win(self):
+    platform = WinMockPlatform()
+    platform.machine = MachineArch.X64
+    self._download_perfetto_tool(platform, "windows-amd64")
+
   def test_download_win_invalid(self):
     platform = WinMockPlatform()
+    platform.machine = MachineArch.ARM_64
     with self.assertRaises(ValueError):
       self._download_perfetto_tool(platform, "win-arm64")
 
   def _download_perfetto_tool(self, platform, key):
     platform.use_mock_name = False
-    download_path = platform.cache_dir("perfetto") / "v53.0/traceconv"
+    tool = "traceconv.exe" if platform.is_win else "traceconv"
+    download_path = platform.cache_dir("perfetto") / f"v53.0/{tool}"
     platform.expect_download(
         "https://commondatastorage.googleapis.com/perfetto-luci-artifacts/"
-        f"v53.0/{key}/traceconv", download_path)
+        f"v53.0/{key}/{tool}", download_path)
     platform.expect_sh(
         download_path,
         "--version",

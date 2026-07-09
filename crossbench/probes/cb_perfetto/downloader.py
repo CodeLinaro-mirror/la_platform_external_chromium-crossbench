@@ -6,7 +6,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Final, Mapping
 
-from crossbench import exception, plt
+from crossbench import exception
+from crossbench import plt
 
 if TYPE_CHECKING:
   import crossbench.path as pth
@@ -29,6 +30,7 @@ PLATFORM_LOOKUP: Final[Mapping[tuple[str, str], str]] = {
     ("android", "arm64"): "android-arm64",
     ("android", "ia32"): "android-x86",
     ("android", "x64"): "android-x64",
+    ("win", "x64"): "windows-amd64",
 }
 
 
@@ -47,17 +49,22 @@ class PerfettoToolDownloader:
     return self._version
 
   @property
+  def tool(self) -> str:
+    if self._platform.is_win:
+      return f"{self._tool}.exe"
+    return self._tool
+
+  @property
   def url(self) -> str:
     # TODO: use new platform.lookup helper.
     platform_name = PLATFORM_LOOKUP[self._platform.type_key]
-    return f"{_BASE_STORAGE_URL}/{self._version}/{platform_name}/{self._tool}"
+    return f"{_BASE_STORAGE_URL}/{self._version}/{platform_name}/{self.tool}"
 
   @property
   def path(self) -> pth.AnyPath:
     out_dir = self._platform.cache_dir("perfetto")
     version_dir = out_dir / self._version
-    result_path = version_dir / self._tool
-    return result_path
+    return version_dir / self.tool
 
   def download(self) -> pth.AnyPath:
     result_path = self.path
