@@ -6,6 +6,20 @@
         "url": "chrome://newtab/"
         "ready_state": "complete"
       }
+    ],
+    "blank_startup": [
+      {
+        "action": "get"
+        "url": "about:blank"
+        "ready_state": "complete"
+      }
+    ],
+    "google_startup": [
+      {
+        "action": "get"
+        "url": "https://www.google.com/"
+        "ready_state": "complete"
+      }
     ]
   }
 }
