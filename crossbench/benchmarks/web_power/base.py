@@ -15,6 +15,7 @@ from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
+from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.network import NetworkConfig, NetworkType
@@ -64,6 +65,7 @@ class WebPowerStory(Story):
 
   IS_SCENARIO_CLASS: ClassVar[bool] = False
   REQUIRES_AUTOPLAY: ClassVar[bool] = False
+  WINDOW_TARGET: ClassVar[WindowTarget] = WindowTarget.SELF
 
   _scenario_classes: ClassVar[list[type[WebPowerStory]]] = []
 
@@ -150,7 +152,7 @@ class WebPowerStory(Story):
   @override
   def setup(self, run: Run) -> None:
     with run.actions("Show URL", verbose=True) as actions:
-      actions.show_url(self.url)
+      actions.show_url(self.url, target=self.WINDOW_TARGET)
     if self.stabilization_time.total_seconds() > 0:
       with run.actions("Stabilization", verbose=True) as actions:
         actions.wait(self.stabilization_time)

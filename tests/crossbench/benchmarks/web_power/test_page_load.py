@@ -6,9 +6,11 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+from unittest import mock
 
 from typing_extensions import override
 
+from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.page_load import \
     WebPowerPageLoadBenchmark, WebPowerPageLoadStory
@@ -47,6 +49,54 @@ class WebPowerPageLoadStoryTestCase(BaseCrossbenchTestCase):
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.page_load_count, 5)
     self.assertEqual(story.interval, interval)
+
+  def test_setup_window_target(self) -> None:
+    story = WebPowerPageLoadStory(
+        name_suffix="test",
+        site_config=WebPowerSiteConfig(url="https://test.com"),
+    )
+    mock_run = self.mock_run()
+
+    with mock.patch.object(mock_run.browser, "show_url") as mock_show_url:
+      story.setup(mock_run)
+      mock_show_url.assert_called_once_with(
+          "https://test.com", target=WindowTarget.NEW_TAB)
+
+  def test_run_tab_count(self) -> None:
+    story = WebPowerPageLoadStory(
+        name_suffix="test",
+        site_config=WebPowerSiteConfig(url="https://test.com"),
+        page_load_count=5,
+    )
+    mock_run = self.mock_run()
+
+    class TabTracker:
+
+      def __init__(self, test_case: WebPowerPageLoadStoryTestCase):
+        self.test_case = test_case
+        self.tabs = 1
+
+      def show_url(self, url, target=WindowTarget.SELF, **kwargs):
+        if target == WindowTarget.NEW_TAB:
+          self.tabs += 1
+        self.test_case.assertLessEqual(self.tabs, 2)
+
+      def close_tab(self, *args, **kwargs):
+        self.tabs -= 1
+
+    tracker = TabTracker(self)
+
+    with (
+        mock.patch.object(
+            mock_run.browser, "show_url", side_effect=tracker.show_url),
+        mock.patch.object(
+            mock_run.browser, "close_tab", side_effect=tracker.close_tab),
+        mock.patch.object(mock_run.browser, "clear_cache"),
+    ):
+      story.setup(mock_run)
+      story.run(mock_run)
+
+    self.assertEqual(tracker.tabs, 2)
 
 
 class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):

@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 class WebPowerPageLoadStory(WebPowerStory):
   IS_SCENARIO_CLASS = True
+  WINDOW_TARGET: ClassVar[WindowTarget] = WindowTarget.NEW_TAB
   DEFAULT_PAGE_LOAD_COUNT: ClassVar[int] = 40
   # TODO: Test all other sites with 10 page loads and converge on a single
   # default value once it's proven that the variance is low.
