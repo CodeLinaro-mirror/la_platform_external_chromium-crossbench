@@ -83,17 +83,22 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   # Ruff:
   # ---------------------------------------------------------------------------
   # Ruff is fast, let's run it on all sources, excludes are configured
-  # separately in pyproject.toml.
+  # separately in pyproject.toml. We explicitly exclude untracked files.
+  ruff_cmd = [
+      input_api.python3_executable,
+      "-m",
+      "ruff",
+      "check",
+      str(root_path),
+  ]
+  for untracked_file in GetUntrackedFiles(input_api):
+    if untracked_file.endswith(".py"):
+      ruff_cmd.extend(["--extend-exclude", untracked_file])
+
   tests.append(
       input_api.Command(
           name="ruff",
-          cmd=[
-              input_api.python3_executable,
-              "-m",
-              "ruff",
-              "check",
-              str(root_path),
-          ],
+          cmd=ruff_cmd,
           message=output_api.PresubmitError,
           kwargs={},
           python3=True,
@@ -210,6 +215,15 @@ def ModifiedFiles(input_api: Any,
                                           input_api.PresubmitLocalPath())
     files_to_check.append(file_path)
   return files_to_check
+
+
+def GetUntrackedFiles(input_api: Any) -> list[str]:
+  try:
+    return input_api.subprocess.check_output(
+        ["git", "ls-files", "--others", "--exclude-standard"],
+        encoding="utf-8").splitlines()
+  except input_api.subprocess.CalledProcessError:
+    return []
 
 
 def LinterFilePatterns(on_commit: bool,
