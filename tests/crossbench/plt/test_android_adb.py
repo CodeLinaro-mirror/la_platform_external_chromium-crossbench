@@ -620,6 +620,16 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("cat 'path/with a space/to/a/file'")
     self.platform.cat(self.platform.path("path/with a space/to/a/file"))
 
+  def test_sh_input(self):
+    self.expect_sh("cat", result="hello world")
+    hello_world = self.platform.sh_stdout("cat", input=b"hello world")
+    self.assertEqual(hello_world, "hello world")
+
+    self.expect_sh("cat", result=b"hello world bytes")
+    hello_world_bytes = self.platform.sh_stdout_bytes(
+        "cat", input=b"hello world bytes")
+    self.assertEqual(hello_world_bytes, b"hello world bytes")
+
   def test_sh_shell_invalid(self):
     with self.assertRaisesRegex(ValueError, "shell=True"):
       self.platform.sh_stdout("ls", "folder with space", shell=True)

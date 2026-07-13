@@ -9,9 +9,12 @@ import functools
 import logging
 import os
 import shutil
-import subprocess
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
+
+if TYPE_CHECKING:
+  from crossbench.plt.types import TupleCmdArgs
 
 from crossbench import path as pth
 from crossbench.plt.base import Platform
@@ -184,9 +187,10 @@ class WinPlatform(Platform):
     return dst_path
 
   @functools.cached_property
-  def _clipboard_bin(self) -> pth.AnyPath | None:
-    self.assert_is_local()
-    return self.which("clip")
+  def _clipboard_bin(self) -> TupleCmdArgs | None:
+    if path := self.which("clip"):
+      return (path,)
+    return None
 
   @property
   @override
@@ -196,6 +200,4 @@ class WinPlatform(Platform):
   @override
   def set_clipboard(self, text: str) -> None:
     assert self._clipboard_bin
-    subprocess.run((self._clipboard_bin,),
-                   input=text.encode("utf-8"),
-                   check=True)
+    self.sh(*self._clipboard_bin, input=text.encode("utf-8"), check=True)

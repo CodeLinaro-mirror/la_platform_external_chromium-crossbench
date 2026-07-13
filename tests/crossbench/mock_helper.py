@@ -359,6 +359,7 @@ class MockPlatformMixin:
                       shell: bool = False,
                       quiet: bool = False,
                       stdin: ProcessIo = None,
+                      input: bytes | str | None = None,
                       env: Mapping[str, str] | None = None,
                       cwd: pth.AnyPath | None = None,
                       check: bool = True) -> bytes:
@@ -367,6 +368,7 @@ class MockPlatformMixin:
         shell=shell,
         quiet=quiet,
         stdin=stdin,
+        input=input,
         env=env,
         cwd=cwd,
         check=check,
@@ -379,11 +381,12 @@ class MockPlatformMixin:
          stdout: ProcessIo = None,
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
+         input: bytes | str | None = None,
          env: Mapping[str, str] | None = None,
          cwd: pth.AnyPath | None = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
-    del capture_output, stderr, stdin, stdout, shell, quiet, env, cwd
+    del capture_output, stderr, stdin, input, stdout, shell, quiet, env, cwd
     if self._expected_sh_cmds is not None:
       assert self._expected_sh_cmds, (
           f"Missing expected sh_cmds, but got: {args}")

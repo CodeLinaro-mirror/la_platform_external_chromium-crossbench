@@ -908,14 +908,19 @@ class Platform(abc.ABC):
                 quiet: bool = False,
                 encoding: str = "utf-8",
                 stdin: ProcessIo = None,
+                input: bytes | None = None,
                 env: Mapping[str, str] | None = None,
                 cwd: pth.AnyPath | None = None,
                 check: bool = True) -> str:
+    """ Platform-dependent wrapper around subprocess.run which captures the
+      output as text (use sh_stdout_bytes for bytes).
+      See subprocess.run for detailed argument help. """
     result = self.sh_stdout_bytes(
         *args,
         shell=shell,
         quiet=quiet,
         stdin=stdin,
+        input=input,
         env=env,
         cwd=cwd,
         check=check)
@@ -926,15 +931,20 @@ class Platform(abc.ABC):
                       shell: bool = False,
                       quiet: bool = False,
                       stdin: ProcessIo = None,
+                      input: bytes | None = None,
                       env: Mapping[str, str] | None = None,
                       cwd: pth.AnyPath | None = None,
                       check: bool = True) -> bytes:
+    """ Platform-dependent wrapper around subprocess.run which captures the
+      output as bytes (use the sh_stdout for text).
+      See subprocess.run for detailed argument help. """
     completed_process = self.sh(
         *args,
         shell=shell,
         capture_output=True,
         quiet=quiet,
         stdin=stdin,
+        input=input,
         env=env,
         cwd=cwd,
         check=check)
@@ -955,6 +965,8 @@ class Platform(abc.ABC):
             env: Mapping[str, str] | None = None,
             cwd: pth.AnyPath | None = None,
             quiet: bool = False) -> subprocess.Popen:
+    """ Platform-dependent wrapper around subprocess.Popen.
+      See subprocess.run for detailed argument help. """
     self.assert_is_local()
     self.validate_shell_args(args, shell)
     if not quiet:
@@ -977,10 +989,13 @@ class Platform(abc.ABC):
          stdout: ProcessIo = None,
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
+         input: bytes | None = None,
          env: Mapping[str, str] | None = None,
          cwd: pth.AnyPath | None = None,
          quiet: bool = False,
          check: bool = True) -> subprocess.CompletedProcess:
+    """ Platform-dependent wrapper around subprocess.run.
+      See subprocess.run for detailed argument help. """
     self.assert_is_local()
     self.validate_shell_args(args, shell)
     if not quiet:
@@ -990,6 +1005,7 @@ class Platform(abc.ABC):
         args=args,
         shell=shell,
         stdin=stdin,
+        input=input,
         stdout=stdout,
         stderr=stderr,
         env=env,

@@ -212,11 +212,12 @@ class PlatformClipboardTestCase(
       extra_args: list[str],
   ) -> None:
     self.assertTrue(platform.has_clipboard)
-    with mock.patch("subprocess.run") as mock_run:
+    with mock.patch.object(platform, "sh") as mock_sh:
       platform.set_clipboard("hello")
 
-      mock_run.assert_called_once_with(
-          (bin_path, *extra_args),
+      mock_sh.assert_called_once_with(
+          bin_path,
+          *extra_args,
           input=b"hello",
           check=True,
       )

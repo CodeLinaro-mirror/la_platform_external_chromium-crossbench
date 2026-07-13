@@ -244,6 +244,7 @@ class Adb:
            stdout: ProcessIo = None,
            stderr: ProcessIo = None,
            stdin: ProcessIo = None,
+           input: bytes | None = None,
            quiet: bool = False,
            check: bool = True,
            use_serial_id: bool = True) -> subprocess.CompletedProcess:
@@ -255,6 +256,7 @@ class Adb:
         stdout=stdout,
         stderr=stderr,
         stdin=stdin,
+        input=input,
         quiet=quiet,
         check=check)
 
@@ -262,6 +264,7 @@ class Adb:
                   *args: CmdArg,
                   quiet: bool = False,
                   stdin: ProcessIo = None,
+                  input: bytes | None = None,
                   encoding: str = "utf-8",
                   use_serial_id: bool = True,
                   check: bool = True) -> str:
@@ -269,6 +272,7 @@ class Adb:
         *args,
         quiet=quiet,
         stdin=stdin,
+        input=input,
         use_serial_id=use_serial_id,
         check=check)
     return result.decode(encoding)
@@ -277,11 +281,12 @@ class Adb:
                         *args: CmdArg,
                         quiet: bool = False,
                         stdin: ProcessIo = None,
+                        input: bytes | None = None,
                         use_serial_id: bool = True,
                         check: bool = True) -> bytes:
     adb_cmd = self._build_adb_cmd(*args, use_serial_id=use_serial_id)
     return self._host_platform.sh_stdout_bytes(
-        *adb_cmd, quiet=quiet, check=check, stdin=stdin)
+        *adb_cmd, quiet=quiet, check=check, stdin=stdin, input=input)
 
   def _get_current_user(self) -> str | None:
     try:
@@ -323,6 +328,7 @@ class Adb:
                    quiet: bool = False,
                    encoding: str = "utf-8",
                    stdin: ProcessIo = None,
+                   input: bytes | None = None,
                    env: Mapping[str, str] | None = None,
                    cwd: pth.AnyPath | None = None,
                    check: bool = True) -> str:
@@ -331,6 +337,7 @@ class Adb:
         shell=shell,
         quiet=quiet,
         stdin=stdin,
+        input=input,
         env=env,
         cwd=cwd,
         check=check)
@@ -341,6 +348,7 @@ class Adb:
                          shell: bool = False,
                          quiet: bool = False,
                          stdin: ProcessIo = None,
+                         input: bytes | None = None,
                          env: Mapping[str, str] | None = None,
                          cwd: pth.AnyPath | None = None,
                          check: bool = True) -> bytes:
@@ -351,7 +359,7 @@ class Adb:
     # -x: disable remote exit codes and stdout/stderr separation
     shell_cmd = self.build_shell_cmd(*args, shell=shell, env=env, cwd=cwd)
     return self._host_platform.sh_stdout_bytes(
-        *shell_cmd, stdin=stdin, quiet=quiet, check=check)
+        *shell_cmd, stdin=stdin, input=input, quiet=quiet, check=check)
 
   def shell(self,
             *args: CmdArg,
@@ -360,6 +368,7 @@ class Adb:
             stdout: ProcessIo = None,
             stderr: ProcessIo = None,
             stdin: ProcessIo = None,
+            input: bytes | None = None,
             env: Mapping[str, str] | None = None,
             cwd: pth.AnyPath | None = None,
             quiet: bool = False,
@@ -372,6 +381,7 @@ class Adb:
         stdout=stdout,
         stderr=stderr,
         stdin=stdin,
+        input=input,
         quiet=quiet,
         check=check)
 
@@ -911,6 +921,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
          stdout: ProcessIo = None,
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
+         input: bytes | None = None,
          env: Mapping[str, str] | None = None,
          cwd: pth.AnyPath | None = None,
          quiet: bool = False,
@@ -922,6 +933,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         stdout=stdout,
         stderr=stderr,
         stdin=stdin,
+        input=input,
         env=env,
         cwd=cwd,
         quiet=quiet,
@@ -933,6 +945,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                       shell: bool = False,
                       quiet: bool = False,
                       stdin: ProcessIo = None,
+                      input: bytes | None = None,
                       env: Mapping[str, str] | None = None,
                       cwd: pth.AnyPath | None = None,
                       check: bool = True) -> bytes:
@@ -940,6 +953,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
         *args,
         shell=shell,
         stdin=stdin,
+        input=input,
         env=env,
         cwd=cwd,
         quiet=quiet,

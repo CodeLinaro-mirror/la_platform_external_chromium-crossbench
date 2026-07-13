@@ -9,7 +9,6 @@ import datetime as dt
 import functools
 import os
 import re
-import subprocess
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterator
 
 from typing_extensions import override
@@ -24,6 +23,7 @@ from crossbench.plt.signals import LinuxSignals
 
 if TYPE_CHECKING:
   from crossbench.plt.display_info import DisplayInfo
+  from crossbench.plt.types import TupleCmdArgs
 
 SCRIPTS_DIR: Final = pth.LocalPath(__file__).parent / "remote_scripts"
 
@@ -242,8 +242,7 @@ class LinuxPlatform(PosixPlatform):
       return meminfos
 
   @functools.cached_property
-  def _clipboard_bin(self) -> tuple[pth.AnyPath, *tuple[str, ...]] | None:
-    self.assert_is_local()
+  def _clipboard_bin(self) -> TupleCmdArgs | None:
     if path := self.which("xclip"):
       return (path, "-selection", "clipboard")
     if path := self.which("wl-copy"):
@@ -260,7 +259,7 @@ class LinuxPlatform(PosixPlatform):
   @override
   def set_clipboard(self, text: str) -> None:
     assert self._clipboard_bin
-    subprocess.run(self._clipboard_bin, input=text.encode("utf-8"), check=True)
+    self.sh(*self._clipboard_bin, input=text.encode("utf-8"), check=True)
 
 
 class RemoteLinuxPlatform(RemotePlatformMixin, LinuxPlatform):

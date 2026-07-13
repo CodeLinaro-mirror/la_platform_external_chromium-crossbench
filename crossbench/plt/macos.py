@@ -30,6 +30,7 @@ from crossbench.plt.signals import MacOSSignals
 if TYPE_CHECKING:
   from crossbench.plt.base import CPUFreqInfo
   from crossbench.plt.display_info import DisplayInfo
+  from crossbench.plt.types import TupleCmdArgs
   from crossbench.plt.version import PlatformVersion
 
 DISPLAY_NDRV_RE: Final[re.Pattern] = re.compile(
@@ -679,9 +680,10 @@ class MacOSPlatform(PosixPlatform):
     self.sh("screencapture", "-x", result_path)
 
   @functools.cached_property
-  def _clipboard_bin(self) -> pth.AnyPath | None:
-    self.assert_is_local()
-    return self.which("pbcopy")
+  def _clipboard_bin(self) -> TupleCmdArgs | None:
+    if path := self.which("pbcopy"):
+      return (path,)
+    return None
 
   @property
   @override
@@ -691,9 +693,7 @@ class MacOSPlatform(PosixPlatform):
   @override
   def set_clipboard(self, text: str) -> None:
     assert self._clipboard_bin
-    subprocess.run((self._clipboard_bin,),
-                   input=text.encode("utf-8"),
-                   check=True)
+    self.sh(*self._clipboard_bin, input=text.encode("utf-8"), check=True)
 
   @override
   def is_port_used(self, port: int) -> bool:

@@ -635,6 +635,13 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     self.assertTrue(lsa)
     self.assertNotEqual(ls, lsa)
 
+  def test_sh_input(self):
+    hello_world = self.platform.sh_stdout("cat", input=b"hello world")
+    self.assertEqual(hello_world, "hello world")
+    hello_world_bytes = self.platform.sh_stdout_bytes(
+        "cat", input=b"hello world bytes")
+    self.assertEqual(hello_world_bytes, b"hello world bytes")
+
   def test_sh_bytes(self):
     ls_bytes = self.platform.sh_stdout_bytes("ls")
     self.assertIsInstance(ls_bytes, bytes)

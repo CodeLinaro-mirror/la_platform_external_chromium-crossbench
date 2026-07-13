@@ -73,13 +73,19 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
                       shell: bool = False,
                       quiet: bool = False,
                       stdin: ProcessIo = None,
+                      input: bytes | None = None,
                       env: Mapping[str, str] | None = None,
                       cwd: pth.AnyPath | None = None,
                       check: bool = True) -> bytes:
     ssh_cmd: ListCmdArgs = self.build_ssh_cmd(
         *args, shell=shell, env=env, cwd=cwd)
     return self._host_platform.sh_stdout_bytes(
-        *ssh_cmd, shell=False, quiet=quiet, stdin=stdin, check=check)
+        *ssh_cmd,
+        shell=False,
+        quiet=quiet,
+        stdin=stdin,
+        input=input,
+        check=check)
 
   def sh(self,
          *args: CmdArg,
@@ -88,6 +94,7 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
          stdout: ProcessIo = None,
          stderr: ProcessIo = None,
          stdin: ProcessIo = None,
+         input: bytes | None = None,
          env: Mapping[str, str] | None = None,
          cwd: pth.AnyPath | None = None,
          quiet: bool = False,
@@ -101,6 +108,7 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
         stdout=stdout,
         stderr=stderr,
         stdin=stdin,
+        input=input,
         quiet=quiet,
         check=check)
 
