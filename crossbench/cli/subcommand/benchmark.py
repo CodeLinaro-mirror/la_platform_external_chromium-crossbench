@@ -21,7 +21,8 @@ from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport, ViewportMode
 from crossbench.cli import ui
 from crossbench.cli.config.browser import BrowserConfig
-from crossbench.cli.config.browser_variants import BrowserVariantsConfig
+from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig, \
+    BrowserVariantsConfig
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig, \
     ValidationMode
 from crossbench.cli.config.network import NetworkConfig
@@ -538,10 +539,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       return version_str
     return ""
 
-  def extra_banner_info(self) -> str:
-    benchmark_name = self.benchmark_name()
-    version_str = self.benchmark_version()
-    return f"{benchmark_name} {version_str}"
 
   @override
   def run(self, args: argparse.Namespace) -> None:
@@ -551,7 +548,9 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     self._helper(args)
     try:
       self._process_args(args)
-      self._print_banner(self.extra_banner_info())
+      args.browser = self._get_browsers(args)
+      self._print_banner(self.benchmark_banner_info(),
+                         self.browser_banner_info(args.browser))
       benchmark = self._get_benchmark(args)
       with plt.PLATFORM.TemporaryDirectory(
           prefix="crossbench") as tmp_dirname, plt.PLATFORM.wakelock():
@@ -569,6 +568,24 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         raise
       self._log_benchmark_subcommand_failure(benchmark, self._runner, e)
       sys.exit(3)
+
+  def benchmark_banner_info(self) -> str:
+    benchmark_name = self.benchmark_name()
+    version_str = self.benchmark_version()
+    return f"{benchmark_name} {version_str}"
+
+  def browser_banner_info(self, browsers: Sequence[Browser]) -> str:
+    if not browsers:
+      return ""
+
+    if len(browsers) == 1:
+      browser = browsers[0]
+      return f"{browser.type_name()} v{browser.version} {browser.platform.name}"
+
+    if len(browsers) < 4:
+      return ", ".join(b.type_name() for b in browsers)
+
+    return f"{len(browsers)} browsers"
 
   def _run(self, args: argparse.Namespace, benchmark: Benchmark,
            tmp_dirname: pth.AnyPath) -> None:
@@ -793,6 +810,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       logging.error("Could not create %s", latest_link)
 
   def _get_browsers(self, args: argparse.Namespace) -> Sequence[Browser]:
+    if isinstance(args.browser_config, BaseBrowserVariantsConfig):
+      return args.browser_config.browsers
     # TODO: move browser instance create to separate method.
     # TODO: move --browser-config parsing to BrowserVariantsConfig
     args.browser_config = BrowserVariantsConfig.parse_args(args)

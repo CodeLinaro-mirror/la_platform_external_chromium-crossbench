@@ -23,10 +23,10 @@ if TYPE_CHECKING:
   from crossbench.cli.types import Subparsers
 
 BANNER = r"""
-                   ▌           ▌      Browser Benchmark Runner
-    ▞▀▖▙▀▖▞▀▖▞▀▘▞▀▘▛▀▖▞▀▖▛▀▖▞▀▖▛▀▖    v{version}
-    ▌ ▖▌  ▌ ▌▝▀▖▝▀▖▌ ▌▛▀ ▌ ▌▌ ▖▌ ▌    {extra_info}
-    ▝▀ ▘  ▝▀ ▀▀ ▀▀ ▀▀ ▝▀▘▘ ▘▝▀ ▘ ▘
+                   ▌           ▌    │  Browser Benchmark Runner
+    ▞▀▖▙▀▖▞▀▖▞▀▘▞▀▘▛▀▖▞▀▖▛▀▖▞▀▖▛▀▖  │  v{version}
+    ▌ ▖▌  ▌ ▌▝▀▖▝▀▖▌ ▌▛▀ ▌ ▌▌ ▖▌ ▌  │  {extra_info}
+    ▝▀ ▘  ▝▀ ▀▀ ▀▀ ▀▀ ▝▀▘▘ ▘▝▀ ▘ ▘  │  {browser_info}
 """
 
 
@@ -83,15 +83,21 @@ class CrossbenchSubcommand(abc.ABC):
   def _log_version_info(self) -> None:
     logging.info("🛠 v%s", self._get_version_info())
 
-  def _print_banner(self, extra_info: str | None = None) -> None:
+  def _print_banner(self,
+                    extra_info: str | None = None,
+                    browser_info: str | None = None) -> None:
     if self.cli.args.verbosity < 0:
       self._log_version_info()
     else:
-      self._print_banner_logo(extra_info)
+      self._print_banner_logo(extra_info, browser_info)
 
-  def _print_banner_logo(self, extra_info: str | None = None) -> None:
+  def _print_banner_logo(self,
+                         extra_info: str | None = None,
+                         browser_info: str | None = None) -> None:
     formatted_banner = BANNER.format(
-        version=self._get_version_info(), extra_info=extra_info or "")
+        version=self._get_version_info(),
+        extra_info=extra_info or "",
+        browser_info=browser_info or "")
     lines = formatted_banner.strip("\n").split("\n")
 
     if not ui.COLOR_LOGGING:
