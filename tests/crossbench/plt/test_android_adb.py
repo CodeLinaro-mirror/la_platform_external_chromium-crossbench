@@ -957,5 +957,20 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         8 + len(string_pool_chunk) + len(start_element_chunk))
     return axml_header + string_pool_chunk + start_element_chunk
 
+  @mock.patch("crossbench.plt.android_adb.uiautomator")
+  @mock.patch("crossbench.plt.android_adb.android_device")
+  def test_uiautomator_device(self, android_device_mock, uiautomator_mock):
+    device_mock = mock.MagicMock()
+    android_device_mock.AndroidDevice.return_value = device_mock
+
+    with self.platform.uiautomator_device() as device:
+      self.assertEqual(device, device_mock)
+      device_mock.services.register.assert_called_once_with(
+          uiautomator_mock.ANDROID_SERVICE_NAME,
+          uiautomator_mock.UiAutomatorService)
+      device_mock.services.unregister_all.assert_not_called()
+
+    device_mock.services.unregister_all.assert_called_once()
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

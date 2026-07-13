@@ -717,13 +717,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def key(self) -> tuple[Any, ...]:
     return ("android", self.serial_id)
 
-  @functools.cached_property
-  def _uiautomator_device(self) -> android_device.AndroidDevice:
-    ad = android_device.AndroidDevice(self.serial_id)
-    ad.services.register(uiautomator.ANDROID_SERVICE_NAME,
-                         uiautomator.UiAutomatorService)
-    return ad
-
   @contextlib.contextmanager
   def uiautomator_device(
       self) -> Generator[android_device.AndroidDevice, Any, None]:
@@ -737,9 +730,15 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       else:
         environ["PATH"] = adb_dir
 
+    ad = None
     try:
-      yield self._uiautomator_device
+      ad = android_device.AndroidDevice(self.serial_id)
+      ad.services.register(uiautomator.ANDROID_SERVICE_NAME,
+                           uiautomator.UiAutomatorService)
+      yield ad
     finally:
+      if ad:
+        ad.services.unregister_all()
       if adb_dir:
         environ["PATH"] = old_path
 
