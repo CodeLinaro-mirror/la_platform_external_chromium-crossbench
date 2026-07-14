@@ -560,10 +560,10 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     self._helper(args)
     try:
       self._process_args(args)
+      benchmark = self._get_benchmark(args)
       args.browser = self._get_browsers(args)
       self._print_banner(self.benchmark_banner_info(),
                          self.browser_banner_info(args.browser))
-      benchmark = self._get_benchmark(args)
       with plt.PLATFORM.TemporaryDirectory(
           prefix="crossbench") as tmp_dirname, plt.PLATFORM.wakelock():
         self._run(args, benchmark, tmp_dirname)

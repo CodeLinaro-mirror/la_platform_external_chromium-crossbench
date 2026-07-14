@@ -8,20 +8,24 @@ import datetime as dt
 import json
 import os
 import pathlib
-from typing import TYPE_CHECKING, Callable, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Sequence
 from unittest import mock
 
 import hjson
 
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers import viewport
 from crossbench.browsers.splash_screen import SplashScreen, URLSplashScreen
+from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
+from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.env.runner_env import ValidationMode
+from crossbench.network.local_file_server import LocalFileNetwork
 from crossbench.parse import LateArgumentError
 from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe
@@ -30,6 +34,7 @@ from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 from tests.crossbench.cli.config.base import IOS_DEVICES_SINGLE_OUTPUT
+from tests.crossbench.mock_helper import MockStory
 
 if TYPE_CHECKING:
   from crossbench.path import AnyPath
@@ -657,6 +662,36 @@ class FastCliTestCasePartB(BaseCliTestCase):
             raises=SysExitTestException)
         self.assertIn(f"Unknown binary: {debugger}", stderr)
         self.assertIn(pathlib.Path(debugger), searched_binaries)
+
+  def test_benchmark_overrides_network(self):
+
+    class MockCustomNetworkBenchmark(Benchmark):
+      """Mock custom network benchmark docstring."""
+      NAME = "custom-network-benchmark"
+      DEFAULT_STORY_CLS = MockStory
+
+      @classmethod
+      def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+        if not getattr(args, "has_explicit_network", False):
+          args.network = NetworkConfig(
+              type=NetworkType.LOCAL, path=pth.LocalPath("/mock/dir"))
+        return {"stories": (MockStory("story_1"),)}
+
+    mock_dir = pth.LocalPath("/mock/dir")
+    self.fs.create_dir(mock_dir)
+    self.fs.create_file(mock_dir / "index.html")
+
+    with mock.patch.object(CrossBenchCLI, "BENCHMARKS",
+                           (MockCustomNetworkBenchmark,)):
+      with self._patch_get_browser_cls():
+        cli = self.run_cli(
+            "custom-network-benchmark",
+            "--browser=chrome",
+        )
+        runner = cli.last_subcommand.runner
+        self.assertEqual(len(runner.browsers), 1)
+        browser = runner.browsers[0]
+        self.assertIsInstance(browser.network, LocalFileNetwork)
 
 
 if __name__ == "__main__":
