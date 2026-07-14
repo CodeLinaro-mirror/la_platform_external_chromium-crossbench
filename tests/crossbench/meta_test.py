@@ -139,7 +139,7 @@ class MetaTestCase(unittest.TestCase):
   def test_version_match(self):
     pyproject_toml_path = ROOT_DIR / "pyproject.toml"
     pyproject_toml = tomllib.loads(pyproject_toml_path.read_text())
-    pyproject_version = pyproject_toml["tool"]["poetry"]["version"]
+    pyproject_version = pyproject_toml["project"]["version"]
     self.assertEqual(
         pyproject_version, crossbench.__version__,
         f"Version mismatch between {pyproject_toml_path} "

@@ -1,20 +1,22 @@
 [tool.isort]
 multi_line_output = 2
 
-[tool.poetry]
+[project]
 name = "crossbench"
 version = "1.2026.02"
-authors = [ "Camillo Bruni <cbruni@chromium.org>" ]
+authors = [ { name = "Camillo Bruni", email = "cbruni@chromium.org" } ]
 description = "A cross-browser, cross-system web benchmark runner"
 readme = "README.md"
 license = "BSD-3-Clause"
+requires-python = ">=3.11,<3.13"
+dynamic = ["dependencies"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
 ]
 
-[tool.poetry.urls]
+[project.urls]
 "Homepage" = "http://crossben.ch"
 "Bug Tracker" = "http://bugs.crossben.ch"
 "Source" = "http://source.crossben.ch"
@@ -37,7 +39,6 @@ platformdirs = "4.9.2"
 protobuf = "6.33.5"
 psutil = "7.2.1"
 pygments = "2.19.2"
-python = ">=3.11,<3.13"
 python-dateutil = "2.9.0"
 pytz = "2025.2"
 requests = "2.32.5"
@@ -49,11 +50,11 @@ tabulate = "0.9.0"
 websockets = "15.0.1"
 xlsxwriter = "3.2.5"
 
-[tool.poetry.scripts]
+[project.scripts]
 crossbench = 'crossbench.scripts:crossbench'
 cb = 'crossbench.scripts:crossbench'
 cb_btp = 'crossbench.scripts:cb_btp'
-cb_validate_hjson= 'crossbench.scripts:cb_validate_hjson'
+cb_validate_hjson = 'crossbench.scripts:cb_validate_hjson'
 
 [tool.poetry.group.dev.dependencies]
 debugpy = "1.8.16"
