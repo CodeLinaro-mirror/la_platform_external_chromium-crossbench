@@ -537,18 +537,34 @@ class FastCliTestCasePartB(BaseCliTestCase):
                      "--throw")
       self.assertIn("powersampler", str(cm.exception))
 
-  def test_fast(self):
+  def _test_fast(self, fast_flag: str, expected_validation: ValidationMode):
     with self._patch_get_browser_cls():
       url = "http://test.com"
-      cli = self.run_cli("loading", f"--urls={url}", "--throw", "--fast")
+      cli = self.run_cli("loading", f"--urls={url}", "--throw", fast_flag,
+                         f"--out-dir={self.out_dir / fast_flag}")
       self.assertEqual(cli.args.splash_screen, SplashScreen.NONE)
       self.assertEqual(cli.args.cool_down_time, dt.timedelta(0))
-      self.assertEqual(cli.args.env_validation, ValidationMode.SKIP)
+      self.assertEqual(cli.args.env_validation, expected_validation)
       for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertIs(browser.settings.splash_screen, SplashScreen.NONE)
         self.assertListEqual(browser.url_list, [url])
         self.assertEqual(len(browser.js_flags), 0)
+
+  def test_fast_implicit_mode(self):
+    self._test_fast("--fast", ValidationMode.WARN)
+
+  def test_fast_strict(self):
+    self._test_fast("--fast=strict", ValidationMode.THROW)
+
+  def test_fast_explicit_mode(self):
+    for mode in ValidationMode:
+      self._test_fast(f"--fast={mode.value}", mode)
+
+  def test_fast_invalid(self):
+    with self.assertRaises(argparse.ArgumentError) as cm:
+      self._test_fast("--fast=invalid", ValidationMode.THROW)
+    self.assertIn("invalid choice: 'invalid'", str(cm.exception))
 
   def test_fast_startup_delay_input(self):
     with self._patch_get_browser_cls():

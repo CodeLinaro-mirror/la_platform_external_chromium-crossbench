@@ -50,15 +50,25 @@ if TYPE_CHECKING:
 class EnableFastAction(argparse.Action):
   """Custom action to enable fast test runs"""
 
+  @classmethod
+  def _parse_fast_validation_mode(
+      cls, values: str | Sequence[Any] | None) -> ValidationMode:
+    value = ObjectParser.non_empty_str(values)
+    if value == "strict":
+      value = "throw"
+    return ObjectParser.enum(ValidationMode.__name__, ValidationMode, value,
+                             ValidationMode)
+
+  @override
   def __call__(self,
                parser: argparse.ArgumentParser,
                namespace: argparse.Namespace,
                values: str | Sequence[Any] | None,
                option_string: str | None = None) -> None:
-    del parser, values, option_string
+    del parser, option_string
     namespace.cool_down_time = dt.timedelta()
     namespace.splash_screen = SplashScreen.NONE
-    namespace.env_validation = ValidationMode.SKIP
+    namespace.env_validation = self._parse_fast_validation_mode(values)
 
 
 class AppendDebuggerProbeAction(argparse.Action):
@@ -448,10 +458,12 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     cooldown_group.add_argument(
         "--fast",
         action=EnableFastAction,
-        nargs=0,
-        help=("Switch to a fast run mode "
-              "which might yield unstable performance results. "
-              "Equivalent to --cool-down=0 --no-splash --env-validation=skip."))
+        nargs="?",
+        const="warn",
+        default=None,
+        choices=tuple(m.value for m in ValidationMode) + ("strict",),
+        help=('Enable fast mode. Use --fast for the default ("warn"). '
+              'Accepts any ValidationMode, plus "strict" ("throw").'))
 
     timing_group.add_argument(
         "--time-unit",
