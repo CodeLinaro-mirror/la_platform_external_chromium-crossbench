@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 
   import google.cloud.storage.blob as gcloud_blob  # type: ignore
 
+  from crossbench.action_runner.display_rectangle import DisplayRectangle
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
@@ -1141,6 +1142,10 @@ class Platform(abc.ABC):
     raise NotImplementedError(
         "'display_resolution' is only available on Android and ChromeOS for "
         "now")
+
+  def get_window_rect(self, window_name: str) -> DisplayRectangle:
+    raise NotImplementedError(
+        "'get_window_rect' is only available on Android for now")
 
   @contextlib.contextmanager
   def low_power_mode(self) -> Generator[None, Any, None]:

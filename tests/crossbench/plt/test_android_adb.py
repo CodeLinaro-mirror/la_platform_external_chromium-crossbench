@@ -16,6 +16,8 @@ from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.action_runner.display_rectangle import DisplayRectangle
+from crossbench.benchmarks.loading.point import Point
 from crossbench.helper.version import VersionParseError
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, \
     AndroidDeviceInfo, AndroidVersion
@@ -740,6 +742,32 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     [horizontal, vertical] = self.platform.display_resolution()
     self.assertEqual(horizontal, 1920)
     self.assertEqual(vertical, 1080)
+
+  def test_get_window_rect(self):
+    dumpsys_output = ("Window #0 Window{1a2b3c4 u0 com.android.chrome/Main}:\n"
+                      "  mAppBounds=Rect(0, 0 - 1080, 2400)\n")
+    self.expect_sh("dumpsys window windows", result=dumpsys_output)
+    rect = self.platform.get_window_rect("com.android.chrome")
+    self.assertEqual(rect, DisplayRectangle(Point(0, 0), 1080, 2400))
+
+  def test_get_window_rect_multi_window(self):
+    dumpsys_output = ("Window #0 Window{1a2b3c4 u0 com.android.chrome/Main}:\n"
+                      "  mAppBounds=Rect(191, 83 - 1174, 635)\n")
+    self.expect_sh("dumpsys window windows", result=dumpsys_output)
+    rect = self.platform.get_window_rect("com.android.chrome")
+    self.assertEqual(rect, DisplayRectangle(Point(191, 83), 983, 552))
+
+  def test_get_window_rect_empty_window_name_raises(self):
+    with self.assertRaises(AssertionError):
+      self.platform.get_window_rect("")
+
+  def test_get_window_rect_not_found_raises(self):
+    self.expect_sh(
+        "dumpsys window windows",
+        result="Window #0 Window{1a2b3c4 u0 com.other.app}:")
+    with self.assertRaisesRegex(
+        RuntimeError, "Could not find window bounds for com.android.chrome"):
+      self.platform.get_window_rect("com.android.chrome")
 
   def test_user_id(self):
     self.expect_sh("am get-current-user", result="10")

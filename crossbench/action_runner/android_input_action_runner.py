@@ -297,21 +297,7 @@ return [
     browser_main_window_name = self._get_browser_window_name(
         self.browser.attributes())
 
-    raw_window_config = self.browser_platform.sh_stdout("dumpsys", "window",
-                                                        "windows")
-
-    raw_window_config = raw_window_config[raw_window_config
-                                          .find(browser_main_window_name):]
-
-    match = self._BOUNDS_RE.search(raw_window_config)
-    if not match:
-      raise RuntimeError("Could not find chrome window bounds")
-
-    width = int(match["right"]) - int(match["left"])
-    height = int(match["bottom"]) - int(match["top"])
-
-    return DisplayRectangle(
-        Point(int(match["left"]), int(match["top"])), width, height)
+    return self.browser_platform.get_window_rect(browser_main_window_name)
 
   def _type_characters(self, _: Actions, characters: str) -> None:
     # TODO(kalutes) handle special characters and other whitespaces like '\t'
