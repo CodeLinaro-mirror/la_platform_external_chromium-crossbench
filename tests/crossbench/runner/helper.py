@@ -95,7 +95,8 @@ class BaseRunnerTestCase(
                      benchmark: Benchmark | None = None,
                      probes: Iterable[Probe] | None = None,
                      throw: bool = True,
-                     create_symlinks: bool = True) -> Runner:
+                     create_symlinks: bool = True,
+                     **kwargs) -> Runner:
     return Runner(
         self.out_dir,
         browsers=browsers or self.browsers,
@@ -104,7 +105,8 @@ class BaseRunnerTestCase(
         platform=self.platform,
         create_symlinks=create_symlinks,
         throw=throw,
-        in_memory_result_db=True)
+        in_memory_result_db=True,
+        **kwargs)
 
   def single_story_runner(self,
                           browser: Browser | None = None,

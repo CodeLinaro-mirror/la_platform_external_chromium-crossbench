@@ -220,29 +220,34 @@ class Runner:
         "cool_down_threshold": args.cool_down_threshold,
         "step_by_step_mode": args.step_by_step_mode,
         "ignore_partial_failures": args.ignore_partial_failures,
+        "disabled_probes": args.no_probe,
     }
 
-  def __init__(self,
-               out_dir: pth.LocalPath,
-               browsers: Iterable[Browser],
-               benchmark: Benchmark,
-               probes: Iterable[Probe] = (),
-               platform: plt.Platform | None = None,
-               env_config: EnvConfig | None = None,
-               env_validation_mode: ValidationMode = ValidationMode.THROW,
-               repetitions: int = 1,
-               warmup_repetitions: int = 0,
-               cache_temperatures: Iterable[CacheTemperature] = (
-                   CacheTemperature.DEFAULT,),
-               timing: Timing = _DEFAULT_TIMING,
-               cool_down_threshold: ThermalStatus | None = None,
-               thread_mode: ThreadMode = ThreadMode.NONE,
-               throw: bool = False,
-               create_symlinks: bool = True,
-               in_memory_result_db: bool = False,
-               step_by_step_mode: bool = False,
-               ignore_partial_failures: bool = False) -> None:
+  def __init__(
+      self,
+      out_dir: pth.LocalPath,
+      browsers: Iterable[Browser],
+      benchmark: Benchmark,
+      probes: Iterable[Probe] = (),
+      platform: plt.Platform | None = None,
+      env_config: EnvConfig | None = None,
+      env_validation_mode: ValidationMode = ValidationMode.THROW,
+      repetitions: int = 1,
+      warmup_repetitions: int = 0,
+      cache_temperatures: Iterable[CacheTemperature] = (
+          CacheTemperature.DEFAULT,),
+      timing: Timing = _DEFAULT_TIMING,
+      cool_down_threshold: ThermalStatus | None = None,
+      thread_mode: ThreadMode = ThreadMode.NONE,
+      throw: bool = False,
+      create_symlinks: bool = True,
+      in_memory_result_db: bool = False,
+      step_by_step_mode: bool = False,
+      ignore_partial_failures: bool = False,
+      disabled_probes: Iterable[str] = ()
+  ) -> None:
     self.out_dir = out_dir.absolute()
+    self._disabled_probes: frozenset[str] = frozenset(disabled_probes)
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
     self.out_dir.mkdir(parents=True)
     self._state = RunnerStateMachine(self)
@@ -309,6 +314,8 @@ class Runner:
                        ), f"Expected BenchmarkProbe, got {benchmark_probe}"
       assert isinstance(benchmark_probe,
                         Probe), f"Expected Probe, got {benchmark_probe}"
+      if benchmark_probe.name in self._disabled_probes:
+        continue
       self.attach_probe(benchmark_probe)
 
   def _sort_probes(self) -> None:
@@ -383,6 +390,8 @@ class Runner:
       probe = pending_probes.pop(0)
       with self.exceptions.annotate(f"Attaching extra probes for {probe.name}"):
         for extra_probe in probe.get_extra_probes(self):
+          if extra_probe.name in self._disabled_probes:
+            continue
           self.attach_probe(extra_probe)
           pending_probes.append(extra_probe)
           logging.warning("🩺 Auto-adding '%s' probe.", extra_probe.name)
