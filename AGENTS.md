@@ -55,8 +55,9 @@ If running `./cb.py` fails, try the following:
   during most iterations (e.g. only relevant files), and only run the entire suite
   when it's time to finalise a CL.
 - mypy: Run `vpython3 -m mypy` only when absolutely necessary (e.g., after a larger change).
-  To save time, restrict it to the minimum set of modified files rather than the
-  entire codebase.
+  To save time during iterative development, restrict mypy to the minimum set of modified
+  files rather than the entire codebase. Infer the user's intent and recognize when it's time
+  to finalize the CL; when that happens, DO run mypy over the entire codebase.
 - ruff: Always do `vpython3 -m ruff check` after completing a change to validate
   all results.
 
