@@ -441,6 +441,12 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
         help="Duration for the BITS tool to run.",
     )
     parser.add_argument(
+        "--bits-port",
+        type=int,
+        default=None,
+        help="Port for the BITS tool to use.",
+    )
+    parser.add_argument(
         "--stabilization",
         "--stabilization-time",
         dest="stabilization_time",
@@ -463,6 +469,7 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
           "out": args.bits_out,
           "device": args.bits_device,
           "duration": args.bits_duration,
+          "port": args.bits_port,
       })
 
     # default_probe_config_path() cannot conditionally return None based on

@@ -12,7 +12,7 @@ from typing import IO, TYPE_CHECKING, Any, ClassVar, Iterator, Self
 
 from typing_extensions import override
 
-from crossbench.parse import DurationParser, PathParser
+from crossbench.parse import DurationParser, NumberParser, PathParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
     ProbeIncompatibleBrowser
 
@@ -66,6 +66,11 @@ class BitsProbe(Probe):
         type=DurationParser.positive_duration,
         default=cls.DEFAULT_DURATION,
         help="Duration for the BITS tool to run.")
+    parser.add_argument(
+        "port",
+        type=NumberParser.positive_int,
+        default=None,
+        help="Optional port number for the BITS tool.")
     return parser
 
   def __init__(
@@ -74,6 +79,7 @@ class BitsProbe(Probe):
       bits_out: str = "",
       bits_device: str = "",
       duration: dt.timedelta = DEFAULT_DURATION,
+      port: int | None = None,
   ) -> None:
     super().__init__()
     if duration < dt.timedelta(seconds=1):
@@ -82,6 +88,7 @@ class BitsProbe(Probe):
     self._bits_out: str = bits_out
     self._bits_device: str = bits_device
     self._duration: dt.timedelta = duration
+    self._port: int | None = port
 
   @property
   def bits_path(self) -> pth.LocalPath:
@@ -99,6 +106,9 @@ class BitsProbe(Probe):
   def duration(self) -> dt.timedelta:
     return self._duration
 
+  @property
+  def port(self) -> int | None:
+    return self._port
 
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
@@ -145,6 +155,8 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
     device_args: tuple[str, ...] = ()
     if self.probe.bits_device:
       device_args += ("--device", self.probe.bits_device)
+    if self.probe.port is not None:
+      device_args += ("--service_port", str(self.probe.port))
 
     with self._log_files("w") as (stdout, stderr):
       self._process = self.host_platform.popen(
@@ -160,10 +172,14 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
 
   def _stop_collection(self) -> None:
     logging.debug("BITS: Stopping collection (ID: %r)", self.bits_out_id)
+    device_args: tuple[pth.AnyPathLike, ...] = ()
+    if self.probe.port is not None:
+      device_args += ("--service_port", str(self.probe.port))
     stop_args = (
         self.probe.bits_path,
         "--stop",
         self.bits_out_id,
+        *device_args,
     )
     with self._log_files("a") as (stdout, stderr):
       self.host_platform.sh(*stop_args, stdout=stdout, stderr=stderr)

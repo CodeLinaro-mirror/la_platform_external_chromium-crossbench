@@ -128,6 +128,37 @@ class BitsProbeTestCase(BaseProbeTestCase):
     })
     self.assertEqual(probe_empty.bits_device, "")
 
+  def test_bits_probe_parsing_no_port_specified(self) -> None:
+    probe = BitsProbe.parse_dict({
+        "bits_path": str(self.bits_path),
+        "bits_out": "test_run_id"
+    })
+    self.assertIsNone(probe.port)
+
+  def test_bits_probe_parsing_custom_port(self) -> None:
+    probe = BitsProbe.parse_dict({
+        "bits_path": str(self.bits_path),
+        "bits_out": "test_run_id",
+        "port": 1234
+    })
+    self.assertEqual(probe.port, 1234)
+
+  def test_bits_probe_parsing_zero_port(self) -> None:
+    with self.assertRaises(argparse.ArgumentTypeError):
+      BitsProbe.parse_dict({
+          "bits_path": str(self.bits_path),
+          "bits_out": "run_id",
+          "port": 0
+      })
+
+  def test_bits_probe_parsing_negative_port(self) -> None:
+    with self.assertRaises(argparse.ArgumentTypeError):
+      BitsProbe.parse_dict({
+          "bits_path": str(self.bits_path),
+          "bits_out": "run_id",
+          "port": -8080
+      })
+
   def test_validate_browser_incompatible(self) -> None:
     probe = BitsProbe(self.bits_path, "test_run_id")
     browser = self.magic_mock_browser
@@ -136,12 +167,15 @@ class BitsProbeTestCase(BaseProbeTestCase):
     with self.assertRaises(ProbeIncompatibleBrowser):
       probe.validate_browser(env, browser)
 
-  def _check_probe_lifecycle(self, bits_device: str) -> None:
+  def _check_probe_lifecycle(self,
+                             bits_device: str,
+                             port: int | None = None) -> None:
     probe = BitsProbe(
         self.bits_path,
         "test_run_id",
         bits_device=bits_device,
         duration=dt.timedelta(seconds=120),
+        port=port,
     )
     run = self.mock_run()
     run.browser_session.browser.platform.serial_id = "serial"
@@ -160,21 +194,22 @@ class BitsProbeTestCase(BaseProbeTestCase):
     context.start_story_run()
     host_platform.popen.assert_called_once()
     call_args = host_platform.popen.call_args.args
-    if bits_device:
-      self.assertEqual(call_args[-2:], ("--device", bits_device))
-    else:
-      self.assertNotIn("--device", call_args)
 
-    host_platform.popen.assert_called_once()
+    expected_device_args: list[str] = []
+    if bits_device:
+      expected_device_args += ["--device", bits_device]
+    if port is not None:
+      expected_device_args += ["--service_port", str(port)]
+
     self.assertEqual(
-        host_platform.popen.call_args.args,
+        call_args,
         (
             self.bits_path,
             "--create",
             "test_run_id",
             "--duration",
             "120s",
-            *(("--device", bits_device) if bits_device else []),
+            *expected_device_args,
         ),
     )
     self.assertIn("stdout", host_platform.popen.call_args.kwargs)
@@ -183,12 +218,17 @@ class BitsProbeTestCase(BaseProbeTestCase):
     # 3. stop_story_run() should stop BITS
     context.stop_story_run()
     host_platform.sh.assert_called_once()
+    expected_stop_args: list[str] = []
+    if port is not None:
+      expected_stop_args += ["--service_port", str(port)]
+
     self.assertEqual(
         host_platform.sh.call_args.args,
         (
             self.bits_path,
             "--stop",
             "test_run_id",
+            *expected_stop_args,
         ),
     )
     self.assertIn("stdout", host_platform.sh.call_args.kwargs)
@@ -210,6 +250,12 @@ class BitsProbeTestCase(BaseProbeTestCase):
 
   def test_probe_lifecycle_with_device(self) -> None:
     self._check_probe_lifecycle(bits_device="device_id_123")
+
+  def test_probe_lifecycle_with_port(self) -> None:
+    self._check_probe_lifecycle(bits_device="", port=1234)
+
+  def test_probe_lifecycle_with_device_and_port(self) -> None:
+    self._check_probe_lifecycle(bits_device="device_id_123", port=1234)
 
 
 class BitsProbeResultsFileTestCase(BaseProbeTestCase):
