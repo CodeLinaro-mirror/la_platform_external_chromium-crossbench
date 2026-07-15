@@ -629,7 +629,7 @@ class NoProbeFlagCliTestCase(BaseCliTestCase):
   def setUp(self) -> None:
     super().setUp()
     self.config_file = pathlib.Path("/config.hjson")
-    config_data = {
+    config_data: dict[str, dict] = {
         "probes": {
             self._PROBE_1: {},
             self._PROBE_2: {},
@@ -642,8 +642,8 @@ class NoProbeFlagCliTestCase(BaseCliTestCase):
   def _run_no_probe_flag_test(
       self,
       no_probe_flags: Sequence[str],
-      expected_present: Iterable[str],
-      expected_absent: Iterable[str],
+      expected_present: Iterable[str] = (),
+      expected_absent: Iterable[str] = (),
   ) -> None:
     loading_cls = self._BENCHMARK_CLASS
     url = "http://test.com"
@@ -772,6 +772,34 @@ class NoProbeFlagCliTestCase(BaseCliTestCase):
           "--throw",
       )
     self.assertIn("Did you mean 'v8.log'?", str(cm.exception))
+
+  def test_no_probe_flag_with_explicit_probe_config(self) -> None:
+    # This is NOT a conflict because --no-probe is designed to remove probes
+    # from the "base" configuration (loaded either from the default .hjson
+    # or explicitly via --probe-config). This allows users to easily skip
+    # specific probes from large custom config files without modifying them.
+    # The conflict exception is only thrown when a probe is explicitly
+    # enabled via the inline --probe flag AND disabled via --no-probe.
+    self._run_no_probe_flag_test(
+        [f"--probe-config={self.config_file}", f"--no-probe={self._PROBE_1}"],
+        expected_present=[self._PROBE_2, self._PROBE_3],
+        expected_absent=[self._PROBE_1],
+    )
+
+  def _test_no_probe_flag_conflicting(self, flags: Iterable[str]) -> None:
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "enable and disable") as cm:
+      self._run_no_probe_flag_test(tuple(flags))
+    self.assertIn(self._PROBE_1, str(cm.exception))
+    self.assertIn("Cannot both enable and disable probes", str(cm.exception))
+
+  def test_no_probe_flag_conflicting(self) -> None:
+    self._test_no_probe_flag_conflicting(
+        [f"--no-probe={self._PROBE_1}", f"--probe={self._PROBE_1}", "--throw"])
+
+  def test_no_probe_flag_conflicting_reversed(self) -> None:
+    self._test_no_probe_flag_conflicting(
+        [f"--probe={self._PROBE_1}", f"--no-probe={self._PROBE_1}", "--throw"])
 
 
 if __name__ == "__main__":

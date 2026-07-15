@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import logging
 from typing import TYPE_CHECKING, Any, Final, Iterable, Self, Sequence
 
@@ -16,7 +17,6 @@ from crossbench.config import ConfigObject
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
-  import argparse
 
   import crossbench.path as pth
   from crossbench.probes.probe import Probe
@@ -33,6 +33,7 @@ class ProbeListConfig(ConfigObject):
       probe_config_path: pth.LocalPath = args.probe_config
       config_from_file = cls.parse(probe_config_path)
       if args.no_probe:
+        cls._verify_no_conflicts(args.no_probe, config_from_args)
         config_from_file = cls._exclude(config_from_file, args.no_probe)
       with exception.annotate(
           f"Merging probe config ({probe_config_path.name}) with cli --probe:"):
@@ -78,11 +79,25 @@ class ProbeListConfig(ConfigObject):
 
   @classmethod
   def _exclude(cls, config: Self, no_probe_list: Iterable[str]) -> Self:
-    skipped_names: set[str] = set()
-    for item in no_probe_list:
-      skipped_names.update(x.strip() for x in item.split(","))
+    skipped_names = cls._parse_no_probes(no_probe_list)
     filtered_probes = [p for p in config.probes if p.name not in skipped_names]
     return cls(probes=filtered_probes)
+
+  @classmethod
+  def _verify_no_conflicts(cls, no_probe_list: Iterable[str],
+                           config_from_args: Self) -> None:
+    no_probes = cls._parse_no_probes(no_probe_list)
+    explicit_probes = {p.name for p in config_from_args.probes}
+    if conflicting := (no_probes & explicit_probes):
+      raise argparse.ArgumentTypeError("Cannot both enable and disable probes: "
+                                       f"{', '.join(sorted(conflicting))}")
+
+  @classmethod
+  def _parse_no_probes(cls, no_probe_list: Iterable[str]) -> set[str]:
+    skipped_names: set[str] = set()
+    for item in no_probe_list:
+      skipped_names.update(x.strip() for x in item.split(",") if x.strip())
+    return skipped_names
 
   def __init__(
       self,
