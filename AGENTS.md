@@ -17,7 +17,6 @@ If running `./cb.py` fails, try the following:
 - Keep methods short where possible and use well-named helper methods.
 - Type annotate all instance methods inside __init__ methods, method arguments
   and return values.
-- Always run ruff and and mypy after completing a change.
 
 ## Crossbench Platform Code
 - Avoid using raw shell-commands if possible and directly use the platform
