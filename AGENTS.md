@@ -46,12 +46,12 @@ If running `./cb.py` fails, try the following:
   config/* folder.
 
 # Crossbench Sanity Checks
-- Always do `vpython3 -m ruff check` after completing a change to validate
-  all results.
+- Run tests with `vpython3 -m pytest tests/crossbench -x -n 7`.
 - Run `vpython3 -m mypy` only when absolutely necessary (e.g., after a larger change).
   To save time, restrict it to the minimum set of modified files rather than the
   entire codebase.
-- Run tests with `vpython3 -m pytest tests/crossbench -x -n 7`.
+- Always do `vpython3 -m ruff check` after completing a change to validate
+  all results.
 
 # Running Performance Investigations
 - **Environment Validation**: When running `cb.py` automatically, it might
