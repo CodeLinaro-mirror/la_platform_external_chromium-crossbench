@@ -20,3 +20,34 @@ metric_spec: {
     inner_query_id: "loadline2_score"
   }
 }
+
+query {
+  id: "loadline2_browser_info"
+  table {
+    table_name: "loadline2_browser_info"
+    module_name: "ext.loadline2_browser_info"
+    column_names: "placeholder_value"
+    column_names: "browser_version"
+  }
+}
+
+# Perfetto v2 metrics do not support string values, so the browser
+# version can only be encoded in the metric name.
+# Results in a metric like this:
+#   bundle_id: "loadline2.browser_info.browser_version"
+#   row {
+#     values {
+#       double_value: 1.0
+#     }
+#     dimension {
+#       string_value: "150.0.7871.46-64"
+#    }
+#  }
+metric_spec: {
+  id: "loadline2.browser_info.browser_version"
+  value: "placeholder_value"
+  dimensions: "browser_version"
+  query {
+    inner_query_id: "loadline2_browser_info"
+  }
+}
