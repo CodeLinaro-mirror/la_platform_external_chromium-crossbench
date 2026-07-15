@@ -81,6 +81,11 @@ class Benchmark(abc.ABC):
     return ()
 
   @classmethod
+  def fast_mode_default_overrides(cls) -> dict[str, Any]:
+    """Return benchmark-specific default overrides for --fast mode."""
+    return {}
+
+  @classmethod
   def register_subcommand(cls,
                           subparsers: Subparsers) -> argparse.ArgumentParser:
     return subparsers.add_parser(

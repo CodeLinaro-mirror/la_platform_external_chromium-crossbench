@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import override
 
@@ -90,6 +90,14 @@ class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
   NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-page-load"
   DEFAULT_STORY_CLS: ClassVar = WebPowerPageLoadStory
   STORY_FILTER_CLS: ClassVar = WebPowerPageLoadStoryFilter
+
+  @classmethod
+  @override
+  def fast_mode_default_overrides(cls) -> dict[str, Any]:
+    overrides = super().fast_mode_default_overrides()
+    overrides["page_load_count"] = 2
+    overrides["interval"] = dt.timedelta(seconds=1)
+    return overrides
 
   @classmethod
   @override

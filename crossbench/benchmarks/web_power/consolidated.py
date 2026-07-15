@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Sequence
 
 from typing_extensions import override
 
@@ -43,6 +43,14 @@ class WebPowerBenchmark(WebPowerBenchmarkBase):
   DEFAULT_STORY_CLS: ClassVar = WebPowerStory
   STORY_FILTER_CLS: ClassVar = WebPowerConsolidatedStoryFilter
   SITE_REQUIRED: ClassVar[bool] = False
+
+  @classmethod
+  @override
+  def fast_mode_default_overrides(cls) -> dict[str, Any]:
+    overrides = super().fast_mode_default_overrides()
+    for benchmark_cls in WebPowerBenchmarkBase.scenario_benchmarks():
+      overrides.update(benchmark_cls.fast_mode_default_overrides())
+    return overrides
 
   @classmethod
   @override

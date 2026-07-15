@@ -332,6 +332,7 @@ class CrossBenchCLI:
       return
     if subcommand := self.subcommands.get(subcommand_name):
       subcommand.init_cli_parser()
+      subcommand.set_fast_mode_defaults(argv)
 
   def log_assertion_error_statement(self, e: AssertionError) -> None:
     _, exc_exception, tb = sys.exc_info()

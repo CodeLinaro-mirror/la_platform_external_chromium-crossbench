@@ -315,6 +315,14 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
                                  parser: CBArgumentParser) -> CBArgumentParser:
     raise NotImplementedError
 
+  @classmethod
+  def fast_mode_default_overrides(cls) -> dict[str, Any]:
+    overrides = super().fast_mode_default_overrides()
+    overrides["duration"] = dt.timedelta(seconds=3)
+    overrides["repetitions"] = 1
+    overrides["stabilization_time"] = dt.timedelta(seconds=3)
+    return overrides
+
   NAME: ClassVar = "web-power"
   DEFAULT_REPETITIONS: ClassVar[int] = 5
   DEFAULT_COOL_DOWN: ClassVar[dt.timedelta] = dt.timedelta(minutes=2)

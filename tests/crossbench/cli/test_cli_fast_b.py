@@ -16,6 +16,7 @@ import hjson
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.base import Benchmark
+from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.browsers import viewport
 from crossbench.browsers.splash_screen import SplashScreen, URLSplashScreen
 from crossbench.cli.cli import CrossBenchCLI
@@ -37,6 +38,7 @@ from tests.crossbench.cli.config.base import IOS_DEVICES_SINGLE_OUTPUT
 from tests.crossbench.mock_helper import MockStory
 
 if TYPE_CHECKING:
+  from crossbench.cli.parser import CBArgumentParser
   from crossbench.path import AnyPath
 
 
@@ -549,8 +551,11 @@ class FastCliTestCasePartB(BaseCliTestCase):
                          f"--out-dir={self.out_dir / fast_flag}")
       self.assertEqual(cli.args.splash_screen, SplashScreen.NONE)
       self.assertEqual(cli.args.cool_down_time, dt.timedelta(0))
-      self.assertEqual(cli.args.env_validation, expected_validation)
-      for browser in cli.last_subcommand.runner.browsers:
+      subcommand = cli.last_subcommand
+      assert isinstance(subcommand, BenchmarkSubcommand)
+      self.assertEqual(
+          subcommand._get_env_validation_mode(cli.args), expected_validation)
+      for browser in subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertIs(browser.settings.splash_screen, SplashScreen.NONE)
         self.assertListEqual(browser.url_list, [url])
@@ -570,6 +575,38 @@ class FastCliTestCasePartB(BaseCliTestCase):
     with self.assertRaises(argparse.ArgumentError) as cm:
       self._test_fast("--fast=invalid", ValidationMode.THROW)
     self.assertIn("invalid choice: 'invalid'", str(cm.exception))
+
+  def _test_fast_calls_fast_mode_default_overrides(self,
+                                                   flag: str) -> ValidationMode:
+    with mock.patch(
+        "crossbench.benchmarks.loading.loading_benchmark.LoadingBenchmark"
+        ".fast_mode_default_overrides",
+        return_value={}) as fast_mode_default_overrides_mock:
+      with self._patch_get_browser_cls():
+        url = "http://test.com"
+        suffix = flag.replace("=", "_").replace("-", "_")
+        cli = self.run_cli("loading", f"--urls={url}", "--throw", flag,
+                           f"--out-dir={self.out_dir / 'fast_mode' / suffix}")
+        fast_mode_default_overrides_mock.assert_called_once_with()
+        subcommand = cli.last_subcommand
+        assert isinstance(subcommand, BenchmarkSubcommand)
+        return subcommand._get_env_validation_mode(cli.args)
+
+  def test_fast_calls_fast_mode_default_overrides_implicit(self):
+    self.assertEqual(
+        self._test_fast_calls_fast_mode_default_overrides("--fast"),
+        ValidationMode.WARN)
+
+  def test_fast_calls_fast_mode_default_overrides_strict(self):
+    self.assertEqual(
+        self._test_fast_calls_fast_mode_default_overrides("--fast=strict"),
+        ValidationMode.THROW)
+
+  def test_fast_calls_fast_mode_default_overrides_explicit(self):
+    for mode in ValidationMode:
+      self.assertEqual(
+          self._test_fast_calls_fast_mode_default_overrides(
+              f"--fast={mode.value}"), mode)
 
   def test_fast_startup_delay_input(self):
     with self._patch_get_browser_cls():
@@ -598,6 +635,87 @@ class FastCliTestCasePartB(BaseCliTestCase):
       self.assertEqual(cli.args.cool_down_time, dt.timedelta(0))
       self.assertEqual(cli.args.start_delay, dt.timedelta.max)
       self.assertEqual(cli.args.stop_delay, dt.timedelta.max)
+
+  def _test_flag_precedence_hierarchy(self, flags: list[str]) -> None:
+    # This tests the exact precedence hierarchy of argparse variables:
+    # 1. Explicit CLI arguments (e.g. `--arg1=explicit`) take highest priority.
+    # 2. Rapid defaults (if `--fast`) override regular defaults.
+    # 3. Regular defaults apply if no explicit argument or rapid default is set.
+    # We use a MockBenchmark with 3 generic arguments to verify all 3 levels of
+    # precedence in a single CLI run.
+
+    class MockBenchmark(LoadingBenchmark):
+      """Mock Benchmark for testing arg precedence."""
+      NAME = "mock_benchmark"
+
+      @classmethod
+      def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
+        parser = super().add_cli_arguments(parser)
+        parser.add_argument("--arg1", default="default")
+        parser.add_argument("--arg2", default="default")
+        parser.add_argument("--arg3", default="default")
+        return parser
+
+      @classmethod
+      def fast_mode_default_overrides(cls) -> dict[str, Any]:
+        defaults = super().fast_mode_default_overrides()
+        defaults["arg1"] = "rapid-default"
+        defaults["arg2"] = "rapid-default"
+        return defaults
+
+    with mock.patch("crossbench.cli.cli.CrossBenchCLI.BENCHMARKS",
+                    (MockBenchmark,)), self._patch_get_browser_cls():
+      url = "http://test.com"
+
+      args = ["mock_benchmark", f"--urls={url}", "--throw", "--arg1=explicit"]
+      args.extend(flags)
+
+      cli = self.run_cli(*args, f"--out-dir={self.out_dir}/test")
+
+      # arg1: User explicitly provided. Takes precedence.
+      self.assertEqual(cli.args.arg1, "explicit")
+
+      # arg2: No explicit user flag. Overridden by rapid defaults (if passed).
+      expected_arg2 = "rapid-default" if flags else "default"
+      self.assertEqual(cli.args.arg2, expected_arg2)
+
+      # arg3: No explicit user flag, no rapid default. Uses regular default.
+      self.assertEqual(cli.args.arg3, "default")
+
+  def test_flag_precedence_hierarchy_fast(self):
+    self._test_flag_precedence_hierarchy(["--fast"])
+
+  def test_flag_precedence_hierarchy_none(self):
+    self._test_flag_precedence_hierarchy([])
+
+  def _test_fast_mode_explicit_override(self, flags: list[str],
+                                        dest_property: str) -> Any:
+    with self._patch_get_browser_cls():
+      url = "http://test.com"
+      value = None
+      for i, args in enumerate((flags, list(reversed(flags)))):
+        cli = self.run_cli("loading", f"--urls={url}", "--throw", *args,
+                           f"--out-dir={self.out_dir}_{i}")
+        if i == 0:
+          value = getattr(cli.args, dest_property)
+        else:
+          self.assertEqual(value, getattr(cli.args, dest_property))
+      return value
+
+  def test_fast_explicit_override(self):
+    value: dt.timedelta = self._test_fast_mode_explicit_override(
+        ["--fast", "--cool-down=123ms"], "cool_down_time")
+    self.assertEqual(value, dt.timedelta(milliseconds=123))
+
+  def test_fast_splash_screen_override(self):
+    value: SplashScreen = self._test_fast_mode_explicit_override(
+        ["--fast", "--splash-screen=detailed"], "splash_screen")
+    self.assertEqual(value, SplashScreen.DETAILED)
+
+  def test_fast_env_validation_override(self):
+    value: ValidationMode = self._test_fast_mode_explicit_override(
+        ["--fast", "--env-validation=prompt"], "env_validation")
+    self.assertEqual(value, ValidationMode.PROMPT)
 
   def test_create_symlinks(self):
     with self._patch_get_browser_cls():

@@ -47,30 +47,6 @@ if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
 
 
-class EnableFastAction(argparse.Action):
-  """Custom action to enable fast test runs"""
-
-  @classmethod
-  def _parse_fast_validation_mode(
-      cls, values: str | Sequence[Any] | None) -> ValidationMode:
-    value = ObjectParser.non_empty_str(values)
-    if value == "strict":
-      value = "throw"
-    return ObjectParser.enum(ValidationMode.__name__, ValidationMode, value,
-                             ValidationMode)
-
-  @override
-  def __call__(self,
-               parser: argparse.ArgumentParser,
-               namespace: argparse.Namespace,
-               values: str | Sequence[Any] | None,
-               option_string: str | None = None) -> None:
-    del parser, option_string
-    namespace.cool_down_time = dt.timedelta()
-    namespace.splash_screen = SplashScreen.NONE
-    namespace.env_validation = self._parse_fast_validation_mode(values)
-
-
 class AppendDebuggerProbeAction(argparse.Action):
   """Custom action to set multiple args when --gdb or --lldb are set:
   - Add a DebuggerProbe config.
@@ -115,6 +91,17 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     self._parser = self._benchmark_cls.register_subcommand(subparsers)
     self._parser.set_defaults(crossbench_subcommand=self)
     return self.parser
+
+  def set_fast_mode_defaults(self, argv: Sequence[str]) -> None:
+    has_fast = any(arg == "--fast" or arg.startswith("--fast=") for arg in argv)
+    if not has_fast:
+      return
+    overrides: dict[str, Any] = {
+        "cool_down_time": dt.timedelta(),
+        "splash_screen": SplashScreen.NONE,
+    }
+    overrides.update(self._benchmark_cls.fast_mode_default_overrides())
+    self.parser.set_defaults(**overrides)
 
   @override
   def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
@@ -381,7 +368,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
 
     env_group.add_argument(
         "--env-validation",
-        default=ValidationMode.PROMPT,
+        default=None,
         type=ValidationMode,  # type: ignore
         help=(
             "Set how runner env is validated (see also --env-config/--env):\n" +
@@ -455,9 +442,9 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         const=dt.timedelta(seconds=0),
         help=("Disable cool-down between runs (might cause CPU throttling), "
               "equivalent to --cool-down=0."))
-    cooldown_group.add_argument(
+
+    parser.add_argument(
         "--fast",
-        action=EnableFastAction,
         nargs="?",
         const="warn",
         default=None,
@@ -851,7 +838,15 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
 
   def _get_env_validation_mode(self,
                                args: argparse.Namespace) -> ValidationMode:
-    return args.env_validation
+    if args.env_validation is not None:
+      return args.env_validation
+    if args.fast is None:
+      return ValidationMode.PROMPT
+    value = args.fast
+    if value == "strict":
+      return ValidationMode.THROW
+    return ObjectParser.enum(ValidationMode.__name__, ValidationMode, value,
+                             ValidationMode)
 
   def _get_env_config(self, args: argparse.Namespace) -> EnvConfig:
     return args.env

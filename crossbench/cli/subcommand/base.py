@@ -8,7 +8,7 @@ import abc
 import colorsys
 import logging
 import random
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Sequence, cast
 
 from crossbench import __version__
 from crossbench import path as pth
@@ -41,6 +41,9 @@ class CrossbenchSubcommand(abc.ABC):
     if not self._parser_populated:
       self.add_cli_arguments(self.parser)
       self._parser_populated = True
+
+  def set_fast_mode_defaults(self, argv: Sequence[str]) -> None:
+    pass
 
   @property
   def cli(self) -> CrossBenchCLI:

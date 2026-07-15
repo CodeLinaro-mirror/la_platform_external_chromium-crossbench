@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import atexit
 import tempfile
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import override
 
@@ -156,3 +156,10 @@ class WebPowerScrollBenchmark(WebPowerBenchmarkBase):
         help="Frequency of synthetic scroll touch events in Hz. "
         f"(Default: {story_cls.DEFAULT_INPUT_RATE}Hz)")
     return parser
+
+  @classmethod
+  @override
+  def fast_mode_default_overrides(cls) -> dict[str, Any]:
+    overrides = super().fast_mode_default_overrides()
+    overrides["scroll_count"] = 1
+    return overrides
