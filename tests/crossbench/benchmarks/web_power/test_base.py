@@ -19,6 +19,7 @@ from crossbench.benchmarks.web_power import wpr_helpers
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
     WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or
 from crossbench.cli.config.network import NetworkConfig, NetworkType
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CBArgumentParser
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.probes.bits import BitsProbe
@@ -299,31 +300,65 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       MockWebPowerBenchmark.kwargs_from_cli(args)
 
-  def test_default_probe_config_path(self) -> None:
-    path = MockWebPowerBenchmark.default_probe_config_path()
-    self.assertIsNotNone(path)
-    assert path is not None
-    self.assertEqual(path.name, "probe_config.hjson")
-
-  def test_probe_config_default_and_override(self) -> None:
-    parser = CBArgumentParser()
+  def _parse_and_get_kwargs(
+      self, *cli_args: str) -> tuple[argparse.Namespace, dict[str, Any]]:
+    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
     parser.add_argument(
         "--probe-config",
         type=pathlib.Path,
         default=MockWebPowerBenchmark.default_probe_config_path(),
     )
+    # In Crossbench, the --probe argument is added by the root CLI command,
+    # not the benchmark's add_cli_arguments(). We add it manually here so
+    # that our parsed `args` can be successfully passed to
+    # `ProbeListConfig.from_cli_args(args)` to test probe instantiation.
+    parser.add_argument("--probe", action="append", default=[])
+    args = parser.parse_args(["--site", "cnn", *cli_args])
+    kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
+    return args, kwargs
 
-    # Scenario A: Default config path resolved when flag is omitted
-    args_default = parser.parse_args([])
-    self.assertEqual(
-        args_default.probe_config,
-        MockWebPowerBenchmark.default_probe_config_path(),
-    )
+  def test_kwargs_from_cli_probe_config_default(self) -> None:
+    # Verify that the default probe config is loaded when no config is
+    # specified.
+    args, kwargs = self._parse_and_get_kwargs()
+    self.assertIsNotNone(args.probe_config)
+    self.assertEqual(args.probe_config.name, "probe_config.hjson")
+    self.assertNotIn("bits_probe", kwargs)
 
-    # Scenario B: Custom non-default config path successfully overrides default
+    # Mock pyfakefs files required by the default config and its Perfetto
+    # presets.
+    self.fs.create_file(
+        args.probe_config, contents='{"probes": {"perfetto": {}}}')
+    self.fs.create_file(
+        args.probe_config.parents[2] /
+        "probe/perfetto/trace_config/default.txtpb",
+        contents="duration_ms: 1000")
+
+    probe_names = [p.name for p in ProbeListConfig.from_cli_args(args).probes]
+    self.assertIn("perfetto", probe_names)
+
+  def test_kwargs_from_cli_probe_config_override(self) -> None:
+    # Verify that explicitly providing --probe-config overrides the default.
     custom_path = pathlib.Path("/path/to/custom.hjson")
-    args_custom = parser.parse_args(["--probe-config", str(custom_path)])
-    self.assertEqual(args_custom.probe_config, custom_path)
+    self.fs.create_file(custom_path, contents='{"probes": {"v8.log": {}}}')
+    args, kwargs = self._parse_and_get_kwargs("--probe-config",
+                                              str(custom_path))
+    self.assertEqual(args.probe_config, custom_path)
+    self.assertNotIn("bits_probe", kwargs)
+    probe_names = [p.name for p in ProbeListConfig.from_cli_args(args).probes]
+    self.assertIn("v8.log", probe_names)
+    self.assertNotIn("perfetto", probe_names)
+
+  def test_kwargs_from_cli_probe_config_with_bits_probe(self) -> None:
+    # Verify that using BITS prevents the default probe config (and Perfetto)
+    # from loading.
+    bits_path = pathlib.Path("/path/to/bits")
+    self.fs.create_file(bits_path)
+    args, kwargs = self._parse_and_get_kwargs("--bits-path", str(bits_path))
+    self.assertIsNone(args.probe_config)
+    self.assertIn("bits_probe", kwargs)
+    probe_names = [p.name for p in ProbeListConfig.from_cli_args(args).probes]
+    self.assertNotIn("perfetto", probe_names)
 
   def _verify_junction_temperature_setup(
       self, is_supported: bool, already_has_probe: bool) -> mock.MagicMock:

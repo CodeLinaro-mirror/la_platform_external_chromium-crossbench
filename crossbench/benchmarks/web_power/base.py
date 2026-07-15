@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, Generic, Iterable, Mapping, \
 from typing_extensions import override
 
 from crossbench import config
-from crossbench import path as pth
 from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
@@ -465,6 +464,14 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
           "device": args.bits_device,
           "duration": args.bits_duration,
       })
+
+    # default_probe_config_path() cannot conditionally return None based on
+    # args.bits_path because it is evaluated before arguments are parsed.
+    if getattr(args, "probe_config",
+               None) is None and "bits_probe" not in kwargs:
+      args.probe_config = config.config_dir(
+      ) / "benchmark/web_power/probe_config.hjson"
+
     return kwargs
 
   @classmethod
@@ -509,8 +516,3 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
         type=NetworkType.WPR,
         url=site_config.archive,
         no_archive_certificates=True)
-
-  @classmethod
-  @override
-  def default_probe_config_path(cls) -> pth.LocalPath | None:
-    return (config.config_dir() / "benchmark/web_power/probe_config.hjson")
