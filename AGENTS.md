@@ -46,11 +46,16 @@ If running `./cb.py` fails, try the following:
   config/* folder.
 
 # Crossbench Sanity Checks
-- Run tests with `vpython3 -m pytest tests/crossbench -x -n 7`.
-- Run `vpython3 -m mypy` only when absolutely necessary (e.g., after a larger change).
+- When producing changes, you should run the following validations - tests, mypy, ruff.
+  However, it is extremely important to run such validations at the right time only,
+  because the user's time is valuable. Unless there is good reason to do otherwise,
+  you should run tests first, then check mypy, and finish off with ruff. Only proceed
+  to the next of these once the previous one passes without errors.
+- Tests: Run tests with `vpython3 -m pytest tests/crossbench -x -n 7`.
+- mypy: Run `vpython3 -m mypy` only when absolutely necessary (e.g., after a larger change).
   To save time, restrict it to the minimum set of modified files rather than the
   entire codebase.
-- Always do `vpython3 -m ruff check` after completing a change to validate
+- ruff: Always do `vpython3 -m ruff check` after completing a change to validate
   all results.
 
 # Running Performance Investigations
