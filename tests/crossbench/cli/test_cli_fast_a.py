@@ -7,11 +7,13 @@ import argparse
 import json
 import pathlib
 import unittest
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable, Sequence
+from unittest import mock
 
 import hjson
 
 from crossbench import __version__, plt
+from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.env.runner_env import EnvConfig
 from crossbench.runner.runner import CacheTemperature
@@ -20,6 +22,7 @@ from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
 if TYPE_CHECKING:
+  from crossbench.benchmarks.base import Benchmark
   from crossbench.cli.config.browser import BrowserConfig
 
 
@@ -613,6 +616,162 @@ class FastCliTestCasePartA(BaseCliTestCase):
     _, _, stderr = self.run_cli_output(
         "loading", "--bin-override=my_bin_no_path", raises=SysExitTestException)
     self.assertIn("Invalid --bin-override format", stderr)
+
+
+class NoProbeFlagCliTestCase(BaseCliTestCase):
+  # An arbitrary benchmark subcommand name, used to run the CLI parser tests.
+  # Can be replaced with another valid benchmark if 'loading' is ever removed.
+  _BENCHMARK_CLASS: type[Benchmark] = LoadingBenchmark
+  _PROBE_1: str = "v8.log"
+  _PROBE_2: str = "js"
+  _PROBE_3: str = "netlog"
+
+  def setUp(self) -> None:
+    super().setUp()
+    self.config_file = pathlib.Path("/config.hjson")
+    config_data = {
+        "probes": {
+            self._PROBE_1: {},
+            self._PROBE_2: {},
+            self._PROBE_3: {}
+        }
+    }
+    with self.config_file.open("w", encoding="utf-8") as f:
+      hjson.dump(config_data, f)
+
+  def _run_no_probe_flag_test(
+      self,
+      no_probe_flags: Sequence[str],
+      expected_present: Iterable[str],
+      expected_absent: Iterable[str],
+  ) -> None:
+    loading_cls = self._BENCHMARK_CLASS
+    url = "http://test.com"
+    with (
+        self._patch_get_browser(),
+        mock.patch.object(
+            loading_cls,
+            "default_probe_config_path",
+            return_value=self.config_file),
+    ):
+      cli = self.run_cli(self._BENCHMARK_CLASS.NAME, *no_probe_flags, url)
+      runner_probes = {p.name for p in cli.last_subcommand.runner.probes}
+      self.assertTrue(all(name in runner_probes for name in expected_present))
+      self.assertFalse(any(name in runner_probes for name in expected_absent))
+
+  def test_no_probe_flag_single(self) -> None:
+    self._run_no_probe_flag_test(
+        [f"--no-probe={self._PROBE_1}"],
+        expected_present=[self._PROBE_2, self._PROBE_3],
+        expected_absent=[self._PROBE_1],
+    )
+
+  def test_no_probe_flag_multiple_comma_separated(self) -> None:
+    self._run_no_probe_flag_test(
+        [f"--no-probe={self._PROBE_1},{self._PROBE_2}"],
+        expected_present=[self._PROBE_3],
+        expected_absent=[self._PROBE_1, self._PROBE_2],
+    )
+
+  # Note: In a real shell environment, quotes are stripped before they reach
+  # the Python process, e.g., --no-probe="a, b" is received as --no-probe=a, b.
+  # Thus, we test without literal double quotes around the argument value.
+  def test_no_probe_flag_multiple_comma_separated_whitespace(self) -> None:
+    self._run_no_probe_flag_test(
+        [f"--no-probe={self._PROBE_1}, {self._PROBE_2}"],
+        expected_present=[self._PROBE_3],
+        expected_absent=[self._PROBE_1, self._PROBE_2],
+    )
+
+  def test_no_probe_flag_multiple_flags(self) -> None:
+    self._run_no_probe_flag_test(
+        [f"--no-probe={self._PROBE_1}", f"--no-probe={self._PROBE_2}"],
+        expected_present=[self._PROBE_3],
+        expected_absent=[self._PROBE_1, self._PROBE_2],
+    )
+
+  def test_no_probe_flag_invalid(self) -> None:
+    with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
+      self.run_cli(
+          self._BENCHMARK_CLASS.NAME,
+          "--no-probe=invalid_probe_name",
+          "http://test.com",
+          "--throw",
+      )
+
+  def test_no_probe_flag_invalid_multiple(self) -> None:
+    with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
+      self.run_cli(
+          self._BENCHMARK_CLASS.NAME,
+          f"--no-probe={self._PROBE_1},invalid_probe_name",
+          "http://test.com",
+          "--throw",
+      )
+
+  def test_no_probe_flag_empty(self) -> None:
+    with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
+      self.run_cli(
+          self._BENCHMARK_CLASS.NAME,
+          "--no-probe=",
+          "http://test.com",
+          "--throw",
+      )
+
+  def test_no_probe_flag_empty_comma(self) -> None:
+    with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
+      self.run_cli(
+          self._BENCHMARK_CLASS.NAME,
+          "--no-probe=,",
+          "http://test.com",
+          "--throw",
+      )
+
+  def test_no_probe_flag_empty_leading_comma(self) -> None:
+    with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
+      self.run_cli(
+          self._BENCHMARK_CLASS.NAME,
+          f"--no-probe=,{self._PROBE_1}",
+          "http://test.com",
+          "--throw",
+      )
+
+  def test_no_probe_flag_empty_trailing_comma(self) -> None:
+    with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
+      self.run_cli(
+          self._BENCHMARK_CLASS.NAME,
+          f"--no-probe={self._PROBE_1},",
+          "http://test.com",
+          "--throw",
+      )
+
+  def test_no_probe_flag_empty_middle(self) -> None:
+    with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
+      self.run_cli(
+          self._BENCHMARK_CLASS.NAME,
+          f"--no-probe={self._PROBE_1},,{self._PROBE_2}",
+          "http://test.com",
+          "--throw",
+      )
+
+  def test_no_probe_flag_inline_config(self) -> None:
+    with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
+      self.run_cli(
+          self._BENCHMARK_CLASS.NAME,
+          "--no-probe=v8.log{log_all:true}",
+          "http://test.com",
+          "--throw",
+      )
+
+  def test_no_probe_flag_close_match(self) -> None:
+    with self.assertRaisesRegex(argparse.ArgumentError,
+                                "v8.log") as cm, self._patch_get_browser():
+      self.run_cli(
+          self._BENCHMARK_CLASS.NAME,
+          "--no-probe=v8.lo",
+          "http://test.com",
+          "--throw",
+      )
+    self.assertIn("Did you mean 'v8.log'?", str(cm.exception))
 
 
 if __name__ == "__main__":

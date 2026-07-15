@@ -328,6 +328,7 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     # that our parsed `args` can be successfully passed to
     # `ProbeListConfig.from_cli_args(args)` to test probe instantiation.
     parser.add_argument("--probe", action="append", default=[])
+    parser.add_argument("--no-probe", action="store_true", default=False)
     args = parser.parse_args(["--site", "cnn", *cli_args])
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     return args, kwargs

@@ -30,6 +30,7 @@ from crossbench.cli.config.probe import PROBE_LOOKUP, ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
+from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import DurationParser, LateArgumentError, ObjectParser, \
     PathParser
 from crossbench.probes.debugger import DebuggerProbe
@@ -45,6 +46,23 @@ if TYPE_CHECKING:
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.cli.types import Subparsers
   from crossbench.probes.probe import Probe
+
+
+def _parse_no_probe(value: str) -> tuple[str, ...]:
+  if not value:
+    raise argparse.ArgumentTypeError("Empty no-probe value")
+  names = []
+  for name in value.split(","):
+    name = name.strip()
+    if not name:
+      raise argparse.ArgumentTypeError(f"Empty probe name in {value!r}")
+    if name not in PROBE_LOOKUP:
+      error_message, _ = close_matches_message(name, PROBE_LOOKUP.keys(),
+                                               "Probe name")
+      raise argparse.ArgumentTypeError(error_message)
+    names.append(name)
+  return tuple(names)
+
 
 
 class AppendDebuggerProbeAction(argparse.Action):
@@ -179,6 +197,13 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
               "Use this config file to specify more complex Probe settings. "
               "See config/doc/probe.config.hjson on how to set up a complex "
               "configuration file."))
+    probe_group.add_argument(
+        "--no-probe",
+        action="extend",
+        type=_parse_no_probe,
+        default=[],
+        help="Skip setting up a probe if it is in the default config.",
+    )
 
   def _add_chrome_arguments(self, parser: argparse.ArgumentParser) -> None:
     chrome_args = parser.add_argument_group(

@@ -32,6 +32,8 @@ class ProbeListConfig(ConfigObject):
         return config_from_args
       probe_config_path: pth.LocalPath = args.probe_config
       config_from_file = cls.parse(probe_config_path)
+      if args.no_probe:
+        config_from_file = cls._exclude(config_from_file, args.no_probe)
       with exception.annotate(
           f"Merging probe config ({probe_config_path.name}) with cli --probe:"):
         return config_from_file.merge(config_from_args, should_override=True)
@@ -73,6 +75,14 @@ class ProbeListConfig(ConfigObject):
   @override
   def parse_str(cls, value: str) -> Self:
     raise NotImplementedError
+
+  @classmethod
+  def _exclude(cls, config: Self, no_probe_list: Iterable[str]) -> Self:
+    skipped_names: set[str] = set()
+    for item in no_probe_list:
+      skipped_names.update(x.strip() for x in item.split(","))
+    filtered_probes = [p for p in config.probes if p.name not in skipped_names]
+    return cls(probes=filtered_probes)
 
   def __init__(
       self,

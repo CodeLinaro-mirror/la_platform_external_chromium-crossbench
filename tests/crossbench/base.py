@@ -119,6 +119,7 @@ class CrossbenchMockArgsMixin:
         enable_field_trial_config=kwargs.pop("enable_field_trial_config", None),
         network=kwargs.pop("network", NetworkConfig.default()),
         probe=kwargs.pop("probe", []),
+        no_probe=kwargs.pop("no_probe", []),
         extra_browser_args=kwargs.pop("extra_browser_args", []),
         other_browser_args=kwargs.pop("other_browser_args", []),
         playback=kwargs.pop("playback", PlaybackController.default()),
