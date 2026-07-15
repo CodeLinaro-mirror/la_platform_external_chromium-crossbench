@@ -8,8 +8,8 @@ import dataclasses
 import datetime as dt
 import functools
 import inspect
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Iterable, Mapping, \
-    Self, Sequence, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Generic, Iterable, \
+    Mapping, Self, Sequence, TypeVar, cast
 
 from typing_extensions import override
 
@@ -39,6 +39,16 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
+
+
+# The Web Power benchmarks will follow an `a.b.c` scheme, where:
+# - The A portion of a.b.c refers to the year, with year one being 2026.
+# - The B portion of a.b.c refers to the major revision within the year.
+#   This is incremented with major, score-affecting changes to the workloads.
+# - The C portion of a.b.c refers to minor, score-unaffecting changes; e.g.
+#   "quality of life" improvements, changes to the cool-off period determined
+#   not to affect thermals, etc.
+VERSION_STRING: Final[str] = "1.1.0"
 
 
 _T = TypeVar("_T")
@@ -428,6 +438,8 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     parser = super().add_cli_arguments(parser)
     parser = cast("CBArgumentParser",
                   cls.STORY_FILTER_CLS.add_cli_arguments(parser))
+    parser.add_argument(
+        "--benchmark-version", action="version", version=f"{VERSION_STRING}")
     parser.add_argument(
         "--bits-path",
         type=PathParser.existing_file_path,
