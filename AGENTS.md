@@ -52,6 +52,9 @@ If running `./cb.py` fails, try the following:
   you should run tests first, then check mypy, and finish off with ruff. Only proceed
   to the next of these once the previous one passes without errors.
 - Tests: Run tests with `vpython3 -m pytest tests/crossbench -x -n 7`.
+  Working on CLs is an iterative process. Only run the relevant subset of tests
+  during most iterations (e.g. only relevant files), and only run the entire suite
+  when it's time to finalise a CL.
 - mypy: Run `vpython3 -m mypy` only when absolutely necessary (e.g., after a larger change).
   To save time, restrict it to the minimum set of modified files rather than the
   entire codebase.
