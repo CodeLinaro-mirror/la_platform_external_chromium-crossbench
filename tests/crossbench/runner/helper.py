@@ -90,13 +90,14 @@ class BaseRunnerTestCase(
         "firefox-stable", settings=Settings(platform=self.platform))
     self.browsers: list[Browser] = [self.mock_chrome_dev, self.mock_firefox]
 
-  def default_runner(self,
-                     browsers: Iterable[Browser] | None = None,
-                     benchmark: Benchmark | None = None,
-                     probes: Iterable[Probe] | None = None,
-                     throw: bool = True,
-                     create_symlinks: bool = True,
-                     **kwargs) -> Runner:
+  def default_runner(
+      self,
+      browsers: Iterable[Browser] | None = None,
+      benchmark: Benchmark | None = None,
+      probes: Iterable[Probe] | None = None,
+      throw: bool = True,
+      create_symlinks: bool = True,
+      disabled_probes: Iterable[str] = ()) -> Runner:
     return Runner(
         self.out_dir,
         browsers=browsers or self.browsers,
@@ -106,7 +107,7 @@ class BaseRunnerTestCase(
         create_symlinks=create_symlinks,
         throw=throw,
         in_memory_result_db=True,
-        **kwargs)
+        disabled_probes=disabled_probes)
 
   def single_story_runner(self,
                           browser: Browser | None = None,
