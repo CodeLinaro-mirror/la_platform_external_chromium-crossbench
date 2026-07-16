@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-import functools
 import logging
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self
 
@@ -99,7 +98,6 @@ class TraceConfig(ConfigObject):
     return config_dir() / "probe/perfetto/trace_config"
 
   @classmethod
-  @functools.cache
   def presets(cls) -> dict[str, pth.LocalPath]:
     result: dict[str, pth.LocalPath] = {}
     for preset_config in cls.preset_dir().glob("*.txtpb"):

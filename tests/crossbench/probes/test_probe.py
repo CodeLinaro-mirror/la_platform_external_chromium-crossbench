@@ -17,7 +17,7 @@ from crossbench.probes.all import CONFIGURABLE_INTERNAL_PROBES, \
     DEFAULT_INTERNAL_PROBES, GENERAL_PURPOSE_PROBES, INTERNAL_PROBES, \
     NON_CONFIGURABLE_INTERNAL_PROBES, OPTIONAL_INTERNAL_PROBES
 from crossbench.probes.bits import BitsProbe
-from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe, TraceConfig
+from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
 from crossbench.probes.cb_perfetto.tracing import TracingProbe
 from crossbench.probes.chrome_histograms import ChromeHistogramsProbe
 from crossbench.probes.chromium_pgo import ChromiumPgoProbe
@@ -88,7 +88,6 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
 
   def setUp(self) -> None:
     super().setUp()
-    TraceConfig.presets.cache_clear()
     self.setup_perfetto_config_presets()
 
   def probe_instances(self):

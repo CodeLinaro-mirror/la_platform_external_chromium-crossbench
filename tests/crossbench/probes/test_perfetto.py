@@ -307,7 +307,6 @@ class PerfettoProbeFunctionalTestCase(CrossbenchConfigTestMixin,
     self.assertIn("Perfetto trace results", cm.output[1])
 
   def test_help_text_items(self):
-    TraceConfig.presets.cache_clear()
     # Ensure there is at least one preset in the fake FS
     dummy_preset = TraceConfig.preset_dir() / "dummy_preset.txtpb"
     self.fs.create_file(dummy_preset)
