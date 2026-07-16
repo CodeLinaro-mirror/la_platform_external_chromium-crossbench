@@ -33,8 +33,9 @@ class ProbeListConfig(ConfigObject):
       probe_config_path: pth.LocalPath = args.probe_config
       config_from_file = cls.parse(probe_config_path)
       if args.no_probe:
-        cls._verify_no_conflicts(args.no_probe, config_from_args)
-        config_from_file = cls._exclude(config_from_file, args.no_probe)
+        no_probes = frozenset(args.no_probe)
+        cls._verify_no_conflicts(no_probes, config_from_args)
+        config_from_file = cls._exclude(config_from_file, no_probes)
       with exception.annotate(
           f"Merging probe config ({probe_config_path.name}) with cli --probe:"):
         return config_from_file.merge(config_from_args, should_override=True)
@@ -78,26 +79,17 @@ class ProbeListConfig(ConfigObject):
     raise NotImplementedError
 
   @classmethod
-  def _exclude(cls, config: Self, no_probe_list: Iterable[str]) -> Self:
-    skipped_names = cls._parse_no_probes(no_probe_list)
-    filtered_probes = [p for p in config.probes if p.name not in skipped_names]
+  def _exclude(cls, config: Self, no_probes: frozenset[str]) -> Self:
+    filtered_probes = [p for p in config.probes if p.name not in no_probes]
     return cls(probes=filtered_probes)
 
   @classmethod
-  def _verify_no_conflicts(cls, no_probe_list: Iterable[str],
+  def _verify_no_conflicts(cls, no_probes: frozenset[str],
                            config_from_args: Self) -> None:
-    no_probes = cls._parse_no_probes(no_probe_list)
     explicit_probes = {p.name for p in config_from_args.probes}
     if conflicting := (no_probes & explicit_probes):
       raise argparse.ArgumentTypeError("Cannot both enable and disable probes: "
                                        f"{', '.join(sorted(conflicting))}")
-
-  @classmethod
-  def _parse_no_probes(cls, no_probe_list: Iterable[str]) -> set[str]:
-    skipped_names: set[str] = set()
-    for item in no_probe_list:
-      skipped_names.update(x.strip() for x in item.split(",") if x.strip())
-    return skipped_names
 
   def __init__(
       self,
