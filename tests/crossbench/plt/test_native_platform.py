@@ -1031,6 +1031,7 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
   def test_check_autobrightness(self):
     if test_helper.is_on_swarming():
       self.skipTest("Skipping this to run in CQ due to crbug.com/396405604.")
+    # True or false, it should be handled gracefully (i.e. not throw).
     self.platform.check_autobrightness()
 
   def test_exec_apple_script(self):

@@ -400,15 +400,13 @@ class MacOSPlatform(PosixPlatform):
                             "-json").strip()
     data = json.loads(output)
     if spdisplays_data := data.get("SPDisplaysDataType"):
-      for data in spdisplays_data:
-        if spdisplays_ndrvs := data.get("spdisplays_ndrvs"):
+      for display_data in spdisplays_data:
+        if spdisplays_ndrvs := display_data.get("spdisplays_ndrvs"):
           for display in spdisplays_ndrvs:
             if auto_brightness := display.get("spdisplays_ambient_brightness"):
               return auto_brightness == "spdisplays_yes"
-        raise ValueError(
-            "Could not find 'spdisplays_ndrvs' from SPDisplaysDataType. "
-            f"Output={output}")
-    raise ValueError("Could not get 'SPDisplaysDataType' form system profiler. "
+      return False
+    raise ValueError("Could not get 'SPDisplaysDataType' from system profiler. "
                      f"Output={output}")
 
   def check_crowdstrike(self, disable: bool = False) -> bool:
