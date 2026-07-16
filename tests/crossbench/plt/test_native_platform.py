@@ -1018,7 +1018,7 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertFalse(self.platform.is_remote)
 
   def test_set_main_screen_brightness(self):
-    if "Apple M1" in plt.PLATFORM.cpu or "Apple M2" in plt.PLATFORM.cpu:
+    if "Apple M" in plt.PLATFORM.cpu:
       self.skipTest("Skipping this due to crbug.com/396417022.")
     prev_level = plt.PLATFORM.get_main_display_brightness()
     brightness_level = 32
