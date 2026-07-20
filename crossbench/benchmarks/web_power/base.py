@@ -13,9 +13,12 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final, Generic, Iterable, \
 
 from typing_extensions import override
 
+# TODO(eladalon): Avoid noqa.
+import crossbench.probes.all as _probes  # noqa: F401  # Break circular import.
 from crossbench import config
 from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
+from crossbench.benchmarks.web_power.probe import WebPowerProbe
 from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.helper.path_finder import WprGoFinder
@@ -339,6 +342,7 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
   SITE_REQUIRED: ClassVar[bool] = True
   STORY_FILTER_CLS: ClassVar[type[StoryFilter]] = WebPowerStoryFilter
   DEFAULT_STORY_CLS: ClassVar[type[WebPowerStory]]
+  PROBES: ClassVar = (WebPowerProbe,)
 
   def __init__(
       self,

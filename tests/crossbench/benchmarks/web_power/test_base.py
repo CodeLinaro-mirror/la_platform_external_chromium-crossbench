@@ -13,18 +13,27 @@ from unittest import mock
 
 from typing_extensions import override
 
+# TODO(eladalon): Avoid noqa.
+import crossbench.probes.all as _probes  # noqa: F401  # Break circular import.
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.web_power import wpr_helpers
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
     WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or
+from crossbench.benchmarks.web_power.probe import WebPowerProbe
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CBArgumentParser
+from crossbench.env.runner_env import ValidationMode
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.probes.bits import BitsProbe
+from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe, TraceConfig
 from crossbench.probes.junction_temperature import JunctionTemperatureProbe
 from crossbench.probes.probe import ProbeIncompatibleBrowser
+from crossbench.probes.trace_processor.query_config import QUERIES_DIR
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
+from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
@@ -119,6 +128,10 @@ class WebPowerStoryTestCase(unittest.TestCase):
 
 class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
 
+  def setUp(self) -> None:
+    super().setUp()
+    mapping_file = QUERIES_DIR / "web_power" / "mapping.json"
+    self.fs.create_file(mapping_file, contents='{"pixels": "test"}')
   @property
   @override
   def benchmark_cls(self) -> type[MockWebPowerBenchmark]:
@@ -389,7 +402,8 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
       benchmark = MockWebPowerBenchmark(stories=[story])
 
       runner = mock.MagicMock()
-      runner.has_probe.return_value = already_has_probe
+      self._mock_has_probe(runner, JunctionTemperatureProbe.NAME,
+                           already_has_probe)
       runner.browsers = [mock.MagicMock()]
 
       benchmark.setup(runner)
@@ -408,6 +422,118 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     runner = self._verify_junction_temperature_setup(
         is_supported=True, already_has_probe=True)
     runner.attach_probe.assert_not_called()
+
+  def _mock_has_probe(self, runner: mock.MagicMock, probe_name: str,
+                      already_has_probe: bool) -> None:
+    """Isolate the test by explicitly controlling the mock for one probe and
+    defaulting the others to True (already attached), preventing unrelated
+    probes from being inadvertently attached by the benchmark."""
+    runner.has_probe.side_effect = (lambda name: already_has_probe
+                                    if name == probe_name else True)
+
+  def _verify_trace_processor_get_extra_probes(
+      self, already_has_probe: bool) -> TraceProcessorProbe | None:
+    story = MockWebPowerStory.from_site(
+        "cnn", total_duration=dt.timedelta(seconds=123))
+    benchmark = MockWebPowerBenchmark(stories=[story])
+    probe = WebPowerProbe(benchmark=benchmark)
+
+    runner = mock.MagicMock()
+    self._mock_has_probe(runner, "trace_processor", already_has_probe)
+    runner.browsers = [mock.MagicMock()]
+
+    extra_probes = tuple(probe.get_extra_probes(runner))
+    if not extra_probes:
+      return None
+    self.assertEqual(len(extra_probes), 1)
+    tp_probe = extra_probes[0]
+    self.assertIsInstance(tp_probe, TraceProcessorProbe)
+    assert isinstance(tp_probe, TraceProcessorProbe)
+    return tp_probe
+
+  def test_setup_trace_processor_probe(self) -> None:
+    """Verify that the benchmark attaches a TraceProcessorProbe by default."""
+    self.assertIsNotNone(
+        self._verify_trace_processor_get_extra_probes(already_has_probe=False))
+
+  def test_setup_trace_processor_probe_mapping(self) -> None:
+    """Verify that the benchmark configures the TraceProcessorProbe with a
+    mapping.json that correctly applies different queries to different
+    devices."""
+    # Overwrite the dummy mapping.json from setUp with device-specific queries.
+    mapping_file = QUERIES_DIR / "web_power" / "mapping.json"
+    mapping_file.write_text(
+        '{"Pixel 9\\\\b.*": "query_p9", "Pixel 10\\\\b.*": "query_p10"}')
+    self.fs.create_file(QUERIES_DIR / "query_p9.sql", contents="SELECT p9;")
+    self.fs.create_file(QUERIES_DIR / "query_p10.sql", contents="SELECT p10;")
+
+    tp_probe = self._verify_trace_processor_get_extra_probes(
+        already_has_probe=False)
+    self.assertIsNotNone(tp_probe)
+    assert tp_probe is not None
+    [query] = tp_probe.queries
+
+    platform_p9 = mock.MagicMock()
+    platform_p9.model = "Pixel 9 Pro"
+    resolved_p9 = query.resolve_for_platform(platform_p9)
+    self.assertEqual(resolved_p9.sql, "SELECT p9;")
+
+    platform_p10 = mock.MagicMock()
+    platform_p10.model = "Pixel 10 Pro XL"
+    resolved_p10 = query.resolve_for_platform(platform_p10)
+    self.assertEqual(resolved_p10.sql, "SELECT p10;")
+
+  def test_setup_trace_processor_probe_already_has_probe(self) -> None:
+    """Verify that the benchmark skips attaching a TraceProcessorProbe if one
+    is already present."""
+    tp_probe = self._verify_trace_processor_get_extra_probes(
+        already_has_probe=True)
+    self.assertIsNone(tp_probe)
+
+  def test_probe_teardown_and_merge_ordering(self) -> None:
+    """Verify that probes are ordered such that TraceProcessorProbe merges data
+    before WebPowerProbe attempts to read it, and PerfettoProbe tears down
+    before TraceProcessorProbe."""
+
+    if not self.fs.exists(TraceConfig.preset_dir() / "default.txtpb"):
+      self.fs.create_file(
+          TraceConfig.preset_dir() / "default.txtpb",
+          contents="duration_ms: 1000")
+
+    story = MockWebPowerStory.from_site(
+        "cnn", total_duration=dt.timedelta(seconds=1))
+    benchmark = MockWebPowerBenchmark(stories=[story])
+
+    browser = mock.MagicMock()
+    browser.unique_name = "mock_browser"
+    browser.driver_logging = False
+    browser.label = "mock_label"
+
+    runner = Runner(
+        out_dir=self.out_dir,
+        browsers=[browser],
+        benchmark=benchmark,
+        probes=[PerfettoProbe()],
+        env_validation_mode=ValidationMode.SKIP,
+        in_memory_result_db=True,
+    )
+
+    benchmark.setup(runner)
+
+    probe_classes = [type(p) for p in runner.probes]
+
+    perfetto_idx = probe_classes.index(PerfettoProbe)
+    tp_idx = probe_classes.index(TraceProcessorProbe)
+    wp_idx = probe_classes.index(WebPowerProbe)
+
+    self.assertGreater(
+        perfetto_idx, tp_idx,
+        "PerfettoProbe must be sorted after TraceProcessorProbe "
+        "so that it tears down first")
+    self.assertGreater(
+        tp_idx, wp_idx,
+        "TraceProcessorProbe must be sorted after WebPowerProbe "
+        "so that it merges first")
 
 
 class FakeWprReplayNetwork(WprReplayNetwork):
