@@ -13,8 +13,6 @@ from unittest import mock
 
 from typing_extensions import override
 
-# TODO(eladalon): Avoid noqa.
-import crossbench.probes.all as _probes  # noqa: F401  # Break circular import.
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.web_power import wpr_helpers

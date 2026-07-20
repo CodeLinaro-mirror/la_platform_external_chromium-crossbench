@@ -18,7 +18,6 @@ from crossbench.helper.path_finder import ChromiumCheckoutFinder
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
 from crossbench.probes.cb_perfetto import traceconv
-from crossbench.probes.profiling.system_profiling import ProfilingProbe
 from crossbench.probes.trace_processor.context.base import \
     TraceProcessorProbeContext
 from crossbench.probes.trace_processor.query_config import \
@@ -50,7 +49,7 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
   def should_symbolize_profile(self) -> bool:
     if not self.probe.symbolize_profile:
       return False
-    return self.run.has_probe_context(ProfilingProbe)
+    return self.run.has_probe_context_by_name("profiling")
 
   @override
   def _merge_trace_files(self) -> LocalProbeResult:

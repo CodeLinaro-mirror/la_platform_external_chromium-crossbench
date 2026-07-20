@@ -168,6 +168,10 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
   def has_probe_context(self, probe_cls: type[ProbeT]) -> bool:
     return probe_cls in self._probe_contexts
 
+  def has_probe_context_by_name(self, probe_name: str) -> bool:
+    return any(context.probe.NAME == probe_name
+               for context in self._probe_contexts.values())
+
   def get_probe_context(self,
                         probe_cls: type[ProbeT]) -> ProbeContext[ProbeT] | None:
     if probe_context := self._probe_contexts.get(probe_cls):

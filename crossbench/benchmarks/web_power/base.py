@@ -13,8 +13,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final, Generic, Iterable, \
 
 from typing_extensions import override
 
-# TODO(eladalon): Avoid noqa.
-import crossbench.probes.all as _probes  # noqa: F401  # Break circular import.
 from crossbench import config
 from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark

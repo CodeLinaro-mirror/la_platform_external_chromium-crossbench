@@ -229,6 +229,27 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(len(queries), 1)
     self.assertEqual(queries[0].name, "jetstream_3_perf_sample_span")
 
+  def _test_should_symbolize_profile(self,
+                                     run: unittest.mock.MagicMock) -> bool:
+    probe = TraceProcessorProbe.parse_dict({"queries": ["pprof"]})
+    context = TraceProcessorSymbolizingProbeContext(probe, run)
+
+    # We must access the property FIRST before asserting the mock was called,
+    # because the property itself makes the call.
+    result = context.should_symbolize_profile
+    run.has_probe_context_by_name.assert_called_once_with("profiling")
+    return result
+
+  def test_should_symbolize_profile_skips_without_profiling(self):
+    run = unittest.mock.MagicMock()
+    run.runner.has_probe.return_value = True
+    run.has_probe_context_by_name.return_value = False
+    self.assertFalse(self._test_should_symbolize_profile(run))
+
+  def test_should_symbolize_profile_with_profiling(self):
+    run = unittest.mock.MagicMock()
+    run.has_probe_context_by_name.return_value = True
+    self.assertTrue(self._test_should_symbolize_profile(run))
 
 TARGET_P9 = "web_power/power_rails_p9"
 TARGET_P10 = "web_power/power_rails_p10"

@@ -493,6 +493,9 @@ class Run(ResultOrigin):
   def has_probe_context(self, probe_cls: type[ProbeT]) -> bool:
     return self._probe_context_manager.has_probe_context(probe_cls)
 
+  def has_probe_context_by_name(self, probe_name: str) -> bool:
+    return self._probe_context_manager.has_probe_context_by_name(probe_name)
+
   def get_probe_context(self,
                         probe_cls: type[ProbeT]) -> ProbeContext[ProbeT] | None:
     return self._probe_context_manager.get_probe_context(probe_cls)

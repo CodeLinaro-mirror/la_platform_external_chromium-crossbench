@@ -49,6 +49,24 @@ class RunTestCase(BaseRunGroupTestCase):
       self.assertIsNotNone(run.get_probe_context(MockProbe))
       self.assertIsNone(run.get_probe_context(ScreenshotProbe))
 
+  def test_has_probe_context_by_name(self):
+
+    class MockProbe1(MockProbe):
+      NAME = "mock_probe_1"
+
+    class MockProbe2(MockProbe):
+      NAME = "mock_probe_2"
+
+    self.runner.attach_probe(MockProbe1())
+    self.runner.attach_probe(MockProbe2())
+    run = self._create_run()
+    session = run.browser_session
+    session.set_ready()
+    with session.open():
+      self.assertTrue(run.has_probe_context_by_name("mock_probe_1"))
+      self.assertTrue(run.has_probe_context_by_name("mock_probe_2"))
+      self.assertFalse(run.has_probe_context_by_name("non_existent"))
+
   def test_annotate(self):
     run = self._create_run()
     self.assertFalse(list(run.annotations))
