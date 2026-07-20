@@ -2,10 +2,6 @@
 	path = buildtools
 	url = https://chromium.googlesource.com/chromium/src/buildtools
 	gclient-condition = not build_with_chromium
-[submodule "internal"]
-	path = internal
-	url = https://chrome-internal.googlesource.com/crossbench/crossbench-internal
-	gclient-condition = checkout_crossbench_internal
 [submodule "third_party/clang-format/script"]
 	path = third_party/clang-format/script
 	url = https://chromium.googlesource.com/external/github.com/llvm/llvm-project/clang/tools/clang-format
@@ -20,3 +16,7 @@
 	path = third_party/webpagereplay
 	url = https://chromium.googlesource.com/webpagereplay
 	gclient-condition = not build_with_chromium
+[submodule "internal"]
+	path = internal
+	url = https://chrome-internal.googlesource.com/crossbench/crossbench-internal
+	gclient-condition = checkout_crossbench_internal
