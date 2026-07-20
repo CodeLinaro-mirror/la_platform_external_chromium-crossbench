@@ -1017,9 +1017,18 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     self.assertFalse(self.platform.is_win)
     self.assertFalse(self.platform.is_remote)
 
-  def test_set_main_screen_brightness(self):
+  def _platform_supports_autobrightness(self):
     if "Apple M" in plt.PLATFORM.cpu:
       self.skipTest("Skipping this due to crbug.com/396417022.")
+    try:
+      if self.platform.check_autobrightness():
+        return
+    except Exception:
+      pass
+    self.skipTest("Skipping test; could not check autobrightness.")
+
+  def test_set_main_screen_brightness(self):
+    self._platform_supports_autobrightness()
     prev_level = plt.PLATFORM.get_main_display_brightness()
     brightness_level = 32
     plt.PLATFORM.set_main_display_brightness(brightness_level)
