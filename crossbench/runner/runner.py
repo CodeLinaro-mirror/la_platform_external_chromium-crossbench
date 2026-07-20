@@ -360,6 +360,7 @@ class Runner:
               browser, probe, matching_browser_only)
     if probe_was_used:
       self._probes[probe.name] = probe
+      self._sort_probes()
     self._env.add_probes((probe,))
     return probe
 

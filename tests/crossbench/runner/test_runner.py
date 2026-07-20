@@ -21,7 +21,7 @@ from crossbench.helper.state import UnexpectedStateError
 from crossbench.network.live import LiveNetwork
 from crossbench.probes import all as all_probes
 from crossbench.probes.js import JSProbe
-from crossbench.probes.probe import ProbeIncompatibleBrowser
+from crossbench.probes.probe import ProbeIncompatibleBrowser, ProbePriority
 from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -392,6 +392,29 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertIn("twice", str(cm.exception))
     self.assertIn(probe, runner.probes)
     self.assertNotIn(probe, runner.default_probes)
+
+  def test_attach_probe_sorts_probes(self):
+    """Verify that probes are sorted by priority when attached."""
+
+    class UserProbe(MockProbe):
+      NAME = "probe_user"
+      PRIORITY = ProbePriority.USER
+
+    class InternalProbe(MockProbe):
+      NAME = "probe_internal"
+      PRIORITY = ProbePriority.INTERNAL
+
+    runner = self.default_runner()
+    probe_1 = UserProbe("probe_user_data")
+    probe_internal = InternalProbe("probe_internal_data")
+
+    runner.attach_probe(probe_1)
+    runner.attach_probe(probe_internal)
+
+    probe_list = list(runner.probes)
+    self.assertLess(
+        probe_list.index(probe_internal), probe_list.index(probe_1),
+        "Probes were not sorted correctly upon attach_probe().")
 
   def test_attach_incompatible_probe(self):
     runner = self.default_runner()
