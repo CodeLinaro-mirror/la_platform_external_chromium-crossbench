@@ -45,21 +45,24 @@ If running `./cb.py` fails, try the following:
   config/* folder.
 
 # Crossbench Sanity Checks
-- When producing changes, you should run the following validations - tests, mypy, ruff.
-  However, it is extremely important to run such validations at the right time only,
-  because the user's time is valuable. Unless there is good reason to do otherwise,
-  you should run tests first, then check mypy, and finish off with ruff. Only proceed
-  to the next of these once the previous one passes without errors.
-- Tests: Run tests with `vpython3 -m pytest tests/crossbench -x -n 7`.
-  Working on CLs is an iterative process. Only run the relevant subset of tests
-  during most iterations (e.g. only relevant files), and only run the entire suite
-  when it's time to finalise a CL.
-- mypy: Run `vpython3 -m mypy` only when absolutely necessary (e.g., after a larger change).
-  To save time during iterative development, restrict mypy to the minimum set of modified
-  files rather than the entire codebase. Infer the user's intent and recognize when it's time
-  to finalize the CL; when that happens, DO run mypy over the entire codebase.
-- ruff: Always do `vpython3 -m ruff check` after completing a change to validate
-  all results.
+- When producing changes, you should run the following four validations:
+  (1) tests, (2) mypy, (3) ruff, (4) git-cl-format-js.
+  However, it is extremely important to run such validations at the right time
+  only, because the user's time is valuable. Unless there is good reason to do
+  otherwise, you should run these steps in order, and only proceed to the next
+  of these once the previous one passes without errors.
+  1. Tests: Run tests with `vpython3 -m pytest tests/crossbench -x -n 7`.
+     Working on CLs is an iterative process. Only run the relevant subset of
+     tests during most iterations (e.g. only relevant files), and only run the
+     entire suite when it's time to finalise a CL.
+  2. mypy: Run `vpython3 -m mypy` only when absolutely necessary (e.g., after a
+     larger change). To save time during iterative development, restrict mypy to
+     the minimum set of modified files rather than the entire codebase. Infer
+     the user's intent and recognize when it's time to finalize the CL;
+     when that happens, DO run mypy over the entire codebase.
+  3. ruff: Always do `vpython3 -m ruff check` after completing a change to
+     validate all results.
+  4. Run `git cl format --js`.
 
 # Running Performance Investigations
 - **Environment Validation**: When running `cb.py` automatically, it might
