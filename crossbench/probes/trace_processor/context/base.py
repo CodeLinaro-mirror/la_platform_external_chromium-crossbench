@@ -135,9 +135,10 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
 
   @property
   def queries(self) -> tuple[TraceProcessorQueryConfig, ...]:
-    return tuple(
+    resolved = (
         query.resolve_for_platform(self.run.browser.platform)
         for query in self._probe.queries)
+    return tuple(q for q in resolved if q is not None)
 
   def _run_metrics(self, tp: TraceProcessor,
                    exceptions: ExceptionAnnotator) -> LocalProbeResult:

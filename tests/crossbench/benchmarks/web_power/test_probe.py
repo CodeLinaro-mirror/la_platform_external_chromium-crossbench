@@ -7,6 +7,7 @@ from __future__ import annotations
 from unittest import mock
 
 import pandas as pd
+import pytest
 
 from crossbench import path as pth
 from crossbench.benchmarks.web_power.base import VERSION_STRING
@@ -161,6 +162,26 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         },
     ])
 
+  def test_merge_browsers_unsupported_device(self):
+    """Verify that a run with only an unsupported/unmapped device results in
+    its score being gracefully padded with NaN."""
+    csv_contents = "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+
+    run = mock.MagicMock()
+    run.browser.unique_name = "safari"
+    run.story.name = "cnn"
+    self.group.runs = [run]
+
+    records = self._test_merge_browsers(csv_contents)
+
+    self.assertEqual(records, [
+        {
+            "cb_browser": "safari",
+            "cb_story": "cnn",
+            "total_power_mw": pytest.approx(float("nan"), nan_ok=True)
+        },
+    ])
+
   def test_merge_browsers_multiple_browsers_and_stories(self):
     """Verify that power metrics are kept isolated per browser and story when
     aggregating."""
@@ -193,12 +214,24 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
   def test_merge_browsers_multiple_mapped_devices(self):
     """Verify that multiple devices with distinct mappings (e.g. Pixel 9 and
     Pixel 10) are successfully aggregated together if they both output
-    power_rails data."""
+    power_rails data, while any unsupported devices are padded with NaN."""
     csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
                     "chrome_pixel_9,test,0,rail_1,10.0\n"
                     "chrome_pixel_9,test,0,rail_2,20.0\n"
                     "chrome_pixel_10,test,0,rail_1,5000.0\n"
                     "chrome_pixel_10,test,0,rail_2,6000.0\n")
+
+    run_p9 = mock.MagicMock()
+    run_p9.browser.unique_name = "chrome_pixel_9"
+    run_p9.story.name = "test"
+    run_p10 = mock.MagicMock()
+    run_p10.browser.unique_name = "chrome_pixel_10"
+    run_p10.story.name = "test"
+    run_safari = mock.MagicMock()
+    run_safari.browser.unique_name = "safari"
+    run_safari.story.name = "test"
+    self.group.runs = [run_p9, run_p10, run_safari]
+
     records = self._test_merge_browsers(csv_contents)
     self.assertEqual(records, [
         {
@@ -210,6 +243,11 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
             "cb_browser": "chrome_pixel_9",
             "cb_story": "test",
             "total_power_mw": 10.0 + 20.0
+        },
+        {
+            "cb_browser": "safari",
+            "cb_story": "test",
+            "total_power_mw": pytest.approx(float("nan"), nan_ok=True)
         },
     ])
 

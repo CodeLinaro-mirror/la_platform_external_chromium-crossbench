@@ -95,6 +95,7 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
     if not trace_result:
       raise ProbeMissingDataError(self,
                                   f"{group} has no TraceProcessorProbe result")
+
     all_results = trace_result.csv_list
     query_results = [r for r in all_results if r.stem.endswith("power_rails")]
     if not query_results:
@@ -115,5 +116,26 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
     # Average total_power_mw over runs for each browser/story combination.
     run_metrics = (
         df_sum.groupby(["cb_browser",
-                        "cb_story"])["total_power_mw"].mean().reset_index())
-    return run_metrics
+                        "cb_story"])["total_power_mw"].mean().to_frame())
+
+    # Update the base DataFrame with actual computed scores where available.
+    # We use combine_first so that any browser/story present in base_df but
+    # missing in run_metrics will be padded with NaN.
+    base_df = self._get_base_df(group)
+    if not base_df.empty:
+      base_df = base_df.set_index(["cb_browser", "cb_story"])
+      run_metrics = run_metrics.combine_first(base_df)
+
+    return run_metrics.reset_index()
+
+  def _get_base_df(self, group: BrowsersRunGroup) -> pd.DataFrame:
+    """Create a baseline dataframe with all browser/story combinations
+       padded with NaN scores. This gracefully handles unmapped devices."""
+    combinations = []
+    for run in group.runs:
+      combinations.append({
+          "cb_browser": run.browser.unique_name,
+          "cb_story": run.story.name,
+          "total_power_mw": float("nan"),
+      })
+    return pd.DataFrame(combinations).drop_duplicates()

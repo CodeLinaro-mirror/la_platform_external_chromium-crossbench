@@ -333,8 +333,8 @@ class TraceProcessorProbe(Probe):
         with exceptions.capture(f"query: {query.name!r}"):
           for platform in platforms:
             with exceptions.capture(f"platform: {platform.name}"):
-              resolved_query = query.resolve_for_platform(platform)
-              tp.query(resolved_query.sql)
+              if resolved_query := query.resolve_for_platform(platform):
+                tp.query(resolved_query.sql)
 
       if summary_metrics := self.summary_metrics:
         with exceptions.capture("summary metrics:"):

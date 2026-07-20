@@ -421,7 +421,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
         expected_sql_path=f"{TARGET_FALLBACK}.sql",
         replacements={"Chromium": "ReplacedChromium"})
 
-  def test_device_specific_query_resolution_unsupported_raises(self):
+  def test_device_specific_query_resolution_unsupported_returns_none(self):
     query = TraceProcessorQueryConfig.parse({
         "name": "web_power_power_rails",
         "device_override": {
@@ -432,10 +432,8 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     platform = unittest.mock.MagicMock()
     platform.model = "Pixel 10 Pro"
 
-    with self.assertRaisesRegex(ValueError,
-                                "Unsupported device model for query"):
-      query.resolve_for_platform(platform)
-
+    resolved = query.resolve_for_platform(platform)
+    self.assertIsNone(resolved)
 
 
 class TraceProcessorResultTestCase(BaseCrossbenchTestCase):

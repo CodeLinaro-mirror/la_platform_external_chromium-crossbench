@@ -82,8 +82,8 @@ class TraceProcessorQueryConfig(ConfigObject):
   def sql(self) -> str:
     return self._sql
 
-  def resolve_for_platform(self,
-                           platform: Platform) -> TraceProcessorQueryConfig:
+  def resolve_for_platform(
+      self, platform: Platform) -> TraceProcessorQueryConfig | None:
     del platform
     return self
 
@@ -127,8 +127,8 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
         "DeviceSpecificTraceProcessorQuery must be resolved for a platform "
         "before accessing its SQL.")
 
-  def resolve_for_platform(self,
-                           platform: Platform) -> TraceProcessorQueryConfig:
+  def resolve_for_platform(
+      self, platform: Platform) -> TraceProcessorQueryConfig | None:
     device_model = platform.model
     query_path = ""
 
@@ -141,7 +141,7 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
       if self._fallback_sql:
         query_path = self._fallback_sql
       else:
-        raise ValueError(f"Unsupported device model for query: {device_model}")
+        return None
 
     value = f"{query_path}.sql"
     sql_path = PathParser.existing_file_path(QUERIES_DIR / value, "sql query")
