@@ -81,13 +81,12 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
     trace_result = group.results.get_by_name("trace_processor")
     if not trace_result:
-      raise ProbeMissingDataError(self,
-                                  f"{group} has no TraceProcessorProbe result")
+      return self._get_base_df(group)
 
     all_results = trace_result.csv_list
     query_results = [r for r in all_results if r.stem.endswith("power_rails")]
     if not query_results:
-      raise ProbeMissingDataError(self, "power_rails result not found")
+      return self._get_base_df(group)
     if len(query_results) > 1:
       raise ProbeMissingDataError(
           self, f"Multiple power_rails results found: {query_results}")

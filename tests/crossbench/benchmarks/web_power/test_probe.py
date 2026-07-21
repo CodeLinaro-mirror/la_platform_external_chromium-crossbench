@@ -254,23 +254,47 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         },
     ])
 
+  def _extract_csv_records(self, result):
+    self.assertTrue(result.csv)
+    df = pd.read_csv(result.csv)
+    return df.to_dict(orient="records")
+
   def test_merge_browsers_missing_trace_result(self):
-    """Verify that merge fails if the TraceProcessorProbe results are
-    completely missing."""
+    """Verify that merge gracefully handles missing trace processor result by
+    padding with NaN."""
     result_path = pth.LocalPath("results_dir/web_power_probe")
+    self.fs.create_dir(result_path)
     self.group.get_local_probe_result_path.return_value = result_path
+
+    run = mock.MagicMock()
+    run.browser.unique_name = "chrome"
+    run.story.name = "cnn"
+    self.group.runs = [run]
 
     self.group.results.get_by_name.return_value = None
 
-    with self.assertRaisesRegex(ProbeMissingDataError,
-                                "has no TraceProcessorProbe result"):
-      self.probe.merge_browsers(self.group)
+    result = self.probe.merge_browsers(self.group)
+
+    self.assertEqual(
+        self._extract_csv_records(result), [
+            {
+                "cb_browser": "chrome",
+                "cb_story": "cnn",
+                "total_power_mw": pytest.approx(float("nan"), nan_ok=True)
+            },
+        ])
 
   def test_merge_browsers_missing_power_rails(self):
-    """Verify that merge fails if the TraceProcessorProbe results exist but
-    lack the specific power rails CSV."""
+    """Verify that merge gracefully handles missing power rails CSV by padding
+    with NaN."""
     result_path = pth.LocalPath("results_dir/web_power_probe")
+    self.fs.create_dir(result_path)
     self.group.get_local_probe_result_path.return_value = result_path
+
+    run = mock.MagicMock()
+    run.browser.unique_name = "chrome"
+    run.story.name = "cnn"
+    self.group.runs = [run]
 
     csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
                     "chrome,test,0,rail_1,10.0\n"
@@ -283,9 +307,16 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     tp_result.csv_list = [tp_csv]
     self.group.results.get_by_name.return_value = tp_result
 
-    with self.assertRaisesRegex(ProbeMissingDataError,
-                                "power_rails result not found"):
-      self.probe.merge_browsers(self.group)
+    result = self.probe.merge_browsers(self.group)
+
+    self.assertEqual(
+        self._extract_csv_records(result), [
+            {
+                "cb_browser": "chrome",
+                "cb_story": "cnn",
+                "total_power_mw": pytest.approx(float("nan"), nan_ok=True)
+            },
+        ])
 
   def test_merge_browsers_multiple_power_rails(self):
     """Verify that merge fails if multiple power rails CSVs are found,
