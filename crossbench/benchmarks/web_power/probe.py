@@ -70,6 +70,10 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
   def get_extra_probes(self, runner: Runner) -> Iterable[Probe]:
     if runner.has_probe(TraceProcessorProbe.NAME):
       return ()
+    # We only need TraceProcessorProbe if we are capturing Perfetto traces.
+    # Otherwise, there will be no trace to query power_rails from.
+    if not runner.has_probe("perfetto"):
+      return ()
     device_mapping: dict[str, str] = {}
     device_mapping.update(self._load_mapping(QUERIES_DIR / "web_power"))
     if self.INTERNAL_QUERIES_DIR.is_dir():

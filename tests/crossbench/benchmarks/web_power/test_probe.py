@@ -9,6 +9,7 @@ import json
 import re
 import typing
 import unittest
+from typing import TYPE_CHECKING, Callable
 from unittest import mock
 
 import pandas as pd
@@ -20,6 +21,10 @@ from crossbench.benchmarks.web_power.probe import WebPowerProbe
 from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.trace_processor.constants import QUERIES_DIR
+
+if TYPE_CHECKING:
+  from crossbench.probes.probe import Probe
+
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -35,7 +40,8 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     self.group = mock.MagicMock()
     self.group.results = mock.MagicMock()
     self.runner = mock.MagicMock()
-    self.runner.has_probe.return_value = False
+    # Simulate that only the "perfetto" probe is attached.
+    self.runner.has_probe.side_effect = lambda name: name == "perfetto"
 
   def test_get_context_cls(self):
     """Verify that the probe uses the correct context class."""
@@ -347,6 +353,30 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
                                 "Multiple power_rails results found"):
       self.probe.merge_browsers(self.group)
 
+  def _test_get_extra_probes(
+      self, has_probe_side_effect: Callable[[str], bool]) -> tuple[Probe, ...]:
+    """Helper to verify get_extra_probes behavior with a mocked has_probe.
+
+    It creates a minimal mock mapping.json file in the fake filesystem
+    so that it does not crash when attempting to load the device-specific
+    query mapping, sets up the has_probe side-effect on the runner,
+    and returns the resolved extra probes.
+    """
+    mapping_dir = QUERIES_DIR / "web_power"
+    self.fs.create_dir(mapping_dir)
+    self.fs.create_file(mapping_dir / "mapping.json", contents="{}")
+    self.runner.has_probe.side_effect = has_probe_side_effect
+    return tuple(self.probe.get_extra_probes(self.runner))
+
+  def test_get_extra_probes_with_perfetto(self):
+    extra_probes = self._test_get_extra_probes(lambda name: name == "perfetto")
+    probe_names = tuple(p.name for p in extra_probes)
+    self.assertEqual(probe_names, ("trace_processor",))
+
+  def test_get_extra_probes_without_perfetto(self):
+    extra_probes = self._test_get_extra_probes(lambda name: False)
+    self.assertEqual(extra_probes, ())
+
 
 class Mapping(enum.Enum):
   PUBLIC = "public"
@@ -368,7 +398,8 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
         map(int, VERSION_STRING.split(".")))
     self.probe = WebPowerProbe(benchmark=self.mock_benchmark)
     self.runner = mock.MagicMock()
-    self.runner.has_probe.return_value = False
+    # Simulate that only the "perfetto" probe is attached.
+    self.runner.has_probe.side_effect = lambda name: name == "perfetto"
 
   def _get_mapping_dir(self, mapping: Mapping) -> pth.LocalPath:
     match mapping:
