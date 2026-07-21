@@ -4,7 +4,11 @@
 
 from __future__ import annotations
 
+import enum
+import json
+import re
 import typing
+import unittest
 from unittest import mock
 
 import pandas as pd
@@ -15,6 +19,7 @@ from crossbench.benchmarks.web_power.base import VERSION_STRING
 from crossbench.benchmarks.web_power.probe import WebPowerProbe
 from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
+from crossbench.probes.trace_processor.constants import QUERIES_DIR
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -29,6 +34,8 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     self.probe = WebPowerProbe(benchmark=self.mock_benchmark)
     self.group = mock.MagicMock()
     self.group.results = mock.MagicMock()
+    self.runner = mock.MagicMock()
+    self.runner.has_probe.return_value = False
 
   def test_get_context_cls(self):
     """Verify that the probe uses the correct context class."""
@@ -339,6 +346,213 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaisesRegex(ProbeMissingDataError,
                                 "Multiple power_rails results found"):
       self.probe.merge_browsers(self.group)
+
+
+class Mapping(enum.Enum):
+  PUBLIC = "public"
+  INTERNAL = "internal"
+
+
+class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
+  """Verifies how the probe handles edge cases (e.g., missing directories,
+  invalid JSON, broken regexes, missing SQL files). We check this independently
+  of whether the repository actually has the internal Crossbench module, so
+  that users with the internal repo won't break things for those without,
+  and vice versa.
+  """
+
+  def setUp(self):
+    super().setUp()
+    self.mock_benchmark = mock.MagicMock()
+    self.mock_benchmark.version.return_value = tuple(
+        map(int, VERSION_STRING.split(".")))
+    self.probe = WebPowerProbe(benchmark=self.mock_benchmark)
+    self.runner = mock.MagicMock()
+    self.runner.has_probe.return_value = False
+
+  def _get_mapping_dir(self, mapping: Mapping) -> pth.LocalPath:
+    match mapping:
+      case Mapping.PUBLIC:
+        return QUERIES_DIR / "web_power"
+      case Mapping.INTERNAL:
+        return WebPowerProbe.INTERNAL_QUERIES_DIR
+      case _:
+        raise ValueError(f"Unknown mapping: {mapping}")
+
+  def _create_mapping_dir(self, mapping: Mapping):
+    self.fs.create_dir(self._get_mapping_dir(mapping))
+
+  def _create_mapping_file(self, mapping: Mapping, contents: str = "{}"):
+    self.fs.create_file(
+        self._get_mapping_dir(mapping) / "mapping.json", contents=contents)
+
+  def _setup_mapping(self,
+                     public_contents: str = "{}",
+                     internal_contents: str = "{}"):
+    self._create_mapping_dir(Mapping.PUBLIC)
+    self._create_mapping_file(Mapping.PUBLIC, contents=public_contents)
+    self._create_mapping_dir(Mapping.INTERNAL)
+    self._create_mapping_file(Mapping.INTERNAL, contents=internal_contents)
+
+  def _create_sql_file(self,
+                       mapping: Mapping,
+                       name: str,
+                       contents: str = "SELECT 1") -> pth.LocalPath:
+    match mapping:
+      case Mapping.PUBLIC:
+        path = self._get_mapping_dir(mapping) / name
+      case Mapping.INTERNAL:
+        path = self._get_mapping_dir(mapping).parent / name
+      case _:
+        raise ValueError(f"Unknown mapping: {mapping}")
+    self.fs.create_file(path, contents=contents)
+    return path
+
+  def test_load_mapping_missing_public_mapping_dir(self):
+    """Verify that get_extra_probes fails if public mapping dir is missing."""
+    self._create_mapping_dir(Mapping.INTERNAL)
+    self._create_mapping_file(Mapping.INTERNAL)
+    # Explicitly NOT calling self._create_mapping_dir(Mapping.PUBLIC)
+    # Explicitly NOT calling self._create_mapping_file(Mapping.PUBLIC)
+    with self.assertRaisesRegex(
+        ValueError, "Mapping file does not exist: " +
+        re.escape(str(QUERIES_DIR / "web_power/mapping.json"))):
+      self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_missing_public_mapping_file(self):
+    """Verify that get_extra_probes fails if public mapping.json is missing."""
+    self._create_mapping_dir(Mapping.PUBLIC)
+    self._create_mapping_dir(Mapping.INTERNAL)
+    self._create_mapping_file(Mapping.INTERNAL)
+    # Explicitly NOT calling self._create_mapping_file(Mapping.PUBLIC)
+    with self.assertRaisesRegex(
+        ValueError, "Mapping file does not exist: " +
+        re.escape(str(QUERIES_DIR / "web_power/mapping.json"))):
+      self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_missing_internal_mapping_expected(self):
+    """Verify failure if internal dir exists but lacks mapping.json."""
+    self._create_mapping_dir(Mapping.PUBLIC)
+    self._create_mapping_file(Mapping.PUBLIC)
+    self._create_mapping_dir(Mapping.INTERNAL)
+    # Explicitly NOT calling self._create_mapping_file(Mapping.INTERNAL)
+    with self.assertRaisesRegex(
+        ValueError, "Mapping file does not exist: " +
+        re.escape(str(WebPowerProbe.INTERNAL_QUERIES_DIR / "mapping.json"))):
+      self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_missing_internal_mapping_not_expected(self):
+    """Verify success if internal dir doesn't exist (mapping not expected)."""
+    self._create_mapping_dir(Mapping.PUBLIC)
+    self._create_mapping_file(Mapping.PUBLIC)
+    # Explicitly NOT calling self._create_mapping_dir(Mapping.INTERNAL)
+    # Should not raise any error.
+    self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_both_valid_json(self):
+    """Verify get_extra_probes succeeds with empty valid mapping.json files."""
+    self._setup_mapping(public_contents="{}", internal_contents="{}")
+    # Should not raise any error.
+    self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_invalid_json_public(self):
+    """Verify that get_extra_probes raises an error when public mapping.json
+    is invalid JSON."""
+    self._setup_mapping(public_contents="{ invalid json")
+    with self.assertRaises(json.JSONDecodeError):
+      self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_invalid_json_internal(self):
+    """Verify that get_extra_probes raises an error when internal mapping.json
+    is invalid JSON."""
+    self._setup_mapping(internal_contents="{ invalid json")
+    with self.assertRaises(json.JSONDecodeError):
+      self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_invalid_regex_both(self):
+    """Verify that an invalid regex in both mapping.json files raises an
+    error."""
+    self._setup_mapping(
+        public_contents='{"[": "web_power/public_valid_sql"}',
+        internal_contents='{"[": "internal_valid_sql"}')
+    self._create_sql_file(Mapping.PUBLIC, "public_valid_sql.sql")
+    self._create_sql_file(Mapping.INTERNAL, "internal_valid_sql.sql")
+    with self.assertRaisesRegex(ValueError, "Invalid regex in mapping key"):
+      self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_invalid_regex_public(self):
+    """Verify that an invalid regex in public mapping.json raises an error."""
+    self._setup_mapping(public_contents='{"[": "web_power/public_valid_sql"}')
+    self._create_sql_file(Mapping.PUBLIC, "public_valid_sql.sql")
+    self._create_sql_file(Mapping.INTERNAL, "internal_valid_sql.sql")
+    with self.assertRaisesRegex(ValueError, "Invalid regex in mapping key"):
+      self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_invalid_regex_internal(self):
+    """Verify that an invalid regex in internal mapping.json raises an error."""
+    self._setup_mapping(internal_contents='{"[": "internal_valid_sql"}')
+    self._create_sql_file(Mapping.PUBLIC, "public_valid_sql.sql")
+    self._create_sql_file(Mapping.INTERNAL, "internal_valid_sql.sql")
+    with self.assertRaisesRegex(ValueError, "Invalid regex in mapping key"):
+      self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_missing_sql_file_public(self):
+    """Verify that a missing SQL file mapped in public mapping.json raises
+    an error."""
+    self._setup_mapping(public_contents='{"Device A": "web_power/missing_sql"}')
+    with self.assertRaisesRegex(ValueError, "Mapped SQL file does not exist"):
+      self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_missing_sql_file_internal(self):
+    """Verify that a missing SQL file mapped in internal mapping.json raises
+    an error."""
+    self._setup_mapping(
+        internal_contents='{"Device A": "internal_missing_sql"}')
+    with self.assertRaisesRegex(ValueError, "Mapped SQL file does not exist"):
+      self.probe.get_extra_probes(self.runner)
+
+  def test_load_mapping_success(self):
+    """Verify that get_extra_probes succeeds when mappings are valid."""
+    self._setup_mapping(
+        public_contents='{"Public Device": "web_power/public_query"}',
+        internal_contents='{"Internal Device": "internal_query"}')
+    public_sql = self._create_sql_file(Mapping.PUBLIC, "public_query.sql")
+    internal_sql = self._create_sql_file(Mapping.INTERNAL, "internal_query.sql")
+
+    (tp_probe,) = self.probe.get_extra_probes(self.runner)
+    (query,) = tp_probe.queries
+
+    self.assertDictEqual(
+        query._device_override, {
+            re.compile("Public Device"): str(public_sql.resolve()),
+            re.compile("Internal Device"): str(internal_sql.resolve()),
+        })
+
+
+class WebPowerProbeRealFsTestCase(unittest.TestCase):
+  """Validates the actual mapping files committed to the repository.
+  This unlike WebPowerProbeMappingTestCase, which checked what the code
+  would do with/without the dirs and files."""
+
+  def _test_real_mapping_dir(self, directory: pth.LocalPath,
+                             require_mappings: bool):
+    probe = WebPowerProbe(benchmark=mock.MagicMock())
+    mapping = probe._load_mapping(directory)
+    self.assertIsInstance(mapping, dict)
+    if require_mappings:
+      self.assertGreater(len(mapping), 0)
+
+  def test_load_mapping_public_repo_valid(self):
+    """Verify that the public QUERIES_DIR mapping.json parses correctly."""
+    self._test_real_mapping_dir(
+        QUERIES_DIR / "web_power", require_mappings=True)
+
+  @unittest.skipIf(not WebPowerProbe.INTERNAL_QUERIES_DIR.is_dir(),
+                   "Internal queries directory does not exist.")
+  def test_load_mapping_internal_repo_valid(self):
+    """Verify that the internal mapping.json (if present) parses correctly."""
+    self._test_real_mapping_dir(
+        WebPowerProbe.INTERNAL_QUERIES_DIR, require_mappings=False)
 
 
 if __name__ == "__main__":

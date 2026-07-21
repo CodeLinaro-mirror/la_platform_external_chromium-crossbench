@@ -130,6 +130,10 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     super().setUp()
     mapping_file = QUERIES_DIR / "web_power" / "mapping.json"
     self.fs.create_file(mapping_file, contents='{"pixels": "test"}')
+    self.fs.create_file(
+        mapping_file.parent.parent / "test.sql", contents="SELECT 1;")
+    self.fs.create_file(
+        mapping_file.parent.parent / "test.sql.sql", contents="SELECT 1;")
   @property
   @override
   def benchmark_cls(self) -> type[MockWebPowerBenchmark]:
@@ -464,6 +468,9 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
         '{"Pixel 9\\\\b.*": "query_p9", "Pixel 10\\\\b.*": "query_p10"}')
     self.fs.create_file(QUERIES_DIR / "query_p9.sql", contents="SELECT p9;")
     self.fs.create_file(QUERIES_DIR / "query_p10.sql", contents="SELECT p10;")
+    self.fs.create_file(QUERIES_DIR / "query_p9.sql.sql", contents="SELECT p9;")
+    self.fs.create_file(
+        QUERIES_DIR / "query_p10.sql.sql", contents="SELECT p10;")
 
     tp_probe = self._verify_trace_processor_get_extra_probes(
         already_has_probe=False)

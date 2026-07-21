@@ -6,12 +6,14 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import TYPE_CHECKING, ClassVar, Iterable
 
 import pandas as pd
 from tabulate import tabulate
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.probes.probe import Probe, ProbePriority
 from crossbench.probes.probe_context import EmptyProbeContext
@@ -34,24 +36,47 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
   BENCHMARK_NAME: ClassVar = "WebPower"
   IS_GENERAL_PURPOSE: ClassVar = False
   PRODUCES_DATA: ClassVar = False
+  INTERNAL_QUERIES_DIR: ClassVar = (
+      pth.ROOT_DIR / "internal" / "probes" / "trace_processor" / "queries" /
+      "web_power")
 
   @override
   def get_context_cls(self) -> type[EmptyProbeContext[WebPowerProbe]]:
     return EmptyProbeContext
 
+  def _validate_and_resolve_mapping_entry(self, key: str, value: str,
+                                          mapping_dir: pth.LocalPath) -> str:
+    try:
+      re.compile(key)
+    except re.error as e:
+      raise ValueError(f"Invalid regex in mapping key '{key}': {e}") from e
+    sql_file = mapping_dir.parent / f"{value}.sql"
+    if not sql_file.is_file():
+      raise ValueError(f"Mapped SQL file does not exist: {sql_file}")
+    return str(sql_file.resolve())
+
+  def _load_mapping(self, mapping_dir: pth.LocalPath) -> dict[str, str]:
+    mapping_file = mapping_dir / "mapping.json"
+    if not mapping_file.is_file():
+      raise ValueError(f"Mapping file does not exist: {mapping_file}")
+    with mapping_file.open("r", encoding="utf-8") as f:
+      mapping = json.load(f)
+    return {
+        key: self._validate_and_resolve_mapping_entry(key, value, mapping_dir)
+        for key, value in mapping.items()
+    }
+
   @override
   def get_extra_probes(self, runner: Runner) -> Iterable[Probe]:
     if runner.has_probe(TraceProcessorProbe.NAME):
       return ()
-    mapping_file = QUERIES_DIR / "web_power/mapping.json"
-    with mapping_file.open("r", encoding="utf-8") as f:
-      device_mapping = json.load(f)
-
-    queries = [
-        DeviceSpecificTraceProcessorQuery(
-            name="power_rails", device_override=device_mapping)
-    ]
-    return (TraceProcessorProbe(queries=queries),)
+    device_mapping: dict[str, str] = {}
+    device_mapping.update(self._load_mapping(QUERIES_DIR / "web_power"))
+    if self.INTERNAL_QUERIES_DIR.is_dir():
+      device_mapping.update(self._load_mapping(self.INTERNAL_QUERIES_DIR))
+    query = DeviceSpecificTraceProcessorQuery(
+        name="power_rails", device_override=device_mapping)
+    return (TraceProcessorProbe(queries=[query]),)
 
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
