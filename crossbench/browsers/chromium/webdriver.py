@@ -301,7 +301,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
   @override
   def maximize_window(self) -> None:
     try:
-      with self.platform.uiautomator_device() as device:
+      with self.platform.uiautomator_device(root_device=False) as device:
         # TODO(b/417165220): Update to standard Android OS window management
         # once available. UIAutomator widget hierarchy search is a placeholder.
         buttons = device.ui.find(resourceIdMatches="(?i).*maximize_window")

@@ -55,6 +55,24 @@ class _MoblyDebugFilter(logging.Filter):
 
 logging.getLogger().addFilter(_MoblyDebugFilter())
 
+
+class _CrossbenchUiAutomatorDevice(android_device.AndroidDevice):
+  """Custom AndroidDevice that allows bypassing Mobly's auto-root behavior.
+  This avoids restarting adbd and dropping all existing adb forward/reverse
+  ports.
+  """
+
+  def __init__(self, serial: str = "", root_device: bool = True):
+    self._root_device = root_device
+    super().__init__(serial)
+
+  @override
+  def root_adb(self) -> None:
+    if not self._root_device:
+      return
+    super().root_adb()
+
+
 # Defines the Android permissions to be granted.
 # TODO(381985595): make this configurable.
 ANDROID_PERMISSIONS: Final = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
@@ -735,7 +753,9 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @contextlib.contextmanager
   def uiautomator_device(
-      self) -> Generator[android_device.AndroidDevice, Any, None]:
+      self,
+      root_device: bool = True
+  ) -> Generator[android_device.AndroidDevice, Any, None]:
     # uiautomator requires adb in PATH
     adb_dir = os.path.dirname(self.adb.adb_bin)  # noqa: PTH120
     environ = self.host_platform.environ
@@ -748,7 +768,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
     ad = None
     try:
-      ad = android_device.AndroidDevice(self.serial_id)
+      ad = _CrossbenchUiAutomatorDevice(self.serial_id, root_device=root_device)
       ad.services.register(uiautomator.ANDROID_SERVICE_NAME,
                            uiautomator.UiAutomatorService)
       yield ad

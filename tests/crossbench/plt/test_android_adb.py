@@ -996,10 +996,10 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     return axml_header + string_pool_chunk + start_element_chunk
 
   @mock.patch("crossbench.plt.android_adb.uiautomator")
-  @mock.patch("crossbench.plt.android_adb.android_device")
-  def test_uiautomator_device(self, android_device_mock, uiautomator_mock):
+  @mock.patch("crossbench.plt.android_adb._CrossbenchUiAutomatorDevice")
+  def test_uiautomator_device(self, cb_device_mock, uiautomator_mock):
     device_mock = mock.MagicMock()
-    android_device_mock.AndroidDevice.return_value = device_mock
+    cb_device_mock.return_value = device_mock
 
     with self.platform.uiautomator_device() as device:
       self.assertEqual(device, device_mock)
