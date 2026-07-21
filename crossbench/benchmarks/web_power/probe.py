@@ -80,7 +80,7 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
       device_mapping.update(self._load_mapping(self.INTERNAL_QUERIES_DIR))
     query = DeviceSpecificTraceProcessorQuery(
         name="power_rails", device_override=device_mapping)
-    return (TraceProcessorProbe(queries=[query]),)
+    return (TraceProcessorProbe(queries=[query], module_paths=[QUERIES_DIR]),)
 
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
