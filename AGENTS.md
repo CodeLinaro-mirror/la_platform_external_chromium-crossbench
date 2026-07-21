@@ -9,7 +9,8 @@ If running `./cb.py` fails, try the following:
 2. If no `depot_tools` found, try running with `poetry`: `poetry run cb`.
 
 # Python Code Style Guide
-- You must follow the google style guide for python coding.
+- You must follow the Google style guide for python coding.
+- Observe an 80 characters per line limit in Python files.
 - local imports inside classes or methods are strictly **forbidden**.
 - Check surrounding code and class hierarchies for reusing functionality.
 - Use existing tests and test classes to write platform and mock tests.
