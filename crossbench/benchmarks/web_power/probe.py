@@ -14,7 +14,7 @@ from typing_extensions import override
 
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.probes.probe import Probe, ProbePriority
-from crossbench.probes.probe_context import ProbeContext
+from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.results import LocalProbeResult
 from crossbench.probes.trace_processor.query_config import QUERIES_DIR, \
@@ -28,18 +28,6 @@ if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
 
 
-class WebPowerProbeContext(ProbeContext["WebPowerProbe"]):
-
-  def start(self) -> None:
-    pass
-
-  def stop(self) -> None:
-    pass
-
-  def teardown(self) -> ProbeResult:
-    return self.empty_result()
-
-
 class WebPowerProbe(BenchmarkProbeMixin, Probe):
   NAME: ClassVar = "web_power_probe"
   PRIORITY: ClassVar = ProbePriority.PRE_TRACE_PROCESSOR
@@ -48,8 +36,8 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
   PRODUCES_DATA: ClassVar = False
 
   @override
-  def get_context_cls(self) -> type[WebPowerProbeContext]:
-    return WebPowerProbeContext
+  def get_context_cls(self) -> type[EmptyProbeContext[WebPowerProbe]]:
+    return EmptyProbeContext
 
   @override
   def get_extra_probes(self, runner: Runner) -> Iterable[Probe]:

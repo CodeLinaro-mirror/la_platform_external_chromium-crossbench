@@ -11,8 +11,8 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
-    ProbeKeyT
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
+from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.result_location import ResultLocation
 
@@ -20,7 +20,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.path import LocalPath
-  from crossbench.probes.results import ProbeResult
 
 _DEBUGGER_LOOKUP: Final[dict[str, str]] = {
     "macos": "lldb",
@@ -148,17 +147,5 @@ class DebuggerProbe(Probe):
     return shlex.join(debugger_cmd)
 
   @override
-  def get_context_cls(self) -> type[DebuggerContext]:
-    return DebuggerContext
-
-
-class DebuggerContext(ProbeContext[DebuggerProbe]):
-
-  def start(self) -> None:
-    pass
-
-  def stop(self) -> None:
-    pass
-
-  def teardown(self) -> ProbeResult:
-    return self.empty_result()
+  def get_context_cls(self) -> type[EmptyProbeContext[DebuggerProbe]]:
+    return EmptyProbeContext

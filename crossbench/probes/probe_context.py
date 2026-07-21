@@ -286,6 +286,25 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     return self.empty_result()
 
 
+class EmptyProbeContext(ProbeContext[ProbeT]):
+  """
+  A generic context for probes that don't need to perform any per-run work,
+  but rather operate exclusively at the aggregate level.
+  """
+
+  @override
+  def start(self) -> None:
+    pass
+
+  @override
+  def stop(self) -> None:
+    pass
+
+  @override
+  def teardown(self) -> ProbeResult:
+    return self.empty_result()
+
+
 class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
   """
   A scope during which a probe is actively collecting data during an active

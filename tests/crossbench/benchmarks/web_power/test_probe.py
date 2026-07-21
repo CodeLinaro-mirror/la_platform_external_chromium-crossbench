@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import typing
 from unittest import mock
 
 import pandas as pd
@@ -11,8 +12,8 @@ import pytest
 
 from crossbench import path as pth
 from crossbench.benchmarks.web_power.base import VERSION_STRING
-from crossbench.benchmarks.web_power.probe import WebPowerProbe, \
-    WebPowerProbeContext
+from crossbench.benchmarks.web_power.probe import WebPowerProbe
+from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -31,7 +32,9 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
 
   def test_get_context_cls(self):
     """Verify that the probe uses the correct context class."""
-    self.assertEqual(self.probe.get_context_cls(), WebPowerProbeContext)
+    self.assertEqual(self.probe.get_context_cls(), EmptyProbeContext)
+    hints = typing.get_type_hints(self.probe.get_context_cls)
+    self.assertEqual(hints["return"], type[EmptyProbeContext[WebPowerProbe]])
 
   @mock.patch("logging.critical")
   def test_log_browsers_result_missing_data(self, critical_mock):
