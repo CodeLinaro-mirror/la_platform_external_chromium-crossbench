@@ -373,6 +373,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     platform.model = model
 
     resolved = query.resolve_for_platform(platform)
+    assert resolved is not None
     expected_sql = read_query_sql(expected_sql_path)
     if replacements:
       for k, v in replacements.items():
@@ -434,6 +435,35 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
 
     resolved = query.resolve_for_platform(platform)
     self.assertIsNone(resolved)
+
+  def test_device_specific_query_resolution_multiple_conflicting_matches(self):
+    query = TraceProcessorQueryConfig.parse({
+        "name": "web_power_power_rails",
+        "device_override": {
+            r"Pixel.*": TARGET_P9,
+            r"Pixel 10.*": TARGET_P10,
+        }
+    })
+    platform = unittest.mock.MagicMock()
+    platform.model = "Pixel 10 Pro"
+
+    with self.assertRaisesRegex(
+        ValueError, "Multiple conflicting mappings match device model"):
+      query.resolve_for_platform(platform)
+
+  def test_device_specific_query_resolution_multiple_identical_matches(self):
+    query = TraceProcessorQueryConfig.parse({
+        "name": "web_power_power_rails",
+        "device_override": {
+            r"Pixel.*": TARGET_P9,
+            r"Pixel 9.*": TARGET_P9,
+        }
+    })
+    platform = unittest.mock.MagicMock()
+    platform.model = "Pixel 9 Pro"
+
+    resolved = query.resolve_for_platform(platform)
+    self.assertIsNotNone(resolved)
 
 
 class TraceProcessorResultTestCase(BaseCrossbenchTestCase):

@@ -132,8 +132,6 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     self.fs.create_file(mapping_file, contents='{"pixels": "test"}')
     self.fs.create_file(
         mapping_file.parent.parent / "test.sql", contents="SELECT 1;")
-    self.fs.create_file(
-        mapping_file.parent.parent / "test.sql.sql", contents="SELECT 1;")
   @property
   @override
   def benchmark_cls(self) -> type[MockWebPowerBenchmark]:
@@ -468,9 +466,6 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
         '{"Pixel 9\\\\b.*": "query_p9", "Pixel 10\\\\b.*": "query_p10"}')
     self.fs.create_file(QUERIES_DIR / "query_p9.sql", contents="SELECT p9;")
     self.fs.create_file(QUERIES_DIR / "query_p10.sql", contents="SELECT p10;")
-    self.fs.create_file(QUERIES_DIR / "query_p9.sql.sql", contents="SELECT p9;")
-    self.fs.create_file(
-        QUERIES_DIR / "query_p10.sql.sql", contents="SELECT p10;")
 
     tp_probe = self._verify_trace_processor_get_extra_probes(
         already_has_probe=False)
@@ -481,11 +476,13 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     platform_p9 = mock.MagicMock()
     platform_p9.model = "Pixel 9 Pro"
     resolved_p9 = query.resolve_for_platform(platform_p9)
+    self.assertIsNotNone(resolved_p9)
     self.assertEqual(resolved_p9.sql, "SELECT p9;")
 
     platform_p10 = mock.MagicMock()
     platform_p10.model = "Pixel 10 Pro XL"
     resolved_p10 = query.resolve_for_platform(platform_p10)
+    self.assertIsNotNone(resolved_p10)
     self.assertEqual(resolved_p10.sql, "SELECT p10;")
 
   def test_setup_trace_processor_probe_already_has_probe(self) -> None:

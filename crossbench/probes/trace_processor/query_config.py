@@ -134,8 +134,10 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
 
     for model_re, path in self._device_override.items():
       if model_re.fullmatch(device_model):
+        if query_path and query_path != path:
+          raise ValueError("Multiple conflicting mappings match device model "
+                           f"'{device_model}': '{query_path}' and '{path}'")
         query_path = path
-        break
 
     if not query_path:
       if self._fallback_sql:
@@ -143,7 +145,7 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
       else:
         return None
 
-    value = f"{query_path}.sql"
+    value = query_path if query_path.endswith(".sql") else f"{query_path}.sql"
     sql_path = PathParser.existing_file_path(QUERIES_DIR / value, "sql query")
     sql = sql_path.read_text(encoding="utf-8")
     return TraceProcessorQueryConfig(
