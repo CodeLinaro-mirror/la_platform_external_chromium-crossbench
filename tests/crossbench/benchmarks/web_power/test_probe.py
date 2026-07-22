@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import enum
 import re
+import tempfile
 import typing
 import unittest
 from typing import TYPE_CHECKING, Callable
@@ -18,9 +19,14 @@ import pytest
 from crossbench import path as pth
 from crossbench.benchmarks.web_power.base import VERSION_STRING
 from crossbench.benchmarks.web_power.probe import WebPowerProbe
+from crossbench.exception import MultiException
 from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.trace_processor.constants import QUERIES_DIR
+from crossbench.probes.trace_processor.query_config import \
+    DeviceSpecificTraceProcessorQuery
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
 
 if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
@@ -588,6 +594,74 @@ class WebPowerProbeRealFsTestCase(unittest.TestCase):
     self._test_real_mapping_dir(
         WebPowerProbe.INTERNAL_QUERIES_DIR, require_mappings=False)
 
+
+class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
+  """Tests validating the SQL queries used by WebPowerProbe."""
+
+  def setUp(self):
+    super().setUp()
+
+    # Initialize the WebPowerProbe and extract its underlying
+    # TraceProcessorProbe and SQL query configuration for validation testing.
+    self.probe = WebPowerProbe(benchmark=mock.MagicMock())
+    self.runner = mock.MagicMock(has_probe=lambda name: name == "perfetto")
+    extra_probes = tuple(self.probe.get_extra_probes(self.runner))
+    self.assertEqual(len(extra_probes), 1)
+    self.tp_probe = extra_probes[0]
+    self.assertIsInstance(self.tp_probe, TraceProcessorProbe)
+    self.tp_probe._browsers.clear()
+    self.assertEqual(len(self.tp_probe.queries), 1)
+    self.query = self.tp_probe.queries[0]
+    self.assertIsInstance(self.query, DeviceSpecificTraceProcessorQuery)
+
+    self._setup_dummy_browsers()
+
+  def _setup_dummy_browsers(self):
+    """
+    Overwrite the regex keys in the original device overrides with simple
+    dummy device names ('0', '1', ...) and create corresponding mock browsers.
+    This ensures that every mapped SQL file is validated exactly once
+    without presupposing the structure of the original regex mappings.
+    """
+
+    paths = list(self.query._device_override.values())
+    self.query._device_override.clear()
+
+    for path in paths:
+      device_name = str(len(self.tp_probe.browsers))
+      self.query._device_override[re.compile(device_name)] = path
+      browser = mock.MagicMock()
+      browser.platform.model = device_name
+      self.tp_probe.attach(browser)
+
+  def _run_validation_with_sql(self, sql_content: str, device_name: str):
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".sql") as sql_file:
+      sql_file.write(sql_content)
+      sql_file.flush()
+
+      self.query._device_override[re.compile(device_name)] = sql_file.name
+      browser = mock.MagicMock()
+      browser.platform.model = device_name
+      self.tp_probe.attach(browser)
+
+      self.tp_probe.validate_env(mock.MagicMock())
+
+  def test_valid_query_passes_validation(self):
+    """Verify that our validation mechanism successfully accepts valid SQL
+    queries."""
+    self._run_validation_with_sql("SELECT 1;", "valid_device")
+
+  def test_defective_query_fails_validation(self):
+    """Verify that our validation mechanism correctly detects and fails on
+    invalid SQL syntax."""
+    with self.assertRaises(MultiException) as cm:
+      self._run_validation_with_sql("SYNTAX ERROR;", "defective_device")
+    self.assertIn("syntax error", str(cm.exception))
+
+  def test_queries_are_valid_and_compile(self):
+    """Verify that the actual production SQL queries in WebPowerProbe are valid
+    and compile correctly."""
+    self.tp_probe.validate_env(mock.MagicMock())
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
