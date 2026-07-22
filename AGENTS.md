@@ -18,6 +18,9 @@ If running `./cb.py` fails, try the following:
 - Keep methods short where possible and use well-named helper methods.
 - Type annotate all instance methods inside __init__ methods, method arguments
   and return values.
+- Import declarations always go at the top of the file, never nested inside
+  of a method or class. (Conditional imports based on a simple if statement
+  referring to TYPE_CHECKING are an exception.)
 
 ## Crossbench Platform Code
 - Avoid using raw shell-commands if possible and directly use the platform
