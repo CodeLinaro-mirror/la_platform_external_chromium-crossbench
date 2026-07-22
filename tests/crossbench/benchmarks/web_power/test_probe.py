@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import enum
 import json
 import re
@@ -508,7 +509,7 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
         internal_contents='{"[": "internal_valid_sql"}')
     self._create_sql_file(Mapping.PUBLIC, "public_valid_sql.sql")
     self._create_sql_file(Mapping.INTERNAL, "internal_valid_sql.sql")
-    with self.assertRaisesRegex(ValueError, "Invalid regex in mapping key"):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "Invalid regexp"):
       self.probe.get_extra_probes(self.runner)
 
   def test_load_mapping_invalid_regex_public(self):
@@ -516,7 +517,7 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     self._setup_mapping(public_contents='{"[": "web_power/public_valid_sql"}')
     self._create_sql_file(Mapping.PUBLIC, "public_valid_sql.sql")
     self._create_sql_file(Mapping.INTERNAL, "internal_valid_sql.sql")
-    with self.assertRaisesRegex(ValueError, "Invalid regex in mapping key"):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "Invalid regexp"):
       self.probe.get_extra_probes(self.runner)
 
   def test_load_mapping_invalid_regex_internal(self):
@@ -524,14 +525,15 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     self._setup_mapping(internal_contents='{"[": "internal_valid_sql"}')
     self._create_sql_file(Mapping.PUBLIC, "public_valid_sql.sql")
     self._create_sql_file(Mapping.INTERNAL, "internal_valid_sql.sql")
-    with self.assertRaisesRegex(ValueError, "Invalid regex in mapping key"):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "Invalid regexp"):
       self.probe.get_extra_probes(self.runner)
 
   def test_load_mapping_missing_sql_file_public(self):
     """Verify that a missing SQL file mapped in public mapping.json raises
     an error."""
     self._setup_mapping(public_contents='{"Device A": "web_power/missing_sql"}')
-    with self.assertRaisesRegex(ValueError, "Mapped SQL file does not exist"):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Mapped SQL file path does not exist"):
       self.probe.get_extra_probes(self.runner)
 
   def test_load_mapping_missing_sql_file_internal(self):
@@ -539,7 +541,8 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     an error."""
     self._setup_mapping(
         internal_contents='{"Device A": "internal_missing_sql"}')
-    with self.assertRaisesRegex(ValueError, "Mapped SQL file does not exist"):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Mapped SQL file path does not exist"):
       self.probe.get_extra_probes(self.runner)
 
   def test_load_mapping_success(self):

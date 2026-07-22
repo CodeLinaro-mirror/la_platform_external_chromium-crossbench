@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from typing import TYPE_CHECKING, ClassVar, Iterable
 
 import pandas as pd
@@ -15,6 +14,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
+from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.probe import Probe, ProbePriority
 from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
@@ -46,13 +46,9 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
 
   def _validate_and_resolve_mapping_entry(self, key: str, value: str,
                                           mapping_dir: pth.LocalPath) -> str:
-    try:
-      re.compile(key)
-    except re.error as e:
-      raise ValueError(f"Invalid regex in mapping key '{key}': {e}") from e
+    ObjectParser.regexp(key, f"mapping key '{key}'")
     sql_file = mapping_dir.parent / f"{value}.sql"
-    if not sql_file.is_file():
-      raise ValueError(f"Mapped SQL file does not exist: {sql_file}")
+    PathParser.existing_file_path(sql_file, "Mapped SQL file")
     return str(sql_file.resolve())
 
   def _load_mapping(self, mapping_dir: pth.LocalPath) -> dict[str, str]:
