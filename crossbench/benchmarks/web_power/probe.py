@@ -38,6 +38,7 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
   INTERNAL_QUERIES_DIR: ClassVar = (
       pth.ROOT_DIR / "internal" / "probes" / "trace_processor" / "queries" /
       "web_power")
+  QUERY_NAME: ClassVar = "power_rails"
 
   @override
   def get_context_cls(self) -> type[EmptyProbeContext[WebPowerProbe]]:
@@ -73,7 +74,7 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
     if self.INTERNAL_QUERIES_DIR.is_dir():
       device_mapping.update(self._load_mapping(self.INTERNAL_QUERIES_DIR))
     query = DeviceSpecificTraceProcessorQuery(
-        name="power_rails", device_override=device_mapping)
+        name=self.QUERY_NAME, device_override=device_mapping)
     return (TraceProcessorProbe(
         queries=[query], module_paths=[QUERIES_DIR / "web_power"]),)
 
@@ -108,15 +109,26 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
       return self._get_base_df(group)
 
     all_results = trace_result.csv_list
-    query_results = [r for r in all_results if r.stem.endswith("power_rails")]
+    query_results = [r for r in all_results if r.stem.endswith(self.QUERY_NAME)]
     if not query_results:
       return self._get_base_df(group)
     if len(query_results) > 1:
       raise ProbeMissingDataError(
-          self, f"Multiple power_rails results found: {query_results}")
+          self, f"Multiple {self.QUERY_NAME} results found: {query_results}")
 
-    query_result = query_results[0]
-    df = pd.read_csv(query_result)
+    return self.process_result_dir(
+        group.get_local_probe_result_path(self).parent,
+        self._get_base_df(group))
+
+  @classmethod
+  def process_result_dir(cls, result_dir: pth.LocalPath,
+                         base_df: pd.DataFrame) -> pd.DataFrame:
+
+    csv_path = result_dir / "trace_processor" / f"{cls.QUERY_NAME}.csv"
+    if not csv_path.is_file():
+      raise ValueError(f"Could not find {cls.QUERY_NAME}.csv in {result_dir}")
+
+    df = pd.read_csv(csv_path)
 
     # Calculate total power per run by summing avg_power_mw for each rail.
     df_sum = (
@@ -132,7 +144,6 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
     # Update the base DataFrame with actual computed scores where available.
     # We use combine_first so that any browser/story present in base_df but
     # missing in run_metrics will be padded with NaN.
-    base_df = self._get_base_df(group)
     if not base_df.empty:
       base_df = base_df.set_index(["cb_browser", "cb_story"])
       run_metrics = run_metrics.combine_first(base_df)

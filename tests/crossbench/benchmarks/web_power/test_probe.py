@@ -93,7 +93,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     self.group.get_local_probe_result_path.return_value = result_path
 
     tp_result = mock.MagicMock()
-    tp_csv = pth.LocalPath("results_dir/power_rails.csv")
+    tp_csv = pth.LocalPath("results_dir/trace_processor/power_rails.csv")
     self.fs.create_file(tp_csv, contents=csv_contents)
     tp_result.csv_list = [tp_csv]
     self.group.results.get_by_name.return_value = tp_result
