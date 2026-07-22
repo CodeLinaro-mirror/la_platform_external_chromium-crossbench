@@ -373,7 +373,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     platform.model = model
 
     resolved = query.resolve_for_platform(platform)
-    assert resolved is not None
+    self.assertIsNotNone(resolved)
     expected_sql = read_query_sql(expected_sql_path)
     if replacements:
       for k, v in replacements.items():

@@ -470,7 +470,6 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     tp_probe = self._verify_trace_processor_get_extra_probes(
         already_has_probe=False)
     self.assertIsNotNone(tp_probe)
-    assert tp_probe is not None
     [query] = tp_probe.queries
 
     platform_p9 = mock.MagicMock()
@@ -612,7 +611,7 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
       story = MockWebPowerStory.from_site(
           site_key, total_duration=dt.timedelta(seconds=10))
     else:
-      assert url is not None
+      self.assertIsNotNone(url)
       story = MockWebPowerStory.from_url(
           url, total_duration=dt.timedelta(seconds=10))
     benchmark = MockWebPowerBenchmark(stories=[story])
@@ -659,7 +658,7 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
       self.assertEqual(network.archive_path, expected_archive_path)
       self.assertIsNotNone(network._response_transformations_file)
       rules_file = network._response_transformations_file
-      assert rules_file is not None
+      self.assertIsNotNone(rules_file)
       self.assertTrue(pathlib.Path(rules_file).exists())
 
   def test_setup_session_network_twice(self) -> None:
@@ -730,7 +729,7 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
       self.assertEqual(network.archive_path, archive_path)
       self.assertIsNotNone(network._response_transformations_file)
       rules_file = network._response_transformations_file
-      assert rules_file is not None
+      self.assertIsNotNone(rules_file)
       self.assertTrue(pathlib.Path(rules_file).exists())
 
 
