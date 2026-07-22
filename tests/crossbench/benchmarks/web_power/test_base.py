@@ -128,7 +128,7 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
 
   def setUp(self) -> None:
     super().setUp()
-    mapping_file = QUERIES_DIR / "web_power" / "mapping.json"
+    mapping_file = QUERIES_DIR / "web_power" / "mapping.hjson"
     self.fs.create_file(mapping_file, contents='{"pixels": "test"}')
     self.fs.create_file(
         mapping_file.parent.parent / "test.sql", contents="SELECT 1;")
@@ -458,10 +458,10 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
 
   def test_setup_trace_processor_probe_mapping(self) -> None:
     """Verify that the benchmark configures the TraceProcessorProbe with a
-    mapping.json that correctly applies different queries to different
+    mapping.hjson that correctly applies different queries to different
     devices."""
-    # Overwrite the dummy mapping.json from setUp with device-specific queries.
-    mapping_file = QUERIES_DIR / "web_power" / "mapping.json"
+    # Overwrite the dummy mapping.hjson from setUp with device-specific queries.
+    mapping_file = QUERIES_DIR / "web_power" / "mapping.hjson"
     mapping_file.write_text(
         '{"Pixel 9\\\\b.*": "query_p9", "Pixel 10\\\\b.*": "query_p10"}')
     self.fs.create_file(QUERIES_DIR / "query_p9.sql", contents="SELECT p9;")

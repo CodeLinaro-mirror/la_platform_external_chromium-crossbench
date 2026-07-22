@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import TYPE_CHECKING, ClassVar, Iterable
 
@@ -52,11 +51,10 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
     return str(sql_file.resolve())
 
   def _load_mapping(self, mapping_dir: pth.LocalPath) -> dict[str, str]:
-    mapping_file = mapping_dir / "mapping.json"
+    mapping_file = mapping_dir / "mapping.hjson"
     if not mapping_file.is_file():
       raise ValueError(f"Mapping file does not exist: {mapping_file}")
-    with mapping_file.open("r", encoding="utf-8") as f:
-      mapping = json.load(f)
+    mapping = ObjectParser.dict(ObjectParser.hjson_file(mapping_file))
     return {
         key: self._validate_and_resolve_mapping_entry(key, value, mapping_dir)
         for key, value in mapping.items()

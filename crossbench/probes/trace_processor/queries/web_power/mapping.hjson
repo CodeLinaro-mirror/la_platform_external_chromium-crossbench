@@ -1,4 +1,4 @@
 {
-  "Pixel 9\\b.*": "web_power/power_rails_p9",
+  "Pixel 9\\b.*": "web_power/power_rails_p9"
   "Pixel 10\\b.*": "web_power/power_rails_p10"
 }
