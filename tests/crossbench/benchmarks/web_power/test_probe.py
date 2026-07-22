@@ -337,6 +337,22 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
             },
         ])
 
+  def test_process_result_dir_no_data(self):
+    """Verify that process_result_dir handles missing power_rails.csv by
+    appending 'No Data' to total_power_mw in base_df."""
+    base_df = pd.DataFrame([{
+        "cb_browser": "chrome",
+        "cb_story": "cnn",
+    }])
+    # In this fake filesystem test, 'results_dir' is never created,
+    # ensuring that the underlying 'power_rails.csv' is missing when
+    # process_result_dir is called.
+    result_dir = pth.LocalPath("results_dir")
+    result_df = self.probe.process_result_dir(result_dir, base_df)
+    self.assertEqual(len(result_df), 1)
+    self.assertEqual(result_df["cb_browser"].iloc[0], "chrome")
+    self.assertEqual(result_df["total_power_mw"].iloc[0], "No Data")
+
   def test_merge_browsers_multiple_power_rails(self):
     """Verify that merge fails if multiple power rails CSVs are found,
     indicating an ambiguous query mapping."""

@@ -126,7 +126,10 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
 
     csv_path = result_dir / "trace_processor" / f"{cls.QUERY_NAME}.csv"
     if not csv_path.is_file():
-      raise ValueError(f"Could not find {cls.QUERY_NAME}.csv in {result_dir}")
+      if "total_power_mw" not in base_df.columns:
+        base_df = base_df.copy()
+        base_df["total_power_mw"] = "No Data"
+      return base_df
 
     df = pd.read_csv(csv_path)
 
