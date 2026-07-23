@@ -26,6 +26,7 @@ from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.action_runner.action.screenshot import ScreenshotAction
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
+from crossbench.action_runner.action.switch_frame import SwitchFrameAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
 from crossbench.action_runner.action.text_input import TextInputAction
 from crossbench.action_runner.action.wait import WaitAction
@@ -935,6 +936,36 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action = SwitchTabAction.parse_dict(config_dict)
 
     self.assertEqual(action.relative_tab_index, 17)
+
+  def test_parse_switch_frame_default(self):
+    config_dict = {"action": "switch_frame"}
+    action = SwitchFrameAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.SWITCH_FRAME)
+    self.assertEqual(action.selector, "")
+    self.assertEqual(action.timeout, ACTION_TIMEOUT)
+    action.validate()
+
+    action_2 = SwitchFrameAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_switch_frame_all(self):
+    config_dict = {
+        "action": "switch_frame",
+        "selector": "iframe#viewer",
+        "timeout": "15s",
+    }
+    action = SwitchFrameAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.SWITCH_FRAME)
+    self.assertEqual(action.selector, "iframe#viewer")
+    self.assertEqual(action.timeout, dt.timedelta(seconds=15))
+    action.validate()
+
+    action_2 = SwitchFrameAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
 
   def test_parse_close_all_tabs(self):
     config_dict = {"action": "close_all_tabs"}

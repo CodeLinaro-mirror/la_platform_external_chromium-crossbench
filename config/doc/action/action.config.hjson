@@ -138,6 +138,15 @@
         "url": '''.*crossbench\.ch.*'''
       }
     ]
+    "switch_frame": [
+      {
+        "action": "switch_frame"
+      }
+      {
+        "action": "switch_frame"
+        "selector": "iframe#my-iframe"
+      }
+    ]
     "close_all_tabs": [
       {
         "action": "close_all_tabs"

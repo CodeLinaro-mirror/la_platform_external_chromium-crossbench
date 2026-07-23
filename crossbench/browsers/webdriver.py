@@ -302,6 +302,25 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
                             self) from e
 
   @override
+  def switch_frame(self, selector: str | None) -> None:
+    logging.debug("WebDriverBrowser.switch_frame(%s)", selector)
+    assert self.is_running
+    try:
+      if not selector:
+        self._private_driver.switch_to.default_content()
+      else:
+        prefix = "xpath/"
+        if selector.startswith(prefix):
+          selector = selector[len(prefix):]
+          element = self._private_driver.find_element(By.XPATH, selector)
+        else:
+          element = self._private_driver.find_element(By.CSS_SELECTOR, selector)
+        self._private_driver.switch_to.frame(element)
+    except selenium.common.exceptions.WebDriverException as e:
+      raise DriverException(f"Failed to switch to frame '{selector}' : {e.msg}",
+                            self) from e
+
+  @override
   def screenshot(self, path: LocalPath) -> None:
     if not self._private_driver.get_screenshot_as_file(path.as_posix()):
       raise DriverException(

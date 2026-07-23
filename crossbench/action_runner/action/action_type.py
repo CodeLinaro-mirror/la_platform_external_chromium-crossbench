@@ -29,6 +29,8 @@ class ActionType(ConfigEnum):
       "Only supported in chromium-based browsers."))
   SCREENSHOT = ("screenshot", "Take a screenshot")
   SWITCH_TAB = ("switch_tab", "Switch the tab that actions are sent to")
+  SWITCH_FRAME = ("switch_frame", "Switch webdriver context to the specified "
+                  "frame (or default content if selector is empty)")
   CLOSE_ALL_TABS = ("close_all_tabs", "Close all tabs")
   CLOSE_TAB = ("close_tab", "Close the specified tab")
   OPEN_DEVTOOLS = ("open_devtools", "Open the browser's developer tools")

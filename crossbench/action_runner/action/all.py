@@ -22,6 +22,7 @@ from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.action_runner.action.screenshot import ScreenshotAction
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
+from crossbench.action_runner.action.switch_frame import SwitchFrameAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
 from crossbench.action_runner.action.text_input import TextInputAction
 from crossbench.action_runner.action.wait import WaitAction
@@ -52,6 +53,7 @@ ACTIONS_TUPLE: tuple[type[Action], ...] = (
     ScrollAction,
     SwipeAction,
     SwitchTabAction,
+    SwitchFrameAction,
     TextInputAction,
     WaitAction,
     WaitForConditionAction,

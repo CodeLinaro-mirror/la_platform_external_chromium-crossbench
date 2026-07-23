@@ -652,6 +652,10 @@ class ActionRunner:
           action.timeout,
       )
 
+  def switch_frame(self, action: i_action.SwitchFrameAction) -> None:
+    with self.actions("SwitchFrameAction", measure=False):
+      self.browser.switch_frame(action.selector)
+
   def close_tab(self, action: i_action.CloseTabAction) -> None:
     with self.actions("CloseTabAction", measure=False):
       self.browser.close_tab(
