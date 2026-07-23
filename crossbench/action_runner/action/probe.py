@@ -11,8 +11,8 @@ from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_probe import BaseProbeAction
-from crossbench.cli.config.probe import PROBE_LOOKUP
 from crossbench.parse import ObjectParser
+from crossbench.probes.all import PROBE_LOOKUP
 
 if TYPE_CHECKING:
   from crossbench.config import ConfigParser

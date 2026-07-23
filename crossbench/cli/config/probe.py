@@ -15,7 +15,7 @@ from crossbench import exception
 from crossbench.config import ConfigError, ConfigObject
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import ObjectParser
-from crossbench.probes.all import GENERAL_PURPOSE_PROBES
+from crossbench.probes.all import PROBE_LOOKUP
 
 if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
@@ -23,11 +23,6 @@ if TYPE_CHECKING:
 
 class ProbeConfigError(ConfigError):
   pass
-
-
-PROBE_LOOKUP: dict[str, type[Probe]] = {
-    cls.NAME: cls for cls in GENERAL_PURPOSE_PROBES
-}
 
 _PROBE_CONFIG_RE: Final[re.Pattern] = re.compile(
     r"(?P<probe_name>[\w.-]+):?(?P<config>.*)", re.MULTILINE | re.DOTALL)

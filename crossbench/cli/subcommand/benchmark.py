@@ -26,13 +26,14 @@ from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig, \
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig, \
     ValidationMode
 from crossbench.cli.config.network import NetworkConfig
-from crossbench.cli.config.probe import PROBE_LOOKUP, ProbeConfig
+from crossbench.cli.config.probe import ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import DurationParser, LateArgumentError, ObjectParser, \
     PathParser
+from crossbench.probes.all import PROBE_LOOKUP
 from crossbench.probes.debugger import DebuggerProbe
 from crossbench.probes.internal.errors import ErrorsProbe
 from crossbench.probes.thermal_monitor import ThermalStatus

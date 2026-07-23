@@ -11,6 +11,7 @@ import logging
 from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Self, TypeVar
 
 from crossbench.helper.state import State, StateMachine
+from crossbench.probes.all import PROBE_LOOKUP
 from crossbench.probes.probe_context import BaseProbeContext, ProbeContext
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 from crossbench.runner.result_origin import ResultOrigin
@@ -169,6 +170,8 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
     return probe_cls in self._probe_contexts
 
   def has_probe_context_by_name(self, probe_name: str) -> bool:
+    if probe_name not in PROBE_LOOKUP:
+      raise ValueError(f"Unknown probe name: '{probe_name}'")
     return any(context.probe.NAME == probe_name
                for context in self._probe_contexts.values())
 

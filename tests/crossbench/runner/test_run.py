@@ -6,10 +6,12 @@ from __future__ import annotations
 
 import datetime as dt
 from typing import TYPE_CHECKING
+from unittest import mock
 
 from typing_extensions import override
 
 from crossbench.probes.screenshot import ScreenshotProbe
+from crossbench.probes.video import VideoProbe
 from crossbench.runner.run import Run
 from crossbench.runner.run_annotation import RunAnnotation
 from tests import test_helper
@@ -49,23 +51,48 @@ class RunTestCase(BaseRunGroupTestCase):
       self.assertIsNotNone(run.get_probe_context(MockProbe))
       self.assertIsNone(run.get_probe_context(ScreenshotProbe))
 
-  def test_has_probe_context_by_name(self):
-
-    class MockProbe1(MockProbe):
-      NAME = "mock_probe_1"
-
-    class MockProbe2(MockProbe):
-      NAME = "mock_probe_2"
-
-    self.runner.attach_probe(MockProbe1())
-    self.runner.attach_probe(MockProbe2())
+  def _assert_has_probe_context(self, attached_probe, unattached_probe_cls,
+                                invalid_name: str):
+    self.runner.attach_probe(attached_probe)
     run = self._create_run()
     session = run.browser_session
     session.set_ready()
     with session.open():
-      self.assertTrue(run.has_probe_context_by_name("mock_probe_1"))
-      self.assertTrue(run.has_probe_context_by_name("mock_probe_2"))
-      self.assertFalse(run.has_probe_context_by_name("non_existent"))
+      self.assertTrue(run.has_probe_context_by_name(attached_probe.NAME))
+      self.assertFalse(run.has_probe_context_by_name(unattached_probe_cls.NAME))
+      with self.assertRaisesRegex(ValueError,
+                                  f"Unknown probe name: '{invalid_name}'"):
+        run.has_probe_context_by_name(invalid_name)
+
+  def test_has_probe_context_by_name(self):
+    """Check that real probes return True/False if attached/unattached,
+       and typos yield exceptions."""
+
+    class MockProbe1(MockProbe):
+      NAME = "probe_attached"
+
+    class MockProbe2(MockProbe):
+      NAME = "probe_unattached"
+
+    # We inject our mock probes into the PROBE_LOOKUP so validation passes.
+    with mock.patch.dict("crossbench.runner.probe_context_manager.PROBE_LOOKUP",
+                         {
+                             "probe_attached": MockProbe1,
+                             "probe_unattached": MockProbe2
+                         }):
+      self._assert_has_probe_context(
+          attached_probe=MockProbe1(),
+          unattached_probe_cls=MockProbe2,
+          invalid_name="probe_invalid")
+
+  def test_has_probe_context_by_name_real_probes(self):
+    """Repeat `test_has_probe_context_by_name` with real probes.
+       The choice of probes is arbitrary; should breaking changes ever
+       be made, choose other probes to fix this test."""
+    self._assert_has_probe_context(
+        attached_probe=VideoProbe(),
+        unattached_probe_cls=ScreenshotProbe,
+        invalid_name="video_probee")
 
   def test_annotate(self):
     run = self._create_run()

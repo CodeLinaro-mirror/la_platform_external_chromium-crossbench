@@ -12,7 +12,7 @@ from typing_extensions import override
 
 from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, Self
 from crossbench.action_runner.action.action_type import ActionType
-from crossbench.cli.config.probe import PROBE_LOOKUP
+from crossbench.probes.all import PROBE_LOOKUP
 
 if TYPE_CHECKING:
   import datetime as dt

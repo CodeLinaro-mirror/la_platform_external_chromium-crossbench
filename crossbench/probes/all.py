@@ -152,3 +152,7 @@ for probe_cls in DEFAULT_INTERNAL_PROBES:
   assert probe_cls.NAME, "Missing {probe_cls}.NAME property"
   assert probe_cls.NAME.startswith(INTERNAL_NAME_PREFIX), (
       f"Internal {probe_cls}.NAME must start with 'cb.'")
+
+PROBE_LOOKUP: dict[str, type[Probe]] = {
+    cls.NAME: cls for cls in GENERAL_PURPOSE_PROBES
+}
