@@ -29,6 +29,13 @@ if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
 
 
+def _mean_without_outliers(group: pd.Series) -> float:
+  """Computes the mean, discarding top and bottom outliers for >=5 runs."""
+  if len(group) >= 5:
+    return group.sort_values().iloc[1:-1].mean()
+  return group.mean()
+
+
 class WebPowerProbe(BenchmarkProbeMixin, Probe):
   NAME: ClassVar = "web_power_probe"
   PRIORITY: ClassVar = ProbePriority.PRE_TRACE_PROCESSOR
@@ -141,8 +148,9 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
 
     # Average total_power_mw over runs for each browser/story combination.
     run_metrics = (
-        df_sum.groupby(["cb_browser",
-                        "cb_story"])["total_power_mw"].mean().to_frame())
+        df_sum.groupby([
+            "cb_browser", "cb_story"
+        ])["total_power_mw"].agg(_mean_without_outliers).to_frame())
 
     # Update the base DataFrame with actual computed scores where available.
     # We use combine_first so that any browser/story present in base_df but

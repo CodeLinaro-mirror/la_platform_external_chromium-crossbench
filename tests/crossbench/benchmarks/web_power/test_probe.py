@@ -140,6 +140,115 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         },
     ])
 
+  def test_merge_browsers_four_runs_simple_mean(self):
+    """Verify that if there are 4 or less runs, all totals are kept and averaged
+    without discarding outliers."""
+    csv_contents = (
+        "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+        # Run 0
+        "chrome,test,0,rail_1,10.0\n"
+        "chrome,test,0,rail_2,20.0\n"
+        # Run 1
+        "chrome,test,1,rail_1,30.0\n"
+        "chrome,test,1,rail_2,40.0\n"
+        # Run 2
+        "chrome,test,2,rail_1,50.0\n"
+        "chrome,test,2,rail_2,60.0\n"
+        # Run 3
+        "chrome,test,3,rail_1,70.0\n"
+        "chrome,test,3,rail_2,80.0\n")
+    records = self._test_merge_browsers(csv_contents)
+    score = ((10 + 20) + (30 + 40) + (50 + 60) + (70 + 80)) / 4.0
+    self.assertEqual(records, [
+        {
+            "cb_browser": "chrome",
+            "cb_story": "test",
+            "total_power_mw": score
+        },
+    ])
+
+  def test_merge_browsers_five_runs_outliers_dropped_ordered(self):
+    """Verify that if there are 5 or more runs, the top and bottom totals are
+    discarded."""
+    csv_contents = (
+        "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+        # Run 0
+        "chrome,test,0,rail_1,10.0\n"
+        "chrome,test,0,rail_2,20.0\n"
+        # Run 1
+        "chrome,test,1,rail_1,30.0\n"
+        "chrome,test,1,rail_2,40.0\n"
+        # Run 2
+        "chrome,test,2,rail_1,50.0\n"
+        "chrome,test,2,rail_2,60.0\n"
+        # Run 3
+        "chrome,test,3,rail_1,70.0\n"
+        "chrome,test,3,rail_2,80.0\n"
+        # Run 4
+        "chrome,test,4,rail_1,90.0\n"
+        "chrome,test,4,rail_2,100.0\n")
+    records = self._test_merge_browsers(csv_contents)
+    self.assertEqual(records, [
+        {
+            "cb_browser": "chrome",
+            "cb_story": "test",
+            "total_power_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0
+        },
+    ])
+
+  def test_merge_browsers_five_runs_outliers_dropped_unordered(self):
+    """Verify that outliers are correctly identified and discarded even when the
+    run scores are not chronologically ordered by magnitude."""
+    csv_contents = (
+        "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+        # Run 0
+        "chrome,test,0,rail_1,70.0\n"
+        "chrome,test,0,rail_2,80.0\n"
+        # Run 1
+        "chrome,test,1,rail_1,90.0\n"
+        "chrome,test,1,rail_2,100.0\n"
+        # Run 2
+        "chrome,test,2,rail_1,50.0\n"
+        "chrome,test,2,rail_2,60.0\n"
+        # Run 3
+        "chrome,test,3,rail_1,10.0\n"
+        "chrome,test,3,rail_2,20.0\n"
+        # Run 4
+        "chrome,test,4,rail_1,30.0\n"
+        "chrome,test,4,rail_2,40.0\n")
+    records = self._test_merge_browsers(csv_contents)
+    self.assertEqual(records, [
+        {
+            "cb_browser": "chrome",
+            "cb_story": "test",
+            "total_power_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0
+        },
+    ])
+
+  def test_merge_browsers_many_runs_outliers_dropped_unordered(self):
+    """Verify that outliers are discarded for 10 runs. Ensure it's always
+    one outlier on the top and one on the bottom, regardless of the number
+    of runs."""
+    csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+                    "chrome,test,0,rail,10.0\n"
+                    "chrome,test,1,rail,20.0\n"
+                    "chrome,test,2,rail,30.0\n"
+                    "chrome,test,3,rail,40.0\n"
+                    "chrome,test,4,rail,50.0\n"
+                    "chrome,test,5,rail,60.0\n"
+                    "chrome,test,6,rail,70.0\n"
+                    "chrome,test,7,rail,80.0\n"
+                    "chrome,test,8,rail,90.0\n"
+                    "chrome,test,9,rail,100.0\n")
+    records = self._test_merge_browsers(csv_contents)
+    self.assertEqual(records, [
+        {
+            "cb_browser": "chrome",
+            "cb_story": "test",
+            "total_power_mw": (20 + 30 + 40 + 50 + 60 + 70 + 80 + 90) / 8.0
+        },
+    ])
+
   def test_merge_browsers_multiple_stories(self):
     """Verify that power metrics are kept isolated per story when
     aggregating."""
