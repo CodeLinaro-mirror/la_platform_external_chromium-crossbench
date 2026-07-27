@@ -21,6 +21,7 @@ If running `./cb.py` fails, try the following:
 - Import declarations always go at the top of the file, never nested inside
   of a method or class. (Conditional imports based on a simple if statement
   referring to TYPE_CHECKING are an exception.)
+- Avoid `getattr` and `hasattr` (where feasible).
 
 ## Crossbench Platform Code
 - Avoid using raw shell-commands if possible and directly use the platform
