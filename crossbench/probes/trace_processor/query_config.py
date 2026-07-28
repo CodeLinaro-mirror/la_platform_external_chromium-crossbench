@@ -129,7 +129,10 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
 
   def resolve_for_platform(
       self, platform: Platform) -> TraceProcessorQueryConfig | None:
-    device_model = platform.model
+    return self.resolve_for_device_model(platform.model)
+
+  def resolve_for_device_model(
+      self, device_model: str) -> TraceProcessorQueryConfig | None:
     query_path = ""
 
     for model_re, path in self._device_override.items():

@@ -462,6 +462,75 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(result_df["cb_browser"].iloc[0], "chrome")
     self.assertEqual(result_df["total_power_mw"].iloc[0], "No Data")
 
+  def test_process_result_dir_from_csv(self):
+    """Verify that process_result_dir can read data from a pre-existing CSV."""
+    base_df = pd.DataFrame([{
+        "cb_browser": "chrome",
+        "cb_story": "cnn",
+    }])
+    result_dir = pth.LocalPath("results_dir")
+    csv_path = result_dir / "trace_processor" / "power_rails.csv"
+    self.fs.create_file(
+        csv_path,
+        contents="cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+        "chrome,cnn,0,rail_1,10.0\n"
+        "chrome,cnn,0,rail_2,20.0\n")
+
+    result_df = self.probe.process_result_dir(
+        result_dir, base_df, reprocess=False)
+    self.assertEqual(len(result_df), 1)
+    self.assertEqual(result_df["cb_browser"].iloc[0], "chrome")
+    self.assertEqual(result_df["total_power_mw"].iloc[0], 30.0)
+
+  @mock.patch("crossbench.benchmarks.web_power.probe.BatchTraceProcessor")
+  def test_process_result_dir_reprocess(self, btp_mock):
+    """Verify that process_result_dir ignores existing CSVs and reruns traces
+    when reprocess=True.
+    """
+    base_df = pd.DataFrame([{
+        "cb_browser": "chrome",
+        "cb_story": "cnn",
+        "device_model": "test_device",
+    }])
+    result_dir = pth.LocalPath("results_dir")
+
+    # Create an old CSV that should be ignored and overwritten.
+    csv_path = result_dir / "trace_processor" / "power_rails.csv"
+    self.fs.create_file(
+        csv_path,
+        contents="cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+        "chrome,cnn,0,rail_1,999.0\n")
+
+    # Create a trace file so it triggers reprocess.
+    trace_file = (
+        result_dir / "chrome" / "stories" / "cnn" / "0" / "0_default" /
+        "trace.pb.gz")
+    self.fs.create_file(trace_file)
+
+    # Create the fallback SQL file so that process_result_dir actually
+    # executes the query.
+    sql_file = QUERIES_DIR / "web_power" / "power_rails.sql"
+    self.fs.create_file(sql_file, contents="SELECT 1")
+    mapping_file = QUERIES_DIR / "web_power" / "mapping.hjson"
+    self.fs.create_file(
+        mapping_file, contents='{".*": "web_power/power_rails"}')
+
+    btp_instance = btp_mock.return_value.__enter__.return_value
+    btp_instance.query_and_flatten.return_value = pd.DataFrame({
+        "_path": [str(trace_file)],
+        "name": ["rail_1"],
+        "avg_power_mw": [50.0],
+    })
+
+    result_df = self.probe.process_result_dir(
+        result_dir, base_df, reprocess=True)
+    self.assertEqual(len(result_df), 1)
+    self.assertEqual(result_df["cb_browser"].iloc[0], "chrome")
+    # Should be 50.0 from the mock BTP, not 999.0 from the CSV.
+    self.assertEqual(result_df["total_power_mw"].iloc[0], 50.0)
+    btp_mock.assert_called_once_with(traces=[str(trace_file)], config=mock.ANY)
+    btp_instance.query_and_flatten.assert_called_once_with("SELECT 1")
+
   def test_merge_browsers_multiple_power_rails(self):
     """Verify that merge fails if multiple power rails CSVs are found,
     indicating an ambiguous query mapping."""

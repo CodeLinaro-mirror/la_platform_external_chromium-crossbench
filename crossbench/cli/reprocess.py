@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from typing import TYPE_CHECKING, Any, Sequence
 
 import pandas as pd
@@ -74,9 +75,25 @@ class ReprocessUtil:
     # TODO: Upstream this to the base Probe interface or find an alternative to
     # unify offline reprocessing across all probes.
     assert hasattr(probe_cls, "process_result_dir")
-    new_scores: pd.DataFrame = probe_cls.process_result_dir(result_dir, base_df)
+    new_scores: pd.DataFrame = probe_cls.process_result_dir(
+        result_dir, base_df, reprocess=True)
     print(
         tabulate(new_scores, headers="keys", tablefmt="plain", showindex=False))
+
+  @classmethod
+  def _get_device_model_from_run(cls, run_dir: pth.LocalPath) -> str:
+    for json_name, keys in (("cb.system.details.json",
+                             ["Android", "ro.product.model"]),
+                            ("cb.results.json", ["browser", "os", "model"])):
+      file_path = run_dir / json_name
+      if not file_path.is_file():
+        continue
+      data = json.loads(file_path.read_text(encoding="utf-8"))
+      for key in keys:
+        data = data.get(key) if isinstance(data, dict) else ""
+      if data:
+        return data
+    return ""
 
   def _get_base_df(self, result_dir: pth.LocalPath) -> pd.DataFrame:
     # Reconstruct the base_df by scanning the result-dir for browser and story
@@ -89,9 +106,10 @@ class ReprocessUtil:
       except ValueError:
         continue
 
-      # rel_parts: (`browser``, "stories", `story`, ...).
+      # rel_parts: (`browser`, "stories", `story`, `run`, `probe`).
       if len(rel_parts) == 5 and rel_parts[1] == "stories":
         combinations.append({
+            "device_model": self._get_device_model_from_run(run_dir),
             "cb_browser": rel_parts[0],
             "cb_story": rel_parts[2],
         })
