@@ -1,13 +1,12 @@
 # Web Power Benchmark
 
-The "Web Power" benchmark measures the power consumption of various Web
-workloads on Android devices.
+The "Web Power" benchmark measures the power consumption of Web workloads.
 
-Currently supported scenarios include:
+Currently supported scenarios:
 
-- **Idle:** Static, fully loaded page. (Or as close to it as is possible, as
-  pages can load arbitrary new content at any time.)
-- **Scroll:** Actively scrolling up and down.
+- **Idle:** Static, fully-loaded page (or as close to it as possible, since
+  pages can load arbitrary new content at any time).
+- **Scroll:** Actively scrolling up and down (with pauses for workload realism).
 - **Page-Load:** The initial page-loading phase.
 - **Media-Playback:** The steady-state of playing back video and audio.
 
@@ -15,20 +14,19 @@ The canonical sites used for power measurements are **Al Jazeera** (`ajnews`),
 **CNN** (`cnn`), and **MSN** (`msn`). For the `media-playback` scenario, the
 canonical site is **YouTube**.
 
-Other sites (like `yahoo`) are supported by the benchmark but are considered
-non-canonical; this can be because the site exhibits high variance between
-measurements, because it's not representative of a large proportion of the Web,
-or for any other reason.
+We support other sites (like `yahoo`), but they aren't canonical - usually
+because their metrics are too noisy, or they aren't representative of the
+broader Web.
 
 A story consists of a combination of a scenario and a site (for example,
-`idle-cnn` or `scroll-msn`). The site may be implied if only one is supported,
-as is the case for media playback at the moment.
+`idle-cnn` or `scroll-msn`). The site may be implied if only one is supported
+(e.g., media playback currently only uses YouTube).
 
-Power measurement is supported through various means. Currently, these include:
+Power measurement is supported through various means. These include:
 
 - **ODPM (On-Device Power Meter):** Hardware sensors built into many modern
-  devices (like Pixel phones) that report precise power consumption for
-  various system rails (e.g., CPU, GPU, Display).
+  devices (like Pixel phones) that report precise power consumption for various
+  system rails (e.g., CPU, GPU, Display).
 - **External Dedicated Hardware:** Hardware like Kibble, paired with matching
   software like Bits, can be used for high-fidelity, external power profiling.
 
@@ -36,18 +34,23 @@ Power measurement is supported through various means. Currently, these include:
 
 ### Getting the Code
 
-The "Web Power" benchmark is part of the open source
-[Crossbench](http://chromium.googlesource.com/) project. Instructions on how to
-clone the repository and use the tool are available
-[here](https://chromium.googlesource.com/crossbench). Note that these
-instructions encourage you to use [depot_tools](https://chromium.googlesource.com/chromium/tools/depot_tools/+/HEAD/README.md).
-You would do well to follow that guidance.
+The "Web Power" benchmark is part of the open-source
+[Crossbench](http://chromium.googlesource.com/) project. Instructions are
+available [here](https://chromium.googlesource.com/crossbench). We strongly
+recommend following the guidance on using
+[depot_tools](https://chromium.googlesource.com/chromium/tools/depot_tools/+/HEAD/README.md).
 
-If you are a Googler, after fetching Crossbench, find the `.gclient` file.
-It should contain a section named `"crossbench"`. Ensure it has the following
+If you're a Googler, after checking out Crossbench, open your `.gclient` file.
+It should contain a section named `"crossbench"`. Add the following
 entry in its `"custom_vars"` section:
 
+```python
+      "checkout_crossbench_internal": True,
 ```
+
+Thereafter, the file should look roughly as follows:
+
+```python
 solutions = [
   {
     "name": "crossbench",
@@ -61,139 +64,125 @@ solutions = [
 ]
 ```
 
-That is, make sure `"checkout_crossbench_internal"` is set to `True`.
 After setting this for the first time, run `gclient sync` once to fetch
-the crossbench-internal submodule.
+the `crossbench-internal` submodule.
 
 ### Obtaining Access to WPR Recordings
 
-To ensure consistent results, the benchmark uses WPR (Web Page Replay) archives
-stored in the `chrome-partner-loadline` cloud bucket. Request access to this
+To ensure consistent results, we use WPR (Web Page Replay) archives stored in
+the `chrome-partner-loadline` cloud bucket. Request access to this
 bucket [here](https://docs.google.com/forms/d/e/1FAIpQLSdCb1LYPlDEKuOd1lP21yZ9YDEvjq-9W0a5X9k7QxM_YjskzA/viewform).
 
-After obtaining access, run the following command on your machine (this only
-needs to be done once).
+After obtaining access, run this once:
 
 ```bash
 gcloud auth application-default login --disable-quota-project
 ```
 
-If you run into any issues, please refer to the
-[relevant section](https://chromium.googlesource.com/crossbench/+/refs/heads/main/config/benchmark/loadline2/#cloud-bucket-access)
-of the LoadLine 2 guide. (The same bucket is used by both benchmarks.)
+If you run into issues, refer to the
+[relevant section](https://chromium.googlesource.com/crossbench/+/refs/heads/main/config/benchmark/loadline2/#cloud-bucket-access) of the LoadLine 2 guide. (Both benchmarks use the same
+cloud bucket.)
 
 ## Running the Benchmark
 
 ### Canonical Configuration Runs
 
-To run a canonical power measurement that iterates over the 10 canonical stories
-and runs each 5 times, with the recommended wait time in between, use:
+A canonical run currently consists of 10 stories, 5 repetitions of each, and a
+set cool-down period in between. Run it with:
 
 ```bash
 ./cb.py web-power --browser=adb:chrome
 ```
 
-Canonical runs do not deviate from the default configuration. Any deviations
-(like changing the number of repetitions or cooldown times) can significantly
-affect the final scores, often by altering the device's thermal state.
-Non-canonical runs are often useful, but for score-collection, it is imperative
-to stick to the canonical configuration.
+For official score-collecting runs, do NOT deviate from the defaults.
+For example, tweaking the interval between runs might affect the thermal
+state of the device, change the frequency of thermal throttling, and therefore
+impact the scores.
 
 ### Results
 
-As with any Crossbench benchmark, results are available in the output directory
-printed to the console at the end of the run.
+Like any Crossbench benchmark, a results directory is produced at the end of
+the run.
 
-The main metric of the Web Power benchmarks is power consumption. As mentioned
-earlier, there are two ways to collect these - using ODPM or through dedicated
-hardware.
+The main metric of the Web Power benchmark is power consumption. As mentioned
+earlier, there are two ways to collect this data: ODPM or dedicated hardware.
 
-We default to using ODPM metrics, which are collected using a Perfetto probe.
-Users who have access to Bits may use that instead by specifying
+By default, a Perfetto probe will be used to collect ODPM metrics.
+Users with access to Bits may use that instead by specifying
 `--bits-path=path/to/bits/binary`.
 
-Normally these two collection methods are
-mutually exclusive, as Perfetto trace collection impacts performance and
-power, and we prefer to avoid such an unintended side-effect when possible.
-However, users who wish to measure power in both ways at the same time can
-explicitly add both `--bits-path` and
+Because Perfetto trace collection impacts performance and power, the collection
+methods are mutually exclusive by default. If you know what you are doing and
+want _both_ metrics simultaneously, pass both `--bits-path` and
 `--probe-config=config/benchmark/web_power/probe_config.hjson`.
 
 #### ODPM
 
-When using ODPM collection, Crossbench automatically captures Perfetto traces
-containing power rail data. After the benchmark finishes, it automatically
-processes these traces, extracts the relevant metrics, and outputs them in
-two ways:
+When using ODPM, Crossbench pulls Perfetto traces with power rail data. After
+the run, it auto-processes them and outputs:
 
-- Logs saved to the results directory (which is reported to `stdout`). This
-  directory includes a Perfetto trace for each iteration (located in
-  `runs/*/perfetto.trace.pb.gz`) that can be opened and visualized with
+- **Logs and traces:** Saved in the aforementioned results directory. These
+  include a raw Perfetto trace for each iteration (under
+  `runs/*/perfetto.trace.pb.gz`) that you can open in
   [Perfetto UI](https://ui.perfetto.dev).
-- A summary of the results printed directly to `stdout`.
+- **Console Summary:** High-level results printed straight to `stdout`.
 
-Because power rails are highly specific to the device hardware, extracting
-meaningful metrics requires device-specific Trace Processor SQL queries. The
-benchmark maintains a mapping between device models (matched via regex) and
-specific SQL query files (stored in the source code). The tool looks up the
-device model, selects the appropriate SQL file, and auto-runs it against the
-trace.
+As power rails are hardware-specific, we need custom Trace Processor SQL queries
+to analyse the data. Crossbench determines the device model and runs the
+matching SQL query.
 
-The queries associated with devices reveal information about them through their
-power rails. As such, queries associated with unreleased devices should not be
-committed to the open source project. It is possible to store these in such
-private repositories as `crossbench-internal` (see
-[Getting the Code](#getting-the-code)). Those who need to configure a different
-private repository can come up with alternatives.
+**Watch out:** power rail queries expose hardware details. Do not push queries
+for unreleased hardware to the open-source repo. Keep them gated in a private
+repo like `crossbench-internal` (see [Getting the Code](#getting-the-code)).
 
 #### Kibble/Bits
 
-When running the benchmark with external hardware using the `--bits-path` flag,
-power metrics are collected from the hardware rather than from on-device
-sensors. Bits captures high-fidelity power data throughout the run and outputs
-it to a sub-directory of the dedicated Bits output directory. The name of this
-sub-directory is controlled by the `--bits-out` flag. If this flag is omitted,
-the sub-directory name defaults to the current timestamp in the format
-`YYYYMMDD_HHMMSS`.
+Dedicated power-measuring hardware and matching software can be used.
+Crossbench currently supports one such HW/SW pair - Kibble/Bits. It is used
+by specifying `--bits-path=<PATH_TO_BITS_BINARY>`. (Different users will have
+installed Bits to different paths.)
+
+Bits captures high-fidelity power data throughout the run and writes data to a
+sub-directory of the dedicated Bits output directory. This is controlled using
+`--bits-out=<SUB_DIRECTORY_NAME>`. (Note that the name of the sub-directory is
+expected, not the full path.) If the flag is omitted, the sub-directory name
+defaults to the current timestamp in the format `YYYYMMDD_HHMMSS`.
 
 Additional supported Bits configuration includes:
 
-- `--bits-device`: The device identifier passed to the Bits tool. Be advised
-  that these are typically different from the ADB serial number of the device.
-- `--bits-duration`: How long the Bits collection should run. By default, this
-  spans from story-start to story-end (i.e., collecting data only during the
-  actual workload, skipping initial browser setup and page navigation).
-  This can normally be omitted.
-- `--bits-port`: The service port number for the Bits tool. This can normally be
-  omitted, in which case a port will be auto-assigned.
+- `--bits-device`: The device identifier passed to the Bits tool. (This is
+  typically NOT the ADB serial number of the device.)
+- `--bits-duration`: How long Bits records. Unused by default; instead,
+  an unbounded recording is used, then terminated when the benchmark completes.
+- `--bits-port`: The Bits service port. This can normally be omitted.
 
 ## Versioning
 
 ### Reading the Version
 
-The version of Crossbench itself can be read using the `--version` flag.
+The version of Crossbench itself can be read using the `--version` flag:
 
 ```bash
 ./cb.py --version
 ```
 
 The version of the benchmark can be read using the `--benchmark-version` flag.
-Naturally, the benchmark itself should be specified; in our case, `web-power`.
+Naturally, the benchmark itself must be specified (in this case, `web-power`):
 
 ```bash
 ./cb.py web-power --benchmark-version
 ```
 
-You'd typically only care about the latter (Web Power version).
+You will typically only care about the latter (the Web Power version).
 
 ### Interpreting the Version String
 
-The Web Power version follows the format A.B.C, where:
+The Web Power version follows the format `A.B.C`, where:
 
 - **A** is expected to be incremented roughly every year, with `1` being the
-  first entry, launched in 2026. Different values of `A` are expected to be
-  associated with such different workloads and scores that they might sometimes
-  be considered as distinct benchmarks.
+  first entry launched in 2026. Different values of `A` are associated with such
+  different workloads and scores that they might be considered distinct
+  benchmarks.
 - **B** is the major version within a given year. It will be incremented when
   significant changes are made that can affect the score.
 - **C** is the minor version within a given `A.B` version. It is typically
