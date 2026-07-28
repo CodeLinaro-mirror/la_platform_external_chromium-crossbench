@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import atexit
 import contextlib
 import dataclasses
 import datetime as dt
@@ -708,6 +709,9 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
     self._adb: Final[Adb] = adb or Adb(host_platform, device_identifier)
+    self._uiautomator_device_instance: (
+        android_device.AndroidDevice | None) = None
+    self._uiautomator_device_root: bool = False
     super().__init__(host_platform)
 
   def _create_port_manager(self) -> PortManager:
@@ -751,6 +755,27 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def key(self) -> tuple[Any, ...]:
     return ("android", self.serial_id)
 
+  def _uiautomator_device(
+      self, root_device: bool = True
+  ) -> android_device.AndroidDevice:
+    if self._uiautomator_device_instance is not None:
+      # We are reusing the device except if it's not rooted and root is required.
+      if not self._uiautomator_device_root and root_device:
+        ad = self._uiautomator_device_instance
+        ad.services.unregister_all()
+        atexit.unregister(ad.services.unregister_all)
+        self._uiautomator_device_instance = None
+      else:
+        return self._uiautomator_device_instance
+
+    ad = _CrossbenchUiAutomatorDevice(self.serial_id, root_device=root_device)
+    atexit.register(ad.services.unregister_all)
+    ad.services.register(uiautomator.ANDROID_SERVICE_NAME,
+                         uiautomator.UiAutomatorService)
+    self._uiautomator_device_instance = ad
+    self._uiautomator_device_root = root_device
+    return ad
+
   @contextlib.contextmanager
   def uiautomator_device(
       self,
@@ -766,15 +791,9 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       else:
         environ["PATH"] = adb_dir
 
-    ad = None
     try:
-      ad = _CrossbenchUiAutomatorDevice(self.serial_id, root_device=root_device)
-      ad.services.register(uiautomator.ANDROID_SERVICE_NAME,
-                           uiautomator.UiAutomatorService)
-      yield ad
+      yield self._uiautomator_device(root_device)
     finally:
-      if ad:
-        ad.services.unregister_all()
       if adb_dir:
         environ["PATH"] = old_path
 
