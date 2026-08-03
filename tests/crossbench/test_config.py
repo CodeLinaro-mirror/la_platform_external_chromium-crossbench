@@ -1603,15 +1603,13 @@ class ConfigEnumTestCase(unittest.TestCase):
 class ConfigRootDirTestCase(CrossbenchFakeFsTestCase):
 
   def test_root_dir_standard(self):
-    with mock.patch(
-        "crossbench.config.__file__",
-        "/path/to/root/crossbench/config.py"):
+    with mock.patch("crossbench.config.__file__",
+                    "/path/to/root/crossbench/config.py"):
       self.fs.create_file("/path/to/root/crossbench/config.py")
       self.assertEqual(str(root_dir()), "/path/to/root")
 
   def test_root_dir_flattened(self):
-    with mock.patch(
-        "crossbench.config.__file__", "/path/to/root/config.py"):
+    with mock.patch("crossbench.config.__file__", "/path/to/root/config.py"):
       self.fs.create_file("/path/to/root/config.py")
       self.fs.create_dir("/path/to/root/config")
       self.assertEqual(str(root_dir()), "/path/to/root")

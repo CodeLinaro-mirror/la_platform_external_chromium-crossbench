@@ -913,7 +913,6 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with self.assertRaises(VersionParseError):
       AndroidVersion.parse("foo")
 
-
   def test_parse_binary_manifest_package_name_utf8(self):
     package_name = "org.chromium.chrome"
     axml_data = self._create_axml(package_name)
@@ -994,6 +993,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         "<HHL", RES_XML_TYPE, 0x0008,
         8 + len(string_pool_chunk) + len(start_element_chunk))
     return axml_header + string_pool_chunk + start_element_chunk
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

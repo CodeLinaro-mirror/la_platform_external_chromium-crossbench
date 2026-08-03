@@ -176,7 +176,6 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       self.host_platform.killall("safaridriver")
 
 
-
 class SafariWebdriverIOS(SafariWebDriver):
   MAX_STARTUP_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=15)
 

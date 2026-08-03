@@ -104,6 +104,7 @@ _DEFAULT_TIMING: Final[Timing] = Timing()
 
 
 class Runner:
+
   @classmethod
   def add_cli_arguments(
       cls, benchmark_cls: type[Benchmark],

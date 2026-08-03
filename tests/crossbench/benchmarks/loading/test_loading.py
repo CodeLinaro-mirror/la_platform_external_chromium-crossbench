@@ -52,7 +52,6 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     args.pages_config = None
     return args
 
-
   @override
   def story_filter(self,
                    patterns: Sequence[str],

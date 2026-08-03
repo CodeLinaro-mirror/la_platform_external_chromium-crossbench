@@ -17,7 +17,6 @@ USE_PYTHON3 = True
 SOURCE_SKIP_RE = [r"^protoc/gen.*", r"^third_party/.*"]
 
 
-
 def GlobalSkipChecks(input_api: Any, file_path: str) -> bool:
   if input_api.fnmatch.fnmatch(file_path, "*protoc/gen/*"):
     return True

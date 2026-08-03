@@ -132,6 +132,7 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     self.fs.create_file(mapping_file, contents='{"pixels": "test"}')
     self.fs.create_file(
         mapping_file.parent.parent / "test.sql", contents="SELECT 1;")
+
   @property
   @override
   def benchmark_cls(self) -> type[MockWebPowerBenchmark]:
@@ -274,7 +275,6 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     bits_probe = kwargs["bits_probe"]
     self.assertEqual(bits_probe.port, 1234)
-
 
   def test_setup_bits_probe(self) -> None:
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"

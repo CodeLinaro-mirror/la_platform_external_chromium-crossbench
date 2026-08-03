@@ -36,7 +36,8 @@ def test_embedder(device_id, adb_path, test_env: TestEnv, adb_root) -> None:
       "embedder",
       f"--browser={browser_config}",
       "--splashscreen=skip",
-      f"--cuj-config={test_env.root_dir}/config/team/woa/embedder_cuj_config.hjson",
+      f"--cuj-config={test_env.root_dir}/config/team/woa/"
+      "embedder_cuj_config.hjson",
       # TODO(zbikowski): Add this flag once embedder in the emulator image is
       # updated.
       # "--embedder-process-name=googleapp",

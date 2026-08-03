@@ -199,8 +199,6 @@ class MemoryProbeContext(ActionRunnerListener,
       metrics[f"playback_{i}"] = playback_metrics
     return metrics
 
-
-
   def _increment_tab_count(self) -> None:
     self._tab_count += 1
 
@@ -282,7 +280,6 @@ class MemoryProbeContext(ActionRunnerListener,
       return True
     return False
 
-
   @override
   def handle_page_run(self, run: Run) -> None:
     self._record_navigation_time(run)
@@ -328,7 +325,6 @@ class MemoryBenchmarkStoryFilter(LoadingPageFilter):
   """
   Create memory story.
   """
-
 
   @classmethod
   @override

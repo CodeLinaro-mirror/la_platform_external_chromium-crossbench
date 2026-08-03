@@ -709,8 +709,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
     self._adb: Final[Adb] = adb or Adb(host_platform, device_identifier)
-    self._uiautomator_device_instance: (
-        android_device.AndroidDevice | None) = None
+    self._uiautomator_device_instance: (android_device.AndroidDevice
+                                        | None) = None
     self._uiautomator_device_root: bool = False
     super().__init__(host_platform)
 
@@ -755,11 +755,12 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   def key(self) -> tuple[Any, ...]:
     return ("android", self.serial_id)
 
-  def _uiautomator_device(
-      self, root_device: bool = True
-  ) -> android_device.AndroidDevice:
+  def _uiautomator_device(self,
+                          root_device: bool = True
+                         ) -> android_device.AndroidDevice:
     if self._uiautomator_device_instance is not None:
-      # We are reusing the device except if it's not rooted and root is required.
+      # We are reusing the device except if it's not rooted and root is
+      # required.
       if not self._uiautomator_device_root and root_device:
         ad = self._uiautomator_device_instance
         ad.services.unregister_all()
@@ -887,7 +888,6 @@ class AndroidAdbPlatform(RemotePosixPlatform):
       if match := _AAPT_PACKAGE_NAME_RE.search(line):
         return match.group(1)
     raise ValueError(f"Could not find package name in aapt output for {path}")
-
 
   @override
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:

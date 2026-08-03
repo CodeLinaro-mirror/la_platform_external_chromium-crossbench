@@ -45,8 +45,8 @@ class WprBannerDismisser:
   @classmethod
   def create_rules(cls, metadata: str) -> tuple[str, str] | None:
     match = re.search(
-        r"^Dismisser target:\s*([^,]+),([^,]+),\"([^\"]*)\",([^\n]+)",
-        metadata, re.MULTILINE)
+        r"^Dismisser target:\s*([^,]+),([^,]+),\"([^\"]*)\",([^\n]+)", metadata,
+        re.MULTILINE)
     if not match:
       return None
 
@@ -74,15 +74,13 @@ class WprBannerDismisser:
       return pth.LocalPath(rf.name)
 
   @classmethod
-  def _build_dismisser_script(
-      cls, elem_type: str, elem_role: str, elem_text: str) -> str:
+  def _build_dismisser_script(cls, elem_type: str, elem_role: str,
+                              elem_text: str) -> str:
     template_file = pth.LocalPath(__file__).parent / "dismisser.js"
     mapping = {
         "INJECTED_TYPE": f'"{elem_type}"',
         "INJECTED_ROLE": f'"{elem_role}"',
         "INJECTED_TEXT": f'"{elem_text}"',
     }
-    return re.sub(
-        r"INJECTED_(TYPE|ROLE|TEXT)",
-        lambda m: mapping[m.group(0)],
-        template_file.read_text(encoding=_ENCODING))
+    return re.sub(r"INJECTED_(TYPE|ROLE|TEXT)", lambda m: mapping[m.group(0)],
+                  template_file.read_text(encoding=_ENCODING))

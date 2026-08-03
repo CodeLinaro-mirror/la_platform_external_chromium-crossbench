@@ -33,7 +33,6 @@ if TYPE_CHECKING:
   from crossbench.cli.types import Subparsers
 
 
-
 class DescribeSubcommandNoParser(DescribeSubcommand):
 
   def __init__(self, cli: CrossBenchCLI) -> None:

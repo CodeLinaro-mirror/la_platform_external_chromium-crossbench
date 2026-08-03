@@ -252,6 +252,7 @@ def prepare_linux_perf_env(platform: plt.Platform,
 
 KB = 1024
 
+
 def linux_perf_probe_inject_v8_symbols(
     perf_data_file: pth.AnyPath,
     platform: plt.Platform | None = None) -> pth.AnyPath | None:

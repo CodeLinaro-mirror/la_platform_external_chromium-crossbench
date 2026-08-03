@@ -51,8 +51,8 @@ class WprReplayNetwork(ReplayNetwork):
     self._persist_server: Final[bool] = persist_server
     self._inject_deterministic_script: Final[bool] = inject_deterministic_script
     self._no_archive_certificates: Final[bool] = no_archive_certificates
-    self._response_transformations_file: (
-        LocalPath | None) = response_transformations_file
+    self._response_transformations_file: (LocalPath |
+                                          None) = response_transformations_file
     self._cross_platform_mode: Final[bool] = cross_platform_mode
     self._wpr_go_bin: Final[LocalPath] = WprGoFinder(self.host_platform).wpr(
         self._wpr_platform)

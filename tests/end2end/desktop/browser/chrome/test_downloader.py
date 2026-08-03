@@ -29,8 +29,8 @@ if TYPE_CHECKING:
 def check_gcs_access():
   try:
     plt.PLATFORM.check_gcs_file_exists(
-        "gs://chrome-signed/desktop-5c0tCh/111.0.5563.19/linux64/non-existent-file"
-    )
+        "gs://chrome-signed/desktop-5c0tCh/111.0.5563.19/linux64/"
+        "non-existent-file")
   except PermissionError as e:
     logging.info("Could not access chrome bucket: %s", e)
     pytest.skip("GCS likely has no access to gs://chrome-signed/desktop-5c0tCh")

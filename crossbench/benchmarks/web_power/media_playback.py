@@ -248,9 +248,7 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     parser = super().add_cli_arguments(parser)
     story_cls = cls.DEFAULT_STORY_CLS
-    parser.set_defaults(
-        duration=story_cls.DEFAULT_DURATION,
-    )
+    parser.set_defaults(duration=story_cls.DEFAULT_DURATION,)
     return parser
 
   @classmethod

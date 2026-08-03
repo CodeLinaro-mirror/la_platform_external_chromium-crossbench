@@ -753,7 +753,6 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
         with self.assertRaises(argparse.ArgumentTypeError):
           ObjectParser.iterable(invalid)
 
-
   def test_parse_non_empty_sequence(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = ObjectParser.non_empty_sequence([])

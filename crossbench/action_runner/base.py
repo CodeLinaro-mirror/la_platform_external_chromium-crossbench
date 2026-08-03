@@ -379,6 +379,7 @@ class ActionRunner:
       if action.verify:
         self.wait_for_element_impl(
             actions, selector=action.verify, timeout=action.timeout)
+
   def scroll_js(self, action: i_action.ScrollAction) -> None:
     with self.actions("ScrollAction", measure=False) as actions:
       selector = ""

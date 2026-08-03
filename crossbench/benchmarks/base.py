@@ -38,6 +38,7 @@ if TYPE_CHECKING:
 
 VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
 
+
 class Benchmark(abc.ABC):
   # TODO: migrate to abstract class methods
   NAME: ClassVar[str]
@@ -769,7 +770,6 @@ class PressBenchmark(SubStoryBenchmark):
       if version_name != cls.NAME:
         version_names.append(version_name)
     return tuple(version_names)
-
 
   @classmethod
   @override

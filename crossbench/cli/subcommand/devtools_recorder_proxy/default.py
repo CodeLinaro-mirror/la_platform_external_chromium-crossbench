@@ -117,6 +117,7 @@ class CrossbenchDevToolsRecorderProxy:
     self._websocket = websocket
     async for message in websocket:
       await self._send_message(self._handle_message(message))
+
   async def _send_message(
       self, coroutine: Coroutine[Any, Any,
                                  tuple[Response, Any] | None]) -> None:

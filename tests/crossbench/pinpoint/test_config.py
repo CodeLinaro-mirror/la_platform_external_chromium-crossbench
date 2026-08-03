@@ -456,7 +456,6 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
     self.mock_show_warnings.assert_called_once_with(
         ["Unknown story: invalid_story"])
 
-
   def test_parser_raw_config_minimal(self):
     config = PinpointTryJobConfig.from_response_dict(self.response_dict)
     expectation = PinpointTryJobConfig(
@@ -622,9 +621,7 @@ class PinpointBisectJobConfigTest(MockHttpRequestsMixin):
                 commit="abcdef00",
                 flags=FlagsConfig.parse("--js-flags=--start-js-flag"),
             ),
-            end=BisectEndVariantConfig(
-                commit=_TEST_RECENT_COMMIT,
-            )))
+            end=BisectEndVariantConfig(commit=_TEST_RECENT_COMMIT,)))
 
   def test_override_all_fields(self):
     config = PinpointBisectJobConfig.parse_and_override(
@@ -657,9 +654,7 @@ class PinpointBisectJobConfigTest(MockHttpRequestsMixin):
                                         "--enable-features=enable1,enable2 "
                                         "--disable-features=disable1,disable2"),
             ),
-            end=BisectEndVariantConfig(
-                commit="12345678",
-            )))
+            end=BisectEndVariantConfig(commit="12345678",)))
 
 
 if __name__ == "__main__":

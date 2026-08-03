@@ -147,6 +147,7 @@ JETSTREAM_MAIN_STORY_DATA: Final[Mapping[str, tuple[str, ...]]] = {
     "8bitbench-wasm": ("all", "default", "wasm")
 }
 
+
 class JetStreamMainStory(JetStream3Story):
   __doc__ = JetStream3Story.__doc__
   NAME: ClassVar[str] = "jetstream_main"

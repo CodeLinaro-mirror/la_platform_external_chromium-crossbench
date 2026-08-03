@@ -108,10 +108,8 @@ class BlinkAIStory(PressBenchmarkStory):
 
       status = actions.js("return window.testStatus;")
       if status != "success":
-        raise ValueError(
-            "Blink-AI Benchmark did not finish successfully. "
-            f"Final testStatus: '{status}'. "
-        )
+        raise ValueError("Blink-AI Benchmark did not finish successfully. "
+                         f"Final testStatus: '{status}'. ")
 
       metrics = actions.js("return window.metrics;")
       if not metrics or not isinstance(metrics, dict):

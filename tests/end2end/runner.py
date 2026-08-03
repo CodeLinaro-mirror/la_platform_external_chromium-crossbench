@@ -30,14 +30,12 @@ if __name__ == "__main__":
   # TODO: Remove after bot configs are updated to no longer pass this flag
   parser.add_argument("--test-gsutil-path", required=False, help="Deprecated")
 
-
   args, _ = parser.parse_known_args()
   if args.ignore_tests:
     subfolders = args.ignore_tests.split(",")
     more_flags.extend([f"--ignore={END2END_TEST_DIR / x}" for x in subfolders])
   elif not args.adb_device_id:
     more_flags.append(f"--ignore={END2END_TEST_DIR / 'android'}")
-
 
   test_helper.run_pytest(
       END2END_TEST_DIR,

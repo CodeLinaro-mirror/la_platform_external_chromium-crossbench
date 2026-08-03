@@ -410,12 +410,14 @@ class TraceProcessorProbe(Probe):
       json_files += self._run_btp_metrics(btp, group_dir, exceptions)
     return LocalProbeResult(csv=csv_files, json=json_files)
 
-  def _run_btp_queries(self, btp: BatchTraceProcessor, group_dir: pth.LocalPath,
-                       exceptions: ExceptionAnnotator) -> tuple[
-                           list[pth.LocalPath], list[pth.LocalPath]]:
+  def _run_btp_queries(
+      self, btp: BatchTraceProcessor, group_dir: pth.LocalPath,
+      exceptions: ExceptionAnnotator
+  ) -> tuple[list[pth.LocalPath], list[pth.LocalPath]]:
 
-    def run_query(query: TraceProcessorQueryConfig) -> tuple[
-        pth.LocalPath, pth.LocalPath]:
+    def run_query(
+        query: TraceProcessorQueryConfig
+    ) -> tuple[pth.LocalPath, pth.LocalPath]:
       csv_file = group_dir / f"{query.name}.csv"
       json_file = group_dir / f"{query.name}.json"
       df = btp.query_and_flatten(query.sql)

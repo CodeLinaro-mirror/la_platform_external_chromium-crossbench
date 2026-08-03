@@ -50,7 +50,6 @@ ACTION_TIMEOUT: Final = dt.timedelta(seconds=20)
 ACTIONS: dict[ActionType, type[Action]] = {}
 
 
-
 class Action(ConfigObject, metaclass=abc.ABCMeta):
   TYPE: ClassVar[ActionType] = ActionType.GET
 

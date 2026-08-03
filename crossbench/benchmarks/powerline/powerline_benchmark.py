@@ -39,31 +39,31 @@ class PowerlineStory(Story):
   STORY_NAME = "podcast_vorbis_remute"
   URL_BASE = "https://chromium-workloads.web.app/web-tests/main/synthetic/powerline/"
   STORY_URLS = {
-    # No activity except for the browser
-    "scenario_idle": "index.html",
-    # Media playback cases (screen on)
-    "media_vp9_720p": "media-vp9-720p.html",
-    "media_vp9_480p": "media-vp9-480p.html",
-    "media_vp9_360p": "media-vp9-360p.html",
-    "media_vp9_240p": "media-vp9-240p.html",
-    "media_av1_1080p": "media-av1-1080p.html",
-    "media_av1_720p": "media-av1-720p.html",
-    "media_av1_480p": "media-av1-480p.html",
-    "media_av1_360p": "media-av1-360p.html",
-    "media_av1_240p": "media-av1-240p.html",
-    "media_h264_1080p": "media-h264-1080p.html",
-    "media_h264_720p": "media-h264-720p.html",
-    "media_h265_1080p": "media-h265-1080p.html",
-    "media_h265_720p": "media-h265-720p.html",
-    "media_multistream_2up": "media-multistream-2up.html",
-    "media_multistream_3up": "media-multistream-3up.html",
-    "media_multistream_6up": "media-multistream-6up.html",
-    # Media playback cases (screen off)
-    "podcast_vorbis": "podcast-vorbis.html",
-    "podcast_vorbis_muted": "podcast-vorbis.html",
-    "podcast_opus": "podcast-opus.html",
-    "podcast_mp3": "podcast-mp3.html",
-    "podcast_aac": "podcast-aac.html"
+      # No activity except for the browser
+      "scenario_idle": "index.html",
+      # Media playback cases (screen on)
+      "media_vp9_720p": "media-vp9-720p.html",
+      "media_vp9_480p": "media-vp9-480p.html",
+      "media_vp9_360p": "media-vp9-360p.html",
+      "media_vp9_240p": "media-vp9-240p.html",
+      "media_av1_1080p": "media-av1-1080p.html",
+      "media_av1_720p": "media-av1-720p.html",
+      "media_av1_480p": "media-av1-480p.html",
+      "media_av1_360p": "media-av1-360p.html",
+      "media_av1_240p": "media-av1-240p.html",
+      "media_h264_1080p": "media-h264-1080p.html",
+      "media_h264_720p": "media-h264-720p.html",
+      "media_h265_1080p": "media-h265-1080p.html",
+      "media_h265_720p": "media-h265-720p.html",
+      "media_multistream_2up": "media-multistream-2up.html",
+      "media_multistream_3up": "media-multistream-3up.html",
+      "media_multistream_6up": "media-multistream-6up.html",
+      # Media playback cases (screen off)
+      "podcast_vorbis": "podcast-vorbis.html",
+      "podcast_vorbis_muted": "podcast-vorbis.html",
+      "podcast_opus": "podcast-opus.html",
+      "podcast_mp3": "podcast-mp3.html",
+      "podcast_aac": "podcast-aac.html"
   }
 
   def __init__(self,

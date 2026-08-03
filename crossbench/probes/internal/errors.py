@@ -24,6 +24,7 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.types import Json
 
+
 class ErrorsProbe(InternalJsonResultProbe):
   """
   Runner-internal meta-probe: Collects all errors from running stories and/or

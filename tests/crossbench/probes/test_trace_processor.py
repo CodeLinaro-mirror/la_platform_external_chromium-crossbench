@@ -251,10 +251,12 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     run.has_probe_context_by_name.return_value = True
     self.assertTrue(self._test_should_symbolize_profile(run))
 
+
 TARGET_P9 = "web_power/power_rails_p9"
 TARGET_P10 = "web_power/power_rails_p10"
 TARGET_P1 = "web_power/power_rails_p1"
 TARGET_FALLBACK = "web_power/powerline_cpu_rails"
+
 
 class TraceProcessorQueryConfigTestCase(unittest.TestCase):
 

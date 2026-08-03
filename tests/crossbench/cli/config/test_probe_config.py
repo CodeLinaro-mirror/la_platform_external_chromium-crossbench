@@ -55,5 +55,6 @@ class ProbeConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.config_str, str(trace_config_file))
     self.assertIsNone(config.config_dict)
 
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

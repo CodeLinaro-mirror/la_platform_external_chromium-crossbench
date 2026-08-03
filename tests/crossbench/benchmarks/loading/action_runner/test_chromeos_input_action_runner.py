@@ -362,7 +362,6 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.action_runner = ChromeOSInputActionRunner(self.run)
     self.run.action_runner = self.action_runner
 
-
   def run_action(self, action: Action) -> None:
     action.run_with(self.action_runner)
 

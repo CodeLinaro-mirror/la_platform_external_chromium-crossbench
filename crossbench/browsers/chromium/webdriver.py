@@ -329,6 +329,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     except subprocess.SubprocessError as e:
       logging.warning("Could not maximize Android window: %s", e)
 
+
 class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
   """
   Custom version that uses a locally built bundle wrapper.
@@ -382,6 +383,7 @@ class LocalChromiumWebDriverAndroid(ChromiumWebDriverAndroid):
     with ui.spinner(title=f"Installing {self.path.name} on {self.platform}"):
       self.host_platform.sh_stdout(self.path, "install",
                                    f"--device={self.platform.serial_id}")
+
 
 class AutoForwardingRemoteWebDriver(RemoteWebDriver):
   """

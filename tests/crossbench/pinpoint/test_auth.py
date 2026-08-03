@@ -22,8 +22,8 @@ class AuthTestCase(BaseCrossbenchTestCase):
     super().setUp()
     self.google_auth_default = self.enterContext(
         mock.patch("google.auth.default"))
-    self.google_auth_default.side_effect = google.auth.exceptions.DefaultCredentialsError(
-    )
+    self.google_auth_default.side_effect = (
+        google.auth.exceptions.DefaultCredentialsError())
     self.ui_prompt = self.enterContext(mock.patch("crossbench.cli.ui.prompt"))
 
   def test_get_auth_session_gcloud_missing(self):

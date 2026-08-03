@@ -64,7 +64,7 @@ class Actions(TimeScope):
                                    run.max_end_datetime())
     else:
       self._max_end_datetime = run.max_end_datetime()
-    self._performance_mark : str = performance_mark
+    self._performance_mark: str = performance_mark
 
   @property
   def timing(self) -> Timing:

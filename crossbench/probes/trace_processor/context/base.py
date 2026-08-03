@@ -114,8 +114,9 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
   def _run_queries(self, tp: TraceProcessor,
                    exceptions: ExceptionAnnotator) -> LocalProbeResult:
 
-    def run_query(query: TraceProcessorQueryConfig) -> tuple[
-          pth.LocalPath, pth.LocalPath]:
+    def run_query(
+        query: TraceProcessorQueryConfig
+    ) -> tuple[pth.LocalPath, pth.LocalPath]:
       csv_file = self.local_result_path / f"{query.name}.csv"
       json_file = self.local_result_path / f"{query.name}.json"
       df = tp.query(query.sql).as_pandas_dataframe()

@@ -504,6 +504,7 @@ class EnumTestCase(unittest.TestCase):
     self.assertIs(CallGraphMode("fp"), CallGraphMode.FRAME_POINTER)
     self.assertIs(CallGraphMode("FP"), CallGraphMode.FRAME_POINTER)
 
+
 # Remove import that's used to avoid circular import issues.
 del all_probes
 

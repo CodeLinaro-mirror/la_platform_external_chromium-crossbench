@@ -210,7 +210,6 @@ class Platform(abc.ABC):
     return ("local", self.name, str(self.machine))
 
   @property
-
   def is_remote(self) -> bool:
     return False
 

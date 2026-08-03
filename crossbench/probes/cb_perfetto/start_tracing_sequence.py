@@ -17,5 +17,5 @@ class StartTracingSequence(ConfigEnum):
       "Start tracing immediately before the story setup workload is started.")
   STORY_RUN = (
       "story_run",
-      "Start tracing immediately before the first iteration of the core story workload."
-  )
+      "Start tracing immediately before the first iteration of the core story "
+      "workload.")

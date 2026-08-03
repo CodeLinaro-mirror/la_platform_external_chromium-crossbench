@@ -143,7 +143,6 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.action_runner = AndroidInputActionRunner(self.mock_run)
     self.mock_run.action_runner = self.action_runner
 
-
   def run_action(self, action: Action) -> None:
     action.run_with(self.action_runner)
 

@@ -25,7 +25,8 @@ class Timing:
   # Used for upper bound / timeout limits independently.
   timeout_unit: dt.timedelta = dt.timedelta()
   run_timeout: dt.timedelta = dt.timedelta()
-  # Wait time after starting the browser and before running the workload's setup.
+  # Wait time after starting the browser and before running the workload's
+  # setup.
   setup_delay: dt.timedelta = dt.timedelta()
   # Wait time after starting the browser and before running a workload.
   start_delay: dt.timedelta = dt.timedelta()

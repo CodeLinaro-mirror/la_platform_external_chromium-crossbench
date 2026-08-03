@@ -22,6 +22,7 @@ from tests.crossbench.runner.helper import MockProbe
 if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
 
+
 class RunTestCase(BaseRunGroupTestCase):
 
   @override

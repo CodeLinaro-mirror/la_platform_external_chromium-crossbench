@@ -140,7 +140,6 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
     self.action_runner = ActionRunner(self.mock_run)
     self.mock_run.action_runner = self.action_runner
 
-
     if not probe_context_cls:
       self.probe_context = self.probe.create_context(cast(Run, self.mock_run))
     else:

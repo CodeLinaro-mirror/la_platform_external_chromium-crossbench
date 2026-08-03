@@ -42,7 +42,6 @@ TEST_BROWSER_FLAG: Final = "--test-browser-path"
 TEST_DRIVER_FLAG: Final = "--test-driver-path"
 
 
-
 def pytest_addoption(parser):
   parser.addoption(
       TEST_BROWSER_FLAG, "--browserpath", default=None, type=PathParser.path)
@@ -183,9 +182,6 @@ def mock_patch_chrome_stable(browser_path) -> Iterator[None]:
           "get_browser_cls",
           side_effect=mock_get_browser_cls):
     yield
-
-
-
 
 
 @pytest.fixture

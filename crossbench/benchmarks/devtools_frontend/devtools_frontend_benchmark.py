@@ -34,6 +34,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.types import Json
 
+
 class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
                                     BenchmarkProbeMixin):
   """
@@ -90,13 +91,13 @@ class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
         merger,
     )
 
+
 def flatten_key_fn(path: tuple[str, ...]) -> str:
   """Write key in metric.panel.site order with a delimiter that avoids key
   loss downstream in Chromium Perf Infra"""
   # TODO(liviurau): fix the convertor script b/469111729.
   # TODO(liviurau): find a way to reverse the key as data gets merged.
   return ".".join(path[::-1])
-
 
 
 class DevToolsFrontendLoadTimeProbeContext(

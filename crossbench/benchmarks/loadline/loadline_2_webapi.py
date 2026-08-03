@@ -30,7 +30,6 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.stories.story import Story as BaseStory
 
-
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
 VERSION_STRING: Final[str] = "2.4.0"
@@ -61,6 +60,7 @@ def get_event_name(story: Story, event: Event) -> str:
 
 def get_metric_name(story: Story, metric: Metric) -> str:
   return f"{story}_{metric}"
+
 
 class LoadLine2WebApiProbe(LoadLineProbe):
   NAME: ClassVar = "loadline2_webapi_probe"

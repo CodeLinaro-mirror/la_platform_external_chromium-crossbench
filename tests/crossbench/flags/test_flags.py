@@ -290,5 +290,6 @@ class TestFlags(unittest.TestCase):
         self.CLASS.parse('--foo="--other=1"'),
         self.CLASS({"--foo": "--other=1"}))
 
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -109,6 +109,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       self.assertEqual(len(urls), repetitions)
       self.assertIn(self.story_cls.URL + "?stories=language_model", urls)
       self.assertListEqual(browser.expected_js, [])
+
   def test_run_custom_url(self):
     custom_url = "http://test.example.com/blink_ai"
     stories = self.story_cls.from_names(["language_model"], url=custom_url)

@@ -133,6 +133,7 @@ class MockRemotePortManager(TrackingPortManagerMixin,
 
 ShResultType: TypeAlias = str | bytes | ShResult
 
+
 class MockPlatformMixin:
 
   def __init__(self, *args, is_battery_powered=False, fake_fs=None, **kwargs):

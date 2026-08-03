@@ -165,12 +165,8 @@ class PinpointSubcommandTest(unittest.TestCase):
         story_tags="tag1,tag2",
         repeat=42,
         bug="12345",
-        start=BisectStartVariantConfig(
-            commit="HEAD",
-        ),
-        end=BisectEndVariantConfig(
-            commit="recent",
-        ),
+        start=BisectStartVariantConfig(commit="HEAD",),
+        end=BisectEndVariantConfig(commit="recent",),
     )
     mock_parse_and_override.return_value = test_config
     self.cli.run([

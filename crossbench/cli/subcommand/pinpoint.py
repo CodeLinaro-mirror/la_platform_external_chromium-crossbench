@@ -36,6 +36,7 @@ if TYPE_CHECKING:
   from crossbench.cli.cli import BenchmarkClass, CrossBenchCLI
   from crossbench.cli.types import Subparsers
 
+
 class PinpointBaseSubcommand(abc.ABC):
 
   def __init__(self, parent: PinpointSubcommand) -> None:

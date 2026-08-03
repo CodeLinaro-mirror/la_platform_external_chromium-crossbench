@@ -88,6 +88,7 @@ class EnableDebuggingAction(argparse.Action):
 
 
 class MainCrossBenchArgumentParser(CBArgumentParser):
+
   @override
   def print_help(self,
                  file: IO[str] | None = None) -> None:  # type: ignore[override]

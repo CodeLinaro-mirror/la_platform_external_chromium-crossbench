@@ -104,7 +104,6 @@ class PinpointJobResults:
         "https://chrome-infra-packages.appspot.com/p/infra/tools/luci/cas and "
         "add it to your PATH.")
 
-
   def _prepare_tasks(self, spinner: Spinner,
                      out_dir: pth.LocalPath) -> list[Callable[[], None]]:
     tasks: list[Callable[[], None]] = []

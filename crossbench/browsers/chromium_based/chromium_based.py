@@ -95,8 +95,6 @@ class ChromiumBased(Browser):
     if not settings.extensions:
       self._flags.set("--disable-extensions")
 
-
-
     if self.version.major in self.WHATS_NEW_UI_VERSION_RANGE:
       whatsnew_ui_feature = "ChromeWhatsNewUI"
       if not self._flags.features:

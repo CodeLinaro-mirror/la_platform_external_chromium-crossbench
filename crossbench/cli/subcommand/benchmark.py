@@ -65,7 +65,6 @@ def _parse_no_probe(value: str) -> tuple[str, ...]:
   return tuple(names)
 
 
-
 class AppendDebuggerProbeAction(argparse.Action):
   """Custom action to set multiple args when --gdb or --lldb are set:
   - Add a DebuggerProbe config.
@@ -564,7 +563,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       return version_str
     return ""
 
-
   @override
   def run(self, args: argparse.Namespace) -> None:
     benchmark: Benchmark | None = None
@@ -818,7 +816,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     all_annotations = set(
         itertools.chain.from_iterable(run.annotations for run in runner.runs))
     RunAnnotation.log_all(all_annotations)
-
 
   def _update_default_results_symlinks(self, args: argparse.Namespace,
                                        runner: Runner) -> None:

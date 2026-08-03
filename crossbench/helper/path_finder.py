@@ -380,7 +380,6 @@ class BaseCrossbenchPathFinder(BaseChromiumPathFinder):
     pass
 
 
-
 class WprGoFinder(BaseCrossbenchPathFinder):
 
   @override

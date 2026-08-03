@@ -41,7 +41,6 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
-
 # The Web Power benchmarks will follow an `a.b.c` scheme, where:
 # - The A portion of a.b.c refers to the year, with year one being 2026.
 # - The B portion of a.b.c refers to the major revision within the year.
@@ -50,7 +49,6 @@ if TYPE_CHECKING:
 #   "quality of life" improvements, changes to the cool-off period determined
 #   not to affect thermals, etc.
 VERSION_STRING: Final[str] = "1.1.0"
-
 
 _T = TypeVar("_T")
 StoryT = TypeVar("StoryT", bound=Story)
@@ -144,8 +142,8 @@ class WebPowerStory(Story):
                stabilization_time: dt.timedelta) -> None:
     self.site_config = site_config
     self.stabilization_time = stabilization_time
-    super().__init__(
-        f"web-power-{self.story_name}-{name_suffix}", total_duration)
+    super().__init__(f"web-power-{self.story_name}-{name_suffix}",
+                     total_duration)
 
   @property
   def url(self) -> str:
@@ -410,7 +408,6 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
       js_payload, target_url = res
       rules_file = WprBannerDismisser.serialize_rules(js_payload, target_url)
       network.set_response_transformations_file(rules_file)
-
 
   @classmethod
   @override

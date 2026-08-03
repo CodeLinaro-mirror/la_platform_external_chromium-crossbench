@@ -18,6 +18,7 @@ if TYPE_CHECKING:
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.cli.types import Subparsers
 
+
 class DevtoolsRecorderProxySubcommand(CrossbenchSubcommand):
 
   @override

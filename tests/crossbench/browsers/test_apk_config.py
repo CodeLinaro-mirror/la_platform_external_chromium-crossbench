@@ -76,6 +76,5 @@ class ApkConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertFalse(config.reinstall)
 
 
-
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 class ProbeConfigError(ConfigError):
   pass
 
+
 _PROBE_CONFIG_RE: Final[re.Pattern] = re.compile(
     r"(?P<probe_name>[\w.-]+):?(?P<config>.*)", re.MULTILINE | re.DOTALL)
 

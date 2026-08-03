@@ -18,7 +18,6 @@ if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
   from crossbench.browsers.version import BrowserVersion
 
-
 _WEBVIEW_SYSUPDATE_CURRENT_PKG_RE = re.compile(
     r"Current WebView package.*:.*\(([a-z.]*),\s+(\d+\.\d+\.\d+\.\d+)\)")
 

@@ -203,7 +203,6 @@ class ListJobsTest(MockHttpRequestsMixin):
     with self.assertRaises(http_requests.requests.exceptions.HTTPError):
       list_jobs(UserEnum.ALL, 10, None, ListFormatEnum.TABLE)
 
-
   def test_list_jobs_extra_columns(self):
     job_data = {
         "job_id": "123",

@@ -27,7 +27,6 @@ if TYPE_CHECKING:
   from crossbench.cli.types import Subparsers
   from crossbench.plt.types import CmdArg
 
-
 WARNING_MESSAGE = """
 WARNING: In order to establish an Ethernet connection to the tested device,
 crossbench will attempt to reconfigure the '{interface}' network interface on
