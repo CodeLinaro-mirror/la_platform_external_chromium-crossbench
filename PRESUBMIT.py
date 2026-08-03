@@ -127,7 +127,7 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   # ---------------------------------------------------------------------------
   # isort:
   # ---------------------------------------------------------------------------
-  SortImports(input_api, modified_py_files)
+  results += SortImports(input_api, output_api, modified_py_files)
 
   # ---------------------------------------------------------------------------
   # js:
@@ -138,7 +138,7 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   # ---------------------------------------------------------------------------
   # hjson:
   # ---------------------------------------------------------------------------
-  FormatHjsonFiles(input_api, output_api, results, modified_hjson_files)
+  results += FormatHjsonFiles(input_api, output_api, modified_hjson_files)
 
   # ---------------------------------------------------------------------------
   # Unittest:
@@ -156,7 +156,9 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   return results
 
 
-def SortImports(input_api: Any, modified_py_files: list[str]) -> None:
+def SortImports(input_api: Any, output_api: Any,
+                modified_py_files: list[str]) -> list:
+  results = []
   files_to_sort = [
       str(pathlib.Path(input_api.change.RepositoryRoot()) / f)
       for f in modified_py_files
@@ -165,13 +167,34 @@ def SortImports(input_api: Any, modified_py_files: list[str]) -> None:
   if files_to_sort:
     # Batches all files into a single synchronous parallel invocation that
     # formats in place
-    subprocess.run(
+    process = subprocess.run(
         [input_api.python_executable, "-m", "isort", "-j", "0", *files_to_sort],
-        check=True)
+        check=True,
+        capture_output=True,
+        text=True)
+    # For completeness we capture both stdout and stderr:
+    # stdout: fix suggestions
+    # stderr: error messages
+    output = process.stdout + process.stderr
+    offending_files = []
+    for f in files_to_sort:
+      if f in output:
+        offending_files.append(f)
+
+    if offending_files:
+      results.append(
+          output_api.PresubmitPromptWarning(
+              "Unsorted python imports:",
+              items=offending_files,
+              long_text=(
+                  "Please update your commit with the formatted files.\n\n" +
+                  output)))
+  return results
 
 
-def FormatHjsonFiles(input_api: Any, output_api: Any, results: list,
-                     modified_hjson_files: list[str]) -> None:
+def FormatHjsonFiles(input_api: Any, output_api: Any,
+                     modified_hjson_files: list[str]) -> list:
+  results = []
   for hjson_file in modified_hjson_files:
     full_hjson_path = pathlib.Path(
         input_api.change.RepositoryRoot()) / hjson_file
@@ -194,6 +217,7 @@ def FormatHjsonFiles(input_api: Any, output_api: Any, results: list,
               "Unformatted hjson file:",
               items=[str(full_hjson_path)],
               long_text="Please update your commit with the formatted file."))
+  return results
 
 
 def ModifiedFiles(input_api: Any,
