@@ -1,0 +1,10 @@
+{
+  setup_commands: {
+    start_memeater: [
+      "sh"
+      "-c"
+      "nohup memeater 4g </dev/null &>/dev/null &"
+    ]
+  }
+}
+
