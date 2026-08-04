@@ -73,7 +73,7 @@
       }
       {
         "action": "wait"
-        "duration": "5s"
+        "duration": "30s"
       }
     ]
   }
