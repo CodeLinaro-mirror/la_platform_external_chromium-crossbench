@@ -56,19 +56,19 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
     self.assertEqual(len(probe.module_paths), 2)
     self.assertRegex(
         str(probe.module_paths[0]),
-        r".*\/crossbench\/probes\/perfetto\/trace_processor\/modules\/ext")
+        r".*\/crossbench\/probes\/trace_processor\/modules\/ext")
     self.assertEqual(str(probe.module_paths[1]), "/my_project/modules/ext")
 
     metric_definitions = probe.metric_definitions
     self.assertEqual(len(metric_definitions), 2)
-    self.assertTrue("file_textproto_metric" in metric_definitions[0])
+    self.assertTrue("file_metric_def_textproto" in metric_definitions[0])
     self.assertTrue("inline_textproto_metric" in metric_definitions[1])
 
     summary_metrics = probe.summary_metrics
     # Should contain everything in 'metrics' plus 'summary_metrics'
     self.assertListEqual(
         list(summary_metrics),
-        ["trace_stats", "file_textproto_metric", "inline_textproto_metric"])
+        ["trace_stats", "file_metric_def_textproto", "inline_textproto_metric"])
 
   def test_query_config_duplicate_name_raises(self):
     with self.assertRaisesRegex(ArgumentTypeError,
