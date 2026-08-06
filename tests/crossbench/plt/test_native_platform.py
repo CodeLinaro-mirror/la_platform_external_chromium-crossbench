@@ -20,7 +20,7 @@ from unittest import mock
 from typing_extensions import override
 
 import crossbench.path as pth
-from crossbench import plt
+from crossbench import __version__, plt
 from crossbench.path import LocalPath
 from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
 from crossbench.plt.posix import PosixPlatform
@@ -661,6 +661,44 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     details = self.platform.system_details()
     self.assertTrue(details)
     self.assertTrue(json.dumps(details))
+    self.assertIn("crossbench", details)
+
+  def test_crossbench_details(self):
+    self.platform.crossbench_details.cache_clear()
+    details = self.platform.crossbench_details()
+    self.assertTrue(details)
+    self.assertTrue(json.dumps(details))
+    self.assertEqual(details["version"], __version__)
+    for key, expected_type in (
+        ("current_hash", str),
+        ("canonical_parent_hash", str),
+        ("has_uncommitted_changes", bool),
+    ):
+      self.assertIn(key, details)
+      self.assertIsInstance(details[key], expected_type)
+
+  def test_crossbench_details_no_git_binary(self):
+    self.platform.crossbench_details.cache_clear()
+    with mock.patch("shutil.which", return_value=None):
+      details = self.platform.crossbench_details()
+      self.assertDictEqual(details, {"version": __version__})
+
+  def test_crossbench_details_no_git_dir(self):
+    self.platform.crossbench_details.cache_clear()
+    fake_root = pth.LocalPath("/non/existent/crossbench/root")
+    with mock.patch.object(pth, "ROOT_DIR", new=fake_root):
+      details = self.platform.crossbench_details()
+      self.assertDictEqual(details, {"version": __version__})
+
+  def test_crossbench_details_git_error(self):
+    self.platform.crossbench_details.cache_clear()
+    failed_proc = mock.Mock(returncode=128, stdout="")
+    with mock.patch("subprocess.run", return_value=failed_proc):
+      details = self.platform.crossbench_details()
+      self.assertEqual(details["version"], __version__)
+      self.assertEqual(details["current_hash"], "?")
+      self.assertEqual(details["canonical_parent_hash"], "?")
+      self.assertFalse(details["has_uncommitted_changes"])
 
   def test_os_details(self):
     details = self.platform.os_details()

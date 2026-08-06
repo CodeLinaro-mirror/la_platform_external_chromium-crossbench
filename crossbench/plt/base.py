@@ -30,7 +30,7 @@ import google.api_core.exceptions as gcloud_exceptions
 import google.cloud.storage as gcloud_storage
 import psutil
 
-from crossbench import parse
+from crossbench import __version__, parse
 from crossbench import path as pth
 from crossbench.helper import wait
 from crossbench.parse import ObjectParser
@@ -351,6 +351,7 @@ class Platform(abc.ABC):
         "machine": str(self.machine),
         "os": self.os_details(),
         "python": self.python_details(),
+        "crossbench": self.crossbench_details(),
         "CPU": self.cpu_details(),
         "display": self.display_details()
     }
@@ -371,6 +372,29 @@ class Platform(abc.ABC):
     return {
         "version": py_platform.python_version(),
         "bits": 64 if sys.maxsize > 2**32 else 32,
+    }
+
+  @functools.lru_cache(maxsize=1)
+  def crossbench_details(self) -> JsonDict:
+    git_bin = shutil.which("git")
+    root_dir = pth.ROOT_DIR
+    if not git_bin or not (root_dir / ".git").exists():
+      return {"version": __version__}
+
+    def run_git(*args: str) -> str | None:
+      res = subprocess.run([git_bin, *args],
+                           cwd=root_dir,
+                           capture_output=True,
+                           text=True,
+                           check=False)
+      return res.stdout.strip() if res.returncode == 0 else None
+
+    return {
+        "version": __version__,
+        "current_hash": run_git("rev-parse", "HEAD") or "?",
+        "canonical_parent_hash":
+            (run_git("merge-base", "HEAD", "origin/main") or "?"),
+        "has_uncommitted_changes": bool(run_git("status", "--porcelain")),
     }
 
   def display_details(self) -> tuple[DisplayInfo, ...]:
