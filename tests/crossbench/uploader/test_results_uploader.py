@@ -5,8 +5,10 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import functools
 import tarfile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Iterator
 from unittest import mock
 
 from typing_extensions import override
@@ -127,6 +129,160 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
     member = self._get_archive_symlink_member("ext_link.txt", ext_target)
     self.assertTrue(member.issym())
     self.assertEqual(member.linkname, str(ext_target))
+
+
+class ResultsUploaderGitPatchTestCase(BaseCrossbenchTestCase):
+
+  @override
+  def setUp(self) -> None:
+    super().setUp()
+    self.out_dir.mkdir()
+    self.run_dir = self.out_dir / "run_results"
+    self.run_dir.mkdir()
+
+  def _extract_patch(self, file_path: pth.LocalPath) -> bytes | None:
+    """Extracts diff.patch from archive, or None if missing."""
+    self.assertTrue(file_path.name.endswith(".tar.gz"))
+    archive_id = file_path.name.removesuffix(".tar.gz")
+    with tarfile.open(file_path, "r:gz") as tar:
+      patch_name = f"{archive_id}/diff.patch"
+      if patch_name not in tar.getnames():
+        return None
+      extracted = tar.extractfile(patch_name)
+      assert extracted is not None
+      return extracted.read()
+
+  def _mock_upload(self, patches: list[bytes | None],
+                   file_path: pth.LocalPath) -> str:
+    """Mock upload side effect that captures patch bytes from the archive."""
+    patches.append(self._extract_patch(file_path))
+    return "gs://my-bucket/test/archive.tar.gz"
+
+  @contextlib.contextmanager
+  def _mock_git_and_uploader(
+      self,
+      crossbench_details: dict[str, Any],
+      diff_content: str = "sample diff content",
+  ) -> Iterator[Callable[[], bytes | None]]:
+    """Context manager mocking git and uploader, yielding patch getter."""
+    # Mutable list passed by reference to _mock_upload to capture the
+    # extracted patch.
+    patches: list[bytes | None] = []
+    mock_uploader = mock.MagicMock(spec=BaseUploader)
+    mock_uploader.upload.side_effect = functools.partial(
+        self._mock_upload, patches)
+
+    with (
+        mock.patch(
+            "crossbench.uploader.results_uploader._uploader_for_url",
+            return_value=mock_uploader,
+        ),
+        mock.patch(
+            "crossbench.plt.PLATFORM.crossbench_details",
+            return_value=crossbench_details,
+        ),
+        mock.patch(
+            "crossbench.plt.PLATFORM.sh_stdout", return_value=diff_content),
+    ):
+      yield lambda: patches[0] if patches else None
+
+  def test_create_archive_parent_different_hash(self) -> None:
+    """Verifies diff.patch is included when parent hash differs from current."""
+    diff_content = "sample diff content"
+    with self._mock_git_and_uploader(
+        crossbench_details={
+            "canonical_parent_hash": "11111111",
+            "current_hash": "22222222",
+            "has_uncommitted_changes": False,
+        },
+        diff_content=diff_content,
+    ) as get_patch:
+      results_uploader.upload(self.run_dir, "gs://my-bucket/test/")
+      patch_bytes = get_patch()
+      self.assertIsNotNone(patch_bytes)
+      assert patch_bytes is not None
+      self.assertEqual(patch_bytes.decode("utf-8"), diff_content)
+
+  def test_create_archive_uncommitted_changes(self) -> None:
+    """Verifies diff.patch is included with uncommitted changes."""
+    diff_content = "sample diff content"
+    with self._mock_git_and_uploader(
+        crossbench_details={
+            "canonical_parent_hash": "11111111",
+            "current_hash": "11111111",
+            "has_uncommitted_changes": True,
+        },
+        diff_content=diff_content,
+    ) as get_patch:
+      results_uploader.upload(self.run_dir, "gs://my-bucket/test/")
+      patch_bytes = get_patch()
+      self.assertIsNotNone(patch_bytes)
+      assert patch_bytes is not None
+      self.assertEqual(patch_bytes.decode("utf-8"), diff_content)
+
+  def test_create_archive_no_changes(self) -> None:
+    """Verifies diff.patch is omitted when there are no git changes."""
+    with self._mock_git_and_uploader(
+        crossbench_details={
+            "canonical_parent_hash": "11111111",
+            "current_hash": "11111111",
+            "has_uncommitted_changes": False,
+        },) as get_patch:
+      results_uploader.upload(self.run_dir, "gs://my-bucket/test/")
+      self.assertIsNone(get_patch())
+
+  def test_create_archive_empty_diff(self) -> None:
+    """Verifies diff.patch is omitted when git diff returns an empty string."""
+    with self._mock_git_and_uploader(
+        crossbench_details={
+            "canonical_parent_hash": "11111111",
+            "current_hash": "22222222",
+            "has_uncommitted_changes": True,
+        },
+        diff_content="",
+    ) as get_patch:
+      results_uploader.upload(self.run_dir, "gs://my-bucket/test/")
+      self.assertIsNone(get_patch())
+
+  def test_create_archive_no_current_hash(self) -> None:
+    """Verifies diff.patch is omitted when no current hash is available."""
+
+    crossbench_details = {
+        "canonical_parent_hash": "11111111",
+        "has_uncommitted_changes": True,
+    }
+
+    with self._mock_git_and_uploader(
+        crossbench_details=crossbench_details,) as get_patch:
+      results_uploader.upload(self.run_dir, "gs://my-bucket/test/")
+      self.assertIsNone(get_patch())
+
+    # Repeat with an empty `current_hash` entry.
+    crossbench_details["current_hash"] = ""
+    with self._mock_git_and_uploader(
+        crossbench_details=crossbench_details,) as get_patch:
+      results_uploader.upload(self.run_dir, "gs://my-bucket/test/")
+      self.assertIsNone(get_patch())
+
+  def test_create_archive_no_parent_hash(self) -> None:
+    """Verifies diff.patch is omitted when no parent hash is available."""
+
+    crossbench_details = {
+        "current_hash": "11111111",
+        "has_uncommitted_changes": True,
+    }
+
+    with self._mock_git_and_uploader(
+        crossbench_details=crossbench_details,) as get_patch:
+      results_uploader.upload(self.run_dir, "gs://my-bucket/test/")
+      self.assertIsNone(get_patch())
+
+    # Repeat with an empty `canonical_parent_hash` entry.
+    crossbench_details["canonical_parent_hash"] = ""
+    with self._mock_git_and_uploader(
+        crossbench_details=crossbench_details,) as get_patch:
+      results_uploader.upload(self.run_dir, "gs://my-bucket/test/")
+      self.assertIsNone(get_patch())
 
 
 if __name__ == "__main__":

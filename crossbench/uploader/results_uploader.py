@@ -5,14 +5,17 @@
 from __future__ import annotations
 
 import functools
+import io
 import logging
 import os
 import tarfile
 import tempfile
+import time
 import uuid
 from typing import TYPE_CHECKING
 
 from crossbench import path as pth
+from crossbench import plt
 from crossbench.parse import ObjectParser
 from crossbench.uploader.gcs import GoogleCloudStorageUploader
 
@@ -70,7 +73,38 @@ def _create_archive(source_dir: pth.LocalPath,
       _filter_tarinfo, source_dir=source_dir, archive_id=archive_id)
   with tarfile.open(archive_path, "w:gz") as tar:
     tar.add(source_dir, arcname=archive_id, filter=tar_filter)
+    if patch_bytes := _generate_git_diff_patch():
+      _add_tar_file(tar, f"{archive_id}/diff.patch", patch_bytes)
   return archive_path
+
+
+def _add_tar_file(tar: tarfile.TarFile, rel_path: str, data: bytes) -> None:
+  """Adds raw bytes as a file entry into the tar archive."""
+  tarinfo = tarfile.TarInfo(name=rel_path)
+  tarinfo.size = len(data)
+  tarinfo.mtime = int(time.time())
+  tar.addfile(tarinfo, io.BytesIO(data))
+
+
+def _generate_git_diff_patch() -> bytes:
+  """Generates git diff relative to canonical_parent_hash as UTF-8 bytes."""
+  details = plt.PLATFORM.crossbench_details()
+  parent_hash = details.get("canonical_parent_hash")
+  if not isinstance(parent_hash, str) or not parent_hash:
+    return b""
+  current_hash = details.get("current_hash")
+  if not isinstance(current_hash, str) or not current_hash:
+    return b""
+  has_uncommitted = bool(details.get("has_uncommitted_changes"))
+  if parent_hash == current_hash and not has_uncommitted:
+    return b""
+  try:
+    patch_content = plt.PLATFORM.sh_stdout(
+        "git", "diff", parent_hash, cwd=pth.ROOT_DIR, check=False)
+    return patch_content.encode("utf-8")
+  except (RuntimeError, ValueError, OSError) as e:
+    logging.warning("Failed to generate git patch: %s", e)
+    return b""
 
 
 def _filter_tarinfo(tarinfo: tarfile.TarInfo, source_dir: pth.LocalPath,
