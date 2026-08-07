@@ -44,6 +44,24 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       results_uploader.target_url("gs://")
 
+  def test_target_url_empty_with_env_var(self) -> None:
+    url = "gs://my-bucket/env-target/"
+    with mock.patch.dict("os.environ",
+                         {"CROSSBENCH_RESULT_UPLOAD_TARGET": url}):
+      self.assertEqual(results_uploader.target_url(""), url)
+
+  def test_target_url_explicit_overrides_env_var(self) -> None:
+    env_url = "gs://my-bucket/env-target/"
+    explicit_url = "gs://my-bucket/explicit-target/"
+    with mock.patch.dict("os.environ",
+                         {"CROSSBENCH_RESULT_UPLOAD_TARGET": env_url}):
+      self.assertEqual(results_uploader.target_url(explicit_url), explicit_url)
+
+  def test_target_url_empty_without_env_var(self) -> None:
+    with mock.patch.dict("os.environ", {}, clear=True):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        results_uploader.target_url("")
+
   def test_create_archive_unique_filenames(self) -> None:
     run_dir = self.out_dir / "run_results"
     run_dir.mkdir(exist_ok=True)

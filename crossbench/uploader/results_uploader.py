@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import functools
 import io
 import logging
@@ -53,6 +54,12 @@ def supported_schemes_str() -> str:
 
 def target_url(url: str) -> str:
   """Validates that url is a supported results upload destination URL."""
+  if not url:
+    url = os.environ.get("CROSSBENCH_RESULT_UPLOAD_TARGET", "")
+    if not url:
+      raise argparse.ArgumentTypeError(
+          "--upload-results specified without value, but "
+          "CROSSBENCH_RESULT_UPLOAD_TARGET environment variable is not set.")
   return ObjectParser.url_str(
       url, name="results upload URL", schemes=tuple(_SCHEME_TO_UPLOADER.keys()))
 

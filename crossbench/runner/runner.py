@@ -203,6 +203,8 @@ class Runner:
               "Defaults to binary_cache"))
     out_dir_group.add_argument(
         "--upload-results",
+        nargs="?",
+        const="",
         type=results_uploader.target_url,
         help=("Upload benchmark results to a remote location. "
               "Supported upload mechanisms include: "

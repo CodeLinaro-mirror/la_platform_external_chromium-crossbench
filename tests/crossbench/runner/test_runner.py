@@ -179,6 +179,41 @@ class RunnerTestCase(BaseRunnerTestCase):
     args = parser.parse_args(["--cache-temperatures", "--out-dir", "out"])
     self.assertEqual(args.cache_temperatures, list(CacheTemperature.all()))
 
+  def test_upload_results_arg_parsing(self) -> None:
+    parser = argparse.ArgumentParser()
+    Runner._add_output_arguments(MockBenchmark, parser)
+
+    # Test default (no flag).
+    args = parser.parse_args([])
+    self.assertIsNone(args.upload_results)
+
+    # Test flag with explicit URL (`--flag value`).
+    args = parser.parse_args(["--upload-results", "gs://my-bucket/path"])
+    self.assertEqual(args.upload_results, "gs://my-bucket/path")
+
+    # Test flag with explicit URL (`--flag=value`).
+    args = parser.parse_args(["--upload-results=gs://my-bucket/path"])
+    self.assertEqual(args.upload_results, "gs://my-bucket/path")
+
+    # Test flag without value when CROSSBENCH_RESULT_UPLOAD_TARGET is set.
+    with mock.patch.dict(
+        "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": "gs://env-bucket"}):
+      args = parser.parse_args(["--upload-results"])
+      self.assertEqual(args.upload_results, "gs://env-bucket")
+
+    # Test explicit URL takes precedence over CROSSBENCH_RESULT_UPLOAD_TARGET.
+    with mock.patch.dict(
+        "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": "gs://env-bucket"}):
+      args = parser.parse_args(["--upload-results", "gs://explicit-bucket"])
+      self.assertEqual(args.upload_results, "gs://explicit-bucket")
+      args = parser.parse_args(["--upload-results=gs://explicit-bucket"])
+      self.assertEqual(args.upload_results, "gs://explicit-bucket")
+
+    # Test flag without value when CROSSBENCH_RESULT_UPLOAD_TARGET is not set.
+    with mock.patch.dict("os.environ", {}, clear=True):
+      with self.assertRaises(SystemExit):
+        parser.parse_args(["--upload-results"])
+
   def test_dry_run(self):
     self.test_run(is_dry_run=True)
 
