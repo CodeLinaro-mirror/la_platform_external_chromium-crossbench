@@ -162,6 +162,14 @@ Results can be uploaded to a GCS bucket using `--upload-results`. Googlers
 should use `--upload-results=gs://web-power-crossbench-export/`, and other
 users can use their own GCS bucket if they so wish.
 
+To save yourself some typing, you may set the `CROSSBENCH_RESULT_UPLOAD_TARGET`
+as an environment variable. For example, as a Googler, you could add this to
+your `.bashrc` file or its equivalent:
+```bash
+CROSSBENCH_RESULT_UPLOAD_TARGET="gs://web-power-crossbench-export/"
+```
+If you do so, you can then specify `--upload-results` without an explicit URL.
+
 ## Versioning
 
 ### Reading the Version
