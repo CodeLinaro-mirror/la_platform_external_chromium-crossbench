@@ -156,6 +156,12 @@ Additional supported Bits configuration includes:
   an unbounded recording is used, then terminated when the benchmark completes.
 - `--bits-port`: The Bits service port. This can normally be omitted.
 
+#### Uploading Results
+
+Results can be uploaded to a GCS bucket using `--upload-results`. Googlers
+should use `--upload-results=gs://web-power-crossbench-export/`, and other
+users can use their own GCS bucket if they so wish.
+
 ## Versioning
 
 ### Reading the Version
