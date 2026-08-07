@@ -696,8 +696,8 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     with mock.patch("subprocess.run", return_value=failed_proc):
       details = self.platform.crossbench_details()
       self.assertEqual(details["version"], __version__)
-      self.assertEqual(details["current_hash"], "?")
-      self.assertEqual(details["canonical_parent_hash"], "?")
+      self.assertEqual(details["current_hash"], "")
+      self.assertEqual(details["canonical_parent_hash"], "")
       self.assertFalse(details["has_uncommitted_changes"])
 
   def test_os_details(self):

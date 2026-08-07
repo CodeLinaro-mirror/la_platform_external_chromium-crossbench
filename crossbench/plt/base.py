@@ -381,19 +381,18 @@ class Platform(abc.ABC):
     if not git_bin or not (root_dir / ".git").exists():
       return {"version": __version__}
 
-    def run_git(*args: str) -> str | None:
+    def run_git(*args: str) -> str:
       res = subprocess.run([git_bin, *args],
                            cwd=root_dir,
                            capture_output=True,
                            text=True,
                            check=False)
-      return res.stdout.strip() if res.returncode == 0 else None
+      return res.stdout.strip() if res.returncode == 0 else ""
 
     return {
         "version": __version__,
-        "current_hash": run_git("rev-parse", "HEAD") or "?",
-        "canonical_parent_hash":
-            (run_git("merge-base", "HEAD", "origin/main") or "?"),
+        "current_hash": run_git("rev-parse", "HEAD"),
+        "canonical_parent_hash": run_git("merge-base", "HEAD", "origin/main"),
         "has_uncommitted_changes": bool(run_git("status", "--porcelain")),
     }
 

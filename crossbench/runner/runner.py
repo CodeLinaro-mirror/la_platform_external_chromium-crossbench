@@ -35,6 +35,7 @@ from crossbench.runner.run import Run
 from crossbench.runner.runner_state import RunnerState, RunnerStateMachine
 from crossbench.runner.timing import Timing
 from crossbench.str_enum_with_help import StrEnumWithHelp
+from crossbench.uploader import results_uploader
 
 if TYPE_CHECKING:
 
@@ -200,6 +201,12 @@ class Runner:
         default=None,
         help=("Used for caching browser binaries and archives. "
               "Defaults to binary_cache"))
+    out_dir_group.add_argument(
+        "--upload-results",
+        type=results_uploader.target_url,
+        help=("Upload benchmark results to a remote location. "
+              "Supported upload mechanisms include: "
+              f"{results_uploader.supported_schemes_str()}."))
 
   @classmethod
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:

@@ -1,0 +1,133 @@
+# Copyright 2026 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+from __future__ import annotations
+
+import argparse
+import tarfile
+from typing import TYPE_CHECKING
+from unittest import mock
+
+from typing_extensions import override
+
+from crossbench.uploader import results_uploader
+from crossbench.uploader.base import BaseUploader
+from tests import test_helper
+from tests.crossbench.base import BaseCrossbenchTestCase
+
+if TYPE_CHECKING:
+  from crossbench import path as pth
+
+
+class ResultsUploaderTestCase(BaseCrossbenchTestCase):
+
+  @override
+  def setUp(self) -> None:
+    super().setUp()
+    self.out_dir.mkdir()
+
+  def test_target_url_valid_target(self) -> None:
+    """Supported scheme, valid URL - allowed."""
+    url = "gs://my-bucket/test/"
+    self.assertEqual(results_uploader.target_url(url), url)
+
+  def test_target_url_unsupported_scheme(self) -> None:
+    """Unsupported scheme, valid URL - disallowed."""
+    with self.assertRaises(argparse.ArgumentTypeError):
+      results_uploader.target_url("https://storage.googleapis.com/my-bucket/")
+
+  def test_target_url_invalid_url(self) -> None:
+    """Supported scheme, invalid URL - disallowed."""
+    with self.assertRaises(argparse.ArgumentTypeError):
+      results_uploader.target_url("gs://")
+
+  def test_create_archive_unique_filenames(self) -> None:
+    run_dir = self.out_dir / "run_results"
+    run_dir.mkdir(exist_ok=True)
+    tmp_dir = self.out_dir / "tmp"
+    tmp_dir.mkdir(exist_ok=True)
+
+    archive_path_1 = results_uploader._create_archive(run_dir, tmp_dir)
+    archive_path_2 = results_uploader._create_archive(run_dir, tmp_dir)
+
+    self.assertNotEqual(archive_path_1, archive_path_2)
+    self.assertNotEqual(archive_path_1.name, archive_path_2.name)
+
+  def test_upload(self) -> None:
+    """Verifies that upload() archives results and delegates to backend."""
+    run_dir = self.out_dir / "run_results"
+    run_dir.mkdir()
+    target_file = run_dir / "output.txt"
+    target_file.write_text("data", encoding="utf-8")
+
+    mock_uploader = mock.MagicMock(spec=BaseUploader)
+    mock_uploader.upload.return_value = "gs://my-bucket/test/archive.tar.gz"
+
+    with mock.patch(
+        "crossbench.uploader.results_uploader._uploader_for_url",
+        return_value=mock_uploader):
+      result_url = results_uploader.upload(run_dir, "gs://my-bucket/test/")
+      self.assertEqual(result_url, "gs://my-bucket/test/archive.tar.gz")
+      mock_uploader.upload.assert_called_once()
+      (archive_path,), _ = mock_uploader.upload.call_args
+      self.assertEqual(archive_path.suffix, ".gz")
+
+  def test_upload_failure(self) -> None:
+    run_dir = self.out_dir / "run_results"
+    run_dir.mkdir()
+
+    mock_uploader = mock.MagicMock(spec=BaseUploader)
+    mock_uploader.upload.side_effect = RuntimeError("GCS network failure")
+
+    with mock.patch(
+        "crossbench.uploader.results_uploader._uploader_for_url",
+        return_value=mock_uploader):
+      result_url = results_uploader.upload(run_dir, "gs://my-bucket/test/")
+      self.assertIsNone(result_url)
+
+  def _get_archive_symlink_member(
+      self, symlink_rel_path: str,
+      target_path: pth.LocalPath) -> tarfile.TarInfo:
+    run_dir = self.out_dir / "run_results"
+    run_dir.mkdir(exist_ok=True)
+    symlink_file = run_dir / symlink_rel_path
+    symlink_file.parent.mkdir(parents=True, exist_ok=True)
+    symlink_file.symlink_to(target_path)
+
+    archive_path = results_uploader._create_archive(run_dir, self.out_dir)
+    archive_id = archive_path.name.removesuffix(".tar.gz")
+
+    with tarfile.open(archive_path, "r:gz") as tar:
+      return tar.getmember(f"{archive_id}/{symlink_rel_path}")
+
+  def test_create_archive_root_symlink(self) -> None:
+    target_file = self.out_dir / "run_results" / "output.txt"
+    target_file.parent.mkdir(exist_ok=True)
+    target_file.write_text("data", encoding="utf-8")
+
+    member = self._get_archive_symlink_member("abs_link.txt", target_file)
+    self.assertTrue(member.issym())
+    self.assertEqual(member.linkname, "output.txt")
+
+  def test_create_archive_nested_symlink(self) -> None:
+    target_file = self.out_dir / "run_results" / "output.txt"
+    target_file.parent.mkdir(exist_ok=True)
+    target_file.write_text("data", encoding="utf-8")
+
+    member = self._get_archive_symlink_member("sub/nested_link.txt",
+                                              target_file)
+    self.assertTrue(member.issym())
+    self.assertEqual(member.linkname, "../output.txt")
+
+  def test_create_archive_external_symlink(self) -> None:
+    ext_target = self.out_dir / "external.txt"
+    ext_target.write_text("ext", encoding="utf-8")
+
+    member = self._get_archive_symlink_member("ext_link.txt", ext_target)
+    self.assertTrue(member.issym())
+    self.assertEqual(member.linkname, str(ext_target))
+
+
+if __name__ == "__main__":
+  test_helper.run_pytest(__file__)

@@ -40,6 +40,7 @@ from crossbench.probes.thermal_monitor import ThermalStatus
 from crossbench.runner.run_annotation import RunAnnotation
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
+from crossbench.uploader import results_uploader
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -787,6 +788,9 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       runner.run(is_dry_run=args.dry_run)
       logging.info("")
       self._log_results(args, runner, is_success=runner.is_success)
+      if args.upload_results:
+        results_uploader.upload(
+            source=runner.out_dir, target=args.upload_results)
     except:  # noqa: BLE001
       self._log_results(args, runner, is_success=False)
       raise
