@@ -78,9 +78,9 @@ Coding guidelines:
 
 
 ### Maintenance
-The supported python versions are listed in the `.vpython3` and the
+The supported python versions are listed in the `vpython.toml` and the
 `pyproject.toml` file.
 This has to be in sync with chrome infra's vpython3 version.
 
 - Regularly update the poetry packages using `poetry update`
-- Regularly update the vpython3 packages specified in `.vpython3`
+- Regularly update the vpython3 packages specified in `vpython.toml`

@@ -167,7 +167,6 @@ hooks = [
     'name': 'vpython3_common',
     'pattern': '.',
     'action': [ 'vpython3',
-                '-vpython-spec', '.vpython3',
                 '-vpython-tool', 'install',
     ],
   },

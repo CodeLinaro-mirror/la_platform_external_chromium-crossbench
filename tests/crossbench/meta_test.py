@@ -60,25 +60,21 @@ class MetaTestCase(unittest.TestCase):
 
   @pytest.mark.xfail
   def test_vpython_poetry_version_match(self):
-    vpython_content = (ROOT_DIR / ".vpython3").read_text()
+    vpython_content = (ROOT_DIR / "vpython.toml.uv.lock").read_text()
     poetry_lock_content = (ROOT_DIR / "poetry.lock").read_text()
 
     vpython_re = re.compile(
-        r"name: \"infra/python/wheels/(?P<name>[^/\"]+).*?"
-        r"version: \"version:(?P<version>[^\"]+)\"", re.DOTALL)
+        r"^(?P<name>[a-zA-Z0-9_.\-]+)==(?P<version>[^\s;]+)", re.MULTILINE)
     poetry_re = re.compile(
         r'name = "(?P<name>[^"]+)".*?'
         r'version = "(?P<version>[^"]+)"', re.DOTALL)
 
     vpython_packages = {}
-    for wheel_block in vpython_content.split("wheel: <"):
-      if not wheel_block.strip():
-        continue
-      match = vpython_re.search(wheel_block)
-      if match:
-        name = match.group("name").split("-py")[0]
-        version = match.group("version").split(".chromium")[0]
-        vpython_packages[name] = version
+    for match in vpython_re.finditer(vpython_content):
+      name = match.group("name")
+      version = (
+          match.group("version").split("+chromium")[0].split(".chromium")[0])
+      vpython_packages[name] = version
 
     poetry_packages = {}
     for package_block in poetry_lock_content.split("[[package]]"):
@@ -91,13 +87,14 @@ class MetaTestCase(unittest.TestCase):
         poetry_packages[name] = version
 
     self.assertGreater(
-        len(vpython_packages), 0, "No packages found in .vpython3")
+        len(vpython_packages), 0, "No packages found in vpython.toml.uv.lock")
     self.assertGreater(
         len(poetry_packages), 0, "No packages found in poetry.lock")
 
     vpython_only = sorted(vpython_packages.keys() - poetry_packages.keys())
     if vpython_only:
-      logging.warning("Packages only in .vpython3: %s", ", ".join(vpython_only))
+      logging.warning("Packages only in vpython.toml.uv.lock: %s",
+                      ", ".join(vpython_only))
     poetry_only = sorted(poetry_packages.keys() - vpython_packages.keys())
     if poetry_only:
       logging.warning("Packages only in poetry.lock: %s",
@@ -113,7 +110,7 @@ class MetaTestCase(unittest.TestCase):
       mismatches.append((name, vpython_version_str, poetry_version_str))
     mismatches.sort(key=lambda row: row[0])
     if mismatches:
-      headers = ["Package", ".vpython3", "poetry.lock"]
+      headers = ["Package", "vpython.toml.uv.lock", "poetry.lock"]
       self.fail("Version mismatches found:\n" +
                 tabulate(mismatches, headers=headers))
 
