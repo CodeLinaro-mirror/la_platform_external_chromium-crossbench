@@ -35,7 +35,24 @@ certifi==2026.2.25 \
     #   httpx
     #   requests
     #   selenium
-cffi==1.15.1+chromium.2 \
+cffi==1.15.1 ; (python_full_version >= '3.12' and python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version >= '3.12' and python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.12' and python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.12' and python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'armv6l' and sys_platform == 'linux') or (python_full_version >= '3.12' and python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'armv7l' and sys_platform == 'linux') or (python_full_version >= '3.12' and python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.12' and python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version >= '3.12' and python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86' and sys_platform == 'win32') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine != 'aarch64' and platform_machine != 'armv6l' and platform_machine != 'armv7l' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine != 'AMD64' and platform_machine != 'x86' and sys_platform == 'win32') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'arm64' and platform_python_implementation != 'CPython' and sys_platform == 'darwin') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86_64' and platform_python_implementation != 'CPython' and sys_platform == 'darwin') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'aarch64' and platform_python_implementation != 'CPython' and sys_platform == 'linux') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'armv6l' and platform_python_implementation != 'CPython' and sys_platform == 'linux') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'armv7l' and platform_python_implementation != 'CPython' and sys_platform == 'linux') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86_64' and platform_python_implementation != 'CPython' and sys_platform == 'linux') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'AMD64' and platform_python_implementation != 'CPython' and sys_platform == 'win32') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86' and platform_python_implementation != 'CPython' and sys_platform == 'win32') or (python_full_version < '4' and implementation_name != 'pypy' and os_name == 'nt' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32') \
+    --hash=sha256:01a2d360ce056121c6502df8b14527a87c71290265c38a68d1b4149d8d97a8ac \
+    --hash=sha256:2378be7dd2e3a4f87a9cb77b2ab930930d3c930da852752c31bd1c8dc0fd5f03 \
+    --hash=sha256:269151b2235a57e6dc41281a294591868de9ac7e6ca3a38ebe807b0e6c7d1dc2 \
+    --hash=sha256:2dd97fc135fb5fdca329ec673c531a47dd8762f25a9e28093511af4e4b0f19ff \
+    --hash=sha256:2f9a7ab3df230fd5d12f509ca30e93d20f20bea96e3f17e0c07f70bb317c570c \
+    --hash=sha256:31e788a0e934fdaac16d06eb48d3c3a0da8cb208ec54a46830072addcf38d9bf \
+    --hash=sha256:341988857bfda183e090da0a393b7988fbe0b78b226775e04be3911ff4a6c688 \
+    --hash=sha256:389256ae85df5e55f20ddbd0972e57ea878dc9fe21ebac287879d4220be23087 \
+    --hash=sha256:7c7765f6bdcc54f7669a7bc05ae86857fab6b380003846620996ba6a5447772c \
+    --hash=sha256:87c7a8e2b3453d2346db11b5316732394ce1355c27633f7d91997f5548de00c6 \
+    --hash=sha256:9b01c95077cb512f7d786a3db57114b469f34989d3e8f8cfe3fc784c7c523935 \
+    --hash=sha256:aef49f85c50b146931f8332e411435c588fc69eec3e18f698a28732782777221 \
+    --hash=sha256:c8bbbb9749b96618c0236d76eda13a0e6b06856adef0767cb7ba17dbd7ab95b5 \
+    --hash=sha256:d0b6bba46d56660e2abf21604098c2090fd693b3d106fe8cba3ed7459f7c2587 \
+    --hash=sha256:e8f76a47d7b36864dd662851b7e92666dd88aed071eae530d8c0a872b51351f6
+    # via trio
+cffi==1.15.1+chromium.2 ; (python_full_version >= '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine != 'armv6l' and platform_machine != 'armv7l' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version >= '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine != 'AMD64' and platform_machine != 'x86' and sys_platform == 'win32') or (python_full_version < '3.12' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'arm64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (python_full_version < '3.12' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86_64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (python_full_version < '3.12' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'armv6l' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (python_full_version < '3.12' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'armv7l' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (python_full_version < '3.12' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86_64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (python_full_version < '3.12' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'AMD64' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (python_full_version < '3.12' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (python_full_version >= '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version >= '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'armv6l' and sys_platform == 'linux') or (python_full_version >= '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'armv7l' and sys_platform == 'linux') or (python_full_version >= '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version >= '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'AMD64' and sys_platform == 'win32') or (python_full_version >= '4' and implementation_name != 'pypy' and os_name == 'nt' and platform_machine == 'x86' and sys_platform == 'win32') or (python_full_version >= '4' and implementation_name != 'pypy' and os_name == 'nt' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32') \
     --hash=sha256:10bdaddfd9bc761f9cf6ea80a0cb3dbcf85a6034c3038879634948d75dc903e1 \
     --hash=sha256:220efee8db3410f448fc08a1337345b168853387cc0fd11c288cd4024d005308 \
     --hash=sha256:2252d280c0ab8be58f52469f4106743073ae37f956e4e483ed8d4e46efaf8566 \
@@ -56,10 +73,8 @@ charset-normalizer==3.3.2 \
     --hash=sha256:3e4d1f6587322d2788836a99c69062fbb091331ec940e02d12d179c1d53e25fc \
     --hash=sha256:b333c10bbe7ac019c5d42c7ddcd7fced5fd64a0dfa9efdb38497bad5b0f8ba78
     # via requests
-click==8.0.3 \
-    --hash=sha256:353f466495adaeb40b6b5f592f9f91cb22372351c84caeb068132442a4518ef3 \
-    --hash=sha256:353f466495adaeb40b6b5f592f9f91cb22372351c84caeb068132442a4518ef3 \
-    --hash=sha256:b0a0492d07c8e7e4a88ee153ca6553d357a0746792d6868bfca79dc1a344bb1b
+click==8.4.1 ; sys_platform != 'emscripten' \
+    --hash=sha256:482be17c6991b8c19c5429a1e995d9b0efdbb63172824c41f99965dc0ade8ec2
     # via uvicorn
 colorama==0.4.6 \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6 \
@@ -67,24 +82,6 @@ colorama==0.4.6 \
     # via
     #   click
     #   pytest
-debugpy==1.8.16 \
-    --hash=sha256:0825cdb07956788e3e3bb671543e05c4710eb11f3cf72f13753ea63a5559ead3 \
-    --hash=sha256:39d1e0d8b18fb2dc93f48f41ebd3115a4a1a5f038ff0f9cd16ead6e0083e2a92 \
-    --hash=sha256:5b28dbefbd626b16814fb061cd64d0889bc9ab78baab21a8f1f01c1f7dfc9f88 \
-    --hash=sha256:984f51e17faba93cd6cd93cac8588ac7dc3e35fffca1dda90883be9644e62067 \
-    --hash=sha256:9f7a952c11547f0ae48ee5206c5fef13a9f80a38447d0f15ca0cbd3e87f7bd0b \
-    --hash=sha256:ac2aa688d646a051d53d2511d615cfdf2fc1a19fe7e799d31e5b09df54caf3cd \
-    --hash=sha256:c28ca6b5baa931268fd913570817d0b6e021d2f74b7c08a68ab3c8663e151344
-exceptiongroup==1.1.2 \
-    --hash=sha256:bb0cd1002f101a8a944b7aed5905ea3e4e2c6f6c98c2c67ee7ac7f3c91fcc8a9 \
-    --hash=sha256:e346e69d186172ca7cf029c8c1d16235aa0e04035e5750b4b95039e65204328f \
-    --hash=sha256:e346e69d186172ca7cf029c8c1d16235aa0e04035e5750b4b95039e65204328f \
-    --hash=sha256:e346e69d186172ca7cf029c8c1d16235aa0e04035e5750b4b95039e65204328f \
-    --hash=sha256:e346e69d186172ca7cf029c8c1d16235aa0e04035e5750b4b95039e65204328f \
-    --hash=sha256:e346e69d186172ca7cf029c8c1d16235aa0e04035e5750b4b95039e65204328f \
-    --hash=sha256:e346e69d186172ca7cf029c8c1d16235aa0e04035e5750b4b95039e65204328f \
-    --hash=sha256:e346e69d186172ca7cf029c8c1d16235aa0e04035e5750b4b95039e65204328f \
-    --hash=sha256:e346e69d186172ca7cf029c8c1d16235aa0e04035e5750b4b95039e65204328f
 execnet==2.1.1 \
     --hash=sha256:26dee51f1b80cebd6d0ca8e74dd8745419761d3bef34163928cbebbdc4749fdc \
     --hash=sha256:58d6d58362e52bfab78f40ebfed9575a3334c41593bee4eb5fcda518290018dc
@@ -107,16 +104,24 @@ google-auth==2.40.3 \
 google-cloud-bigquery==3.38.0 \
     --hash=sha256:62fea9fec6871c1b71ec6f1dd46679287d05c43de647e50a25dc5b3f97d51970 \
     --hash=sha256:e06e93ff7b245b239945ef59cb59616057598d369edac457ebf292bd61984da6
-google-cloud-core==2.4.3 \
-    --hash=sha256:46baa9e1710313ab9e1ae3744109927b4afad6932c13629e1f2e9a8800562d26 \
-    --hash=sha256:5130f9f4c14b4fafdff75c79448f9495cfade0d8775facf1b09c3bf67e027f6e
+google-cloud-core==2.5.0 \
+    --hash=sha256:67d977b41ae6c7211ee830c7912e41003ea8194bff15ae7d72fd6f51e57acabc \
+    --hash=sha256:b8c47dbb3f31aa2e8dd1626497702a46acb554281e3850d1a4ca91e96ad7f9fb
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
 google-cloud-storage==3.3.0 \
     --hash=sha256:0338ecd6621b3ecacb108f1cf7513ff0d1bca7f1ff4d58e0220b59f3a725ff23 \
     --hash=sha256:861c70e2df983079d2d953d89619c9f98055e63f73b933915c17af403ecee6d9
-google-crc32c==1.7.1+chromium.1 \
+google-crc32c==1.7.1 ; (python_full_version >= '3.12' and python_full_version < '4' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version >= '3.12' and python_full_version < '4' and platform_machine == 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.12' and python_full_version < '4' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.12' and python_full_version < '4' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.12' and python_full_version < '4' and sys_platform == 'win32') or (python_full_version < '4' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version < '4' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version < '4' and platform_machine == 'arm64' and platform_python_implementation != 'CPython' and sys_platform == 'darwin') or (python_full_version < '4' and platform_machine == 'x86_64' and platform_python_implementation != 'CPython' and sys_platform == 'darwin') or (python_full_version < '4' and platform_machine == 'aarch64' and platform_python_implementation != 'CPython' and sys_platform == 'linux') or (python_full_version < '4' and platform_machine == 'x86_64' and platform_python_implementation != 'CPython' and sys_platform == 'linux') or (python_full_version < '4' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version < '4' and platform_python_implementation != 'CPython' and sys_platform == 'win32') or (python_full_version < '4' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32') \
+    --hash=sha256:5d7bd1d0b09e8407b0678ee92969f0fd5fc8089196ecd81b7e3344533b01427f \
+    --hash=sha256:6a0ed57c65f509a22bdd47e12024f8838fdd1f00ac8bdaaf0d1f575fc5989a0e \
+    --hash=sha256:ae795c32b4d800083e9ab19389db2ee7958e3803a8f1f4ef6aec557162ea38cd \
+    --hash=sha256:ee6547b657621b6cbed3562ea7826c3e11cab01cd33b74e1f677690652883e77
+    # via
+    #   google-cloud-storage
+    #   google-resumable-media
+google-crc32c==1.7.1+chromium.1 ; (python_full_version >= '4' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '4' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version < '3.12' and platform_machine == 'arm64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (python_full_version < '3.12' and platform_machine == 'x86_64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (python_full_version < '3.12' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (python_full_version < '3.12' and platform_machine == 'x86_64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (python_full_version < '3.12' and platform_machine == 'AMD64' and platform_python_implementation == 'CPython' and sys_platform == 'win32') or (python_full_version >= '4' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version >= '4' and platform_machine == 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '4' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version >= '4' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version >= '4' and sys_platform == 'win32') or (python_full_version >= '4' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32') \
     --hash=sha256:367b2eaa08c078c6dcdee1785d9e489c5f8916746deda58cc5b9245c2c5c7ac2 \
     --hash=sha256:7fe67a284c4d64c780df83c60d84bbaa5b8813acfaf1c2b6c85fe76ac537a320 \
     --hash=sha256:a5328d2c4ba67d8b792b7457aa67446d29672bbec44ff4193997447981747df3 \
@@ -132,13 +137,12 @@ google-resumable-media==2.7.2 \
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
-googleapis-common-protos==1.69.2 \
-    --hash=sha256:0b30452ff9c7a27d80bfc5718954063e8ab53dd3697093d3bc99581f5fd24212 \
-    --hash=sha256:2900d9cd6e7520950cacb16f6739657e34c2e378d6825aea5cf09c52e56ea57d
+googleapis-common-protos==1.75.0 \
+    --hash=sha256:961ed60399c457ceb0ee8f285a84c870aabc9c6a832b9d37bb281b5bebde43ed
     # via
     #   google-api-core
     #   grpcio-status
-greenlet==3.2.4 \
+greenlet==3.2.4 ; (python_full_version < '3.14' and platform_machine == 'AMD64') or (python_full_version < '3.14' and platform_machine == 'WIN32') or (python_full_version < '3.14' and platform_machine == 'aarch64') or (python_full_version < '3.14' and platform_machine == 'amd64') or (python_full_version < '3.14' and platform_machine == 'ppc64le') or (python_full_version < '3.14' and platform_machine == 'win32') or (python_full_version < '3.14' and platform_machine == 'x86_64') \
     --hash=sha256:1ca8a40cd81bef5b5771f3cd011f5eefe22b5e188340aea3ef9d3c04b9713879 \
     --hash=sha256:47a779edb0b968b82afa606bf2197f02cfa8f9a54c23bfac5823f31e76907301 \
     --hash=sha256:672b48d73de530bd02aab634b4974a9d5c116da13b3cd8008521b89b7372e9dc \
@@ -217,30 +221,13 @@ idna==3.10 \
 immutabledict==4.2.1 \
     --hash=sha256:9504594d82e982556132b440896e28301351874a706a6f543a8a2b7d8b596e20 \
     --hash=sha256:c56a26ced38c236f79e74af3ccce53772827cef5c3bce7cab33ff2060f756373
-iniconfig==2.1.0 \
-    --hash=sha256:9deba5723312380e77435581c6bf4935c94cbfab9b1ed33ef8d238ea168eb760 \
-    --hash=sha256:c9b120a8564afdd97c6aec63eaa9e27c7a5d2686a0db2b53ab4e026ae798d1ec
+iniconfig==2.3.0 \
+    --hash=sha256:e6ae3625a739878eeb4baf25f17a0b4e9d985421e45b897d1332ed7478f822d9 \
+    --hash=sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12
     # via pytest
 isort==5.13.2 \
     --hash=sha256:8ca5e72a8d85860d5a3fa69b8745237f2939afe12dbf656afbcb47fe72d947a6 \
     --hash=sha256:c70dfdafb0d9ebeaa141b63864285fbfb7508ffeccbe688ecaf96e360e18a17b
-markupsafe==2.1.5 \
-    --hash=sha256:00767588d04ddea85aa2855b4dd14b1a28bfe896eda6edddda845171343035c8 \
-    --hash=sha256:17d66a47d308d7fced53b4cb0305c00f514147afccc8cbab16bf22207f1c2299 \
-    --hash=sha256:219e3ec1c96d4e48b2c15b3354a84cd2d9132e4142617f68fb3a260de0fa1ae1 \
-    --hash=sha256:369c3454437a4cddac124e8c82ddac83272f8cb55fe0a252db9f273f5ba4662d \
-    --hash=sha256:4354b3e56e3fe76f3478d3fcdd23c740a040690437dba18fa9f8c06319239386 \
-    --hash=sha256:44e085f5bd9edf9aa26abd7191732670db4c293030870f040e6ccdd6ee14c707 \
-    --hash=sha256:457b75d5e9defb4087619d5fd4a102abf02530f3004d2473acb660218842d6a8 \
-    --hash=sha256:62b9d6a01efd8b2bfe1a2a2ffcb3b5250c0bce9baa5961f4bcd3405a1574edfa \
-    --hash=sha256:6605205c12b162163e16da80e3627f71ff0ae5fc9015c28771a05d62cf745bb3 \
-    --hash=sha256:8cc4d84b46d12b13e5d0919024e557c753e8375784cd28d92a3da0c26f4898c3 \
-    --hash=sha256:ab8b6980543c83efed82d5db7dd459c333fe91052cf9fcd47ab64246f9ded34c \
-    --hash=sha256:ac5ebad4e3e4b24c8a081aa4036629f883e8032fd9342def3ba97fe97dd126f4 \
-    --hash=sha256:b43e8cb653afce1600b68da2a9272e1b62cde23d2eabb94158bbfce1391bfcd5 \
-    --hash=sha256:cd9a3fd115a3730985b866c520299056a13769623fcaffbefb81b2d69a52909a \
-    --hash=sha256:e0edf0a23d85b1410a63e136338bce6a7c14547a09669c702ec8022e6735f2fa \
-    --hash=sha256:ebe0c147784978c93e4e7705e611ae6b92b9e119830ac1e145fd563e321bdb58
 mcp==1.9.4 \
     --hash=sha256:78959d9958e78edfea30c9d1ea6da5d07ef17fdf0f64655dec2a8207700a5013 \
     --hash=sha256:7fcf36b62936adb8e63f89346bccca1268eeca9bf6dfb562ee10b1dfbda9dac0
@@ -248,16 +235,6 @@ mobly==1.13 \
     --hash=sha256:1eb16944cccfe0df313c8ac91843280534d23f96726910e1c6cdb1fb411532f8 \
     --hash=sha256:fe0ac6e5891ee867b4b6b6fcca68b42245c2c219f834c5b934ca695202c96bde
     # via snippet-uiautomator
-msgspec==0.18.6 \
-    --hash=sha256:3a6b5966e97c8d4796f580c919597b2f41778d2ca8d315db7fa4762ad60f3714 \
-    --hash=sha256:3c4c38f377130680a48e7639c4c464c6ae041be2dda1ae2a796d3557b46d0e20 \
-    --hash=sha256:523ba7b6401e2bca298eed01f7be4cf2b85a53920cf4d65d2530dd1fab463830 \
-    --hash=sha256:565a4eb7cde47585d5d828568ab3460a429be69e6d86475b1b5a5944f6685f49 \
-    --hash=sha256:7600586bf05432c33cf04c9c31f6249a66a77c07e1752cf490e73cb522b0c8cd \
-    --hash=sha256:91cd9dcd9ae88efe3f8c1943144d970b586616cf92ce21c46020b320514fd30b \
-    --hash=sha256:c6dbdab3337f0b8e39f876b60983a3cd11648bf510d446fa475a2c972bf3158a \
-    --hash=sha256:eb76ef41ea7f981dfa550a44383602f1c3d19984e4312f5f5dca3ca78b4b4230 \
-    --hash=sha256:fedac5fc619b4ae0a6d9cd729c270666b4bb084af4061c84178af1e6effb4e1f
 mypy==1.18.2 \
     --hash=sha256:22a1748707dd62b58d2ae53562ffc4d7f8bcc727e8ac7cbc69c053ddc874d47e \
     --hash=sha256:d20458db1a67c01709544aabb2fc0221232b0735b1294436e3043fbd3752ca98
@@ -271,22 +248,7 @@ mypy-extensions==1.1.0 \
     --hash=sha256:1be4cccdb0f2482337c4743e60421de3a356cd97508abadd57d47403e94f5505 \
     --hash=sha256:1be4cccdb0f2482337c4743e60421de3a356cd97508abadd57d47403e94f5505 \
     --hash=sha256:4ec363d206d93f233330fa7f08eefe9a382dd1e326112a94244f95ec2f22f10e
-    # via
-    #   mypy
-    #   typing-inspect
-ninja==1.10.2.4+chromium.1 \
-    --hash=sha256:4e94765737c0e793c1eaafe0315e6cdb27feba8e2f759ff8cee6ff00ae8d2e85 \
-    --hash=sha256:669281b8a4914572df07941efdaa3080442498897fb0389c31f004a80a623b27 \
-    --hash=sha256:685cea93f764c0818742b0945425613d7f21fa43a88432c0a315cc017ca48d9a \
-    --hash=sha256:685cea93f764c0818742b0945425613d7f21fa43a88432c0a315cc017ca48d9a \
-    --hash=sha256:78518daca666fdd2b1574967b9b04e695f9041f54ca1a48cf05f5da56988eb5a \
-    --hash=sha256:8885f2ece82d38d1b58282fe0fb2a4e1c809e318d73b34b1fb8b79870337bd34 \
-    --hash=sha256:c6d192ef105697f7e580fd8365ad05e116f6f066b944f8da001101c9cb3bb266 \
-    --hash=sha256:c6dffa2e2cb96803476c6a29a0fa7dc495251132842efbb73f08fb9286a5f8db \
-    --hash=sha256:dae970279fc3c3f3bbc49089304f0659117919df85c0c15726085fa5cc88028f \
-    --hash=sha256:e2e806912743d624a73484da2c33842dd5b1f34ae1543c9927af2d18343263c4 \
-    --hash=sha256:f7087f2d2ad4d15730f2f772a9cf216da4c8f8054bea98e89262dcf77edab994 \
-    --hash=sha256:f7087f2d2ad4d15730f2f772a9cf216da4c8f8054bea98e89262dcf77edab994
+    # via mypy
 numpy==1.23.5+chromium.4 \
     --hash=sha256:1f09f09cd02263534f3f3376dc290bb33b2d16c10eb85fd1b0491b02028f559c \
     --hash=sha256:298e858d71fd8e2d963414be9d85288f4e04df92c1025128d7917b42a82768cd \
@@ -315,9 +277,8 @@ outcome==1.3.0.post0 \
     # via
     #   trio
     #   trio-websocket
-packaging==25.0 \
-    --hash=sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484 \
-    --hash=sha256:ebeef2792db7967a635cda6d190b9fd3bf004cf526e2feb5896ec8aa2a8983b5
+packaging==26.2 \
+    --hash=sha256:5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e
     # via
     #   google-cloud-bigquery
     #   pytest
@@ -346,9 +307,8 @@ portpicker==1.6.0 \
     --hash=sha256:b2787a41404cf7edbe29b07b9e0ed863b09f2665dcc01c1eb0c2261c1e7d0755 \
     --hash=sha256:ca6cfaa4b709a7e590a2f952e576713601c3878b0c59516475ea4e29afd355bd
     # via mobly
-proto-plus==1.26.1 \
-    --hash=sha256:13285478c2dcf2abb829db158e1047e2f1e8d63a077d94263c2b88b043c75a66 \
-    --hash=sha256:33d1bb43209d647dc8695ac4b854e9bc0c952062fc77ac06939b9e2e16b04b99
+proto-plus==1.28.0 \
+    --hash=sha256:a630604310899e73c59ec302e5765c058d412b2f090b9c79c8822589f14955b8
     # via google-api-core
 protobuf==6.33.5 \
     --hash=sha256:2d7cd4c2152df61dea8147caa60d428960d506c2fb85e1f4a979ec8b0d5ae4fc \
@@ -376,12 +336,9 @@ psutil==7.2.1 \
     --hash=sha256:aa77905cb1457c836bd0ec211ebe73ece1094b641baeb1efd88e2d5851cbef83 \
     --hash=sha256:f709d1f584d01afa789751592976dee1e26737aa4387c9f7e5ccaf7f3d959f4c
     # via portpicker
-py==1.11.0 \
-    --hash=sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378 \
-    --hash=sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378
-pyasn1==0.6.1 \
-    --hash=sha256:0a73739fe90c314749c2741a0e02394f59ba6fbb34b8d2dc548c0a4a61162260 \
-    --hash=sha256:0d632f46f2ba09143da3a8afe9e33fb6f92fa2320ab7e886e2d0f7672af84629
+pyasn1==0.6.2 \
+    --hash=sha256:1eb26d860996a18e9b6ed05e7aae0e9fc21619fcee6af91cca9bad4fbea224bf \
+    --hash=sha256:cc5ca61649be8414d3329dde933c3c58dae66d8f699fd963016f09b5252f0641
     # via
     #   pyasn1-modules
     #   rsa
@@ -389,7 +346,7 @@ pyasn1-modules==0.4.2 \
     --hash=sha256:29253a9207ce32b64c3ac6600edc75368f98473906e8fd1043bd6b5b1de2c14a \
     --hash=sha256:b6d347124ad586ee5e4260008a1edf41f2293abb64bca92c9b723fc4e76f8c64
     # via google-auth
-pycparser==2.22 \
+pycparser==2.22 ; (python_full_version >= '3.12' and implementation_name != 'pypy' and os_name == 'nt') or (implementation_name != 'pypy' and os_name == 'nt' and platform_machine != 'aarch64') or (implementation_name != 'pypy' and os_name == 'nt' and platform_python_implementation != 'CPython') or (implementation_name != 'pypy' and os_name == 'nt' and sys_platform != 'linux') \
     --hash=sha256:bfc4b24aba594bdc5fd4d109ddfccd2a2277fb3cbe58aad7955ada7be04ec76a \
     --hash=sha256:da097d2cad410536f550aef516bfa7ac775a6486e2228088f4ddfce15a88d7b1
     # via cffi
@@ -444,9 +401,9 @@ pytest-timeout==2.2.0 \
 pytest-xdist==3.8.0 \
     --hash=sha256:202ca578cfeb7370784a8c33d6d05bc6e13b4f25b5053c30a152269fd10f0b88 \
     --hash=sha256:9e659fa2eacbed776070a08a075eff2d9c8e010bab4eea169640c22a1b079f2c
-python-dateutil==2.9.0 \
-    --hash=sha256:cbf2f1da5e6083ac2fbfd4da39a25f34312230110440f424a14c7558bb85d82e \
-    --hash=sha256:d6e8ba261767bc6626b87eafbaff60e52b68417ae5d245ba5b703e59a384a169
+python-dateutil==2.9.0.post0 \
+    --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427 \
+    --hash=sha256:b023f951d8638f647ee3dc334fa62c9020a790285c08fba09cdab02c3b95919c
     # via
     #   google-cloud-bigquery
     #   pandas
@@ -458,9 +415,9 @@ python-multipart==0.0.20 \
     --hash=sha256:8a62d3a8335e06589fe01f2a3e178cdcc632f3fbe0d492ad9ee0ec35aab1f104 \
     --hash=sha256:99087ff3f8f0f3b8f37bec5111c1446c70a74c28fcf24c3e937c7819f4dd27dc
     # via mcp
-pytz==2025.2 \
-    --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00 \
-    --hash=sha256:e14ffd5ea85d3acc73cb4fe5df3ef59e768f56e8b01c35197147a89988c7179e
+pytz==2026.1.post1 ; (python_full_version < '3.12' and platform_machine == 'arm64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (python_full_version < '3.12' and platform_machine == 'x86_64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (python_full_version < '3.12' and platform_machine == 'x86_64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (python_full_version < '3.12' and platform_machine == 'AMD64' and platform_python_implementation == 'CPython' and sys_platform == 'win32') \
+    --hash=sha256:9d4dd968003f0a02967c1380f80a80c7d8b2073dd8bd6143260db1eef7fc8d54 \
+    --hash=sha256:f2fd16142fda348286a75e1a524be810bb05d444e5a081f37f7affc635035f7a
     # via pandas
 pywin32==308 ; sys_platform == 'win32' \
     --hash=sha256:48e9e39c028aae1f5dde236379070c8374393b695be23631c447b93ee9b62a5e \
@@ -588,11 +545,7 @@ typing-extensions==4.15.0 \
     #   selenium
     #   sqlalchemy
     #   starlette
-    #   typing-inspect
     #   typing-inspection
-typing-inspect==0.7.1 \
-    --hash=sha256:3cd7d4563e997719a710a3bfe7ffb544c6b72069b6812a02e9b414a8fa3aaa6b \
-    --hash=sha256:d68f2ee116b6f01b96a8488cdb098be7e04fbe3f72e302adb6d15d9983ff5b3b
 typing-inspection==0.4.1 \
     --hash=sha256:389055682238f53b04f7badcb49b989835495a96700ced5dab2d8feae4b26f51 \
     --hash=sha256:389055682238f53b04f7badcb49b989835495a96700ced5dab2d8feae4b26f51 \
@@ -606,7 +559,7 @@ typing-inspection==0.4.1 \
     # via
     #   pydantic
     #   pydantic-settings
-tzdata==2025.2 \
+tzdata==2025.2 ; (python_full_version < '3.12' and platform_machine == 'arm64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (python_full_version < '3.12' and platform_machine == 'x86_64' and platform_python_implementation == 'CPython' and sys_platform == 'darwin') or (python_full_version < '3.12' and platform_machine == 'x86_64' and platform_python_implementation == 'CPython' and sys_platform == 'linux') or (python_full_version < '3.12' and platform_machine == 'AMD64' and platform_python_implementation == 'CPython' and sys_platform == 'win32') \
     --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8 \
     --hash=sha256:259d0754e270da739e95ad473d5adbcff926c9657914b325cc64f5048cfbe39d
     # via pandas
@@ -623,9 +576,8 @@ urllib3==2.6.3 \
     # via
     #   requests
     #   selenium
-uvicorn==0.35.0 \
-    --hash=sha256:197535216b25ff9b785e29a0b79199f55222193d47f820816e7da751e9bc8d4a \
-    --hash=sha256:57e22a1f2fa7f9bfbe555aafa2f4b39bdf7d4eb5494a31399a80ed00ad883a29
+uvicorn==0.50.0 ; sys_platform != 'emscripten' \
+    --hash=sha256:05f0eb19edf38208f79f43df8a63081b48df31b0cd1e5997be957a4dc97d1b19
     # via mcp
 websocket-client==1.8.0 \
     --hash=sha256:5dc1636127b91f8f6bed64ee22e707547edf1b1050a50402a45f716dbd5d252a \
