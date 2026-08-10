@@ -43,8 +43,7 @@ class IOSDeviceInfo(DeviceInfo):
     return f"{self.name} ({self.version}) ({self.udid})"
 
 
-def ios_devices(platform: Platform,
-                show_all: bool = False) -> dict[str, IOSDeviceInfo]:
+def ios_devices(platform: Platform) -> dict[str, IOSDeviceInfo]:
   results: dict[str, IOSDeviceInfo] = {}
   with platform.NamedTemporaryFile(suffix=".json") as tmp_file_path:
     platform.sh_stdout("xcrun", "devicectl", "list", "devices",
@@ -52,9 +51,8 @@ def ios_devices(platform: Platform,
     data = json.loads(platform.read_text(tmp_file_path))
 
   for device_data in data.get("result", {}).get("devices", []):
-    if not show_all:
-      if device_data["connectionProperties"]["tunnelState"] == "unavailable":
-        continue
+    if device_data["connectionProperties"]["tunnelState"] == "unavailable":
+      continue
     device = IOSDeviceInfo(device_data["hardwareProperties"]["udid"],
                            device_data["deviceProperties"]["name"],
                            device_data["deviceProperties"]["osVersionNumber"])
