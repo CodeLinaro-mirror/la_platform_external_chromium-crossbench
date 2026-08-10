@@ -12,7 +12,7 @@ from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.plt.ios import IOSPlatform
+from crossbench.plt.ios import IOSDeviceInfo, IOSPlatform, ios_devices
 from crossbench.plt.version import PlatformVersion
 from tests import test_helper
 from tests.crossbench.mock_helper import MacOsMockPlatform
@@ -102,6 +102,25 @@ DEVICES_NONE = {
     }
 }
 
+IPHONE_SIMULATOR = {
+    "udid": "SIM-UDID-1111",
+    "name": "iPhone 15 Simulator",
+    "state": "Booted"
+}
+
+WATCH_SIMULATOR = {
+    "udid": "SIM-UDID-2222",
+    "name": "Apple Watch Simulator",
+    "state": "Booted"
+}
+
+SIMULATORS_SAMPLE = {
+    "devices": {
+        "com.apple.CoreSimulator.SimRuntime.iOS-17-5": [IPHONE_SIMULATOR],
+        "com.apple.CoreSimulator.SimRuntime.watchOS-10-0": [WATCH_SIMULATOR]
+    }
+}
+
 
 class IOsMockPlatformTestCase(BaseMockPlatformTestCase):
   __test__ = True
@@ -129,9 +148,11 @@ class IOsMockPlatformTestCase(BaseMockPlatformTestCase):
     self.expect_startup_devices()
     return IOSPlatform(self.host_platform)
 
-  def expect_startup_devices(self, devices=None):
+  def expect_startup_devices(self, devices=None, simulators=None):
     if devices is None:
       devices = DEVICES_SINGLE
+    if simulators is None:
+      simulators = {"devices": {}}
     # Use the fs directly to avoid issues with /tmp symlinks on MacOS fakefs
     if self.fs.exists("/devicectl_output.json"):
       self.fs.remove_object("/devicectl_output.json")
@@ -143,6 +164,14 @@ class IOsMockPlatformTestCase(BaseMockPlatformTestCase):
         "devices",
         "--json-output=/devicectl_output.json",
         result="")
+    self.host_platform.expect_sh(
+        "xcrun",
+        "simctl",
+        "list",
+        "devices",
+        "booted",
+        "--json",
+        result=json.dumps(simulators))
 
   def test_name(self):
     self.assertEqual(self.platform.name, "ios")
@@ -250,6 +279,52 @@ class IOsMockPlatformTestCase(BaseMockPlatformTestCase):
     self.expect_startup_devices(DEVICES_MULTIPLE)
     platform_a = IOSPlatform(self.host_platform, "iPhone Pro")
     self.assertEqual(platform_a.version, PlatformVersion([17, 1, 1]))
+
+  def test_simulator_device_discovery(self):
+    self.expect_startup_devices(
+        devices=DEVICES_NONE, simulators=SIMULATORS_SAMPLE)
+    expected_device = IOSDeviceInfo(
+        device_id=IPHONE_SIMULATOR["udid"],
+        name=IPHONE_SIMULATOR["name"],
+        version="17.5",
+        is_simulator=True)
+    devices = ios_devices(self.host_platform)
+    self.assertEqual(devices, {IPHONE_SIMULATOR["udid"]: expected_device})
+    # Implied, but for clarity's sake.
+    self.assertNotIn(WATCH_SIMULATOR["udid"], devices)
+
+  def test_simulator_and_physical_devices_combined(self):
+    self.expect_startup_devices(
+        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+    expected_physical = IOSDeviceInfo(
+        device_id="00001111-11AA22BB33DD",
+        name="An iPhone",
+        version="17.1.2",
+        is_simulator=False)
+    expected_sim = IOSDeviceInfo(
+        device_id=IPHONE_SIMULATOR["udid"],
+        name=IPHONE_SIMULATOR["name"],
+        version="17.5",
+        is_simulator=True)
+    devices = ios_devices(self.host_platform)
+    self.assertEqual(
+        devices, {
+            "00001111-11AA22BB33DD": expected_physical,
+            IPHONE_SIMULATOR["udid"]: expected_sim
+        })
+    # Implied, but for clarity's sake.
+    self.assertNotIn(WATCH_SIMULATOR["udid"], devices)
+
+  def test_is_simulator(self):
+    self.expect_startup_devices(
+        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+    platform_physical = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
+    self.assertFalse(platform_physical.is_simulator)
+
+    self.expect_startup_devices(
+        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+    platform_sim = IOSPlatform(self.host_platform, IPHONE_SIMULATOR["udid"])
+    self.assertTrue(platform_sim.is_simulator)
 
 
 if __name__ == "__main__":

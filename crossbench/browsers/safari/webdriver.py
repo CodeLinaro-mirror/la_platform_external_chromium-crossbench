@@ -195,6 +195,8 @@ class SafariWebdriverIOS(SafariWebDriver):
         "safari:openLinksInBackground": True,
         "safari:allowPopups": True,
     }
+    if self.platform.is_simulator:
+      desired_cap["safari:useSimulator"] = True
     for key, value in desired_cap.items():
       options.set_capability(key, value)
     return options

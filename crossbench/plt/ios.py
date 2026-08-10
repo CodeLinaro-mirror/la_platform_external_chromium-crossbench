@@ -34,6 +34,7 @@ pattern: re.Pattern[str] = re.compile(
 @dataclasses.dataclass(frozen=True)
 class IOSDeviceInfo(DeviceInfo):
   version: str = ""
+  is_simulator: bool = False
 
   @property
   def udid(self) -> str:
@@ -44,6 +45,13 @@ class IOSDeviceInfo(DeviceInfo):
 
 
 def ios_devices(platform: Platform) -> dict[str, IOSDeviceInfo]:
+  devices = _devicectl_devices(platform)
+  simulators = _simctl_devices(platform)
+  assert not (set(devices) & set(simulators)), "Repeated UUIDs."
+  return simulators | devices
+
+
+def _devicectl_devices(platform: Platform) -> dict[str, IOSDeviceInfo]:
   results: dict[str, IOSDeviceInfo] = {}
   with platform.NamedTemporaryFile(suffix=".json") as tmp_file_path:
     platform.sh_stdout("xcrun", "devicectl", "list", "devices",
@@ -56,9 +64,31 @@ def ios_devices(platform: Platform) -> dict[str, IOSDeviceInfo]:
     device = IOSDeviceInfo(device_data["hardwareProperties"]["udid"],
                            device_data["deviceProperties"]["name"],
                            device_data["deviceProperties"]["osVersionNumber"])
-    if device.udid in results:
-      raise ValueError("Duplicate UDID")
+    assert device.udid not in results, f"Duplicate UDID: {device.udid}"
     results[device.udid] = device
+  return results
+
+
+def _simctl_devices(platform: Platform) -> dict[str, IOSDeviceInfo]:
+  """Return IOSDeviceInfo mapping for all booted simulators."""
+  args = ("xcrun", "simctl", "list", "devices", "booted", "--json")
+  sim_data = json.loads(platform.sh_stdout(*args))
+  results: dict[str, IOSDeviceInfo] = {}
+  prefix = "com.apple.CoreSimulator.SimRuntime.iOS-"
+  for runtime, devices in sim_data.get("devices", {}).items():
+    if not runtime.startswith(prefix):
+      continue
+    version = runtime[len(prefix):].replace("-", ".")
+    for device_data in devices:
+      # "xcrun simctl list devices booted" guarantees all devices are booted.
+      assert device_data.get("state") == "Booted", "Unbooted device"
+      device = IOSDeviceInfo(
+          device_id=device_data["udid"],
+          name=device_data["name"],
+          version=version,
+          is_simulator=True)
+      assert device.udid not in results, f"Duplicate UDID: {device.udid}"
+      results[device.udid] = device
   return results
 
 
@@ -154,6 +184,10 @@ class IOSPlatform(RemotePlatformMixin, Platform):
   @property
   def udid(self) -> str:
     return self._device.udid
+
+  @property
+  def is_simulator(self) -> bool:
+    return self._device.is_simulator
 
   @property
   @override
