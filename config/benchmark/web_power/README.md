@@ -158,17 +158,26 @@ Additional supported Bits configuration includes:
 
 #### Uploading Results
 
-Results can be uploaded to a GCS bucket using `--upload-results`. Googlers
-should use `--upload-results=gs://web-power-crossbench-export/`, and other
-users can use their own GCS bucket if they so wish.
+To share results with colleagues, you can upload them to a GCS bucket (Google
+Cloud Storage). You can either:
+- Elect to upload the results automatically after the benchmark finishes.
+  This is done by specifying `--upload-results` when running Crossbench.
+  Googlers should use `--upload-results=gs://web-power-crossbench-export/`,
+  and other users can use their own GCS bucket if they so wish.
+- Manually trigger an upload of previously collected results. This is done
+  using `./cb.py upload-results path/to/results/dir path/to/gcs_bucket`.
 
-To save yourself some typing, you may set the `CROSSBENCH_RESULT_UPLOAD_TARGET`
-as an environment variable. For example, as a Googler, you could add this to
-your `.bashrc` file or its equivalent:
+If you upload results often, you may save yourself some typing by setting the
+`CROSSBENCH_RESULT_UPLOAD_TARGET` environment variable to the target URL to
+which you normally upload. Uploads will then default to that target when an
+explicit value is omitted.
+
+For example, as a Googler, you could add this to your `.bashrc` file:
 ```bash
 CROSSBENCH_RESULT_UPLOAD_TARGET="gs://web-power-crossbench-export/"
 ```
-If you do so, you can then specify `--upload-results` without an explicit URL.
+If you do so, you can then specify `--upload-results` without an explicit URL,
+or run `./cb.py upload-results results/latest`.
 
 ## Versioning
 
