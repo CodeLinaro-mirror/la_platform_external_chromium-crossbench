@@ -360,7 +360,7 @@ class Runner:
   def attach_probe(self,
                    probe: Probe,
                    matching_browser_only: bool = False) -> Probe:
-    if self.has_probe(probe.name):
+    if probe.name in self._probes:
       raise ValueError(f"Cannot add the same probe twice: {probe.name}")
     probe_was_used = False
     with exception.annotate(f"Attaching {probe.name}"):
@@ -391,6 +391,8 @@ class Runner:
     return True
 
   def has_probe(self, name: str) -> bool:
+    if name not in all_probes.PROBE_LOOKUP:
+      raise ValueError(f"Unknown probe name: {name!r}")
     return name in self._probes
 
   def is_probe_disabled(self, name: str) -> bool:
@@ -626,7 +628,7 @@ class Runner:
   def _setup_validate_browser(self, browser: Browser) -> None:
     browser.validate()
     for probe in browser.probes:
-      assert self.has_probe(probe.name), (
+      assert probe.name in self._probes, (
           f"Browser {browser} probe {probe} not in Runner.probes. "
           "Use Runner.attach_probe()")
 

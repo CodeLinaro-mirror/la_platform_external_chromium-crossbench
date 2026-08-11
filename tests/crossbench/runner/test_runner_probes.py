@@ -42,8 +42,8 @@ class MockProbeWithAdditional(MockProbeWithName):
 class TestRunnerProbes(BaseRunnerTestCase):
 
   def test_auto_add_probe(self):
-    additional_probe = MockProbeWithName()
-    main_probe = MockProbeWithAdditional(additional_probe, "main_probe")
+    additional_probe = MockProbeWithName("js")
+    main_probe = MockProbeWithAdditional(additional_probe, "perfetto")
 
     runner = self.default_runner(probes=[main_probe])
 
@@ -51,6 +51,14 @@ class TestRunnerProbes(BaseRunnerTestCase):
     self.assertIn(additional_probe, runner.probes)
     self.assertTrue(runner.has_probe(main_probe.name))
     self.assertTrue(runner.has_probe(additional_probe.name))
+
+  def test_has_probe(self):
+    main_probe = MockProbeWithName("perfetto")
+    runner = self.default_runner(probes=[main_probe])
+    self.assertTrue(runner.has_probe("perfetto"))
+    self.assertFalse(runner.has_probe("js"))
+    with self.assertRaisesRegex(ValueError, "Unknown probe name"):
+      runner.has_probe("unknown_probe_typo")
 
   def test_auto_add_probe_recursive(self):
     additional_probe_2 = MockProbeWithName("additional_probe_2")
