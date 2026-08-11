@@ -75,26 +75,34 @@ class TestRunnerProbes(BaseRunnerTestCase):
   # Tests that secondary "extra" probes attached automatically by a primary
   # probe are skipped if explicitly disabled via --no-probe.
   def test_no_probes_skips_extra_probe(self):
-    additional_probe = MockProbeWithName("additional_probe")
-    main_probe = MockProbeWithAdditional(additional_probe, "main_probe")
+    additional_probe = MockProbeWithName("js")
+    main_probe = MockProbeWithAdditional(additional_probe, "perfetto")
 
-    runner = self.default_runner(
-        probes=[main_probe], disabled_probes=["additional_probe"])
+    runner = self.default_runner(probes=[main_probe], disabled_probes=["js"])
 
     self.assertIn(main_probe, runner.probes)
     self.assertNotIn(additional_probe, runner.probes)
     self.assertTrue(runner.has_probe(main_probe.name))
     self.assertFalse(runner.has_probe(additional_probe.name))
+    self.assertFalse(runner.is_probe_disabled(main_probe.name))
+    self.assertTrue(runner.is_probe_disabled(additional_probe.name))
+
+  def test_is_probe_disabled(self):
+    runner = self.default_runner(disabled_probes=["perfetto"])
+    self.assertTrue(runner.is_probe_disabled("perfetto"))
+    self.assertFalse(runner.is_probe_disabled("js"))
+    with self.assertRaisesRegex(ValueError, "Unknown probe name"):
+      runner.is_probe_disabled("unknown_probe_typo")
 
   # Tests that default probes automatically attached by a benchmark are
   # skipped if explicitly disabled via --no-probe.
   def test_no_probes_skips_benchmark_probe(self):
 
     class DummyBenchmarkProbe(BenchmarkProbeMixin, MockProbe):
-      NAME = "benchmark_probe"
+      NAME = "perfetto"
 
       def __init__(self, **kwargs):
-        super().__init__("benchmark_probe", **kwargs)
+        super().__init__("perfetto", **kwargs)
 
     class BenchmarkWithProbe(MockBenchmark):
       PROBES = (DummyBenchmarkProbe,)
@@ -104,9 +112,10 @@ class TestRunnerProbes(BaseRunnerTestCase):
 
     benchmark = BenchmarkWithProbe(self.stories)
     runner = self.default_runner(
-        benchmark=benchmark, disabled_probes=["benchmark_probe"])
+        benchmark=benchmark, disabled_probes=["perfetto"])
 
-    self.assertFalse(runner.has_probe("benchmark_probe"))
+    self.assertFalse(runner.has_probe("perfetto"))
+    self.assertTrue(runner.is_probe_disabled("perfetto"))
 
 
 del BaseRunnerTestCase

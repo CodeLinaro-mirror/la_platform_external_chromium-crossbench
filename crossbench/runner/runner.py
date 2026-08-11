@@ -393,6 +393,11 @@ class Runner:
   def has_probe(self, name: str) -> bool:
     return name in self._probes
 
+  def is_probe_disabled(self, name: str) -> bool:
+    if name not in all_probes.PROBE_LOOKUP:
+      raise ValueError(f"Unknown probe name: {name!r}")
+    return name in self._disabled_probes
+
   def _attach_extra_probes(self) -> None:
     # We use a queue to allow additional probes to also add more probes.
     # self._probes might grow during this process.
