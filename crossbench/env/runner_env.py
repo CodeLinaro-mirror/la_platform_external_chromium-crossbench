@@ -7,8 +7,10 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
+import re
 from typing import TYPE_CHECKING, Final, Iterable
 
+from crossbench import path as pth
 from crossbench import plt
 from crossbench.cli.config.env import EnvConfig, ValidationMode
 from crossbench.env.base import BaseEnv
@@ -17,7 +19,6 @@ from crossbench.helper import collection_helper, url_helper
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
-  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.plt.base import Platform
   from crossbench.probes.probe import Probe
@@ -468,6 +469,18 @@ class RunnerEnv(BaseEnv):
           "Background apps and tabs can be heavily throttled.",
           allow_interactive=False)
 
+  def _check_dependencies(self) -> None:
+    crossbench_dir = pth.ROOT_DIR
+    if not (crossbench_dir / ".git").exists():
+      return
+
+    output = self._platform.sh_stdout(
+        "git", "status", "--porcelain=v2", cwd=crossbench_dir, quiet=True)
+
+    if re.search(r"^[12u] \S+ SC", output, re.MULTILINE):
+      self.handle_validation_warning(
+          "Missing or outdated dependencies. Run `gclient sync`.")
+
   def validate(self) -> None:
     logging.info("-" * 80)
     message = "🌤️  VALIDATE ENVIRONMENT"
@@ -481,6 +494,7 @@ class RunnerEnv(BaseEnv):
     exceptions = ExceptionAnnotator(
         throw=self.validation_mode == ValidationMode.THROW)
     with exceptions.annotate():
+      self._check_dependencies()
       self._check_system_monitoring()
       self._check_power()
       self._check_disk_space()

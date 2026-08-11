@@ -322,6 +322,54 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
       self.assertNotIn("custom_binary_b", str(cm.exception))
       mock_which.assert_called()
 
+  def _setup_git_repo(self) -> pathlib.Path:
+    crossbench_dir = pathlib.Path(__file__).parents[2]
+    self.fs.create_dir(crossbench_dir / ".git")
+    return crossbench_dir
+
+  def test_check_dependencies_no_git(self):
+    env = self.create_env()
+    with (
+        mock.patch.object(self.platform, "sh_stdout"),
+        mock.patch.object(env, "handle_validation_warning") as mock_warn,
+    ):
+      env.validate()
+    mock_warn.assert_not_called()
+
+  def test_check_dependencies_clean(self):
+    env = self.create_env()
+    self._setup_git_repo()
+    clean_output = "# branch.oid 1234567890\n# branch.head main\n"
+    with (
+        mock.patch.object(
+            self.platform, "sh_stdout", return_value=clean_output),
+        mock.patch.object(env, "handle_validation_warning") as mock_warn,
+    ):
+      env.validate()
+    mock_warn.assert_not_called()
+
+  def test_check_dependencies_modified(self):
+    env = self.create_env()
+    self._setup_git_repo()
+    status_output = "1 .M SC.. 160000 160000 160000 12345 67890 internal\n"
+    with mock.patch.object(
+        self.platform, "sh_stdout", return_value=status_output):
+      with self.assertRaises(ValidationError) as cm:
+        env.validate()
+    self.assertIn("gclient sync", str(cm.exception))
+
+  def test_check_dependencies_modified_content_ignored(self):
+    env = self.create_env()
+    self._setup_git_repo()
+    status_output = "1 .M S.M. 160000 160000 160000 12345 67890 internal\n"
+    with (
+        mock.patch.object(
+            self.platform, "sh_stdout", return_value=status_output),
+        mock.patch.object(env, "handle_validation_warning") as mock_warn,
+    ):
+      env.validate()
+    mock_warn.assert_not_called()
+
   def test_file_access_outdir(self):
     self._check_file_access()
 
