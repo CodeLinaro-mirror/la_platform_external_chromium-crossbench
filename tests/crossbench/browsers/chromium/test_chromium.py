@@ -31,10 +31,17 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
         LocalChromiumWebDriverAndroid.is_apk_helper(
             pth.AnyPath("/home/user/Documents/chrome/src/"
                         "out/arm64.apk/bin/chrome_public_apk")))
+    self.assertTrue(
+        LocalChromiumWebDriverAndroid.is_apk_helper(
+            pth.AnyPath("/home/user/Documents/chrome/src/"
+                        "out/arm64.apk/bin/trichrome_chrome_64_32_bundle")))
     self.assertFalse(LocalChromiumWebDriverAndroid.is_apk_helper(None))
     self.assertFalse(
         LocalChromiumWebDriverAndroid.is_apk_helper(
             pth.AnyPath("org.chromium.chrome")))
+    self.assertFalse(
+        LocalChromiumWebDriverAndroid.is_apk_helper(
+            pth.AnyPath("/home/user/Documents/chrome/src/out/arm64/chrome")))
 
   def test_is_local_build_mock_browser(self):
     self.assertTrue(self.browsers)

@@ -83,10 +83,18 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
         LocalChromeWebDriverAndroid.is_apk_helper(
             pth.AnyPath("/home/user/Documents/chrome/src/"
                         "out/arm64.apk/bin/chrome_public_apk")))
+    self.assertTrue(
+        LocalChromeWebDriverAndroid.is_apk_helper(
+            pth.AnyPath("/home/user/Documents/chrome/src/"
+                        "out/arm64.apk/bin/trichrome_chrome_google_64_32_bundle"
+                       )))
     self.assertFalse(LocalChromeWebDriverAndroid.is_apk_helper(None))
     self.assertFalse(
         LocalChromeWebDriverAndroid.is_apk_helper(
             pth.AnyPath("org.chromium.chrome")))
+    self.assertFalse(
+        LocalChromeWebDriverAndroid.is_apk_helper(
+            pth.AnyPath("/home/user/Documents/chrome/src/out/arm64/chrome")))
 
 
 class ChromePathMacOsTestCase(BaseCrossbenchTestCase):
