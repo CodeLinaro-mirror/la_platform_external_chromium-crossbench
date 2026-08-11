@@ -47,9 +47,12 @@ class UploadResultsSubcommand(CrossbenchSubcommand):
         help="Path to the benchmark result directory.")
     parser.add_argument(
         "target_url",
+        nargs="?",
+        default="",
         type=results_uploader.target_url,
-        help=("Target upload URL. "
-              "Currently, only Google Cloud Storage is supported."))
+        help=("Target upload URL. Defaults to the "
+              "CROSSBENCH_RESULT_UPLOAD_TARGET environment variable if "
+              "omitted. Currently, only Google Cloud Storage is supported."))
     self.cli.add_debugging_arguments(parser)
     return parser
 

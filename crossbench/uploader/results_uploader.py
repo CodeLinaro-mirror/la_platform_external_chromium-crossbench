@@ -55,7 +55,7 @@ def target_url(url: str) -> str:
     url = os.environ.get("CROSSBENCH_RESULT_UPLOAD_TARGET", "")
     if not url:
       raise argparse.ArgumentTypeError(
-          "--upload-results specified without value, but "
+          "Target upload URL not specified, and "
           "CROSSBENCH_RESULT_UPLOAD_TARGET environment variable is not set.")
   return ObjectParser.url_str(
       url, name="results upload URL", schemes=tuple(_SCHEME_TO_UPLOADER.keys()))
