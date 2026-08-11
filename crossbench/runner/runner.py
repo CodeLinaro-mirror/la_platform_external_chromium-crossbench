@@ -597,24 +597,7 @@ class Runner:
     with self._exceptions.annotate(
         f"Preparing Benchmark: {self._benchmark.NAME}"):
       self._benchmark.setup(self)
-    with self._exceptions.annotate("Generating Git Patch"):
-      self._setup_git_patch()
     self._results_db.setup_runs(self._all_runs)
-
-  def _setup_git_patch(self) -> None:
-    details = self.platform.crossbench_details()
-    parent_hash = details.get("canonical_parent_hash")
-    if not isinstance(parent_hash, str) or not parent_hash:
-      # Skip creating patch.diff if git is not installed, or when running from
-      # something other than a standalone git repo. (E.g. from inside Chromium.)
-      return
-    patch_file = self.out_dir / "patch.diff"
-    try:
-      with patch_file.open("w", encoding="utf-8") as f:
-        self.platform.sh(
-            "git", "diff", parent_hash, stdout=f, cwd=pth.ROOT_DIR, check=False)
-    except (RuntimeError, ValueError, OSError) as e:
-      logging.warning("Failed to generate git patch: %s", e)
 
   def _setup_validate_browsers(self) -> None:
     logging.info("🌐 SETUP %d BROWSER(S)", len(self.browsers))

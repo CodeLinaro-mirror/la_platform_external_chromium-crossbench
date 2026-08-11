@@ -43,6 +43,7 @@ from crossbench.probes.powermetrics import PowerMetricsProbe
 from crossbench.probes.probe import Probe
 from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
+from crossbench.probes.repo_status import RepoStatusProbe
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.probes.shell import LocalShellProbe, ShellProbe
 from crossbench.probes.system_stats import SystemStatsProbe
@@ -78,6 +79,7 @@ NON_CONFIGURABLE_INTERNAL_PROBES: InternalProbeTuple = (
     LogProbe,
     SystemDetailsProbe,
     CrashdumpProbe,
+    RepoStatusProbe,
 )
 # Internal probes that are configurable by command line flags but always
 # installed.
