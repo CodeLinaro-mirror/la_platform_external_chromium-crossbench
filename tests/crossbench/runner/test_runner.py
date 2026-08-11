@@ -891,6 +891,59 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
           mock.patch.object(runner, "_measured_runs", runs)):
       runner.assert_successful_sessions_and_runs()
 
+  def test_setup_creates_patch_diff(self):
+    """Verifies patch.diff is created when git diff returns non-empty output."""
+    runner = self.default_runner()
+    diff_content = "diff --git a/file.py b/file.py\n+new line"
+
+    def mock_sh(*args, stdout=None, **kwargs):
+      del args, kwargs
+      if stdout and hasattr(stdout, "write"):
+        stdout.write(diff_content)
+      return mock.MagicMock()
+
+    with mock.patch.object(
+        runner.platform,
+        "crossbench_details",
+        return_value={"canonical_parent_hash": "abcdef123"}), mock.patch.object(
+            runner.platform, "sh", side_effect=mock_sh):
+      runner._setup()
+    patch_file = runner.out_dir / "patch.diff"
+    self.assertTrue(patch_file.exists())
+    self.assertEqual(patch_file.read_text(encoding="utf-8"), diff_content)
+
+  def test_setup_creates_patch_diff_no_changes(self):
+    """Verifies an empty patch.diff is created when there are no git changes."""
+    runner = self.default_runner()
+    with mock.patch.object(
+        runner.platform,
+        "crossbench_details",
+        return_value={"canonical_parent_hash": "abcdef123"}), mock.patch.object(
+            runner.platform, "sh", return_value=mock.MagicMock()):
+      runner._setup()
+    patch_file = runner.out_dir / "patch.diff"
+    self.assertTrue(patch_file.exists())
+    self.assertEqual(patch_file.read_text(encoding="utf-8"), "")
+
+  def test_setup_skips_patch_diff_no_parent_hash(self):
+    """Verifies patch.diff is skipped when parent git hash is unavailable."""
+    runner = self.default_runner()
+    with mock.patch.object(
+        runner.platform, "crossbench_details", return_value={}):
+      runner._setup()
+    patch_file = runner.out_dir / "patch.diff"
+    self.assertFalse(patch_file.exists())
+
+  def test_setup_handles_git_patch_exception(self):
+    """Verifies setup handles exceptions during git patch generation."""
+    runner = self.default_runner()
+    with mock.patch.object(
+        runner.platform,
+        "crossbench_details",
+        return_value={"canonical_parent_hash": "abcdef123"}), mock.patch.object(
+            runner.platform, "sh", side_effect=OSError("Git failed")):
+      runner._setup()
+
 
 del BaseRunnerTestCase
 
