@@ -34,6 +34,7 @@ from crossbench.cli.subcommand.perfetto import PerfettoCrossbenchSubcommand
 from crossbench.cli.subcommand.pinpoint import PinpointSubcommand
 from crossbench.cli.subcommand.setup_cross_platform_mode import \
     SetupCrossPlatformModeSubcommand
+from crossbench.cli.subcommand.upload_results import UploadResultsSubcommand
 from crossbench.cli.subcommand.version import VersionSubcommand
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
@@ -225,6 +226,7 @@ class CrossBenchCLI:
     self._add_subcommand(PerfettoCrossbenchSubcommand)
     self._add_subcommand(PinpointSubcommand)
     self._add_subcommand(SetupCrossPlatformModeSubcommand)
+    self._add_subcommand(UploadResultsSubcommand)
 
   def _setup_benchmark_subcommands(self) -> None:
     for benchmark_cls in self.BENCHMARKS:
