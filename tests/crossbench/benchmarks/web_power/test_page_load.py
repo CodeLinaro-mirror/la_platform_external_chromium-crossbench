@@ -17,7 +17,8 @@ from crossbench.benchmarks.web_power.page_load import \
 from crossbench.cli.parser import CBArgumentParser
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
-from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
+from tests.crossbench.benchmarks.web_power.test_base import \
+    BaseWebPowerBenchmarkTestCase
 
 
 class WebPowerPageLoadStoryTestCase(BaseCrossbenchTestCase):
@@ -99,7 +100,7 @@ class WebPowerPageLoadStoryTestCase(BaseCrossbenchTestCase):
     self.assertEqual(tracker.tabs, 2)
 
 
-class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
+class WebPowerPageLoadBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
   @property
   @override
@@ -107,9 +108,7 @@ class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
     return WebPowerPageLoadBenchmark
 
   def test_kwargs_from_cli_defaults(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerPageLoadBenchmark.add_cli_arguments(parser)
-    args = parser.parse_args(["--site", "cnn"])
+    args = self.parse_args("--site", "cnn")
     kwargs = WebPowerPageLoadBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     story = kwargs["stories"][0]
@@ -121,14 +120,12 @@ class WebPowerPageLoadBenchmarkTestCase(BaseBenchmarkTestCase):
                      story.site_config.default_stabilization_time)
 
   def test_kwargs_from_cli_custom(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerPageLoadBenchmark.add_cli_arguments(parser)
-    args = parser.parse_args([
+    args = self.parse_args(
         "--site=cnn",
         "--page-loads=15",
         "--interval=10s",
         "--stabilization-time=15s",
-    ])
+    )
     kwargs = WebPowerPageLoadBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     story = kwargs["stories"][0]

@@ -15,6 +15,7 @@ import hjson
 from crossbench import __version__, plt
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.cli.cli import CrossBenchCLI
+from crossbench.cli.config.network import NetworkType
 from crossbench.env.runner_env import EnvConfig
 from crossbench.runner.runner import CacheTemperature
 from tests import test_helper
@@ -616,6 +617,32 @@ class FastCliTestCasePartA(BaseCliTestCase):
     _, _, stderr = self.run_cli_output(
         "loading", "--bin-override=my_bin_no_path", raises=SysExitTestException)
     self.assertIn("Invalid --bin-override format", stderr)
+
+  def test_explicit_network_flag_preserved(self):
+    network_path = pathlib.Path("/test/archive.wprgo")
+    self.fs.create_file(network_path, st_size=100)
+    network_arg = f'{{"type": "wpr", "path": "{network_path}"}}'
+    with unittest.mock.patch(
+        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run"
+    ) as mock_run:
+      self.run_cli("loading", "--browser=chrome", f"--network={network_arg}")
+    self.assertTrue(mock_run.called)
+    args = mock_run.call_args[0][0]
+    self.assertIsNotNone(args.network)
+    self.assertEqual(args.network.type, NetworkType.WPR)
+    self.assertEqual(args.network.path, network_path)
+
+  def test_explicit_default_network(self):
+    network_path = pathlib.Path("/test/archive.wprgo")
+    self.fs.create_file(network_path, st_size=100)
+    with unittest.mock.patch(
+        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run"
+    ) as mock_run:
+      self.run_cli("loading", "--browser=chrome", "--network=default")
+    self.assertTrue(mock_run.called)
+    args = mock_run.call_args[0][0]
+    self.assertIsNotNone(args.network)
+    self.assertEqual(args.network.type, NetworkType.LIVE)
 
 
 class NoProbeFlagCliTestCase(BaseCliTestCase):

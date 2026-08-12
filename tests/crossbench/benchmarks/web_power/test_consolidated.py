@@ -21,7 +21,8 @@ from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.cli.parser import CBArgumentParser
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
-from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
+from tests.crossbench.benchmarks.web_power.test_base import \
+    BaseWebPowerBenchmarkTestCase
 
 
 class WebPowerConsolidatedStoryFilterTestCase(BaseCrossbenchTestCase):
@@ -103,7 +104,7 @@ class WebPowerConsolidatedStoryFilterTestCase(BaseCrossbenchTestCase):
                      self._expected_canonical_stories())
 
 
-class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
+class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
   @property
   @override
@@ -111,8 +112,8 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     return WebPowerBenchmark
 
   def test_kwargs_from_cli_defaults_instantiates_all_types(self) -> None:
-    parser = WebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    kwargs = WebPowerBenchmark.kwargs_from_cli(parser.parse_args([]))
+    args = self.parse_args()
+    kwargs = WebPowerBenchmark.kwargs_from_cli(args)
     stories = kwargs["stories"]
     self.assertEqual(len(stories), 10)
 
@@ -132,8 +133,7 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(counts[WebPowerMediaPlaybackStory], 1)
 
   def test_kwargs_from_cli_defaults_idle(self) -> None:
-    parser = WebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    kwargs = WebPowerBenchmark.kwargs_from_cli(parser.parse_args([]))
+    kwargs = WebPowerBenchmark.kwargs_from_cli(self.parse_args())
     # We do not assert that a WebPowerIdleStory was found here;
     # test_kwargs_from_cli_defaults_instantiates_all_types ensures
     # we have at least one.
@@ -145,8 +145,7 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
                        story.site_config.default_stabilization_time)
 
   def test_kwargs_from_cli_defaults_scroll(self) -> None:
-    parser = WebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    kwargs = WebPowerBenchmark.kwargs_from_cli(parser.parse_args([]))
+    kwargs = WebPowerBenchmark.kwargs_from_cli(self.parse_args())
     # test_kwargs_from_cli_defaults_instantiates_all_types ensures
     # we have at least one.
     for story in kwargs["stories"]:
@@ -159,8 +158,7 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
                        story.site_config.default_stabilization_time)
 
   def test_kwargs_from_cli_defaults_page_load(self) -> None:
-    parser = WebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    kwargs = WebPowerBenchmark.kwargs_from_cli(parser.parse_args([]))
+    kwargs = WebPowerBenchmark.kwargs_from_cli(self.parse_args())
     # test_kwargs_from_cli_defaults_instantiates_all_types ensures
     # we have at least one.
     for story in kwargs["stories"]:
@@ -176,8 +174,7 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
                        story.site_config.default_stabilization_time)
 
   def test_kwargs_from_cli_defaults_media_playback(self) -> None:
-    parser = WebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    kwargs = WebPowerBenchmark.kwargs_from_cli(parser.parse_args([]))
+    kwargs = WebPowerBenchmark.kwargs_from_cli(self.parse_args())
     # test_kwargs_from_cli_defaults_instantiates_all_types ensures
     # we have at least one.
     for story in kwargs["stories"]:
@@ -193,8 +190,6 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
                        WebPowerMediaPlaybackStory.DEFAULT_AMBIENT_MODE)
 
   def test_kwargs_from_cli_custom_duration_override(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerBenchmark.add_cli_arguments(parser)
     # Specifying an explicit --duration should override duration for all tests
     # that support this flag. (Pick a value that would avoid false positives.)
     expected_duration: Final[int] = 42
@@ -203,7 +198,7 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertNotEqual(
         expected_duration,
         WebPowerMediaPlaybackStory.DEFAULT_DURATION.total_seconds())
-    args = parser.parse_args([f"--duration={expected_duration}s"])
+    args = self.parse_args(f"--duration={expected_duration}s")
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
 
     self.assertEqual(len(kwargs["stories"]), 10)
@@ -217,9 +212,7 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
                            dt.timedelta(seconds=expected_duration))
 
   def test_kwargs_from_cli_custom_scenario_arguments(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerBenchmark.add_cli_arguments(parser)
-    args = parser.parse_args([
+    args = self.parse_args(
         "--stories=idle-msn,scroll-cnn,page-load-cnn,media-playback-youtube",
         "--duration=45s",
         "--stabilization-time=5s",
@@ -230,7 +223,7 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
         "--stats",
         "--volume=off",
         "--ambient-mode=unchanged",
-    ])
+    )
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
 
     stories = kwargs["stories"]
@@ -266,11 +259,8 @@ class WebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(stories[3].ambient_mode, AmbientMode.UNCHANGED)
 
   def test_extra_flags_story_autoplay_assignment(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerBenchmark.add_cli_arguments(parser)
-    args = parser.parse_args([
-        "--stories=idle-msn,page-load-cnn,media-playback-youtube",
-    ])
+    args = self.parse_args(
+        "--stories=idle-msn,page-load-cnn,media-playback-youtube",)
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
     benchmark = WebPowerBenchmark(**kwargs)
 

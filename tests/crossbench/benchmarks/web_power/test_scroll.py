@@ -15,7 +15,8 @@ from crossbench.benchmarks.web_power.scroll import WebPowerScrollBenchmark, \
 from crossbench.cli.parser import CBArgumentParser
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
-from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
+from tests.crossbench.benchmarks.web_power.test_base import \
+    BaseWebPowerBenchmarkTestCase
 
 
 class WebPowerScrollStoryTestCase(BaseCrossbenchTestCase):
@@ -41,7 +42,7 @@ class WebPowerScrollStoryTestCase(BaseCrossbenchTestCase):
     self.assertEqual(story.input_rate, 120)
 
 
-class WebPowerScrollBenchmarkTestCase(BaseBenchmarkTestCase):
+class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
   @property
   @override
@@ -49,9 +50,7 @@ class WebPowerScrollBenchmarkTestCase(BaseBenchmarkTestCase):
     return WebPowerScrollBenchmark
 
   def test_kwargs_from_cli_defaults(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerScrollBenchmark.add_cli_arguments(parser)
-    args = parser.parse_args(["--site", "cnn"])
+    args = self.parse_args("--site", "cnn")
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     story = kwargs["stories"][0]
@@ -63,14 +62,12 @@ class WebPowerScrollBenchmarkTestCase(BaseBenchmarkTestCase):
                      story.site_config.default_stabilization_time)
 
   def test_kwargs_from_cli_custom(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerScrollBenchmark.add_cli_arguments(parser)
-    args = parser.parse_args([
+    args = self.parse_args(
         "--site=cnn",
         "--scrolls=12",
         "--input-rate=100",
         "--stabilization-time=15s",
-    ])
+    )
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     story = kwargs["stories"][0]

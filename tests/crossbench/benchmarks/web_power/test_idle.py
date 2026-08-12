@@ -11,10 +11,10 @@ from typing_extensions import override
 from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.idle import WebPowerIdleBenchmark, \
     WebPowerIdleStory
-from crossbench.cli.parser import CBArgumentParser
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
-from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
+from tests.crossbench.benchmarks.web_power.test_base import \
+    BaseWebPowerBenchmarkTestCase
 
 
 class WebPowerIdleStoryTestCase(BaseCrossbenchTestCase):
@@ -54,7 +54,7 @@ class WebPowerIdleStoryTestCase(BaseCrossbenchTestCase):
     self.assertGreaterEqual(story.duration, dt.timedelta(days=365))
 
 
-class WebPowerIdleBenchmarkTestCase(BaseBenchmarkTestCase):
+class WebPowerIdleBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
   @property
   @override
@@ -62,9 +62,7 @@ class WebPowerIdleBenchmarkTestCase(BaseBenchmarkTestCase):
     return WebPowerIdleBenchmark
 
   def test_kwargs_from_cli_defaults(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerIdleBenchmark.add_cli_arguments(parser)
-    args = parser.parse_args(["--site", "cnn"])
+    args = self.parse_args("--site", "cnn")
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     story = kwargs["stories"][0]
@@ -74,13 +72,11 @@ class WebPowerIdleBenchmarkTestCase(BaseBenchmarkTestCase):
                      story.site_config.default_stabilization_time)
 
   def test_kwargs_from_cli_custom(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerIdleBenchmark.add_cli_arguments(parser)
-    args = parser.parse_args([
+    args = self.parse_args(
         "--site=cnn",
         "--duration=45s",
         "--stabilization-time=15s",
-    ])
+    )
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     story = kwargs["stories"][0]

@@ -124,7 +124,16 @@ class WebPowerStoryTestCase(unittest.TestCase):
     self.assertEqual(story.duration, dt.timedelta(seconds=123))
 
 
-class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
+class BaseWebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
+
+  def parse_args(self, *args: str) -> argparse.Namespace:
+    parser = self.benchmark_cls.add_cli_arguments(CBArgumentParser())
+    parsed_args = parser.parse_args(args)
+    parsed_args.network = NetworkConfig.default()
+    return parsed_args
+
+
+class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
 
   def setUp(self) -> None:
     super().setUp()
@@ -146,34 +155,29 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
                      dt.timedelta(minutes=2))
 
   def test_kwargs_from_cli_site(self) -> None:
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args(["--site", "cnn"])
+    args = self.parse_args("--site", "cnn")
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     self.assertEqual(kwargs["stories"][0].url, "https://www.cnn.com")
     self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-cnn")
 
   def test_kwargs_from_cli_url(self) -> None:
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args(["--url", "https://www.google.com"])
+    args = self.parse_args("--url", "https://www.google.com")
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-custom")
     self.assertEqual(kwargs["stories"][0].url, "https://www.google.com")
 
   def test_kwargs_from_cli_help(self) -> None:
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
     # Passing --help should bypass validation and raise SystemExit natively
     with self.assertRaises(SystemExit):
-      parser.parse_args(["--help"])
+      self.parse_args("--help")
 
   def test_kwargs_from_cli_site_wpr_default(self) -> None:
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args(["--site", "cnn"])
+    args = self.parse_args("--site", "cnn")
     # Simulate CLI runner parsing network defaults
     args.network_config = None
     args.network = None
-    args.has_explicit_network = False
 
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
@@ -185,12 +189,9 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
                      "gs://chrome-partner-loadline/power/cnn_20260513.wprgo")
 
   def test_kwargs_from_cli_url_live_default(self) -> None:
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args(["--url", "https://www.google.com"])
+    args = self.parse_args("--url", "https://www.google.com")
     # Simulate CLI runner parsing network defaults
     args.network_config = None
-    args.network = NetworkConfig.default()
-    args.has_explicit_network = False
 
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
@@ -198,14 +199,11 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     self.assertEqual(args.network.type, NetworkType.LIVE)
 
   def test_kwargs_from_cli_url_with_explicit_network(self) -> None:
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args(["--url", "https://www.google.com"])
+    args = self.parse_args("--url", "https://www.google.com")
     # Simulate explicit WPR network config
     args.network_config = None
     args.network = NetworkConfig(
         type=NetworkType.WPR, url="gs://some/other.wprgo")
-
-    args.has_explicit_network = True
 
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
@@ -214,14 +212,11 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     self.assertEqual(args.network.url, "gs://some/other.wprgo")
 
   def test_kwargs_from_cli_site_with_explicit_network_fails(self) -> None:
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args(["--site", "cnn"])
+    args = self.parse_args("--site", "cnn")
     # Simulate conflicting explicit network config
     args.network_config = None
     args.network = NetworkConfig(
         type=NetworkType.WPR, url="gs://some/other.wprgo")
-
-    args.has_explicit_network = True
 
     with self.assertRaisesRegex(
         ValueError, "Specifying '--site' is mutually exclusive with explicit"):
@@ -231,11 +226,9 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
     self.fs.create_file(bits_path)
 
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args([
-        "--site", "cnn", "--bits-path",
-        str(bits_path), "--bits-out", "custom_bits_run", "--bits-duration", "5m"
-    ])
+    args = self.parse_args("--site", "cnn", "--bits-path", str(bits_path),
+                           "--bits-out", "custom_bits_run", "--bits-duration",
+                           "5m")
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-cnn")
@@ -252,12 +245,9 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
     self.fs.create_file(bits_path)
 
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args([
-        "--site", "cnn", "--bits-path",
-        str(bits_path), "--bits-out", "custom_bits_run", "--bits-device",
-        "dev_123", "--bits-duration", "5m"
-    ])
+    args = self.parse_args("--site", "cnn", "--bits-path", str(bits_path),
+                           "--bits-out", "custom_bits_run", "--bits-device",
+                           "dev_123", "--bits-duration", "5m")
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     bits_probe = kwargs["bits_probe"]
     self.assertEqual(bits_probe.bits_device, "dev_123")
@@ -266,13 +256,10 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
     self.fs.create_file(bits_path)
 
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args([
-        "--site", "cnn", "--bits-path",
-        str(bits_path), "--bits-out", "custom_bits_run", "--bits-port", "1234",
-        "--bits-duration", "5m"
-    ])
-    kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
+    args, kwargs = self._parse_and_get_kwargs("--site", "cnn", "--bits-path",
+                                              str(bits_path), "--bits-out",
+                                              "custom_bits_run", "--bits-port",
+                                              "1234", "--bits-duration", "5m")
     bits_probe = kwargs["bits_probe"]
     self.assertEqual(bits_probe.port, 1234)
 
@@ -305,8 +292,7 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
     self.fs.create_file(bits_path)
 
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args(["--site", "cnn", "--bits-path", str(bits_path)])
+    args = self.parse_args("--site", "cnn", "--bits-path", str(bits_path))
 
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
 
@@ -323,8 +309,7 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
       self.assertEqual(context.bits_out_id, "20260702_170055")
 
   def test_kwargs_from_cli_bits_only_out_fails(self) -> None:
-    parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
-    args = parser.parse_args(["--site", "cnn", "--bits-out", "run_id"])
+    args = self.parse_args("--site", "cnn", "--bits-out", "run_id")
     with self.assertRaises(argparse.ArgumentTypeError):
       MockWebPowerBenchmark.kwargs_from_cli(args)
 
@@ -336,12 +321,11 @@ class WebPowerBenchmarkBaseTestCase(BaseBenchmarkTestCase):
         type=pathlib.Path,
         default=MockWebPowerBenchmark.default_probe_config_path(),
     )
-    # In Crossbench, the --probe argument is added by the root CLI command,
-    # not the benchmark's add_cli_arguments(). We add it manually here so
-    # that our parsed `args` can be successfully passed to
-    # `ProbeListConfig.from_cli_args(args)` to test probe instantiation.
+    # Add necessary arguments that would have been added by parent CLI commands.
     parser.add_argument("--probe", action="append", default=[])
     parser.add_argument("--no-probe", action="store_true", default=False)
+    parser.add_argument(
+        "--network", type=NetworkConfig.parse, default=NetworkConfig.default())
     args = parser.parse_args(["--site", "cnn", *cli_args])
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     return args, kwargs

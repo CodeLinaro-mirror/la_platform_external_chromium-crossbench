@@ -12,10 +12,10 @@ from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.media_playback import AmbientMode, \
     WebPowerMediaPlaybackBenchmark, WebPowerMediaPlaybackStory
 from crossbench.benchmarks.web_power.volume_helper import VolumeMode
-from crossbench.cli.parser import CBArgumentParser
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
-from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
+from tests.crossbench.benchmarks.web_power.test_base import \
+    BaseWebPowerBenchmarkTestCase
 
 
 class WebPowerMediaPlaybackStoryTestCase(BaseCrossbenchTestCase):
@@ -53,7 +53,7 @@ class WebPowerMediaPlaybackStoryTestCase(BaseCrossbenchTestCase):
     self.assertEqual(story.ambient_mode, AmbientMode.UNCHANGED)
 
 
-class WebPowerMediaPlaybackBenchmarkTestCase(BaseBenchmarkTestCase):
+class WebPowerMediaPlaybackBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
   @property
   @override
@@ -61,9 +61,7 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseBenchmarkTestCase):
     return WebPowerMediaPlaybackBenchmark
 
   def test_kwargs_from_cli_defaults(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerMediaPlaybackBenchmark.add_cli_arguments(parser)
-    args = parser.parse_args(["--site", "youtube"])
+    args = self.parse_args("--site", "youtube")
     kwargs = WebPowerMediaPlaybackBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     story = kwargs["stories"][0]
@@ -77,16 +75,14 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseBenchmarkTestCase):
     self.assertEqual(story.ambient_mode, AmbientMode.OFF)
 
   def test_kwargs_from_cli_custom(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerMediaPlaybackBenchmark.add_cli_arguments(parser)
-    args = parser.parse_args([
+    args = self.parse_args(
         "--site=youtube",
         "--volume=off",
         "--duration=45s",
         "--stabilization-time=15s",
         "--stats",
         "--ambient-mode=unchanged",
-    ])
+    )
     kwargs = WebPowerMediaPlaybackBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     story = kwargs["stories"][0]

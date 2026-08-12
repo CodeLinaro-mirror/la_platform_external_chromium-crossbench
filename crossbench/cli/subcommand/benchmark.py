@@ -661,16 +661,13 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       self._process_network_args(args)
 
   def _process_network_args(self, args: argparse.Namespace) -> None:
-    args.has_explicit_network = False
-
     # The order of preference of flags is as follows:
     # Explicitly specified network config > explicitly specified network >
     # benchmark-specific network config > default network.
     if network_config := args.network_config:
       args.network = network_config
-      args.has_explicit_network = True
     elif args.network:
-      args.has_explicit_network = True
+      pass
     elif network_config := self._benchmark_cls.default_network_config_path():
       args.network = network_config
     else:
@@ -701,7 +698,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     config_file = args.config
     config_data = ObjectParser.hjson_file(config_file)
     found_any_config = False
-    args.has_explicit_network = bool(args.network)
 
     if env_config_data := config_data.get("env"):
       args.env = EnvConfig.parse(env_config_data)
@@ -716,7 +712,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     if network_config_data := config_data.get("network"):
       # TODO: migrate all --config helper to this format
       args.network = NetworkConfig.parse(network_config_data)
-      args.has_explicit_network = True
       found_any_config = True
     else:
       logging.warning("Skipping network config: no 'network' property in %s",

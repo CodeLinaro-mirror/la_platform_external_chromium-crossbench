@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
+import functools
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from typing_extensions import override
@@ -72,8 +73,9 @@ class NetworkConfig(ConfigObject):
   https_port: int | None = None
 
   @classmethod
-  def default(cls, type: NetworkType | None = None) -> Self:
-    return cls(type=type or NetworkType.LIVE)
+  @functools.cache
+  def default(cls) -> Self:
+    return cls(type=NetworkType.LIVE)
 
   @classmethod
   @override
@@ -168,7 +170,11 @@ class NetworkConfig(ConfigObject):
     if not value:
       raise argparse.ArgumentTypeError("Network: Cannot parse empty string")
     if value == "default":
-      return cls.default(type)
+      default_network = cls.default()
+      if type and type != default_network.type:
+        raise argparse.ArgumentTypeError(
+            f"No default NetworkConfig for type={type}")
+      return default_network
     if type and type is not NetworkType.LIVE:
       raise argparse.ArgumentTypeError(
           f"Network type mismatch expected LIVE, got {type}")
@@ -311,6 +317,9 @@ class NetworkConfig(ConfigObject):
             http_port=self.http_port,
             https_port=self.https_port)
     raise ValueError(f"Unknown network type {self.type}")
+
+  def is_default(self) -> bool:
+    return self is NetworkConfig.default()
 
   def _create_traffic_shaper(self, browser_platform: Platform) -> TrafficShaper:
     if self.speed.is_live:

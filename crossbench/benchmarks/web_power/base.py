@@ -502,21 +502,22 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
 
   @classmethod
   def _select_network(cls, args: argparse.Namespace) -> None:
-    if getattr(args, "has_explicit_network", False):
-      cls._setup_explicit_network(args)
+    network: NetworkConfig = args.network
+    if network and not network.is_default():
+      cls._setup_explicit_network(args, network)
     elif not args.url:
       cls._setup_pre_recorded_site_network(args)
 
   @classmethod
-  def _setup_explicit_network(cls, args: argparse.Namespace) -> None:
+  def _setup_explicit_network(cls, args: argparse.Namespace,
+                              network: NetworkConfig) -> None:
     if args.site:
       raise ValueError(
           "Specifying '--site' is mutually exclusive with explicit "
           "'--network' or '--wpr' flags, as it implies the selection "
           "of a specific WPR recording. Explicit networks are only "
           "supported when testing with '--url'.")
-    network = getattr(args, "network", None)
-    if network and network.type == NetworkType.WPR:
+    if network.type == NetworkType.WPR:
       args.network = dataclasses.replace(network, no_archive_certificates=True)
 
   @classmethod

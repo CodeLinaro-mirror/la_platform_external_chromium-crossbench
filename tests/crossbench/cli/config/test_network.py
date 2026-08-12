@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import unittest
 import urllib.parse as urlparse
@@ -87,6 +88,13 @@ class NetworkSpeedConfigTestCase(BaseConfigTestCase):
 
 class NetworkConfigTestCase(BaseConfigTestCase):
 
+  def test_default_is_frozen(self):
+    # NetworkConfig.default relies on a frozen immutable state for proper
+    # default network detection.
+    config = NetworkConfig.default()
+    with self.assertRaises(dataclasses.FrozenInstanceError):
+      config.foo = "bar"
+
   def test_parse_invalid(self):
     for invalid in ("", None, "---", "something"):
       with self.assertRaises(argparse.ArgumentTypeError):
@@ -106,6 +114,29 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config, config_1)
     config_2 = NetworkConfig.parse("{}")
     self.assertEqual(config, config_2)
+
+  def test_is_default(self):
+    self.assertIs(NetworkConfig.default(), NetworkConfig.default())
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NetworkConfig.parse_str("default", type=NetworkType.WPR)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NetworkConfig.parse_str("default", type=NetworkType.LOCAL)
+    with self.assertRaises(TypeError):
+      NetworkConfig.default(NetworkType.LIVE)  # type: ignore[call-arg]
+    self.assertTrue(NetworkConfig.default().is_default())
+    self.assertTrue(NetworkConfig.parse("default").is_default())
+    self.assertEqual(NetworkConfig.default(), NetworkConfig.parse("live"))
+    self.assertIsNot(NetworkConfig.default(), NetworkConfig.parse("live"))
+    self.assertFalse(NetworkConfig.parse("live").is_default())
+    self.assertFalse(NetworkConfig(type=NetworkType.LIVE).is_default())
+    self.assertFalse(NetworkConfig.parse("4G").is_default())
+    self.assertFalse(
+        NetworkConfig(
+            type=NetworkType.LIVE,
+            speed=NetworkSpeedConfig.parse("4G")).is_default())
+    self.assertFalse(
+        NetworkConfig(type=NetworkType.LOCAL,
+                      path=pth.LocalPath(".")).is_default())
 
   def test_help(self):
     help_text = NetworkConfig.help()
