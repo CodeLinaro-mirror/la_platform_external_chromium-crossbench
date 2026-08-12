@@ -347,14 +347,16 @@ class Platform(abc.ABC):
 
   @functools.lru_cache(maxsize=1)
   def system_details(self) -> dict[str, Any]:
-    return {
+    details = {
         "machine": str(self.machine),
         "os": self.os_details(),
         "python": self.python_details(),
-        "crossbench": self.crossbench_details(),
         "CPU": self.cpu_details(),
         "display": self.display_details()
     }
+    if self.is_local:
+      details["crossbench"] = self.crossbench_details(),
+    return details
 
   @functools.lru_cache(maxsize=1)
   def os_details(self) -> JsonDict:
@@ -376,18 +378,15 @@ class Platform(abc.ABC):
 
   @functools.lru_cache(maxsize=1)
   def crossbench_details(self) -> JsonDict:
-    git_bin = shutil.which("git")
+    self.assert_is_local()
+    git_bin = self.which("git")
     root_dir = pth.ROOT_DIR
     if not git_bin or not (root_dir / ".git").exists():
       return {"version": __version__}
 
-    def run_git(*args: str) -> str:
-      res = subprocess.run([git_bin, *args],
-                           cwd=root_dir,
-                           capture_output=True,
-                           text=True,
-                           check=False)
-      return res.stdout.strip() if res.returncode == 0 else ""
+    def run_git(*args: CmdArg) -> str:
+      res = self.sh_stdout(git_bin, *args, cwd=root_dir, check=False)
+      return res.strip()
 
     return {
         "version": __version__,

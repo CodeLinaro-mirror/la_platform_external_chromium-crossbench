@@ -661,10 +661,15 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     details = self.platform.system_details()
     self.assertTrue(details)
     self.assertTrue(json.dumps(details))
-    self.assertIn("crossbench", details)
+    if not self.platform.is_remote:
+      self.assertIn("crossbench", details)
 
   def test_crossbench_details(self):
     self.platform.crossbench_details.cache_clear()
+    if self.platform.is_remote:
+      with self.assertRaises(RuntimeError):
+        self.platform.crossbench_details()
+      return
     details = self.platform.crossbench_details()
     self.assertTrue(details)
     self.assertTrue(json.dumps(details))
@@ -678,12 +683,16 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
       self.assertIsInstance(details[key], expected_type)
 
   def test_crossbench_details_no_git_binary(self):
+    if self.platform.is_remote:
+      return
     self.platform.crossbench_details.cache_clear()
     with mock.patch("shutil.which", return_value=None):
       details = self.platform.crossbench_details()
       self.assertDictEqual(details, {"version": __version__})
 
   def test_crossbench_details_no_git_dir(self):
+    if self.platform.is_remote:
+      return
     self.platform.crossbench_details.cache_clear()
     fake_root = pth.LocalPath("/non/existent/crossbench/root")
     with mock.patch.object(pth, "ROOT_DIR", new=fake_root):
@@ -691,8 +700,10 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
       self.assertDictEqual(details, {"version": __version__})
 
   def test_crossbench_details_git_error(self):
+    if self.platform.is_remote:
+      return
     self.platform.crossbench_details.cache_clear()
-    failed_proc = mock.Mock(returncode=128, stdout="")
+    failed_proc = mock.Mock(returncode=128, stdout=b"", stderr=b"")
     with mock.patch("subprocess.run", return_value=failed_proc):
       details = self.platform.crossbench_details()
       self.assertEqual(details["version"], __version__)
