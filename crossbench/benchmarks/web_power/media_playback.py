@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import enum
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -37,6 +38,7 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
   DEFAULT_STATS: ClassVar[bool] = False
   DEFAULT_VOLUME: ClassVar[VolumeMode] = VolumeMode.ON
   DEFAULT_AMBIENT_MODE: ClassVar[AmbientMode] = AmbientMode.OFF
+  DEFAULT_FULLSCREEN: ClassVar[bool] = True
 
   @classmethod
   @override
@@ -55,13 +57,15 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
                stabilization_time: dt.timedelta | None = None,
                stats: bool | None = None,
                volume: VolumeMode | None = None,
-               ambient_mode: AmbientMode | None = None) -> None:
+               ambient_mode: AmbientMode | None = None,
+               fullscreen: bool | None = None) -> None:
     self.playback_duration = _value_or(duration, self.DEFAULT_DURATION)
     stabilization_time = _value_or(stabilization_time,
                                    site_config.default_stabilization_time)
     self.stats = _value_or(stats, self.DEFAULT_STATS)
     self.volume = _value_or(volume, self.DEFAULT_VOLUME)
     self.ambient_mode = _value_or(ambient_mode, self.DEFAULT_AMBIENT_MODE)
+    self.fullscreen = _value_or(fullscreen, self.DEFAULT_FULLSCREEN)
 
     total_duration = (
         stabilization_time + self.setup_max_duration + self.playback_duration +
@@ -180,11 +184,12 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
     with run.actions("Pause_Video", verbose=True) as actions:
       self._pause_video(actions)
 
-    with run.actions("Full_Screen", verbose=True) as actions:
-      self._show_controls(actions)
-      selector = "document.querySelector('button[aria-label*=\"screen\"]')"
-      self._wait_js_condition(actions, f"return !!({selector});")
-      self._evaluate_with_gesture(run.browser, f"({selector}).click();")
+    if self.fullscreen:
+      with run.actions("Full_Screen", verbose=True) as actions:
+        self._show_controls(actions)
+        selector = "document.querySelector('button[aria-label*=\"screen\"]')"
+        self._wait_js_condition(actions, f"return !!({selector});")
+        self._evaluate_with_gesture(run.browser, f"({selector}).click();")
 
     if self.stats:
       with run.actions("Stats_For_Nerds", verbose=True) as actions:
@@ -285,4 +290,10 @@ class WebPowerMediaPlaybackBenchmark(WebPowerBenchmarkBase):
         default=story_cls.DEFAULT_VOLUME,
         help="Configure device music stream volume. "
         f"(Default: {story_cls.DEFAULT_VOLUME})")
+    parser.add_argument(
+        "--fullscreen",
+        action=argparse.BooleanOptionalAction,
+        default=story_cls.DEFAULT_FULLSCREEN,
+        help="Enable fullscreen video playback. "
+        f"(Default: {story_cls.DEFAULT_FULLSCREEN})")
     return parser
