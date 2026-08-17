@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, TypeAlias
+from typing import TYPE_CHECKING, ClassVar, Final, TypeAlias
 
 from typing_extensions import override
 
@@ -13,7 +13,7 @@ from crossbench import path as pth
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
-  BinaryLookup: TypeAlias = pth.AnyPathLike | Iterable[pth.AnyPathLike]
+  BinaryLookup: TypeAlias = pth.AnyPathLike | tuple[pth.AnyPathLike, ...]
 
 
 class BinaryNotFoundError(RuntimeError):
@@ -76,9 +76,9 @@ class Binary:
       path: str = paths
       if not path:
         raise ValueError("Got unexpected empty string as binary path")
-      paths = [path]
-    elif isinstance(paths, pth.AnyPath):
-      paths = [paths]
+      return (pth.AnyPath(path),)
+    if isinstance(paths, pth.AnyPath):
+      return (paths,)
     return tuple(pth.AnyPath(path) for path in paths)
 
   def _validate_win(self) -> None:
@@ -206,25 +206,27 @@ class ChromeOSBinary(Binary):
 class Binaries:
   ADB: ClassVar = Binary(
       "adb",
-      macos=["adb", "~/Library/Android/sdk/platform-tools/adb"],
-      linux=["adb"],
-      win=["adb.exe", "Android/sdk/platform-tools/adb.exe"])
+      macos=("adb", "~/Library/Android/sdk/platform-tools/adb",
+             "third_party/android_sdk/public/platform-tools/adb"),
+      linux=("adb", "third_party/android_sdk/public/platform-tools/adb"),
+      win=("adb.exe", "Android/sdk/platform-tools/adb.exe",
+           "third_party/android_sdk/public/platform-tools/adb.exe"))
   AAPT: ClassVar = Binary(
       "aapt",
-      macos=[
+      macos=(
           "aapt",
           "~/Library/Android/sdk/build-tools/*/aapt",
           "third_party/android_sdk/public/build-tools/*/aapt",
-      ],
-      linux=[
+      ),
+      linux=(
           "aapt",
           "third_party/android_sdk/public/build-tools/*/aapt",
-      ],
-      win=[
+      ),
+      win=(
           "aapt.exe",
           "Android/sdk/build-tools/*/aapt.exe",
           "third_party/android_sdk/public/build-tools/*/aapt.exe",
-      ])
+      ))
   CPIO: ClassVar = LinuxBinary("cpio")
   FFMPEG: ClassVar = Binary("ffmpeg", posix="ffmpeg")
   GCERTSTATUS: ClassVar = Binary("gcertstatus", posix="gcertstatus")
@@ -259,5 +261,5 @@ class Browsers:
   FIREFOX_NIGHTLY: ClassVar = Binary(
       "Firefox nightly",
       macos="Firefox Nightly.app",
-      linux=["firefox-nightly", "firefox-trunk"],
+      linux=("firefox-nightly", "firefox-trunk"),
       win="Firefox Nightly/firefox.exe")

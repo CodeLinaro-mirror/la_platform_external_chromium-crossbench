@@ -15,8 +15,8 @@ from typing_extensions import override
 import crossbench.path as pth
 from crossbench import plt
 from crossbench.plt import PLATFORM
-from crossbench.plt.bin import Binary, BinaryNotFoundError, ChromeOSBinary, \
-    LinuxBinary, MacOsBinary, PosixBinary, WinBinary
+from crossbench.plt.bin import Binaries, Binary, BinaryNotFoundError, \
+    ChromeOSBinary, LinuxBinary, MacOsBinary, PosixBinary, WinBinary
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_helper import ChromeOsSshMockPlatform, \
@@ -279,6 +279,16 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve_cached(platform)
 
+
+class BinariesTestCase(CrossbenchFakeFsTestCase):
+
+  def test_adb_bin_paths(self):
+    linux_plt = LinuxMockPlatform()
+    adb_path = linux_plt.local_path(
+        "third_party/android_sdk/public/platform-tools/adb")
+    self.fs.create_file(adb_path, st_size=100)
+
+    self.assertEqual(Binaries.ADB.resolve(linux_plt), adb_path)
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
