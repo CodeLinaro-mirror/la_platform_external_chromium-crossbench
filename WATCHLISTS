@@ -16,8 +16,6 @@
   'WATCHLISTS': {
     'all': [
       'cbruni+watch@chromium.org',
-      'faridzad+watch@google.com',
-      'johnchen+watch@chromium.org',
     ],
   },
 }
