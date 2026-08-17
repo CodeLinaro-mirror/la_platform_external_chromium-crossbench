@@ -76,7 +76,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
       with platform.override_binary(binary, path):
         self.assertEqual(binary.resolve(platform), path)
         self.assertEqual(binary.resolve_cached(platform), path)
-    cm.assert_called_once_with(os.fspath(path))
+    cm.assert_called_once_with(os.fspath(platform.path(path)))
 
     # Still cached
     self.assertEqual(binary.resolve_cached(platform), path)

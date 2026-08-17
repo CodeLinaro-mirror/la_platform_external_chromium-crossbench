@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import pathlib
 import plistlib
 import textwrap
 from unittest import mock
@@ -124,6 +125,20 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertEqual(
         self.platform.app_version(binary_path), "(Release 203, 19620.1.6)")
 
+  def test_which_empty_path(self):
+    with self.assertRaises(ValueError):
+      self.platform.which("")
+    with self.assertRaises(ValueError):
+      self.platform.which(pathlib.Path())
+
+  def test_search_binary_empty_path(self):
+    with self.assertRaises(ValueError) as cm:
+      self.platform.search_binary(pathlib.Path())
+    self.assertIn("empty", str(cm.exception))
+    with self.assertRaises(ValueError) as cm:
+      self.platform.search_binary("")
+    self.assertIn("empty", str(cm.exception))
+
   def test_search_binary(self):
     app_path = pth.LocalPath("/Applications/Google Chrome.app")
     self.assertIsNone(self.platform.search_binary(app_path))
@@ -177,6 +192,46 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
       plistlib.dump({}, f)
     with self.assertRaisesRegex(ValueError, "binaries"):
       self.platform.search_binary(app_path)
+
+  def test_search_app_home_override(self):
+    overridden_app = self.platform.path("/System/Applications/Calendar.app")
+    self.fs.create_file(overridden_app / "Contents/MacOS/Calendar", st_size=100)
+    test_app_home = "~/Applications/Foo.app"
+    test_app_expanded = self.platform.expanduser(test_app_home)
+
+    with self.platform.override_binary(test_app_home, overridden_app):
+      app = self.platform.search_app(self.platform.path(test_app_home))
+      self.assertIsNotNone(app)
+      self.assertEqual(app.name, "Calendar.app")
+
+    with self.platform.override_binary(test_app_expanded, overridden_app):
+      app = self.platform.search_app(self.platform.path(test_app_home))
+      self.assertIsNotNone(app)
+      self.assertEqual(app.name, "Calendar.app")
+
+  def test_search_binary_home_override(self):
+    overridden_app = self.platform.path("/System/Applications/Calendar.app")
+    self.fs.create_file(overridden_app / "Contents/MacOS/Calendar", st_size=100)
+    test_app_home = "~/Applications/Foo.app"
+    test_app_expanded = self.platform.expanduser(test_app_home)
+
+    with self.platform.override_binary(test_app_home, overridden_app):
+      binary = self.platform.search_binary(self.platform.path(test_app_home))
+      self.assertIsNotNone(binary)
+      self.assertEqual(binary.name, "Calendar")
+
+    with self.platform.override_binary(test_app_expanded, overridden_app):
+      binary = self.platform.search_binary(self.platform.path(test_app_home))
+      self.assertIsNotNone(binary)
+      self.assertEqual(binary.name, "Calendar")
+
+  def test_search_app_empty(self):
+    with self.assertRaisesRegex(ValueError, "empty"):
+      self.platform.search_app("")
+    with self.assertRaisesRegex(ValueError, "empty"):
+      self.platform.search_app(pth.LocalPath(""))
+    with self.assertRaisesRegex(ValueError, "empty"):
+      self.platform.search_app(pth.LocalPath())
 
   def test_search_app(self):
     app_path = pth.LocalPath("/Applications/Custom Chrome.app")

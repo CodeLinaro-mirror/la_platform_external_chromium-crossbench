@@ -150,7 +150,7 @@ class ShellProbeBase(Probe):
     if not cmd:
       return
     program = str(cmd[0])
-    if platform.which(platform.expanduser(program)):
+    if platform.which(program):
       return
     raise ProbeValidationError(
         self, f"Command '{program}' in {cmd_name} is not executable or "

@@ -145,16 +145,12 @@ class WinPlatform(Platform):
       raise ValueError("Got empty path")
     if app_or_bin_path.suffix.lower() not in (".exe", ".bat"):
       raise ValueError("Expected executable path with '.exe' or '.bat' suffix, "
-                       f"but got: '{app_or_bin_path.name}'")
+                       f"but got: {app_or_bin_path.name!r}")
     if result_path := self.which(app_or_bin):
-      assert self.exists(result_path), f"{result_path} does not exist."
+      if not self.exists(result_path):
+        raise RuntimeError(f"Resolved binary {result_path} does not exist.")
       return result_path
-    for path in self.SEARCH_PATHS:
-      # Recreate Path object for easier pyfakefs testing
-      result_path = self.path(path) / app_or_bin
-      if self.exists(result_path):
-        return result_path
-    return None
+    return self._search_binary_in_search_path(app_or_bin_path)
 
   @override
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:

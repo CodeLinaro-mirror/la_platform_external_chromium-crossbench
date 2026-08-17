@@ -171,18 +171,11 @@ class LinuxPlatform(PosixPlatform):
 
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
     app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
-    if not app_or_bin_path.parts:
-      raise ValueError("Got empty path")
     if result_path := self.which(app_or_bin_path):
       if not self.exists(result_path):
-        raise RuntimeError(f"{result_path} does not exist.")
+        raise RuntimeError(f"Resolved binary {result_path} does not exist.")
       return result_path
-    for path in self.SEARCH_PATHS:
-      # Recreate Path object for easier pyfakefs testing
-      result_path = self.path(path) / app_or_bin_path
-      if self.exists(result_path):
-        return result_path
-    return None
+    return self._search_binary_in_search_path(app_or_bin_path)
 
   def screenshot(self, result_path: pth.AnyPath) -> None:
     # TODO: maybe use imagemagick's 'import' as more portable alternative

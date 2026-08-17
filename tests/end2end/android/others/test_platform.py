@@ -47,6 +47,12 @@ class AndroidAdbPlatformTestCase(PosixNativePlatformTestCase):
     if self.adb.has_root():
       self.assertTrue(self.platform.is_dir(self.platform.home()))
 
+  def test_binary_lookup_override_home_dir(self):
+    if not self.adb.has_root():
+      self.skipTest("AndroidAdbPlatform requires ADB root privileges "
+                    "to access the user home directory (~).")
+    super().test_binary_lookup_override_home_dir()
+
   def test_cpu_usage(self):
     self.skipTest("Not supported yet")
 

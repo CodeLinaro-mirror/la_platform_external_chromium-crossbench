@@ -9,6 +9,7 @@ import contextlib
 import dataclasses
 import enum
 import functools
+import os
 import pathlib
 import shlex
 import subprocess
@@ -350,7 +351,10 @@ class MockPlatformMixin:
     return self.path(f"/usr/bin/{name}")
 
   def search_binary(self, app_or_bin: str | pth.AnyPath) -> pth.AnyPath | None:
-    path = self.path(f"/usr/bin/{app_or_bin}")
+    path = self.path(app_or_bin)
+    if not path.parts:
+      raise ValueError("Got empty path")
+    path = self.path(f"/usr/bin/{path}")
     if self.use_fs and self.is_file(path):
       return path
     return super().search_binary(app_or_bin)
@@ -546,7 +550,15 @@ class WinMockPlatformMixin(MockPlatformMixin):
   # when running on posix.
 
   def path(self, path: pth.AnyPathLike) -> pth.AnyPath:
-    return pathlib.PureWindowsPath(path)
+    return pathlib.PureWindowsPath(os.fspath(path))
+
+  def local_path(self, path: pth.AnyPathLike) -> pth.LocalPath:
+    self.assert_is_local()
+    if isinstance(path, pathlib.PureWindowsPath):
+      return pth.LocalPath(path.as_posix())
+    if isinstance(path, str):
+      return pth.LocalPath(pathlib.PureWindowsPath(path).as_posix())
+    return pth.LocalPath(path)
 
 
 class LinuxMockPlatform(PosixMockPlatformMixin, LinuxPlatform):

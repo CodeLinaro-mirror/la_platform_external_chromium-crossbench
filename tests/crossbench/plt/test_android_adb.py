@@ -375,6 +375,20 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
       self.assertEqual(self.platform.machine, MachineArch.ARM_64)
     self.assertIn("arm37-XXX", str(cm.exception))
 
+  def test_home_and_tilde_lookups_raise_runtime_error(self):
+    test_binary_home = "~/crossbench-non-existing-test-binary"
+
+    with self.assertRaisesRegex(RuntimeError, "home dir"):
+      self.platform.home()
+
+    with self.assertRaisesRegex(RuntimeError, "home dir"):
+      self.platform.expanduser(test_binary_home)
+
+    with self.assertRaisesRegex(RuntimeError, "home dir"):
+      self.platform.which(test_binary_home)
+
+    self.assertIsNone(self.platform.lookup_binary_override(test_binary_home))
+
   def test_machine_arm64(self):
     self.expect_sh("getprop ro.product.cpu.abi", result="arm64-v8a")
     self.assertEqual(self.platform.machine, MachineArch.ARM_64)
@@ -536,6 +550,12 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
                     "mPendingUpdate=null")
     self.expect_sh("dumpsys", "display", result=display_info)
     self.assertEqual(self.platform.get_main_display_brightness(), 100)
+
+  def test_which_empty_path(self):
+    with self.assertRaises(ValueError):
+      self.platform.which("")
+    with self.assertRaises(ValueError):
+      self.platform.which(pathlib.Path())
 
   def test_search_binary_empty_path(self):
     with self.assertRaises(ValueError) as cm:

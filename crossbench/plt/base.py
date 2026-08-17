@@ -117,6 +117,7 @@ DEFAULT_CACHE_DIR: Final = pth.LocalPath(__file__).parents[2] / "cache"
 
 
 class Platform(abc.ABC):
+  SEARCH_PATHS: tuple[pth.AnyPath, ...] = ()
 
   def __init__(self) -> None:
     self._id: Final[int] = _next_id()
@@ -458,7 +459,7 @@ class Platform(abc.ABC):
   ) -> pth.AnyPath:
     return self._search_executable(name, macos, win, linux, self.search_binary)
 
-  def search_app(self, app_or_bin: pth.AnyPath) -> pth.AnyPath | None:
+  def search_app(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
     """Look up a application bundle (macos) or binary (all other platforms) in
     the common search paths.
     """
@@ -470,6 +471,15 @@ class Platform(abc.ABC):
     segment path with just the binary name.
     Returns the location of the binary (and not the .app bundle on macOS).
     """
+
+  def _search_binary_in_search_path(
+      self, app_or_bin: pth.AnyPath) -> pth.AnyPath | None:
+    for path in self.SEARCH_PATHS:
+      # Recreate Path object for easier pyfakefs testing
+      result_path = self.path(path) / app_or_bin
+      if self.exists(result_path):
+        return result_path
+    return None
 
   @abc.abstractmethod
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
@@ -502,12 +512,14 @@ class Platform(abc.ABC):
     return parse.PathParser.local_binary_path(value, self, name)
 
   def which(self, binary_name: pth.AnyPathLike) -> pth.AnyPath | None:
-    if not binary_name:
+    binary_name_path = self.path(binary_name)
+    if not binary_name_path.parts:
       raise ValueError("Got empty path")
     self.assert_is_local()
     if binary_override := self.lookup_binary_override(binary_name):
       return binary_override
-    if result := shutil.which(os.fspath(binary_name)):
+    binary_name_path = self.expanduser(binary_name_path)
+    if result := shutil.which(os.fspath(binary_name_path)):
       return self.path(result)
     return None
 
@@ -818,9 +830,9 @@ class Platform(abc.ABC):
 
   def absolute(self, path: pth.AnyPathLike) -> pth.AnyPath:
     """Convert an arbitrary path to a platform-specific absolute path"""
-    platform_path: pth.AnyPath = self.path(path)
     if self.is_local:
-      return self.local_path(platform_path).absolute()
+      return self.local_path(path).absolute()
+    platform_path: pth.AnyPath = self.path(path)
     if platform_path.is_absolute():
       return platform_path
     raise RuntimeError(
@@ -832,19 +844,13 @@ class Platform(abc.ABC):
 
   def expanduser(self, path: pth.AnyPathLike) -> pth.AnyPath:
     platform_path = self.path(path)
-    if self.is_local:
-      try:
-        return self.local_path(platform_path).expanduser()
-      except RuntimeError:
-        return platform_path
-    path_str = os.fspath(platform_path)
-    if path_str == "~":
-      return self.home()
-    if path_str.startswith("~/"):
-      return self.home() / path_str[len("~/"):]
+    parts = platform_path.parts
+    if parts and parts[0] == "~":
+      return self.home().joinpath(*parts[1:])
     return platform_path
 
   def home(self) -> pth.AnyPath:
+    self.assert_is_local()
     return pathlib.Path.home()
 
   def touch(self, path: pth.AnyPathLike) -> None:

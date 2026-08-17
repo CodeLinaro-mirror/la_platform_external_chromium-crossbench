@@ -73,6 +73,50 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
         self.platform.path(pathlib.PurePosixPath("foo/bar")),
         pathlib.PureWindowsPath)
 
+  def test_expanduser(self) -> None:
+    home = self.path("C:/Users/testuser")
+    with mock.patch.object(self.platform, "home", return_value=home):
+      self.assertEqual(self.platform.expanduser("~"), home)
+      self.assertEqual(self.platform.expanduser("~/"), home)
+      self.assertEqual(self.platform.expanduser("~/foo"), home / "foo")
+      self.assertEqual(self.platform.expanduser("~/foo/bar"), home / "foo/bar")
+      self.assertEqual(self.platform.expanduser("~\\"), home)
+      self.assertEqual(self.platform.expanduser("~\\foo"), home / "foo")
+      self.assertEqual(
+          self.platform.expanduser("~\\foo\\bar"), home / "foo/bar")
+      self.assertEqual(
+          self.platform.expanduser(pathlib.PureWindowsPath("~\\foo")),
+          home / "foo")
+      self.assertEqual(
+          self.platform.expanduser(pth.AnyWindowsPath("~\\foo")), home / "foo")
+      self.assertEqual(
+          self.platform.expanduser(pathlib.PurePosixPath("~/foo")),
+          home / "foo")
+      self.assertEqual(
+          self.platform.expanduser(pth.AnyPosixPath("~/foo")), home / "foo")
+
+  def test_expanduser_no_home(self) -> None:
+    for path_str in (
+        "",
+        ".",
+        "foo",
+        "foo/bar",
+        "foo\\bar",
+        "foo/~bar",
+        "foo\\~bar",
+        "~~",
+        "~~/foo",
+        "~~\\foo",
+        "~otheruser",
+        "~otheruser\\foo",
+        "C:/Users/foo",
+        "C:\\Users\\foo",
+        "C:\\foo\\~bar",
+    ):
+      with self.subTest(path=path_str):
+        self.assertEqual(
+            self.platform.expanduser(path_str), self.path(path_str))
+
   def test_which(self):
     bin_path = self.path("foo/bar/default/crossbench_mock_binary.exe")
     self.assertIsNone(self.platform.which(bin_path))
@@ -85,21 +129,26 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
       self.platform.which("")
     self.assertIn("empty", str(cm.exception))
 
-  def test_search_binary_invalid(self):
-    with self.assertRaises(ValueError) as cm:
+  def test_which_empty_path(self):
+    with self.assertRaises(ValueError):
+      self.platform.which("")
+    with self.assertRaises(ValueError):
+      self.platform.which(pathlib.Path())
+
+  def test_search_binary_empty_path(self):
+    with self.assertRaisesRegex(ValueError, "empty"):
+      self.platform.search_binary(pathlib.Path())
+    with self.assertRaisesRegex(ValueError, "empty"):
       self.platform.search_binary("")
-    self.assertIn("empty", str(cm.exception))
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, ".exe"):
       self.platform.search_binary("foo/bar")
-    self.assertIn(".exe", str(cm.exception))
 
   def test_search_binary_broken_which(self):
     bin_path = self.path("foo/bar/default/crossbench_mock_binary.exe")
     self.assertIsNone(self.platform.search_app(bin_path))
     with mock.patch("shutil.which", return_value=bin_path) as cm:
-      with self.assertRaises(AssertionError) as search_cm:
+      with self.assertRaisesRegex(RuntimeError, "exist"):
         self.assertEqual(self.platform.search_app(bin_path), bin_path)
-      self.assertIn("exist", str(search_cm.exception))
     cm.assert_called_once_with(os.fspath(bin_path))
 
   def test_search_binary(self):

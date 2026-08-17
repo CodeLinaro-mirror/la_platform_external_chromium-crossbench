@@ -94,29 +94,27 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     self.assertTrue(len(version_a.parts) >= 1)
     self.assertGreater(version_a.major, 0)
 
-  def test_which_none(self):
+  def test_which_empty_path(self):
     with self.assertRaises(ValueError):
       self.platform.which("")
+    with self.assertRaises(ValueError):
+      self.platform.which(pathlib.Path())
 
   def test_which_invalid_binary(self):
     with tempfile.TemporaryDirectory() as tmp_dirname:
       self.assertIsNone(self.platform.which(tmp_dirname))
 
   def test_search_binary_empty_path(self):
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "empty"):
       self.platform.search_binary(pathlib.Path())
-    self.assertIn("empty", str(cm.exception))
-    with self.assertRaises(ValueError) as cm:
-      self.platform.search_binary(pathlib.Path())
-    self.assertIn("empty", str(cm.exception))
+    with self.assertRaisesRegex(ValueError, "empty"):
+      self.platform.search_binary("")
 
   def test_search_app_empty_path(self):
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "empty"):
       self.platform.search_app(pathlib.Path())
-    self.assertIn("empty", str(cm.exception))
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "empty"):
       self.platform.search_app(pathlib.Path())
-    self.assertIn("empty", str(cm.exception))
 
   def test_cat(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
@@ -329,9 +327,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     else:
       self.assertTrue(self.platform.is_dir(self.platform.home()))
 
-  def _compare_expanded(self, lhs: str, rhs: pth.AnyPath) -> None:
-    self.assertEqual(self.platform.expanduser(lhs), self.platform.path(rhs))
-
   def test_expanduser(self) -> None:
     home: pth.AnyPath | None
     try:
@@ -351,9 +346,15 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       with self.assertRaises(RuntimeError):
         self.platform.expanduser("~/foo")
 
-    self._compare_expanded("~~", self.platform.path("~~"))
-    self._compare_expanded("~~/foo", self.platform.path("~~/foo"))
-    self._compare_expanded("foo", self.platform.path("foo"))
+  def test_expanduser_no_home(self) -> None:
+    self._compare_expanded("~~", "~~")
+    self._compare_expanded("~~/foo", "~~/foo")
+    self._compare_expanded("foo", "foo")
+    self._compare_expanded("foo/bar", "foo/bar")
+    self._compare_expanded("foo/~bar", "foo/~bar")
+
+  def _compare_expanded(self, lhs: str, rhs: pth.AnyPathLike) -> None:
+    self.assertEqual(self.platform.expanduser(lhs), self.platform.path(rhs))
 
   def test_absolute_absolute(self):
     if self.platform.is_win:
@@ -602,6 +603,21 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.assertEqual(self.platform.which(test_binary), override_binary)
     self.assertIsNone(self.platform.lookup_binary_override(test_binary))
     self.assertIsNone(self.platform.which(test_binary))
+
+  @unittest.skipIf(
+      not plt.PLATFORM.which("python3"), reason="python3 not installed")
+  def test_binary_lookup_override_home_dir(self):
+    # Test overriding a binary in the home directory
+    test_binary_home = "~/crossbench-non-existing-test-binary"
+
+    self.assertIsNone(self.platform.lookup_binary_override(test_binary_home))
+    self.assertIsNone(self.platform.which(test_binary_home))
+
+    override_binary = self.platform.which(self.known_binary)
+    self.assertTrue(override_binary)
+
+    with self.platform.override_binary(test_binary_home, override_binary):
+      self.assertEqual(self.platform.which(test_binary_home), override_binary)
 
   def test_signals(self):
     for signal_name in dir(self.platform.signals):

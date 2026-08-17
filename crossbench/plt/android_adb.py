@@ -891,9 +891,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
 
   @override
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
-    app_or_bin_path = self.path(app_or_bin)
-    if not app_or_bin_path.parts:
-      raise ValueError("Got empty path")
+    app_or_bin_path: pth.AnyPath = self.path(app_or_bin)
     if result_path := self.which(app_or_bin_path):
       return result_path
     if str(app_or_bin) in self.adb.packages():

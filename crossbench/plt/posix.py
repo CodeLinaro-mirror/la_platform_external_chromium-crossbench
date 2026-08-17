@@ -234,12 +234,16 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
   def which(self, binary_name: pth.AnyPathLike) -> pth.AnyPath | None:
     if self.is_local:
       return super().which(binary_name)
-    if not binary_name:
+    binary_name_path = self.path(binary_name)
+    if not binary_name_path.parts:
       raise ValueError("Got empty path")
     if binary_override := self.lookup_binary_override(binary_name):
       return binary_override
+    binary_name_path = self.expanduser(binary_name)
+    if binary_override := self.lookup_binary_override(binary_name_path):
+      return binary_override
     try:
-      if maybe_path := self.sh_stdout("which", self.path(binary_name)).strip():
+      if maybe_path := self.sh_stdout("which", binary_name_path).strip():
         maybe_bin = self.path(maybe_path)
         if self.exists(maybe_bin):
           return maybe_bin

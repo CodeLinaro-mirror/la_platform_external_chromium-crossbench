@@ -7,6 +7,7 @@ from __future__ import annotations
 import contextlib
 import datetime as dt
 import json
+import pathlib
 
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
@@ -224,12 +225,26 @@ class IOsMockPlatformTestCase(BaseMockPlatformTestCase):
     platform_a = IOSPlatform(self.host_platform, "iPhone Pro")
     self.assertEqual(platform_a.uptime(), dt.timedelta())
 
+  def test_which_empty_path(self):
+    with self.assertRaises(ValueError):
+      self.platform.which("")
+    with self.assertRaises(ValueError):
+      self.platform.which(pathlib.Path())
+
+  def test_search_binary_empty_path(self):
+    with self.assertRaises(ValueError) as cm:
+      self.platform.search_binary(pathlib.Path())
+    self.assertIn("empty", str(cm.exception))
+    with self.assertRaises(ValueError) as cm:
+      self.platform.search_binary("")
+    self.assertIn("empty", str(cm.exception))
+
   def test_search_binary_safari(self):
     self.expect_startup_devices(DEVICES_MULTIPLE)
-    platform_a = IOSPlatform(self.host_platform, "iPhone Pro")
+    platform = IOSPlatform(self.host_platform, "iPhone Pro")
     self.assertEqual(
-        platform_a.search_binary(self.SAFARI_PATH),
-        pth.AnyPath(self.SAFARI_PATH))
+        str(platform.search_binary(self.SAFARI_PATH)),
+        str(pth.AnyPath(self.SAFARI_PATH)))
 
   def test_search_binary_not_safari(self):
     self.expect_startup_devices(DEVICES_MULTIPLE)

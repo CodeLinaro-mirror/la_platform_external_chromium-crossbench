@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import pathlib
 import textwrap
 from unittest import mock
 
@@ -51,6 +52,7 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.platform.mock_version_str = None
     self.expect_sh("uname", "-r", result="5.4.0-104-generic")
     self.assertEqual(self.platform.version_str, "5.4.0-104-generic")
+
     version = self.platform.version
     self.assertEqual(version.parts, (5, 4, 0))
     self.assertEqual(version.version_str, "5.4.0-104-generic")
@@ -241,6 +243,20 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
       self.platform.system_memory_bytes
 
   # TODO: implement more mock tests
+  def test_which_empty_path(self):
+    with self.assertRaises(ValueError):
+      self.platform.which("")
+    with self.assertRaises(ValueError):
+      self.platform.which(pathlib.Path())
+
+  def test_search_binary_empty_path(self):
+    with self.assertRaises(ValueError) as cm:
+      self.platform.search_binary(pathlib.Path())
+    self.assertIn("empty", str(cm.exception))
+    with self.assertRaises(ValueError) as cm:
+      self.platform.search_binary("")
+    self.assertIn("empty", str(cm.exception))
+
   def test_local_reverse_port_forward_invalid(self):
     pass
 

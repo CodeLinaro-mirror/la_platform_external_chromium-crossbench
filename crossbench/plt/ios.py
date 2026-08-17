@@ -272,8 +272,11 @@ class IOSPlatform(RemotePlatformMixin, Platform):
 
   @override
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
-    if self._is_safari_app(app_or_bin):
-      return pth.AnyPath(app_or_bin)
+    resolved_app_or_bin: pth.AnyPath = self.expanduser(app_or_bin)
+    if not resolved_app_or_bin.parts:
+      raise ValueError("Got empty path")
+    if self._is_safari_app(resolved_app_or_bin):
+      return resolved_app_or_bin
     raise ValueError(
         f"Safari is the only supported app on ios, requested {app_or_bin}")
 
