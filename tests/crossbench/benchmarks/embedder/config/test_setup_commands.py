@@ -31,9 +31,9 @@ class SetupCommandsConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(len(config.commands[0].command), 0)
 
     config_data = {"setup_commands": {}}
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                r"(?i)setup_commands.*non-empty"):
       SetupCommandsConfig.parse(config_data)
-    self.assertIn("empty", str(cm.exception).lower())
 
   def test_example(self):
     config_data = {

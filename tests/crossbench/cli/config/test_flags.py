@@ -21,12 +21,11 @@ from tests.crossbench.base import CrossbenchMockArgsMixin
 class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_invalid_empty(self):
-    with self.assertRaises(ArgumentTypeMultiException) as cm:
+    with self.assertRaisesRegex(ArgumentTypeMultiException,
+                                r"(?i)empty string"):
       FlagsConfig.parse("")
-    self.assertIn("empty", str(cm.exception).lower())
-    with self.assertRaises(ConfigError) as cm:
+    with self.assertRaisesRegex(ConfigError, r"(?i)empty string"):
       FlagsConfig.parse_str("")
-    self.assertIn("empty", str(cm.exception).lower())
 
   def test_empty_dict(self):
     config = FlagsConfig.parse({})

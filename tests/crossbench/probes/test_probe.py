@@ -70,12 +70,10 @@ if TYPE_CHECKING:
 class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_invalid_empty(self):
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "str"):
       ProbeListConfig.parse({"probes": ""})
-    self.assertIn("str", str(cm.exception).lower())
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "probes"):
       ProbeListConfig.parse({"browsers": {}})
-    self.assertIn("probes", str(cm.exception).lower())
 
   def test_empty(self):
     probe_list = ProbeListConfig.parse({"probes": []})

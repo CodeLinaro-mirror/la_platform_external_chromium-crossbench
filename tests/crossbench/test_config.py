@@ -291,9 +291,8 @@ class ConfigParserTestCase(unittest.TestCase):
 
   def test_default(self):
     self.parser.add_argument("name", type=str, required=True)
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, r"(?i)no value"):
       self.parser.parse({})
-    self.assertIn("no value", str(cm.exception).lower())
     parser = ConfigParser(
         CustomConfigObject, default=CustomConfigObject.default())
     config = parser.parse({})

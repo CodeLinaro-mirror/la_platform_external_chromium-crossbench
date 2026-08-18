@@ -159,13 +159,14 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_empty_actions(self):
     config_data: dict[str, dict] = {"pages": {"Google Story": []}}
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                r"(?i)non-empty sequence"):
       PagesConfig.parse(config_data)
-    self.assertIn("empty", str(cm.exception).lower())
+
     config_data = {"pages": {"Google Story": {}}}
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                r"(?i)non-empty dict"):
       PagesConfig.parse(config_data)
-    self.assertIn("empty", str(cm.exception).lower())
 
   def test_example(self):
     config_data: dict[str, dict] = {

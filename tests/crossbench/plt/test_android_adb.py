@@ -255,9 +255,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_create_default_too_many_devices(self):
     self.expect_startup_devices()
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, r"(?i)too many"):
       Adb(self.host_platform)
-    self.assertIn("too many", str(cm.exception).lower())
 
   def test_create_default_one_device(self):
     self.expect_startup_devices(ADB_DEVICE_SAMPLE_OUTPUT)
@@ -266,9 +265,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_create_default_one_device_invalid(self):
     self.expect_startup_devices(ADB_DEVICE_SAMPLE_OUTPUT)
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, r"(?i)invalid device identifier"):
       Adb(self.host_platform, "")
-    self.assertIn("invalid device identifier", str(cm.exception).lower())
 
   def test_create_by_name(self):
     self.expect_startup_devices(ADB_DEVICES_SAMPLE_OUTPUT)
@@ -280,9 +278,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_create_by_name_duplicate(self):
     self.expect_startup_devices(ADB_DEVICES_SAMPLE_OUTPUT)
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaisesRegex(ValueError, "devices"):
       Adb(self.host_platform, "Android_SDK_built_for_x86")
-    self.assertIn("devices", str(cm.exception).lower())
 
   def test_basic_properties(self):
     self.assertTrue(self.platform.is_remote)

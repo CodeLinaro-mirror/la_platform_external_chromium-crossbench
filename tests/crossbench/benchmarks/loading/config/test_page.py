@@ -19,14 +19,13 @@ from tests import test_helper
 class PageConfigTestsCase(unittest.TestCase):
 
   def test_parse_empty(self):
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                r"(?i)non-empty.*url"):
       PageConfig.parse("")
-    self.assertIn("empty", str(cm.exception).lower())
 
   def test_parse_unknown_type(self):
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, r"(?i)invalid"):
       PageConfig.parse(self)
-    self.assertIn("type", str(cm.exception))
 
   def test_parse_blank(self):
     config = PageConfig.parse("about:blank")

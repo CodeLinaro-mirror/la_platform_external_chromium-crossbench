@@ -136,25 +136,25 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
     with self.patch_property(self.platform, "is_battery_powered") as mocked:
       env = self.create_env(
           EnvConfig(power_use_battery=True),
-          validation_mode=ValidationMode.THROW)
+          validation_mode=ValidationMode.THROW,
+      )
       mocked.return_value = True
       env.validate()
 
       mocked.return_value = False
-      with self.assertRaises(Exception) as cm:
+      with self.assertRaisesRegex(ValidationError, "battery"):
         env.validate()
-      self.assertIn("battery", str(cm.exception).lower())
 
   def test_request_battery_power_off(self):
     env = self.create_env(
         EnvConfig(power_use_battery=False),
-        validation_mode=ValidationMode.THROW)
+        validation_mode=ValidationMode.THROW,
+    )
     with self.patch_property(self.platform,
                              "is_battery_powered") as is_battery_powered:
       is_battery_powered.return_value = True
-      with self.assertRaises(ValidationError) as cm:
+      with self.assertRaisesRegex(ValidationError, "battery"):
         env.validate()
-      self.assertIn("battery", str(cm.exception).lower())
       self.assertEqual(is_battery_powered.call_count, 1)
 
       is_battery_powered.return_value = False

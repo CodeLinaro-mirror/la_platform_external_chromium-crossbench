@@ -123,9 +123,9 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     for preset_page in PAGE_LIST:
       stories = self.story_filter([preset_page.name]).stories
       self.assertListEqual([p.url for p in stories], [preset_page.url])
-    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                r"(?i)non-empty string"):
       self.story_filter([])
-    self.assertIn("empty", str(cm.exception).lower())
 
   def test_filter_by_name_with_duration(self):
     pages = PAGE_LIST

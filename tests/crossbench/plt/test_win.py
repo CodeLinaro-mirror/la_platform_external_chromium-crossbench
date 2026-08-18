@@ -136,9 +136,9 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
       self.platform.which(pathlib.Path())
 
   def test_search_binary_empty_path(self):
-    with self.assertRaisesRegex(ValueError, "empty"):
+    with self.assertRaisesRegex(ValueError, r"(?i)empty path"):
       self.platform.search_binary(pathlib.Path())
-    with self.assertRaisesRegex(ValueError, "empty"):
+    with self.assertRaisesRegex(ValueError, r"(?i)empty path"):
       self.platform.search_binary("")
     with self.assertRaisesRegex(ValueError, ".exe"):
       self.platform.search_binary("foo/bar")

@@ -213,7 +213,8 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("empty", str(cm.exception))
 
   def test_parse_str_or_file_contents(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                r"(?i)non-empty string"):
       ObjectParser.str_or_file_contents("")
     self.assertEqual(
         ObjectParser.str_or_file_contents("some data"), "some data")
@@ -493,7 +494,8 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(pathlib.Path("file.json"), result)
 
   def test_parse_inline_hjson(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                r"(?i)non-empty string"):
       ObjectParser.inline_hjson("")
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "braces"):
       ObjectParser.inline_hjson("{")

@@ -27,9 +27,9 @@ class NetworkSpeedConfigTestCase(BaseConfigTestCase):
           NetworkSpeedConfig.parse(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
           NetworkSpeedConfig.parse_str(str(invalid))
-      with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                  r"(?i)choices are"):
         NetworkSpeedConfig.parse("not a speed preset value")
-      self.assertIn("choices are", str(cm.exception).lower())
 
   def test_parse_default(self):
     config = NetworkSpeedConfig.parse("default")

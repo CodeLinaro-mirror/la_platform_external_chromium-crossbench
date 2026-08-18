@@ -85,7 +85,7 @@ class ChromeExtensionsTestCase(unittest.TestCase):
 
   def test_add(self):
     extensions = ChromeExtensions(["ext_a"])
-    with self.assertRaisesRegex(ValueError, "empty"):
+    with self.assertRaisesRegex(ValueError, r"(?i)empty extension"):
       extensions.add("")
     extensions.add("ext_b")
     self.assertEqual(extensions.extensions, ("ext_a", "ext_b"))
@@ -94,7 +94,7 @@ class ChromeExtensionsTestCase(unittest.TestCase):
 
   def test_enable(self):
     extensions = ChromeExtensions(["ext_a"])
-    with self.assertRaisesRegex(ValueError, "empty"):
+    with self.assertRaisesRegex(ValueError, r"(?i)empty extensions"):
       extensions.enable("")
     extensions.enable("ext_b")
     self.assertEqual(extensions.extensions, ("ext_a", "ext_b"))

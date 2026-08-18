@@ -218,7 +218,7 @@ class RegexFilterTestCase(unittest.TestCase):
 
   def test_range_invalid_syntax(self):
     regex_filter = RegexFilter(["A", "B"], ["A", "B"])
-    with self.assertRaisesRegex(RangePatternError, "empty"):
+    with self.assertRaisesRegex(RangePatternError, r"(?i)both be empty"):
       regex_filter.process_all(["..."])
     with self.assertRaisesRegex(RangePatternError, "separator"):
       regex_filter.process_all(["A...B...C"])
