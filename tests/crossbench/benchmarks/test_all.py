@@ -17,7 +17,8 @@ from crossbench.benchmarks.jetstream.jetstream_2_2 import JetStream22Benchmark
 from crossbench.benchmarks.jetstream.jetstream_3_0 import JetStream30Benchmark
 from crossbench.benchmarks.jetstream.jetstream_main import \
     JetStreamMainBenchmark
-from crossbench.benchmarks.loading.browser_startup import BrowserStartupBenchmark
+from crossbench.benchmarks.loading.browser_startup import \
+    BrowserStartupBenchmark
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loadline import LoadLine1PhoneBenchmark, \
     LoadLine1PhoneDebugBenchmark, LoadLine1PhoneFastBenchmark, \
@@ -51,6 +52,7 @@ from crossbench.benchmarks.speedometer.speedometer_3_1 import \
     Speedometer31Benchmark
 from crossbench.benchmarks.speedometer.speedometer_main import \
     SpeedometerMainBenchmark
+from crossbench.benchmarks.webxprt.webxprt_main import WebXPRT5Benchmark
 from tests import test_helper
 
 if TYPE_CHECKING:
@@ -90,6 +92,7 @@ ALL = (
     SpeedometerMainBenchmark,
     MemoryBenchmark,
     EmbedderBenchmark,
+    WebXPRT5Benchmark,
 )
 
 

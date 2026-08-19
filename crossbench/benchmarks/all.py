@@ -34,6 +34,7 @@ from crossbench.benchmarks.web_power import WebPowerBenchmark, \
     WebPowerIdleBenchmark, WebPowerMediaPlaybackBenchmark, \
     WebPowerPageLoadBenchmark, WebPowerScrollBenchmark
 from crossbench.benchmarks.webai import WebAIBenchmark
+from crossbench.benchmarks.webxprt import WebXPRT5Benchmark
 
 __all__ = [
     "BlinkAIBenchmark",
@@ -80,4 +81,5 @@ __all__ = [
     "WebPowerMediaPlaybackBenchmark",
     "WebPowerPageLoadBenchmark",
     "WebPowerScrollBenchmark",
+    "WebXPRT5Benchmark",
 ]

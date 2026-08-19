@@ -193,6 +193,8 @@ class CrossBenchCLI:
       benchmarks.WebPowerScrollBenchmark,
       # WebAI
       benchmarks.WebAIBenchmark,
+      # WebXPRT
+      benchmarks.WebXPRT5Benchmark,
   )
 
   RUNNER_CLS: type[Runner] = Runner
