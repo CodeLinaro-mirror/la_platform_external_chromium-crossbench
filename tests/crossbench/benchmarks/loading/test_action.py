@@ -36,6 +36,8 @@ from crossbench.action_runner.action.wait_for_element import \
     WaitForElementAction
 from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
+from crossbench.action_runner.action.wait_for_url_matches import \
+    WaitForUrlMatchesAction
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.config import config_dir
@@ -1035,6 +1037,39 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action.validate()
 
     action_2 = WaitForReadyStateAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_wait_for_url_matches(self):
+    config_dict = {
+        "action": "wait_for_url_matches",
+        "url_pattern": "example.com",
+    }
+    action = WaitForUrlMatchesAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.WAIT_FOR_URL_MATCHES)
+    self.assertEqual(action.url_pattern.pattern, "example.com")
+    action.validate()
+
+    action_2 = WaitForUrlMatchesAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_wait_for_url_matches_timeout(self):
+    config_dict = {
+        "action": "wait_for_url_matches",
+        "url_pattern": "example\\.com",
+        "timeout": "8s"
+    }
+    action = WaitForUrlMatchesAction.parse_dict(config_dict)
+
+    self.assertEqual(action.TYPE, ActionType.WAIT_FOR_URL_MATCHES)
+    self.assertEqual(action.url_pattern.pattern, "example\\.com")
+    self.assertEqual(action.timeout, dt.timedelta(seconds=8))
+    self.assertTrue(action.has_timeout)
+    action.validate()
+
+    action_2 = WaitForUrlMatchesAction.parse_dict(action.to_json())
     self.assertEqual(action, action_2)
     action_2.validate()
 

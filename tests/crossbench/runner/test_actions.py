@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import contextlib
+import re
 from typing import Iterator
 from unittest import mock
 
@@ -49,6 +50,28 @@ class ActionsTestCase(BaseRunGroupTestCase):
         actions.show_url("http://google.com")
         mock_show_url.assert_called_once_with(
             "http://google.com", target=WindowTarget.SELF)
+
+  def test_wait_for_url_matches(self):
+    run = self.mock_run()
+    with Actions("test", run) as actions:
+      actions._browser.current_url = "https://example.com/product/sample.html"
+      actions.wait_for_url_matches(
+          re.compile(r"product/.*\.html", re.IGNORECASE),
+          min_interval=0.5,
+          timeout=10,
+      )
+      self.assertEqual(actions._browser.current_url,
+                       "https://example.com/product/sample.html")
+
+  def test_wait_for_url_matches_timeout(self):
+    run = self.mock_run()
+    with Actions("test", run) as actions:
+      actions._browser.current_url = "https://example.com/custom_path/sub"
+      with self.assertRaises(TimeoutError):
+        actions.wait_for_url_matches(
+            re.compile(r".*\.html"), min_interval=0.5, timeout=1)
+      self.assertEqual(actions._browser.current_url,
+                       "https://example.com/custom_path/sub")
 
 
 if __name__ == "__main__":

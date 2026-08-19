@@ -168,6 +168,12 @@
         "action": "wait_for_ready_state"
       }
     ]
+    "wait_for_url_matches": [
+      {
+        "action": "wait_for_url_matches"
+        "url_pattern": '''index\.html$'''
+      }
+    ]
     "dump_html": [
       {
         "action": "dump_html"

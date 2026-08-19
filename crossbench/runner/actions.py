@@ -7,9 +7,12 @@ from __future__ import annotations
 import contextlib
 import datetime as dt
 import logging
+import re
 import sys
 import time as py_time
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Self, Sequence
+
+import selenium.common.exceptions
 
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.cli import ui
@@ -164,6 +167,30 @@ class Actions(TimeScope):
           let state = document.readyState;
           return state === '{ready_state}' || state === "complete";
         """, 0.2, timeout)
+
+  def wait_for_url_matches(self,
+                           url_pattern: re.Pattern[str],
+                           min_interval: AnyTimeUnit,
+                           timeout: AnyTimeUnit,
+                           delay: AnyTimeUnit = 0) -> None:
+    """
+    Waits until the browser's current URL matches the given pattern.
+
+    Note that if getting the browser's URL may fail (e.g. due to a timeout
+    when the page is navigating), it will log a warning and retry until
+    `timeout` is reached.
+    """
+    self._assert_is_active()
+    wait_range: WaitRange = self._run.wait_range(min_interval, timeout, delay)
+    current_url: str = ""
+    for _ in wait_range.wait_with_backoff():
+      try:
+        current_url = self._browser.current_url
+        if re.search(url_pattern, current_url):
+          return
+      except selenium.common.exceptions.TimeoutException:
+        logging.warning("Unable to get URL for %s", url_pattern.pattern)
+        continue
 
   def show_url(
       self,

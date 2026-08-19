@@ -447,6 +447,12 @@ class ActionRunner:
       actions.wait_js_condition(
           action.condition, min_interval=0.1, timeout=action.timeout)
 
+  def wait_for_url_matches(self,
+                           action: i_action.WaitForUrlMatchesAction) -> None:
+    with self.actions("WaitForUrlMatchesAction", measure=False) as actions:
+      actions.wait_for_url_matches(
+          action.url_pattern, min_interval=0.1, timeout=action.timeout)
+
   def wait_for_element_impl(
       self,
       actions: Actions,

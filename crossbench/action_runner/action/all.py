@@ -34,6 +34,8 @@ from crossbench.action_runner.action.wait_for_element import \
     WaitForElementAction
 from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
+from crossbench.action_runner.action.wait_for_url_matches import \
+    WaitForUrlMatchesAction
 
 ACTIONS_TUPLE: tuple[type[Action], ...] = (
     ClearCacheAction,
@@ -60,6 +62,7 @@ ACTIONS_TUPLE: tuple[type[Action], ...] = (
     WaitForDownloadAction,
     WaitForElementAction,
     WaitForReadyStateAction,
+    WaitForUrlMatchesAction,
 )
 for action_cls in ACTIONS_TUPLE:
   ACTIONS[action_cls.TYPE] = action_cls

@@ -37,6 +37,9 @@ class ActionType(ConfigEnum):
   WAIT_FOR_DOWNLOAD = ("wait_for_download", "wait for a download to complete")
   WAIT_FOR_READY_STATE = ("wait_for_ready_state",
                           "Wait for a specific document.readyState")
+  WAIT_FOR_URL_MATCHES = ("wait_for_url_matches",
+                          "Wait for the current browser url to match with the "
+                          "specified pattern")
   DUMP_HTML = ("dump_html", "Dump the current document's HTML")
   MEET_CREATE = ("meet_create", "Create a Google Meet meeting")
   MEET_SCRIPT = ("meet_script", "Run a script to automate Meet bot actions")
