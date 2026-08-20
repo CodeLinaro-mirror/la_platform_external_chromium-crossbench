@@ -1297,6 +1297,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     config = BrowserConfig(browser=pth.AnyPath("Chrome.exe"))
     self.assertIs(variants.get_browser_cls(config), ChromeWebDriver)
 
+  def test_get_browser_cls_chrome_local_build(self):
+    variants = BrowserVariantsConfig()
+    chrome_bin = pth.LocalPath("/home/user/src/out/Release/chrome")
+    args_gn = pth.LocalPath("/home/user/src/out/Release/args.gn")
+    self.fs.create_file(args_gn, st_size=100)
+    config = BrowserConfig(browser=chrome_bin)
+    self.assertIs(variants.get_browser_cls(config), ChromiumWebDriver)
+
   def test_get_browser_cls_chromium_default(self):
     variants = BrowserVariantsConfig()
     config = BrowserConfig(browser=pth.AnyPath("Chromium.app"))

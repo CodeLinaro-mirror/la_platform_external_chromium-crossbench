@@ -21,6 +21,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.browsers.browser_helper import convert_flags_to_label
 from crossbench.browsers.chrome.downloader import ChromeDownloader
+from crossbench.browsers.chromium_based import helper as chromium_helper
 from crossbench.browsers.firefox.downloader import FirefoxDownloader
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.webkit.downloader import WebKitDownloader
@@ -286,6 +287,11 @@ class BaseBrowserVariantsConfig(abc.ABC):
   @classmethod
   def get_chrome_browser_cls(cls,
                              browser_config: BrowserConfig) -> type[Browser]:
+    path: pth.AnyPath = browser_config.path
+    if browser_config.is_local and chromium_helper.find_build_dir(
+        path, browser_config.get_platform()):
+      return cls.get_chromium_browser_cls(browser_config)
+
     driver = browser_config.driver.driver_type
     if driver == BrowserDriverType.WEB_DRIVER:
       return all_browsers.ChromeWebDriver
