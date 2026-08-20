@@ -13,6 +13,7 @@
               track_event_config {
                 disabled_categories: "*"
                 enabled_categories: "blink.user_timing"
+                enabled_categories: "cppgc"
                 enabled_categories: "disabled-by-default-cppgc"
                 enabled_categories: "toplevel"
                 enabled_categories: "v8"
