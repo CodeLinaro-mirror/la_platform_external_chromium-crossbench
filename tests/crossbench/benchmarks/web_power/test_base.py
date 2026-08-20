@@ -129,7 +129,7 @@ class BaseWebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
   def parse_args(self, *args: str) -> argparse.Namespace:
     parser = self.benchmark_cls.add_cli_arguments(CBArgumentParser())
     parsed_args = parser.parse_args(args)
-    parsed_args.network = NetworkConfig.default()
+    parsed_args.network_config = NetworkConfig.default()
     return parsed_args
 
 
@@ -177,45 +177,41 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     args = self.parse_args("--site", "cnn")
     # Simulate CLI runner parsing network defaults
     args.network_config = None
-    args.network = None
 
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-cnn")
-    # args.network should be mapped to WPR with the canonical cnn archive URL
-    self.assertIsInstance(args.network, NetworkConfig)
-    self.assertEqual(args.network.type, NetworkType.WPR)
-    self.assertEqual(args.network.url,
+    # args.network_config should be mapped to WPR with the canonical
+    # cnn archive URL
+    self.assertIsInstance(args.network_config, NetworkConfig)
+    self.assertEqual(args.network_config.type, NetworkType.WPR)
+    self.assertEqual(args.network_config.url,
                      "gs://chrome-partner-loadline/power/cnn_20260513.wprgo")
 
   def test_kwargs_from_cli_url_live_default(self) -> None:
     args = self.parse_args("--url", "https://www.google.com")
     # Simulate CLI runner parsing network defaults
-    args.network_config = None
-
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-custom")
-    self.assertEqual(args.network.type, NetworkType.LIVE)
+    self.assertEqual(args.network_config.type, NetworkType.LIVE)
 
   def test_kwargs_from_cli_url_with_explicit_network(self) -> None:
     args = self.parse_args("--url", "https://www.google.com")
     # Simulate explicit WPR network config
-    args.network_config = None
-    args.network = NetworkConfig(
+    args.network_config = NetworkConfig(
         type=NetworkType.WPR, url="gs://some/other.wprgo")
 
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     self.assertEqual(len(kwargs["stories"]), 1)
     self.assertEqual(kwargs["stories"][0].name, "web-power-mock-story-custom")
-    self.assertEqual(args.network.type, NetworkType.WPR)
-    self.assertEqual(args.network.url, "gs://some/other.wprgo")
+    self.assertEqual(args.network_config.type, NetworkType.WPR)
+    self.assertEqual(args.network_config.url, "gs://some/other.wprgo")
 
   def test_kwargs_from_cli_site_with_explicit_network_fails(self) -> None:
     args = self.parse_args("--site", "cnn")
     # Simulate conflicting explicit network config
-    args.network_config = None
-    args.network = NetworkConfig(
+    args.network_config = NetworkConfig(
         type=NetworkType.WPR, url="gs://some/other.wprgo")
 
     with self.assertRaisesRegex(
@@ -325,7 +321,10 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     parser.add_argument("--probe", action="append", default=[])
     parser.add_argument("--no-probe", action="store_true", default=False)
     parser.add_argument(
-        "--network", type=NetworkConfig.parse, default=NetworkConfig.default())
+        "--network",
+        dest="network_config",
+        type=NetworkConfig.parse,
+        default=NetworkConfig.default())
     args = parser.parse_args(["--site", "cnn", *cli_args])
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     return args, kwargs
@@ -347,7 +346,7 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
         "probe/perfetto/trace_config/default.txtpb",
         contents="duration_ms: 1000")
 
-    probe_names = [p.name for p in ProbeListConfig.from_cli_args(args).probes]
+    probe_names = [p.name for p in ProbeListConfig.parse_args(args).probes]
     self.assertIn("perfetto", probe_names)
 
   def test_kwargs_from_cli_probe_config_override(self) -> None:
@@ -358,7 +357,7 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
                                               str(custom_path))
     self.assertEqual(args.probe_config, custom_path)
     self.assertNotIn("bits_probe", kwargs)
-    probe_names = [p.name for p in ProbeListConfig.from_cli_args(args).probes]
+    probe_names = [p.name for p in ProbeListConfig.parse_args(args).probes]
     self.assertIn("v8.log", probe_names)
     self.assertNotIn("perfetto", probe_names)
 
@@ -370,7 +369,7 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     args, kwargs = self._parse_and_get_kwargs("--bits-path", str(bits_path))
     self.assertIsNone(args.probe_config)
     self.assertIn("bits_probe", kwargs)
-    probe_names = [p.name for p in ProbeListConfig.from_cli_args(args).probes]
+    probe_names = [p.name for p in ProbeListConfig.parse_args(args).probes]
     self.assertNotIn("perfetto", probe_names)
 
   def _verify_junction_temperature_setup(

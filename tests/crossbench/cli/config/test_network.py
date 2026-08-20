@@ -102,6 +102,20 @@ class NetworkConfigTestCase(BaseConfigTestCase):
       with self.assertRaises(argparse.ArgumentTypeError):
         NetworkConfig.parse_str(str(invalid))
 
+  def test_parse_args_empty(self):
+    args = self.mock_args(network_config=None)
+    config = NetworkConfig.parse_args(args)
+    self.assertIs(config, NetworkConfig.default())
+
+  def test_parse_args_str(self):
+    args = self.mock_args(network_config="default")
+    config = NetworkConfig.parse_args(args)
+    self.assertIs(config, NetworkConfig.default())
+    args = self.mock_args(network_config="live")
+    config = NetworkConfig.parse_args(args)
+    self.assertIsNot(config, NetworkConfig.default())
+    self.assertEqual(config.type, NetworkType.LIVE)
+
   def test_parse_default(self):
     config = NetworkConfig.parse("default")
     self.assertEqual(config, NetworkConfig.default())

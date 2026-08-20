@@ -100,7 +100,7 @@ class CrossbenchMockArgsMixin:
         browser=kwargs.pop("browser", []),
         driver_path=kwargs.pop("driver_path", None),
         remote_driver_path=kwargs.pop("remote_driver_path", None),
-        network_config=kwargs.pop("network_config", None),
+        network_config=kwargs.pop("network_config", NetworkConfig.default()),
         browser_config=kwargs.pop("browser_config", None),
         probe_config=kwargs.pop("probe_config", None),
         viewport=kwargs.pop("viewport", None),
@@ -127,7 +127,7 @@ class CrossbenchMockArgsMixin:
         about_blank_duration=kwargs.pop("about_blank_duration", dt.timedelta()),
         run_login=kwargs.pop("run_login", True),
         run_setup=kwargs.pop("run_setup", True),
-        env=EnvConfig.default(),
+        env_config=kwargs.pop("env_config", EnvConfig.default()),
         binary_overrides=kwargs.pop("binary_overrides", []),
         action_runner_config=kwargs.pop("action_runner_config", None))
     assert not kwargs, f"got unused kwargs: {kwargs}"

@@ -628,9 +628,9 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("loading", "--browser=chrome", f"--network={network_arg}")
     self.assertTrue(mock_run.called)
     args = mock_run.call_args[0][0]
-    self.assertIsNotNone(args.network)
-    self.assertEqual(args.network.type, NetworkType.WPR)
-    self.assertEqual(args.network.path, network_path)
+    self.assertIsNotNone(args.network_config)
+    self.assertEqual(args.network_config.type, NetworkType.WPR)
+    self.assertEqual(args.network_config.path, network_path)
 
   def test_explicit_default_network(self):
     network_path = pathlib.Path("/test/archive.wprgo")
@@ -641,8 +641,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("loading", "--browser=chrome", "--network=default")
     self.assertTrue(mock_run.called)
     args = mock_run.call_args[0][0]
-    self.assertIsNotNone(args.network)
-    self.assertEqual(args.network.type, NetworkType.LIVE)
+    self.assertIsNotNone(args.network_config)
+    self.assertEqual(args.network_config.type, NetworkType.LIVE)
 
 
 class NoProbeFlagCliTestCase(BaseCliTestCase):
@@ -681,7 +681,8 @@ class NoProbeFlagCliTestCase(BaseCliTestCase):
             "default_probe_config_path",
             return_value=self.config_file),
     ):
-      cli = self.run_cli(self._BENCHMARK_CLASS.NAME, *no_probe_flags, url)
+      cli = self.run_cli(self._BENCHMARK_CLASS.NAME, *no_probe_flags,
+                         f"--story={url}")
       runner_probes = {p.name for p in cli.last_subcommand.runner.probes}
       self.assertTrue(all(name in runner_probes for name in expected_present))
       self.assertFalse(any(name in runner_probes for name in expected_absent))

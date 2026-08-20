@@ -380,6 +380,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     env_settings_group.add_argument(
         "--env",
         type=EnvConfig.parse,
+        dest="env_config",
         help=("Set default runner environment settings. "
               f"Possible values: {', '.join(ENV_CONFIG_PRESETS.keys())} "
               "or an inline hjson configuration (see --env-config). "
@@ -409,17 +410,19 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     network_group = parser.add_argument_group("Network Options")
     network_settings_group = network_group.add_mutually_exclusive_group()
     network_settings_group.add_argument(
+        "--network-config",
+        metavar="DIR",
+        default=self._benchmark_cls.default_network_config_path(),
+        type=NetworkConfig.parse_config_path,
+        help=("Path to a full network config file. See `help network` "
+              "for all options."))
+    network_settings_group.add_argument(
         "--network",
+        dest="network_config",
         type=NetworkConfig.parse,
         help=("Either an inline network config or a file path to full "
               "network config hjson file (see --network-config or "
               "'help network')."))
-    network_settings_group.add_argument(
-        "--network-config",
-        metavar="DIR",
-        type=NetworkConfig.parse_config_path,
-        help=("Path to a full network config file. See `help network` "
-              "for all options."))
     network_settings_group.add_argument(
         "--local-file-server",
         "--local-fileserver",
@@ -567,18 +570,11 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
   @override
   def run(self, args: argparse.Namespace) -> None:
     benchmark: Benchmark | None = None
-    if args.cache_dir:
-      plt.PLATFORM.set_cache_dir(args.cache_dir)
-    self._helper(args)
+    self._handle_fuzzy_helper_cmds(args)
     try:
-      self._process_args(args)
-      benchmark = self._get_benchmark(args)
-      args.browser = self._get_browsers(args)
-      self._print_banner(self.benchmark_banner_info(),
-                         self.browser_banner_info(args.browser))
       with plt.PLATFORM.TemporaryDirectory(
           prefix="crossbench") as tmp_dirname, plt.PLATFORM.wakelock():
-        self._run(args, benchmark, tmp_dirname)
+        self._run(args, tmp_dirname)
     except KeyboardInterrupt:
       if self._runner:
         self._runner.interrupt()
@@ -592,6 +588,22 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         raise
       self._log_benchmark_subcommand_failure(benchmark, self._runner, e)
       sys.exit(3)
+
+  def _run(self, args: argparse.Namespace, tmp_dirname: pth.AnyPath) -> None:
+    self._process_dir_args(args, tmp_dirname)
+    self._process_config_args(args)
+    benchmark = self._get_benchmark(args)
+    self._process_browser_config_args(args)
+    args.browser = self._get_browsers(args)
+    self._print_banner(self.benchmark_banner_info(),
+                       self.browser_banner_info(args.browser))
+    probes: Sequence[Probe] = self._get_probes(args)
+    env_config: EnvConfig = self._get_env_config(args)
+    env_validation_mode: ValidationMode = self._get_env_validation_mode(args)
+    timing: Timing = self._get_timing(args)
+    self._runner = self._get_runner(args, benchmark, probes, env_config,
+                                    env_validation_mode, timing)
+    self._run_benchmark(args, self.runner)
 
   def benchmark_banner_info(self) -> str:
     benchmark_name = self.benchmark_name()
@@ -611,20 +623,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
 
     return f"{len(browsers)} browsers"
 
-  def _run(self, args: argparse.Namespace, benchmark: Benchmark,
-           tmp_dirname: pth.AnyPath) -> None:
-    if args.dry_run:
-      args.out_dir = pth.LocalPath(tmp_dirname) / "results"
-    args.browser = self._get_browsers(args)
-    probes: Sequence[Probe] = self._get_probes(args)
-    env_config: EnvConfig = self._get_env_config(args)
-    env_validation_mode: ValidationMode = self._get_env_validation_mode(args)
-    timing: Timing = self._get_timing(args)
-    self._runner = self._get_runner(args, benchmark, probes, env_config,
-                                    env_validation_mode, timing)
-    self._run_benchmark(args, self.runner)
 
-  def _helper(self, args: argparse.Namespace) -> None:
+  def _handle_fuzzy_helper_cmds(self, args: argparse.Namespace) -> None:
     """Handle common subcommand mistakes that are not easily implementable
     with argparse.
     run      => just run the benchmark
@@ -651,80 +651,58 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       subcommand.run(args)
       sys.exit(0)
 
-  def _process_args(self, args: argparse.Namespace) -> None:
+  def _process_dir_args(self, args: argparse.Namespace,
+                        tmp_dirname: pth.AnyPath) -> None:
+    if args.cache_dir:
+      plt.PLATFORM.set_cache_dir(args.cache_dir)
+    if args.dry_run:
+      args.out_dir = pth.LocalPath(tmp_dirname) / "results"
+
+  def _process_config_args(self, args: argparse.Namespace) -> None:
     if args.config:
-      self._process_config_args(args)
+      #Deals with --config vs standalone --XXX-config args.
+      self._process_config_arg(args)
     else:
       # We keep separate *_config args so we can throw in case they conflict
       # with --config. Since we don't use argparse's dest, we have to manually
       # copy the args.*_config back.
-      self._process_network_args(args)
+      self._process_env_config_args(args)
+      self._process_network_config_args(args)
+      self._process_probe_config_args(args)
 
-  def _process_network_args(self, args: argparse.Namespace) -> None:
-    # The order of preference of flags is as follows:
-    # Explicitly specified network config > explicitly specified network >
-    # benchmark-specific network config > default network.
-    if network_config := args.network_config:
-      args.network = network_config
-    elif args.network:
-      pass
-    elif network_config := self._benchmark_cls.default_network_config_path():
-      args.network = network_config
-    else:
-      args.network = NetworkConfig.default()
-
-  def _process_env_args(self, args: argparse.Namespace) -> None:
-    if env_config := args.env_config:
-      args.env = env_config
-    elif args.env:
-      pass
-    else:
-      args.env = EnvConfig.default()
-
-  def _process_config_args(self, args: argparse.Namespace) -> None:
+  def _process_config_arg(self, args: argparse.Namespace) -> None:
     if args.env_config:
       raise argparse.ArgumentTypeError(
           "--config cannot be used together with --env-config")
     if args.network_config:
       raise argparse.ArgumentTypeError(
           "--config cannot be used together with --network-config")
-    if args.browser_config:
-      raise argparse.ArgumentTypeError(
-          "--config cannot be used together with --browser-config")
     if args.probe_config:
       raise argparse.ArgumentTypeError(
           "--config cannot be used together with --probe-config")
+    if args.browser_config:
+      raise argparse.ArgumentTypeError(
+          "--config cannot be used together with --browser-config")
 
     config_file = args.config
     config_data = ObjectParser.hjson_file(config_file)
     found_any_config = False
 
     if env_config_data := config_data.get("env"):
-      args.env = EnvConfig.parse(env_config_data)
+      args.env_config = EnvConfig.parse(env_config_data)
       found_any_config = True
     else:
       logging.warning("Skipping env config: no 'env' property in %s",
                       config_file)
-
-    if not args.env:
-      args.env = EnvConfig.default()
+    self._process_env_config_args(args)
 
     if network_config_data := config_data.get("network"):
-      # TODO: migrate all --config helper to this format
-      args.network = NetworkConfig.parse(network_config_data)
+      args.network_config = NetworkConfig.parse(network_config_data)
       found_any_config = True
     else:
       logging.warning("Skipping network config: no 'network' property in %s",
                       config_file)
-    if not args.network:
-      args.network = NetworkConfig.default()
-
-    if config_data.get("browsers"):
-      args.browser_config = config_file
-      found_any_config = True
-    else:
-      logging.warning("Skipping browsers config: No 'browsers' property in %s",
-                      config_file)
+    self._process_network_config_args(args)
 
     if config_data.get("probes"):
       args.probe_config = config_file
@@ -732,10 +710,33 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     else:
       logging.warning("Skipping probes config: no 'probes' property in %s",
                       config_file)
+    self._process_probe_config_args(args)
+
+    if config_data.get("browsers"):
+      args.browser_config = config_file
+      found_any_config = True
+    else:
+      logging.warning("Skipping browsers config: No 'browsers' property in %s",
+                      config_file)
+    self._process_browser_config_args(args)
 
     if not found_any_config:
       raise argparse.ArgumentTypeError(
           f"--config: config file has no config properties {config_file}")
+
+  def _process_env_config_args(self, args: argparse.Namespace) -> None:
+    args.env_config = EnvConfig.parse_args(args)
+
+  def _process_network_config_args(self, args: argparse.Namespace) -> None:
+    args.network_config = NetworkConfig.parse_args(args)
+
+  def _process_probe_config_args(self, args: argparse.Namespace) -> None:
+    args.probe_config = ProbeListConfig.parse_args(args)
+
+  def _process_browser_config_args(self, args: argparse.Namespace) -> None:
+    if isinstance(args.browser_config, BaseBrowserVariantsConfig):
+      return
+    args.browser_config = BrowserVariantsConfig.parse_args(args)
 
   def _log_benchmark_subcommand_failure(self, benchmark: Benchmark | None,
                                         runner: Runner | None,
@@ -831,18 +832,10 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       logging.error("Could not create %s", latest_link)
 
   def _get_browsers(self, args: argparse.Namespace) -> Sequence[Browser]:
-    if isinstance(args.browser_config, BaseBrowserVariantsConfig):
-      return args.browser_config.browsers
-    # TODO: move browser instance create to separate method.
-    # TODO: move --browser-config parsing to BrowserVariantsConfig
-    args.browser_config = BrowserVariantsConfig.parse_args(args)
     browsers = args.browser_config.browsers
     return browsers
 
   def _get_probes(self, args: argparse.Namespace) -> Sequence[Probe]:
-    # TODO: move probe creation to separate method
-    # TODO: move --probe-config parsing to ProbeListConfig
-    args.probe_config = ProbeListConfig.from_cli_args(args)
     return args.probe_config.probes
 
   def _get_benchmark(self, args: argparse.Namespace) -> Benchmark:
@@ -871,7 +864,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
                              ValidationMode)
 
   def _get_env_config(self, args: argparse.Namespace) -> EnvConfig:
-    return args.env
+    return args.env_config
 
   def _get_timing(self, args: argparse.Namespace) -> Timing:
     timeout_unit: dt.timedelta = args.timeout_unit or args.time_unit

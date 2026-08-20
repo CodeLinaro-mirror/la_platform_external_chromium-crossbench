@@ -35,6 +35,7 @@ from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig, \
     BrowserVariantsConfig, BrowserVariantsConfigDict
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
+from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.config import ConfigError
 from crossbench.helper.cwd import change_cwd
@@ -1225,7 +1226,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     network_3g = NetworkConfig.parse("3G-slow")
     network_4g = NetworkConfig.parse("4G")
     self.assertNotEqual(network_3g.speed.in_kbps, network_4g.speed.in_kbps)
-    args = self.mock_args(browser_config=config_file, network=network_3g)
+    args = self.mock_args(browser_config=config_file, network_config=network_3g)
 
     with self._patch_get_browser_cls(mock_browser.MockChromeStable), mock.patch(
         "crossbench.network.traffic_shaping.ts_proxy.TsProxyFinder") as finder:
@@ -1248,6 +1249,39 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertFalse(browser_3.network.traffic_shaper.is_live)
     self.assertEqual(browser_3.network.traffic_shaper.ts_proxy.in_kbps,
                      network_4g.speed.in_kbps)
+
+  def test_from_cli_args_browser_config_env_override(self):
+    browser_config_dict = {
+        "browsers": {
+            "default-env": {
+                "path": "chrome-stable",
+                "env": "default"
+            },
+            "default": "chrome-stable",
+            "custom-env": {
+                "path": "chrome-stable",
+                "env": {
+                    "cpu_max_usage_percent": 42
+                }
+            }
+        }
+    }
+    config_file = pth.LocalPath("browsers.config.json")
+    with config_file.open("w", encoding="utf-8") as f:
+      json.dump(browser_config_dict, f)
+    global_env = EnvConfig(cpu_max_usage_percent=99)
+    args = self.mock_args(browser_config=config_file, env_config=global_env)
+
+    with self._patch_get_browser_cls(mock_browser.MockChromeStable):
+      config = BrowserVariantsConfig.parse_args(args)
+    browsers = config.browsers
+    self.assertEqual(len(browsers), 3)
+    browser_1, browser_2, browser_3 = browsers
+    self.assertEqual(browser_1.settings.env_config,
+                     ENV_CONFIG_PRESETS["default"])
+    self.assertEqual(browser_2.settings.env_config, global_env)
+    self.assertEqual(browser_2.settings.env_config.cpu_max_usage_percent, 99)
+    self.assertEqual(browser_3.settings.env_config.cpu_max_usage_percent, 42)
 
   def test_get_browser_cls_unsupported(self):
     variants = BrowserVariantsConfig()

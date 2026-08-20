@@ -502,7 +502,7 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
 
   @classmethod
   def _select_network(cls, args: argparse.Namespace) -> None:
-    network: NetworkConfig = args.network
+    network: NetworkConfig = args.network_config
     if network and not network.is_default():
       cls._setup_explicit_network(args, network)
     elif not args.url:
@@ -518,7 +518,8 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
           "of a specific WPR recording. Explicit networks are only "
           "supported when testing with '--url'.")
     if network.type == NetworkType.WPR:
-      args.network = dataclasses.replace(network, no_archive_certificates=True)
+      args.network_config = dataclasses.replace(
+          network, no_archive_certificates=True)
 
   @classmethod
   def _setup_pre_recorded_site_network(cls, args: argparse.Namespace) -> None:
@@ -539,7 +540,7 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
       raise ValueError(
           "Web Power benchmarks require an explicit, known '--site' "
           f"or '--story' to use a mapped WPR recording. Got: {site}")
-    args.network = NetworkConfig(
+    args.network_config = NetworkConfig(
         type=NetworkType.WPR,
         url=site_config.archive,
         no_archive_certificates=True)

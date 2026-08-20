@@ -150,6 +150,12 @@ class NetworkConfig(ConfigObject):
     return cls.config_parser().help
 
   @classmethod
+  def parse_args(cls, args: argparse.Namespace) -> Self:
+    if network_config := args.network_config:
+      return cls.parse(network_config)
+    return cls.default()
+
+  @classmethod
   def parse_wpr(cls, value: Any) -> Self:
     config = cls.parse(value)
     if config.type != NetworkType.WPR:

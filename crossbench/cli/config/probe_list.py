@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class ProbeListConfig(ConfigObject):
 
   @classmethod
-  def from_cli_args(cls, args: argparse.Namespace) -> Self:
+  def parse_args(cls, args: argparse.Namespace) -> Self:
     with exception.annotate_argparsing():
       config_from_args = cls(args.probe)
       if not args.probe_config:

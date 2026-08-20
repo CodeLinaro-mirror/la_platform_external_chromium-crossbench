@@ -431,6 +431,7 @@ class BrowserConfig(ConfigObject):
     parser.add_argument(
         "driver", type=DriverConfig, default=DriverConfig.default())
     parser.add_argument("network", type=NetworkConfig)
+    parser.add_argument("env", type=EnvConfig)
     parser.add_argument(
         "cache_dir",
         aliases=("browser_cache", "browser_cache_dir"),

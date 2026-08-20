@@ -790,8 +790,8 @@ class FastCliTestCasePartB(BaseCliTestCase):
 
       @classmethod
       def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
-        if not getattr(args, "has_explicit_network", False):
-          args.network = NetworkConfig(
+        if args.network_config.is_default():
+          args.network_config = NetworkConfig(
               type=NetworkType.LOCAL, path=pth.LocalPath("/mock/dir"))
         return {"stories": (MockStory("story_1"),)}
 
@@ -810,6 +810,77 @@ class FastCliTestCasePartB(BaseCliTestCase):
         self.assertEqual(len(runner.browsers), 1)
         browser = runner.browsers[0]
         self.assertIsInstance(browser.network, LocalFileNetwork)
+
+  def test_benchmark_custom_default_probe_config_path(self):
+    probe_config_file = pth.LocalPath("/custom_probe_config.hjson")
+    self.fs.create_file(
+        probe_config_file, contents=hjson.dumps({"probes": {
+            "js": {}
+        }}))
+
+    class MockCustomProbeBenchmark(Benchmark):
+      """Mock custom probe benchmark docstring."""
+      NAME = "custom-probe-benchmark"
+      DEFAULT_STORY_CLS = MockStory
+
+      @classmethod
+      def default_probe_config_path(cls) -> pth.LocalPath | None:
+        return probe_config_file
+
+      @classmethod
+      def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+        return {"stories": (MockStory("story_1"),)}
+
+    with mock.patch.object(CrossBenchCLI, "BENCHMARKS",
+                           (MockCustomProbeBenchmark,)):
+      with self._patch_get_browser_cls():
+        cli = self.run_cli(
+            "custom-probe-benchmark",
+            "--browser=chrome",
+        )
+        runner = cli.last_subcommand.runner
+        probe_names = {p.name for p in runner.probes}
+        self.assertIn("js", probe_names)
+
+  def test_benchmark_custom_default_network_config_path(self):
+    mock_dir = pth.LocalPath("/mock/dir")
+    self.fs.create_dir(mock_dir)
+    self.fs.create_file(mock_dir / "index.html")
+
+    network_config_file = pth.LocalPath("/custom_network_config.hjson")
+    self.fs.create_file(
+        network_config_file,
+        contents=hjson.dumps({
+            "type": "local",
+            "path": str(mock_dir)
+        }))
+
+    class MockCustomNetworkConfigBenchmark(Benchmark):
+      """Mock custom network config benchmark docstring."""
+      NAME = "custom-network-config-benchmark"
+      DEFAULT_STORY_CLS = MockStory
+
+      @classmethod
+      def default_network_config_path(cls) -> pth.LocalPath | None:
+        return network_config_file
+
+      @classmethod
+      def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+        return {"stories": (MockStory("story_1"),)}
+
+    with mock.patch.object(CrossBenchCLI, "BENCHMARKS",
+                           (MockCustomNetworkConfigBenchmark,)):
+      with self._patch_get_browser_cls():
+        cli = self.run_cli(
+            "custom-network-config-benchmark",
+            "--browser=chrome",
+        )
+        runner = cli.last_subcommand.runner
+        self.assertEqual(len(runner.browsers), 1)
+        browser = runner.browsers[0]
+        network = browser.network
+        self.assertIsInstance(network, LocalFileNetwork)
+        self.assertEqual(network.path, mock_dir)
 
 
 if __name__ == "__main__":

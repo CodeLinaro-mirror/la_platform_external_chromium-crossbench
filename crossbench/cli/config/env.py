@@ -119,6 +119,12 @@ class EnvConfig(ConfigObject):
     return ENV_CONFIG_PRESETS["default"]
 
   @classmethod
+  def parse_args(cls, args: argparse.Namespace) -> EnvConfig:
+    if env_config := args.env_config:
+      return cls.parse(env_config)
+    return cls.default()
+
+  @classmethod
   @override
   def parse_str(cls, value: str) -> EnvConfig:
     value = ObjectParser.non_empty_str(value)

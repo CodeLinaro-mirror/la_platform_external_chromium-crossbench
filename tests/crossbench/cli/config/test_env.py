@@ -6,13 +6,45 @@ from __future__ import annotations
 
 import datetime as dt
 
+import hjson
+
 from crossbench import hjson as cb_hjson
+from crossbench import path as pth
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 
 
 class EnvironmentConfigTestCase(BaseConfigTestCase):
+
+  def test_parse_args_empty(self):
+    args = self.mock_args(env_config=None)
+    config = EnvConfig.parse_args(args)
+    self.assertEqual(config, EnvConfig.default())
+
+  def test_parse_args_instance(self):
+    custom_config = EnvConfig(cpu_max_usage_percent=42)
+    args = self.mock_args(env_config=custom_config)
+    config = EnvConfig.parse_args(args)
+    self.assertEqual(config, custom_config)
+
+  def test_parse_args_preset(self):
+    args = self.mock_args(env_config="default")
+    config = EnvConfig.parse_args(args)
+    self.assertEqual(config, EnvConfig.default())
+
+  def test_parse_args_dict(self):
+    args = self.mock_args(env_config={"cpu_max_usage_percent": 55})
+    config = EnvConfig.parse_args(args)
+    self.assertEqual(config.cpu_max_usage_percent, 55)
+
+  def test_parse_args_file(self):
+    config_file = pth.LocalPath("/env.hjson")
+    self.fs.create_file(
+        config_file, contents=hjson.dumps({"cpu_max_usage_percent": 88}))
+    args = self.mock_args(env_config=config_file)
+    config = EnvConfig.parse_args(args)
+    self.assertEqual(config.cpu_max_usage_percent, 88)
 
   def test_parse_global_config_dict(self):
     env_config_data = {

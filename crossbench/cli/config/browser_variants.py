@@ -27,6 +27,7 @@ from crossbench.browsers.webkit.downloader import WebKitDownloader
 from crossbench.cli.config.browser import SUPPORTED_EMBEDDER, BrowserConfig, \
     BrowserType
 from crossbench.cli.config.driver_type import BrowserDriverType
+from crossbench.cli.config.env import EnvConfig
 from crossbench.cli.config.flags import DEFAULT_LABEL, FlagsConfig, \
     FlagsGroupConfig, FlagsVariantConfig
 from crossbench.cli.config.network import NetworkConfig
@@ -38,7 +39,6 @@ from crossbench.parse import LateArgumentError, ObjectParser
 if TYPE_CHECKING:
   from crossbench.browsers.apk_config import ApkConfig
   from crossbench.browsers.browser import Browser
-  from crossbench.cli.config.env import EnvConfig
   from crossbench.network.base import Network
 
   FlagGroupItemT = tuple[str, str | None] | None
@@ -402,17 +402,17 @@ class BaseBrowserVariantsConfig(abc.ABC):
                            browser_config: BrowserConfig,
                            browser_platform: plt.Platform) -> Network:
     with exception.annotate_argparsing("Creating network config"):
-      network_config = browser_config.network or args.network
-      if not isinstance(network_config, NetworkConfig):
-        network_config = NetworkConfig.parse(network_config)
+      network_config = browser_config.network or args.network_config
+      assert isinstance(network_config,
+                        NetworkConfig), ("Invalid network_config type")
       return network_config.create(browser_platform)
     raise exception.UnreachableError
 
   def _get_browser_env_config(self, args: argparse.Namespace,
                               browser_config: BrowserConfig) -> EnvConfig:
-    if env_config := browser_config.env:
-      return env_config
-    return args.env
+    env_config = browser_config.env or args.env_config
+    assert isinstance(env_config, EnvConfig), ("Invalid env_config type")
+    return env_config
 
 
 class BrowserVariantsConfig(BaseBrowserVariantsConfig):
