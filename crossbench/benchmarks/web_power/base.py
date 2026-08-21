@@ -86,8 +86,9 @@ class WebPowerStory(Story):
   def scenario_classes(cls) -> tuple[type[WebPowerStory], ...]:
     return tuple(cls._scenario_classes)
 
-  _LEGACY_WPR_RECORDING = ("gs://chrome-partner-loadline/power/"
-                           "CHROME_EFFICIENCY_KPI_2026_04_03.wprgo")
+  _WEB_POWER_GCS = "gs://chrome-partner-loadline/power"
+  _LEGACY_WPR_RECORDING = (
+      f"{_WEB_POWER_GCS}/CHROME_EFFICIENCY_KPI_2026_04_03.wprgo")
 
   _CANONICAL_SITES: ClassVar[dict[str, WebPowerSiteConfig]] = {
       "ajnews":
@@ -98,7 +99,7 @@ class WebPowerStory(Story):
       "cnn":
           WebPowerSiteConfig(
               url="https://www.cnn.com",
-              archive=("gs://chrome-partner-loadline/power/cnn_20260513.wprgo"),
+              archive=f"{_WEB_POWER_GCS}/cnn_20260513.wprgo",
           ),
       "msn":
           WebPowerSiteConfig(
@@ -109,8 +110,7 @@ class WebPowerStory(Story):
       "youtube":
           WebPowerSiteConfig(
               url="https://www.youtube.com/watch?v=XITHbsUUlYI",
-              archive=("gs://chrome-partner-loadline/power/"
-                       "youtube_2026_05_18.wprgo"),
+              archive=f"{_WEB_POWER_GCS}/youtube_2026_05_18.wprgo",
           ),
   }
 
