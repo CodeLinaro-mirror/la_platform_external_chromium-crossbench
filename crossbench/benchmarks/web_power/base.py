@@ -115,6 +115,11 @@ class WebPowerStory(Story):
   }
 
   _NON_CANONICAL_SITES: ClassVar[dict[str, WebPowerSiteConfig]] = {
+      "allrecipes":
+          WebPowerSiteConfig(
+              url="https://www.allrecipes.com",
+              archive=f"{_WEB_POWER_GCS}/allrecipes_2026_08_20.wprgo",
+          ),
       "yahoo":
           WebPowerSiteConfig(
               url="https://www.yahoo.com",
