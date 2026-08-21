@@ -436,6 +436,7 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
           "--disable-renderer-backgrounding",
           "--disable-stack-profiler",
           "--disable-gesture-requirement-for-presentation",
+          "--disable-notifications",
       ):
         flags.set(flag)
     return flags
