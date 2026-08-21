@@ -13,8 +13,9 @@ function __dismissBanners() {
   self.__DISMISS_BANNERS_INJECTED = true;
 
   const findAndClick = (observer) => {
-    const links = Array.from(
-        document.querySelectorAll(`${ELEMENT_TYPE}[role="${ELEMENT_ROLE}"]`));
+    const selector =
+        ELEMENT_ROLE ? `${ELEMENT_TYPE}[role="${ELEMENT_ROLE}"]` : ELEMENT_TYPE;
+    const links = Array.from(document.querySelectorAll(selector));
     const link = links.find(el => el.textContent.trim() === ELEMENT_TEXT);
 
     if (!link) {

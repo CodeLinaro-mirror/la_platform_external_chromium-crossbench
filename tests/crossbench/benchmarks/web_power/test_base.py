@@ -644,6 +644,30 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
       self.assertIsNotNone(rules_file)
       self.assertTrue(pathlib.Path(rules_file).exists())
 
+  def test_setup_session_network_with_cookie_banner_no_role(self) -> None:
+    benchmark, network, session = self._create_session(site_key="cnn")
+    self.fs.create_file(self.platform.path("/tmp/cnn_archive.wprgo"))
+    dismisser_file = pathlib.Path(wpr_helpers.__file__).parent / "dismisser.js"
+    self.fs.add_real_file(dismisser_file)
+
+    with mock.patch.object(
+        self.platform,
+        "sh_stdout",
+        return_value=('Dismisser target: button,,"Accept All",'
+                      'https://www.cnn.com'),
+    ):
+      benchmark.setup_session_network(session)
+      expected_archive_path = (
+          self.platform.local_cache_dir("wpr")
+          / "cnn_20260513_mock_hash.wprgo"
+      )
+      self.assertEqual(network.archive_path, expected_archive_path)
+      self.assertIsNotNone(network._response_transformations_file)
+      rules_file = network._response_transformations_file
+      self.assertIsNotNone(rules_file)
+      assert rules_file is not None
+      self.assertTrue(pathlib.Path(rules_file).exists())
+
   def test_setup_session_network_twice(self) -> None:
     benchmark, network, session1 = self._create_session(site_key="cnn")
     _, _, session2 = self._create_session(site_key="cnn")

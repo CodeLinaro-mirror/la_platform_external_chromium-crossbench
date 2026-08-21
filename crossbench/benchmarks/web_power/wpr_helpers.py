@@ -45,8 +45,10 @@ class WprBannerDismisser:
   @classmethod
   def create_rules(cls, metadata: str) -> tuple[str, str] | None:
     match = re.search(
-        r"^Dismisser target:\s*([^,]+),([^,]+),\"([^\"]*)\",([^\n]+)", metadata,
-        re.MULTILINE)
+        r"^Dismisser target:\s*([^,]+),([^,]*),\"([^\"]*)\",([^\n]+)",
+        metadata,
+        re.MULTILINE,
+    )
     if not match:
       return None
 
