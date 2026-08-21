@@ -326,27 +326,35 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
         type=NetworkConfig.parse,
         default=NetworkConfig.default())
     args = parser.parse_args(["--site", "cnn", *cli_args])
+
+    # Ensure default probe config exists by default so tests don't fail
+    # when parsing args.probe_config in ProbeListConfig.parse_args(args).
+    default_path = MockWebPowerBenchmark.default_probe_config_path()
+    if not self.fs.exists(default_path):
+      self.fs.create_file(default_path, contents='{"probes": {"perfetto": {}}}')
+      self.fs.create_file(
+          default_path.parents[2] / "probe/perfetto/trace_config/default.txtpb",
+          contents="duration_ms: 1000")
+
+    if getattr(args, "probe_config", None):
+      args.probe_config = ProbeListConfig.parse_args(args)
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     return args, kwargs
+
+  def test_default_probe_config_path(self) -> None:
+    path = MockWebPowerBenchmark.default_probe_config_path()
+    self.assertIsNotNone(path)
+    self.assertEqual(path.name, "probe_config.hjson")
+    self.assertEqual(path.parent.name, "web_power")
 
   def test_kwargs_from_cli_probe_config_default(self) -> None:
     # Verify that the default probe config is loaded when no config is
     # specified.
     args, kwargs = self._parse_and_get_kwargs()
-    self.assertIsNotNone(args.probe_config)
-    self.assertEqual(args.probe_config.name, "probe_config.hjson")
+    self.assertIsInstance(args.probe_config, ProbeListConfig)
     self.assertNotIn("bits_probe", kwargs)
 
-    # Mock pyfakefs files required by the default config and its Perfetto
-    # presets.
-    self.fs.create_file(
-        args.probe_config, contents='{"probes": {"perfetto": {}}}')
-    self.fs.create_file(
-        args.probe_config.parents[2] /
-        "probe/perfetto/trace_config/default.txtpb",
-        contents="duration_ms: 1000")
-
-    probe_names = [p.name for p in ProbeListConfig.parse_args(args).probes]
+    probe_names = [p.name for p in args.probe_config.probes]
     self.assertIn("perfetto", probe_names)
 
   def test_kwargs_from_cli_probe_config_override(self) -> None:
@@ -355,9 +363,9 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     self.fs.create_file(custom_path, contents='{"probes": {"v8.log": {}}}')
     args, kwargs = self._parse_and_get_kwargs("--probe-config",
                                               str(custom_path))
-    self.assertEqual(args.probe_config, custom_path)
+    self.assertIsInstance(args.probe_config, ProbeListConfig)
     self.assertNotIn("bits_probe", kwargs)
-    probe_names = [p.name for p in ProbeListConfig.parse_args(args).probes]
+    probe_names = [p.name for p in args.probe_config.probes]
     self.assertIn("v8.log", probe_names)
     self.assertNotIn("perfetto", probe_names)
 
@@ -367,9 +375,9 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     bits_path = pathlib.Path("/path/to/bits")
     self.fs.create_file(bits_path)
     args, kwargs = self._parse_and_get_kwargs("--bits-path", str(bits_path))
-    self.assertIsNone(args.probe_config)
+    self.assertIsInstance(args.probe_config, ProbeListConfig)
     self.assertIn("bits_probe", kwargs)
-    probe_names = [p.name for p in ProbeListConfig.parse_args(args).probes]
+    probe_names = [p.name for p in args.probe_config.probes]
     self.assertNotIn("perfetto", probe_names)
 
   def _verify_junction_temperature_setup(

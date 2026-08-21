@@ -19,6 +19,7 @@ from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.web_power.probe import WebPowerProbe
 from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.network import NetworkConfig, NetworkType
+from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.parse import DurationParser, PathParser
@@ -486,6 +487,15 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     return parser
 
   @classmethod
+  def _base_dir(cls) -> LocalPath:
+    return config.config_dir() / "benchmark" / "web_power"
+
+  @classmethod
+  @override
+  def default_probe_config_path(cls) -> LocalPath:
+    return cls._base_dir() / "probe_config.hjson"
+
+  @classmethod
   @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
@@ -498,13 +508,14 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
           "duration": args.bits_duration,
           "port": args.bits_port,
       })
-
-    # default_probe_config_path() cannot conditionally return None based on
-    # args.bits_path because it is evaluated before arguments are parsed.
-    if getattr(args, "probe_config",
-               None) is None and "bits_probe" not in kwargs:
-      args.probe_config = config.config_dir(
-      ) / "benchmark/web_power/probe_config.hjson"
+      probe_config = getattr(args, "probe_config", None)
+      if isinstance(probe_config, ProbeListConfig):
+        default_config = ProbeListConfig.parse(cls.default_probe_config_path())
+        cli_probes = ProbeListConfig(getattr(args, "probe", ()))
+        default_config_merged = default_config.merge(
+            cli_probes, should_override=True)
+        if probe_config == default_config_merged:
+          args.probe_config = cli_probes
 
     return kwargs
 
