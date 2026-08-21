@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
-from crossbench.parse import PathParser
 from crossbench.uploader import results_uploader
 
 if TYPE_CHECKING:
@@ -43,7 +42,7 @@ class UploadResultsSubcommand(CrossbenchSubcommand):
   def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
     parser.add_argument(
         "result_dir",
-        type=PathParser.dir_path,
+        type=results_uploader.result_dir,
         help="Path to the benchmark result directory.")
     parser.add_argument(
         "target_url",

@@ -11,6 +11,7 @@ from unittest import mock
 
 from typing_extensions import override
 
+from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.uploader import results_uploader
 from crossbench.uploader.base import BaseUploader
 from tests import test_helper
@@ -145,6 +146,86 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
     member = self._get_archive_symlink_member("ext_link.txt", ext_target)
     self.assertTrue(member.issym())
     self.assertEqual(member.linkname, str(ext_target))
+
+
+class ResultDirTestCase(BaseCrossbenchTestCase):
+
+  @override
+  def setUp(self) -> None:
+    super().setUp()
+    self.out_dir.mkdir()
+    self.result_dir = self.out_dir / "run_results"
+    self.result_dir.mkdir()
+    (self.result_dir / ResultsSummaryProbe.FILE_NAME).touch()
+
+  def test_result_dir_valid(self) -> None:
+    """Verifies that a valid result directory is accepted."""
+    resolved_dir = results_uploader.result_dir(str(self.result_dir))
+    self.assertEqual(resolved_dir, self.result_dir)
+
+  def test_result_dir_symlink_valid(self) -> None:
+    """Verifies that a single-hop symlink to a result directory is resolved."""
+    symlink = self.out_dir / "latest"
+    symlink.symlink_to(self.result_dir)
+    resolved_dir = results_uploader.result_dir(str(symlink))
+    self.assertEqual(resolved_dir, self.result_dir)
+
+  def test_result_dir_chained_symlink_valid(self) -> None:
+    """Verifies that chained symlinks to a result directory are resolved."""
+    symlink_1 = self.out_dir / "link1"
+    symlink_1.symlink_to(self.result_dir)
+    symlink_2 = self.out_dir / "link2"
+    symlink_2.symlink_to(symlink_1)
+    resolved_dir = results_uploader.result_dir(str(symlink_2))
+    self.assertEqual(resolved_dir, self.result_dir)
+
+  def test_result_dir_file_raises(self) -> None:
+    """Verifies that passing a file instead of a directory raises an error."""
+    file_path = self.out_dir / "some_file.txt"
+    file_path.touch()
+    with self.assertRaises(argparse.ArgumentTypeError):
+      results_uploader.result_dir(str(file_path))
+
+  def test_result_dir_symlink_to_file_raises(self) -> None:
+    """Verifies that a symlink pointing to a file raises an error."""
+    file_path = self.out_dir / "some_file.txt"
+    file_path.touch()
+    symlink = self.out_dir / "link_to_file"
+    symlink.symlink_to(file_path)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      results_uploader.result_dir(str(symlink))
+
+  def test_result_dir_non_result_dir_raises(self) -> None:
+    """Verifies that non-result directories raise an error.
+
+    To that end, a heuristic is employed - the presence or absence of a specific
+    file.
+    """
+    non_result_dir = self.out_dir / "not_a_result_dir"
+    non_result_dir.mkdir()
+    with self.assertRaises(argparse.ArgumentTypeError):
+      results_uploader.result_dir(str(non_result_dir))
+
+  def test_result_dir_non_existent_raises(self) -> None:
+    """Verifies that non-existent paths raise an error."""
+    with self.assertRaises(argparse.ArgumentTypeError):
+      results_uploader.result_dir(str(self.out_dir / "does_not_exist"))
+
+  def test_result_dir_broken_symlink_raises(self) -> None:
+    """Verifies that broken symlinks raise an error."""
+    symlink = self.out_dir / "broken"
+    symlink.symlink_to(self.out_dir / "does_not_exist")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      results_uploader.result_dir(str(symlink))
+
+  def test_result_dir_symlink_loop_raises(self) -> None:
+    """Verifies that cyclical symlink loops raise an error."""
+    symlink_a = self.out_dir / "loop_a"
+    symlink_b = self.out_dir / "loop_b"
+    symlink_a.symlink_to(symlink_b)
+    symlink_b.symlink_to(symlink_a)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      results_uploader.result_dir(str(symlink_a))
 
 
 if __name__ == "__main__":

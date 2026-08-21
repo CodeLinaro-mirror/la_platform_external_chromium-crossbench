@@ -14,7 +14,8 @@ import uuid
 from typing import TYPE_CHECKING
 
 from crossbench import path as pth
-from crossbench.parse import ObjectParser
+from crossbench.parse import ObjectParser, PathParser
+from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.uploader.gcs import GoogleCloudStorageUploader
 
 if TYPE_CHECKING:
@@ -23,6 +24,26 @@ if TYPE_CHECKING:
 _SCHEME_TO_UPLOADER: dict[str, type[BaseUploader]] = {
     "gs": GoogleCloudStorageUploader,
 }
+
+
+def result_dir(value: pth.LocalPathLike) -> pth.LocalPath:
+  """Validates that value points to a valid Crossbench result directory."""
+  path = PathParser.path(value)
+  try:
+    path = path.resolve()
+  except (RuntimeError, OSError) as e:
+    raise argparse.ArgumentTypeError(
+        f"Failed to resolve path {str(path)!r}: {e}") from e
+  if not path.exists():
+    raise argparse.ArgumentTypeError(f"Path does not exist: {str(path)!r}")
+  if not path.is_dir():
+    raise argparse.ArgumentTypeError(
+        f"Result path must be a directory, not a file: {str(path)!r}")
+  if not _is_result_dir(path):
+    raise argparse.ArgumentTypeError(
+        f"Path is not a valid Crossbench result directory: {str(path)!r} "
+        f"(missing {ResultsSummaryProbe.FILE_NAME!r}).")
+  return path
 
 
 def upload(source: pth.LocalPath, target: str) -> str | None:
@@ -59,6 +80,17 @@ def target_url(url: str) -> str:
           "CROSSBENCH_RESULT_UPLOAD_TARGET environment variable is not set.")
   return ObjectParser.url_str(
       url, name="results upload URL", schemes=tuple(_SCHEME_TO_UPLOADER.keys()))
+
+
+def _is_result_dir(path: pth.LocalPath) -> bool:
+  """Heuristically checks if a directory is a Crossbench result directory.
+
+  Crossbench generates a 'cb.results.json' summary file at the root of the
+  results output directory upon benchmark completion. Note that this is only
+  a heuristic - any folder could happen to contain a file with this name, and
+  future or past versions of Crossbench might produce different files.
+  """
+  return (path / ResultsSummaryProbe.FILE_NAME).is_file()
 
 
 def _uploader_for_url(url: str) -> BaseUploader:
