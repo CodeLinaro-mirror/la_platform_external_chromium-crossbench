@@ -170,22 +170,20 @@ class WebPowerStory(Story):
     raise NotImplementedError
 
   @classmethod
+  @override
   def default_story_names(cls) -> tuple[str, ...]:
-    if cls is not WebPowerStory:
-      # TODO(eladalon): Derive this more nicely without picking up YouTube,
-      # which we don't use for anything other than media-playback.
-      return ("msn", "cnn", "ajnews")
-    return cls.all_story_names()
+    return tuple(name for name in cls.all_story_names()
+                 if name.rsplit("-", 1)[-1] in cls._CANONICAL_SITES)
 
   @classmethod
-  @functools.cache
+  @override
   def all_story_names(cls) -> tuple[str, ...]:
     if cls is not WebPowerStory:
-      return tuple(sorted(cls.SITES.keys()))
+      return tuple(sorted(site for site in cls.SITES if site != "youtube"))
     names: list[str] = []
     for story_cls in cls.scenario_classes():
       scenario = story_cls.story_name_cls()
-      for site in story_cls.default_story_names():
+      for site in story_cls.all_story_names():
         names.append(f"{scenario}-{site}")
     return tuple(sorted(names))
 
@@ -206,9 +204,9 @@ class WebPowerStory(Story):
     lookup: dict[str, list[str]] = {}
     for name in cls.all_story_names():
       scenario, site = name.rsplit("-", 1)
-      lookup[name] = [scenario, site]
+      lookup[name] = [site]
       if site in cls._CANONICAL_SITES:
-        lookup[name].append("canonical")
+        lookup[name].extend([scenario, "canonical"])
     return lookup
 
 

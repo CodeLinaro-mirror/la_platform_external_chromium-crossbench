@@ -47,7 +47,7 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
 
   @classmethod
   @override
-  def default_story_names(cls) -> tuple[str, ...]:
+  def all_story_names(cls) -> tuple[str, ...]:
     return ("youtube",)
 
   def __init__(self,

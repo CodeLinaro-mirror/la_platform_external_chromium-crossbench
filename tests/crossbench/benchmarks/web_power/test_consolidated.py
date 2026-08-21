@@ -71,6 +71,18 @@ class WebPowerConsolidatedStoryFilterTestCase(BaseCrossbenchTestCase):
     self.assertEqual(stories[1].name, "web-power-page-load-cnn")
     self.assertEqual(stories[2].name, "web-power-scroll-cnn")
 
+  def test_stories_from_names_non_canonical(self) -> None:
+    parser = CBArgumentParser()
+    parser = WebPowerBenchmark.add_cli_arguments(parser)
+    args = parser.parse_args(["--stories=idle-yahoo"])
+    story_filter = WebPowerConsolidatedStoryFilter.from_cli_args(
+        WebPowerBenchmark.DEFAULT_STORY_CLS, args)
+    stories = story_filter.stories
+
+    self.assertEqual(len(stories), 1)
+    self.assertEqual(stories[0].name, "web-power-idle-yahoo")
+    self.assertEqual(stories[0].url, "https://www.yahoo.com")
+
   def _expected_canonical_stories(self) -> set[str]:
     return {
         "web-power-idle-msn",
