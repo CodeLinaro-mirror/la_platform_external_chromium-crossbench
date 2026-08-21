@@ -120,6 +120,11 @@ class WebPowerStory(Story):
               url="https://www.allrecipes.com",
               archive=f"{_WEB_POWER_GCS}/allrecipes_2026_08_20.wprgo",
           ),
+      "telegraph":
+          WebPowerSiteConfig(
+              url="https://www.telegraph.co.uk",
+              archive=f"{_WEB_POWER_GCS}/telegraph_2026_08_20.wprgo",
+          ),
       "yahoo":
           WebPowerSiteConfig(
               url="https://www.yahoo.com",
