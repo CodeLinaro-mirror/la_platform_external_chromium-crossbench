@@ -63,7 +63,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
-  'clang_format_revision': '75375d6e0dbc6626d5705b529fd698f9b0b97f00',
+  'clang_format_revision': '1baf9afe06a7955fd9489d11c7f703475d385926',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling tsproxy
   # and whatever else without interference from each other.
