@@ -79,6 +79,12 @@ class CrossbenchFakeFsTestCase(
     self.fs.create_file(path, contents=contents)
     return path
 
+  def setup_chromium_checkout(self, chrome_src: pth.AnyPath) -> None:
+    self.fs.create_file(chrome_src.parent / ".gclient")
+    self.fs.create_dir(chrome_src / ".git")
+    self.fs.create_dir(chrome_src / "v8")
+    self.fs.create_dir(chrome_src / "chrome")
+
   def mock_platform_default_tmp_dir(self, platform_cls: type) -> None:
     patcher = mock.patch.object(
         platform_cls,

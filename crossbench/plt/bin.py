@@ -4,17 +4,175 @@
 
 from __future__ import annotations
 
+import abc
 import functools
 from typing import TYPE_CHECKING, ClassVar, Final, TypeAlias
 
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.helper.path_finder_base import ChromiumCheckoutFinder
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
   BinaryLookup: TypeAlias = pth.AnyPathLike | tuple[pth.AnyPathLike, ...]
 
+
+def validate_win_binary(binary_name: str) -> None:
+  if not binary_name.lower().endswith((".exe", ".bat")):
+    raise ValueError(
+        f"Windows binary {binary_name} should have '.exe' or '.bat' suffix")
+
+
+class BinaryPath(abc.ABC):
+  """Abstract base class to look up different kinds of binaries."""
+
+  @abc.abstractmethod
+  def resolve(self, platform: Platform) -> pth.AnyPath | None:
+    """Main entry point to resolve a binary."""
+
+  def validate_win(self) -> None:
+    """Specialized windows validation (e.g. check for .exe suffix)"""
+
+  def for_windows(self) -> BinaryPath:
+    """Return a windows compatible version of this lookup."""
+    return self
+
+
+class SystemPath(BinaryPath):
+  """Lookup a binary using in the current PATH using platform.search."""
+
+  def __init__(self, binary: pth.AnyPathLike):
+    if not binary:
+      raise ValueError("SystemPath requires a non-empty string for binary name")
+    self.binary: Final[pth.AnyPath] = pth.AnyPath(binary)
+
+  def for_windows(self) -> BinaryPath:
+    if self.binary.suffix.lower() not in (".exe", ".bat"):
+      return SystemPath(f"{self.binary}.exe")
+    return self
+
+  def validate_win(self) -> None:
+    validate_win_binary(self.binary.name)
+
+  def resolve(self, platform: Platform) -> pth.AnyPath | None:
+    return platform.search_binary(self.binary)
+
+
+class EnvVarPath(BinaryPath):
+  """Look up a binary with an ENV variable."""
+
+  def __init__(self, env_var: str):
+    assert env_var, "ENV_VAR must be a non-empty string"
+    self.env_var: Final[str] = env_var
+
+  def resolve(self, platform: Platform) -> pth.AnyPath | None:
+    if env_path_str := platform.environ.get(self.env_var):
+      return platform.search_binary(env_path_str)
+    return None
+
+
+@functools.cache
+def _find_chromium_checkout(platform: Platform) -> pth.AnyPath | None:
+  return ChromiumCheckoutFinder(platform).path
+
+
+class ChromePath(BinaryPath):
+
+  def __init__(self, relative_path: pth.AnyPathLike):
+    # Enforce standard AnyPath wrapping
+    self.relative_path: Final[pth.AnyPath] = pth.AnyPath(relative_path)
+    assert self.relative_path.parts, (
+        "ChromiumLookup requires a non-empty relative_path")
+
+  def for_windows(self) -> BinaryPath:
+    if self.relative_path.suffix.lower() not in (".exe", ".bat"):
+      return ChromePath(f"{self.relative_path}.exe")
+    return self
+
+  def validate_win(self) -> None:
+    validate_win_binary(self.relative_path.name)
+
+  def resolve(self, platform: Platform) -> pth.AnyPath | None:
+    if maybe_chrome := _find_chromium_checkout(platform):
+      candidate = maybe_chrome / self.relative_path
+      if platform.exists(candidate):
+        return candidate
+    return None
+
+
+BinaryPathElement: TypeAlias = pth.AnyPathLike | BinaryPath
+BinaryPathArg: TypeAlias = BinaryPathElement | tuple[BinaryPathElement, ...]
+
+
+class AndroidBuildToolPath(BinaryPath):
+  """Lookup Android Build Tools by resolving the highest version number
+  in a build-tools directory."""
+
+  CHROME_SDK_PATH: ClassVar[pth.AnyPath] = pth.AnyPath(
+      "third_party/android_sdk/public")
+
+  def __init__(self,
+               tool_name: str,
+               fallback_sdk_path: pth.AnyPathLike | None = None):
+    assert len(pth.AnyPath(tool_name).parts) == 1, (
+        f"tool_name '{tool_name}' must not contain path separators")
+    self.fallback_sdk_path: Final[pth.AnyPath | None] = (
+        pth.AnyPath(fallback_sdk_path) if fallback_sdk_path else None)
+    self.tool_name: Final[str] = str(tool_name)
+
+  def for_windows(self) -> BinaryPath:
+    if not self.tool_name.lower().endswith((".exe", ".bat")):
+      return AndroidBuildToolPath(self.tool_name + ".exe",
+                                  self.fallback_sdk_path)
+    return self
+
+  def validate_win(self) -> None:
+    validate_win_binary(self.tool_name)
+
+  def _sort_key(self, path: pth.AnyPath) -> tuple[int, ...]:
+    try:
+      return tuple(int(x) for x in path.name.split("."))
+    except ValueError:
+      return (0,)
+
+  def _find_tool_in_sdk(self, platform: Platform,
+                        base_sdk_path: pth.AnyPath) -> pth.AnyPath | None:
+    build_tools_dir = base_sdk_path / "build-tools"
+    if not platform.exists(build_tools_dir):
+      return None
+
+    valid_dirs = []
+    for child in platform.iterdir(build_tools_dir):
+      if platform.is_dir(child):
+        valid_dirs.append(child)
+
+    if not valid_dirs:
+      return None
+
+    valid_dirs.sort(key=self._sort_key)
+
+    candidate = valid_dirs[-1] / self.tool_name
+    if platform.exists(candidate):
+      return candidate
+    return None
+
+  def resolve(self, platform: Platform) -> pth.AnyPath | None:
+    if maybe_chrome := _find_chromium_checkout(platform):
+      if candidate := self._find_tool_in_sdk(
+          platform, maybe_chrome / self.CHROME_SDK_PATH):
+        return candidate
+
+    if not self.fallback_sdk_path:
+      return None
+
+    parts = list(self.fallback_sdk_path.parts)
+    if parts and parts[0] == "~":
+      base_dir = platform.home() / pth.AnyPath(*parts[1:])
+    else:
+      base_dir = self.fallback_sdk_path
+
+    return self._find_tool_in_sdk(platform, base_dir)
 
 class BinaryNotFoundError(RuntimeError):
 
@@ -49,13 +207,13 @@ class Binary:
 
   def __init__(self,
                name: str,
-               default: BinaryLookup | None = None,
-               posix: BinaryLookup | None = None,
-               linux: BinaryLookup | None = None,
-               android: BinaryLookup | None = None,
-               macos: BinaryLookup | None = None,
-               win: BinaryLookup | None = None,
-               chromeos: BinaryLookup | None = None) -> None:
+               default: BinaryPathArg | None = None,
+               posix: BinaryPathArg | None = None,
+               linux: BinaryPathArg | None = None,
+               android: BinaryPathArg | None = None,
+               macos: BinaryPathArg | None = None,
+               win: BinaryPathArg | None = None,
+               chromeos: BinaryPathArg | None = None) -> None:
     self._name = name
     self._default = self._convert(default)
     self._posix = self._convert(posix)
@@ -69,22 +227,22 @@ class Binary:
       raise ValueError("At least one platform binary must be provided")
 
   def _convert(self,
-               paths: BinaryLookup | None = None) -> tuple[pth.AnyPath, ...]:
+               paths: BinaryPathArg
+               | None = None) -> tuple[BinaryPath, ...]:
     if paths is None:
       return ()
-    if isinstance(paths, str):
-      path: str = paths
-      if not path:
-        raise ValueError("Got unexpected empty string as binary path")
-      return (pth.AnyPath(path),)
-    if isinstance(paths, pth.AnyPath):
-      return (paths,)
-    return tuple(pth.AnyPath(path) for path in paths)
+    if isinstance(paths, tuple):
+      return tuple(self._convert_to_paths(path) for path in paths)
+    return (self._convert_to_paths(paths),)
+
+  def _convert_to_paths(self, element: BinaryPathElement) -> BinaryPath:
+    if isinstance(element, BinaryPath):
+      return element
+    return SystemPath(element)
 
   def _validate_win(self) -> None:
-    for path in self._win:
-      if path.suffix != ".exe":
-        raise ValueError(f"Windows binary {path} should have '.exe' suffix")
+    for bin_path in self._win:
+      bin_path.validate_win()
 
   @property
   def name(self) -> str:
@@ -95,9 +253,8 @@ class Binary:
 
   def search(self, platform: Platform) -> pth.AnyPath | None:
     self._validate_platform(platform)
-    for binary in self.platform_path(platform):
-      binary_path = platform.path(binary)
-      if result := platform.search_binary(binary_path):
+    for element in self.platform_path(platform):
+      if result := element.resolve(platform):
         return result
     return None
 
@@ -110,7 +267,7 @@ class Binary:
       return path
     raise BinaryNotFoundError(self, platform)
 
-  def platform_path(self, platform: Platform) -> tuple[pth.AnyPath, ...]:
+  def platform_path(self, platform: Platform) -> tuple[BinaryPath, ...]:
     if self._chromeos and platform.is_chromeos:
       return self._chromeos
     if self._linux and platform.is_linux:
@@ -128,10 +285,8 @@ class Binary:
         return self._win_default()
     return self._default
 
-  def _win_default(self) -> tuple[pth.AnyPath, ...]:
-    return tuple(
-        default if default.suffix == ".exe" else default.with_suffix(".exe")
-        for default in self._default)
+  def _win_default(self) -> tuple[BinaryPath, ...]:
+    return tuple(default.for_windows() for default in self._default)
 
   def _validate_platform(self, platform: Platform) -> None:
     pass
@@ -206,26 +361,33 @@ class ChromeOSBinary(Binary):
 class Binaries:
   ADB: ClassVar = Binary(
       "adb",
-      macos=("adb", "~/Library/Android/sdk/platform-tools/adb",
-             "third_party/android_sdk/public/platform-tools/adb"),
-      linux=("adb", "third_party/android_sdk/public/platform-tools/adb"),
-      win=("adb.exe", "Android/sdk/platform-tools/adb.exe",
-           "third_party/android_sdk/public/platform-tools/adb.exe"))
+      macos=(
+          "adb",
+          "~/Library/Android/sdk/platform-tools/adb",
+          ChromePath("third_party/android_sdk/public/platform-tools/adb"),
+      ),
+      linux=(
+          "adb",
+          ChromePath("third_party/android_sdk/public/platform-tools/adb"),
+      ),
+      win=(
+          "adb.exe",
+          "Android/sdk/platform-tools/adb.exe",
+          ChromePath("third_party/android_sdk/public/platform-tools/adb.exe"),
+      ))
   AAPT: ClassVar = Binary(
       "aapt",
       macos=(
           "aapt",
-          "~/Library/Android/sdk/build-tools/*/aapt",
-          "third_party/android_sdk/public/build-tools/*/aapt",
+          AndroidBuildToolPath("aapt", "~/Library/Android/sdk"),
       ),
       linux=(
           "aapt",
-          "third_party/android_sdk/public/build-tools/*/aapt",
+          AndroidBuildToolPath("aapt"),
       ),
       win=(
           "aapt.exe",
-          "Android/sdk/build-tools/*/aapt.exe",
-          "third_party/android_sdk/public/build-tools/*/aapt.exe",
+          AndroidBuildToolPath("aapt.exe", "Android/sdk"),
       ))
   CPIO: ClassVar = LinuxBinary("cpio")
   FFMPEG: ClassVar = Binary("ffmpeg", posix="ffmpeg")

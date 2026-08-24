@@ -547,11 +547,7 @@ class Platform(abc.ABC):
                       result: pth.AnyPath | None) -> Iterator[None]:
     binary_name: pth.AnyPathLike = ""
     if isinstance(binary, Binary):
-      if override := binary.platform_path(self):
-        binary_name = override[0]
-      else:
-        raise RuntimeError("Cannot override binary:"
-                           f" {binary} is not supported supported on {self}")
+      binary_name = binary.name
     else:
       binary_name = binary
     prev_override = self.lookup_binary_override(binary_name)

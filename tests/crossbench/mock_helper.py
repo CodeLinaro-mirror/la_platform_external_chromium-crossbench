@@ -354,7 +354,8 @@ class MockPlatformMixin:
     path = self.path(app_or_bin)
     if not path.parts:
       raise ValueError("Got empty path")
-    path = self.path(f"/usr/bin/{path}")
+    if len(path.parts) == 1:
+      path = self.path(f"/usr/bin/{app_or_bin}")
     if self.use_fs and self.is_file(path):
       return path
     return super().search_binary(app_or_bin)
