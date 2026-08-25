@@ -45,7 +45,29 @@ class WprReplayNetworkTestCase(BaseCrossbenchTestCase):
     browser.attributes().is_chromium_based = False
     with self.assertRaises(ValueError) as cm:
       network.validate(browser)
-    self.assertIn("chromium-based browsers are supported", str(cm.exception))
+    self.assertIn("only supports wpr replay in cross-platform mode",
+                  str(cm.exception))
+
+  @mock.patch("crossbench.network.replay.wpr.WprGoFinder.wpr")
+  def test_validate_cross_platform_mode(self, mock_wpr_finder):
+    mock_wpr_finder.return_value = self.wpr_go_bin
+    network = LocalWprReplayNetwork(
+        archive=self.archive_path,
+        traffic_shaper=self.traffic_shaper,
+        browser_platform=self.platform,
+        persist_server=False,
+        inject_deterministic_script=False,
+        no_archive_certificates=False,
+        response_transformations_file=None,
+        cross_platform_mode=True,
+        host=None)
+
+    browser = mock.Mock()
+    browser.attributes().is_chromium_based = True
+    network.validate(browser)
+
+    browser.attributes().is_chromium_based = False
+    network.validate(browser)
 
 
 if __name__ == "__main__":

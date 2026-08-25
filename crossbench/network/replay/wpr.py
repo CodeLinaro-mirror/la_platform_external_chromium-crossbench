@@ -67,10 +67,12 @@ class WprReplayNetwork(ReplayNetwork):
   @override
   def validate(self, browser: Browser) -> None:
     super().validate(browser)
-    if not browser.attributes().is_chromium_based:
+    if (not browser.attributes().is_chromium_based and
+        not self._cross_platform_mode):
       raise ValueError(
-          f"Browser {browser.unique_name} is not supported. "
-          "Only chromium-based browsers are supported for wpr replay.")
+          f"Non chromium-based browser {browser.unique_name} only supports "
+          "wpr replay in cross-platform mode. See ./cb.py "
+          "setup-cross-platform-mode")
 
   @override
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
