@@ -355,6 +355,20 @@ class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
     self.assertIn("bits", probe_names)
     self.assertNotIn("perfetto", probe_names)
 
+  def test_explicit_perfetto_probe(self) -> None:
+    probe_names = self._get_runner_probe_names("--probe=perfetto")
+    self.assertEqual(probe_names.count("perfetto"), 1)
+    self.assertIn("trace_processor", probe_names)
+
+  def test_bits_path_with_explicit_perfetto_probe(self) -> None:
+    bits_path = pth.LocalPath("/mock/bits")
+    self.fs.create_file(bits_path)
+    probe_names = self._get_runner_probe_names(f"--bits-path={bits_path}",
+                                               "--probe=perfetto")
+    self.assertIn("bits", probe_names)
+    self.assertIn("perfetto", probe_names)
+    self.assertIn("trace_processor", probe_names)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
