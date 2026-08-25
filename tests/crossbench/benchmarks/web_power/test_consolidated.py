@@ -323,7 +323,7 @@ class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
     self.addCleanup(bits_validate_patcher.stop)
     bits_validate_patcher.start()
 
-  def test_default_probe_setup(self) -> None:
+  def _get_runner_probe_names(self, *extra_args: str) -> tuple[str, ...]:
     with self._patch_get_browser_cls():
       cli = self.run_cli(
           "web-power",
@@ -331,50 +331,29 @@ class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
           "--browser=chrome",
           "--fast",
           "--dry-run",
+          *extra_args,
       )
       subcommand = cli.last_subcommand
       assert isinstance(subcommand, BenchmarkSubcommand)
-      runner = subcommand.runner
-      probe_names = {p.name for p in runner.probes}
-      self.assertIn("perfetto", probe_names)
-      self.assertIn("trace_processor", probe_names)
-      self.assertIn("web_power_probe", probe_names)
+      return tuple(p.name for p in subcommand.runner.probes)
+
+  def test_default_probe_setup(self) -> None:
+    probe_names = self._get_runner_probe_names()
+    self.assertIn("perfetto", probe_names)
+    self.assertIn("trace_processor", probe_names)
+    self.assertIn("web_power_probe", probe_names)
 
   def test_no_probe_flag(self) -> None:
-    with self._patch_get_browser_cls():
-      cli = self.run_cli(
-          "web-power",
-          "--stories=idle-cnn",
-          "--browser=chrome",
-          "--no-probe=perfetto",
-          "--fast",
-          "--dry-run",
-      )
-      subcommand = cli.last_subcommand
-      assert isinstance(subcommand, BenchmarkSubcommand)
-      runner = subcommand.runner
-      probe_names = {p.name for p in runner.probes}
-      self.assertNotIn("perfetto", probe_names)
-      self.assertNotIn("trace_processor", probe_names)
+    probe_names = self._get_runner_probe_names("--no-probe=perfetto")
+    self.assertNotIn("perfetto", probe_names)
+    self.assertNotIn("trace_processor", probe_names)
 
   def test_bits_path_suppresses_perfetto(self) -> None:
     bits_path = pth.LocalPath("/mock/bits")
     self.fs.create_file(bits_path)
-    with self._patch_get_browser_cls():
-      cli = self.run_cli(
-          "web-power",
-          "--stories=idle-cnn",
-          "--browser=chrome",
-          f"--bits-path={bits_path}",
-          "--fast",
-          "--dry-run",
-      )
-      subcommand = cli.last_subcommand
-      assert isinstance(subcommand, BenchmarkSubcommand)
-      runner = subcommand.runner
-      probe_names = {p.name for p in runner.probes}
-      self.assertIn("bits", probe_names)
-      self.assertNotIn("perfetto", probe_names)
+    probe_names = self._get_runner_probe_names(f"--bits-path={bits_path}")
+    self.assertIn("bits", probe_names)
+    self.assertNotIn("perfetto", probe_names)
 
 
 if __name__ == "__main__":
