@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, Iterable
+from typing import TYPE_CHECKING, ClassVar, Iterable, cast
 
 import pandas as pd
 from perfetto.batch_trace_processor.api import BatchTraceProcessor, \
@@ -14,9 +14,11 @@ from perfetto.trace_processor.api import TraceProcessorConfig
 from tabulate import tabulate
 from typing_extensions import override
 
+from crossbench import config
 from crossbench import path as pth
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.parse import ObjectParser, PathParser
+from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
 from crossbench.probes.probe import Probe, ProbePriority
 from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
@@ -27,6 +29,7 @@ from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
 
 if TYPE_CHECKING:
+  from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.runner import Runner
@@ -54,6 +57,11 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
   def get_context_cls(self) -> type[EmptyProbeContext[WebPowerProbe]]:
     return EmptyProbeContext
 
+  @property
+  @override
+  def benchmark(self) -> WebPowerBenchmarkBase:
+    return cast("WebPowerBenchmarkBase", super().benchmark)
+
   @classmethod
   def _validate_and_resolve_mapping_entry(cls, key: str, value: str,
                                           mapping_dir: pth.LocalPath) -> str:
@@ -75,15 +83,44 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
 
   @override
   def get_extra_probes(self, runner: Runner) -> Iterable[Probe]:
-    if runner.has_probe(TraceProcessorProbe.NAME):
-      return ()
-    # We only need TraceProcessorProbe if we are capturing Perfetto traces.
-    # Otherwise, there will be no trace to query power_rails from.
-    if not runner.has_probe("perfetto"):
-      return ()
-    return (TraceProcessorProbe(
+    extra_probes: list[Probe] = []
+
+    # BITS: If the user configured BITS via benchmark flags (--bits-path),
+    # attach the configured probe. (If the user configured BITS via the generic
+    # --probe=bits flag instead, it is already attached to the runner.)
+    if self.benchmark.bits_probe and not runner.has_probe("bits"):
+      extra_probes.append(self.benchmark.bits_probe)
+    is_bits_active = runner.has_probe("bits") or bool(self.benchmark.bits_probe)
+
+    # Perfetto: By default (when BITS is not explicitly added), Web Power
+    # measures power rails via Perfetto, unless the user provided a custom
+    # Perfetto probe or explicitly disabled Perfetto via --no-probe=perfetto.
+    if adding_perfetto := (not is_bits_active and
+                           not runner.has_probe("perfetto") and
+                           not runner.is_probe_disabled("perfetto")):
+      extra_probes.append(self._default_perfetto_probe())
+    has_perfetto = adding_perfetto or runner.has_probe("perfetto")
+
+    # TraceProcessor: When Perfetto is active (either user-provided or
+    # default-attached), attach the default TraceProcessor to query power rails.
+    if has_perfetto and not runner.has_probe("trace_processor"):
+      extra_probes.append(self._default_trace_processor_probe())
+
+    return extra_probes
+
+  @classmethod
+  def _default_perfetto_probe(cls) -> PerfettoProbe:
+    return PerfettoProbe.parse_dict({
+        "textproto":
+            (config.config_dir() / "benchmark/web_power/perfetto_basic.txtpb"),
+        "start_tracing_sequence": "story_run",
+    })
+
+  def _default_trace_processor_probe(self) -> TraceProcessorProbe:
+    return TraceProcessorProbe(
         queries=[self._get_query_config()],
-        module_paths=[QUERIES_DIR / "web_power"]),)
+        module_paths=[QUERIES_DIR / "web_power"],
+    )
 
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:

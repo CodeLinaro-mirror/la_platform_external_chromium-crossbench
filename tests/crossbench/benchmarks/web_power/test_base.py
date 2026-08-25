@@ -270,11 +270,10 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     bits_probe = kwargs["bits_probe"]
     self.assertEqual(bits_probe.port, 1234)
 
-  def test_setup_bits_probe(self) -> None:
+  def test_bits_probe_property(self) -> None:
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
     self.fs.create_file(bits_path)
 
-    # Both flags provided: BitsProbe should be attached
     bits_probe = BitsProbe(
         bits_path=bits_path,
         bits_out="run_id",
@@ -286,14 +285,7 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
         stories=[story],
         bits_probe=bits_probe,
     )
-    runner = mock.MagicMock()
-    benchmark.setup(runner)
-    runner.attach_probe.assert_called_once()
-    attached_probe = runner.attach_probe.call_args.args[0]
-    self.assertIsInstance(attached_probe, BitsProbe)
-    self.assertEqual(attached_probe.bits_path, bits_path)
-    self.assertEqual(attached_probe.bits_out, "run_id")
-    self.assertEqual(attached_probe.duration, dt.timedelta(seconds=120))
+    self.assertIs(benchmark.bits_probe, bits_probe)
 
   def test_kwargs_from_cli_bits_only_path(self) -> None:
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"

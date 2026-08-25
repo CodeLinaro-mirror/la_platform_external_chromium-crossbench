@@ -20,6 +20,7 @@ from crossbench import path as pth
 from crossbench.benchmarks.web_power.base import VERSION_STRING
 from crossbench.benchmarks.web_power.probe import WebPowerProbe
 from crossbench.exception import MultiException
+from crossbench.probes.bits import BitsProbe
 from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.trace_processor.constants import QUERIES_DIR
@@ -39,7 +40,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self):
     super().setUp()
-    self.mock_benchmark = mock.MagicMock()
+    self.mock_benchmark = mock.MagicMock(bits_probe=None)
     self.mock_benchmark.version.return_value = tuple(
         map(int, VERSION_STRING.split(".")))
     self.probe = WebPowerProbe(benchmark=self.mock_benchmark)
@@ -604,6 +605,12 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     extra_probes = self._test_get_extra_probes(lambda name: False)
     self.assertEqual(extra_probes, ())
 
+  def test_get_extra_probes_with_bits(self):
+    bits_probe = mock.MagicMock(spec=BitsProbe, name="bits")
+    self.mock_benchmark.bits_probe = bits_probe
+    extra_probes = self._test_get_extra_probes(lambda name: False)
+    self.assertEqual(extra_probes, (bits_probe,))
+
 
 class Mapping(enum.Enum):
   PUBLIC = "public"
@@ -620,7 +627,7 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self):
     super().setUp()
-    self.mock_benchmark = mock.MagicMock()
+    self.mock_benchmark = mock.MagicMock(bits_probe=None)
     self.mock_benchmark.version.return_value = tuple(
         map(int, VERSION_STRING.split(".")))
     self.probe = WebPowerProbe(benchmark=self.mock_benchmark)
@@ -824,7 +831,7 @@ class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
 
     # Initialize the WebPowerProbe and extract its underlying
     # TraceProcessorProbe and SQL query configuration for validation testing.
-    self.probe = WebPowerProbe(benchmark=mock.MagicMock())
+    self.probe = WebPowerProbe(benchmark=mock.MagicMock(bits_probe=None))
     self.runner = mock.MagicMock(has_probe=lambda name: name == "perfetto")
     extra_probes = tuple(self.probe.get_extra_probes(self.runner))
     self.assertEqual(len(extra_probes), 1)

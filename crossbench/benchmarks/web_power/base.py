@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final, Generic, Iterable, \
 
 from typing_extensions import override
 
-from crossbench import config
 from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.web_power.probe import WebPowerProbe
@@ -22,7 +21,6 @@ from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.parse import DurationParser, PathParser
-from crossbench.probes.all import PerfettoProbe
 from crossbench.probes.bits import BitsProbe
 from crossbench.probes.junction_temperature import \
     JunctionTemperatureProbe as JtProbe
@@ -358,6 +356,10 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     self._bits_probe = bits_probe
     super().__init__(stories, action_runner_config)
 
+  @property
+  def bits_probe(self) -> BitsProbe | None:
+    return self._bits_probe
+
   @override
   def _validate_stories(self, stories: Sequence[Story]) -> list[Story]:
     assert stories, "No stories provided"
@@ -378,24 +380,9 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
   @override
   def setup(self, runner: Runner) -> None:
     super().setup(runner)
-    if self._bits_probe:
-      runner.attach_probe(self._bits_probe)
+    # TODO: Move JtProbe attachment to WebPowerProbe.get_extra_probes().
     if not runner.has_probe(JtProbe.NAME):
       runner.attach_probe(JtProbe(), matching_browser_only=True)
-    if (not self._bits_probe and not runner.has_probe("perfetto") and
-        not runner.is_probe_disabled("perfetto")):
-      perfetto_probe = PerfettoProbe.parse_dict({
-          "textproto":
-              (config.config_dir() / "benchmark/web_power/perfetto_basic.txtpb"
-              ),
-          "start_tracing_sequence": "story_run",
-      })
-      runner.attach_probe(perfetto_probe, matching_browser_only=True)
-      for probe in list(runner.probes):
-        for extra_probe in probe.get_extra_probes(runner):
-          if (not runner.has_probe(extra_probe.name) and
-              not runner.is_probe_disabled(extra_probe.name)):
-            runner.attach_probe(extra_probe, matching_browser_only=True)
 
   @override
   def setup_session_network(self, session: BrowserSessionRunGroup) -> None:
@@ -506,15 +493,21 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
     cls._select_network(args)
-    if args.bits_path or args.bits_out:
-      kwargs["bits_probe"] = BitsProbe.parse_dict({
-          "path": args.bits_path,
-          "out": args.bits_out,
-          "device": args.bits_device,
-          "duration": args.bits_duration,
-          "port": args.bits_port,
-      })
+    if bits_probe := cls._parse_bits_probe(args):
+      kwargs["bits_probe"] = bits_probe
     return kwargs
+
+  @classmethod
+  def _parse_bits_probe(cls, args: argparse.Namespace) -> BitsProbe | None:
+    if not args.bits_path and not args.bits_out:
+      return None
+    return BitsProbe.parse_dict({
+        "path": args.bits_path,
+        "out": args.bits_out,
+        "device": args.bits_device,
+        "duration": args.bits_duration,
+        "port": args.bits_port,
+    })
 
   @classmethod
   def _select_network(cls, args: argparse.Namespace) -> None:
