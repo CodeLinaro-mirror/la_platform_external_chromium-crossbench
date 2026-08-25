@@ -14,6 +14,7 @@ from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth
+from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.config import ConfigObject, config_dir
 from crossbench.helper import fs_helper
 from crossbench.helper.collection_helper import close_matches_message
@@ -35,6 +36,7 @@ from protoc import trace_config_pb2
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.probes.cb_perfetto.context.base import PerfettoProbeContext
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
@@ -389,8 +391,12 @@ class PerfettoProbe(Probe):
     return "perfetto.trace.pb"
 
   @override
+  def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
+    super().validate_browser(env, browser)
+    self.expect_browser(browser, BrowserAttributes.CHROMIUM_BASED)
+
+  @override
   def attach(self, browser: Browser) -> None:
-    assert browser.attributes().is_chromium_based
     browser.features.enable("EnablePerfettoSystemTracing")
     if self._needs_v8_code_logger:
       logging.debug("Auto-enabling --perfetto-code-logger on %s", browser)

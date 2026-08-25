@@ -13,12 +13,14 @@ from unittest import mock
 
 from typing_extensions import override
 
+from crossbench import config
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.web_power import wpr_helpers
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
     WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or
 from crossbench.benchmarks.web_power.probe import WebPowerProbe
+from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CBArgumentParser
@@ -27,7 +29,7 @@ from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.probes.bits import BitsProbe
 from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe, TraceConfig
 from crossbench.probes.junction_temperature import JunctionTemperatureProbe
-from crossbench.probes.probe import ProbeIncompatibleBrowser
+from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
 from crossbench.probes.trace_processor.query_config import QUERIES_DIR
 from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
@@ -141,6 +143,15 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     self.fs.create_file(mapping_file, contents='{"pixels": "test"}')
     self.fs.create_file(
         mapping_file.parent.parent / "test.sql", contents="SELECT 1;")
+    self.fs.create_file(
+        config.config_dir() / "probe/perfetto/trace_config/default.txtpb",
+        contents="duration_ms: 1000",
+    )
+    self.fs.create_file(
+        config.config_dir() / "benchmark/web_power/perfetto_basic.txtpb",
+        contents="duration_ms: 1000",
+    )
+    self.bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
 
   @property
   @override
@@ -330,24 +341,11 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     return args, kwargs
 
   def test_kwargs_from_cli_probe_config_default(self) -> None:
-    # Verify that the default probe config is loaded when no config is
-    # specified.
+    # Verify that the default probe config is NOT loaded into args (it is now
+    # loaded in setup()).
     args, kwargs = self._parse_and_get_kwargs()
-    self.assertIsNotNone(args.probe_config)
-    self.assertEqual(args.probe_config.name, "probe_config.hjson")
+    self.assertIsNone(args.probe_config)
     self.assertNotIn("bits_probe", kwargs)
-
-    # Mock pyfakefs files required by the default config and its Perfetto
-    # presets.
-    self.fs.create_file(
-        args.probe_config, contents='{"probes": {"perfetto": {}}}')
-    self.fs.create_file(
-        args.probe_config.parents[2] /
-        "probe/perfetto/trace_config/default.txtpb",
-        contents="duration_ms: 1000")
-
-    probe_names = [p.name for p in ProbeListConfig.parse_args(args).probes]
-    self.assertIn("perfetto", probe_names)
 
   def test_kwargs_from_cli_probe_config_override(self) -> None:
     # Verify that explicitly providing --probe-config overrides the default.
@@ -492,6 +490,7 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     browser.unique_name = "mock_browser"
     browser.driver_logging = False
     browser.label = "mock_label"
+    browser.attributes.return_value = BrowserAttributes.CHROMIUM_BASED
 
     runner = Runner(
         out_dir=self.out_dir,
@@ -518,6 +517,86 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
         tp_idx, wp_idx,
         "TraceProcessorProbe must be sorted after WebPowerProbe "
         "so that it merges first")
+
+
+class WebPowerSetupProbesTestCase(WebPowerBenchmarkBaseTestCase):
+
+  def setUp(self) -> None:
+    super().setUp()
+    self.mock_browser = mock.Mock()
+    self.mock_browser.unique_name = "mock_browser"
+    self.mock_browser.driver_logging = False
+    self.mock_browser.label = "mock_label"
+    self.mock_browser.attributes.return_value = BrowserAttributes.CHROMIUM_BASED
+
+  def _setup_runner(
+      self,
+      with_bits: bool = False,
+      probes: Sequence[Probe] = (),
+      disabled_probes: Sequence[str] = (),
+  ) -> Runner:
+    self.mock_browser.platform.is_android = with_bits
+    if with_bits and not self.fs.exists(self.bits_path):
+      self.fs.create_file(self.bits_path)
+    bits_probe = (
+        BitsProbe(bits_path=self.bits_path, bits_out="run_id")
+        if with_bits else None)
+    story = MockWebPowerStory.from_site(
+        "cnn", total_duration=dt.timedelta(seconds=1))
+    benchmark = MockWebPowerBenchmark(stories=[story], bits_probe=bits_probe)
+
+    runner = Runner(
+        out_dir=self.out_dir,
+        browsers=[self.mock_browser],
+        benchmark=benchmark,
+        probes=list(probes),
+        disabled_probes=list(disabled_probes),
+        env_validation_mode=ValidationMode.SKIP,
+        in_memory_result_db=True,
+    )
+
+    with mock.patch("crossbench.probes.junction_temperature."
+                    "JunctionTemperatureProbe.validate_browser"):
+      benchmark.setup(runner)
+    return runner
+
+  def test_setup_probes_default_no_bits_no_perfetto(self) -> None:
+    runner = self._setup_runner()
+    probe_names = [p.name for p in runner.probes]
+    self.assertIn("perfetto", probe_names)
+    self.assertIn("trace_processor", probe_names)
+    self.assertNotIn("bits", probe_names)
+
+  def test_setup_probes_only_perfetto(self) -> None:
+    perfetto = PerfettoProbe()
+    runner = self._setup_runner(probes=[perfetto])
+    probe_names = [p.name for p in runner.probes]
+    self.assertEqual(probe_names.count("perfetto"), 1)
+    self.assertIn("trace_processor", probe_names)
+    self.assertNotIn("bits", probe_names)
+
+  def test_setup_probes_only_bits(self) -> None:
+    runner = self._setup_runner(with_bits=True)
+    probe_names = [p.name for p in runner.probes]
+    self.assertIn("bits", probe_names)
+    self.assertNotIn("perfetto", probe_names)
+    self.assertNotIn("trace_processor", probe_names)
+
+  def test_setup_probes_both_bits_and_perfetto(self) -> None:
+    perfetto = PerfettoProbe()
+    runner = self._setup_runner(with_bits=True, probes=[perfetto])
+    probe_names = [p.name for p in runner.probes]
+    self.assertIn("bits", probe_names)
+    self.assertIn("perfetto", probe_names)
+    self.assertIn("trace_processor", probe_names)
+
+  def test_setup_probes_skips_disabled_perfetto(self) -> None:
+    runner = self._setup_runner(disabled_probes=["perfetto"])
+    probe_names = [p.name for p in runner.probes]
+    self.assertNotIn("perfetto", probe_names)
+    self.assertNotIn("trace_processor", probe_names)
+    self.assertNotIn("bits", probe_names)
+    self.assertTrue(runner.is_probe_disabled("perfetto"))
 
 
 class FakeWprReplayNetwork(WprReplayNetwork):

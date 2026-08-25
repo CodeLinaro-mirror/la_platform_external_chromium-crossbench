@@ -6,9 +6,12 @@ from __future__ import annotations
 
 import datetime as dt
 from typing import Final
+from unittest import mock
 
 from typing_extensions import override
 
+from crossbench import config
+from crossbench import path as pth
 from crossbench.benchmarks.web_power.consolidated import WebPowerBenchmark, \
     WebPowerConsolidatedStoryFilter
 from crossbench.benchmarks.web_power.idle import WebPowerIdleStory
@@ -19,8 +22,13 @@ from crossbench.benchmarks.web_power.scroll import WebPowerScrollStory
 from crossbench.benchmarks.web_power.volume_helper import VolumeMode
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.cli.parser import CBArgumentParser
+from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
+from crossbench.probes.bits import BitsProbe
+from crossbench.probes.trace_processor.query_config import QUERIES_DIR
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorProbe
 from tests import test_helper
-from tests.crossbench.base import BaseCrossbenchTestCase
+from tests.crossbench.base import BaseCliTestCase, BaseCrossbenchTestCase
 from tests.crossbench.benchmarks.web_power.test_base import \
     BaseWebPowerBenchmarkTestCase
 
@@ -282,6 +290,91 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
       self.assertEqual("--autoplay-policy" in flags, is_playback)
       if is_playback:
         self.assertEqual(flags["--autoplay-policy"], "no-user-gesture-required")
+
+
+class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
+
+  @override
+  def setUp(self) -> None:
+    super().setUp()
+    self.setup_config_dir(QUERIES_DIR / "web_power")
+    perfetto_basic = (
+        config.config_dir() / "benchmark/web_power/perfetto_basic.txtpb")
+    if not self.fs.exists(perfetto_basic):
+      self.fs.create_file(perfetto_basic, contents="duration_ms: 1000")
+    mock_archive = pth.LocalPath("/mock/archive.wprgo")
+    self.fs.create_file(mock_archive)
+    archive_patcher = mock.patch(
+        "crossbench.network.replay.base.ReplayNetwork.ensure_archive",
+        return_value=mock_archive)
+    self.addCleanup(archive_patcher.stop)
+    archive_patcher.start()
+    wpr_patcher = mock.patch(
+        "crossbench.network.replay.wpr.WprGoFinder.wpr",
+        return_value=pth.LocalPath("/mock/wpr.go"))
+    self.addCleanup(wpr_patcher.stop)
+    wpr_patcher.start()
+    tp_validate_patcher = mock.patch.object(
+        TraceProcessorProbe, "validate_env", return_value=None)
+    self.addCleanup(tp_validate_patcher.stop)
+    tp_validate_patcher.start()
+    bits_validate_patcher = mock.patch.object(
+        BitsProbe, "validate_browser", return_value=None)
+    self.addCleanup(bits_validate_patcher.stop)
+    bits_validate_patcher.start()
+
+  def test_default_probe_setup(self) -> None:
+    with self._patch_get_browser_cls():
+      cli = self.run_cli(
+          "web-power",
+          "--stories=idle-cnn",
+          "--browser=chrome",
+          "--fast",
+          "--dry-run",
+      )
+      subcommand = cli.last_subcommand
+      assert isinstance(subcommand, BenchmarkSubcommand)
+      runner = subcommand.runner
+      probe_names = {p.name for p in runner.probes}
+      self.assertIn("perfetto", probe_names)
+      self.assertIn("trace_processor", probe_names)
+      self.assertIn("web_power_probe", probe_names)
+
+  def test_no_probe_flag(self) -> None:
+    with self._patch_get_browser_cls():
+      cli = self.run_cli(
+          "web-power",
+          "--stories=idle-cnn",
+          "--browser=chrome",
+          "--no-probe=perfetto",
+          "--fast",
+          "--dry-run",
+      )
+      subcommand = cli.last_subcommand
+      assert isinstance(subcommand, BenchmarkSubcommand)
+      runner = subcommand.runner
+      probe_names = {p.name for p in runner.probes}
+      self.assertNotIn("perfetto", probe_names)
+      self.assertNotIn("trace_processor", probe_names)
+
+  def test_bits_path_suppresses_perfetto(self) -> None:
+    bits_path = pth.LocalPath("/mock/bits")
+    self.fs.create_file(bits_path)
+    with self._patch_get_browser_cls():
+      cli = self.run_cli(
+          "web-power",
+          "--stories=idle-cnn",
+          "--browser=chrome",
+          f"--bits-path={bits_path}",
+          "--fast",
+          "--dry-run",
+      )
+      subcommand = cli.last_subcommand
+      assert isinstance(subcommand, BenchmarkSubcommand)
+      runner = subcommand.runner
+      probe_names = {p.name for p in runner.probes}
+      self.assertIn("bits", probe_names)
+      self.assertNotIn("perfetto", probe_names)
 
 
 if __name__ == "__main__":

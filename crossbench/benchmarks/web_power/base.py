@@ -22,6 +22,7 @@ from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.parse import DurationParser, PathParser
+from crossbench.probes.all import PerfettoProbe
 from crossbench.probes.bits import BitsProbe
 from crossbench.probes.junction_temperature import \
     JunctionTemperatureProbe as JtProbe
@@ -381,6 +382,20 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
       runner.attach_probe(self._bits_probe)
     if not runner.has_probe(JtProbe.NAME):
       runner.attach_probe(JtProbe(), matching_browser_only=True)
+    if (not self._bits_probe and not runner.has_probe("perfetto") and
+        not runner.is_probe_disabled("perfetto")):
+      perfetto_probe = PerfettoProbe.parse_dict({
+          "textproto":
+              (config.config_dir() / "benchmark/web_power/perfetto_basic.txtpb"
+              ),
+          "start_tracing_sequence": "story_run",
+      })
+      runner.attach_probe(perfetto_probe, matching_browser_only=True)
+      for probe in list(runner.probes):
+        for extra_probe in probe.get_extra_probes(runner):
+          if (not runner.has_probe(extra_probe.name) and
+              not runner.is_probe_disabled(extra_probe.name)):
+            runner.attach_probe(extra_probe, matching_browser_only=True)
 
   @override
   def setup_session_network(self, session: BrowserSessionRunGroup) -> None:
@@ -499,14 +514,6 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
           "duration": args.bits_duration,
           "port": args.bits_port,
       })
-
-    # default_probe_config_path() cannot conditionally return None based on
-    # args.bits_path because it is evaluated before arguments are parsed.
-    if getattr(args, "probe_config",
-               None) is None and "bits_probe" not in kwargs:
-      args.probe_config = config.config_dir(
-      ) / "benchmark/web_power/probe_config.hjson"
-
     return kwargs
 
   @classmethod

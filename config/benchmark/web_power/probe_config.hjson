@@ -1,8 +1,0 @@
-{
-  "probes": {
-    "perfetto": {
-      "start_tracing_sequence": "story_run"
-      "textproto": "perfetto_basic.txtpb"
-    }
-  }
-}
