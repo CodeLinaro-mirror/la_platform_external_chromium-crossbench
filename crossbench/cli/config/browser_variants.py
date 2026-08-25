@@ -194,13 +194,6 @@ class BaseBrowserVariantsConfig(abc.ABC):
       raise ConfigError(f"'flags' is not a list for browser={browser_name!r}")
     ObjectParser.unique_sequence(flag_group_names, error_cls=ConfigError)
 
-  def _log_browser_variants(self, name: str,
-                            flag_variants: FlagsGroupConfig) -> None:
-    logging.info("🌐 SELECTED BROWSER: '%s' with %s flag variants:", name,
-                 len(flag_variants))
-    for i, variant in enumerate(flag_variants):
-      logging.info("   %s: %s", i, variant.flags)
-
   @classmethod
   def get_browser_cls(cls, browser_config: BrowserConfig) -> type[Browser]:
     browser_type = cls.get_browser_type(browser_config)
@@ -522,7 +515,6 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
 
     flag_variants: FlagsGroupConfig = self._get_browser_variants(
         args, name, raw_browser_data)
-    self._log_browser_variants(name, flag_variants)
     browser_platform: plt.Platform = self._get_browser_platform(browser_config)
     labels_lookup: dict[FlagsVariantConfig,
                         str] = self._create_unique_variant_labels(
@@ -622,12 +614,8 @@ class BrowserVariantConfigArgs(BaseBrowserVariantsConfig):
       flags: Flags = flag_variant.flags
       if len(args_variants) > 1:
         label = self._flags_to_label(label, flags)
-      browser_variant = self._append_variant(args, label, browser_cls,
-                                             browser_config, flags,
-                                             browser_platform, network,
-                                             env_config)
-      logging.info("🌐 SELECTED BROWSER: name=%s path='%s' ",
-                   browser_variant.label, browser_variant.path)
+      self._append_variant(args, label, browser_cls, browser_config, flags,
+                           browser_platform, network, env_config)
 
   def _verify_browser_flags(self, args: argparse.Namespace) -> None:
     args_variants = FlagsGroupConfig.parse_args(args)

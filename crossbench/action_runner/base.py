@@ -21,7 +21,7 @@ from crossbench.action_runner.element_not_found_error import \
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.browsers.chromium.devtools import \
     DevToolsInBrowserClient as DevToolsClient
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.probes.screenshot import ScreenshotProbe, \
     ScreenshotProbeContext
 from crossbench.runner.probe_context_lookup_error import \

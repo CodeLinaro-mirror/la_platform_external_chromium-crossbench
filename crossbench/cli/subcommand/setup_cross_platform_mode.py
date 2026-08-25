@@ -13,8 +13,8 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from crossbench.cli import ui
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
+from crossbench.cli.ui import ui
 from crossbench.helper import wait
 from crossbench.plt import PLATFORM
 from crossbench.plt.android_adb import adb_devices

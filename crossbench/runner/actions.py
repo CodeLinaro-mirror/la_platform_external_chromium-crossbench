@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Callable, Iterator, Self, Sequence
 import selenium.common.exceptions
 
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.helper.durations import TimeScope
 from crossbench.parse import ObjectParser
 

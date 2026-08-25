@@ -9,7 +9,7 @@ import uuid
 
 from google.cloud import bigquery
 
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.pinpoint.settings import Settings
 
 

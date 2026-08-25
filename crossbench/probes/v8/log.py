@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Final, Iterable, \
 from typing_extensions import override
 
 from crossbench import plt
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.flags.js_flags import JSFlags
 from crossbench.helper import fs_helper
 from crossbench.helper.path_finder import V8ToolsFinder

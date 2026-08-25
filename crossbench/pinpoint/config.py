@@ -8,8 +8,8 @@ import dataclasses
 import re
 from typing import Any
 
-from crossbench.cli import ui
 from crossbench.cli.config.flags import FlagsConfig
+from crossbench.cli.ui import ui
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser
 from crossbench.pinpoint import patch_resolver

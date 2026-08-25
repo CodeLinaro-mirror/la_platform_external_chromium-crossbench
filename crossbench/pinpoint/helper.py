@@ -9,7 +9,7 @@ import sys
 from typing import Iterator
 
 from crossbench import exception
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.helper import terminal
 
 

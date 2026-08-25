@@ -13,8 +13,8 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData
-from crossbench.cli import ui
 from crossbench.cli.config.env import ValidationMode
+from crossbench.cli.ui import ui
 from crossbench.env.base import ValidationError
 from crossbench.env.run_env import RunEnv
 from crossbench.exception import Annotator, TInfoStack

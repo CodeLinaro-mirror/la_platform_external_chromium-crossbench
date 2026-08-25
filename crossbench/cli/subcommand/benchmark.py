@@ -19,10 +19,9 @@ from crossbench import plt
 from crossbench.benchmarks.base import Benchmark
 from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.browsers.viewport import Viewport, ViewportMode
-from crossbench.cli import ui
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig, \
-    BrowserVariantsConfig
+    BrowserVariantConfig, BrowserVariantsConfig
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig, \
     ValidationMode
 from crossbench.cli.config.network import NetworkConfig
@@ -30,6 +29,8 @@ from crossbench.cli.config.probe import ProbeConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
+from crossbench.cli.ui import ui
+from crossbench.cli.ui.banner import Banner
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import DurationParser, LateArgumentError, ObjectParser, \
     PathParser
@@ -569,7 +570,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
 
   @override
   def run(self, args: argparse.Namespace) -> None:
-    benchmark: Benchmark | None = None
     self._handle_fuzzy_helper_cmds(args)
     try:
       with plt.PLATFORM.TemporaryDirectory(
@@ -586,17 +586,16 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     except Exception as e:  # noqa: BLE001
       if args.throw:
         raise
-      self._log_benchmark_subcommand_failure(benchmark, self._runner, e)
+      self._log_benchmark_subcommand_failure(self._runner, e)
       sys.exit(3)
 
   def _run(self, args: argparse.Namespace, tmp_dirname: pth.AnyPath) -> None:
     self._process_dir_args(args, tmp_dirname)
     self._process_config_args(args)
-    benchmark = self._get_benchmark(args)
+    benchmark: Benchmark = self._get_benchmark(args)
     self._process_browser_config_args(args)
+    self._log_startup(benchmark, args.browser_config.variants)
     args.browser = self._get_browsers(args)
-    self._print_banner(self.benchmark_banner_info(),
-                       self.browser_banner_info(args.browser))
     probes: Sequence[Probe] = self._get_probes(args)
     env_config: EnvConfig = self._get_env_config(args)
     env_validation_mode: ValidationMode = self._get_env_validation_mode(args)
@@ -604,25 +603,6 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     self._runner = self._get_runner(args, benchmark, probes, env_config,
                                     env_validation_mode, timing)
     self._run_benchmark(args, self.runner)
-
-  def benchmark_banner_info(self) -> str:
-    benchmark_name = self.benchmark_name()
-    version_str = self.benchmark_version()
-    return f"{benchmark_name} {version_str}"
-
-  def browser_banner_info(self, browsers: Sequence[Browser]) -> str:
-    if not browsers:
-      return ""
-
-    if len(browsers) == 1:
-      browser = browsers[0]
-      return f"{browser.type_name()} v{browser.version} {browser.platform.name}"
-
-    if len(browsers) < 4:
-      return ", ".join(b.type_name() for b in browsers)
-
-    return f"{len(browsers)} browsers"
-
 
   def _handle_fuzzy_helper_cmds(self, args: argparse.Namespace) -> None:
     """Handle common subcommand mistakes that are not easily implementable
@@ -738,15 +718,12 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       return
     args.browser_config = BrowserVariantsConfig.parse_args(args)
 
-  def _log_benchmark_subcommand_failure(self, benchmark: Benchmark | None,
-                                        runner: Runner | None,
+  def _log_benchmark_subcommand_failure(self, runner: Runner | None,
                                         e: Exception) -> None:
     logging.debug(e)
     logging.error("")
     logging.error("#" * 80)
-    message: str = "SUBCOMMAND"
-    if benchmark:
-      message = f"{benchmark.NAME.upper()} BENCHMARK"
+    message: str = f"{self.benchmark_name().upper()} BENCHMARK"
     error_message = f"{message} FAILED WITH {e.__class__.__name__}"
     self._log_benchmark_subcommand_exception(error_message, e)
     logging.error("-" * 80)
@@ -790,6 +767,10 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     except:  # noqa: BLE001
       self._log_results(args, runner, is_success=False)
       raise
+
+  def _log_startup(self, benchmark: Benchmark,
+                   browser: Sequence[BrowserVariantConfig]) -> None:
+    Banner.print(self, benchmark, browser)
 
   def _log_results(self, args: argparse.Namespace, runner: Runner,
                    is_success: bool) -> None:

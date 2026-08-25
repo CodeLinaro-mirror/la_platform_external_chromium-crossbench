@@ -12,7 +12,7 @@ from typing_extensions import override
 from crossbench import config
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
-from crossbench.cli.ui import timer
+from crossbench.cli.ui.ui import timer
 from crossbench.flags.base import Flags
 from crossbench.parse import DurationParser
 from crossbench.stories.story import Story

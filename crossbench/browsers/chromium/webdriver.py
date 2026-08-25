@@ -21,9 +21,9 @@ from crossbench import hjson as cb_hjson
 from crossbench import path as pth
 from crossbench.browsers.chromium.base import ChromiumBaseMixin
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
-from crossbench.cli import ui
 from crossbench.cli.config.apk_helper import CHROME_APK_HELPER_NAMES
 from crossbench.cli.config.secrets import GoogleUsernamePassword
+from crossbench.cli.ui import ui
 from crossbench.helper import wait
 from crossbench.parse import NumberParser
 from crossbench.plt.android_adb import AndroidAdbPlatform

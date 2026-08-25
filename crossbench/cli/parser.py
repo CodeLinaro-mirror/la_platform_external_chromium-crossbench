@@ -11,7 +11,7 @@ from typing import Never
 
 import colorama
 
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 
 
 class CBArgumentParser(argparse.ArgumentParser):

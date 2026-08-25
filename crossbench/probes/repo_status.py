@@ -34,8 +34,7 @@ class RepoStatusProbe(InternalProbe):
   def setup(self, runner: Runner) -> None:
     super().setup(runner)
     details = runner.platform.crossbench_details()
-    canonical_parent_hash = details.get("canonical_parent_hash")
-    if not isinstance(canonical_parent_hash, str) or not canonical_parent_hash:
+    if not (canonical_parent_hash := details.get("canonical_parent_hash")):
       return
     patch_file = runner.out_dir / "patch.diff"
     try:

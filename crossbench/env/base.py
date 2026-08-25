@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Iterable
 import colorama
 
 from crossbench import plt
-from crossbench.cli import ui
 from crossbench.cli.config.env import EnvConfig, ValidationMode
+from crossbench.cli.ui import ui
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CmdArg, Platform

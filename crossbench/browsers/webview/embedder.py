@@ -18,7 +18,7 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from typing_extensions import override
 
 from crossbench.browsers.webview.webview import Webview
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 
 if TYPE_CHECKING:
   from selenium.webdriver.chromium.webdriver import ChromiumDriver

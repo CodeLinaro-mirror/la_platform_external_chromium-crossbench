@@ -22,7 +22,7 @@ import crossbench.benchmarks.all as benchmarks
 import crossbench.plt as plt
 from crossbench import __version__
 from crossbench import path as pth
-from crossbench.cli import exception_formatter, ui
+from crossbench.cli import exception_formatter
 from crossbench.cli.parser import CBArgumentParser
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.cli.subcommand.describe import DescribeSubcommand
@@ -36,6 +36,7 @@ from crossbench.cli.subcommand.setup_cross_platform_mode import \
     SetupCrossPlatformModeSubcommand
 from crossbench.cli.subcommand.upload_results import UploadResultsSubcommand
 from crossbench.cli.subcommand.version import VersionSubcommand
+from crossbench.cli.ui import ui
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 from crossbench.runner.runner import Runner

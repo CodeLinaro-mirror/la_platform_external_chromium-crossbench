@@ -13,8 +13,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from typing_extensions import override
 
 from crossbench.benchmarks.base import Benchmark
-from crossbench.cli import ui
-from crossbench.cli.ui import timer
+from crossbench.cli.ui import ui
+from crossbench.cli.ui.ui import timer
 from crossbench.helper import input_helper
 from crossbench.parse import DurationParser, ObjectParser
 from crossbench.probes.cdp_endpoint import CDPEndpointProbe

@@ -18,7 +18,7 @@ from crossbench import exception
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.safari.safari import Safari, find_safaridriver
 from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.helper.wait import WaitRange
 from crossbench.path import AnyPath, LocalPath
 from crossbench.plt.ios import IOSPlatform

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Final
 from typing_extensions import override
 
 import crossbench.path as pth
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.helper.wait import WaitRange, wait_with_backoff
 from crossbench.probes.profiling.context.base import PosixProfilingContext
 from crossbench.probes.profiling.enum import TargetMode

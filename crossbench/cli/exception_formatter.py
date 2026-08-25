@@ -28,7 +28,7 @@ from pygments.formatters import get_formatter_by_name
 from pygments.lexers import get_lexer_by_name
 from pygments.util import ClassNotFound
 
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 
 if TYPE_CHECKING:
   from types import TracebackType

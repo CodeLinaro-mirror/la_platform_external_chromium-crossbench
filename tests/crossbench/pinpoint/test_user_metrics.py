@@ -23,7 +23,8 @@ class TestUserMetrics(unittest.TestCase):
             "crossbench.pinpoint.user_metrics.Settings",
             return_value=self.mock_settings))
 
-    self.mock_prompt = self.enterContext(mock.patch("crossbench.cli.ui.prompt"))
+    self.mock_prompt = self.enterContext(
+        mock.patch("crossbench.cli.ui.ui.prompt"))
     self.mock_bq_client_cls = self.enterContext(
         mock.patch("google.cloud.bigquery.Client"))
 

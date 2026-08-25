@@ -16,7 +16,7 @@ import google.cloud.storage as gcloud_storage  # type: ignore
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.pinpoint.helper import annotate
 from crossbench.pinpoint.job_config import fetch_job_config
 

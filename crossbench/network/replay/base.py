@@ -14,7 +14,7 @@ from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.network.base import Network
 from crossbench.parse import PathParser
 

@@ -17,7 +17,7 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.chromium.version import ChromiumVersion
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.helper import fs_helper
 from crossbench.probes.profiling.context.base import PosixProfilingContext
 from crossbench.probes.profiling.enum import CleanupMode

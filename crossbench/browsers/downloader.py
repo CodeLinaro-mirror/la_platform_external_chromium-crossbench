@@ -17,7 +17,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform

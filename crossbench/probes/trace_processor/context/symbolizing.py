@@ -13,7 +13,7 @@ from typing_extensions import override
 
 from crossbench.browsers.chromium_based import helper as chromium_helper
 from crossbench.browsers.version import BrowserVersionChannel
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.helper.path_finder import ChromiumCheckoutFinder
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError

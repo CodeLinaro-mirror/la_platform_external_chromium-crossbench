@@ -11,7 +11,7 @@ from google import auth as google_auth
 from google.auth.transport import requests as auth_requests
 
 from crossbench import plt
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.pinpoint.exceptions import GCloudNotInstalledError
 from crossbench.pinpoint.helper import annotate
 

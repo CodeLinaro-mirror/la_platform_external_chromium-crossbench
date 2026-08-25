@@ -52,6 +52,7 @@ if TYPE_CHECKING:
   from crossbench.plt.signals import AnySignals, Signals
   from crossbench.plt.types import CmdArg, ProcessIo, ProcessLike, TupleCmdArgs
   from crossbench.plt.version import PlatformVersion
+  from crossbench.plt.version_details import VersionDetails
   from crossbench.types import JsonDict
 
 
@@ -356,7 +357,7 @@ class Platform(abc.ABC):
         "display": self.display_details()
     }
     if self.is_local:
-      details["crossbench"] = self.crossbench_details(),
+      details["crossbench"] = self.crossbench_details()
     return details
 
   @functools.lru_cache(maxsize=1)
@@ -378,7 +379,7 @@ class Platform(abc.ABC):
     }
 
   @functools.lru_cache(maxsize=1)
-  def crossbench_details(self) -> JsonDict:
+  def crossbench_details(self) -> VersionDetails:
     self.assert_is_local()
     git_bin = self.which("git")
     root_dir = pth.ROOT_DIR

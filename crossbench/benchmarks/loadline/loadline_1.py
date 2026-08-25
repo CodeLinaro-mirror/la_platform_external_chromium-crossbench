@@ -4,8 +4,7 @@
 
 from __future__ import annotations
 
-import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final
 
 import numpy as np
 from typing_extensions import override
@@ -19,7 +18,6 @@ from crossbench.probes.probe_context import ProbeContext
 if TYPE_CHECKING:
   import pandas as pd
 
-  from crossbench.benchmarks.base import StoryT
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.flags.base import Flags
@@ -136,11 +134,6 @@ class LoadLine1Benchmark(LoadLineBenchmark):
   @override
   def default_probe_config_path(cls) -> pth.LocalPath:
     return cls._base_dir() / "probe_config.hjson"
-
-  @override
-  def log_stories(self, stories: Sequence[StoryT]) -> None:
-    logging.warning(_DEPRECATION_MESSAGE)
-    super().log_stories(stories)
 
 
 class LoadLine1PhoneBenchmark(LoadLine1Benchmark):

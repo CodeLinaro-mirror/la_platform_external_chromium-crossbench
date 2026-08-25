@@ -157,7 +157,6 @@ class Benchmark(abc.ABC):
     assert self.DEFAULT_STORY_CLS != Story, (
         f"{self} has no .DEFAULT_STORY_CLS property")
     self.stories: list[Story] = self._validate_stories(stories)
-    self.log_stories(self.stories)
     self._action_runner_config = action_runner_config or ActionRunnerConfig()
 
   def _validate_stories(self, stories: Sequence[Story]) -> list[Story]:
@@ -183,12 +182,6 @@ class Benchmark(abc.ABC):
 
   def teardown(self, runner: Runner) -> None:
     del runner
-
-  def log_stories(self, stories: Sequence[StoryT]) -> None:
-    substory_names = [name for story in stories for name in story.substories]
-    stories_str = ", ".join(substory_names)
-    logging.info("📚 SELECTED %s STORIES AND %s SUBSTORIES: %s", len(stories),
-                 len(substory_names), stories_str)
 
 
 StoryT = TypeVar("StoryT", bound=Story)

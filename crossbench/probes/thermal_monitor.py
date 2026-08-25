@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, ClassVar, Iterable
 
 from typing_extensions import override
 
-from crossbench.cli import ui
+from crossbench.cli.ui import ui
 from crossbench.helper.wait import WaitRange
 from crossbench.probes.internal.base import InternalJsonResultProbe, \
     InternalJsonResultProbeContext
