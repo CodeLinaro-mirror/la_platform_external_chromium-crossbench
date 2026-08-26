@@ -114,7 +114,7 @@ Users with access to Bits may use that instead by specifying
 Because Perfetto trace collection impacts performance and power, the collection
 methods are mutually exclusive by default. If you know what you are doing and
 want _both_ metrics simultaneously, pass both `--bits-path` and
-`--probe=config/benchmark/web_power/perfetto_basic.txtpb`.
+`--probe=perfetto:config/benchmark/web_power/perfetto_basic.txtpb`.
 
 #### ODPM
 
