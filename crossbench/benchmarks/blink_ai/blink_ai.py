@@ -45,7 +45,7 @@ class BlinkAIStory(PressBenchmarkStory):
   @classmethod
   @override
   def default_story_names(cls) -> tuple[str, ...]:
-    return ("language_model",)
+    return cls.SUBSTORIES
 
   def __init__(self,
                substories: Sequence[str] = (),
@@ -57,7 +57,7 @@ class BlinkAIStory(PressBenchmarkStory):
   @property
   @override
   def substory_duration(self) -> dt.timedelta:
-    return dt.timedelta(seconds=15)
+    return dt.timedelta(seconds=100)
 
   @property
   @override

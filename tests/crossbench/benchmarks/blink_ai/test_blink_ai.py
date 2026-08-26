@@ -63,21 +63,56 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     browser.expect_js(result=json.dumps(probe_results))
 
   def test_run_default(self):
-    # Prepare stories
-    stories = self.story_cls.from_names(["language_model"])
+    # Default should include all substories
+    stories = self.story_cls.default()
     benchmark = self.benchmark_cls(stories)
     self.assertTrue(len(benchmark.describe()) > 0)
 
-    # Set up expectations for mock browsers
     probe_results = {
         "downloadTimeMs": 500.5,
+        "language_model": {
+            "sessionCreationTimeMs": 120.5,
+            "coldTimeToFirstTokenMs": 45.2,
+            "coldTotalPromptTimeMs": 250.0,
+            "coldChunksPerSecond": 45.8,
+            "warmTimeToFirstTokenMs": [12.5, 10.2, 9.8],
+            "warmTotalPromptTimeMs": [110.0, 95.0, 92.0],
+            "warmChunksPerSecond": [50.2, 55.1, 56.3],
+        },
+        "multimodal_image": {
+            "sessionCreationTimeMs": 110.0,
+            "coldTimeToFirstTokenMs": 50.0,
+            "coldTotalPromptTimeMs": 260.0,
+            "coldChunksPerSecond": 42.0,
+            "warmTimeToFirstTokenMs": [13.0, 11.0, 10.0],
+            "warmTotalPromptTimeMs": [115.0, 98.0, 95.0],
+            "warmChunksPerSecond": [48.0, 52.0, 53.0],
+        },
+        "multimodal_images": {
+            "sessionCreationTimeMs": 115.0,
+            "coldTimeToFirstTokenMs": 55.0,
+            "coldTotalPromptTimeMs": 280.0,
+            "coldChunksPerSecond": 40.0,
+            "warmTimeToFirstTokenMs": [14.0, 12.0, 11.0],
+            "warmTotalPromptTimeMs": [120.0, 102.0, 98.0],
+            "warmChunksPerSecond": [46.0, 50.0, 51.0],
+        },
+        "multimodal_audio": {
+            "sessionCreationTimeMs": 125.0,
+            "coldTimeToFirstTokenMs": 60.0,
+            "coldTotalPromptTimeMs": 300.0,
+            "coldChunksPerSecond": 38.0,
+            "warmTimeToFirstTokenMs": [15.0, 13.0, 12.0],
+            "warmTotalPromptTimeMs": [125.0, 105.0, 100.0],
+            "warmChunksPerSecond": [44.0, 48.0, 49.0],
+        },
         "sessionCreationTimeMs": 120.5,
         "coldTimeToFirstTokenMs": 45.2,
         "coldTotalPromptTimeMs": 250.0,
         "coldChunksPerSecond": 45.8,
         "warmTimeToFirstTokenMs": [12.5, 10.2, 9.8],
         "warmTotalPromptTimeMs": [110.0, 95.0, 92.0],
-        "warmChunksPerSecond": [50.2, 55.1, 56.3]
+        "warmChunksPerSecond": [50.2, 55.1, 56.3],
     }
 
     repetitions = 2
@@ -104,6 +139,53 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     cm.assert_called_once()
 
     # Verification
+    expected_query = ("?stories=language_model%2Cmultimodal_image"
+                      "%2Cmultimodal_images%2Cmultimodal_audio")
+    for browser in self.browsers:
+      urls = self.filter_splashscreen_urls(browser.url_list)
+      self.assertEqual(len(urls), repetitions)
+      self.assertIn(self.story_cls.URL + expected_query, urls)
+      self.assertListEqual(browser.expected_js, [])
+
+  def test_run_single_story(self):
+    stories = self.story_cls.from_names(["language_model"])
+    benchmark = self.benchmark_cls(stories)
+    self.assertTrue(len(benchmark.describe()) > 0)
+
+    probe_results = {
+        "downloadTimeMs": 500.5,
+        "sessionCreationTimeMs": 120.5,
+        "coldTimeToFirstTokenMs": 45.2,
+        "coldTotalPromptTimeMs": 250.0,
+        "coldChunksPerSecond": 45.8,
+        "warmTimeToFirstTokenMs": [12.5, 10.2, 9.8],
+        "warmTotalPromptTimeMs": [110.0, 95.0, 92.0],
+        "warmChunksPerSecond": [50.2, 55.1, 56.3]
+    }
+
+    repetitions = 1
+    for _ in range(repetitions):
+      for browser in self.browsers:
+        self._setup_run_js_expect(browser, probe_results)
+
+    for browser in self.browsers:
+      browser.expected_js = copy.deepcopy(browser.expected_js)
+
+    runner = Runner(
+        self.out_dir,
+        self.browsers,
+        benchmark,
+        env_config=EnvConfig(),
+        env_validation_mode=ValidationMode.SKIP,
+        platform=self.platform,
+        repetitions=repetitions,
+        throw=True,
+        in_memory_result_db=True)
+
+    with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
+      runner.run()
+    cm.assert_called_once()
+
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
