@@ -644,6 +644,34 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.assertIsNotNone(args.network_config)
     self.assertEqual(args.network_config.type, NetworkType.LIVE)
 
+  def test_explicit_local_file_server_flag_preserved(self):
+    local_path = pathlib.Path("/test/benchmark_dir")
+    self.fs.create_dir(local_path)
+    self.fs.create_file(local_path / "index.html", st_size=100)
+    with unittest.mock.patch(
+        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run"
+    ) as mock_run:
+      self.run_cli("loading", "--browser=chrome",
+                   f"--local-file-server={local_path}")
+    self.assertTrue(mock_run.called)
+    args = mock_run.call_args[0][0]
+    self.assertIsNotNone(args.network_config)
+    self.assertEqual(args.network_config.type, NetworkType.LOCAL)
+    self.assertEqual(args.network_config.path, local_path)
+
+  def test_explicit_wpr_flag_preserved(self):
+    network_path = pathlib.Path("/test/archive.wprgo")
+    self.fs.create_file(network_path, st_size=100)
+    with unittest.mock.patch(
+        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run"
+    ) as mock_run:
+      self.run_cli("loading", "--browser=chrome", f"--wpr={network_path}")
+    self.assertTrue(mock_run.called)
+    args = mock_run.call_args[0][0]
+    self.assertIsNotNone(args.network_config)
+    self.assertEqual(args.network_config.type, NetworkType.WPR)
+    self.assertEqual(args.network_config.path, network_path)
+
 
 class NoProbeFlagCliTestCase(BaseCliTestCase):
   # An arbitrary benchmark subcommand name, used to run the CLI parser tests.

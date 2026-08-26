@@ -431,7 +431,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         "--fileserver",
         type=NetworkConfig.parse_local,
         metavar="DIR",
-        dest="network",
+        dest="network_config",
         help=("Start a local http file server at the given directory. "
               "See `help network` for more options."))
     network_settings_group.add_argument(
@@ -439,7 +439,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         "--web-page-replay",
         type=NetworkConfig.parse_wpr,
         metavar="WPR_ARCHIVE",
-        dest="network",
+        dest="network_config",
         help=("Use wpr.archive to replay network requests "
               "via a local proxy server. "
               "Archives can be recorded with --probe=wpr. "
