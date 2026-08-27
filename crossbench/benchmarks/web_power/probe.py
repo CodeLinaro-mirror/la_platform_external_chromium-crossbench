@@ -165,59 +165,64 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
         self._get_base_df(group))
 
   @classmethod
-  def _get_odpm_power_rails_data(
-      cls, result_dir: pth.LocalPath, base_df: pd.DataFrame,
-      reprocess: bool) -> tuple[pd.DataFrame | None, pd.DataFrame]:
+  def _get_odpm_power_rails_data(cls, result_dir: pth.LocalPath,
+                                 base_df: pd.DataFrame,
+                                 reprocess: bool) -> pd.DataFrame:
     if reprocess:
-      return cls._reprocess_traces(result_dir, base_df), base_df
+      if not cls._get_traces(result_dir):
+        return pd.DataFrame()
+      return cls._reprocess_traces(result_dir, base_df)
 
     csv_path = result_dir / "trace_processor" / f"{cls.QUERY_NAME}.csv"
     if not csv_path.is_file():
-      if "odpm_total_mw" not in base_df.columns:
-        base_df = base_df.copy()
-        base_df["odpm_total_mw"] = "No Data"
-      return None, base_df
-    return pd.read_csv(csv_path), base_df
+      return pd.DataFrame()
+    return pd.read_csv(csv_path)
+
+  @classmethod
+  def _aggregate_odpm_power_rails(cls, df: pd.DataFrame) -> pd.DataFrame:
+    df_sum = (
+        df.groupby(["cb_browser", "cb_story", "cb_run"
+                   ])["avg_power_mw"].sum().reset_index(name="odpm_total_mw"))
+    return (df_sum.groupby(["cb_browser", "cb_story"
+                           ])[["odpm_total_mw"
+                              ]].agg(_mean_without_outliers).reset_index())
+
+  @classmethod
+  def _merge_with_base_df(cls, base_df: pd.DataFrame,
+                          run_metrics: pd.DataFrame) -> pd.DataFrame:
+    """Combines computed metrics with base_df, padding missing runs with NaN.
+
+    Preserves the original column ordering of base_df and appends any newly
+    computed metric columns to the end.
+    """
+    orig_cols = list(base_df.columns)
+    for col in orig_cols:
+      if col not in run_metrics.columns:
+        run_metrics[col] = float("nan")
+
+    if not base_df.empty:
+      base_df = base_df.set_index(["cb_browser", "cb_story"])
+      run_metrics = run_metrics.set_index(["cb_browser", "cb_story"])
+      run_metrics = run_metrics.combine_first(base_df).reset_index()
+
+    new_cols = [c for c in run_metrics.columns if c not in orig_cols]
+    return run_metrics[orig_cols + new_cols]
 
   @classmethod
   def process_result_dir(cls,
                          result_dir: pth.LocalPath,
                          base_df: pd.DataFrame,
                          reprocess: bool = False) -> pd.DataFrame:
-    orig_base_cols = list(base_df.columns)
-    df, base_df = cls._get_odpm_power_rails_data(result_dir, base_df, reprocess)
-    if df is None:
-      return base_df
+    """Processes probe result files and computes aggregated power metrics."""
+    if not (df := cls._get_odpm_power_rails_data(result_dir, base_df,
+                                                 reprocess)).empty:
+      run_metrics = cls._aggregate_odpm_power_rails(df)
+      return cls._merge_with_base_df(base_df, run_metrics)
 
-    # Calculate system-wide average power per run.
-    # Note: Because the average of a sum equals the sum of the averages,
-    # summing the 'avg_power_mw' of all individual rails yields the
-    # 'odpm_total_mw' of the entire system for that run.
-    # (e.g., Average(CPU_Power) + Average(GPU_Power) = Average(System_Power))
-    df_sum = (
-        df.groupby(["cb_browser", "cb_story", "cb_run"
-                   ])["avg_power_mw"].sum().reset_index(name="odpm_total_mw"))
-
-    # Average the system-wide odpm_total_mw over runs for each browser/story
-    # combination.
-    run_metrics = (
-        df_sum.groupby([
-            "cb_browser", "cb_story"
-        ])["odpm_total_mw"].agg(_mean_without_outliers).to_frame())
-
-    # Update the base DataFrame with actual computed scores where available.
-    # We use combine_first so that any browser/story present in base_df but
-    # missing in run_metrics will be padded with NaN.
-    if not base_df.empty:
-      base_df = base_df.set_index(["cb_browser", "cb_story"])
-      run_metrics = run_metrics.combine_first(base_df)
-
-    run_metrics.reset_index(inplace=True)
-
-    # Reorder columns to preserve base_df's original order, appending new
-    # metrics.
-    new_cols = [c for c in run_metrics.columns if c not in orig_base_cols]
-    return run_metrics[orig_base_cols + new_cols]
+    if "odpm_total_mw" not in base_df.columns:
+      base_df = base_df.copy()
+      base_df["odpm_total_mw"] = "No Data"
+    return base_df
 
   @classmethod
   def _get_query_config(cls) -> DeviceSpecificTraceProcessorQuery:
