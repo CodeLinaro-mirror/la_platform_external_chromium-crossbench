@@ -103,7 +103,13 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       config.parse_text_io(f, args=self.mock_args())
     self.assertIn("flag-group-1", config.flags_config)
     self.assertGreaterEqual(len(config.flags_config), 1)
-    self.assertGreaterEqual(len(config.variants), 1)
+    self.assertEqual(len(config.variants), 5)
+    inline_variant = config.variants[0]
+    self.assertEqual(inline_variant.label, "chrome-stable-with-inline-flags")
+    self.assertIn("--foo", inline_variant.flags)
+    self.assertIn("--bar", inline_variant.flags)
+    self.assertIsNone(inline_variant.flags["--foo"])
+    self.assertEqual(inline_variant.flags["--bar"], "12")
 
   def _expect_sh_linux_ssh_browser_config(self):
     pass
@@ -659,6 +665,87 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     browsers = config.variants
     self.assertEqual(len(browsers), 1)
     self.assertListEqual(["--no-sandbox"], list(browsers[0].flags))
+
+  def test_flag_direct_inline_list(self):
+    config = BrowserVariantsConfigDict(
+        {
+            "browsers": {
+                "chrome-release": {
+                    "path": "chrome-stable",
+                    "flags": ["--foo", "--bar=12"],
+                }
+            }
+        },
+        browser_lookup_override=self.browser_lookup,
+        args=self.mock_args())
+    browsers = config.variants
+    self.assertEqual(len(browsers), 1)
+    self.assertListEqual(["--foo", "--bar=12"], list(browsers[0].flags))
+    self.assertIsNone(browsers[0].flags["--foo"])
+    self.assertEqual(browsers[0].flags["--bar"], "12")
+
+  def test_flag_direct_inline_with_js_flags(self):
+    config = BrowserVariantsConfigDict(
+        {
+            "browsers": {
+                "chrome-release": {
+                    "path":
+                        "chrome-stable",
+                    "flags": [
+                        "--foo", "--bar=12", "--js-flags=--no-opt,--max-opt=1"
+                    ],
+                }
+            }
+        },
+        browser_lookup_override=self.browser_lookup,
+        args=self.mock_args())
+    browsers = config.variants
+    self.assertEqual(len(browsers), 1)
+    self.assertIsNone(browsers[0].flags["--foo"])
+    self.assertEqual(browsers[0].flags["--bar"], "12")
+    self.assertIsNone(browsers[0].js_flags["--no-opt"])
+    self.assertEqual(browsers[0].js_flags["--max-opt"], "1")
+    self.assertEqual(
+        str(browsers[0].flags),
+        "--foo --bar=12 --js-flags=--no-opt,--max-opt=1")
+
+  def test_flag_combination_direct_inline_with_flag_groups(self):
+    config = BrowserVariantsConfigDict(
+        {
+            "flags": {
+                "features-experiment": {
+                    "--enable-features": [None, "ConsumeCompileHints"]
+                }
+            },
+            "browsers": {
+                "chrome-release": {
+                    "path": "chrome-stable",
+                    "flags": ["--foo", "--bar=12", "features-experiment"]
+                }
+            }
+        },
+        browser_lookup_override=self.browser_lookup,
+        args=self.mock_args())
+    browsers = config.variants
+    self.assertEqual(len(browsers), 2)
+    self.assertListEqual(["--foo", "--bar=12"], list(browsers[0].flags))
+    self.assertListEqual(
+        ["--foo", "--bar=12", "--enable-features=ConsumeCompileHints"],
+        list(browsers[1].flags))
+
+  def test_flag_direct_inline_duplicate(self):
+    with self.assertRaises(ConfigError):
+      BrowserVariantsConfigDict(
+          {
+              "browsers": {
+                  "chrome-release": {
+                      "path": "chrome-stable",
+                      "flags": ["--foo", "--foo"],
+                  }
+              }
+          },
+          browser_lookup_override=self.browser_lookup,
+          args=self.mock_args())
 
   def test_flag_combination_mixed_fixed(self):
     config = BrowserVariantsConfigDict(

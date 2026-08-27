@@ -60,20 +60,26 @@
   // --------------------------------------------------------------------------
   // Contains browser configs
   "browsers": {
-    "chrome-stable-with-flags": {
+    "chrome-stable-with-inline-flags": {
       // For "path" you can use a path, browser name, or a versioned browser.
       // See '--browser' option for all possible values.
       "path": "chrome-stable"
-      # Either the browsers key ("chrome-stable-with-flags") if no label
-      # is specified, otherwise the this label property ("custom-browser-label")
-      # is used.
+      "flags": [
+        // You can directly define fixed inline flags:
+        "--foo"
+        "--bar=12"
+      ]
+    }
+    "chrome-stable-with-flags": {
+      "path": "chrome-stable"
+      // The browser key ("chrome-stable-with-flags") is used as the label by
+      // default, or you can specify an explicit "label" property:
       "label": "custom-browser-label"
       "flags": [
-        // You can reference multiple flag-groups here, any name added to
-        // the 'flags' dict above can be used here.
-        // More flag groups can be added, for instance "chrome-custom", and you
-        // get the product of all flag variants. You can also directly define
-        //fixed flags, e.g. "--js-flags=--no-opt",
+        // You can reference flag groups from the 'flags' dict above.
+        // Multiple flag groups (e.g. "flag-group-1", "chrome-custom") or
+        // combinations of flag groups and inline flags can be specified to
+        // generate the product of all flag variants.
         "flag-group-1"
       ]
     }
