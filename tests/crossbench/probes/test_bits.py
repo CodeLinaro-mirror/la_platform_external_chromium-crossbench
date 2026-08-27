@@ -217,13 +217,14 @@ class BitsProbeTestCase(BaseProbeTestCase):
 
     # 3. stop_story_run() should stop BITS
     context.stop_story_run()
-    host_platform.sh.assert_called_once()
     expected_stop_args: list[str] = []
     if port is not None:
       expected_stop_args += ["--service_port", str(port)]
 
+    self.assertEqual(len(host_platform.sh.call_args_list), 2)
+    stop_call, _ = host_platform.sh.call_args_list
     self.assertEqual(
-        host_platform.sh.call_args.args,
+        stop_call.args,
         (
             self.bits_path,
             "--stop",
@@ -231,8 +232,8 @@ class BitsProbeTestCase(BaseProbeTestCase):
             *expected_stop_args,
         ),
     )
-    self.assertIn("stdout", host_platform.sh.call_args.kwargs)
-    self.assertIn("stderr", host_platform.sh.call_args.kwargs)
+    self.assertIn("stdout", stop_call.kwargs)
+    self.assertIn("stderr", stop_call.kwargs)
 
     # Reset mocks to verify that the final stop phase is a clean no-op
     host_platform.popen.reset_mock()
@@ -256,6 +257,38 @@ class BitsProbeTestCase(BaseProbeTestCase):
 
   def test_probe_lifecycle_with_device_and_port(self) -> None:
     self._check_probe_lifecycle(bits_device="device_id_123", port=1234)
+
+  def test_collect_channel_averages(self) -> None:
+    probe = BitsProbe(
+        self.bits_path,
+        "test_run_id",
+        port=1234,
+    )
+    run = self.mock_run()
+    host_platform = run.browser_session.browser.host_platform
+    host_platform.popen = mock.MagicMock()
+    host_platform.sh = mock.MagicMock()
+
+    context = probe.create_context(run)
+    context.start_story_run()
+    context.stop_story_run()
+
+    self.assertEqual(len(host_platform.sh.call_args_list), 2)
+    _stop_call, avg_call = host_platform.sh.call_args_list
+    self.assertEqual(
+        avg_call.args,
+        (
+            self.bits_path,
+            "--print_channel_averages",
+            "test_run_id",
+            "--service_port",
+            "1234",
+        ),
+    )
+    self.assertIn("stdout", avg_call.kwargs)
+    avg_path = (
+        context.local_result_path / BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME)
+    self.assertTrue(avg_path.exists())
 
 
 class BitsProbeResultsFileTestCase(BaseProbeTestCase):

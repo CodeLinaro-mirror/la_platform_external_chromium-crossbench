@@ -4,8 +4,10 @@
 
 from __future__ import annotations
 
+import csv
+import functools
 import logging
-from typing import TYPE_CHECKING, ClassVar, Iterable, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, cast
 
 import pandas as pd
 from perfetto.batch_trace_processor.api import BatchTraceProcessor, \
@@ -18,6 +20,7 @@ from crossbench import config
 from crossbench import path as pth
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.parse import ObjectParser, PathParser
+from crossbench.probes.bits import BitsProbe
 from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
 from crossbench.probes.probe import Probe, ProbePriority
 from crossbench.probes.probe_context import EmptyProbeContext
@@ -149,16 +152,12 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
 
   def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
     trace_result = group.results.get_by_name("trace_processor")
-    if not trace_result:
-      return self._get_base_df(group)
-
-    all_results = trace_result.csv_list
-    query_results = [r for r in all_results if r.stem.endswith(self.QUERY_NAME)]
-    if not query_results:
-      return self._get_base_df(group)
-    if len(query_results) > 1:
-      raise ProbeMissingDataError(
-          self, f"Multiple {self.QUERY_NAME} results found: {query_results}")
+    if trace_result:
+      results = trace_result.csv_list
+      query_results = [r for r in results if r.stem.endswith(self.QUERY_NAME)]
+      if len(query_results) > 1:
+        raise ProbeMissingDataError(
+            self, f"Multiple {self.QUERY_NAME} results found: {query_results}")
 
     return self.process_result_dir(
         group.get_local_probe_result_path(self).parent,
@@ -179,13 +178,67 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
     return pd.read_csv(csv_path)
 
   @classmethod
+  def _get_bits_data(cls, result_dir: pth.LocalPath) -> pd.DataFrame:
+    """Discovers and parses all BITS channel average CSVs in the result dir."""
+    pattern = f"*/stories/**/bits/{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}"
+    bits_files = [f for f in result_dir.glob(pattern) if f.is_file()]
+    records = [
+        record for csv_file in bits_files
+        if (record := cls._parse_bits_run_record(csv_file, result_dir))
+    ]
+    return pd.DataFrame(records)
+
+  @classmethod
+  def _parse_bits_run_record(cls, csv_file: pth.LocalPath,
+                             result_dir: pth.LocalPath) -> dict[str, Any]:
+    """Extracts run metadata and channel metrics for a single BITS CSV file."""
+    try:
+      cb_browser, _, cb_story, cb_run, *_ = csv_file.relative_to(
+          result_dir).parts
+      return {
+          "cb_browser": cb_browser,
+          "cb_story": cb_story,
+          "cb_run": int(cb_run),
+          **cls._parse_bits_channel_averages(csv_file),
+      }
+    except (ValueError, OSError, csv.Error) as e:
+      logging.warning("Failed to parse BITS averages from %s: %s", csv_file, e)
+      return {}
+
+  @classmethod
+  def _parse_bits_channel_averages(cls,
+                                   csv_file: pth.LocalPath) -> dict[str, float]:
+    """Parses target BITS channel power averages from a CSV file."""
+    channel_map = {
+        "CPU:mW": "bits_cpu_mw",
+        "SOC_TOTAL:mW": "bits_soc_total_mw",
+    }
+    results = {metric: float("nan") for metric in channel_map.values()}
+    with csv_file.open("r", encoding="utf-8") as f:
+      for row in csv.reader(f):
+        if len(row) < 2:
+          continue
+        if metric := channel_map.get(row[0].strip()):
+          results[metric] = float(row[1].strip())
+    return results
+
+  @classmethod
+  def _aggregate_metric_runs(cls, df: pd.DataFrame,
+                             columns: list[str]) -> pd.DataFrame:
+    """Averages metrics across story runs, discarding outliers for >=5 runs."""
+    return (df.groupby(["cb_browser", "cb_story"
+                       ])[columns].agg(_mean_without_outliers).reset_index())
+
+  @classmethod
   def _aggregate_odpm_power_rails(cls, df: pd.DataFrame) -> pd.DataFrame:
     df_sum = (
         df.groupby(["cb_browser", "cb_story", "cb_run"
                    ])["avg_power_mw"].sum().reset_index(name="odpm_total_mw"))
-    return (df_sum.groupby(["cb_browser", "cb_story"
-                           ])[["odpm_total_mw"
-                              ]].agg(_mean_without_outliers).reset_index())
+    return cls._aggregate_metric_runs(df_sum, ["odpm_total_mw"])
+
+  @classmethod
+  def _aggregate_bits_data(cls, df: pd.DataFrame) -> pd.DataFrame:
+    return cls._aggregate_metric_runs(df, ["bits_cpu_mw", "bits_soc_total_mw"])
 
   @classmethod
   def _merge_with_base_df(cls, base_df: pd.DataFrame,
@@ -214,15 +267,25 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
                          base_df: pd.DataFrame,
                          reprocess: bool = False) -> pd.DataFrame:
     """Processes probe result files and computes aggregated power metrics."""
+    metrics_list: list[pd.DataFrame] = []
     if not (df := cls._get_odpm_power_rails_data(result_dir, base_df,
                                                  reprocess)).empty:
-      run_metrics = cls._aggregate_odpm_power_rails(df)
-      return cls._merge_with_base_df(base_df, run_metrics)
+      metrics_list.append(cls._aggregate_odpm_power_rails(df))
+    if not (bits_df := cls._get_bits_data(result_dir)).empty:
+      metrics_list.append(cls._aggregate_bits_data(bits_df))
 
-    if "odpm_total_mw" not in base_df.columns:
-      base_df = base_df.copy()
-      base_df["odpm_total_mw"] = "No Data"
-    return base_df
+    if not metrics_list:
+      if "odpm_total_mw" not in base_df.columns:
+        base_df = base_df.copy()
+        base_df["odpm_total_mw"] = "No Data"
+      return base_df
+
+    run_metrics = functools.reduce(
+        lambda left, right: left.merge(
+            right, on=["cb_browser", "cb_story"], how="outer"),
+        metrics_list,
+    )
+    return cls._merge_with_base_df(base_df, run_metrics)
 
   @classmethod
   def _get_query_config(cls) -> DeviceSpecificTraceProcessorQuery:
@@ -304,5 +367,15 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
           "cb_browser": run.browser.unique_name,
           "cb_story": run.story.name,
           "odpm_total_mw": float("nan"),
+          "bits_cpu_mw": float("nan"),
+          "bits_soc_total_mw": float("nan"),
       })
-    return pd.DataFrame(combinations).drop_duplicates()
+    return pd.DataFrame(
+        combinations,
+        columns=[
+            "cb_browser",
+            "cb_story",
+            "odpm_total_mw",
+            "bits_cpu_mw",
+            "bits_soc_total_mw",
+        ]).drop_duplicates()

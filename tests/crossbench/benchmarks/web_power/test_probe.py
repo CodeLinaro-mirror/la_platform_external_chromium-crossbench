@@ -50,6 +50,19 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     # Simulate that only the "perfetto" probe is attached.
     self.runner.has_probe.side_effect = lambda name: name == "perfetto"
 
+  def _benchmark_version_str(self) -> str:
+    return ".".join(map(str, self.mock_benchmark.version()))
+
+  def _assert_log_browsers_result(self, critical_mock: mock.MagicMock) -> str:
+    critical_mock.assert_called_once_with(
+        "%s Benchmark (%s)\n%s scores:\n%s",
+        self.probe.BENCHMARK_NAME,
+        self._benchmark_version_str(),
+        self.probe.BENCHMARK_NAME,
+        mock.ANY,
+    )
+    return str(critical_mock.call_args.args[-1])
+
   def test_get_context_cls(self):
     """Verify that the probe uses the correct context class."""
     self.assertEqual(self.probe.get_context_cls(), EmptyProbeContext)
@@ -87,27 +100,86 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     self.group.results.get.return_value = mock.MagicMock(csv=csv_file)
 
     self.probe.log_browsers_result(self.group)
-    critical_mock.assert_called()
+    self.assertRegex(
+        self._assert_log_browsers_result(critical_mock),
+        r"^browser\s+story\s+score\s*\nchrome\s+test\s+10\s*$")
 
-  def _test_merge_browsers(self, csv_contents: str) -> list[dict]:
+  @mock.patch("logging.critical")
+  def test_log_browsers_result_bits_success(self, critical_mock):
+    csv_file = pth.LocalPath("power_scores.csv")
+    self.fs.create_file(
+        csv_file,
+        contents="cb_browser,cb_story,bits_cpu_mw,bits_soc_total_mw\n"
+        "chrome,test,1020.796,1925.195\n")
+    self.group.results.get.return_value = mock.MagicMock(csv=csv_file)
+
+    self.probe.log_browsers_result(self.group)
+    self.assertRegex(
+        self._assert_log_browsers_result(critical_mock),
+        r"^cb_browser\s+cb_story\s+bits_cpu_mw\s+bits_soc_total_mw\s*\n"
+        r"chrome\s+test\s+1020\.8\s+1925\.19\s*$")
+
+  def _extract_csv_records(
+      self, result, metrics: tuple[str,
+                                   ...] = ("odpm_total_mw",)) -> list[dict]:
+    self.assertTrue(result.csv)
+    self.assertEqual(result.csv, pth.LocalPath("results_dir/power_scores.csv"))
+    df = pd.read_csv(result.csv)
+
+    # Verify schema.
+    self.assertEqual(
+        list(df.columns),
+        [
+            "cb_browser", "cb_story", "odpm_total_mw", "bits_cpu_mw",
+            "bits_soc_total_mw"
+        ],
+    )
+
+    # Default to NaN.
+    for col in ("odpm_total_mw", "bits_cpu_mw", "bits_soc_total_mw"):
+      if col not in metrics:
+        self.assertTrue(df[col].isna().all())
+
+    keep_cols = ["cb_browser", "cb_story", *metrics]
+    df = df[keep_cols].sort_values(by=["cb_browser", "cb_story"]).reset_index(
+        drop=True)
+    return df.to_dict(orient="records")
+
+  def _test_merge_browsers_bits(
+      self,
+      bits_files: dict[pth.LocalPath, str] | None = None,
+      tp_csv_contents: str | None = None,
+      metrics: tuple[str, ...] = ("bits_cpu_mw", "bits_soc_total_mw"),
+  ) -> list[dict]:
     result_path = pth.LocalPath("results_dir/web_power_probe")
+    self.fs.create_dir(result_path.parent)
     self.group.get_local_probe_result_path.return_value = result_path
 
-    tp_result = mock.MagicMock()
-    tp_csv = pth.LocalPath("results_dir/trace_processor/power_rails.csv")
-    self.fs.create_file(tp_csv, contents=csv_contents)
-    tp_result.csv_list = [tp_csv]
-    self.group.results.get_by_name.return_value = tp_result
+    if tp_csv_contents is not None:
+      tp_result = mock.MagicMock()
+      tp_csv = pth.LocalPath("results_dir/trace_processor/power_rails.csv")
+      self.fs.create_file(tp_csv, contents=tp_csv_contents)
+      tp_result.csv_list = [tp_csv]
+      self.group.results.get_by_name.side_effect = (
+          lambda name: tp_result if name == "trace_processor" else None)
+    else:
+      self.group.results.get_by_name.return_value = None
+
+    for path, contents in (bits_files or {}).items():
+      self.fs.create_file(path, contents=contents)
 
     result = self.probe.merge_browsers(self.group)
+    return self._extract_csv_records(result, metrics)
 
-    self.assertTrue(result.csv)
-    out_csv = result.csv
-    self.assertEqual(out_csv, pth.LocalPath("results_dir/power_scores.csv"))
-
-    df = pd.read_csv(out_csv)
-    df = df.sort_values(by=["cb_browser", "cb_story"]).reset_index(drop=True)
-    return df.to_dict(orient="records")
+  def _test_merge_browsers(
+      self,
+      csv_contents: str,
+      metrics: tuple[str, ...] = ("odpm_total_mw",),
+  ) -> list[dict]:
+    return self._test_merge_browsers_bits(
+        tp_csv_contents=csv_contents,
+        metrics=metrics,
+    )
 
   def test_merge_browsers_single_run(self):
     """Simulate a single benchmark run being successfully merged.
@@ -383,11 +455,6 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         },
     ])
 
-  def _extract_csv_records(self, result):
-    self.assertTrue(result.csv)
-    df = pd.read_csv(result.csv)
-    return df.to_dict(orient="records")
-
   def test_merge_browsers_missing_trace_result(self):
     """Verify that merge gracefully handles missing trace processor result by
     padding with NaN."""
@@ -447,9 +514,136 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
             },
         ])
 
+  def test_merge_browsers_bits_single_run(self):
+    self.mock_benchmark.bits_probe = mock.MagicMock()
+    csv_file = pth.LocalPath("results_dir/chrome/stories/test/0/0_default/bits/"
+                             f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}")
+    csv_contents = ("CHANNEL                                 ,       VALUE\n"
+                    "BIGCPU:mW                               ,      17.706\n"
+                    "MIDCPU:mW                               ,      45.123\n"
+                    "CPU:mW                                  ,    1020.796\n"
+                    "SOC_TOTAL:mW                            ,    1925.195\n")
+    records = self._test_merge_browsers_bits({csv_file: csv_contents})
+    self.assertEqual(records, [{
+        "cb_browser": "chrome",
+        "cb_story": "test",
+        "bits_cpu_mw": 1020.796,
+        "bits_soc_total_mw": 1925.195,
+    }])
+
+  def test_merge_browsers_bits_multiple_runs(self):
+    self.mock_benchmark.bits_probe = mock.MagicMock()
+    run0_file = pth.LocalPath(
+        "results_dir/chrome/stories/test/0/0_default/bits/"
+        f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}")
+    run0_contents = ("CHANNEL , VALUE\n"
+                     "CPU:mW , 100.0\n"
+                     "SOC_TOTAL:mW , 500.0\n")
+    run1_file = pth.LocalPath(
+        "results_dir/chrome/stories/test/1/0_default/bits/"
+        f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}")
+    run1_contents = ("CHANNEL , VALUE\n"
+                     "CPU:mW , 200.0\n"
+                     "SOC_TOTAL:mW , 700.0\n")
+    records = self._test_merge_browsers_bits({
+        run0_file: run0_contents,
+        run1_file: run1_contents,
+    })
+    self.assertEqual(records, [{
+        "cb_browser": "chrome",
+        "cb_story": "test",
+        "bits_cpu_mw": (100.0 + 200.0) / 2.0,
+        "bits_soc_total_mw": (500.0 + 700.0) / 2.0,
+    }])
+
+  def test_merge_browsers_bits_different_outliers_per_metric(self):
+    self.mock_benchmark.bits_probe = mock.MagicMock()
+    # 5 runs to trigger outlier removal (>=5 runs).
+    # Run 0: Min outlier for CPU (50.0), normal for SOC (500.0).
+    # Run 1: Normal for CPU (100.0), Min outlier for SOC (200.0).
+    # Run 2: Normal for CPU (110.0), normal for SOC (520.0).
+    # Run 3: Normal for CPU (120.0), normal for SOC (540.0).
+    # Run 4: Max outlier for CPU (900.0), Max outlier for SOC (1000.0).
+    bits_data = {
+        0: ("50.0", "500.0"),
+        1: ("100.0", "200.0"),
+        2: ("110.0", "520.0"),
+        3: ("120.0", "540.0"),
+        4: ("900.0", "1000.0"),
+    }
+    files = {
+        pth.LocalPath(f"results_dir/chrome/stories/test/{run}/0_default/bits/"
+                      f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}"):
+            (f"CHANNEL , VALUE\n"
+             f"CPU:mW , {cpu}\n"
+             f"SOC_TOTAL:mW , {soc}\n") for run, (cpu, soc) in bits_data.items()
+    }
+    records = self._test_merge_browsers_bits(files)
+    # CPU trims 50.0 and 900.0 -> mean(100.0, 110.0, 120.0) = 110.0
+    # SOC trims 200.0 and 1000.0 -> mean(500.0, 520.0, 540.0) = 520.0
+    self.assertEqual(records, [{
+        "cb_browser": "chrome",
+        "cb_story": "test",
+        "bits_cpu_mw": (100.0 + 110.0 + 120.0) / 3.0,
+        "bits_soc_total_mw": (500.0 + 520.0 + 540.0) / 3.0,
+    }])
+
+  def test_merge_browsers_bits_and_perfetto(self):
+    self.mock_benchmark.bits_probe = mock.MagicMock()
+    tp_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+                   "chrome,test,0,rail_1,10.0\n"
+                   "chrome,test,0,rail_2,20.0\n")
+    csv_file = pth.LocalPath("results_dir/chrome/stories/test/0/0_default/bits/"
+                             f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}")
+    csv_contents = ("CHANNEL , VALUE\n"
+                    "CPU:mW , 100.0\n"
+                    "SOC_TOTAL:mW , 500.0\n")
+    records = self._test_merge_browsers_bits({csv_file: csv_contents},
+                                             tp_csv_contents=tp_contents,
+                                             metrics=("odpm_total_mw",
+                                                      "bits_cpu_mw",
+                                                      "bits_soc_total_mw"))
+    self.assertEqual(records, [{
+        "cb_browser": "chrome",
+        "cb_story": "test",
+        "odpm_total_mw": 30.0,
+        "bits_cpu_mw": 100.0,
+        "bits_soc_total_mw": 500.0,
+    }])
+
+  def test_merge_browsers_bits_missing_channels(self):
+    self.mock_benchmark.bits_probe = mock.MagicMock()
+    csv_file = pth.LocalPath("results_dir/chrome/stories/test/0/0_default/bits/"
+                             f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}")
+    # Verify that substring channels like MIDCPU:mW do NOT match CPU:mW.
+    csv_contents = ("CHANNEL , VALUE\n"
+                    "BIGCPU:mW , 10.0\n"
+                    "MIDCPU:mW , 20.0\n")
+    records = self._test_merge_browsers_bits({csv_file: csv_contents})
+    self.assertEqual(records, [{
+        "cb_browser": "chrome",
+        "cb_story": "test",
+        "bits_cpu_mw": pytest.approx(float("nan"), nan_ok=True),
+        "bits_soc_total_mw": pytest.approx(float("nan"), nan_ok=True),
+    }])
+
+  def test_merge_browsers_bits_unsupported_device(self):
+    self.mock_benchmark.bits_probe = mock.MagicMock()
+    run = mock.MagicMock()
+    run.browser.unique_name = "safari"
+    run.story.name = "cnn"
+    self.group.runs = [run]
+    records = self._test_merge_browsers_bits({})
+    self.assertEqual(records, [{
+        "cb_browser": "safari",
+        "cb_story": "cnn",
+        "bits_cpu_mw": pytest.approx(float("nan"), nan_ok=True),
+        "bits_soc_total_mw": pytest.approx(float("nan"), nan_ok=True),
+    }])
+
   def test_process_result_dir_no_data(self):
     """Verify that process_result_dir handles missing power_rails.csv by
-    appending 'No Data' to total_power_mw in base_df."""
+    appending 'No Data' to odpm_total_mw in base_df."""
     base_df = pd.DataFrame([{
         "cb_browser": "chrome",
         "cb_story": "cnn",
@@ -610,6 +804,14 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     self.mock_benchmark.bits_probe = bits_probe
     extra_probes = self._test_get_extra_probes(lambda name: False)
     self.assertEqual(extra_probes, (bits_probe,))
+
+  def test_get_extra_probes_with_bits_and_perfetto(self):
+    bits_probe = mock.MagicMock(spec=BitsProbe, name="bits")
+    self.mock_benchmark.bits_probe = bits_probe
+    extra_probes = self._test_get_extra_probes(lambda name: name == "perfetto")
+    self.assertEqual(len(extra_probes), 2)
+    self.assertEqual(extra_probes[0], bits_probe)
+    self.assertEqual(extra_probes[1].name, "trace_processor")
 
 
 class Mapping(enum.Enum):

@@ -33,6 +33,7 @@ class BitsProbe(Probe):
   and stops it afterwards.
   """
   NAME: ClassVar[str] = "bits"
+  BITS_CHANNEL_AVERAGES_CSV_NAME: ClassVar[str] = "bits_channel_averages.csv"
   DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=99999)
 
   @classmethod
@@ -183,6 +184,23 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
     )
     with self._log_files("a") as (stdout, stderr):
       self.host_platform.sh(*stop_args, stdout=stdout, stderr=stderr)
+    self._save_channel_averages(device_args)
+
+  def _save_channel_averages(self, device_args: tuple[pth.AnyPathLike,
+                                                      ...]) -> None:
+    avg_args = (
+        self.probe.bits_path,
+        "--print_channel_averages",
+        self.bits_out_id,
+        *device_args,
+    )
+    avg_path = (
+        self.local_result_path / self.probe.BITS_CHANNEL_AVERAGES_CSV_NAME)
+    with (
+        avg_path.open("w", encoding="utf-8") as avg_file,
+        self._log_files("a") as (_, stderr),
+    ):
+      self.host_platform.sh(*avg_args, stdout=avg_file, stderr=stderr)
 
   @override
   def start(self) -> None:
