@@ -165,7 +165,7 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
         self._get_base_df(group))
 
   @classmethod
-  def _get_power_rails_data(
+  def _get_odpm_power_rails_data(
       cls, result_dir: pth.LocalPath, base_df: pd.DataFrame,
       reprocess: bool) -> tuple[pd.DataFrame | None, pd.DataFrame]:
     if reprocess:
@@ -173,9 +173,9 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
 
     csv_path = result_dir / "trace_processor" / f"{cls.QUERY_NAME}.csv"
     if not csv_path.is_file():
-      if "avg_power_mw" not in base_df.columns:
+      if "odpm_total_mw" not in base_df.columns:
         base_df = base_df.copy()
-        base_df["avg_power_mw"] = "No Data"
+        base_df["odpm_total_mw"] = "No Data"
       return None, base_df
     return pd.read_csv(csv_path), base_df
 
@@ -185,25 +185,25 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
                          base_df: pd.DataFrame,
                          reprocess: bool = False) -> pd.DataFrame:
     orig_base_cols = list(base_df.columns)
-    df, base_df = cls._get_power_rails_data(result_dir, base_df, reprocess)
+    df, base_df = cls._get_odpm_power_rails_data(result_dir, base_df, reprocess)
     if df is None:
       return base_df
 
     # Calculate system-wide average power per run.
     # Note: Because the average of a sum equals the sum of the averages,
     # summing the 'avg_power_mw' of all individual rails yields the
-    # 'avg_power_mw' of the entire system for that run.
+    # 'odpm_total_mw' of the entire system for that run.
     # (e.g., Average(CPU_Power) + Average(GPU_Power) = Average(System_Power))
     df_sum = (
-        df.groupby(["cb_browser", "cb_story",
-                    "cb_run"])["avg_power_mw"].sum().reset_index())
+        df.groupby(["cb_browser", "cb_story", "cb_run"
+                   ])["avg_power_mw"].sum().reset_index(name="odpm_total_mw"))
 
-    # Average the system-wide avg_power_mw over runs for each browser/story
+    # Average the system-wide odpm_total_mw over runs for each browser/story
     # combination.
     run_metrics = (
         df_sum.groupby([
             "cb_browser", "cb_story"
-        ])["avg_power_mw"].agg(_mean_without_outliers).to_frame())
+        ])["odpm_total_mw"].agg(_mean_without_outliers).to_frame())
 
     # Update the base DataFrame with actual computed scores where available.
     # We use combine_first so that any browser/story present in base_df but
@@ -298,6 +298,6 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
       combinations.append({
           "cb_browser": run.browser.unique_name,
           "cb_story": run.story.name,
-          "avg_power_mw": float("nan"),
+          "odpm_total_mw": float("nan"),
       })
     return pd.DataFrame(combinations).drop_duplicates()

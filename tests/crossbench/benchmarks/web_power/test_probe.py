@@ -120,7 +120,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "avg_power_mw": 10.0 + 20.0
+            "odpm_total_mw": 10.0 + 20.0
         },
     ])
 
@@ -137,7 +137,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "avg_power_mw": ((10.0 + 20.0) + (200.0 + 400.0)) / 2.0
+            "odpm_total_mw": ((10.0 + 20.0) + (200.0 + 400.0)) / 2.0
         },
     ])
 
@@ -164,7 +164,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "avg_power_mw": score
+            "odpm_total_mw": score
         },
     ])
 
@@ -193,7 +193,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "avg_power_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0
+            "odpm_total_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0
         },
     ])
 
@@ -222,7 +222,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "avg_power_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0
+            "odpm_total_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0
         },
     ])
 
@@ -246,7 +246,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "avg_power_mw": (20 + 30 + 40 + 50 + 60 + 70 + 80 + 90) / 8.0
+            "odpm_total_mw": (20 + 30 + 40 + 50 + 60 + 70 + 80 + 90) / 8.0
         },
     ])
 
@@ -263,12 +263,12 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "cnn",
-            "avg_power_mw": 10.0 + 20.0
+            "odpm_total_mw": 10.0 + 20.0
         },
         {
             "cb_browser": "chrome",
             "cb_story": "msn",
-            "avg_power_mw": 5000.0 + 6000.0
+            "odpm_total_mw": 5000.0 + 6000.0
         },
     ])
 
@@ -285,12 +285,12 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "cnn",
-            "avg_power_mw": 10.0 + 20.0
+            "odpm_total_mw": 10.0 + 20.0
         },
         {
             "cb_browser": "safari",
             "cb_story": "cnn",
-            "avg_power_mw": 100.0 + 200.0
+            "odpm_total_mw": 100.0 + 200.0
         },
     ])
 
@@ -310,7 +310,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "safari",
             "cb_story": "cnn",
-            "avg_power_mw": pytest.approx(float("nan"), nan_ok=True)
+            "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True)
         },
     ])
 
@@ -329,17 +329,17 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "cnn",
-            "avg_power_mw": 10.0 + 20.0
+            "odpm_total_mw": 10.0 + 20.0
         },
         {
             "cb_browser": "chrome",
             "cb_story": "msn",
-            "avg_power_mw": 5000.0 + 6000.0
+            "odpm_total_mw": 5000.0 + 6000.0
         },
         {
             "cb_browser": "safari",
             "cb_story": "cnn",
-            "avg_power_mw": 200.0 + 400.0
+            "odpm_total_mw": 200.0 + 400.0
         },
     ])
 
@@ -369,17 +369,17 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome_pixel_10",
             "cb_story": "test",
-            "avg_power_mw": 5000.0 + 6000.0
+            "odpm_total_mw": 5000.0 + 6000.0
         },
         {
             "cb_browser": "chrome_pixel_9",
             "cb_story": "test",
-            "avg_power_mw": 10.0 + 20.0
+            "odpm_total_mw": 10.0 + 20.0
         },
         {
             "cb_browser": "safari",
             "cb_story": "test",
-            "avg_power_mw": pytest.approx(float("nan"), nan_ok=True)
+            "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True)
         },
     ])
 
@@ -409,7 +409,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
             {
                 "cb_browser": "chrome",
                 "cb_story": "cnn",
-                "avg_power_mw": pytest.approx(float("nan"), nan_ok=True)
+                "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True)
             },
         ])
 
@@ -443,7 +443,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
             {
                 "cb_browser": "chrome",
                 "cb_story": "cnn",
-                "avg_power_mw": pytest.approx(float("nan"), nan_ok=True)
+                "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True)
             },
         ])
 
@@ -461,7 +461,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     result_df = self.probe.process_result_dir(result_dir, base_df)
     self.assertEqual(len(result_df), 1)
     self.assertEqual(result_df["cb_browser"].iloc[0], "chrome")
-    self.assertEqual(result_df["avg_power_mw"].iloc[0], "No Data")
+    self.assertEqual(result_df["odpm_total_mw"].iloc[0], "No Data")
 
   def test_process_result_dir_from_csv(self):
     """Verify that process_result_dir can read data from a pre-existing CSV."""
@@ -481,7 +481,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         result_dir, base_df, reprocess=False)
     self.assertEqual(len(result_df), 1)
     self.assertEqual(result_df["cb_browser"].iloc[0], "chrome")
-    self.assertEqual(result_df["avg_power_mw"].iloc[0], 30.0)
+    self.assertEqual(result_df["odpm_total_mw"].iloc[0], 30.0)
 
   @mock.patch("crossbench.benchmarks.web_power.probe.BatchTraceProcessor")
   def test_process_result_dir_reprocess(self, btp_mock):
@@ -528,7 +528,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(len(result_df), 1)
     self.assertEqual(result_df["cb_browser"].iloc[0], "chrome")
     # Should be 50.0 from the mock BTP, not 999.0 from the CSV.
-    self.assertEqual(result_df["avg_power_mw"].iloc[0], 50.0)
+    self.assertEqual(result_df["odpm_total_mw"].iloc[0], 50.0)
     btp_mock.assert_called_once_with(traces=[str(trace_file)], config=mock.ANY)
     btp_instance.query_and_flatten.assert_called_once_with("SELECT 1")
 
@@ -555,7 +555,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
 
     expected_cols = [
         "custom_first_col", "cb_browser", "cb_story", "custom_middle_col",
-        "avg_power_mw"
+        "odpm_total_mw"
     ]
     self.assertListEqual(list(result_df.columns), expected_cols)
 
