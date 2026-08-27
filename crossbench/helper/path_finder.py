@@ -231,15 +231,9 @@ class BaseChromiumPathFinder(BasePathFinder, metaclass=abc.ABCMeta):
 
   @override
   def candidates(self) -> tuple[pth.AnyPath, ...]:
-    relative_path = (
-        path_finder_base.chromium_src_relative_local_path() /
-        self.chrome_path())
     if maybe_chrome := ChromiumCheckoutFinder(self._platform).path:
-      return (
-          relative_path,
-          maybe_chrome / self.chrome_path(),
-      )
-    return (relative_path,)
+      return (maybe_chrome / self.chrome_path(),)
+    return ()
 
 
 class PerfettoFinder(BaseChromiumPathFinder, metaclass=abc.ABCMeta):

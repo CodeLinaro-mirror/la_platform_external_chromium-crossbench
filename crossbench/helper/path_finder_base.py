@@ -74,11 +74,12 @@ class BasePathFinder(abc.ABC):
 
 def default_chromium_candidates(platform: Platform) -> tuple[pth.AnyPath, ...]:
   """Returns a generous list of potential locations of a chromium checkout."""
-  candidates = []
+  candidates: list[pth.AnyPath] = []
   if chromium_src := platform.environ.get("CHROMIUM_SRC"):
     candidates.append(platform.path(chromium_src))
   if platform.is_local:
-    candidates.append(chromium_src_relative_local_path())
+    if local_relative_src := chromium_src_relative_local_path():
+      candidates.append(local_relative_src)
   if platform.is_android:
     return tuple(candidates)
   home_dir = platform.home()
@@ -95,18 +96,21 @@ def default_chromium_candidates(platform: Platform) -> tuple[pth.AnyPath, ...]:
   return tuple(candidates)
 
 
-def chromium_src_relative_local_path() -> pth.LocalPath:
+def chromium_src_relative_local_path() -> pth.LocalPath | None:
   """Gets the local relative path of `chromium/src`.
 
-  Assuming the cli.py path is `third_party/crossbench/crossbench/cli/cli.py`.
+  Assuming crossbench is located at `third_party/crossbench` within a Chromium
+  checkout.
   """
-  return pth.LocalPath(__file__).parents[4]
+  third_party_dir = pth.ROOT_DIR.parent
+  if third_party_dir.name == "third_party":
+    return third_party_dir.parent
+  return None
 
 
 def is_chromium_checkout_dir(platform: Platform, dir_path: pth.AnyPath) -> bool:
-  return (platform.is_dir(dir_path / "v8") and
-          platform.is_dir(dir_path / "chrome") and
-          platform.is_dir(dir_path / ".git"))
+  return (platform.is_file(dir_path / "tools/perf/cb") and
+          platform.is_dir(dir_path / "third_party/crossbench"))
 
 
 class ChromiumCheckoutFinder(BasePathFinder):

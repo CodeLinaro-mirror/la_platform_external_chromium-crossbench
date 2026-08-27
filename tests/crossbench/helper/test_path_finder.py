@@ -23,17 +23,49 @@ from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
 class BaseCheckoutTestCase(BaseCrossbenchTestCase):
 
   def _add_v8_checkout_files(self, checkout_dir: pathlib.Path) -> None:
-    self.assertIsNone(V8CheckoutFinder(self.platform).path)
     (checkout_dir / ".git").mkdir(parents=True)
-    self.assertIsNone(V8CheckoutFinder(self.platform).path)
     self.fs.create_file(checkout_dir / "include" / "v8.h", st_size=100)
 
   def _add_chrome_checkout_files(self, checkout_dir: pathlib.Path) -> None:
+    (checkout_dir / "third_party/crossbench").mkdir(parents=True)
+    self.fs.create_file(checkout_dir / "tools/perf/cb", st_size=100)
+
+
+class ChromiumCheckoutFinderTestCase(BaseCheckoutTestCase):
+
+  def test_find_none(self):
     self.assertIsNone(ChromiumCheckoutFinder(self.platform).path)
-    self._add_v8_checkout_files(checkout_dir / "v8")
-    (checkout_dir / ".git").mkdir(parents=True)
+    self.assertIsNone(ChromiumCheckoutFinder(self.platform).local_path)
+
+  def test_known_location(self):
+    checkout_dir = pathlib.Path.home() / "Documents/chromium/src"
     self.assertIsNone(ChromiumCheckoutFinder(self.platform).path)
-    (checkout_dir / "chrome").mkdir(parents=True)
+    self._add_chrome_checkout_files(checkout_dir)
+    self.assertEqual(ChromiumCheckoutFinder(self.platform).path, checkout_dir)
+
+  def test_chromium_src_env(self):
+    with mock.patch.dict(os.environ, {}, clear=True):
+      self.assertIsNone(ChromiumCheckoutFinder(self.platform).path)
+    custom_dir = pathlib.Path("/custom/chromium/src")
+    with mock.patch.dict(
+        os.environ, {"CHROMIUM_SRC": str(custom_dir)}, clear=True):
+      self.assertIsNone(ChromiumCheckoutFinder(self.platform).path)
+      self._add_chrome_checkout_files(custom_dir)
+      self.assertEqual(ChromiumCheckoutFinder(self.platform).path, custom_dir)
+      self.assertEqual(
+          ChromiumCheckoutFinder(self.platform).local_path, custom_dir)
+
+  def test_module_relative(self):
+    with mock.patch.dict(os.environ, {}, clear=True):
+      self.assertIsNone(ChromiumCheckoutFinder(self.platform).path)
+      fake_chrome_root = pathlib.Path("/custom/chromium/src")
+      fake_root = fake_chrome_root / "third_party/crossbench"
+      with mock.patch("crossbench.path.ROOT_DIR", fake_root):
+        self.assertIsNone(ChromiumCheckoutFinder(self.platform).path)
+        self._add_chrome_checkout_files(fake_chrome_root)
+        self.assertEqual(
+            pathlib.Path(ChromiumCheckoutFinder(self.platform).path),
+            fake_chrome_root)
 
 
 class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
@@ -68,17 +100,19 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
   def test_module_relative(self):
     with mock.patch.dict(os.environ, {}, clear=True):
       self.assertIsNone(V8CheckoutFinder(self.platform).path)
-      path = pathlib.Path(__file__)
-      self.assertFalse(path.exists())
-      # In:   chromium/src/third_party/crossbench/.../test_helper.py
-      # Out:  chromium/src
-      fake_chrome_root = path.parents[5]
+      fake_chrome_root = pathlib.Path("/custom/chromium/src")
+      fake_root = fake_chrome_root / "third_party/crossbench"
       checkout_dir = fake_chrome_root / "v8"
-      self.assertIsNone(V8CheckoutFinder(self.platform).path)
-      self._add_chrome_checkout_files(fake_chrome_root)
-      self.assertIsNotNone(ChromiumCheckoutFinder(self.platform).path)
-      self.assertEqual(
-          pathlib.Path(V8CheckoutFinder(self.platform).path), checkout_dir)
+      with mock.patch("crossbench.path.ROOT_DIR", fake_root):
+        self.assertIsNone(V8CheckoutFinder(self.platform).path)
+        self._add_chrome_checkout_files(fake_chrome_root)
+        self._add_v8_checkout_files(checkout_dir)
+        self.assertIsNotNone(ChromiumCheckoutFinder(self.platform).path)
+        self.assertEqual(
+            pathlib.Path(ChromiumCheckoutFinder(self.platform).path),
+            fake_chrome_root)
+        self.assertEqual(
+            pathlib.Path(V8CheckoutFinder(self.platform).path), checkout_dir)
 
 
 class ChromiumBuildBinaryFinderTestCase(BaseCheckoutTestCase):
