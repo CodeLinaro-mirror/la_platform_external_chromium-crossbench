@@ -112,6 +112,23 @@ class ChromiumBasedWebDriver(
     return chrome_flags  # type: ignore
 
   @override
+  def _find_driver_pid(self) -> None:
+    service = getattr(self._private_driver, "service", None)
+    if not service:
+      return
+    self._driver_pid = service.process.pid
+    candidates: list[int] = []
+    for child in self.platform.process_children(self._driver_pid):
+      if str(child["exe"]) == str(self.path):
+        candidates.append(child["pid"])
+    if len(candidates) == 1:
+      self._pid = candidates[0]
+    else:
+      logging.debug(
+          "Could not find unique browser process for webdriver: %s, got %s",
+          self, candidates)
+
+  @override
   def _find_driver(self) -> pth.AnyPath:
     if self._driver_path:
       return self.driver_path
