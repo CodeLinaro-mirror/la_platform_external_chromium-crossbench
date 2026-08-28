@@ -9,12 +9,12 @@ import pathlib
 import platform
 import re
 import shutil
-import subprocess
-from typing import Any
+import sys
+from typing import Any, Final
 
 USE_PYTHON3 = True
 
-SOURCE_SKIP_RE = [r"^protoc/gen.*", r"^third_party/.*"]
+SOURCE_SKIP_RE: Final[tuple[str, ...]] = (r"^protoc/gen.*", r"^third_party/.*")
 
 
 def GlobalSkipChecks(input_api: Any, file_path: str) -> bool:
@@ -26,26 +26,30 @@ def GlobalSkipChecks(input_api: Any, file_path: str) -> bool:
 
 
 def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
+  local_path = input_api.PresubmitLocalPath()
+  if local_path not in sys.path:
+    sys.path.insert(0, local_path)
+
   tests = []
   results = []
   testing_env = dict(input_api.environ)
-  root_path = pathlib.Path(input_api.PresubmitLocalPath())
+  root_path = pathlib.Path(local_path)
   crossbench_test_path = root_path / "tests" / "crossbench"
   testing_env["PYTHONPATH"] = input_api.os_path.pathsep.join(
       map(str, [root_path, crossbench_test_path]))
-  # ---------------------------------------------------------------------------
+
   modified_py_files: list[str] = ModifiedFiles(input_api, on_commit)
   modified_hjson_files: list[str] = ModifiedFiles(
       input_api, False, filename_pattern="*.hjson")
 
   # ---------------------------------------------------------------------------
-  # Validate the vpython spec:
+  # VPython Spec:
   # ---------------------------------------------------------------------------
   if platform.system() in ("Linux", "Darwin"):
     tests += input_api.canned_checks.CheckVPythonSpec(input_api, output_api)
 
   # ---------------------------------------------------------------------------
-  # PanProjectChecks: Run combined chromium-repo checks
+  # PanProject Checks:
   # ---------------------------------------------------------------------------
   results += input_api.canned_checks.PanProjectChecks(
       input_api,
@@ -127,6 +131,7 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   # ---------------------------------------------------------------------------
   # isort:
   # ---------------------------------------------------------------------------
+  from tools.presubmit.import_sorter import SortImports
   results += SortImports(input_api, output_api, modified_py_files)
 
   # ---------------------------------------------------------------------------
@@ -138,7 +143,14 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   # ---------------------------------------------------------------------------
   # hjson:
   # ---------------------------------------------------------------------------
+  from tools.presubmit.hjson_formatter import FormatHjsonFiles
   results += FormatHjsonFiles(input_api, output_api, modified_hjson_files)
+
+  # ---------------------------------------------------------------------------
+  # Banned builtins (getattr, setattr, hasattr):
+  # ---------------------------------------------------------------------------
+  from tools.presubmit.banned_builtins import CheckNoBannedBuiltins
+  results += CheckNoBannedBuiltins(input_api, output_api)
 
   # ---------------------------------------------------------------------------
   # Unittest:
@@ -150,79 +162,20 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
       input_api, output_api, unit_tests, env=testing_env)
 
   # ---------------------------------------------------------------------------
-  # Run all test
+  # Run all tests:
   # ---------------------------------------------------------------------------
   results += input_api.RunTests(tests)
   return results
 
 
-def SortImports(input_api: Any, output_api: Any,
-                modified_py_files: list[str]) -> list:
-  results = []
-  files_to_sort = [
-      str(pathlib.Path(input_api.change.RepositoryRoot()) / f)
-      for f in modified_py_files
-      if not GlobalSkipChecks(input_api, f)
-  ]
-  if files_to_sort:
-    # Batches all files into a single synchronous parallel invocation that
-    # formats in place
-    process = subprocess.run(
-        [input_api.python_executable, "-m", "isort", "-j", "0", *files_to_sort],
-        check=True,
-        capture_output=True,
-        text=True)
-    # For completeness we capture both stdout and stderr:
-    # stdout: fix suggestions
-    # stderr: error messages
-    output = process.stdout + process.stderr
-    offending_files = []
-    for f in files_to_sort:
-      if f in output:
-        offending_files.append(f)
-
-    if offending_files:
-      results.append(
-          output_api.PresubmitPromptWarning(
-              "Unsorted python imports:",
-              items=offending_files,
-              long_text=(
-                  "Please update your commit with the formatted files.\n\n" +
-                  output)))
-  return results
+# ---------------------------------------------------------------------------
 
 
-def FormatHjsonFiles(input_api: Any, output_api: Any,
-                     modified_hjson_files: list[str]) -> list:
-  results = []
-  for hjson_file in modified_hjson_files:
-    full_hjson_path = pathlib.Path(
-        input_api.change.RepositoryRoot()) / hjson_file
-
-    try:
-      formatted_contents: str = FormatHjsonFile(input_api, full_hjson_path)
-    except ValueError as e:
-      results.append(
-          output_api.PresubmitPromptWarning(
-              "Malformed hjson file:",
-              items=[str(full_hjson_path)],
-              long_text=str(e)))
-      continue
-
-    original_contents = input_api.ReadFile(str(full_hjson_path), "r")
-    if original_contents != formatted_contents:
-      full_hjson_path.write_text(formatted_contents)
-      results.append(
-          output_api.PresubmitPromptWarning(
-              "Unformatted hjson file:",
-              items=[str(full_hjson_path)],
-              long_text="Please update your commit with the formatted file."))
-  return results
-
-
-def ModifiedFiles(input_api: Any,
-                  on_commit: bool,
-                  filename_pattern: str = "*.py") -> list[str]:
+def ModifiedFiles(
+    input_api: Any,
+    on_commit: bool,
+    filename_pattern: str = "*.py",
+) -> list[str]:
   if on_commit:
     return []
   files = [file.AbsoluteLocalPath() for file in input_api.AffectedFiles()]
@@ -249,8 +202,10 @@ def GetUntrackedFiles(input_api: Any) -> list[str]:
     return []
 
 
-def LinterFilePatterns(on_commit: bool,
-                       modified_py_files: list[str]) -> list[str]:
+def LinterFilePatterns(
+    on_commit: bool,
+    modified_py_files: list[str],
+) -> list[str]:
   if on_commit:
     # Test all files on commit
     return [r"^[^\.]+\.py$"]
@@ -260,8 +215,11 @@ def LinterFilePatterns(on_commit: bool,
   return [re.escape(file) for file in modified_py_files]
 
 
-def TyperPaths(input_api: Any, on_commit: bool,
-               modified_py_files: list[str]) -> list[str]:
+def TyperPaths(
+    input_api: Any,
+    on_commit: bool,
+    modified_py_files: list[str],
+) -> list[str]:
   root_path = pathlib.Path(input_api.PresubmitLocalPath())
   mypy_files_to_check = {"PRESUBMIT.py"}
   crossbench_path = root_path / "crossbench"
@@ -280,53 +238,10 @@ def TyperPaths(input_api: Any, on_commit: bool,
   return result
 
 
-def GetNodeExecutable(input_api: Any) -> str:
-  node_base: pathlib.Path = pathlib.Path(
-      input_api.change.RepositoryRoot()) / "third_party" / "node"
-
-  node_bin = ""
-
-  if input_api.platform == "linux":
-    node_bin = str(node_base / "linux" / "node-linux-x64" / "bin" / "node")
-  if input_api.platform == "win32":
-    node_bin = str(node_base / "win" / "node.exe")
-  if input_api.platform == "darwin":
-    if platform.machine() == "arm64":
-      node_bin = str(node_base / "mac_arm64" / "node-darwin-arm64" / "bin" /
-                     "node")
-    else:
-      node_bin = str(node_base / "mac" / "node-darwin-x64" / "bin" / "node")
-
-  if not node_bin:
-    raise NotImplementedError(f"{input_api.platform} {platform.machine()} "
-                              "is not a supported platform.")
-
-  return node_bin
-
-
-def FormatHjsonFile(input_api: Any, hjson_file: pathlib.Path) -> str:
-  node_bin = GetNodeExecutable(input_api)
-
-  hjson_js_bin = str(
-      pathlib.Path(input_api.change.RepositoryRoot()) / "third_party" /
-      "hjson_js" / "bin" / "hjson")
-
-  try:
-    return subprocess.run([
-        node_bin, hjson_js_bin, "-rt", "-sl", "-nocol", "-cond=0", "-quote=all",
-        "-ml",
-        str(hjson_file)
-    ],
-                          check=True,
-                          capture_output=True).stdout.decode(encoding="utf-8")
-  except subprocess.CalledProcessError as e:
-    error = e.stderr.decode(encoding="utf=8")
-    raise ValueError(f"Failed to parse hjson file: {error}") from e
-
-
 def TestFilePatternsToCheck(
     on_commit: bool,
-    crossbench_test_path: pathlib.Path) -> tuple[pathlib.Path, str]:
+    crossbench_test_path: pathlib.Path,
+) -> tuple[pathlib.Path, str]:
   # Only run test_cli to speed up the presubmit checks
   if on_commit:
     test_dir: pathlib.Path = crossbench_test_path

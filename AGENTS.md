@@ -21,7 +21,8 @@ If running `./cb.py` fails, try the following:
 - Import declarations always go at the top of the file, never nested inside
   of a method or class. (Conditional imports based on a simple if statement
   referring to TYPE_CHECKING are an exception.)
-- Avoid `getattr` and `hasattr` (where feasible).
+- Disallow `getattr`,  `setattr` and `hasattr`: dynamic attribute access is
+  strictly banned by `PRESUBMIT.py`. Only use it when strictly unavoidable.
 
 ## Crossbench Platform Code
 - Avoid using raw shell-commands if possible and directly use the platform

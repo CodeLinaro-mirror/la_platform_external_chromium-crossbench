@@ -189,9 +189,11 @@ ______________________________________________________________________
   well-named constants and helper methods and helper classes. Code comments
   bit-rod, it's better to have executable documentation like tests. Comments on
   classes are good.
-- **Avoid getattr and hasattr**: The methods are generally an antipattern. For
-  accessing args, fix the tests first and add mock values to the test
-  Namespaces.
+- **Avoid defensive programming**: Fail early and explicitly for stricter code
+  and better tests. defensive programming is not good for code health.
+- **Avoid getattr and hasattr**: The methods are generally an antipattern and
+  can hide errors. For accessing args, fix the tests first and add mock values
+  to the test Namespaces.
   ```
   # BAD: getattr on args
   if browser_type := getattr(args, "browser_type"):

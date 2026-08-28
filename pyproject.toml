@@ -166,7 +166,11 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "PRESUBMIT.py" = [
-    "N",
+    "N",        # Presubmit functions in depot_tools are CamelCase
+    "PLC0415",  # Inline imports inside CheckChange for PresubmitLocalPath
+]
+"tools/presubmit/*" = [
+    "N",        # Presubmit functions in depot_tools are CamelCase
 ]
 "tests/*" = [
     "ANN",      # tests are allowed to skip type annotations
