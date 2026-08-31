@@ -333,7 +333,10 @@ class MockPlatformMixin:
     del attrs
     return []
 
-  def process_children(self, parent_pid: int, recursive=False):
+  def process_children(self,
+                       parent_pid: int,
+                       recursive=False,
+                       attrs: list[str] | None = None):
     del parent_pid, recursive
     return []
 

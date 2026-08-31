@@ -608,27 +608,29 @@ class Platform(abc.ABC):
     assert self.is_local, "Only local platform supported"
     return self._collect_process_dict(psutil.process_iter(attrs=attrs), attrs)
 
-  def process_running(self, process_name_list: list[str]) -> str | None:
+  def process_running(self, process_name_list: Iterable[str]) -> str | None:
     self.assert_is_local()
+    name_lookup = {name.lower(): name for name in process_name_list}
     # TODO(cbruni): support remote platforms
     for proc in psutil.process_iter(attrs=["name"]):
-      try:
-        if proc.name().lower() in process_name_list:
-          return proc.name()
-      except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
-        pass
+      with contextlib.suppress(*proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS):
+        name = proc.info.get("name")
+        if name and name.lower() in name_lookup:
+          return name
     return None
 
   def process_children(self,
                        parent_pid: int,
-                       recursive: bool = False) -> list[dict[str, Any]]:
+                       recursive: bool = False,
+                       attrs: list[str] | None = None) -> list[dict[str, Any]]:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
       process = psutil.Process(parent_pid)
     except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return []
-    return self._collect_process_dict(process.children(recursive=recursive))
+    return self._collect_process_dict(
+        process.children(recursive=recursive), attrs=attrs)
 
   def _collect_process_dict(
       self,
@@ -637,15 +639,24 @@ class Platform(abc.ABC):
     process_info_list: list[dict[str, Any]] = []
     for process in process_iterator:
       with contextlib.suppress(*proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS):
-        process_info_list.append(process.as_dict(attrs=attrs))
+        # psutil.Process does not always have an "info" property.
+        # It is dynamically added only by psutil.process_iter().
+        # Other sources like process.children() lack it, requiring getattr
+        # fallback.
+        if info := getattr(process, "info", None):
+          process_info_list.append(info.copy())
+        else:
+          process_info_list.append(process.as_dict(attrs=attrs))
     return process_info_list
 
-  def process_info(self, process: ProcessLike) -> dict[str, Any] | None:
+  def process_info(self,
+                   process: ProcessLike,
+                   attrs: list[str] | None = None) -> dict[str, Any] | None:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
       pid = self.process_pid(process)
-      return psutil.Process(pid).as_dict()
+      return psutil.Process(pid).as_dict(attrs=attrs)
     except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return None
 

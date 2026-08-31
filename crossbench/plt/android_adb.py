@@ -919,7 +919,8 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @override
   def process_children(self,
                        parent_pid: int,
-                       recursive: bool = False) -> list[dict[str, Any]]:
+                       recursive: bool = False,
+                       attrs: list[str] | None = None) -> list[dict[str, Any]]:
     # TODO: implement
     return []
 

@@ -477,10 +477,13 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     self.sh("killall", "-9", process_name, check=False)
 
   @override
-  def process_info(self, process: ProcessLike) -> dict[str, Any] | None:
+  def process_info(self,
+                   process: ProcessLike,
+                   attrs: list[str] | None = None) -> dict[str, Any] | None:
     if self.is_local:
-      return super().process_info(process)
+      return super().process_info(process, attrs)
     try:
+      assert not attrs, "attrs not supported on remote platform"
       pid = self.process_pid(process)
       lines = self.sh_stdout("ps", "-o", "comm", "-p", str(pid)).splitlines()
       if len(lines) <= 1:

@@ -504,6 +504,15 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     self.assertTrue(processes)
     for process_info in processes:
       self.assertIn("name", process_info)
+      self.assertEqual(set(process_info.keys()), {"name"})
+
+    # Test with multiple attributes
+    processes_multi = self.platform.processes(["pid", "name"])
+    self.assertTrue(processes_multi)
+    for process_info in processes_multi:
+      self.assertIn("name", process_info)
+      self.assertIn("pid", process_info)
+      self.assertEqual(set(process_info.keys()), {"pid", "name"})
 
   def test_processes_forwards_attrs_to_as_dict(self):
     if self.platform.is_remote:
@@ -547,6 +556,13 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     process_info = self.platform.process_info(os.getpid())
     self.assertIn("python", process_info["name"].lower())
 
+    # Test with explicit attrs
+    process_info_attrs = self.platform.process_info(
+        os.getpid(), attrs=["pid", "name"])
+    self.assertIsNotNone(process_info_attrs)
+    self.assertSetEqual(set(process_info_attrs.keys()), {"pid", "name"})
+    self.assertIn("python", process_info_attrs["name"].lower())
+
   def test_process_children(self):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
@@ -554,6 +570,41 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     self.assertIsInstance(process_info, list)
     process_info = self.platform.process_children(os.getpid(), recursive=True)
     self.assertIsInstance(process_info, list)
+
+  def test_process_children_forwards_attrs_to_as_dict(self):
+    if self.platform.is_remote:
+      self.skipTest("Not supported yet on remote platforms.")
+
+    class FakeProcess:
+
+      def __init__(self) -> None:
+        self.attrs: list[str] | None = None
+
+      def as_dict(self, attrs: list[str] | None = None) -> dict[str, str]:
+        assert attrs
+        assert not self.attrs
+        self.attrs = attrs
+        return {attr: attr for attr in attrs}
+
+    class FakeParentProcess:
+
+      def __init__(self, children: list[FakeProcess]) -> None:
+        self._children = children
+
+      def children(self, recursive: bool = False) -> list[FakeProcess]:
+        return self._children
+
+    fake_child = FakeProcess()
+    fake_parent = FakeParentProcess([fake_child])
+    attrs = ["name", "pid"]
+    with mock.patch(
+        "crossbench.plt.base.psutil.Process",
+        return_value=fake_parent) as process_mock:
+      children = self.platform.process_children(1234, attrs=attrs)
+
+    process_mock.assert_called_once_with(1234)
+    self.assertEqual(fake_child.attrs, attrs)
+    self.assertEqual(children, [{"name": "name", "pid": "pid"}])
 
   def test_get_free_port(self):
     if self.platform.is_remote:
