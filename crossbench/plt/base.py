@@ -47,6 +47,7 @@ if TYPE_CHECKING:
   import google.cloud.storage.blob as gcloud_blob  # type: ignore
 
   from crossbench.action_runner.display_rectangle import DisplayRectangle
+  from crossbench.action_runner.input_events import InputEvent
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
@@ -495,6 +496,10 @@ class Platform(abc.ABC):
     """Return a bool whether the platform has an active display.
     This can be false on linux without $DISPLAY, true an all other platforms."""
     return True
+
+  def inject_input_events(self, events: Iterable[InputEvent]) -> None:
+    raise NotImplementedError(
+        f"inject_input_events not implemented for {self}.")
 
   def sleep(self, seconds: float | dt.timedelta) -> None:
     wait.sleep(seconds)
