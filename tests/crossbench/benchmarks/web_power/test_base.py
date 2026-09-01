@@ -246,7 +246,7 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     self.assertEqual(bits_probe.bits_out, "custom_bits_run")
     self.assertEqual(bits_probe.duration, dt.timedelta(minutes=5))
     self.assertEqual(bits_probe.bits_device, "")
-    self.assertIsNone(bits_probe.port)
+    self.assertEqual(bits_probe.port, BitsProbe.DEFAULT_PORT)
 
   def test_kwargs_from_cli_bits_with_device(self) -> None:
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
@@ -286,6 +286,17 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
         bits_probe=bits_probe,
     )
     self.assertIs(benchmark.bits_probe, bits_probe)
+
+  def test_teardown_stops_bits_probe(self) -> None:
+    bits_probe = mock.MagicMock(spec=BitsProbe)
+    story = MockWebPowerStory.from_site("cnn")
+    benchmark = MockWebPowerBenchmark(
+        stories=[story],
+        bits_probe=bits_probe,
+    )
+    runner = mock.MagicMock()
+    benchmark.teardown(runner)
+    bits_probe.teardown.assert_called_once()
 
   def test_kwargs_from_cli_bits_only_path(self) -> None:
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"

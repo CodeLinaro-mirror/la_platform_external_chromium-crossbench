@@ -318,10 +318,16 @@ class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
         TraceProcessorProbe, "validate_env", return_value=None)
     self.addCleanup(tp_validate_patcher.stop)
     tp_validate_patcher.start()
+    # Prevent BitsProbe from enforcing Android or attempting to launch the
+    # BITS daemon / query devices during mock CLI dry-runs.
     bits_validate_patcher = mock.patch.object(
         BitsProbe, "validate_browser", return_value=None)
     self.addCleanup(bits_validate_patcher.stop)
     bits_validate_patcher.start()
+    bits_setup_patcher = mock.patch.object(
+        BitsProbe, "setup", return_value=None)
+    self.addCleanup(bits_setup_patcher.stop)
+    bits_setup_patcher.start()
 
   def _get_runner_probe_names(self, *extra_args: str) -> tuple[str, ...]:
     with self._patch_get_browser_cls():

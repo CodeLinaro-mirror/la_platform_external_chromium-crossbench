@@ -385,6 +385,14 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
       runner.attach_probe(JtProbe(), matching_browser_only=True)
 
   @override
+  def teardown(self, runner: Runner) -> None:
+    super().teardown(runner)
+    # TODO: Consider adding Probe.teardown() to probe.py and runner.py
+    # following wider discussion.
+    if self._bits_probe:
+      self._bits_probe.teardown()
+
+  @override
   def setup_session_network(self, session: BrowserSessionRunGroup) -> None:
     super().setup_session_network(session)
     assert session.is_single_run

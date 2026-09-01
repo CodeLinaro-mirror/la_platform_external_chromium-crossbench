@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import subprocess
 from typing import Any
 from unittest import mock
 
@@ -15,6 +16,7 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.probes.bits import BitsProbe, BitsProbeContext
 from crossbench.probes.probe import ProbeIncompatibleBrowser
+from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 from tests import test_helper
 from tests.crossbench.probes.helper import BaseProbeTestCase
@@ -22,6 +24,7 @@ from tests.crossbench.probes.helper import BaseProbeTestCase
 
 class BitsProbeTestCase(BaseProbeTestCase):
 
+  @override
   def setUp(self) -> None:
     super().setUp()
     self.bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
@@ -63,6 +66,11 @@ class BitsProbeTestCase(BaseProbeTestCase):
 
     self.assertEqual(context1.bits_out_id, "20260702_170055")
     self.assertEqual(context2.bits_out_id, "20260702_170110")
+
+  def test_bits_probe_non_file_path(self) -> None:
+    non_existent = pth.LocalPath(self.platform.default_tmp_dir) / "missing_file"
+    with self.assertRaises(AssertionError):
+      BitsProbe(non_existent)
 
   def test_bits_probe_parsing_missing_path(self) -> None:
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -133,7 +141,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
         "bits_path": str(self.bits_path),
         "bits_out": "test_run_id"
     })
-    self.assertIsNone(probe.port)
+    self.assertEqual(probe.port, BitsProbe.DEFAULT_PORT)
 
   def test_bits_probe_parsing_custom_port(self) -> None:
     probe = BitsProbe.parse_dict({
@@ -167,15 +175,25 @@ class BitsProbeTestCase(BaseProbeTestCase):
     with self.assertRaises(ProbeIncompatibleBrowser):
       probe.validate_browser(env, browser)
 
+  def test_validate_browser_compatible(self) -> None:
+    probe = BitsProbe(self.bits_path, "test_run_id")
+    browser = self.magic_mock_browser
+    browser.platform.is_android = True
+    env = mock.MagicMock()
+    probe.validate_browser(env, browser)
+
   def _check_probe_lifecycle(self,
                              bits_device: str,
                              port: int | None = None) -> None:
+    kwargs: dict[str, Any] = {}
+    if port is not None:
+      kwargs["port"] = port
     probe = BitsProbe(
         self.bits_path,
         "test_run_id",
         bits_device=bits_device,
         duration=dt.timedelta(seconds=120),
-        port=port,
+        **kwargs,
     )
     run = self.mock_run()
     run.browser_session.browser.platform.serial_id = "serial"
@@ -195,11 +213,10 @@ class BitsProbeTestCase(BaseProbeTestCase):
     host_platform.popen.assert_called_once()
     call_args = host_platform.popen.call_args.args
 
-    expected_device_args: list[str] = []
+    expected_port = port if port is not None else BitsProbe.DEFAULT_PORT
+    expected_device_args: list[str] = ["--service_port", str(expected_port)]
     if bits_device:
       expected_device_args += ["--device", bits_device]
-    if port is not None:
-      expected_device_args += ["--service_port", str(port)]
 
     self.assertEqual(
         call_args,
@@ -217,9 +234,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
 
     # 3. stop_story_run() should stop BITS
     context.stop_story_run()
-    expected_stop_args: list[str] = []
-    if port is not None:
-      expected_stop_args += ["--service_port", str(port)]
+    expected_stop_args = ["--service_port", str(expected_port)]
 
     self.assertEqual(len(host_platform.sh.call_args_list), 2)
     stop_call, _ = host_platform.sh.call_args_list
@@ -289,6 +304,204 @@ class BitsProbeTestCase(BaseProbeTestCase):
     avg_path = (
         context.local_result_path / BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME)
     self.assertTrue(avg_path.exists())
+
+
+class BitsProbeServiceTestCase(BaseProbeTestCase):
+
+  @override
+  def setUp(self) -> None:
+    super().setUp()
+    tmp_dir = pth.LocalPath(self.platform.default_tmp_dir)
+    self.bits_path = tmp_dir / "bits"
+    self.service_script = tmp_dir / "bits_service.sh"
+    self.fs.create_file(self.bits_path)
+    self.runner = mock.MagicMock()
+    self.mock_proc = mock.MagicMock()
+    self.mock_proc.pid = 12345
+    sh_patcher = mock.patch.object(self.platform, "sh")
+    self.addCleanup(sh_patcher.stop)
+    self.mock_sh = sh_patcher.start()
+
+    popen_patcher = mock.patch.object(
+        self.platform, "popen", return_value=self.mock_proc)
+    self.addCleanup(popen_patcher.stop)
+    self.mock_popen = popen_patcher.start()
+
+    # Mock terminate_gracefully to prevent sending real OS signals (SIGTERM)
+    # to mock_proc.pid, and to assert whether teardown stopped the process.
+    terminate_patcher = mock.patch.object(self.platform, "terminate_gracefully")
+    self.addCleanup(terminate_patcher.stop)
+    self.mock_terminate = terminate_patcher.start()
+
+  def _sh_result(self, stdout: str | bytes = "") -> subprocess.CompletedProcess:
+    if isinstance(stdout, str):
+      stdout = stdout.encode("utf-8")
+    return subprocess.CompletedProcess(args=[], returncode=0, stdout=stdout)
+
+  def _sh_error(self) -> subprocess.CompletedProcess:
+    return subprocess.CompletedProcess(args=[], returncode=1, stdout=b"")
+
+  def test_setup_service_already_running(self) -> None:
+    self.mock_sh.return_value = self._sh_result("device_1\n")
+    probe = BitsProbe(self.bits_path, port=15909)
+    probe.setup(self.runner)
+    self.mock_sh.assert_called_once_with(
+        self.bits_path,
+        "--list_devices",
+        "--service_port",
+        "15909",
+        check=False,
+        capture_output=True,
+    )
+    self.mock_popen.assert_not_called()
+    probe.teardown()
+    self.mock_terminate.assert_not_called()
+
+  def test_setup_service_already_running_bytes_stdout(self) -> None:
+    self.mock_sh.return_value = self._sh_result(b"device_1\n")
+    probe = BitsProbe(self.bits_path, port=15909, bits_device="device_1")
+    probe.setup(self.runner)
+    self.mock_sh.assert_called_once_with(
+        self.bits_path,
+        "--list_devices",
+        "--service_port",
+        "15909",
+        check=False,
+        capture_output=True,
+    )
+    self.mock_popen.assert_not_called()
+    probe.teardown()
+    self.mock_terminate.assert_not_called()
+
+  def test_setup_service_missing_script(self) -> None:
+    self.mock_sh.return_value = self._sh_error()
+    probe = BitsProbe(self.bits_path)
+    with self.assertRaises(ProbeValidationError) as cm:
+      probe.setup(self.runner)
+    self.mock_sh.assert_called_once()
+    self.assertIn("No script: ", str(cm.exception))
+
+  def test_setup_service_auto_start_and_stop(self) -> None:
+    self.fs.create_file(self.service_script)
+    self.mock_sh.side_effect = [self._sh_error(), self._sh_result("device_1\n")]
+    self.mock_proc.stdout.readline.side_effect = [
+        b"Preparing custom Bits temporary folder...\n",
+        b"Launching Bits service...\n",
+        b"######## INITIALIZING COLLECTORS ########\n",
+        b"[TS] (GB094B002A7) Received SW timestamp #1: host_ns=123\n",
+    ]
+    probe = BitsProbe(self.bits_path, port=15909)
+    probe.setup(self.runner)
+    self.mock_popen.assert_called_once_with(
+        str(self.service_script),
+        "--port",
+        "15909",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    probe.teardown()
+    self.mock_terminate.assert_called_once_with(self.mock_proc)
+
+  def test_setup_service_auto_start_custom_port(self) -> None:
+    self.fs.create_file(self.service_script)
+    self.mock_sh.side_effect = [self._sh_error(), self._sh_result("device_1\n")]
+    self.mock_proc.stdout.readline.side_effect = [
+        "Received SW timestamp\n",
+    ]
+    probe = BitsProbe(self.bits_path, port=12345)
+    probe.setup(self.runner)
+    self.mock_popen.assert_called_once_with(
+        str(self.service_script),
+        "--port",
+        "12345",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    probe.teardown()
+    self.mock_terminate.assert_called_once_with(self.mock_proc)
+
+  def test_setup_service_no_devices_detected(self) -> None:
+    self.mock_sh.return_value = self._sh_result()
+    probe = BitsProbe(self.bits_path, port=15909)
+    with self.assertRaises(ProbeValidationError) as cm:
+      probe.setup(self.runner)
+    self.assertIn("No devices on port 15909.", str(cm.exception))
+
+  def test_setup_service_auto_start_no_devices_cleans_up(self) -> None:
+    self.fs.create_file(self.service_script)
+    self.mock_sh.side_effect = [self._sh_error(), self._sh_result("")]
+    self.mock_proc.stdout.readline.side_effect = ["Received SW timestamp\n"]
+    probe = BitsProbe(self.bits_path, port=15909)
+    with self.assertRaises(ProbeValidationError) as cm:
+      probe.setup(self.runner)
+    self.assertIn("No devices on port 15909.", str(cm.exception))
+    self.mock_terminate.assert_called_once_with(self.mock_proc)
+
+  def test_setup_service_target_device_missing(self) -> None:
+    self.mock_sh.return_value = self._sh_result("device_B\ndevice_C\n")
+    probe = BitsProbe(self.bits_path, bits_device="device_A")
+    with self.assertRaises(ProbeValidationError) as cm:
+      probe.setup(self.runner)
+    self.assertIn("Unknown device: 'device_A'", str(cm.exception))
+
+  def test_setup_service_auto_start_device_missing_cleans_up(self) -> None:
+    self.fs.create_file(self.service_script)
+    self.mock_sh.side_effect = [
+        self._sh_error(),
+        self._sh_result("device_B\ndevice_C\n"),
+    ]
+    self.mock_proc.stdout.readline.side_effect = ["Received SW timestamp\n"]
+    probe = BitsProbe(self.bits_path, bits_device="device_A")
+    with self.assertRaises(ProbeValidationError) as cm:
+      probe.setup(self.runner)
+    self.assertIn("Unknown device: 'device_A'", str(cm.exception))
+    self.mock_terminate.assert_called_once_with(self.mock_proc)
+
+  def test_setup_service_target_device_matched(self) -> None:
+    self.mock_sh.return_value = self._sh_result("device_A\ndevice_B\n")
+    probe = BitsProbe(self.bits_path, bits_device="device_A")
+    probe.setup(self.runner)
+
+  def test_setup_service_auto_start_target_device_matched(self) -> None:
+    self.fs.create_file(self.service_script)
+    self.mock_sh.side_effect = [
+        self._sh_error(),
+        self._sh_result("device_A\ndevice_B\n"),
+    ]
+    self.mock_proc.stdout.readline.side_effect = ["Received SW timestamp\n"]
+    probe = BitsProbe(self.bits_path, bits_device="device_A")
+    probe.setup(self.runner)
+    probe.teardown()
+    self.mock_terminate.assert_called_once_with(self.mock_proc)
+
+  def test_setup_service_premature_exit(self) -> None:
+    self.fs.create_file(self.service_script)
+    self.mock_sh.return_value = self._sh_error()
+    self.mock_proc.stdout.readline.side_effect = [
+        "Launching Bits service...\n",
+        "ERROR: Port in use\n",
+        "",  # EOF
+    ]
+    probe = BitsProbe(self.bits_path)
+    with self.assertRaises(ProbeValidationError) as cm:
+      probe.setup(self.runner)
+    self.assertEqual(
+        str(cm.exception), "Probe(bits): BITS service stopped unexpectedly.")
+    self.mock_terminate.assert_called_once_with(self.mock_proc)
+
+  def test_setup_service_timeout(self) -> None:
+    self.fs.create_file(self.service_script)
+    self.mock_sh.return_value = self._sh_error()
+    self.mock_proc.stdout.readline.side_effect = ["Launching...\n"]
+    start_time = dt.datetime(2026, 7, 2, 12, 0, 0)
+    later_time = dt.datetime(2026, 7, 2, 12, 0, 20)
+    probe = BitsProbe(self.bits_path)
+    with mock.patch("crossbench.probes.bits.dt.datetime") as mock_dt:
+      mock_dt.now.side_effect = [start_time, later_time, later_time]
+      with self.assertRaises(ProbeValidationError) as cm:
+        probe._start_service(timeout=dt.timedelta(seconds=10))
+      self.assertIn("Timed out waiting for BITS service", str(cm.exception))
+    self.mock_terminate.assert_called_once_with(self.mock_proc)
 
 
 class BitsProbeResultsFileTestCase(BaseProbeTestCase):

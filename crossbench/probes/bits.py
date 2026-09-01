@@ -8,6 +8,7 @@ import contextlib
 import datetime as dt
 import json
 import logging
+import subprocess
 from typing import IO, TYPE_CHECKING, Any, ClassVar, Iterator, Self
 
 from typing_extensions import override
@@ -15,15 +16,15 @@ from typing_extensions import override
 from crossbench.parse import DurationParser, NumberParser, PathParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
     ProbeIncompatibleBrowser
+from crossbench.probes.probe_error import ProbeValidationError
 
 if TYPE_CHECKING:
-  import subprocess
-
   from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
 
 
 class BitsProbe(Probe):
@@ -35,6 +36,7 @@ class BitsProbe(Probe):
   NAME: ClassVar[str] = "bits"
   BITS_CHANNEL_AVERAGES_CSV_NAME: ClassVar[str] = "bits_channel_averages.csv"
   DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=99999)
+  DEFAULT_PORT: ClassVar[int] = 15909
 
   @classmethod
   @override
@@ -70,8 +72,8 @@ class BitsProbe(Probe):
     parser.add_argument(
         "port",
         type=NumberParser.positive_int,
-        default=None,
-        help="Optional port number for the BITS tool.")
+        default=cls.DEFAULT_PORT,
+        help="Port number for the BITS tool.")
     return parser
 
   def __init__(
@@ -80,16 +82,20 @@ class BitsProbe(Probe):
       bits_out: str = "",
       bits_device: str = "",
       duration: dt.timedelta = DEFAULT_DURATION,
-      port: int | None = None,
+      port: int = DEFAULT_PORT,
   ) -> None:
     super().__init__()
     if duration < dt.timedelta(seconds=1):
       raise ValueError(f"Duration must be at least 1s, but got: {duration}")
     self._bits_path: pth.LocalPath = bits_path
+    assert self._bits_path.is_file()
+    self._bits_service_path: pth.LocalPath = (
+        bits_path.parent / "bits_service.sh")
     self._bits_out: str = bits_out
     self._bits_device: str = bits_device
     self._duration: dt.timedelta = duration
-    self._port: int | None = port
+    self._port: int = port
+    self._service_proc: subprocess.Popen | None = None
 
   @property
   def bits_path(self) -> pth.LocalPath:
@@ -108,8 +114,91 @@ class BitsProbe(Probe):
     return self._duration
 
   @property
-  def port(self) -> int | None:
+  def port(self) -> int:
     return self._port
+
+  def _get_connected_devices(self) -> list[str] | None:
+    res = self.host_platform.sh(
+        self.bits_path,
+        "--list_devices",
+        "--service_port",
+        str(self._port),
+        check=False,
+        capture_output=True,
+    )
+    if res.returncode != 0:
+      return None
+    stdout = res.stdout
+    if isinstance(stdout, bytes):
+      stdout = stdout.decode("utf-8", "replace")
+    return [d.strip() for d in stdout.strip().splitlines() if d.strip()]
+
+  def _start_service(
+      self, timeout: dt.timedelta = dt.timedelta(seconds=15)) -> None:
+    assert self._service_proc is None
+    if not self.host_platform.is_file(self._bits_service_path):
+      raise ProbeValidationError(self, f"No script: {self._bits_service_path}")
+    logging.info("Starting BITS service in background...")
+    self._service_proc = self.host_platform.popen(
+        str(self._bits_service_path),
+        "--port",
+        str(self._port),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    assert self._service_proc.stdout
+
+    # Expected startup stdout sequence from bits_service.sh:
+    # 1. "Bits server started, logging to ..." (server process started)
+    # 2. "######## INITIALIZING COLLECTORS ########" (hardware calibration)
+    # 3. "Successfully retrieved calibration data..." (hardware ready)
+    # 4. "[TS] (...) Received SW timestamp #1: ..." (sync acquired, streaming)
+    ready_marker = "Received SW timestamp"
+
+    deadline = dt.datetime.now() + timeout
+    while dt.datetime.now() < deadline:
+      if not (raw := self._service_proc.stdout.readline()):
+        self._stop_service()
+        raise ProbeValidationError(self, "BITS service stopped unexpectedly.")
+      line = raw.decode("utf-8", "replace") if isinstance(raw, bytes) else raw
+      if ready_marker in line:
+        logging.info("BITS service is ready.")
+        return
+
+    self._stop_service()
+    raise ProbeValidationError(self, "Timed out waiting for BITS service.")
+
+  def _stop_service(self) -> None:
+    if not self._service_proc:
+      return
+    logging.debug("Stopping BITS service (PID: %s)", self._service_proc.pid)
+    self.host_platform.terminate_gracefully(self._service_proc)
+    self._service_proc = None
+
+  @override
+  def setup(self, runner: Runner) -> None:
+    super().setup(runner)
+
+    # Note: If BITS is already running on a different port than self.port,
+    # starting a new instance here will fail due to USB conflicts over the
+    # Kibble devices. We consciously skip guarding against this.
+
+    if (devices := self._get_connected_devices()) is None:
+      self._start_service()
+      devices = self._get_connected_devices() or []
+    else:
+      logging.info("BITS service is already running on port %s.", self.port)
+
+    if not devices:
+      self._stop_service()
+      raise ProbeValidationError(self, f"No devices on port {self.port}.")
+    if self.bits_device and self.bits_device not in devices:
+      self._stop_service()
+      raise ProbeValidationError(self, f"Unknown device: {self.bits_device!r}")
+
+  # TODO: Consider adding Probe.teardown() following wider discussion.
+  def teardown(self) -> None:
+    self._stop_service()
 
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
@@ -153,11 +242,9 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
         json.dumps({"bits_out_id": self.bits_out_id}, indent=2),
     )
 
-    device_args: tuple[str, ...] = ()
+    device_args: tuple[str, ...] = ("--service_port", str(self.probe.port))
     if self.probe.bits_device:
       device_args += ("--device", self.probe.bits_device)
-    if self.probe.port is not None:
-      device_args += ("--service_port", str(self.probe.port))
 
     with self._log_files("w") as (stdout, stderr):
       self._process = self.host_platform.popen(
@@ -173,9 +260,8 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
 
   def _stop_collection(self) -> None:
     logging.debug("BITS: Stopping collection (ID: %r)", self.bits_out_id)
-    device_args: tuple[pth.AnyPathLike, ...] = ()
-    if self.probe.port is not None:
-      device_args += ("--service_port", str(self.probe.port))
+    device_args: tuple[pth.AnyPathLike,
+                       ...] = ("--service_port", str(self.probe.port))
     stop_args = (
         self.probe.bits_path,
         "--stop",
