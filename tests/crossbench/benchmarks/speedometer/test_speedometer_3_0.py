@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import argparse
+
 from typing_extensions import override
 
 from crossbench.benchmarks.speedometer.speedometer_3_0 import \
@@ -40,6 +42,11 @@ class Speedometer30TestCase(Speedometer3BaseTestCase):
   @override
   def name(self):
     return "speedometer_3.0"
+
+  def test_cli_measure_prepare_not_supported(self):
+    parser = self.create_parser()
+    with self.assertRaises((argparse.ArgumentError, SystemExit)):
+      parser.parse_args(["--measure-prepare"])
 
 
 #  Don't expose abstract BaseTestCase to test runner

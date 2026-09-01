@@ -41,6 +41,21 @@ class SpeedometeMainTestCase(Speedometer3BaseTestCase):
   def name(self):
     return "speedometer_main"
 
+  def test_cli_measure_prepare(self):
+    args = self.parse_args()
+    self.assertFalse(args.measure_prepare)
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertNotIn("measurePrepare", story.url_params)
+
+    args = self.parse_args("--measure-prepare")
+    self.assertTrue(args.measure_prepare)
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    for story in benchmark.stories:
+      assert isinstance(story, self.story_cls)
+      self.assertEqual(story.url_params.get("measurePrepare"), "")
+
 
 #  Don't expose abstract BaseTestCase to test runner
 del Speedometer3BaseTestCase
