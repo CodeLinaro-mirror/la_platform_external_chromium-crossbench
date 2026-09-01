@@ -155,7 +155,6 @@ class BlinkAIBenchmark(PressBenchmark):
         "EnableBlinkReceiverAI",
         "LanguageModelAPI",
         "AIPromptAPI",
-        "OnDeviceModelLitertLmBackend",
         "OptimizationGuideOnDeviceModelMultimodal",
         "OnDeviceModelPerformanceParams:"
         "compatible_on_device_performance_classes/*",
