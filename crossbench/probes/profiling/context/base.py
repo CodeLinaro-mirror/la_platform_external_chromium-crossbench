@@ -76,18 +76,8 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
     assert self._story_ready, (
         "Fetching renderer PID/TID before the story is loaded could lead to "
         "the wrong PID/TID being used. This should never happen TM!")
-    renderer_pid: int | None = None
-    renderer_main_tid: int | None = None
-    with self.run.actions("Get Renderer PID/TID", measure=False) as actions:
-      renderer_pid_tid = actions.js(
-          "return ["
-          "chrome?.benchmarking?.getRendererPid?.(),"
-          "chrome?.benchmarking?.getRendererMainTid?.()"
-          "];")
-    if len(renderer_pid_tid) != 2:
-      error_message = f"Invalid result: {renderer_pid_tid}"
-    else:
-      (renderer_pid, renderer_main_tid) = renderer_pid_tid
+    renderer_pid = self.browser.get_renderer_pid()
+    renderer_main_tid = self.browser.get_renderer_main_tid()
     if renderer_pid is None or renderer_main_tid is None:
       error_message = (
           "Unable to get Renderer PID/TID from browser. "

@@ -4,20 +4,19 @@
 
 from __future__ import annotations
 
-import atexit
 import logging
-import subprocess
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, cast
 
 from typing_extensions import override
 
 import crossbench.path as pth
 from crossbench.cli.ui import ui
-from crossbench.helper.wait import WaitRange, wait_with_backoff
 from crossbench.probes.profiling.context.base import PosixProfilingContext
 from crossbench.probes.profiling.enum import TargetMode
+from crossbench.probes.xcode_instruments.recorder import XctraceRecorder
 
 if TYPE_CHECKING:
+  from crossbench.plt.macos import MacOSPlatform
   from crossbench.probes.profiling.system_profiling import ProfilingProbe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
@@ -31,6 +30,8 @@ _XPATH_EXPRESSION: Final[str] = (
     '//trace-toc/run/data/table[@schema="cpu-profile"]')
 KB = 1024
 
+_STOP_TIMEOUT_S: Final[int] = 60
+
 
 class MacOSProfilingContext(PosixProfilingContext):
 
@@ -39,39 +40,20 @@ class MacOSProfilingContext(PosixProfilingContext):
     assert self.target in (
         TargetMode.SYSTEM_WIDE, TargetMode.RENDERER_PROCESS_ONLY), (
             f"Unsupported profiling mode for Mac: {self.target!s}")
+    self._recorder: XctraceRecorder | None = None
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "profile.trace"
 
   def _start_xctrace(self, pid: int | None = None) -> None:
-    assert self.browser_platform.is_file(_MAC_TRACE_TEMPLATE_PATH), (
-        f"Didn't find {_MAC_TRACE_TEMPLATE_PATH}")
-
-    atexit.register(self.stop_process)
-
-    process_filter = ["--all-processes"
-                     ] if pid is None else ["--attach", str(pid)]
-    self._profiling_process = self.browser_platform.popen(
-        "xctrace",
-        "record",
-        "--template",
+    self._recorder = XctraceRecorder(
+        cast("MacOSPlatform", self.browser_platform),
         _MAC_TRACE_TEMPLATE_PATH,
-        *process_filter,
-        "--output",
         self.result_path,
-        stdin=subprocess.PIPE)
-    # xctrace takes some time to start up and create the initial trace directory
-    first_result_file = self.result_path / "Trace1.run"
-    try:
-      for _ in wait_with_backoff(WaitRange(timeout=10)):
-        if self._profiling_process.poll() is not None:
-          raise ValueError("Could not start xctrace")
-        if self.browser_platform.exists(first_result_file):
-          break
-    except TimeoutError:
-      logging.warning("xctrace took too long to start recording. "
-                      "Samples might be missing.")
+        attach_pid=pid,
+        stop_timeout_s=_STOP_TIMEOUT_S)
+    self._recorder.start()
 
   def start(self) -> None:
     pass
@@ -91,10 +73,8 @@ class MacOSProfilingContext(PosixProfilingContext):
       raise ValueError(f"Invalid target: {self.target}")
 
   def stop(self) -> None:
-    # Needs to be SIGINT for xctrace, terminate won't work.
-    assert self._profiling_process, "Missing profiling process"
-    self.browser_platform.send_signal(self._profiling_process,
-                                      self.browser_platform.signals.SIGINT)
+    assert self._recorder, "Missing profiling recorder"
+    self._recorder.request_stop()
 
   def teardown(self) -> ProbeResult:
     self.stop_process()
@@ -120,17 +100,5 @@ class MacOSProfilingContext(PosixProfilingContext):
       return trace_xml_path
 
   def stop_process(self) -> None:
-    if not self._profiling_process:
-      return
-    logging.info("  Waiting for xctrace profiles (slow)...")
-    with ui.spinner():
-      self.browser_platform.terminate_gracefully(
-          self._profiling_process,
-          signal=self.browser_platform.signals.SIGINT,
-          timeout=60)
-    success_file = self.result_path / "open.creq"
-    if not self.browser_platform.exists(success_file):
-      logging.error("xctrace failed to flush cleanly. "
-                    "The trace bundle might be corrupted or empty.")
-    self._profiling_process = None
-    atexit.unregister(self.stop_process)
+    if self._recorder:
+      self._recorder.finalize()

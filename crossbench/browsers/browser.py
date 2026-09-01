@@ -210,7 +210,18 @@ class Browser(abc.ABC):
 
   @property
   def pid(self) -> int | None:
+    """The browser process' PID, or None if not found/supported."""
     return self._pid
+
+  def get_renderer_pid(self) -> int | None:
+    """The current renderer process' PID, or None if not found/supported."""
+    return None
+
+  def get_renderer_main_tid(self) -> int | None:
+    """The TID of the main thread of the current renderer, or None if not found/
+    supported.
+    """
+    return None
 
   @property
   def is_running_process(self) -> bool | None:

@@ -337,6 +337,20 @@ class ChromiumBased(Browser):
     return convert_flags_to_label(*self.flags, *self.js_flags)
 
   @override
+  def get_renderer_pid(self) -> int | None:
+    pid = self.js("return chrome?.benchmarking?.getRendererPid?.();")
+    if pid is None:
+      return None
+    return int(pid)
+
+  @override
+  def get_renderer_main_tid(self) -> int | None:
+    tid = self.js("return chrome?.benchmarking?.getRendererMainTid?.();")
+    if tid is None:
+      return None
+    return int(tid)
+
+  @override
   def quit(self) -> None:
     try:
       super().quit()

@@ -57,6 +57,8 @@ from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
 from crossbench.probes.video_acceleration import VideoAccelerationProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
+from crossbench.probes.xcode_instruments.xcode_instruments import \
+    XcodeInstrumentsProbe
 
 if TYPE_CHECKING:
   from crossbench.probes.internal.base import InternalProbe
@@ -139,6 +141,7 @@ GENERAL_PURPOSE_PROBES: tuple[type[Probe], ...] = (
     VideoProbe,
     VideoAccelerationProbe,
     WebPageReplayProbe,
+    XcodeInstrumentsProbe,
 )
 
 for probe_cls in GENERAL_PURPOSE_PROBES:

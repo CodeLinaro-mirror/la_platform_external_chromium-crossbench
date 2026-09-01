@@ -184,10 +184,7 @@ class EtmProbeContext(ProbeContext[EtmProbe]):
     assert self._story_ready, (
         "Fetching renderer PID/TID before the story is loaded could lead to "
         "the wrong PID/TID being used. This should never happen TM!")
-    renderer_main_tid: int | None = None
-    with self.run.actions("Get Renderer Main TID") as actions:
-      renderer_main_tid = actions.js(
-          "return chrome?.benchmarking?.getRendererMainTid?.();")
+    renderer_main_tid = self.browser.get_renderer_main_tid()
     if not renderer_main_tid:
       raise ValueError("Could not get Renderer Main TID from browser.")
     return renderer_main_tid

@@ -55,6 +55,8 @@ from crossbench.probes.v8.rcs import V8RCSProbe
 from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
+from crossbench.probes.xcode_instruments.xcode_instruments import \
+    XcodeInstrumentsProbe
 from tests import test_helper
 from tests.crossbench.base import CrossbenchConfigTestMixin, \
     CrossbenchFakeFsTestCase
@@ -216,6 +218,8 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
         EtmProbe,
         # Reason: requires bits_path and bits_out parameters
         BitsProbe,
+        # Reason: requires a `template` .tracetemplate to record with.
+        XcodeInstrumentsProbe,
     }
     for probe_cls in GENERAL_PURPOSE_PROBES:
       if probe_cls in requires_configuration:

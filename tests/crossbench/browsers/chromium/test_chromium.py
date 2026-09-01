@@ -10,6 +10,7 @@ import unittest
 from unittest import mock
 
 from crossbench import path as pth
+from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.base import ChromiumBaseMixin
 from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriver, \
@@ -216,6 +217,26 @@ class ChromiumBasedWebDriverTestCase(unittest.TestCase):
     browser.switch_tab(relative_tab_index=-1, timeout=dt.timedelta(seconds=5))
     self.assertEqual(mock_driver.title, "3")
     self.assertEqual(mock_driver.current_url, "https://3.com")
+
+  def test_get_renderer_pid(self):
+    mock_driver = mock.MagicMock(name="Mock Driver")
+    browser = MockChromiumBasedWebDriver("test-driver", mock_driver)
+    with mock.patch.object(browser, "js", return_value=12345):
+      self.assertEqual(browser.get_renderer_pid(), 12345)
+    with mock.patch.object(browser, "js", return_value=None):
+      self.assertIsNone(browser.get_renderer_pid())
+    base_mock = mock.Mock(spec=Browser)
+    self.assertIsNone(Browser.get_renderer_pid(base_mock))
+
+  def test_get_renderer_main_tid(self):
+    mock_driver = mock.MagicMock(name="Mock Driver")
+    browser = MockChromiumBasedWebDriver("test-driver", mock_driver)
+    with mock.patch.object(browser, "js", return_value=6789):
+      self.assertEqual(browser.get_renderer_main_tid(), 6789)
+    with mock.patch.object(browser, "js", return_value=None):
+      self.assertIsNone(browser.get_renderer_main_tid())
+    base_mock = mock.Mock(spec=Browser)
+    self.assertIsNone(Browser.get_renderer_main_tid(base_mock))
 
 
 class ChromeDriverFinderTestCase(BaseCrossbenchTestCase):

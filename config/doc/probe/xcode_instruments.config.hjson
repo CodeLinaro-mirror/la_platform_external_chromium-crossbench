@@ -1,0 +1,10 @@
+// This is an example config to be used with the --probe-config switch. Set
+// `template` to the path of your own Instruments .tracetemplate.
+{
+  "probes": {
+    "xcode_instruments": {
+      "template": "./xcode_instruments.example.tracetemplate"
+      "target": "system_wide"
+    }
+  }
+}
