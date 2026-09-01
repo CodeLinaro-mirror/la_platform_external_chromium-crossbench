@@ -43,7 +43,7 @@ class Speedometer3Probe(SpeedometerProbe, metaclass=abc.ABCMeta):
     return cast(Speedometer3Benchmark, self.benchmark)
 
   @override
-  def _is_valid_metric_key(self, metric_key: str) -> bool:
+  def is_valid_metric_key(self, metric_key: str) -> bool:
     parts = metric_key.split("/")
     if len(parts) != 1:
       return False

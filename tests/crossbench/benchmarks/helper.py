@@ -9,15 +9,15 @@ from typing import Sequence
 
 from typing_extensions import override
 
-from crossbench.benchmarks import base as benchmark
+from crossbench.benchmarks import base as benchmark_module
+from crossbench.cli.parser import CBArgumentParser
 from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
-
   @property
   @abc.abstractmethod
-  def benchmark_cls(self) -> type[benchmark.Benchmark]:
+  def benchmark_cls(self) -> type[benchmark_module.Benchmark]:
     pass
 
   @property
@@ -28,8 +28,22 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
   def setUp(self):
     super().setUp()
     self.assertTrue(
-        issubclass(self.benchmark_cls, benchmark.Benchmark),
-        f"Expected Benchmark subclass, but got: BENCHMARK={self.benchmark_cls}")
+        issubclass(self.benchmark_cls, benchmark_module.Benchmark),
+        f"Expected Benchmark subclass, but got: BENCHMARK={self.benchmark_cls}",
+    )
+
+  def create_parser(self) -> CBArgumentParser:
+    parser = CBArgumentParser()
+    parser.set_defaults(config=None)
+    self.benchmark_cls.add_cli_arguments(parser)
+    return parser
+
+  def parse_args(self, *args: str | Sequence[str]) -> argparse.Namespace:
+    flattened_args: list[str] = [
+        item for arg in args
+        for item in ([arg] if isinstance(arg, str) else arg)
+    ]
+    return self.create_parser().parse_args(flattened_args)
 
   def test_describe(self):
     self.assertIsInstance(self.benchmark_cls.describe(), dict)
@@ -39,15 +53,14 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 
 
 class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):
-
   @property
-  def story_filter_cls(self) -> type[benchmark.StoryFilter]:
+  def story_filter_cls(self) -> type[benchmark_module.StoryFilter]:
     return self.benchmark_cls.STORY_FILTER_CLS
 
   def story_filter(self,
                    patterns: Sequence[str],
                    args: argparse.Namespace | None = None,
-                   **kwargs) -> benchmark.StoryFilter:
+                   **kwargs) -> benchmark_module.StoryFilter:
     if args is None:
       args = self.namespace()
     return self.story_filter_cls(
@@ -91,7 +104,6 @@ class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):
 
 
 class PressBaseBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
-
   def test_invalid_story_names(self):
     # Only StoryFilter can filter stories by regexp
     with self.assertRaises(ValueError):
@@ -174,3 +186,135 @@ class PressBaseBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
     other_story_name = self.story_cls.all_story_names()[1]
     with self.assertRaises(ValueError):
       self.story_filter([other_story_name, f"-{story_name}"])
+
+  def test_cli_flag_live(self):
+    args = self.parse_args("--live")
+    self.assertIsNone(args.custom_benchmark_url)
+    benchmark_instance = self.benchmark_cls.from_cli_args(args)
+    self.assertIsNone(benchmark_instance.custom_url)
+    for story in benchmark_instance.stories:
+      self.assertEqual(story.url, self.story_cls.URL)
+
+  def test_cli_flag_official(self):
+    args = self.parse_args("--official")
+    self.assertEqual(args.custom_benchmark_url, self.story_cls.URL_OFFICIAL)
+    benchmark_instance = self.benchmark_cls.from_cli_args(args)
+    self.assertEqual(benchmark_instance.custom_url, self.story_cls.URL_OFFICIAL)
+    for story in benchmark_instance.stories:
+      self.assertEqual(story.url, self.story_cls.URL_OFFICIAL)
+
+  def test_cli_flag_local(self):
+    args = self.parse_args("--local")
+    self.assertEqual(args.custom_benchmark_url, self.story_cls.URL_LOCAL)
+    benchmark_instance = self.benchmark_cls.from_cli_args(args)
+    self.assertEqual(benchmark_instance.custom_url, self.story_cls.URL_LOCAL)
+    for story in benchmark_instance.stories:
+      self.assertEqual(story.url, self.story_cls.URL_LOCAL)
+
+  def test_cli_flag_custom_benchmark_url(self):
+    custom_url = "http://test.example.com/custom_benchmark"
+    args = self.parse_args(f"--custom-benchmark-url={custom_url}")
+    self.assertEqual(args.custom_benchmark_url, custom_url)
+    benchmark_instance = self.benchmark_cls.from_cli_args(args)
+    self.assertEqual(benchmark_instance.custom_url, custom_url)
+    for story in benchmark_instance.stories:
+      self.assertEqual(story.url, custom_url)
+
+  def test_cli_flag_aliases(self):
+    live_expected = self.parse_args("--live")
+    for alias in ("--live-url", "--browser-ben", "--browserben"):
+      self.assertEqual(self.parse_args(alias), live_expected)
+
+    official_expected = self.parse_args("--official")
+    for alias in ("--official-url",):
+      self.assertEqual(self.parse_args(alias), official_expected)
+
+    local_expected = self.parse_args("--local")
+    for alias in ("--local-url", "--url"):
+      self.assertEqual(self.parse_args(alias), local_expected)
+
+    custom_url = "http://test.example.com/custom_benchmark"
+    custom_expected = self.parse_args(f"--custom-benchmark-url={custom_url}")
+    for alias in ("--url", "--local", "--local-url"):
+      self.assertEqual(
+          self.parse_args(f"{alias}={custom_url}"), custom_expected)
+
+    story_name = self.story_cls.default_story_names()[0]
+    stories_expected = self.parse_args(f"--stories={story_name}")
+    self.assertEqual(self.parse_args(f"--story={story_name}"), stories_expected)
+
+    tags_expected = self.parse_args("--story-tags=all")
+    self.assertEqual(self.parse_args("--story-tag=all"), tags_expected)
+
+  def test_cli_flag_url_mutually_exclusive(self):
+    parser = self.create_parser()
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--live", "--official"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--official", "--local"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--live", "--custom-benchmark-url=http://example.com"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(
+          ["--official", "--custom-benchmark-url=http://example.com"])
+
+  def test_cli_flag_stories_all(self):
+    args = self.parse_args("--stories=all")
+    self.assertEqual(args.stories, "all")
+    self.assertIsNone(args.story_tags)
+    benchmark_instance = self.benchmark_cls.from_cli_args(args)
+    self.assertTrue(benchmark_instance.stories)
+
+  def test_cli_flag_stories_default(self):
+    args = self.parse_args("--stories=default")
+    self.assertEqual(args.stories, "default")
+    self.assertIsNone(args.story_tags)
+    benchmark_instance = self.benchmark_cls.from_cli_args(args)
+    self.assertTrue(benchmark_instance.stories)
+
+  def test_cli_flag_story_single(self):
+    story_name = self.story_cls.default_story_names()[0]
+    args = self.parse_args(f"--stories={story_name}")
+    self.assertEqual(args.stories, story_name)
+    benchmark_instance = self.benchmark_cls.from_cli_args(args)
+    self.assertEqual(len(benchmark_instance.stories), 1)
+
+  def test_cli_flag_all(self):
+    args = self.parse_args("--all")
+    self.assertEqual(args.stories, "all")
+    self.assertIsNone(args.story_tags)
+    benchmark_instance = self.benchmark_cls.from_cli_args(args)
+    self.assertTrue(benchmark_instance.stories)
+
+  def test_cli_flag_story_tags(self):
+    args = self.parse_args("--story-tags=all")
+    self.assertEqual(args.story_tags, "all")
+
+  def test_cli_flag_stories_mutually_exclusive(self):
+    parser = self.create_parser()
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--all", "--stories=default"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--all", "--story-tags=all"])
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--stories=default", "--story-tags=all"])
+
+  def test_cli_flag_combined_and_separate(self):
+    args = self.parse_args()
+    self.assertFalse(args.separate)
+
+    args = self.parse_args("--combined")
+    self.assertFalse(args.separate)
+    benchmark_instance = self.benchmark_cls.from_cli_args(args)
+    self.assertEqual(len(benchmark_instance.stories), 1)
+
+    args = self.parse_args("--separate")
+    self.assertTrue(args.separate)
+    benchmark_instance = self.benchmark_cls.from_cli_args(args)
+    self.assertEqual(
+        len(benchmark_instance.stories),
+        len(self.story_cls.default_story_names()))
+
+    parser = self.create_parser()
+    with self.assertRaises(argparse.ArgumentError):
+      parser.parse_args(["--combined", "--separate"])

@@ -761,7 +761,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       runner.run(is_dry_run=args.dry_run)
       logging.info("")
       self._log_results(args, runner, is_success=runner.is_success)
-      if args.upload_results:
+      if args.upload_results and not args.dry_run:
         results_uploader.upload(
             source=runner.out_dir, target=args.upload_results)
     except:  # noqa: BLE001

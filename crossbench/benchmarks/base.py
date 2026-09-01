@@ -159,6 +159,10 @@ class Benchmark(abc.ABC):
     self.stories: list[Story] = self._validate_stories(stories)
     self._action_runner_config = action_runner_config or ActionRunnerConfig()
 
+  @property
+  def action_runner_config(self) -> ActionRunnerConfig:
+    return self._action_runner_config
+
   def _validate_stories(self, stories: Sequence[Story]) -> list[Story]:
     assert stories, "No stories provided"
     for story in stories:

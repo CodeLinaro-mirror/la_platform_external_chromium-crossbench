@@ -72,7 +72,7 @@ class SpeedometerProbe(
   def _compute_total_score(self, merged: MetricsMerger) -> Metric:
     line_item_scores: list[list[float]] = []
     for key, metric in merged.data.items():
-      if self._is_valid_metric_key(key):
+      if self.is_valid_metric_key(key):
         line_item_scores.append(metric.values)
     total_score = Metric()
     for iteration_line_items_score_values in zip(
@@ -81,7 +81,7 @@ class SpeedometerProbe(
       total_score.append(iteration_score)
     return total_score
 
-  def _is_valid_metric_key(self, metric_key: str) -> bool:
+  def is_valid_metric_key(self, metric_key: str) -> bool:
     parts = metric_key.split("/")
     if len(parts) == 2:
       return True
@@ -126,7 +126,7 @@ class SpeedometerProbe(
   def _extract_result_metrics_table(self, metrics: dict[str, Any],
                                     table: dict[str, list[str]]) -> None:
     for metric_key, metric in metrics.items():
-      if not self._is_valid_metric_key(metric_key):
+      if not self.is_valid_metric_key(metric_key):
         continue
       table[metric_key].append(
           Metric.format(metric["average"], metric["stddev"]))
