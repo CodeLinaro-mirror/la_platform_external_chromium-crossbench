@@ -171,7 +171,7 @@ class BitsProbe(Probe):
   def _stop_service(self) -> None:
     if not self._service_proc:
       return
-    logging.debug("Stopping BITS service (PID: %s)", self._service_proc.pid)
+    logging.info("Stopping BITS service (PID: %s)", self._service_proc.pid)
     self.host_platform.terminate_gracefully(self._service_proc)
     self._service_proc = None
 
@@ -233,7 +233,7 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
       yield stdout, stderr
 
   def _start_collection(self) -> None:
-    logging.debug("BITS: Starting collection (ID: %r)", self.bits_out_id)
+    logging.info("Starting BITS collection (ID: %s)", self.bits_out_id)
     self.host_platform.mkdir(self.local_result_path)
 
     json_path = self.local_result_path / "bits.json"
@@ -259,7 +259,7 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
       )
 
   def _stop_collection(self) -> None:
-    logging.debug("BITS: Stopping collection (ID: %r)", self.bits_out_id)
+    logging.info("Stopping BITS collection (ID: %s)", self.bits_out_id)
     device_args: tuple[pth.AnyPathLike,
                        ...] = ("--service_port", str(self.probe.port))
     stop_args = (
