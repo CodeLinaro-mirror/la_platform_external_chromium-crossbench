@@ -14,6 +14,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Iterable, Sequence, \
     TypeVar
 
+from tabulate import tabulate
 from typing_extensions import override
 
 from crossbench import path as pth
@@ -79,15 +80,25 @@ class WebXPRT5Probe(
     logging.critical("WebXPRT 5 results:")
     if not single_result:
       logging.critical("  %s", result_dict[self].csv)
-    logging.info("- " * 40)
+      logging.info("- " * 40)
 
     with results_json.open(encoding="utf-8") as f:
       data: dict[str, Any] = json.load(f)
       if single_result:
-        if "Score" in data:
-          logging.critical("Score %s", data.pop("Score"))
-        for key, score in data.items():
-          logging.critical("%s %s", key, score)
+        score_keys = ("Score", "Geomean", "Variance")
+        score_table: list[list[Any]] = [
+            [key, data.pop(key)] for key in score_keys if key in data
+        ]
+        if score_table:
+          logging.critical(
+              tabulate(score_table, tablefmt="plain", floatfmt=".3f"))
+          logging.info(" ")
+        logging.critical(
+            tabulate(
+                data.items(),
+                headers=("Workload", "Duration (ms)"),
+                floatfmt=".3f"))
+        logging.info("- " * 40)
       else:
         self._log_result_metrics(data)
 
