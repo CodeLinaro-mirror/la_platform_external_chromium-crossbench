@@ -330,13 +330,23 @@ class ChromiumVersionTestCase(_BrowserVersionTestCase):
     with self.assertRaises(VersionParseError):
       self.parse("Chromium")
     with self.assertRaises(VersionParseError):
-      self.parse("Chrome 115.1.5790.114")
+      self.parse("Firefox 115.1.5790.114")
     with self.assertRaises(VersionParseError):
-      self.parse("Chrome 115")
+      self.parse("Safari 115")
     with self.assertRaises(VersionParseError):
-      self.parse("Chrome M115")
+      self.parse("Edge M115")
     with self.assertRaises(VersionParseError):
-      self.parse("Chr M115")
+      self.parse("Opera M115")
+
+  def test_parse_chrome(self):
+    version = self.parse("Google Chrome 115.1.5790.114")
+    self.assertTrue(version.is_stable)
+    self.assertEqual(version.major, 115)
+    self.assertEqual(version.minor, 1)
+    self.assertEqual(version.build, 5790)
+    self.assertEqual(version.patch, 114)
+    version_short = self.parse("Chrome 115.1.5790.114")
+    self.assertEqual(version, version_short)
 
   def test_init_invalid(self):
     with self.assertRaises(VersionParseError):

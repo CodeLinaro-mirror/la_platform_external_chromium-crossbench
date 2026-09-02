@@ -109,7 +109,8 @@ class ChromiumVersion(BrowserVersion):
     prefix = prefix.lower()
     if prefix.strip() == "m":
       return True
-    return "chromium " in prefix or "chromium-" in prefix
+    return ("chromium " in prefix or "chromium-" in prefix or
+            "chrome " in prefix)
 
   @classmethod
   def _parse_exact_channel(cls, channel_str: str,
