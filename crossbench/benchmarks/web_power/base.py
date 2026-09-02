@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 # - The C portion of a.b.c refers to minor, score-unaffecting changes; e.g.
 #   "quality of life" improvements, changes to the cool-off period determined
 #   not to affect thermals, etc.
-VERSION_STRING: Final[str] = "1.1.7"
+VERSION_STRING: Final[str] = "1.1.8"
 
 _T = TypeVar("_T")
 StoryT = TypeVar("StoryT", bound=Story)
