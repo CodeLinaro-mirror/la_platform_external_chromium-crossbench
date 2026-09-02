@@ -17,6 +17,7 @@ from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.base import ActionRunner
+from crossbench.action_runner.config import ActionRunnerType
 from crossbench.benchmarks.loading.config.blocks import ActionBlock, \
     ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.google import GOOGLE_LOGIN_URL
@@ -34,12 +35,140 @@ from crossbench.cli.config.secrets import Secrets
 from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
-from tests.crossbench.base import BaseCliTestCase
+from tests.crossbench.base import BaseCliTestCase, BaseCrossbenchTestCase
 from tests.crossbench.benchmarks.helper import SubStoryTestCase
 from tests.crossbench.mock_browser import JsInvocation
 
 
-class TestPageLoadBenchmark(SubStoryTestCase):
+class LoadingBenchmarkCliTestCaseMixin:
+
+  def test_parser_defaults(self):
+    args = self.parse_args()
+    self.assertEqual(args.tabs, TabController.default())
+    self.assertEqual(args.playback, PlaybackController.default())
+    self.assertEqual(args.about_blank_duration, dt.timedelta())
+    self.assertTrue(args.run_login)
+    self.assertTrue(args.run_setup)
+    self.assertEqual(args.stories, "default")
+    self.assertIsNone(args.story_tags)
+    self.assertIsNone(args.pages_config)
+    self.assertIsNone(args.action_runner_config)
+
+  def test_single_tab_flag(self):
+    args = self.parse_args("--single-tab")
+    self.assertEqual(args.tabs, TabController.single())
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertGreaterEqual(len(benchmark.stories), 1)
+    for story in benchmark.stories:
+      self.assertEqual(story.tabs, TabController.single())
+
+  def test_multiple_tab_flag(self):
+    args = self.parse_args("--multiple-tab")
+    self.assertEqual(args.tabs, TabController.multiple())
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertGreaterEqual(len(benchmark.stories), 1)
+    for story in benchmark.stories:
+      self.assertEqual(story.tabs, TabController.multiple())
+
+  def test_multiple_tab_count_flag(self):
+    args = self.parse_args("--multiple-tab=5")
+    self.assertEqual(args.tabs, TabController.repeat(5))
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertGreaterEqual(len(benchmark.stories), 1)
+    for story in benchmark.stories:
+      self.assertEqual(story.tabs, TabController.repeat(5))
+
+  def test_infinite_tab_flag(self):
+    args = self.parse_args("--infinite-tab")
+    self.assertEqual(args.tabs, TabController.forever())
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertGreaterEqual(len(benchmark.stories), 1)
+    for story in benchmark.stories:
+      self.assertEqual(story.tabs, TabController.forever())
+
+  def test_playback_flag(self):
+    args = self.parse_args("--playback=5x")
+    self.assertEqual(args.playback, PlaybackController.repeat(5))
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertGreaterEqual(len(benchmark.stories), 1)
+    for story in benchmark.stories:
+      self.assertEqual(story.playback, PlaybackController.repeat(5))
+
+  def test_forever_flag(self):
+    args = self.parse_args("--forever")
+    self.assertEqual(args.playback, PlaybackController.forever())
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertGreaterEqual(len(benchmark.stories), 1)
+    for story in benchmark.stories:
+      self.assertEqual(story.playback, PlaybackController.forever())
+
+  def test_about_blank_duration_flag(self):
+    args = self.parse_args("--about-blank-duration=3.5s", "--separate")
+    self.assertEqual(args.about_blank_duration, dt.timedelta(seconds=3.5))
+
+  def test_skip_login_and_setup(self):
+    args = self.parse_args("--skip-login", "--skip-setup")
+    self.assertFalse(args.run_login)
+    self.assertFalse(args.run_setup)
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertGreaterEqual(len(benchmark.stories), 1)
+    for story in benchmark.stories:
+      if isinstance(story, InteractivePage) and not isinstance(story, LivePage):
+        self.assertFalse(story.run_login)
+        self.assertFalse(story.run_setup)
+
+  def test_stories_all(self):
+    args = self.parse_args("--all")
+    self.assertEqual(args.stories, "all")
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertGreaterEqual(len(benchmark.stories), 1)
+
+  def test_config_not_supported(self):
+    config_file = pathlib.Path("pages.json")
+    self.fs.create_file(
+        config_file,
+        contents=json.dumps(
+            {"pages": {
+                "p": [{
+                    "action": "get",
+                    "url": "https://example.com"
+                }]
+            }}))
+    args = self.parse_args(f"--page-config={config_file}")
+    args.config = pathlib.Path("config.hjson")
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "config"):
+      self.benchmark_cls.from_cli_args(args)
+
+  def test_cli_flag_aliases(self):
+    args_action_runner = self.parse_args("--action-runner=chromeos")
+    args_action_runner_alias = self.parse_args(
+        "--action-runner-config=chromeos")
+    self.assertEqual(args_action_runner, args_action_runner_alias)
+
+  def test_kwargs_from_cli(self):
+    args = self.parse_args("--action-runner=android")
+    kwargs = self.benchmark_cls.kwargs_from_cli(args)
+    self.assertIn("stories", kwargs)
+    self.assertIn("action_runner_config", kwargs)
+    self.assertEqual(kwargs["action_runner_config"].type,
+                     ActionRunnerType.ANDROID)
+
+
+class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
+
+  def test_separate_and_combined_flags(self):
+    args_sep = self.parse_args("--separate")
+    self.assertTrue(args_sep.separate)
+    bm_sep = self.benchmark_cls.from_cli_args(args_sep)
+    self.assertGreater(len(bm_sep.stories), 1)
+    for story in bm_sep.stories:
+      self.assertIsInstance(story, LivePage)
+
+    args_comb = self.parse_args("--combined")
+    self.assertFalse(args_comb.separate)
+    bm_comb = self.benchmark_cls.from_cli_args(args_comb)
+    self.assertEqual(len(bm_comb.stories), 1)
+    self.assertIsInstance(bm_comb.stories[0], CombinedPage)
 
   @property
   @override
@@ -376,6 +505,180 @@ class TestPageLoadBenchmark(SubStoryTestCase):
     self.assertEqual(browser_1_urls, story_urls)
     browser_2_urls = self.filter_splashscreen_urls(self.browsers[1].url_list)
     self.assertEqual(browser_2_urls, story_urls)
+
+
+  def test_tab_flags_mutually_exclusive(self):
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args("--single-tab", "--multiple-tab")
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args("--single-tab", "--infinite-tab")
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args("--multiple-tab", "--infinite-tab")
+
+  def test_playback_flag_with_interval(self):
+    args = self.parse_args("--playback=2x every 3s")
+    self.assertEqual(args.playback,
+                     PlaybackController.periodic(2, dt.timedelta(seconds=3)))
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    (combined_story,) = benchmark.stories
+    self.assertEqual(combined_story.playback,
+                     PlaybackController.periodic(2, dt.timedelta(seconds=3)))
+
+  def test_playback_flags_mutually_exclusive(self):
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args("--playback=5x", "--forever")
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args("--cycle=5x", "--forever")
+
+  def test_about_blank_duration_invalid(self):
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args("--about-blank-duration=-1s")
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args("--about-blank-duration=invalid_val")
+
+  def test_skip_login_flag(self):
+    config_file = pathlib.Path("page_config.json")
+    config = {
+        "pages": {
+            "test_page": {
+                "login": "google",
+                "actions": [{
+                    "action": "get",
+                    "url": "https://example.com"
+                }]
+            }
+        }
+    }
+    self.fs.create_file(config_file, contents=json.dumps(config))
+    args = self.parse_args(f"--page-config={config_file}", "--skip-login",
+                           "--separate")
+    self.assertFalse(args.run_login)
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    (story,) = benchmark.stories
+    self.assertIsInstance(story, InteractivePage)
+    self.assertFalse(story.run_login)
+    self.assertTrue(story.run_setup)
+
+  def test_skip_setup_flag(self):
+    config_file = pathlib.Path("page_config.json")
+    config = {
+        "pages": {
+            "test_page": {
+                "setup": [{
+                    "action": "js",
+                    "script": "console.log(1);"
+                }],
+                "actions": [{
+                    "action": "get",
+                    "url": "https://example.com"
+                }]
+            }
+        }
+    }
+    self.fs.create_file(config_file, contents=json.dumps(config))
+    args = self.parse_args(f"--page-config={config_file}", "--skip-setup",
+                           "--separate")
+    self.assertFalse(args.run_setup)
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    (story,) = benchmark.stories
+    self.assertIsInstance(story, InteractivePage)
+    self.assertFalse(story.run_setup)
+    self.assertTrue(story.run_login)
+
+  def test_stories_default_flag(self):
+    args = self.parse_args("--stories=default", "--separate")
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    story_names = {story.name for story in benchmark.stories}
+    expected_names = {story.name for story in PAGE_LIST_SMALL}
+    self.assertEqual(story_names, expected_names)
+
+  def test_stories_all_flag(self):
+    args = self.parse_args("--all", "--separate")
+    self.assertEqual(args.stories, "all")
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    story_names = {story.name for story in benchmark.stories}
+    expected_names = {story.name for story in PAGE_LIST}
+    self.assertEqual(story_names, expected_names)
+
+  def test_stories_named_urls(self):
+    args = self.parse_args(
+        "--stories=https://example.com/one,https://example.com/two",
+        "--separate")
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertEqual(len(benchmark.stories), 2)
+    self.assertEqual(benchmark.stories[0].first_url, "https://example.com/one")
+    self.assertEqual(benchmark.stories[1].first_url, "https://example.com/two")
+
+  def test_stories_custom_duration(self):
+    args = self.parse_args("--stories=https://example.com/one,12s",
+                           "--separate")
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertEqual(len(benchmark.stories), 1)
+    self.assertEqual(benchmark.stories[0].first_url, "https://example.com/one")
+    self.assertEqual(benchmark.stories[0].duration, dt.timedelta(seconds=12))
+
+  def test_story_tags_flag(self):
+    args = self.parse_args("--story-tags=tag1,tag2")
+    self.assertEqual(args.story_tags, "tag1,tag2")
+    with self.assertRaises(ValueError):
+      self.benchmark_cls.from_cli_args(args)
+
+  def test_story_filtering_mutually_exclusive(self):
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args("--stories=default", "--story-tags=all")
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args("--all", "--stories=default")
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args("--all", "--story-tags=all")
+
+  def test_page_config_flag(self):
+    config_file = pathlib.Path("pages.json")
+    config = {
+        "pages": {
+            "page1": [{
+                "action": "get",
+                "url": "https://example.com/1"
+            }],
+            "page2": [{
+                "action": "get",
+                "url": "https://example.com/2"
+            }],
+        }
+    }
+    self.fs.create_file(config_file, contents=json.dumps(config))
+    args = self.parse_args(f"--page-config={config_file}", "--separate")
+    self.assertIsNotNone(args.pages_config)
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertEqual(len(benchmark.stories), 2)
+    self.assertEqual(benchmark.stories[0].name, "page1")
+    self.assertEqual(benchmark.stories[1].name, "page2")
+
+  def test_page_config_mutually_exclusive(self):
+    config_file = pathlib.Path("pages.json")
+    self.fs.create_file(config_file, contents='{"pages": {}}')
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args(f"--page-config={config_file}",
+                      "--urls=https://example.com")
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args(f"--page-config={config_file}",
+                      f"--url-file={config_file}")
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args(f"--page-config={config_file}",
+                      f"--devtools-recorder={config_file}")
+
+  def test_cli_flag_aliases(self):
+    args_playback = self.parse_args("--playback=10x")
+    args_cycle = self.parse_args("--cycle=10x")
+    self.assertEqual(args_playback, args_cycle)
+
+    args_about_blank = self.parse_args("--about-blank-duration=500ms")
+    args_about_blank_alias = self.parse_args("--about-blank=500ms")
+    self.assertEqual(args_about_blank, args_about_blank_alias)
+
+    args_action_runner = self.parse_args("--action-runner=chromeos")
+    args_action_runner_alias = self.parse_args(
+        "--action-runner-config=chromeos")
+    self.assertEqual(args_action_runner, args_action_runner_alias)
 
 
 class LoadingBenchmarkCliTestCase(BaseCliTestCase):
@@ -988,7 +1291,7 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
 
 
 # Don't expose abstract base test cases.
-del SubStoryTestCase, BaseCliTestCase
+del SubStoryTestCase, BaseCliTestCase, BaseCrossbenchTestCase
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

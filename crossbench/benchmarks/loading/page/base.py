@@ -86,3 +86,7 @@ class Page(Story, metaclass=abc.ABCMeta):
   @property
   def tabs(self) -> TabController:
     return self._tabs
+
+  @property
+  def playback(self) -> PlaybackController:
+    return self._playback

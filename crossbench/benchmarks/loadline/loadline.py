@@ -199,7 +199,7 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
   @override
   def stories_from_cli_args(cls, args: argparse.Namespace) -> tuple[Page, ...]:
     config = cls.get_pages_config(args)
-    assert cls._page_config, "Missing page config"
+    assert config, "Missing page config"
 
     if args.stories:
       all_page_labels = [str(page.label) for page in config.pages]
@@ -209,8 +209,7 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
           ObjectParser.str_list(args.stories, "stories"))
       filtered_pages = tuple(
           page for page in config.pages if page.label in filtered_page_labels)
-      config = PagesConfig(
-          pages=filtered_pages, secrets=cls._page_config.secrets)
+      config = PagesConfig(pages=filtered_pages, secrets=config.secrets)
 
     return cls.STORY_FILTER_CLS.from_config(
         cls.DEFAULT_STORY_CLS,  # type: ignore[type-abstract]

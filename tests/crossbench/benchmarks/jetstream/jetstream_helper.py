@@ -14,7 +14,6 @@ from unittest import mock
 
 from typing_extensions import override
 
-from crossbench.cli.parser import CBArgumentParser
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
@@ -324,9 +323,7 @@ class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
     self.assertDictEqual(story.url_params, {"tags": "all"})
 
   def test_story_filtering_cli_all(self):
-    parser = CBArgumentParser()
-    self.benchmark_cls.add_cli_arguments(parser)
-    args = parser.parse_args(["--all"])
+    args = self.parse_args("--all")
     self.assertEqual(args.stories, "all")
     self.assertIsNone(args.story_tags)
     benchmark = self.benchmark_cls.from_cli_args(args)
@@ -334,6 +331,8 @@ class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
     assert isinstance(story, self.story_cls)
     self.assertEqual(story.name, "all")
     self.assertDictEqual(story.url_params, {"tags": "all"})
+
+    parser = self.create_parser()
     with self.assertRaises(argparse.ArgumentError):
       parser.parse_args(["--all", "--stories=default"])
     with self.assertRaises(argparse.ArgumentError):

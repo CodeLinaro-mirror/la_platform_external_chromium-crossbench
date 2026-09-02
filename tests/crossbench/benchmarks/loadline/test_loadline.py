@@ -5,75 +5,54 @@
 from __future__ import annotations
 
 import abc
-import argparse
-import datetime as dt
-from typing import Sequence
+from unittest import mock
 
 import pandas as pd
 from typing_extensions import override
 
 from crossbench.action_runner.base import ActionRunner
-from crossbench.benchmarks.loading.playback_controller import \
-    PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.benchmarks.loadline import LoadLine1PhoneBenchmark, \
-    LoadLine1TabletBenchmark, loadline_1
-from crossbench.benchmarks.loadline.loadline import LoadLinePageFilter
+    LoadLine1PhoneDebugBenchmark, LoadLine1PhoneFastBenchmark, \
+    LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark, \
+    LoadLine1TabletFastBenchmark, loadline_1
+from crossbench.benchmarks.loadline.loadline import LoadLineProbe
+from crossbench.probes.trace_processor.constants import QUERIES_DIR
 from tests import test_helper
-from tests.crossbench.base import BaseCliTestCase, BaseCrossbenchTestCase
+from tests.crossbench.base import BaseCliTestCase, BaseCrossbenchTestCase, \
+    SysExitTestException
 from tests.crossbench.benchmarks.helper import SubStoryTestCase
+from tests.crossbench.benchmarks.loading.test_loading import \
+    LoadingBenchmarkCliTestCaseMixin
+from tests.crossbench.benchmarks.loadline.base import \
+    BaseLoadLineBenchmarkTestCase, BaseLoadLineTestCase
 
 
-# TODO(378584786): use shared helper mixin with TestPageLoadBenchmark
-class BaseLoadLineBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
+class BaseLoadLine1BenchmarkTestCase(
+    LoadingBenchmarkCliTestCaseMixin,
+    BaseLoadLineBenchmarkTestCase,
+    metaclass=abc.ABCMeta):
 
+  @property
   @override
-  def setUp(self):
-    super().setUp()
-    self.setup_loadline_configs()
+  def expected_tabs(self):
+    return TabController.default()
 
+  @property
   @override
-  def story_filter(
-      self,
-      patterns: Sequence[str],
-      separate: bool = True,
-  ) -> LoadLinePageFilter:
-    args = argparse.Namespace(
-        about_blank_duration=dt.timedelta(),
-        playback=PlaybackController.default(),
-        tabs=TabController.default(),
-        action_runner=ActionRunner(self.mock_run()),
-        run_login=True,
-        run_setup=True,
-    )
-    story_filter = super().story_filter(patterns, args=args, separate=separate)
-    assert isinstance(story_filter, LoadLinePageFilter)
-    return story_filter
+  def expected_action_runner(self):
+    return ActionRunner(self.mock_run())
 
-  def test_all_stories(self):
-    # TODO: preload the story names from the config files
-    stories = self.story_filter(["all"]).stories
-    self.assertFalse(stories)
+  @property
+  def tablet_benchmark_cls(self):
+    return LoadLine1TabletBenchmark
 
-  def test_default_stories(self):
-    # TODO: preload the story names from the config files
-    stories = self.story_filter(["default"]).stories
-    self.assertFalse(stories)
-
-  def test_get_pages_config(self):
-    config = self.benchmark_cls.get_pages_config()
-    # Ensure it's cached
-    self.assertIs(config, self.benchmark_cls.get_pages_config())
-
-  def test_get_pages_config_variants(self):
-    configs = [
-        LoadLine1TabletBenchmark.get_pages_config(),
-        LoadLine1PhoneBenchmark.get_pages_config(),
-    ]
-    self.assertNotEqual(configs[0], configs[1])
+  @property
+  def phone_benchmark_cls(self):
+    return LoadLine1PhoneBenchmark
 
 
-class TestLoadLine1TabletBenchmark(BaseLoadLineBenchmarkTestCase):
+class TestLoadLine1TabletBenchmark(BaseLoadLine1BenchmarkTestCase):
 
   @property
   @override
@@ -81,7 +60,7 @@ class TestLoadLine1TabletBenchmark(BaseLoadLineBenchmarkTestCase):
     return LoadLine1TabletBenchmark
 
 
-class TestLoadLine1PhoneBenchmark(BaseLoadLineBenchmarkTestCase):
+class TestLoadLine1PhoneBenchmark(BaseLoadLine1BenchmarkTestCase):
 
   @property
   @override
@@ -89,20 +68,86 @@ class TestLoadLine1PhoneBenchmark(BaseLoadLineBenchmarkTestCase):
     return LoadLine1PhoneBenchmark
 
 
+class TestLoadLine1TabletDebugBenchmark(BaseLoadLine1BenchmarkTestCase):
+
+  @property
+  @override
+  def benchmark_cls(self):
+    return LoadLine1TabletDebugBenchmark
+
+
+class TestLoadLine1PhoneDebugBenchmark(BaseLoadLine1BenchmarkTestCase):
+
+  @property
+  @override
+  def benchmark_cls(self):
+    return LoadLine1PhoneDebugBenchmark
+
+
+class TestLoadLine1TabletFastBenchmark(BaseLoadLine1BenchmarkTestCase):
+
+  @property
+  @override
+  def benchmark_cls(self):
+    return LoadLine1TabletFastBenchmark
+
+
+class TestLoadLine1PhoneFastBenchmark(BaseLoadLine1BenchmarkTestCase):
+
+  @property
+  @override
+  def benchmark_cls(self):
+    return LoadLine1PhoneFastBenchmark
+
+
 class LoadLine1BenchmarkCliTestCase(BaseCliTestCase):
 
-  def test_run_default_phone(self):
-    # TODO(378584786): implement
-    pass
+  def setUp(self) -> None:
+    super().setUp()
+    self.setup_config_dir(QUERIES_DIR)
 
-  def test_run_default_tablet(self):
-    # TODO(378584786): implement
-    pass
+  def test_cli_help(self) -> None:
+    with self.assertRaises(SysExitTestException):
+      self.run_cli("loadline-phone", "--help")
+    with self.assertRaises(SysExitTestException):
+      self.run_cli("loadline-tablet", "--help")
+
+  def test_run_default_phone(self) -> None:
+    with self._patch_get_browser(), mock.patch.object(
+        LoadLineProbe, "_is_device_online", return_value=True):
+      for browser in self.browsers:
+        browser.set_default_js_return(True)
+      self.run_cli(
+          "loadline-phone",
+          "run",
+          "--network=live",
+          "--dry-run",
+          "--env-validation=skip",
+          "--throw",
+          "--repetitions=1",
+          "--stories=amazon_product",
+      )
+
+  def test_run_default_tablet(self) -> None:
+    with self._patch_get_browser(), mock.patch.object(
+        LoadLineProbe, "_is_device_online", return_value=True):
+      for browser in self.browsers:
+        browser.set_default_js_return(True)
+      self.run_cli(
+          "loadline-tablet",
+          "run",
+          "--network=live",
+          "--dry-run",
+          "--env-validation=skip",
+          "--throw",
+          "--repetitions=1",
+          "--stories=amazon_product",
+      )
 
 
 class TestLoadLine1Helpers(BaseCrossbenchTestCase):
 
-  def test_process_scores(self):
+  def test_process_scores(self) -> None:
     query_result = pd.DataFrame(
         columns=["score", "cb_browser", "cb_story", "cb_temperature", "cb_run"],
         data=[
@@ -119,7 +164,7 @@ class TestLoadLine1Helpers(BaseCrossbenchTestCase):
     self.assertAlmostEqual(scores["story1"].iloc[0], 5)
     self.assertAlmostEqual(scores["story2"].iloc[0], 20)
 
-  def test_process_breakdown(self):
+  def test_process_breakdown(self) -> None:
     query_result = pd.DataFrame(
         columns=[
             "network",
@@ -160,6 +205,7 @@ del BaseLoadLineBenchmarkTestCase
 del BaseCrossbenchTestCase
 del BaseCliTestCase
 del SubStoryTestCase
+del BaseLoadLineTestCase
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

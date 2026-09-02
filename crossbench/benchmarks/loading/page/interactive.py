@@ -82,6 +82,14 @@ class InteractivePage(Page):
     return self._blocks
 
   @property
+  def run_login(self) -> bool:
+    return self._run_login
+
+  @property
+  def run_setup(self) -> bool:
+    return self._run_setup
+
+  @property
   def teardown_block(self) -> ActionBlock | None:
     return self._teardown_block
 
