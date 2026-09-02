@@ -46,7 +46,7 @@ from crossbench.uploader import results_uploader
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.cli.cli import CrossBenchCLI
-  from crossbench.cli.parser import CBArgumentParser
+  from crossbench.cli.parser import CBArgumentParser, CBNamespace
   from crossbench.cli.types import Subparsers
   from crossbench.probes.probe import Probe
 
@@ -569,7 +569,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     return ""
 
   @override
-  def run(self, args: argparse.Namespace) -> None:
+  def run(self, args: CBNamespace) -> None:
     self._handle_fuzzy_helper_cmds(args)
     try:
       with plt.PLATFORM.TemporaryDirectory(
@@ -589,7 +589,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       self._log_benchmark_subcommand_failure(self._runner, e)
       sys.exit(3)
 
-  def _run(self, args: argparse.Namespace, tmp_dirname: pth.AnyPath) -> None:
+  def _run(self, args: CBNamespace, tmp_dirname: pth.AnyPath) -> None:
     self._process_dir_args(args, tmp_dirname)
     self._process_config_args(args)
     benchmark: Benchmark = self._get_benchmark(args)
@@ -602,9 +602,11 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     timing: Timing = self._get_timing(args)
     self._runner = self._get_runner(args, benchmark, probes, env_config,
                                     env_validation_mode, timing)
+    # TODO: move this further up
+    args.freeze()
     self._run_benchmark(args, self.runner)
 
-  def _handle_fuzzy_helper_cmds(self, args: argparse.Namespace) -> None:
+  def _handle_fuzzy_helper_cmds(self, args: CBNamespace) -> None:
     """Handle common subcommand mistakes that are not easily implementable
     with argparse.
     run      => just run the benchmark
@@ -631,14 +633,14 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       subcommand.run(args)
       sys.exit(0)
 
-  def _process_dir_args(self, args: argparse.Namespace,
+  def _process_dir_args(self, args: CBNamespace,
                         tmp_dirname: pth.AnyPath) -> None:
     if args.cache_dir:
       plt.PLATFORM.set_cache_dir(args.cache_dir)
     if args.dry_run:
       args.out_dir = pth.LocalPath(tmp_dirname) / "results"
 
-  def _process_config_args(self, args: argparse.Namespace) -> None:
+  def _process_config_args(self, args: CBNamespace) -> None:
     if args.config:
       #Deals with --config vs standalone --XXX-config args.
       self._process_config_arg(args)
@@ -650,7 +652,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       self._process_network_config_args(args)
       self._process_probe_config_args(args)
 
-  def _process_config_arg(self, args: argparse.Namespace) -> None:
+  def _process_config_arg(self, args: CBNamespace) -> None:
     if args.env_config:
       raise argparse.ArgumentTypeError(
           "--config cannot be used together with --env-config")
@@ -704,16 +706,16 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       raise argparse.ArgumentTypeError(
           f"--config: config file has no config properties {config_file}")
 
-  def _process_env_config_args(self, args: argparse.Namespace) -> None:
+  def _process_env_config_args(self, args: CBNamespace) -> None:
     args.env_config = EnvConfig.parse_args(args)
 
-  def _process_network_config_args(self, args: argparse.Namespace) -> None:
+  def _process_network_config_args(self, args: CBNamespace) -> None:
     args.network_config = NetworkConfig.parse_args(args)
 
-  def _process_probe_config_args(self, args: argparse.Namespace) -> None:
+  def _process_probe_config_args(self, args: CBNamespace) -> None:
     args.probe_config = ProbeListConfig.parse_args(args)
 
-  def _process_browser_config_args(self, args: argparse.Namespace) -> None:
+  def _process_browser_config_args(self, args: CBNamespace) -> None:
     if isinstance(args.browser_config, BaseBrowserVariantsConfig):
       return
     args.browser_config = BrowserVariantsConfig.parse_args(args)
@@ -755,7 +757,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     if isinstance(e, AssertionError):
       self.cli.log_assertion_error_statement(e)
 
-  def _run_benchmark(self, args: argparse.Namespace, runner: Runner) -> None:
+  def _run_benchmark(self, args: CBNamespace, runner: Runner) -> None:
     self._update_default_results_symlinks(args, runner)
     try:
       runner.run(is_dry_run=args.dry_run)
@@ -772,7 +774,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
                    browser: Sequence[BrowserVariantConfig]) -> None:
     Banner.print(self, benchmark, browser)
 
-  def _log_results(self, args: argparse.Namespace, runner: Runner,
+  def _log_results(self, args: CBNamespace, runner: Runner,
                    is_success: bool) -> None:
     logging.info("=" * 80)
     if is_success:
@@ -798,7 +800,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         itertools.chain.from_iterable(run.annotations for run in runner.runs))
     RunAnnotation.log_all(all_annotations)
 
-  def _update_default_results_symlinks(self, args: argparse.Namespace,
+  def _update_default_results_symlinks(self, args: CBNamespace,
                                        runner: Runner) -> None:
     if not args.create_symlinks or args.out_dir:
       return
@@ -812,14 +814,14 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     else:
       logging.error("Could not create %s", latest_link)
 
-  def _get_browsers(self, args: argparse.Namespace) -> Sequence[Browser]:
+  def _get_browsers(self, args: CBNamespace) -> Sequence[Browser]:
     browsers = args.browser_config.browsers
     return browsers
 
-  def _get_probes(self, args: argparse.Namespace) -> Sequence[Probe]:
+  def _get_probes(self, args: CBNamespace) -> Sequence[Probe]:
     return args.probe_config.probes
 
-  def _get_benchmark(self, args: argparse.Namespace) -> Benchmark:
+  def _get_benchmark(self, args: CBNamespace) -> Benchmark:
     benchmark_cls: type[Benchmark] = self._get_benchmark_cls(args)
     assert (issubclass(benchmark_cls, Benchmark)), (
         f"benchmark_cls={benchmark_cls} is not subclass of Runner")
@@ -828,12 +830,11 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
       return benchmark_cls.from_cli_args(args)
     raise exception.UnreachableError
 
-  def _get_benchmark_cls(self, args: argparse.Namespace) -> type[Benchmark]:
+  def _get_benchmark_cls(self, args: CBNamespace) -> type[Benchmark]:
     del args
     return self._benchmark_cls
 
-  def _get_env_validation_mode(self,
-                               args: argparse.Namespace) -> ValidationMode:
+  def _get_env_validation_mode(self, args: CBNamespace) -> ValidationMode:
     if args.env_validation is not None:
       return args.env_validation
     if args.fast is None:
@@ -844,16 +845,16 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     return ObjectParser.enum(ValidationMode.__name__, ValidationMode, value,
                              ValidationMode)
 
-  def _get_env_config(self, args: argparse.Namespace) -> EnvConfig:
+  def _get_env_config(self, args: CBNamespace) -> EnvConfig:
     return args.env_config
 
-  def _get_timing(self, args: argparse.Namespace) -> Timing:
+  def _get_timing(self, args: CBNamespace) -> Timing:
     timeout_unit: dt.timedelta = args.timeout_unit or args.time_unit
     return Timing(args.cool_down_time, args.time_unit, timeout_unit,
                   args.run_timeout, args.setup_delay, args.start_delay,
                   args.stop_delay)
 
-  def _get_runner(self, args: argparse.Namespace, benchmark: Benchmark,
+  def _get_runner(self, args: CBNamespace, benchmark: Benchmark,
                   probes: Iterable[Probe], env_config: EnvConfig,
                   env_validation_mode: ValidationMode,
                   timing: Timing) -> Runner:

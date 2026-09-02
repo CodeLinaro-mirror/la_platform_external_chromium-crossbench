@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import abc
-import argparse
 import contextlib
 import dataclasses
 import datetime as dt
@@ -33,6 +32,7 @@ from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
 from crossbench.cli.config.env import EnvConfig
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.cli.config.secrets import Secrets
+from crossbench.cli.parser import CBNamespace
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.config import config_dir
 from crossbench.flags.base import Flags
@@ -98,8 +98,8 @@ TEST_WARNING = "Test Warning"
 
 class CrossbenchMockArgsMixin:
 
-  def mock_args(self, **kwargs) -> argparse.Namespace:
-    args = argparse.Namespace(
+  def mock_args(self, **kwargs) -> CBNamespace:
+    args = CBNamespace(
         wraps=kwargs.pop("wraps", False),
         throw=kwargs.pop("throw", False),
         browser=kwargs.pop("browser", []),

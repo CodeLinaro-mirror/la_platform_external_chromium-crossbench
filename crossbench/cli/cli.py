@@ -23,7 +23,7 @@ import crossbench.plt as plt
 from crossbench import __version__
 from crossbench import path as pth
 from crossbench.cli import exception_formatter
-from crossbench.cli.parser import CBArgumentParser
+from crossbench.cli.parser import CBArgumentParser, CBNamespace
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.cli.subcommand.describe import DescribeSubcommand
 from crossbench.cli.subcommand.devtools_recorder_proxy.subcommand import \
@@ -209,7 +209,7 @@ class CrossBenchCLI:
     self._subparsers = self._setup_subparsers()
     self._setup_parser()
     self._last_subcommand: CrossbenchSubcommand | None = None
-    self.args = argparse.Namespace()
+    self.args: CBNamespace = CBNamespace()
     self._setup_subcommands()
 
   def _setup_subcommands(self) -> None:

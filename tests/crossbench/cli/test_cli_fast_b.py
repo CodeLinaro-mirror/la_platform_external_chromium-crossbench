@@ -852,7 +852,8 @@ class FastCliTestCasePartB(BaseCliTestCase):
         network_config_file,
         contents=hjson.dumps({
             "type": "local",
-            "path": str(mock_dir)
+            "path": str(mock_dir),
+            "url": "http://localhost:0/",
         }))
 
     class MockCustomNetworkConfigBenchmark(Benchmark):

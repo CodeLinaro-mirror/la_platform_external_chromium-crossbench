@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING, Sequence, cast
 
-from crossbench.cli.parser import CBArgumentParser
+from crossbench.cli.parser import CBArgumentParser, CBNamespace
 
 if TYPE_CHECKING:
   import argparse
@@ -50,7 +50,7 @@ class CrossbenchSubcommand(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def run(self, args: argparse.Namespace) -> None:
+  def run(self, args: CBNamespace) -> None:
     pass
 
   def error(self, message: str) -> None:

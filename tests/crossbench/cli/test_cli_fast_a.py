@@ -338,6 +338,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
       runner = cli.last_subcommand.runner
       self.assertEqual(len(runner.cache_temperatures), 1)
       self.assertIn(CacheTemperature.DEFAULT, runner.cache_temperatures)
+      with self.assertRaises(TypeError):
+        cli.args.mutated_after_run = True
 
   def test_invalid_probe(self):
     with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
