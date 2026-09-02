@@ -9,12 +9,12 @@ SELECT
   avg_power_mw
 FROM ext_web_power_per_rail
 WHERE power_rail_name IN (
-    -- Main, ext
+    -- Main, external (PMIC loss included).
     -- 'power.rails.camera',
     -- 'power.rails.display',
     -- 'power.rails.radio.frontend',
 
-    -- Main, int
+    -- Main, internal (PMIC loss excluded).
     'power.rails.cpu.big',
     'power.rails.cpu.little',
     'power.rails.cpu.mid',
@@ -25,20 +25,20 @@ WHERE power_rail_name IN (
     'power.rails.system.fabric',
     'power.rails.tpu',
 
-    -- Sub, ext
+    -- Sub, external (PMIC loss included).
     -- 'power.rails.mmwave',
     -- 'power.rails.modem',
     -- 'power.rails.wifi.bt',
 
-    -- Sub, int
+    -- Sub, internal (PMIC loss excluded).
     'power.rails.aoc.logic',
     'power.rails.ddr.a',
     'power.rails.ddr.b',
     'power.rails.ddr.c',
     'power.rails.gpu',
     'power.rails.ldo.sub',
-    'power.rails.multimedia',
-    'power.rails.udfps',
-    'power.rails.ufs'
+    'power.rails.multimedia'
+    -- 'power.rails.udfps',  -- Excluded from SOC_TOTAL.
+    -- 'power.rails.ufs'  -- Excluded from SOC_TOTAL.
   )
 ORDER BY 1;

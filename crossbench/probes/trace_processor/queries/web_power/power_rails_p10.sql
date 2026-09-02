@@ -5,13 +5,13 @@ SELECT
   avg_power_mw
 FROM ext_web_power_per_rail
 WHERE power_rail_name IN (
-    -- Main, ext
+    -- Main, external (PMIC loss included).
     -- 'power.rails.wifi.bt',
     -- 'power.VSYS_PWR_CAM_G1_uws',
     -- 'power.VSYS_PWR_CAM_G2_uws',
     -- 'power.VSYS_PWR_VBATT_uws',
 
-    -- Main, int
+    -- Main, internal (PMIC loss excluded).
     'power.rails.ldo.main.a',
     'power.rails.ldo.main.b',
     'power.rails.tpu',
@@ -25,19 +25,19 @@ WHERE power_rail_name IN (
     'power.S5M_VDD_AUR_uws',
     'power.S9M_VDD_TPU_M_uws',
 
-    -- Sub, ext
+    -- Sub, external (PMIC loss included).
     -- 'power.rails.modem',
     -- 'power.rails.radio.frontend',
     -- 'power.VSYS_PWR_DISP_G1_uws',
     -- 'power.VSYS_PWR_DISP_G2_uws',
 
-    -- Sub, int
+    -- Sub, internal (PMIC loss excluded).
     'power.rails.ddr.a',
     'power.rails.ddr.c',
     'power.rails.ldo.sub',
     'power.S10S_VDD_INFRA_MM_GPU_M_uws',
-    'power.S11S_UFS_VCC_uws',
-    'power.S12S_uws',
+    -- 'power.S11S_UFS_VCC_uws',  -- Excluded from SOC_TOTAL.
+    -- 'power.S12S_uws',  -- Excluded from SOC_TOTAL.
     'power.S1S_VDD_MM_uws',
     'power.S2S_VDD_GPU_uws',
     'power.S6S_LLDO2_uws',
