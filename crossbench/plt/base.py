@@ -500,7 +500,8 @@ class Platform(abc.ABC):
     This can be false on linux without $DISPLAY, true an all other platforms."""
     return True
 
-  def inject_input_events(self, events: Iterable[InputEvent]) -> None:
+  def inject_input_events(self, device_name: str,
+                          events: Iterable[InputEvent]) -> None:
     raise NotImplementedError(
         f"inject_input_events not implemented for {self}.")
 

@@ -16,10 +16,10 @@ from tests import test_helper
 class MockEvemuPlatform(EvemuPlatformMixin):
 
   def __init__(self) -> None:
-    self.script_calls: list[str] = []
+    self.script_calls: list[tuple[str, str]] = []
 
-  def _execute_evemu_script(self, script: str) -> None:
-    self.script_calls.append(script)
+  def _execute_evemu_script(self, device_name: str, script: str) -> None:
+    self.script_calls.append((device_name, script))
 
 
 class EvemuPlatformMixinTestCase(unittest.TestCase):
@@ -29,23 +29,27 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
     self.platform = MockEvemuPlatform()
 
   def test_single_key(self) -> None:
-    self.platform.inject_input_events([
+    self.platform.inject_input_events("test_kb", [
         KeyEvent("KeyA", is_down=True),
     ])
     self.assertEqual(len(self.platform.script_calls), 1)
-    script = self.platform.script_calls[0]
+    device_name, script = self.platform.script_calls[0]
+    self.assertEqual(device_name, "test_kb")
     # Should contain EV_KEY KEY_A (001e) value 1, and a SYN
     self.assertIn("E: 0.000000 0001 001e 0001", script)
     self.assertIn("E: 0.000000 0000 0000 0000", script)
 
   def test_key_with_wait(self) -> None:
-    self.platform.inject_input_events([
-        KeyEvent("KeyA", is_down=True),
-        WaitEvent(dt.timedelta(milliseconds=1500)),  # 1.5 seconds wait
-        KeyEvent("KeyA", is_down=False),
-    ])
+    self.platform.inject_input_events(
+        "test_kb",
+        [
+            KeyEvent("KeyA", is_down=True),
+            WaitEvent(dt.timedelta(milliseconds=1500)),  # 1.5 seconds wait
+            KeyEvent("KeyA", is_down=False),
+        ])
 
-    script = self.platform.script_calls[0]
+    device_name, script = self.platform.script_calls[0]
+    self.assertEqual(device_name, "test_kb")
     lines = script.strip().split("\n")
     self.assertEqual(len(lines), 4)
 
@@ -59,14 +63,14 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
 
   def test_unsupported_key(self) -> None:
     with self.assertRaises(ValueError):
-      self.platform.inject_input_events([
+      self.platform.inject_input_events("test_kb", [
           KeyEvent("UnsupportedKey", is_down=True),
       ])
 
   def test_unsupported_event_type(self) -> None:
     with self.assertRaisesRegex(ValueError,
                                 "Unsupported event type: InputEvent"):
-      self.platform.inject_input_events([InputEvent()])
+      self.platform.inject_input_events("test_kb", [InputEvent()])
 
 
 if __name__ == "__main__":

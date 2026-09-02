@@ -90,16 +90,17 @@ class EvemuPlatformMixin(abc.ABC):
   """
 
   @abc.abstractmethod
-  def _execute_evemu_script(self, script: str) -> None:
+  def _execute_evemu_script(self, device_name: str, script: str) -> None:
     pass
 
-  def inject_input_events(self, events: Iterable[InputEvent]) -> None:
+  def inject_input_events(self, device_name: str,
+                          events: Iterable[InputEvent]) -> None:
     """
     Injects abstract input events by translating them into an
     evemu script.
     """
     if script := self._generate_evemu_events_string(events):
-      self._execute_evemu_script(script)
+      self._execute_evemu_script(device_name, script)
 
   def _generate_evemu_events_string(self, events: Iterable[InputEvent]) -> str:
     lines: list[str] = []

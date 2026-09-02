@@ -22,6 +22,7 @@ from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.action_runner.config import VirtualDeviceType
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.benchmarks.loading.point import Point
 from crossbench.flags.base import Flags, FlagsData
@@ -32,6 +33,7 @@ from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
 from crossbench.plt.bin import Binaries
 from crossbench.plt.device_info import DeviceInfo
+from crossbench.plt.evemu_platform_mixin import EvemuPlatformMixin
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import PosixVersion, RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
@@ -700,7 +702,34 @@ class AndroidVersion(PosixVersion):
   pass
 
 
-class AndroidAdbPlatform(RemotePosixPlatform):
+_EVEMU_KEYBOARD_HEADER: Final[bytes] = b"""# EVEMU 1.2
+N: Virtual Keyboard (Crossbench)
+I: 0003 18d2 2c42 0111
+# Properties: none
+P: 00 00 00 00 00 00 00 00
+B: 00 0b 00 00 00 00 00 00 00
+B: 01 fe ff ff ff ff ff 7f ff
+B: 01 1f 00 c0 53 da bf 0e 31
+B: 01 00 40 00 40 00 10 80 00
+B: 01 00 00 00 00 13 00 00 01
+B: 01 00 00 00 00 00 00 00 00
+B: 01 00 00 00 00 00 00 10 00
+B: 01 00 00 00 00 00 00 00 00
+B: 01 00 00 01 00 00 00 00 00
+B: 01 00 00 00 00 00 00 00 00
+B: 01 80 04 20 00 00 00 00 00
+B: 01 00 00 00 00 00 00 00 00
+B: 01 00 00 00 00 00 00 00 00
+B: 02 00 00 00 00 00 00 00 00
+B: 03 00 00 00 00 00 00 00 00
+B: 04 10 00 00 00 00 00 00 00
+B: 05 00 00 00 00 00 00 00 00
+B: 11 00 00 00 00 00 00 00 00
+B: 12 00 00 00 00 00 00 00 00
+"""
+
+
+class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
 
   def __init__(self,
                host_platform: Platform,
@@ -713,6 +742,7 @@ class AndroidAdbPlatform(RemotePosixPlatform):
                                         | None) = None
     self._uiautomator_device_root: bool = False
     super().__init__(host_platform)
+    self._virtual_devices: dict[str, subprocess.Popen] = {}
 
   def _create_port_manager(self) -> PortManager:
     return AndroidAdbPortManager(self, self._adb)
@@ -720,6 +750,32 @@ class AndroidAdbPlatform(RemotePosixPlatform):
   @override
   def _create_default_tmp_dir(self) -> pth.AnyPath:
     return self.path("/data/local/tmp/")
+
+  def setup_virtual_devices(self, virtual_devices: tuple) -> None:
+    for device_config in virtual_devices:
+      if device_config.device_type == VirtualDeviceType.KEYBOARD:
+        self._init_uinput_kb(device_config.name)
+      else:
+        raise ValueError(
+            f"Unsupported virtual device type: {device_config.device_type}")
+
+  def _init_uinput_kb(self, device_name: str) -> None:
+    proc = self._virtual_devices.get(device_name)
+    if proc is None or proc.poll() is not None:
+      proc = self.popen("uinput", "-", stdin=subprocess.PIPE)
+      assert proc.stdin is not None
+      proc.stdin.write(_EVEMU_KEYBOARD_HEADER)
+      proc.stdin.flush()
+      self._virtual_devices[device_name] = proc
+
+  def _execute_evemu_script(self, device_name: str, script: str) -> None:
+    proc = self._virtual_devices.get(device_name)
+    if proc is None:
+      raise RuntimeError(f"Virtual device '{device_name}' was not initialized. "
+                         "Call setup_virtual_devices() first.")
+    assert proc.stdin is not None
+    proc.stdin.write(script.encode("utf-8"))
+    proc.stdin.flush()
 
   @property
   @override

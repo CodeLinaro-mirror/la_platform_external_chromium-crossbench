@@ -567,7 +567,7 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
     assert not (self.is_android and env), "ADB does not support env vars"
 
     with self.NamedTemporaryFile("popen_pid_") as temp_pid_file:
-      shell_cmd = shlex.join(map(str, args))
+      shell_cmd = f"set -m; {shlex.join(map(str, args))}"
       # Capture the PID and wait on the process to finish.
       # Ideally this would use mkfifo but that's not readily available on
       # Android.

@@ -16,6 +16,8 @@ from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.action_runner.config import VirtualDeviceConfig, \
+    VirtualDeviceType
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.benchmarks.loading.point import Point
 from crossbench.helper.version import VersionParseError
@@ -298,6 +300,45 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
             model="Android_SDK_built_for_x86",
             product="sdk_google_phone_x86"))
     self.assertIn(self.DEVICE_ID, str(self.adb))
+
+  def test_setup_virtual_devices(self):
+    mock_proc = mock.MagicMock()
+    mock_proc.poll.return_value = None
+    mock_proc.stdin = mock.MagicMock()
+
+    with mock.patch.object(
+        self.platform, "popen", return_value=mock_proc) as mock_popen:
+      self.platform.setup_virtual_devices((VirtualDeviceConfig(
+          name="kb1", device_type=VirtualDeviceType.KEYBOARD),))
+      mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
+      self.assertIn("kb1", self.platform._virtual_devices)
+      self.assertIs(self.platform._virtual_devices["kb1"], mock_proc)
+      mock_proc.stdin.write.assert_called_once()
+      mock_proc.stdin.flush.assert_called_once()
+
+  def test_setup_virtual_devices_unsupported(self):
+    unsupported_config = mock.MagicMock(spec=VirtualDeviceConfig)
+    unsupported_config.device_type = "unsupported_device_type"
+    unsupported_config.name = "touch1"
+
+    with self.assertRaisesRegex(ValueError, "Unsupported virtual device type"):
+      self.platform.setup_virtual_devices((unsupported_config,))
+
+  def test_execute_evemu_script(self):
+    mock_proc = mock.MagicMock()
+    mock_proc.poll.return_value = None
+    mock_proc.stdin = mock.MagicMock()
+    self.platform._virtual_devices["kb1"] = mock_proc
+
+    self.platform._execute_evemu_script("kb1", "E: 0.000000 0001 001e 0001\n")
+    mock_proc.stdin.write.assert_called_once_with(
+        b"E: 0.000000 0001 001e 0001\n")
+    mock_proc.stdin.flush.assert_called_once()
+
+  def test_execute_evemu_script_uninitialized(self):
+    with self.assertRaisesRegex(RuntimeError,
+                                "Virtual device 'unknown' was not initialized"):
+      self.platform._execute_evemu_script("unknown", "E: ...")
 
   def test_has_root(self):
     self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")

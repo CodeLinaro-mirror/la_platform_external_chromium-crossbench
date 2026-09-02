@@ -50,10 +50,14 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
   def run_action(self, action) -> None:
     action.run_with(self.action_runner)
 
-  def assert_input_events_injected(self,
-                                   expected_events: list[InputEvent]) -> None:
+  def assert_input_events_injected(
+      self,
+      expected_events: list[InputEvent],
+      expected_device_name: str = "default_keyboard") -> None:
     self.inject_events_mock.assert_called_once()
-    actual_events = self.inject_events_mock.call_args[0][0]
+    actual_device_name = self.inject_events_mock.call_args[0][0]
+    actual_events = self.inject_events_mock.call_args[0][1]
+    self.assertEqual(actual_device_name, expected_device_name)
     self.assertListEqual(actual_events, expected_events)
 
   def test_text_input_text_zero_duration(self):
