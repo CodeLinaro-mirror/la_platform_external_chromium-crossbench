@@ -9,10 +9,18 @@ from typing import TYPE_CHECKING, Self
 
 from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
-from crossbench.action_runner.base import ActionRunner
+from crossbench.action_runner.base import ActionRunner, VirtualDeviceConfig, \
+    VirtualDeviceType
 from crossbench.action_runner.chromeos_input_action_runner import \
     ChromeOSInputActionRunner
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
+
+__all__ = [
+    "ActionRunnerConfig",
+    "ActionRunnerType",
+    "VirtualDeviceConfig",
+    "VirtualDeviceType",
+]
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
@@ -31,6 +39,7 @@ class ActionRunnerType(ConfigEnum):
 @dataclasses.dataclass(frozen=True)
 class ActionRunnerConfig(ConfigObject):
   type: ActionRunnerType = ActionRunnerType.AUTO
+  virtual_devices: tuple[VirtualDeviceConfig, ...] = ()
 
   @classmethod
   def parse_str(cls, value: str) -> Self:
@@ -42,6 +51,8 @@ class ActionRunnerConfig(ConfigObject):
     parser = super().config_parser()
     parser.add_argument(
         "type", type=ActionRunnerType, default=ActionRunnerType.AUTO)
+    parser.add_argument(
+        "virtual_devices", type=VirtualDeviceConfig, is_list=True, default=())
     return parser
 
   def instantiate(self,
@@ -50,12 +61,14 @@ class ActionRunnerConfig(ConfigObject):
                   step_by_step_mode: bool = False) -> ActionRunner:
     match self.type:
       case ActionRunnerType.ANDROID:
-        return AndroidInputActionRunner(run, step_by_step_mode)
+        return AndroidInputActionRunner(run, self.virtual_devices,
+                                        step_by_step_mode)
       case ActionRunnerType.CHROMEOS:
-        return ChromeOSInputActionRunner(run, step_by_step_mode)
+        return ChromeOSInputActionRunner(run, self.virtual_devices,
+                                         step_by_step_mode)
       case ActionRunnerType.BASIC:
         # TODO: rename
-        return ActionRunner(run, step_by_step_mode)
+        return ActionRunner(run, self.virtual_devices, step_by_step_mode)
       case ActionRunnerType.AUTO:
         return self.instantiate_default(platform, run, step_by_step_mode)
       case _:
@@ -66,7 +79,9 @@ class ActionRunnerConfig(ConfigObject):
                           run: Run,
                           step_by_step_mode: bool = False) -> ActionRunner:
     if platform.is_android:
-      return AndroidInputActionRunner(run, step_by_step_mode)
+      return AndroidInputActionRunner(run, self.virtual_devices,
+                                      step_by_step_mode)
     if platform.is_chromeos:
-      return ChromeOSInputActionRunner(run, step_by_step_mode)
-    return ActionRunner(run, step_by_step_mode)
+      return ChromeOSInputActionRunner(run, self.virtual_devices,
+                                       step_by_step_mode)
+    return ActionRunner(run, self.virtual_devices, step_by_step_mode)

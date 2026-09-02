@@ -135,6 +135,9 @@ class Platform(abc.ABC):
     self.assert_is_local()
     return self.path(tempfile.gettempdir())
 
+  def setup_virtual_devices(self, virtual_devices: tuple) -> None:
+    del virtual_devices
+
   def assert_is_local(self) -> None:
     if self.is_local:
       return

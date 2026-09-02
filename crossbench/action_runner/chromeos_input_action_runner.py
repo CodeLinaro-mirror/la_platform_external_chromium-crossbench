@@ -24,6 +24,7 @@ from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
+  from crossbench.action_runner.base import VirtualDeviceConfig
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
 
@@ -260,8 +261,11 @@ E: <time> 0000 0000 0
 class ChromeOSInputActionRunner(ActionRunner):
   """Custom ActionRunner for chromeOS devices."""
 
-  def __init__(self, run: Run, step_by_step_mode: bool = False) -> None:
-    super().__init__(run, step_by_step_mode)
+  def __init__(self,
+               run: Run,
+               virtual_devices: tuple[VirtualDeviceConfig, ...] = (),
+               step_by_step_mode: bool = False) -> None:
+    super().__init__(run, virtual_devices, step_by_step_mode)
     self._touch_device: TouchDevice | None = None
     self._mouse_process: subprocess.Popen | None = None
 

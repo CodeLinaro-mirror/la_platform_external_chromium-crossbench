@@ -5,12 +5,13 @@
 from __future__ import annotations
 
 import contextlib
+import dataclasses
 import datetime as dt
 import logging
 import sys
 import time
 from typing import TYPE_CHECKING, Any, Callable, Final, Iterable, Iterator, \
-    Sequence, cast
+    Self, Sequence, cast
 
 from crossbench import exception
 from crossbench.action_runner.action_runner_listener import \
@@ -22,6 +23,7 @@ from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.browsers.chromium.devtools import \
     DevToolsInBrowserClient as DevToolsClient
 from crossbench.cli.ui import ui
+from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.probes.screenshot import ScreenshotProbe, \
     ScreenshotProbeContext
 from crossbench.runner.probe_context_lookup_error import \
@@ -41,6 +43,28 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
+
+
+class VirtualDeviceType(ConfigEnum):
+  KEYBOARD = ("keyboard", "Virtual keyboard device")
+
+
+@dataclasses.dataclass(frozen=True)
+class VirtualDeviceConfig(ConfigObject):
+  name: str
+  device_type: VirtualDeviceType
+
+  @classmethod
+  def parse_str(cls, value: str) -> Self:
+    del value
+    raise ValueError("VirtualDeviceConfig must be parsed from a dictionary")
+
+  @classmethod
+  def config_parser(cls) -> ConfigParser[Self]:
+    parser = super().config_parser()
+    parser.add_argument("name", type=str, required=True)
+    parser.add_argument("device_type", type=VirtualDeviceType, required=True)
+    return parser
 
 
 class ActionNotImplementedError(NotImplementedError):
@@ -133,13 +157,18 @@ class ActionRunner:
 
   _bond: BondActionRunner | None = None
 
-  def __init__(self, run: Run, step_by_step_mode: bool = False) -> None:
+  def __init__(self,
+               run: Run,
+               virtual_devices: tuple[VirtualDeviceConfig, ...] = (),
+               step_by_step_mode: bool = False) -> None:
+    self._virtual_devices = virtual_devices
     self._run = run
     self._listener = ActionRunnerListener()
     # TODO: Don't share state across runs
     self._info_stack: exception.TInfoStack | None = None
     self._step_by_step_mode = step_by_step_mode
     self._failure_screenshot_annotations: list[ScreenshotAnnotation] = []
+    self.browser_platform.setup_virtual_devices(self._virtual_devices)
 
   @property
   def run(self) -> Run:

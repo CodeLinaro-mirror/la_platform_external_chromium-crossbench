@@ -231,6 +231,9 @@ class MockPlatform:
   def key(self) -> str:
     return self.name
 
+  def setup_virtual_devices(self, virtual_devices: tuple) -> None:
+    del virtual_devices
+
 
 class MockWait(NamedTuple):
   time: AnyTimeUnit
