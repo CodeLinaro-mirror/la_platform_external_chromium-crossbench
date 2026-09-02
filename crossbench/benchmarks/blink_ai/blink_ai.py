@@ -152,19 +152,10 @@ class BlinkAIBenchmark(PressBenchmark):
     chrome_flags = ChromeFlags(flags)
     logging.info("Injecting experimental built-in AI flags for Chrome...")
     for feature in (
-        "EnableBlinkReceiverAI",
-        "LanguageModelAPI",
-        "AIPromptAPI",
-        "OptimizationGuideOnDeviceModelMultimodal",
-        "OnDeviceModelPerformanceParams:"
-        "compatible_on_device_performance_classes/*",
+        ("OnDeviceModelPerformanceParams:"
+         "compatible_on_device_performance_classes/*"),
         "AIWriterAPI",
         "AIRewriterAPI",
-        "AIPromptAPIMultimodalInput",
-        "AIPromptAPIMultimodalMultilingual",
     ):
       chrome_flags.features.enable(feature)
-    chrome_flags.blink_features.enable("AIResponseStreaming")
-    # Force device evaluation override to run without download gate block.
-    chrome_flags.set("--optimization-guide-force-device-evaluation-override")
     return chrome_flags
