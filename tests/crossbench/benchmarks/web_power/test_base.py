@@ -132,6 +132,8 @@ class BaseWebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     parser = self.benchmark_cls.add_cli_arguments(CBArgumentParser())
     parsed_args = parser.parse_args(args)
     parsed_args.network_config = NetworkConfig.default()
+    parsed_args.probe_config = None
+    parsed_args.probe = ()
     return parsed_args
 
 

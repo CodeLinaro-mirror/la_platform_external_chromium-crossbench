@@ -77,27 +77,27 @@ class VariantConfigTest(MockHttpRequestsMixin):
 
   def test_override_commit(self):
     config = VariantConfig()
-    config.override_commit("abcdef00", bot="test_bot")
+    config = config.override_commit("abcdef00", bot="test_bot")
     self.assertEqual(config.commit, "abcdef00")
 
-    config.override_commit(None, bot="test_bot")
+    config = config.override_commit(None, bot="test_bot")
     self.assertEqual(config.commit, "abcdef00")
 
-    config.override_commit("recent", bot="test_bot")
+    config = config.override_commit("recent", bot="test_bot")
     self.assertEqual(config.commit, _TEST_RECENT_COMMIT)
     self.mock_fetch_builds.assert_called_once_with("test_bot")
 
   def test_override_patch(self):
     config = VariantConfig()
-    config.override_patch(_TEST_PATCH)
+    config = config.override_patch(_TEST_PATCH)
     self.assertEqual(config.patch, _TEST_PATCH)
 
-    config.override_patch(None)
+    config = config.override_patch(None)
     self.assertEqual(config.patch, _TEST_PATCH)
 
   def test_override_empty_flags(self):
     config = VariantConfig()
-    config.override_flags(
+    config = config.override_flags(
         js_flags="--js-flag1,--js-flag2",
         enable_features="enablefeature1,enablefeature2",
         disable_features="disablefeature1,disablefeature2")
@@ -112,7 +112,7 @@ class VariantConfigTest(MockHttpRequestsMixin):
     config = VariantConfig.parse(
         "{flags: '--standalone --js-flags=--js-flag0 "
         "--enable-features=enablefeature0 --disable-features=disablefeature0'}")
-    config.override_flags(
+    config = config.override_flags(
         js_flags="--js-flag1,--js-flag2",
         enable_features="enablefeature1,enablefeature2",
         disable_features="disablefeature1,disablefeature2")
@@ -128,7 +128,7 @@ class VariantConfigTest(MockHttpRequestsMixin):
     config = VariantConfig.parse(
         "{flags: '--standalone --js-flags=--js-flag0 "
         "--enable-features=enablefeature0 --disable-features=disablefeature0'}")
-    config.override_flags()
+    config = config.override_flags()
     self.assertDictEqual(
         config.flags_as_dict(), {
             "--standalone": None,

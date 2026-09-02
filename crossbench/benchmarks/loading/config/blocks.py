@@ -60,7 +60,7 @@ class ActionBlock(ConfigObject):
   @classmethod
   @override
   @functools.cache
-  def config_parser(cls) -> ConfigParser[Self]:  # type: ignore #override
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument("label", type=cls._parse_block_label, default="default")
     parser.add_argument(

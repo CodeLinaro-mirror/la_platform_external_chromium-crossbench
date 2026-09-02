@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import logging
-from typing import TYPE_CHECKING, Any, Final, Iterable, Self, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Self, Sequence
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -17,17 +18,40 @@ from crossbench.config import ConfigObject
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
-
   import crossbench.path as pth
   from crossbench.probes.probe import Probe
 
 
+@dataclasses.dataclass(frozen=True)
 class ProbeListConfig(ConfigObject):
+  _probes: immutabledict[str, Probe] = dataclasses.field(
+      compare=True, hash=True)
+
+  @classmethod
+  def from_probes(
+      cls,
+      probe_configs: Iterable[ProbeConfig] = (),
+      probes: Iterable[Probe] = ()
+  ) -> Self:
+    accumulator: dict[str, Probe] = {}
+    for probe_config in probe_configs:
+      with exception.annotate(f"Parsing --probe={probe_config.name}"):
+        probe: Probe = probe_config.new_instance()
+        cls._add_probe(accumulator, probe)
+    for probe in probes:
+      cls._add_probe(accumulator, probe)
+    return cls(immutabledict(accumulator))
+
+  @classmethod
+  def _add_probe(cls, accumulator: dict[str, Probe], probe: Probe) -> None:
+    if probe.name in accumulator:
+      raise ValueError(f"Duplicate probe: {probe.name}")
+    accumulator[probe.name] = probe
 
   @classmethod
   def parse_args(cls, args: argparse.Namespace) -> Self:
     with exception.annotate_argparsing():
-      config_from_args = cls(args.probe)
+      config_from_args = cls.from_probes(args.probe)
       if not args.probe_config:
         return config_from_args
       probe_config_path: pth.LocalPath = args.probe_config
@@ -53,7 +77,7 @@ class ProbeListConfig(ConfigObject):
     for index, probe_config in enumerate(config):
       with exception.annotate(f"Parsing probes[{index}]"):
         probe_configs.append(ProbeConfig.parse(probe_config))
-    return cls(probe_configs)
+    return cls.from_probes(probe_configs)
 
   @classmethod
   @override
@@ -71,7 +95,7 @@ class ProbeListConfig(ConfigObject):
       with exception.annotate(f"Parsing probe config probes['{probe_name}']"):
         probe_configs.append(
             ProbeConfig.parse_probe_dict(probe_name, config_data))
-    return cls(probe_configs)
+    return cls.from_probes(probe_configs)
 
   @classmethod
   @override
@@ -81,7 +105,7 @@ class ProbeListConfig(ConfigObject):
   @classmethod
   def _exclude(cls, config: Self, no_probes: frozenset[str]) -> Self:
     filtered_probes = [p for p in config.probes if p.name not in no_probes]
-    return cls(probes=filtered_probes)
+    return cls.from_probes(probes=filtered_probes)
 
   @classmethod
   def _verify_no_conflicts(cls, no_probes: frozenset[str],
@@ -91,39 +115,9 @@ class ProbeListConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Cannot both enable and disable probes: "
                                        f"{', '.join(sorted(conflicting))}")
 
-  def __init__(
-      self,
-      probe_configs: Iterable[ProbeConfig] = (),
-      probes: Iterable[Probe] = ()
-  ) -> None:
-    self._probes: Final[immutabledict[str, Probe]] = self._init_probes(
-        probe_configs, probes)
-
-  def _init_probes(self, probe_configs: Iterable[ProbeConfig],
-                   probes: Iterable[Probe]) -> immutabledict[str, Probe]:
-    if not probe_configs and not probes:
-      return immutabledict()
-    accumulator: dict[str, Probe] = {}
-    for probe_config in probe_configs:
-      with exception.annotate(f"Parsing --probe={probe_config.name}"):
-        self._add_probe_config(accumulator, probe_config)
-    for probe in probes:
-      self._add_probe(accumulator, probe)
-    return immutabledict(accumulator)
-
   @property
   def probes(self) -> tuple[Probe, ...]:
     return tuple(self._probes.values())
-
-  def _add_probe_config(self, accumulator: dict[str, Probe],
-                        probe_config: ProbeConfig) -> None:
-    probe: Probe = probe_config.new_instance()
-    self._add_probe(accumulator, probe)
-
-  def _add_probe(self, accumulator: dict[str, Probe], probe: Probe) -> None:
-    if probe.name in accumulator:
-      raise ValueError(f"Duplicate probe: {probe.name}")
-    accumulator[probe.name] = probe
 
   def merge(self, other: Self, should_override: bool = False) -> Self:
     merged_probes = {probe.name: probe for probe in self.probes}
@@ -135,13 +129,4 @@ class ProbeListConfig(ConfigObject):
         logging.warning("PROBES: Overriding existing probe %s!", name)
       merged_probes[name] = probe
 
-    merged = type(self)(probes=merged_probes.values())
-    return merged
-
-  def __hash__(self) -> int:
-    return hash(self._probes)
-
-  def __eq__(self, other: object) -> bool:
-    if type(other) is ProbeListConfig:
-      return self._probes == other._probes
-    return False
+    return type(self).from_probes(probes=merged_probes.values())

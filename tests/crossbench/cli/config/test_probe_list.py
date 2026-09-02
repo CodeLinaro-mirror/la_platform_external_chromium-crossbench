@@ -327,10 +327,10 @@ class TestProbeListConfig(BaseConfigTestCase):
       self.assertIsInstance(probe, V8RCSProbe)
 
   def test_merge_conflict_raw(self):
-    probe_list_a = ProbeListConfig(
+    probe_list_a = ProbeListConfig.from_probes(
         [ProbeConfig.parse("v8.log"),
          ProbeConfig.parse("v8.rcs")])
-    probe_list_b = ProbeListConfig([ProbeConfig.parse("v8.rcs")])
+    probe_list_b = ProbeListConfig.from_probes([ProbeConfig.parse("v8.rcs")])
     with self.assertRaisesRegex(ValueError, "Duplicate"):
       probe_list_a.merge(probe_list_b)
     with self.assertRaisesRegex(ValueError, "Duplicate"):

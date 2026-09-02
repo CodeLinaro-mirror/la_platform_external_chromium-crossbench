@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import dataclasses
 import re
-from typing import Any
+from typing import Any, Self
+
+from typing_extensions import override
 
 from crossbench.cli.config.flags import FlagsConfig
 from crossbench.cli.ui import ui
@@ -22,13 +24,25 @@ from crossbench.pinpoint.list_builds import fetch_builds
 from crossbench.pinpoint.list_stories import fetch_stories
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(frozen=True)
 class VariantConfig(ConfigObject):
   """Represents one arm of an A/B test (e.g., base or experiment)."""
 
   commit: str = "recent"
   patch: str | None = None
   flags: FlagsConfig = dataclasses.field(default_factory=FlagsConfig)
+
+  @classmethod
+  @override
+  def create(
+      cls,
+      commit: str = "recent",
+      patch: str | None = None,
+      flags: FlagsConfig | None = None,
+  ) -> Self:
+    if flags is None:
+      flags = FlagsConfig()
+    return cls(commit=commit, patch=patch, flags=flags)
 
   @classmethod
   def config_parser(cls) -> ConfigParser[VariantConfig]:
@@ -73,19 +87,21 @@ class VariantConfig(ConfigObject):
   def parse_str(cls, value: str) -> VariantConfig:
     raise NotImplementedError
 
-  def override_commit(self, commit: str | None, bot: str) -> None:
-    self.commit = self.parse_commit(commit or self.commit)
-    if self.commit == "recent":
-      self.commit = fetch_builds(bot)[0].commit
+  def override_commit(self, commit: str | None, bot: str) -> Self:
+    resolved_commit = self.parse_commit(commit or self.commit)
+    if resolved_commit == "recent":
+      resolved_commit = fetch_builds(bot)[0].commit
+    return dataclasses.replace(self, commit=resolved_commit)
 
-  def override_patch(self, patch: str | None) -> None:
-    if patch:
-      self.patch = self.parse_patch(patch)
+  def override_patch(self, patch: str | None) -> Self:
+    if not patch:
+      return self
+    return dataclasses.replace(self, patch=self.parse_patch(patch))
 
   def override_flags(self,
                      js_flags: str | None = None,
                      enable_features: str | None = None,
-                     disable_features: str | None = None) -> None:
+                     disable_features: str | None = None) -> Self:
     input_flags = {
         "--js-flags": js_flags,
         "--enable-features": enable_features,
@@ -94,7 +110,9 @@ class VariantConfig(ConfigObject):
     filtered_flags = {k: v for k, v in input_flags.items() if v is not None}
     combined_flags = self.flags_as_dict() | filtered_flags
     if combined_flags_str := self.flags_dict_to_str(combined_flags):
-      self.flags = FlagsConfig.parse(combined_flags_str)
+      return dataclasses.replace(
+          self, flags=FlagsConfig.parse(combined_flags_str))
+    return self
 
   def flags_as_dict(self) -> dict[str, str | None]:
     if not self.flags.get("default"):
@@ -123,7 +141,7 @@ class VariantConfig(ConfigObject):
     return f'--extra-browser-args="{flags}"'
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(frozen=True)
 class BisectStartVariantConfig(VariantConfig):
   """Represents the start arm of a bisect job."""
 
@@ -133,7 +151,7 @@ class BisectStartVariantConfig(VariantConfig):
           "Patch is not supported for start variant in bisect jobs.")
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(frozen=True)
 class BisectEndVariantConfig(VariantConfig):
   """Represents the end arm of a bisect job."""
 
@@ -145,48 +163,45 @@ class BisectEndVariantConfig(VariantConfig):
           "Flags are not supported for end variant in bisect jobs.")
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(frozen=True)
 class PinpointJobConfigMixin:
   benchmark: str
   bot: str
   story: str | None = None
 
-  def override_benchmark(self, benchmark: str | None) -> str | None:
-    if benchmark:
-      self.benchmark = benchmark
-    if not self.benchmark:
+  @classmethod
+  def resolve_benchmark(cls, benchmark: str) -> str | None:
+    if not benchmark:
       raise ValueError("Benchmark is required.")
     if not is_crossbench_benchmark(
-        self.benchmark) and self.benchmark not in fetch_benchmarks():
-      return f"Unknown benchmark: {self.benchmark}"
+        benchmark) and benchmark not in fetch_benchmarks():
+      return f"Unknown benchmark: {benchmark}"
     return None
 
-  def override_bot(self, bot: str | None) -> str | None:
-    if bot:
-      self.bot = bot
-    if not self.bot:
+  @classmethod
+  def resolve_bot(cls, bot: str) -> str | None:
+    if not bot:
       raise ValueError("Bot is required.")
-    if self.bot not in fetch_bots():
-      return f"Unknown bot: {self.bot}"
+    if bot not in fetch_bots():
+      return f"Unknown bot: {bot}"
     return None
 
-  def override_story(self, story: str | None) -> str | None:
-    if story:
-      self.story = story
-
-    if is_crossbench_benchmark(self.benchmark):
-      if not self.story:
-        self.story = default_story(self.benchmark)
-      elif self.story not in all_stories(self.benchmark):
-        return f"Unknown story: {self.story}"
+  @classmethod
+  def resolve_story(cls, benchmark: str,
+                    story: str | None) -> tuple[str | None, str | None]:
+    if is_crossbench_benchmark(benchmark):
+      if not story:
+        story = default_story(benchmark)
+      elif story not in all_stories(benchmark):
+        return story, f"Unknown story: {story}"
     else:
-      stories = fetch_stories(self.benchmark)
-      if not self.story and len(stories) == 1:
-        self.story = stories[0]
+      stories = fetch_stories(benchmark)
+      if not story and len(stories) == 1:
+        story = stories[0]
 
-      if self.story not in stories:
-        return f"Unknown story: {self.story}"
-    return None
+      if story not in stories:
+        return story, f"Unknown story: {story}"
+    return story, None
 
   @classmethod
   def parse_extra_browser_args(cls,
@@ -198,7 +213,7 @@ class PinpointJobConfigMixin:
     return FlagsConfig.parse(extra_browser_args)
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(frozen=True)
 class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
   """Representation of a Pinpoint "try job" configuration."""
 
@@ -207,6 +222,34 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
   experiment: VariantConfig = dataclasses.field(default_factory=VariantConfig)
   repeat: int = 30
   bug: int | None = None
+
+  @classmethod
+  @override
+  def create(
+      cls,
+      benchmark: str,
+      bot: str,
+      story: str | None = None,
+      story_tags: str | None = None,
+      base: VariantConfig | None = None,
+      experiment: VariantConfig | None = None,
+      repeat: int = 30,
+      bug: int | None = None,
+  ) -> Self:
+    if base is None:
+      base = VariantConfig()
+    if experiment is None:
+      experiment = VariantConfig()
+    return cls(
+        benchmark=benchmark,
+        bot=bot,
+        story=story,
+        story_tags=story_tags,
+        base=base,
+        experiment=experiment,
+        repeat=repeat,
+        bug=bug,
+    )
 
   @classmethod
   def config_parser(cls) -> ConfigParser[PinpointTryJobConfig]:
@@ -285,33 +328,36 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
       else:
         parsed = PinpointTryJobConfig(benchmark="", bot="")
 
-      warnings = [
-          parsed.override_benchmark(benchmark),
-          parsed.override_bot(bot),
-          parsed.override_story(story),
-      ]
+      resolved_benchmark = benchmark or parsed.benchmark
+      resolved_bot = bot or parsed.bot
+      resolved_story = story or parsed.story
 
-      parsed.story_tags = story_tags or parsed.story_tags
-      if not parsed.story and not parsed.story_tags:
+      benchmark_warning = cls.resolve_benchmark(resolved_benchmark)
+      bot_warning = cls.resolve_bot(resolved_bot)
+      resolved_story, story_warning = cls.resolve_story(resolved_benchmark,
+                                                        resolved_story)
+
+      warnings = [benchmark_warning, bot_warning, story_warning]
+
+      resolved_story_tags = story_tags or parsed.story_tags
+      if not resolved_story and not resolved_story_tags:
         raise ValueError("Story or story_tags must be specified.")
 
-      if repeat is not None:
-        parsed.repeat = repeat
-      if bug is not None:
-        parsed.bug = bug
+      resolved_repeat = repeat if repeat is not None else parsed.repeat
+      resolved_bug = bug if bug is not None else parsed.bug
 
-      parsed.base.override_commit(base_commit, bot=parsed.bot)
-      parsed.base.override_patch(base_patch)
-
-      parsed.experiment.override_commit(exp_commit, bot=parsed.bot)
-      parsed.experiment.override_patch(exp_patch)
-
-      parsed.base.override_flags(
+      base = parsed.base.override_commit(base_commit, bot=resolved_bot)
+      base = base.override_patch(base_patch)
+      base = base.override_flags(
           js_flags=base_js_flags,
           enable_features=base_enable_features,
           disable_features=base_disable_features,
       )
-      parsed.experiment.override_flags(
+
+      experiment = parsed.experiment.override_commit(
+          exp_commit, bot=resolved_bot)
+      experiment = experiment.override_patch(exp_patch)
+      experiment = experiment.override_flags(
           js_flags=exp_js_flags,
           enable_features=exp_enable_features,
           disable_features=exp_disable_features,
@@ -319,7 +365,16 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
 
     show_warnings([w for w in warnings if w])
 
-    return parsed
+    return cls(
+        benchmark=resolved_benchmark,
+        bot=resolved_bot,
+        story=resolved_story,
+        story_tags=resolved_story_tags,
+        base=base,
+        experiment=experiment,
+        repeat=resolved_repeat,
+        bug=resolved_bug,
+    )
 
   def to_request_dict(self) -> dict[str, Any]:
     return {
@@ -398,7 +453,7 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
     return result
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(frozen=True)
 class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
   """Representation of a Pinpoint "bisect job" configuration."""
 
@@ -410,6 +465,36 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
       default_factory=BisectEndVariantConfig)
   repeat: int = 30
   bug: int | None = None
+
+  @classmethod
+  @override
+  def create(
+      cls,
+      benchmark: str,
+      bot: str,
+      chart: str | None = None,
+      story: str | None = None,
+      story_tags: str | None = None,
+      start: BisectStartVariantConfig | None = None,
+      end: BisectEndVariantConfig | None = None,
+      repeat: int = 30,
+      bug: int | None = None,
+  ) -> Self:
+    if start is None:
+      start = BisectStartVariantConfig()
+    if end is None:
+      end = BisectEndVariantConfig()
+    return cls(
+        benchmark=benchmark,
+        bot=bot,
+        chart=chart,
+        story=story,
+        story_tags=story_tags,
+        start=start,
+        end=end,
+        repeat=repeat,
+        bug=bug,
+    )
 
   @classmethod
   def config_parser(cls) -> ConfigParser[PinpointBisectJobConfig]:
@@ -486,41 +571,53 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
       else:
         parsed = PinpointBisectJobConfig(benchmark="", bot="")
 
-      warnings = [
-          parsed.override_benchmark(benchmark),
-          parsed.override_bot(bot),
-          parsed.override_story(story),
-      ]
+      resolved_benchmark = benchmark or parsed.benchmark
+      resolved_bot = bot or parsed.bot
+      resolved_story = story or parsed.story
 
-      if chart is not None:
-        parsed.chart = chart
-      if not parsed.chart:
+      benchmark_warning = cls.resolve_benchmark(resolved_benchmark)
+      bot_warning = cls.resolve_bot(resolved_bot)
+      resolved_story, story_warning = cls.resolve_story(resolved_benchmark,
+                                                        resolved_story)
+
+      warnings = [benchmark_warning, bot_warning, story_warning]
+
+      resolved_chart = chart or parsed.chart
+      if not resolved_chart:
         raise ValueError("Chart is required for bisect jobs.")
 
-      parsed.story_tags = story_tags or parsed.story_tags
-      if not parsed.story and not parsed.story_tags:
+      resolved_story_tags = story_tags or parsed.story_tags
+      if not resolved_story and not resolved_story_tags:
         raise ValueError("Story or story_tags must be specified.")
 
-      if repeat is not None:
-        parsed.repeat = repeat
-      if bug is not None:
-        parsed.bug = bug
+      resolved_repeat = repeat or parsed.repeat
+      resolved_bug = bug or parsed.bug
 
-      parsed.start.override_commit(start_commit, bot=parsed.bot)
-      parsed.end.override_commit(end_commit, bot=parsed.bot)
+      start = parsed.start.override_commit(start_commit, bot=resolved_bot)
+      end = parsed.end.override_commit(end_commit, bot=resolved_bot)
 
-      parsed.start.override_flags(
+      start = start.override_flags(
           js_flags=js_flags,
           enable_features=enable_features,
           disable_features=disable_features,
       )
 
-      parsed.start.validate()
-      parsed.end.validate()
+      start.validate()
+      end.validate()
 
     show_warnings([w for w in warnings if w])
 
-    return parsed
+    return cls(
+        benchmark=resolved_benchmark,
+        bot=resolved_bot,
+        chart=resolved_chart,
+        story=resolved_story,
+        story_tags=resolved_story_tags,
+        start=start,
+        end=end,
+        repeat=resolved_repeat,
+        bug=resolved_bug,
+    )
 
   def to_request_dict(self) -> dict[str, Any]:
     return {

@@ -97,20 +97,21 @@ class UsernamePassword(Secret):
     raise NotImplementedError("Cannot support")
 
 
+@dataclasses.dataclass(frozen=True)
 class InteractiveUsernamePassword(UsernamePassword):
   """Interactive secret that defers the input to the user so we can
   live test the login process. """
-
-  def __init__(self) -> None:
-    super().__init__("", "")
+  username: str = dataclasses.field(default="", init=False)
+  password: str = dataclasses.field(default="", init=False)
 
   @property
+  @override
   def is_interactive(self) -> bool:
     return True
 
 
+@dataclasses.dataclass(frozen=True)
 class CycledUsernamePassword(UsernamePassword):
-
   @classmethod
   @override
   def config_parser(cls) -> ConfigParser[Self]:
@@ -118,30 +119,44 @@ class CycledUsernamePassword(UsernamePassword):
     parser.add_argument(
         "use_range",
         aliases=("use-account-range", "enable-range"),
-        type=ObjectParser.bool)
+        type=ObjectParser.bool,
+        default=False)
     parser.add_argument(
         "start",
         aliases=("account-range-start", "range-start"),
-        type=NumberParser.positive_zero_int)
+        type=NumberParser.positive_zero_int,
+        default=0)
     parser.add_argument(
         "end",
         aliases=("account-range-end", "range-end"),
-        type=NumberParser.positive_zero_int)
+        type=NumberParser.positive_zero_int,
+        default=0)
     return parser
 
-  def __init__(self,
-               username: str,
-               password: str,
-               use_range: bool = False,
-               start: int = 0,
-               end: int = 0) -> None:
+  @classmethod
+  @override
+  def create(
+      cls,
+      username: str,
+      password: str,
+      use_range: bool = False,
+      start: int = 0,
+      end: int = 0,
+  ) -> Self:
     if use_range:
+      if end <= start:
+        raise ValueError(
+            f"CycledUsernamePassword 'end' boundary ({end}) must be "
+            f"strictly greater than 'start' ({start}) when 'use_range' "
+            "is enabled.")
+
       account_selection = secrets.randbelow(end - start) + start
       username = username % account_selection
 
-    super().__init__(username, password)
+    return cls(username=username, password=password)
 
 
+@dataclasses.dataclass(frozen=True)
 class GoogleUsernamePassword(CycledUsernamePassword):
   pass
 

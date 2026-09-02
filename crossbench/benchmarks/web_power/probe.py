@@ -293,7 +293,7 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
     if cls.INTERNAL_QUERIES_DIR.is_dir():
       mapping.update(cls._load_mapping(cls.INTERNAL_QUERIES_DIR))
 
-    return DeviceSpecificTraceProcessorQuery(
+    return DeviceSpecificTraceProcessorQuery.create(
         name=cls.QUERY_NAME, device_override=mapping)
 
   @classmethod

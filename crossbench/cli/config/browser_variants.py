@@ -404,7 +404,7 @@ class BaseBrowserVariantsConfig(abc.ABC):
       network_config = browser_config.network or args.network_config
       assert isinstance(network_config,
                         NetworkConfig), ("Invalid network_config type")
-      return network_config.create(browser_platform)
+      return network_config.create_network(browser_platform)
     raise exception.UnreachableError
 
   def _get_browser_env_config(self, args: argparse.Namespace,

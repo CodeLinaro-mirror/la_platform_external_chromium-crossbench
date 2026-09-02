@@ -6,17 +6,18 @@ from __future__ import annotations
 
 import abc
 import argparse
+import dataclasses
 import enum
 import re
 from typing import TYPE_CHECKING, Any, Final, Hashable, Mapping, Pattern, \
-    TypeAlias
+    Self, TypeAlias
 
 from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench.config import ConfigObject
+from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
@@ -56,14 +57,20 @@ class CPUFrequencyMap(ConfigObject, metaclass=abc.ABCMeta):
   @classmethod
   @override
   def parse_dict(cls, config: Mapping[str, Any], **kwargs) -> CPUFrequencyMap:
+    cls.expect_no_extra_kwargs(kwargs)
     if _WILDCARD_CONFIG_KEY in config:
-      return WildcardCPUFrequencyMap(config)
-    return ExplicitCPUFrequencyMap(config)
+      return WildcardCPUFrequencyMap.create(config)
+    return ExplicitCPUFrequencyMap.create(config)
 
   @classmethod
   @override
   def parse_str(cls, value: str) -> CPUFrequencyMap:
     return CPUFrequencyMap.parse_dict({_WILDCARD_CONFIG_KEY: value})
+
+  @classmethod
+  @override
+  def config_parser(cls) -> ConfigParser[Self]:
+    return ConfigParser(cls)
 
   @classmethod
   def _parse_frequency(cls, value: Any) -> FrequencyType:
@@ -115,23 +122,36 @@ class CPUFrequencyMap(ConfigObject, metaclass=abc.ABCMeta):
     return pth.AnyPosixPath(_CPUS_DIR / cpu_name / "cpufreq")
 
 
+@dataclasses.dataclass(frozen=True)
 class WildcardCPUFrequencyMap(CPUFrequencyMap):
+  target_frequency: FrequencyType
 
-  def __init__(self, frequencies: Mapping) -> None:
-    if len(frequencies) != 1:
+  @classmethod
+  @override
+  def create(
+      cls,
+      frequencies: Mapping[str, Any] | None = None,
+      target_frequency: FrequencyType | None = None,
+  ) -> Self:
+    if target_frequency is not None:
+      assert not frequencies, (
+          "Cannot have target_frequency and frequencies at the same time")
+      return cls(target_frequency=cls._parse_frequency(target_frequency))
+    if not frequencies or len(
+        frequencies) != 1 or _WILDCARD_CONFIG_KEY not in frequencies:
       raise argparse.ArgumentTypeError(
           f"A wildcard ({_WILDCARD_CONFIG_KEY}) in "
           "the CPU frequency map should be the only key.")
-
-    self._target_frequency: Final[FrequencyType] = self._parse_frequency(
-        next(iter(frequencies.values())))
+    parsed_target_frequency = cls._parse_frequency(
+        frequencies[_WILDCARD_CONFIG_KEY])
+    return cls(target_frequency=parsed_target_frequency)
 
   @override
   def get_target_frequencies(
       self, platform: Platform) -> immutabledict[pth.AnyPosixPath, int]:
     return immutabledict({
         self._get_cpu_dir(p.name):
-            self._get_target_frequency(platform, p.name, self._target_frequency)
+            self._get_target_frequency(platform, p.name, self.target_frequency)
         for p in platform.iterdir(_CPUS_DIR)
         if _CPU_NAME_REGEX.match(p.name)
     })
@@ -139,18 +159,25 @@ class WildcardCPUFrequencyMap(CPUFrequencyMap):
   @property
   @override
   def key(self) -> Hashable:
-    return self._target_frequency
+    return self.target_frequency
 
 
+@dataclasses.dataclass(frozen=True)
 class ExplicitCPUFrequencyMap(CPUFrequencyMap):
+  frequencies: immutabledict[str, FrequencyType] = dataclasses.field(
+      default_factory=immutabledict)
 
-  def __init__(self, frequencies: Mapping) -> None:
+  @classmethod
+  @override
+  def create(
+      cls,
+      frequencies: Mapping[str, Any] | None = None,
+  ) -> Self:
     typed_map: dict[str, FrequencyType] = {}
-    for k, v in frequencies.items():
+    for k, v in (frequencies or {}).items():
       with exception.annotate_argparsing(f"Parsing cpu frequency: {k}, {v}"):
-        typed_map[ObjectParser.non_empty_str(k)] = self._parse_frequency(v)
-    self._frequencies: immutabledict[str,
-                                     FrequencyType] = immutabledict(typed_map)
+        typed_map[ObjectParser.non_empty_str(k)] = cls._parse_frequency(v)
+    return cls(frequencies=immutabledict(typed_map))
 
   @override
   def get_target_frequencies(
@@ -158,10 +185,10 @@ class ExplicitCPUFrequencyMap(CPUFrequencyMap):
     return immutabledict({
         self._get_cpu_dir(cpu_name):
             self._get_target_frequency(platform, cpu_name, config_frequency)
-        for cpu_name, config_frequency in self._frequencies.items()
+        for cpu_name, config_frequency in self.frequencies.items()
     })
 
   @property
   @override
   def key(self) -> Hashable:
-    return self._frequencies
+    return self.frequencies

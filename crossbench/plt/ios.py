@@ -248,8 +248,9 @@ class IOSPlatform(RemotePlatformMixin, Platform):
         "bits": "n/a",
     }
 
+  @functools.lru_cache(maxsize=2)
   @override
-  def cpu_cores(self, logical: bool) -> int:  #type: ignore[override]
+  def cpu_cores(self, logical: bool) -> int:
     return 0
 
   @override
@@ -259,7 +260,8 @@ class IOSPlatform(RemotePlatformMixin, Platform):
   def get_relative_cpu_speed(self) -> float:
     return 1.0
 
-  def display_details(self) -> tuple[DisplayInfo, ...]:  #type: ignore[override]
+  @override
+  def display_details(self) -> tuple[DisplayInfo, ...]:
     return ()
 
   @property

@@ -282,7 +282,7 @@ class NetworkConfig(ConfigObject):
       raise argparse.ArgumentTypeError(
           "http_port and https_port cannot be set in cross_platform_mode")
 
-  def create(self, browser_platform: Platform) -> Network:
+  def create_network(self, browser_platform: Platform) -> Network:
     with exception.annotate_argparsing(
         f"Setting up {self.type} network for {browser_platform}"):
       traffic_shaper = self._create_traffic_shaper(browser_platform)

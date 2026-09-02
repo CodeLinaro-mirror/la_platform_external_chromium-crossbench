@@ -46,6 +46,15 @@ def is_abstract(cls: type) -> bool:
   return bool(getattr(cls, "__abstractmethods__", False))
 
 
+def get_all_config_classes() -> list[type[ConfigObject]]:
+  config_classes = list(get_all_subclasses(ConfigObject))
+  filtered_classes = [
+      cls for cls in config_classes if not cls.__name__.startswith("_")
+  ]
+  filtered_classes.sort(key=lambda cls: cls.__name__)
+  return filtered_classes
+
+
 class DescribeSubcommand(CrossbenchSubcommand):
 
   PROBE_ALIAS = ("probe", "probes")
@@ -105,12 +114,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
     return names
 
   def config_classes(self) -> list[type[ConfigObject]]:
-    config_classes = list(get_all_subclasses(ConfigObject))
-    config_classes = [
-        cls for cls in config_classes if not cls.__name__.startswith("_")
-    ]
-    config_classes.sort(key=lambda cls: cls.__name__)
-    return config_classes
+    return get_all_config_classes()
 
   def config_object_names(self) -> list[str]:
     names = [config_cls.__name__ for config_cls in self.config_classes()]

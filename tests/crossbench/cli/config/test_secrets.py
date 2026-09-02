@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
 import unittest
@@ -213,6 +214,130 @@ class SecretsConfigTestCase(BaseConfigTestCase):
 
     self.assertTrue(re.match(r"user\d@user.com", cycled_account.username))
     self.assertEqual(cycled_account.password, "password")
+
+  def test_cycled_account_immutability_and_dataclass_fields(self):
+    cycled_account = CycledUsernamePassword.parse({
+        "username": "user%d@user.com",
+        "password": "secret_password",
+        "use_range": True,
+        "start": 10,
+        "end": 20,
+    })
+
+    self.assertEqual(cycled_account.password, "secret_password")
+    self.assertTrue(re.match(r"user1\d@user.com", cycled_account.username))
+
+    # Validate complete serialization and metadata preservation.
+    serialized_dict = dataclasses.asdict(cycled_account)
+    self.assertEqual(serialized_dict["password"], "secret_password")
+    self.assertEqual(serialized_dict["username"], cycled_account.username)
+
+    # Validate strict Immutability.
+    with self.assertRaises(dataclasses.FrozenInstanceError):
+      cycled_account.username = "mutated_username"
+    with self.assertRaises(dataclasses.FrozenInstanceError):
+      cycled_account.password = "mutated_password"
+
+  def test_cycled_account_invalid_range_raises_value_error(self):
+    with self.assertRaisesRegex(ValueError, "start"):
+      CycledUsernamePassword.parse({
+          "username": "user%d@user.com",
+          "password": "password",
+          "use_range": True,
+          "start": 10,
+          "end": 10,
+      })
+
+    with self.assertRaisesRegex(ValueError, "start"):
+      CycledUsernamePassword.parse({
+          "username": "user%d@user.com",
+          "password": "password",
+          "use_range": True,
+          "start": 15,
+          "end": 10,
+      })
+
+  def test_google_username_password_inherited_frozen_invariants(self):
+    google_account = GoogleUsernamePassword.parse({
+        "username": "googler%d@google.com",
+        "password": "secret_google_password",
+        "use_range": True,
+        "start": 100,
+        "end": 200,
+    })
+
+    self.assertTrue(
+        re.match(r"googler1\d{2}@google.com", google_account.username))
+    self.assertEqual(google_account.password, "secret_google_password")
+
+    # Immutability validation on the inherited subclass
+    with self.assertRaises(dataclasses.FrozenInstanceError):
+      google_account.username = "new_username"
+
+    # Serialization completeness on the GoogleUsernamePassword dataclass
+    serialized = dataclasses.asdict(google_account)
+    self.assertEqual(serialized["password"], "secret_google_password")
+    self.assertEqual(serialized["username"], google_account.username)
+
+  def test_cycled_account_create_classmethod_factory(self):
+    """Explicitly validates the create() factory for CycledUsernamePassword.
+
+    Ensures programmatic access directly processes, validates, and interpolates
+    arguments before construction without post-init runtime mutation, and
+    enforces dataclass immutability.
+    """
+    # 1. Non-Cycling Creation
+    account_no_cycle = CycledUsernamePassword.create(
+        username="user@user.com",
+        password="secret_password",
+        use_range=False,
+    )
+    self.assertEqual(account_no_cycle.username, "user@user.com")
+    self.assertEqual(account_no_cycle.password, "secret_password")
+
+    # 2. Unexpected keyword argument raises TypeError
+    with self.assertRaises(TypeError):
+      CycledUsernamePassword.create(
+          username="user@user.com",
+          password="secret_password",
+          extra_unused_kwarg="ignored",
+      )
+
+    # 3. Cycle-Enabled Creation with Range Validation and Interpolation
+    account_cycle = CycledUsernamePassword.create(
+        username="user%d@user.com",
+        password="secret_password",
+        use_range=True,
+        start=10,
+        end=20,
+    )
+    self.assertTrue(re.match(r"user\d{2}@user.com", account_cycle.username))
+    self.assertEqual(account_cycle.password, "secret_password")
+
+    # 4. Round-Trip Dictionary Serialization Retention
+    serialized_no_cycle = dataclasses.asdict(account_no_cycle)
+    self.assertEqual(serialized_no_cycle["username"], "user@user.com")
+    self.assertEqual(serialized_no_cycle["password"], "secret_password")
+
+    serialized_cycle = dataclasses.asdict(account_cycle)
+    self.assertEqual(serialized_cycle["username"], account_cycle.username)
+    self.assertEqual(serialized_cycle["password"], "secret_password")
+
+    # 5. Invalid Range within create() invocation raises ValueError
+    with self.assertRaisesRegex(
+        ValueError,
+        "strictly greater than 'start'",
+    ):
+      CycledUsernamePassword.create(
+          username="user%d@user.com",
+          password="secret_password",
+          use_range=True,
+          start=5,
+          end=5,
+      )
+
+    with self.assertRaises(dataclasses.FrozenInstanceError):
+      account_cycle.username = "mutated_username"
 
 
 class UsernamePasswordTestCase(unittest.TestCase):

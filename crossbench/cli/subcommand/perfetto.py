@@ -160,7 +160,8 @@ class PerfettoBaseSubcommand(abc.ABC):
     settings = Settings(
         cache_dir=browser_config.cache_dir,
         flags=browser_cls.default_flags(Flags()),
-        network=NetworkConfig.default().create(browser_config.get_platform()),
+        network=NetworkConfig.default().create_network(
+            browser_config.get_platform()),
         platform=browser_config.get_platform(),
         env_config=EnvConfig(),
         viewport=Viewport.HEADLESS,

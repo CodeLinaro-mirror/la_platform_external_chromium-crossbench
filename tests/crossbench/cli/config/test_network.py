@@ -476,7 +476,7 @@ class NetworkConfigCreateTestCase(BaseConfigTestCase):
     mock_platform = unittest.mock.MagicMock()
     with unittest.mock.patch(
         "crossbench.cli.config.network.LiveNetwork") as mock_live:
-      config.create(mock_platform)
+      config.create_network(mock_platform)
       mock_live.assert_called_once()
 
   def test_create_local(self):
@@ -487,7 +487,7 @@ class NetworkConfigCreateTestCase(BaseConfigTestCase):
     mock_platform = unittest.mock.MagicMock()
     with unittest.mock.patch(
         "crossbench.cli.config.network.LocalFileNetwork") as mock_local:
-      config.create(mock_platform)
+      config.create_network(mock_platform)
       mock_local.assert_called_once()
 
   def test_create_wpr_local(self):
@@ -498,7 +498,7 @@ class NetworkConfigCreateTestCase(BaseConfigTestCase):
     mock_platform.is_remote = False
     with unittest.mock.patch(
         "crossbench.cli.config.network.LocalWprReplayNetwork") as mock_wpr:
-      config.create(mock_platform)
+      config.create_network(mock_platform)
       mock_wpr.assert_called_once()
 
   def test_create_wpr_remote(self):
@@ -510,7 +510,7 @@ class NetworkConfigCreateTestCase(BaseConfigTestCase):
     with unittest.mock.patch(
         "crossbench.cli.config.network.RemoteWprReplayNetwork") as mock_wpr:
       mock_wpr.is_compatible.return_value = True
-      config.create(mock_platform)
+      config.create_network(mock_platform)
       mock_wpr.assert_called_once()
 
   def test_create_wpr_remote_incompatible(self):
@@ -523,7 +523,7 @@ class NetworkConfigCreateTestCase(BaseConfigTestCase):
         "crossbench.cli.config.network.RemoteWprReplayNetwork") as mock_wpr:
       mock_wpr.is_compatible.return_value = False
       with self.assertRaisesRegex(ValueError, "run_on_device is unsupported"):
-        config.create(mock_platform)
+        config.create_network(mock_platform)
 
 
 if __name__ == "__main__":

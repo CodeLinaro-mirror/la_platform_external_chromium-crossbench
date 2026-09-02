@@ -455,6 +455,15 @@ class ConfigObject(abc.ABC):
     return self
 
   @classmethod
+  def create(cls: type[Self], *args: Any, **kwargs: Any) -> Self:
+    """Factory method for creating ConfigObject instances.
+
+    ConfigParser delegates object creation to this method. Subclasses with
+    custom initialization or validation logic can override it.
+    """
+    return cls(*args, **kwargs)
+
+  @classmethod
   def parse(cls, value: object, **kwargs) -> Self:
     # Quick return for default values used by parsers.
     if isinstance(value, cls):
@@ -1274,6 +1283,8 @@ class ConfigParser(Generic[ConfigResultObjectT]):
 
   def new_instance_from_kwargs(
       self, kwargs: dict[str, object]) -> ConfigResultObjectT:
+    if issubclass(self._cls, ConfigObject):
+      return self._cls.create(**kwargs)
     return self._cls(**kwargs)
 
   def _handle_unused_config_data(self,

@@ -4,18 +4,24 @@
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 import pathlib
 import re
 import tomllib
 import unittest
 from itertools import chain
+from typing import TYPE_CHECKING, Final
 
 import pytest
 from tabulate import tabulate
 
 import crossbench
+from crossbench.cli.subcommand.describe import get_all_config_classes
 from tests import test_helper
+
+if TYPE_CHECKING:
+  from crossbench.config import ConfigObject
 
 RUN_SNIPPET = """
 if __name__ == "__main__":
@@ -179,13 +185,11 @@ class MetaTestCase(unittest.TestCase):
     module_names = {
         "google",
     }
-    for name in dependencies:
-      if name == "python":
-        continue
-      module_names.add(name.replace("-", "_"))
+    pyproject_data = tomllib.loads((ROOT_DIR / "pyproject.toml").read_text())
+    dependencies = pyproject_data["tool"]["poetry"]["dependencies"]
+    module_names = set(dependencies.keys())
 
-    found_shadows: list[str] = []
-    # We check all directories that have an __init__.py
+    found_shadows = []
     for init_file in chain(
         CROSSBENCH_DIR.glob("**/__init__.py"),
         UNITTEST_DIR.glob("**/__init__.py")):
@@ -200,6 +204,111 @@ class MetaTestCase(unittest.TestCase):
                 "Either rename the crossbench module or remove its "
                 "__init__.py file.\n"
                 f"  - {formatted_modules}")
+
+
+class ConfigObjectMetaTest(unittest.TestCase):
+
+  exempt_classes: Final[frozenset[str]] = frozenset({
+      "crossbench.action_runner.action.base_probe.BaseProbeAction",
+      "crossbench.action_runner.action.clear_cache.ClearCacheAction",
+      "crossbench.action_runner.action.click.ClickAction",
+      "crossbench.action_runner.action.close_all_tabs.CloseAllTabsAction",
+      "crossbench.action_runner.action.close_tab.CloseTabAction",
+      "crossbench.action_runner.action.dump_html.DumpHtmlAction",
+      "crossbench.action_runner.action.get.GetAction",
+      "crossbench.action_runner.action."
+      "inject_new_document_script.InjectNewDocumentScriptAction",
+      "crossbench.action_runner.action.js.JsAction",
+      "crossbench.action_runner.action.meet_create.MeetCreateAction",
+      "crossbench.action_runner.action.meet_script.MeetScriptAction",
+      "crossbench.action_runner.action.meminfo.MeminfoAction",
+      "crossbench.action_runner.action.open_devtools.OpenDevToolsAction",
+      "crossbench.action_runner.action.probe.ProbeAction",
+      "crossbench.action_runner.action.screenshot.ScreenshotAction",
+      "crossbench.action_runner.action.scroll.ScrollAction",
+      "crossbench.action_runner.action.swipe.SwipeAction",
+      "crossbench.action_runner.action.switch_frame.SwitchFrameAction",
+      "crossbench.action_runner.action.switch_tab.SwitchTabAction",
+      "crossbench.action_runner.action.text_input.TextInputAction",
+      "crossbench.action_runner.action.wait.WaitAction",
+      "crossbench.action_runner.action."
+      "wait_for_condition.WaitForConditionAction",
+      "crossbench.action_runner.action."
+      "wait_for_download.WaitForDownloadAction",
+      "crossbench.action_runner.action.wait_for_element.WaitForElementAction",
+      ("crossbench.action_runner.action."
+       "wait_for_url_matches.WaitForUrlMatchesAction"),
+      "crossbench.action_runner.action."
+      "wait_for_ready_state.WaitForReadyStateAction",
+      "crossbench.benchmarks.loading.config.login.base.BaseLoginBlock",
+      "crossbench.cli.config.flags.FlagsConfig",
+  })
+
+  def validate_is_dataclass(self, cls: type[ConfigObject],
+                            class_name: str) -> list[str]:
+    if not dataclasses.is_dataclass(cls):
+      return [
+          f"{class_name}: Missing @dataclasses.dataclass(frozen=True) "
+          "decorator. All concrete ConfigObject implementations in "
+          "Crossbench MUST be declared as frozen dataclasses."
+      ]
+    return []
+
+  def validate_dataclass_frozen(self, cls: type[ConfigObject],
+                                class_name: str) -> list[str]:
+    if not cls.__dataclass_params__.frozen:
+      return [
+          f"{class_name}: Declared with frozen=False. Concrete ConfigObject "
+          "schemas MUST enforce strict, post-instantiation immutability ("
+          "@dataclasses.dataclass(frozen=True))."
+      ]
+    return []
+
+  def validate_no_ghost_annotations(self, cls: type[ConfigObject],
+                                    class_name: str) -> list[str]:
+    violations: list[str] = []
+    registered_fields = {field.name for field in dataclasses.fields(cls)}
+    for attr_name, attr_type in cls.__annotations__.items():
+      if "ClassVar" in str(attr_type):
+        continue
+      if attr_name not in registered_fields:
+        violations.append(
+            f"{class_name}: Detected Ghost-Dataclass attribute drop! The field "
+            f"'{attr_name}' was annotated inside the class body, but dropped "
+            "from the compiled Dataclass metadata and `.asdict()` "
+            "serialization schema. Verify the subclass is directly decorated "
+            "with @dataclasses.dataclass(frozen=True).")
+    return violations
+
+  def validate_config_object_cls(self, cls: type[ConfigObject]) -> list[str]:
+    class_name = f"{cls.__module__}.{cls.__name__}"
+
+    dataclass_errors = self.validate_is_dataclass(cls, class_name)
+    if dataclass_errors:
+      return dataclass_errors
+
+    violations: list[str] = []
+    violations.extend(self.validate_dataclass_frozen(cls, class_name))
+    violations.extend(self.validate_no_ghost_annotations(cls, class_name))
+    return violations
+
+  def test_all_config_objects_are_frozen_dataclasses(self):
+    violations: list[str] = []
+    for cls in get_all_config_classes():
+      if not cls.__module__.startswith("crossbench."):
+        continue
+      class_name = f"{cls.__module__}.{cls.__name__}"
+      if class_name in self.exempt_classes:
+        continue
+
+      violations.extend(self.validate_config_object_cls(cls))
+
+    if violations:
+      error_report = "\n  - ".join(violations)
+      self.fail(
+          "Discovered concrete `ConfigObject` schemas violating Crossbench's "
+          "Immutable PEP-557 Dataclass design invariants:\n\n"
+          f"  - {error_report}")
 
 
 if __name__ == "__main__":

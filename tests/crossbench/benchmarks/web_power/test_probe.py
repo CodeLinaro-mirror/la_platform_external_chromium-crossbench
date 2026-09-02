@@ -993,7 +993,7 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     (query,) = tp_probe.queries
 
     self.assertDictEqual(
-        query._device_override, {
+        dict(query.device_override), {
             re.compile("Public Device"): str(public_sql.resolve()),
             re.compile("Internal Device"): str(internal_sql.resolve()),
         })
@@ -1054,22 +1054,29 @@ class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
     without presupposing the structure of the original regex mappings.
     """
 
-    paths = list(self.query._device_override.values())
-    self.query._device_override.clear()
+    paths = list(self.query.device_override.values())
+    dummy_overrides: dict[str, str] = {}
 
     for path in paths:
       device_name = str(len(self.tp_probe.browsers))
-      self.query._device_override[re.compile(device_name)] = path
+      dummy_overrides[device_name] = path
       browser = mock.MagicMock()
       browser.platform.model = device_name
       self.tp_probe.attach(browser)
+
+    self.query = DeviceSpecificTraceProcessorQuery.create(
+        name=self.query.name, device_override=dummy_overrides)
+    self.tp_probe._queries = (self.query,)
 
   def _run_validation_with_sql(self, sql_content: str, device_name: str):
     with tempfile.NamedTemporaryFile(mode="w", suffix=".sql") as sql_file:
       sql_file.write(sql_content)
       sql_file.flush()
 
-      self.query._device_override[re.compile(device_name)] = sql_file.name
+      overrides = {device_name: sql_file.name}
+      test_query = DeviceSpecificTraceProcessorQuery.create(
+          name=self.query.name, device_override=overrides)
+      self.tp_probe._queries = (test_query,)
       browser = mock.MagicMock()
       browser.platform.model = device_name
       self.tp_probe.attach(browser)

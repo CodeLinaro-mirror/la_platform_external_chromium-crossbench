@@ -4,38 +4,58 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Self
+import dataclasses
+from typing import TYPE_CHECKING, Any, Mapping, Self
 
+from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench import exception
-from crossbench.config import ConfigObject
+from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
+@dataclasses.dataclass(frozen=True)
 class Replacements(ConfigObject):
+  _replacements: immutabledict[str, Any] = dataclasses.field(
+      default_factory=immutabledict)
+
+  @classmethod
+  @override
+  def create(
+      cls,
+      replacements: Mapping[str, Any] | None = None,
+  ) -> Self:
+    dict_value = ObjectParser.dict(replacements or {}, "replacements")
+    validated_replacements: dict[str, Any] = {}
+    for replace_key, replace_value in dict_value.items():
+      with exception.annotate_argparsing(
+          f"Parsing ...[{replace_key!r}] = {dict_value!r}"):
+        key = ObjectParser.non_empty_str(replace_key, "replacement key")
+        val = ObjectParser.not_none(replace_value, "replacement value")
+        validated_replacements[key] = val
+    return cls(_replacements=immutabledict(validated_replacements))
 
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
+    del value
     raise ValueError("Cannot parse replacements from string")
 
   @classmethod
   @override
   def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
-    dict_value = ObjectParser.dict(config)
-    for replace_key, replace_value in dict_value.items():
-      with exception.annotate_argparsing(
-          f"Parsing ...[{replace_key!r}] = {config!r}"):
-        ObjectParser.non_empty_str(replace_key, "replacement key")
-        ObjectParser.not_none(replace_value, "replacement value")
-    return cls(config)
+    del kwargs
+    return cls.create(config)
 
-  def __init__(self, replacements: dict[str, Any]) -> None:
-    self._replacements = replacements
+  @classmethod
+  @override
+  def config_parser(cls) -> ConfigParser[Self]:
+    parser = ConfigParser(cls)
+    return parser
 
   def apply(self, raw_value: str) -> str:
     final_value: str = raw_value
@@ -47,4 +67,4 @@ class Replacements(ConfigObject):
     return final_value
 
   def to_json(self) -> JsonDict:
-    return self._replacements
+    return dict(self._replacements)

@@ -133,7 +133,7 @@ class CliSlowTestCase(BaseCliTestCase):
     def get_browser(self, args: argparse.Namespace):
       session = Settings(
           platform=self.cli.platform,
-          network=args.network_config.create(self.cli.platform))
+          network=args.network_config.create_network(self.cli.platform))
       browsers = [
           mock_browser.MockChromeDev("dev", settings=session),
       ]
