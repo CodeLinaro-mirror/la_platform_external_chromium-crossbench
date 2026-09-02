@@ -162,7 +162,6 @@ class BitsProbe(Probe):
         raise ProbeValidationError(self, "BITS service stopped unexpectedly.")
       line = raw.decode("utf-8", "replace") if isinstance(raw, bytes) else raw
       if ready_marker in line:
-        logging.info("BITS service is ready.")
         return
 
     self._stop_service()
@@ -175,6 +174,22 @@ class BitsProbe(Probe):
     self.host_platform.terminate_gracefully(self._service_proc)
     self._service_proc = None
 
+  def _resolve_target_device(self, devices: list[str] | None = None) -> str:
+    if devices is None:
+      devices = self._get_connected_devices() or []
+    if not devices:
+      self._stop_service()
+      raise ProbeValidationError(self, f"No devices on port {self.port}.")
+    if self.bits_device:
+      if self.bits_device not in devices:
+        self._stop_service()
+        raise ProbeValidationError(self, f"Unknown device: {self.bits_device}")
+      return self.bits_device
+    if len(devices) > 1:
+      self._stop_service()
+      raise ProbeValidationError(self, "Multiple Bits devices found.")
+    return devices[0]
+
   @override
   def setup(self, runner: Runner) -> None:
     super().setup(runner)
@@ -185,16 +200,11 @@ class BitsProbe(Probe):
 
     if (devices := self._get_connected_devices()) is None:
       self._start_service()
-      devices = self._get_connected_devices() or []
+      status = "BITS service started"
     else:
-      logging.info("BITS service is already running on port %s.", self.port)
-
-    if not devices:
-      self._stop_service()
-      raise ProbeValidationError(self, f"No devices on port {self.port}.")
-    if self.bits_device and self.bits_device not in devices:
-      self._stop_service()
-      raise ProbeValidationError(self, f"Unknown device: {self.bits_device!r}")
+      status = "BITS service is already running"
+    device = self._resolve_target_device(devices)
+    logging.info("%s (port: %s, device: %s).", status, self.port, device)
 
   # TODO: Consider adding Probe.teardown() following wider discussion.
   def teardown(self) -> None:

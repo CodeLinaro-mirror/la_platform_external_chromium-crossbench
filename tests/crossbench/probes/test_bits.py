@@ -344,7 +344,14 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
   def test_setup_service_already_running(self) -> None:
     self.mock_sh.return_value = self._sh_result("device_1\n")
     probe = BitsProbe(self.bits_path, port=15909)
-    probe.setup(self.runner)
+    with mock.patch("logging.info") as mock_info:
+      probe.setup(self.runner)
+      mock_info.assert_called_with(
+          "%s (port: %s, device: %s).",
+          "BITS service is already running",
+          15909,
+          "device_1",
+      )
     self.mock_sh.assert_called_once_with(
         self.bits_path,
         "--list_devices",
@@ -360,7 +367,14 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
   def test_setup_service_already_running_bytes_stdout(self) -> None:
     self.mock_sh.return_value = self._sh_result(b"device_1\n")
     probe = BitsProbe(self.bits_path, port=15909, bits_device="device_1")
-    probe.setup(self.runner)
+    with mock.patch("logging.info") as mock_info:
+      probe.setup(self.runner)
+      mock_info.assert_called_with(
+          "%s (port: %s, device: %s).",
+          "BITS service is already running",
+          15909,
+          "device_1",
+      )
     self.mock_sh.assert_called_once_with(
         self.bits_path,
         "--list_devices",
@@ -391,7 +405,14 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
         b"[TS] (GB094B002A7) Received SW timestamp #1: host_ns=123\n",
     ]
     probe = BitsProbe(self.bits_path, port=15909)
-    probe.setup(self.runner)
+    with mock.patch("logging.info") as mock_info:
+      probe.setup(self.runner)
+      mock_info.assert_called_with(
+          "%s (port: %s, device: %s).",
+          "BITS service started",
+          15909,
+          "device_1",
+      )
     self.mock_popen.assert_called_once_with(
         str(self.service_script),
         "--port",
@@ -437,12 +458,19 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
     self.assertIn("No devices on port 15909.", str(cm.exception))
     self.mock_terminate.assert_called_once_with(self.mock_proc)
 
+  def test_setup_service_multiple_devices_without_device_flag(self) -> None:
+    self.mock_sh.return_value = self._sh_result("device_A\ndevice_B\n")
+    probe = BitsProbe(self.bits_path, port=15909)
+    with self.assertRaises(ProbeValidationError) as cm:
+      probe.setup(self.runner)
+    self.assertIn("Multiple Bits devices found.", str(cm.exception))
+
   def test_setup_service_target_device_missing(self) -> None:
     self.mock_sh.return_value = self._sh_result("device_B\ndevice_C\n")
     probe = BitsProbe(self.bits_path, bits_device="device_A")
     with self.assertRaises(ProbeValidationError) as cm:
       probe.setup(self.runner)
-    self.assertIn("Unknown device: 'device_A'", str(cm.exception))
+    self.assertIn("Unknown device: device_A", str(cm.exception))
 
   def test_setup_service_auto_start_device_missing_cleans_up(self) -> None:
     self.fs.create_file(self.service_script)
@@ -454,7 +482,7 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
     probe = BitsProbe(self.bits_path, bits_device="device_A")
     with self.assertRaises(ProbeValidationError) as cm:
       probe.setup(self.runner)
-    self.assertIn("Unknown device: 'device_A'", str(cm.exception))
+    self.assertIn("Unknown device: device_A", str(cm.exception))
     self.mock_terminate.assert_called_once_with(self.mock_proc)
 
   def test_setup_service_target_device_matched(self) -> None:
