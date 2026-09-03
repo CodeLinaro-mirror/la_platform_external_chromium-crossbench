@@ -301,6 +301,11 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
             product="sdk_google_phone_x86"))
     self.assertIn(self.DEVICE_ID, str(self.adb))
 
+  def test_get_evemu_device_cmd(self):
+    self.assertEqual(
+        self.platform._get_evemu_device_cmd(VirtualDeviceType.KEYBOARD),
+        ("uinput", "-"))
+
   def test_setup_virtual_devices(self):
     mock_proc = mock.MagicMock()
     mock_proc.poll.return_value = None

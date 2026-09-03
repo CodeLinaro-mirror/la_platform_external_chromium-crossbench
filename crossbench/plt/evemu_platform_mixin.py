@@ -6,12 +6,19 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import Final, Iterable
+import subprocess
+from typing import TYPE_CHECKING, Final, Iterable, cast
 
 from immutabledict import immutabledict
 
+from crossbench.action_runner.config import VirtualDeviceType
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
     WaitEvent
+
+if TYPE_CHECKING:
+  from crossbench.action_runner.config import VirtualDeviceConfig
+  from crossbench.plt.base import Platform
+  from crossbench.plt.types import TupleCmdArgs
 
 # Simplified mapping for common W3C to Linux EV_KEY codes
 # See linux/input-event-codes.h
@@ -82,6 +89,32 @@ EV_SYN: Final[int] = 0x0000
 EV_KEY: Final[int] = 0x0001
 SYN_REPORT: Final[int] = 0x0000
 
+_EVEMU_KEYBOARD_HEADER: Final[bytes] = b"""# EVEMU 1.2
+N: Virtual Keyboard (Crossbench)
+I: 0003 18d2 2c42 0111
+# Properties: none
+P: 00 00 00 00 00 00 00 00
+B: 00 0b 00 00 00 00 00 00 00
+B: 01 fe ff ff ff ff ff 7f ff
+B: 01 1f 00 c0 53 da bf 0e 31
+B: 01 00 40 00 40 00 10 80 00
+B: 01 00 00 00 00 13 00 00 01
+B: 01 00 00 00 00 00 00 00 00
+B: 01 00 00 00 00 00 00 10 00
+B: 01 00 00 00 00 00 00 00 00
+B: 01 00 00 01 00 00 00 00 00
+B: 01 00 00 00 00 00 00 00 00
+B: 01 80 04 20 00 00 00 00 00
+B: 01 00 00 00 00 00 00 00 00
+B: 01 00 00 00 00 00 00 00 00
+B: 02 00 00 00 00 00 00 00 00
+B: 03 00 00 00 00 00 00 00 00
+B: 04 10 00 00 00 00 00 00 00
+B: 05 00 00 00 00 00 00 00 00
+B: 11 00 00 00 00 00 00 00 00
+B: 12 00 00 00 00 00 00 00 00
+"""
+
 
 class EvemuPlatformMixin(abc.ABC):
   """
@@ -89,9 +122,43 @@ class EvemuPlatformMixin(abc.ABC):
   Linux (evemu) strings.
   """
 
+  def __init__(self, *args, **kwargs) -> None:
+    super().__init__(*args, **kwargs)
+    self._virtual_devices: dict[str, subprocess.Popen] = {}
+
   @abc.abstractmethod
-  def _execute_evemu_script(self, device_name: str, script: str) -> None:
+  def _get_evemu_device_cmd(self,
+                            device_type: VirtualDeviceType) -> TupleCmdArgs:
     pass
+
+  def setup_virtual_devices(
+      self, virtual_devices: tuple[VirtualDeviceConfig, ...]) -> None:
+    for device_config in virtual_devices:
+      if device_config.device_type == VirtualDeviceType.KEYBOARD:
+        self._init_virtual_keyboard(device_config.name)
+      else:
+        raise ValueError(
+            f"Unsupported virtual device type: {device_config.device_type}")
+
+  def _init_virtual_keyboard(self, device_name: str) -> None:
+    proc = self._virtual_devices.get(device_name)
+    if proc is None or proc.poll() is not None:
+      cmd = self._get_evemu_device_cmd(VirtualDeviceType.KEYBOARD)
+      platform = cast("Platform", self)
+      proc = platform.popen(*cmd, stdin=subprocess.PIPE)
+      assert proc.stdin is not None
+      proc.stdin.write(_EVEMU_KEYBOARD_HEADER)
+      proc.stdin.flush()
+      self._virtual_devices[device_name] = proc
+
+  def _execute_evemu_script(self, device_name: str, script: str) -> None:
+    proc = self._virtual_devices.get(device_name)
+    if proc is None:
+      raise RuntimeError(f"Virtual device '{device_name}' was not initialized. "
+                         "Call setup_virtual_devices() first.")
+    assert proc.stdin is not None
+    proc.stdin.write(script.encode("utf-8"))
+    proc.stdin.flush()
 
   def inject_input_events(self, device_name: str,
                           events: Iterable[InputEvent]) -> None:
