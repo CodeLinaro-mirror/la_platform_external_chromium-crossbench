@@ -45,6 +45,7 @@ class ScrollAction(InputSourceAction):
                duration: dt.timedelta = dt.timedelta(seconds=1),
                selector: str | None = None,
                required: bool = False,
+               source_device: str | None = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._distance = distance
@@ -52,7 +53,7 @@ class ScrollAction(InputSourceAction):
     # TODO: convert to custom selector object.
     self._selector = selector
     self._required = required
-    super().__init__(source, duration, timeout, index)
+    super().__init__(source, duration, source_device, timeout, index)
 
   @property
   def distance(self) -> float:

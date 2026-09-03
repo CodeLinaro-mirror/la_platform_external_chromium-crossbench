@@ -52,12 +52,13 @@ class ClickAction(InputSourceAction):
                attempts: int = 1,
                duration: dt.timedelta = dt.timedelta(),
                verify: str | None = None,
+               source_device: str | None = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._position = position
     self._attempts = attempts
     self._verify = verify
-    super().__init__(source, duration, timeout, index)
+    super().__init__(source, duration, source_device, timeout, index)
 
   @property
   def position(self) -> PositionConfig:

@@ -48,11 +48,12 @@ class TextInputAction(InputSourceAction):
                duration: dt.timedelta,
                text: str | None = None,
                keyevent: str | None = None,
+               source_device: str | None = None,
                timeout: dt.timedelta = ACTION_TIMEOUT,
                index: int = 0) -> None:
     self._text: str | None = text
     self._keyevent: str | None = keyevent
-    super().__init__(source, duration, timeout, index)
+    super().__init__(source, duration, source_device, timeout, index)
 
   @property
   def text(self) -> str | None:

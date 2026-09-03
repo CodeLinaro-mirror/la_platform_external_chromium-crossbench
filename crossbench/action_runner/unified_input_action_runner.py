@@ -8,7 +8,6 @@ import datetime as dt
 from typing import TYPE_CHECKING, Final
 
 from crossbench.action_runner.base import ActionRunner
-from crossbench.action_runner.config import VirtualDeviceType
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
     WaitEvent
 from crossbench.action_runner.keyboard_layout import US_KEYBOARD_LAYOUT
@@ -100,16 +99,10 @@ class UnifiedInputActionRunner(ActionRunner):
     if not events_with_weights:
       return
 
-    device_name = "default_keyboard"
-    for dev in self._virtual_devices:
-      if dev.device_type == VirtualDeviceType.KEYBOARD:
-        device_name = dev.name
-        break
+    device_name = action.source_device or ""
 
-    if action.duration <= dt.timedelta():
-      input_events = [
-          e for e in events_with_weights if isinstance(e, KeyEvent)
-      ]
+    if not action.duration:
+      input_events = [e for e in events_with_weights if isinstance(e, KeyEvent)]
       self.browser_platform.inject_input_events(device_name, input_events)
       return
 
@@ -124,8 +117,8 @@ class UnifiedInputActionRunner(ActionRunner):
         timed_events.append(item)
       else:
         cumulative_weight += item
-        target_cumulative_us = (
-            total_duration_us * cumulative_weight) // total_weight
+        target_cumulative_us = (total_duration_us *
+                                cumulative_weight) // total_weight
         wait_us = target_cumulative_us - previous_cumulative_us
         previous_cumulative_us = target_cumulative_us
         if wait_us > 0:

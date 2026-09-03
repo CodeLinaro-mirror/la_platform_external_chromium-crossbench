@@ -50,10 +50,9 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
   def run_action(self, action) -> None:
     action.run_with(self.action_runner)
 
-  def assert_input_events_injected(
-      self,
-      expected_events: list[InputEvent],
-      expected_device_name: str = "default_keyboard") -> None:
+  def assert_input_events_injected(self,
+                                   expected_events: list[InputEvent],
+                                   expected_device_name: str = "") -> None:
     self.inject_events_mock.assert_called_once()
     actual_device_name = self.inject_events_mock.call_args[0][0]
     actual_events = self.inject_events_mock.call_args[0][1]
@@ -143,6 +142,19 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
         KeyEvent("Enter", is_down=False),
         WaitEvent(duration=dt.timedelta(milliseconds=600)),
     ])
+
+  def test_text_input_with_source_device(self):
+    text_input_action = TextInputAction(
+        InputSource.KEYBOARD,
+        dt.timedelta(),
+        "a",
+        source_device="my_custom_keyboard")
+    self.run_action(text_input_action)
+
+    self.assert_input_events_injected(
+        [KeyEvent("KeyA", is_down=True),
+         KeyEvent("KeyA", is_down=False)],
+        expected_device_name="my_custom_keyboard")
 
 
 if __name__ == "__main__":

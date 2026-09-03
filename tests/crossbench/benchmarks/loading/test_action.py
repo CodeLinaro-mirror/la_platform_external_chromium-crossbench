@@ -200,6 +200,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.duration, dt.timedelta(seconds=1))
     self.assertEqual(action.distance, 500)
     self.assertEqual(action.input_source, InputSource.JS)
+    self.assertIsNone(action.source_device)
     self.assertTrue(action.has_timeout)
     action.validate()
 
@@ -252,6 +253,17 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       })
     self.assertIn("source", str(cm.exception))
 
+  def test_parse_scroll_source_device(self):
+    config_dict = {
+        "action": "scroll",
+        "source_device": "my_touch_device",
+    }
+    action = ScrollAction.parse_dict(config_dict)
+    self.assertEqual(action.source_device, "my_touch_device")
+    self.assertEqual(action.input_source, InputSource.JS)
+    action_2 = ScrollAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+
   def test_parse_scroll_required_missing_selector(self):
     config_dict = {
         "action": "scroll",
@@ -278,6 +290,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.TYPE, ActionType.CLICK)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
     self.assertEqual(action.input_source, InputSource.JS)
+    self.assertIsNone(action.source_device)
     self.assertEqual(action.position.selector.selector, "#button")
     self.assertTrue(action.position.selector.required)
     self.assertFalse(action.position.selector.scroll_into_view)
@@ -376,6 +389,21 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       })
     self.assertIn("source", str(cm.exception))
 
+  def test_parse_click_source_device(self):
+    action = ClickAction.parse_dict({
+        "action": "click",
+        "source": "touch",
+        "source_device": "my_touchscreen",
+        "position": {
+            "x": 1,
+            "y": 2
+        }
+    })
+    self.assertEqual(action.source_device, "my_touchscreen")
+    self.assertEqual(action.input_source, InputSource.TOUCH)
+    action_2 = ClickAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
+
   def test_parse_click_invalid_selector(self):
     with self.assertRaises(ValueError) as cm:
       ClickAction.parse_dict({"action": "click", "selector": ""})
@@ -471,6 +499,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.TYPE, ActionType.TEXT_INPUT)
     self.assertEqual(action.timeout, ACTION_TIMEOUT)
     self.assertEqual(action.input_source, InputSource.JS)
+    self.assertIsNone(action.source_device)
     self.assertEqual(action.text, "some text")
     self.assertEqual(action.duration, dt.timedelta(seconds=10))
     self.assertTrue(action.has_timeout)
@@ -510,6 +539,19 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
           "text": "some text",
       })
     self.assertIn("source", str(cm.exception))
+
+  def test_parse_text_input_source_device(self):
+    action = TextInputAction.parse_dict({
+        "action": "text_input",
+        "duration": "1s",
+        "source": "keyboard",
+        "source_device": "my_keyboard",
+        "text": "some text",
+    })
+    self.assertEqual(action.source_device, "my_keyboard")
+    self.assertEqual(action.input_source, InputSource.KEYBOARD)
+    action_2 = TextInputAction.parse_dict(action.to_json())
+    self.assertEqual(action, action_2)
 
   def test_parse_text_input_negative_duration(self):
     config_dict = {
