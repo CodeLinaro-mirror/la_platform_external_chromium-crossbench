@@ -26,6 +26,7 @@ dependencies = [
   'protobuf==6.33.5',
   'pygments==2.19.2',
   'google-auth==2.40.3',
+  'google-api-python-client==2.111.0',
   'websocket-client==1.8.0',
   'sqlalchemy==2.0.43',
   'xlsxwriter==3.2.5',

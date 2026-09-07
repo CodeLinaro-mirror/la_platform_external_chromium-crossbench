@@ -12,8 +12,8 @@ import unittest
 import hjson
 
 from crossbench.cli.config.secrets import CycledUsernamePassword, \
-    GoogleUsernamePassword, Secrets, SecretsMergeError, ServiceAccount, \
-    UsernamePassword
+    GoogleUsernamePassword, GoogleWorkspaceSecrets, Secrets, \
+    SecretsMergeError, ServiceAccount, UsernamePassword
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 
@@ -34,6 +34,37 @@ class SecretsConfigTestCase(BaseConfigTestCase):
             "auth_provider_x509_cert_url": "https://example.com/certs",
             "client_x509_cert_url": "https://example.com/x509/my-project.cert",
             "universe_domain": "example.com",
+        }
+    }
+
+  def google_workspace_config_dict(self):
+    return {
+        "google_workspace": {
+            "service_account_key": {
+                "type":
+                    "service_account",
+                "project_id":
+                    "my-project",
+                "private_key_id":
+                    "0BADC0DE",
+                "private_key":
+                    "-----BEGIN PRIVATE KEY-----\n...",
+                "client_email":
+                    "name@example.com",
+                "client_id":
+                    "7",
+                "auth_uri":
+                    "https://example.com/oauth",
+                "token_uri":
+                    "https://example.com/token",
+                "auth_provider_x509_cert_url":
+                    "https://example.com/certs",
+                "client_x509_cert_url":
+                    "https://example.com/x509/my-project.cert",
+                "universe_domain":
+                    "example.com",
+            },
+            "shared_drive_id": "my-shared-drive-id"
         }
     }
 
@@ -80,6 +111,27 @@ class SecretsConfigTestCase(BaseConfigTestCase):
             universe_domain="example.com",
         ))
     self.assertFalse(secrets.bond.is_interactive)
+
+  def test_parse_google_workspace(self):
+    secrets = Secrets.parse(self.google_workspace_config_dict())
+    self.assertEqual(
+        secrets.google_workspace,
+        GoogleWorkspaceSecrets(
+            service_account_key=ServiceAccount(
+                type="service_account",
+                project_id="my-project",
+                private_key_id="0BADC0DE",
+                private_key="-----BEGIN PRIVATE KEY-----\n...",
+                client_email="name@example.com",
+                client_id="7",
+                auth_uri="https://example.com/oauth",
+                token_uri="https://example.com/token",
+                auth_provider_x509_cert_url="https://example.com/certs",
+                client_x509_cert_url="https://example.com/x509/my-project.cert",
+                universe_domain="example.com",
+            ),
+            shared_drive_id="my-shared-drive-id"))
+    self.assertFalse(secrets.google_workspace.is_interactive)
 
   def test_equal_empty(self):
     secrets_1 = Secrets.parse({})

@@ -86,27 +86,39 @@ execnet==2.1.1 \
     --hash=sha256:26dee51f1b80cebd6d0ca8e74dd8745419761d3bef34163928cbebbdc4749fdc \
     --hash=sha256:58d6d58362e52bfab78f40ebfed9575a3334c41593bee4eb5fcda518290018dc
     # via pytest-xdist
-google-api-core==2.25.1 \
-    --hash=sha256:8a2a56c1fef82987a524371f99f3bd0143702fecc670c72e600c1cda6bf8dbb7 \
-    --hash=sha256:b6538923d4e1cae67879332b63bfc440465fe1b8660fc592e3a17e7939899ed2
+google-api-core==2.30.3 \
+    --hash=sha256:a85761ba72c444dad5d611c2220633480b2b6be2521eca69cca2dbb3ffd6bfe8
     # via
+    #   google-api-python-client
     #   google-cloud-bigquery
     #   google-cloud-core
     #   google-cloud-storage
+google-api-python-client==2.111.0 \
+    --hash=sha256:b605adee2d09a843b97a59925757802904679e44e5599708cedb8939900dfbc7 \
+    --hash=sha256:ebbe770671ef122902caa75fdfad74132fdd47d87c2b20fe92b7b236e4896ad3
 google-auth==2.40.3 \
     --hash=sha256:09005c47d4ff4c01cc3faf0a27b01ea6dcf595914462d4b425c7946885692c9e \
     --hash=sha256:1370d4593e86213563547f97a92752fc658456fe4514c809544f330fed45a7ca
     # via
     #   google-api-core
+    #   google-api-python-client
+    #   google-auth-httplib2
     #   google-cloud-bigquery
     #   google-cloud-core
     #   google-cloud-storage
+google-auth-httplib2==0.1.0 \
+    --hash=sha256:31e49c36c6b5643b57e82617cb3e021e3e1d2df9da63af67252c02fa9c1f4a10 \
+    --hash=sha256:31e49c36c6b5643b57e82617cb3e021e3e1d2df9da63af67252c02fa9c1f4a10 \
+    --hash=sha256:31e49c36c6b5643b57e82617cb3e021e3e1d2df9da63af67252c02fa9c1f4a10 \
+    --hash=sha256:3a16b4a034b717c9fdb53723e7824bc33f56d20ff3b3673496798c99f0b7de69 \
+    --hash=sha256:3a16b4a034b717c9fdb53723e7824bc33f56d20ff3b3673496798c99f0b7de69 \
+    --hash=sha256:3a16b4a034b717c9fdb53723e7824bc33f56d20ff3b3673496798c99f0b7de69
+    # via google-api-python-client
 google-cloud-bigquery==3.38.0 \
     --hash=sha256:62fea9fec6871c1b71ec6f1dd46679287d05c43de647e50a25dc5b3f97d51970 \
     --hash=sha256:e06e93ff7b245b239945ef59cb59616057598d369edac457ebf292bd61984da6
-google-cloud-core==2.5.0 \
-    --hash=sha256:67d977b41ae6c7211ee830c7912e41003ea8194bff15ae7d72fd6f51e57acabc \
-    --hash=sha256:b8c47dbb3f31aa2e8dd1626497702a46acb554281e3850d1a4ca91e96ad7f9fb
+google-cloud-core==2.6.1 \
+    --hash=sha256:2682a8a4474a32f56292fb4bca7fa7e4fb0b4af958f6abfe4bca8d195747fd45
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
@@ -137,8 +149,8 @@ google-resumable-media==2.7.2 \
     # via
     #   google-cloud-bigquery
     #   google-cloud-storage
-googleapis-common-protos==1.75.0 \
-    --hash=sha256:961ed60399c457ceb0ee8f285a84c870aabc9c6a832b9d37bb281b5bebde43ed
+googleapis-common-protos==1.75.1 \
+    --hash=sha256:28a1934bcd33b9c9da66ac301a0a4227e3367f095a17d0375cb98f0a09d93b79
     # via
     #   google-api-core
     #   grpcio-status
@@ -151,21 +163,18 @@ greenlet==3.2.4 ; (python_full_version < '3.14' and platform_machine == 'AMD64')
     --hash=sha256:cd3c2538b6df52c201f91708deabb7020006109d977a599ade27971e8540d414 \
     --hash=sha256:d38058df2950bddc038813217ec6816ea7b12bd07e85e82a750eb5e4a65b8b21
     # via sqlalchemy
-grpcio==1.74.0 \
-    --hash=sha256:148c65eb5a2a90894e551f5ade4e11e0a866e24e6cf26d5c710a77953417037b \
-    --hash=sha256:2cc286cbfff89209f2aa9fe76547e2000b62ef88647d10db4f617caf5a97d551 \
-    --hash=sha256:73da7c6e54023bf04fa16fd4e227868958aa07a64dafa7b52d50577e69c0649c \
-    --hash=sha256:7b14bb1c0cb2adbf0cb27a3fbb84bb435ddd57a56c126054bb490a95f8e45b05 \
-    --hash=sha256:8efe72fde5500f47aca1ef59495cb59c885afe04ac89dd11d810f2de87d935d4 \
-    --hash=sha256:9970dd75ec7458d48a0746513159184247f9c88ab5ab49b57691697847484d8e \
-    --hash=sha256:e40549c5752bf1f4b748557daa74791ff556d7e0d47560d98039990e602c982b \
-    --hash=sha256:f612cfc47960aa7317d14c4b242b6aff1f6874f88f744a41f6af62efe535f327
+grpcio==1.81.1 \
+    --hash=sha256:0d36f4f8adbf422e2c1aa0234d82d5878ff4e97af809fc587db9e1460e3e80f8 \
+    --hash=sha256:30e825f6848d9f18bba350ed6c75c1b02a0b5184474a31db9a32b1fa66fd8c79 \
+    --hash=sha256:8945c03a566bfcf4b5405db28f8dcd001bb7a0fef05dbcf754187b5a91015ba8 \
+    --hash=sha256:b137f4bf3ada9dc44d411478decc6ff09a79ed30b306cd2abaa98408c3588137 \
+    --hash=sha256:b137f4bf3ada9dc44d411478decc6ff09a79ed30b306cd2abaa98408c3588137 \
+    --hash=sha256:e9cc76af911ba041661701f192bff1c73e354e0ffec50c5d64d5a6741fe39754
     # via
     #   google-api-core
     #   grpcio-status
-grpcio-status==1.74.0 \
-    --hash=sha256:52cdbd759a6760fc8f668098a03f208f493dd5c76bf8e02598bbbaf1f6fc2876 \
-    --hash=sha256:e8c2ad13fd71925f314d874e4f68a2481ec0e110c9858f113c0397da895c8403
+grpcio-status==1.81.1 \
+    --hash=sha256:08072fa9995f4a95c647fc6f4f85e2411573d00087bcabdf30f260114338f232
     # via google-api-core
 h11==0.16.0 \
     --hash=sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86 \
@@ -188,6 +197,12 @@ httpcore==1.0.9 \
     --hash=sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55 \
     --hash=sha256:9b6c124dac46a7e51898765b289fa68480d92c9f26e464d2d6bf1669fa4d03ec
     # via httpx
+httplib2==0.22.0 \
+    --hash=sha256:12c6b6d2ec0aca0ac658373239bb3f73dd16778fd5020b604672efac372450f1 \
+    --hash=sha256:14ae0a53c1ba8f3d37e9e27cf37eabb0fb9980f435ba405d546948b009dd64dc
+    # via
+    #   google-api-python-client
+    #   google-auth-httplib2
 httpx==0.28.1 \
     --hash=sha256:ae442346a10b89fbfeaa174019b1d012a7cc2f957f6b42994dd270154dd25618 \
     --hash=sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad \
@@ -307,8 +322,8 @@ portpicker==1.6.0 \
     --hash=sha256:b2787a41404cf7edbe29b07b9e0ed863b09f2665dcc01c1eb0c2261c1e7d0755 \
     --hash=sha256:ca6cfaa4b709a7e590a2f952e576713601c3878b0c59516475ea4e29afd355bd
     # via mobly
-proto-plus==1.28.0 \
-    --hash=sha256:a630604310899e73c59ec302e5765c058d412b2f090b9c79c8822589f14955b8
+proto-plus==1.28.3 \
+    --hash=sha256:dc76880b8ee951cca002098574376cf71e055f9f16d9ba6570fb8a06f726d281
     # via google-api-core
 protobuf==6.33.5 \
     --hash=sha256:2d7cd4c2152df61dea8147caa60d428960d506c2fb85e1f4a979ec8b0d5ae4fc \
@@ -379,6 +394,10 @@ pygments==2.19.2 \
     --hash=sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b \
     --hash=sha256:caeea602fa072944e8e680d200d4df56b050a04e6c2f08918706d99fb508fbe7
     # via pytest
+pyparsing==3.2.0 \
+    --hash=sha256:799c11b1e94a53de12a8e0d8a40f16dd0cd5348ae22d79a1b6f9e3ef39648b27 \
+    --hash=sha256:93d9577b88da0bbea8cc8334ee8b918ed014968fd2ec383e868fb8afb1ccef84
+    # via httplib2
 pysocks==1.7.1 \
     --hash=sha256:2725bd0a9925919b9b51739eea5f9e2bae91e83288108a9ad338b2e3a4435ee5 \
     --hash=sha256:e885eb7d225f0ae1eb0aed9ecc09e53e61b1c82ee582dccfade8f84e477bff05
@@ -470,7 +489,9 @@ six==1.17.0 \
     --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274 \
     --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274 \
     --hash=sha256:f5f26efe5825ae15ed1e5b419d3225e6b5a92eae4fcb1177f11927682c6a01b4
-    # via python-dateutil
+    # via
+    #   google-auth-httplib2
+    #   python-dateutil
 sniffio==1.3.1 \
     --hash=sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2 \
     --hash=sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2 \
@@ -539,6 +560,7 @@ typing-extensions==4.15.0 \
     --hash=sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548
     # via
     #   anyio
+    #   grpcio
     #   mypy
     #   pydantic
     #   pydantic-core
@@ -563,6 +585,12 @@ tzdata==2025.2 ; (python_full_version < '3.12' and platform_machine == 'arm64' a
     --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8 \
     --hash=sha256:259d0754e270da739e95ad473d5adbcff926c9657914b325cc64f5048cfbe39d
     # via pandas
+uritemplate==4.1.1 \
+    --hash=sha256:2f6cb445a7baf5ecd6aca1d2bfec3163c408bd673a1743d335a7eb38f7aed84b \
+    --hash=sha256:5c3548003bb3ea9fba83d4ba7ef94a37915f99de8d95ced889d607b620a8cfd8 \
+    --hash=sha256:830c08b8d99bdd312ea4ead05994a38e8936266f84b9a7878232db50b044e02e \
+    --hash=sha256:830c08b8d99bdd312ea4ead05994a38e8936266f84b9a7878232db50b044e02e
+    # via google-api-python-client
 urllib3==2.6.3 \
     --hash=sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4 \
     --hash=sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4 \

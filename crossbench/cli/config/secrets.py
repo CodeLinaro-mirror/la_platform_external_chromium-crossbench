@@ -32,6 +32,7 @@ class Secrets(ConfigObject):
   """
   google: UsernamePassword | None = None
   bond: ServiceAccount | None = None
+  google_workspace: GoogleWorkspaceSecrets | None = None
 
   @classmethod
   @override
@@ -39,6 +40,7 @@ class Secrets(ConfigObject):
     parser = ConfigParser(cls)
     parser.add_argument("google", type=GoogleUsernamePassword)
     parser.add_argument("bond", type=ServiceAccount)
+    parser.add_argument("google_workspace", type=GoogleWorkspaceSecrets)
     return parser
 
   @classmethod
@@ -50,6 +52,8 @@ class Secrets(ConfigObject):
     return type(self)(
         self._merge_secret("Google", self.google, fallback.google, strict),
         self._merge_secret("Bond", self.bond, fallback.bond, strict),
+        self._merge_secret("Google Workspace", self.google_workspace,
+                           fallback.google_workspace, strict),
     )
 
   def _merge_secret(self, name: str, primary: Secret | None,
@@ -65,6 +69,28 @@ class Secret(ConfigObject):
   @property
   def is_interactive(self) -> bool:
     return False
+
+
+@dataclasses.dataclass(frozen=True)
+class GoogleWorkspaceSecrets(Secret):
+  service_account_key: ServiceAccount
+  shared_drive_id: str
+
+  @classmethod
+  @override
+  def config_parser(cls) -> ConfigParser[Self]:
+    parser = ConfigParser(cls)
+    parser.add_argument(
+        "service_account_key", type=ServiceAccount, required=True)
+    parser.add_argument(
+        "shared_drive_id", type=ObjectParser.non_empty_str, required=True)
+    return parser
+
+  @classmethod
+  @override
+  def parse_str(cls, value: str) -> Self:
+    raise NotImplementedError(
+        "GoogleWorkspaceSecrets from string not supported")
 
 
 @dataclasses.dataclass(frozen=True)
