@@ -27,7 +27,7 @@ from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.results import LocalProbeResult
 from crossbench.probes.trace_processor.query_config import QUERIES_DIR, \
-    DeviceSpecificTraceProcessorQuery
+    DeviceSpecificTraceProcessorQuery, TraceProcessorQueryConfig
 from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
 
@@ -121,7 +121,10 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
 
   def _default_trace_processor_probe(self) -> TraceProcessorProbe:
     return TraceProcessorProbe(
-        queries=[self._get_query_config()],
+        queries=[
+            self._get_query_config(),
+            TraceProcessorQueryConfig.parse_str("web_power/cpu_time"),
+        ],
         module_paths=[QUERIES_DIR / "web_power"],
     )
 

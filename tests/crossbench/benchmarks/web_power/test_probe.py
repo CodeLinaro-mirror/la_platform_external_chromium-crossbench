@@ -25,7 +25,7 @@ from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.trace_processor.constants import QUERIES_DIR
 from crossbench.probes.trace_processor.query_config import \
-    DeviceSpecificTraceProcessorQuery
+    DeviceSpecificTraceProcessorQuery, TraceProcessorQueryConfig
 from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
 
@@ -786,6 +786,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     """
     mapping_dir = QUERIES_DIR / "web_power"
     self.fs.create_dir(mapping_dir)
+    self.fs.create_file(mapping_dir / "cpu_time.sql")
     self.fs.create_file(mapping_dir / "mapping.hjson", contents="{}")
     self.runner.has_probe.side_effect = has_probe_side_effect
     return tuple(self.probe.get_extra_probes(self.runner))
@@ -847,7 +848,10 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
         raise ValueError(f"Unknown mapping: {mapping}")
 
   def _create_mapping_dir(self, mapping: Mapping):
-    self.fs.create_dir(self._get_mapping_dir(mapping))
+    mapping_dir = self._get_mapping_dir(mapping)
+    self.fs.create_dir(mapping_dir)
+    if mapping == Mapping.PUBLIC:
+      self.fs.create_file(mapping_dir / "cpu_time.sql")
 
   def _create_mapping_file(self, mapping: Mapping, contents: str = "{}"):
     self.fs.create_file(
@@ -990,10 +994,12 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     internal_sql = self._create_sql_file(Mapping.INTERNAL, "internal_query.sql")
 
     (tp_probe,) = self.probe.get_extra_probes(self.runner)
-    (query,) = tp_probe.queries
+    self.assertEqual(len(tp_probe.queries), 2)
+    device_query, cpu_query = tp_probe.queries
+    self.assertEqual(cpu_query.name, "web_power_cpu_time")
 
     self.assertDictEqual(
-        dict(query.device_override), {
+        dict(device_query.device_override), {
             re.compile("Public Device"): str(public_sql.resolve()),
             re.compile("Internal Device"): str(internal_sql.resolve()),
         })
@@ -1040,9 +1046,12 @@ class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
     self.tp_probe = extra_probes[0]
     self.assertIsInstance(self.tp_probe, TraceProcessorProbe)
     self.tp_probe._browsers.clear()
-    self.assertEqual(len(self.tp_probe.queries), 1)
-    self.query = self.tp_probe.queries[0]
+    self.assertEqual(len(self.tp_probe.queries), 2)
+    self.query, self.cpu_query = self.tp_probe.queries
     self.assertIsInstance(self.query, DeviceSpecificTraceProcessorQuery)
+    # Validate the cpu_query config independently
+    self.assertIsInstance(self.cpu_query, TraceProcessorQueryConfig)
+    self.assertEqual(self.cpu_query.name, "web_power_cpu_time")
 
     self._setup_dummy_browsers()
 
@@ -1066,7 +1075,7 @@ class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
 
     self.query = DeviceSpecificTraceProcessorQuery.create(
         name=self.query.name, device_override=dummy_overrides)
-    self.tp_probe._queries = (self.query,)
+    self.tp_probe._queries = (self.query, self.cpu_query)
 
   def _run_validation_with_sql(self, sql_content: str, device_name: str):
     with tempfile.NamedTemporaryFile(mode="w", suffix=".sql") as sql_file:
@@ -1076,7 +1085,7 @@ class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
       overrides = {device_name: sql_file.name}
       test_query = DeviceSpecificTraceProcessorQuery.create(
           name=self.query.name, device_override=overrides)
-      self.tp_probe._queries = (test_query,)
+      self.tp_probe._queries = (test_query, self.cpu_query)
       browser = mock.MagicMock()
       browser.platform.model = device_name
       self.tp_probe.attach(browser)

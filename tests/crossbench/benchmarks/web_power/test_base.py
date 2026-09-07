@@ -143,6 +143,8 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     super().setUp()
     mapping_file = QUERIES_DIR / "web_power" / "mapping.hjson"
     self.fs.create_file(mapping_file, contents='{"pixels": "test"}')
+    # Required as the missing cpu_time.sql otherwise crashes config parsing
+    self.fs.create_file(mapping_file.parent / "cpu_time.sql")
     self.fs.create_file(
         mapping_file.parent.parent / "test.sql", contents="SELECT 1;")
     self.fs.create_file(
@@ -456,7 +458,7 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     tp_probe = self._verify_trace_processor_get_extra_probes(
         already_has_probe=False)
     self.assertIsNotNone(tp_probe)
-    [query] = tp_probe.queries
+    query = tp_probe.queries[0]
 
     platform_p9 = mock.MagicMock()
     platform_p9.model = "Pixel 9 Pro"
