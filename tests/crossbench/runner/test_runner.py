@@ -6,15 +6,18 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
+import logging
 import pathlib
 import unittest
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Any, Iterator
 from unittest import mock
 
 from typing_extensions import override
 
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.webdriver import RemoteWebDriver
+from crossbench.device_config import DeviceConfig, DeviceConfigError, \
+    RequiredDeviceConfigMode
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
 from crossbench.helper.state import UnexpectedStateError
@@ -943,6 +946,111 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         return_value={"canonical_parent_hash": "abcdef123"}), mock.patch.object(
             runner.platform, "sh", side_effect=OSError("Git failed")):
       runner._setup()
+
+
+class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
+
+  def _valid_device_config(self,
+                           platform: str = "",
+                           value: str = "test_val") -> dict[str, Any]:
+    return {
+        platform or self.platform.name: {
+            "settings": {
+                "secure": {
+                    "test_key": value
+                }
+            }
+        }
+    }
+
+  def _setup_runner(
+      self,
+      required: DeviceConfig,
+      actual: dict[str, Any],
+      mode: RequiredDeviceConfigMode,
+  ) -> Runner:
+    runner = self.default_runner()
+    runner._required_device_config_mode = mode
+    runner.benchmark.REQUIRED_DEVICE_CONFIG = required
+    with mock.patch.object(
+        runner.platform, "device_config", return_value=actual):
+      runner._setup()
+    return runner
+
+  def test_setup_validates_required_device_config_success(self):
+    """Verifies setup succeeds when required device config matches."""
+    config = self._valid_device_config()
+    self._setup_runner(
+        required=config, actual=config, mode=RequiredDeviceConfigMode.THROW)
+
+  def test_setup_skips_unmatched_platform_device_config(self):
+    """Verifies setup skips required device config for unmatched platforms."""
+    self._setup_runner(
+        required=self._valid_device_config("unmatched_platform"),
+        actual=self._valid_device_config(value="wrong_val"),
+        mode=RequiredDeviceConfigMode.THROW)
+
+  def test_setup_validates_required_device_config_error(self):
+    """Verifies setup raises DeviceConfigError on device config discrepancy."""
+    with self.assertRaises(DeviceConfigError):
+      self._setup_runner(
+          required=self._valid_device_config(),
+          actual=self._valid_device_config(value="wrong_val"),
+          mode=RequiredDeviceConfigMode.THROW)
+
+  def test_setup_validates_required_device_config_warn(self):
+    """Verifies setup logs critical and succeeds when mode is warn."""
+    with self.assertLogs(level=logging.CRITICAL) as cm:
+      self._setup_runner(
+          required=self._valid_device_config(),
+          actual=self._valid_device_config(value="wrong_val"),
+          mode=RequiredDeviceConfigMode.WARN)
+    self.assertTrue(any("test_key" in log for log in cm.output))
+
+  def test_setup_validates_required_device_config_from_json_file(self):
+    """Verifies setup loads and validates required config from a JSON file."""
+    config = self._valid_device_config()
+    json_path = self.out_dir.parent / "required_device_config.json"
+    json_path.write_text(json.dumps(config), encoding="utf-8")
+    self._setup_runner(
+        required=json_path, actual=config, mode=RequiredDeviceConfigMode.THROW)
+
+  def test_setup_validates_required_device_config_case_insensitive_platform(
+      self):
+    """Verifies setup validates config when platform key has uppercase."""
+    config = {self.platform.name.upper(): {"test_prop": "expected_val"}}
+    actual = {self.platform.name: {"test_prop": "expected_val"}}
+    self._setup_runner(
+        required=config, actual=actual, mode=RequiredDeviceConfigMode.THROW)
+
+  def test_setup_validates_required_device_config_from_json_file_error(self):
+    """Verifies setup raises DeviceConfigError on file config discrepancy."""
+    config = self._valid_device_config()
+    json_path = self.out_dir.parent / "required_device_config.json"
+    json_path.write_text(json.dumps(config), encoding="utf-8")
+    with self.assertRaises(DeviceConfigError):
+      self._setup_runner(
+          required=json_path,
+          actual=self._valid_device_config(value="wrong_val"),
+          mode=RequiredDeviceConfigMode.THROW)
+
+  def test_setup_validates_required_device_config_file_not_found(self):
+    """Verifies setup raises FileNotFoundError when config file is missing."""
+    with self.assertRaises(FileNotFoundError):
+      self._setup_runner(
+          required=self.out_dir.parent / "non_existent.json",
+          actual=self._valid_device_config(),
+          mode=RequiredDeviceConfigMode.THROW)
+
+  def test_setup_validates_required_device_config_invalid_json(self):
+    """Verifies setup raises ValueError on invalid configuration syntax."""
+    invalid_json_path = self.out_dir.parent / "invalid.json"
+    invalid_json_path.write_text("{not-json", encoding="utf-8")
+    with self.assertRaises(ValueError):
+      self._setup_runner(
+          required=invalid_json_path,
+          actual=self._valid_device_config(),
+          mode=RequiredDeviceConfigMode.THROW)
 
 
 del BaseRunnerTestCase

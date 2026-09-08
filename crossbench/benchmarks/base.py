@@ -30,6 +30,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.cli.types import Subparsers
+  from crossbench.device_config import DeviceConfig
   from crossbench.plt.base import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.run import Run
@@ -46,6 +47,7 @@ class Benchmark(abc.ABC):
   PROBES: ClassVar[tuple[type[BenchmarkProbeMixin], ...]] = ()
   DEFAULT_REPETITIONS: ClassVar[int] = 1
   DEFAULT_COOL_DOWN: ClassVar[dt.timedelta] = dt.timedelta(seconds=2)
+  REQUIRED_DEVICE_CONFIG: ClassVar[DeviceConfig | None] = None
 
   @classmethod
   def cli_help(cls) -> str:

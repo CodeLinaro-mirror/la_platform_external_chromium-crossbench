@@ -326,6 +326,10 @@ class MockPlatformMixin:
   def system_details(self):
     return {"CPU": "20-core 3.1 GHz"}
 
+  @override
+  def device_config(self) -> dict[str, Any]:
+    return {}
+
   def sleep(self, duration):
     self.sleeps.append(duration)
 

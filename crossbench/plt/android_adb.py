@@ -702,6 +702,53 @@ class AndroidVersion(PosixVersion):
   pass
 
 
+class _AndroidDeviceConfigReader:
+  """Reads and parses configuration data from an Android device via ADB."""
+
+  def __init__(self, adb: Adb) -> None:
+    self._adb: Final[Adb] = adb
+
+  def device_config(self) -> dict[str, str]:
+    """Retrieves namespaced flags from 'cmd device_config list'.
+
+    Returns a flat dictionary mapping 'namespace/key' to value, matching
+    the native 'cmd device_config list' output format.
+    """
+    output = self._adb.shell_stdout("cmd", "device_config", "list")
+    return self._parse_key_values(output)
+
+  def getprop(self) -> dict[str, str]:
+    """Retrieves Android system properties (getprop)."""
+    output = self._adb.shell_stdout("getprop")
+    # Format: '[prop.name]: [value]', e.g. '[ro.product.model]: [Pixel 10]'.
+    # Parsed into key-value pairs: {"ro.product.model": "Pixel 10"}.
+    pattern = re.compile(r"^\[(?P<key>[^\]]+)\]: \[(?P<value>[^\]]*)\]$")
+    return {
+        match.group("key"): match.group("value")
+        for line in output.splitlines()
+        if (match := pattern.fullmatch(line.strip()))
+    }
+
+  def settings(self) -> dict[str, dict[str, str]]:
+    """Retrieves Android global, secure, and system settings."""
+    settings_dict: dict[str, dict[str, str]] = {}
+    for namespace in ("global", "secure", "system"):
+      output = self._adb.shell_stdout("settings", "list", namespace)
+      settings_dict[namespace] = self._parse_key_values(output)
+    return settings_dict
+
+  @classmethod
+  def _parse_key_values(cls, output: str) -> dict[str, str]:
+    """Parses 'key=value' lines into a dictionary."""
+    result: dict[str, str] = {}
+    for line in output.splitlines():
+      # Partition on the first '=' because values may contain '='.
+      key, sep, value = line.partition("=")
+      if sep and (stripped_key := key.strip()):
+        result[stripped_key] = value.strip()
+    return result
+
+
 class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
 
   def __init__(self,
@@ -1177,25 +1224,25 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
         "current frequency": "n/a",
     }
 
-  _GETPROP_RE: Final[re.Pattern] = re.compile(
-      r"^\[(?P<key>[^\]]+)\]: \[(?P<value>[^\]]+)\]$")
-
   @functools.lru_cache(maxsize=1)
   @override
   def system_details(self) -> dict[str, Any]:
     system_details = super().system_details()
     system_details.update({
-        "Android": self._getprop_system_details(),
+        "Android": _AndroidDeviceConfigReader(self.adb).getprop(),
     })
     return system_details
 
-  def _getprop_system_details(self) -> dict[str, Any]:
-    properties: dict[str, str] = {}
-    for line in self.adb.shell_stdout("getprop").strip().splitlines():
-      result = self._GETPROP_RE.fullmatch(line)
-      if result:
-        properties[result.group("key")] = result.group("value")
-    return properties
+  @override
+  def device_config(self) -> dict[str, Any]:
+    reader = _AndroidDeviceConfigReader(self.adb)
+    return {
+        "android": {
+            "device_config": reader.device_config(),
+            "getprop": reader.getprop(),
+            "settings": reader.settings(),
+        }
+    }
 
   @functools.lru_cache(maxsize=1)
   @override

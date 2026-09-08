@@ -8,7 +8,7 @@ import argparse
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Any, Final, Iterable
+from typing import TYPE_CHECKING, Any, Final, Iterable, Mapping
 
 from crossbench import exception
 from crossbench import path as pth
@@ -16,6 +16,8 @@ from crossbench import plt
 from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.cli.ui import ui
+from crossbench.device_config import RequiredDeviceConfigMode, \
+    check_device_config, parse_device_config
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import collection_helper
 from crossbench.helper.wait import WaitRange
@@ -231,6 +233,7 @@ class Runner:
         "step_by_step_mode": args.step_by_step_mode,
         "ignore_partial_failures": args.ignore_partial_failures,
         "disabled_probes": args.no_probe,
+        "required_device_config_mode": args.required_device_config_mode,
     }
 
   def __init__(
@@ -254,10 +257,13 @@ class Runner:
       in_memory_result_db: bool = False,
       step_by_step_mode: bool = False,
       ignore_partial_failures: bool = False,
-      disabled_probes: Iterable[str] = ()
+      disabled_probes: Iterable[str] = (),
+      required_device_config_mode: RequiredDeviceConfigMode = (
+          RequiredDeviceConfigMode.THROW),
   ) -> None:
     self.out_dir = out_dir.absolute()
     self._disabled_probes: frozenset[str] = frozenset(disabled_probes)
+    self._required_device_config_mode = required_device_config_mode
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
     self.out_dir.mkdir(parents=True)
     self._state = RunnerStateMachine(self)
@@ -588,6 +594,8 @@ class Runner:
     assert self.browsers, "No browsers provided: self.browsers is empty"
     assert self.stories, "No stories provided: self.stories is empty"
     self._setup_validate_browsers()
+    with self._exceptions.annotate("Validating Device Configuration"):
+      self._validate_device_config()
     with self._exceptions.annotate("Preparing Runs"):
       self._setup_runs()
     with self._exceptions.annotate("Preparing Probes"):
@@ -614,6 +622,18 @@ class Runner:
       assert probe.name in self._probes, (
           f"Browser {browser} probe {probe} not in Runner.probes. "
           "Use Runner.attach_probe()")
+
+  def _validate_device_config(self) -> None:
+    if not (raw_config := self.benchmark.REQUIRED_DEVICE_CONFIG):
+      return
+    req_config = parse_device_config(raw_config)
+    for platform in self.platforms:
+      if not (req_platform_config := req_config.get(platform.name)):
+        continue
+      assert isinstance(req_platform_config, Mapping)
+      actual_config = platform.device_config().get(platform.name, {})
+      check_device_config(req_platform_config, actual_config,
+                          self._required_device_config_mode)
 
   def _setup_runs(self) -> None:
     self._all_runs = list(self._get_runs())

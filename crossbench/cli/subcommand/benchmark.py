@@ -31,6 +31,7 @@ from crossbench.cli.config.secrets import Secrets
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.cli.ui import ui
 from crossbench.cli.ui.banner import Banner
+from crossbench.device_config import RequiredDeviceConfigMode
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import DurationParser, LateArgumentError, ObjectParser, \
     PathParser
@@ -401,6 +402,13 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         help=(
             "Set how runner env is validated (see also --env-config/--env):\n" +
             ValidationMode.help_text(indent=2)))
+    env_group.add_argument(
+        "--required-device-config-mode",
+        default=RequiredDeviceConfigMode.THROW,
+        type=RequiredDeviceConfigMode.parse,
+        help=("Action to take when discrepancies between device configuration "
+              "and benchmark requirements are found:\n" +
+              RequiredDeviceConfigMode.help_text(indent=2)))
     env_group.add_argument(
         "--dry-run",
         action="store_true",

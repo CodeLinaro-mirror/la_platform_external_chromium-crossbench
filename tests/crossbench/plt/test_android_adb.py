@@ -398,6 +398,50 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_adb(self):
     self.assertIs(self.platform.adb, self.adb)
 
+  def test_device_config(self):
+    self.expect_sh(
+        "cmd device_config list",
+        result="accessibility/font_scale=1.0\ntop_level=true")
+    self.expect_sh(
+        "getprop",
+        result="[ro.product.model]: [Pixel 10]\n[ro.build.version.sdk]: [34]")
+    self.expect_sh(
+        "settings list global",
+        result="stay_on_while_plugged_in=3\nanimator_duration_scale=0.0")
+    self.expect_sh(
+        "settings list secure",
+        result="immersive_mode_confirmations=confirmed\nlong_press_timeout=400")
+    self.expect_sh(
+        "settings list system",
+        result="screen_brightness=100\nscreen_off_timeout=60000")
+    self.assertEqual(
+        self.platform.device_config(), {
+            "android": {
+                "device_config": {
+                    "accessibility/font_scale": "1.0",
+                    "top_level": "true",
+                },
+                "getprop": {
+                    "ro.product.model": "Pixel 10",
+                    "ro.build.version.sdk": "34",
+                },
+                "settings": {
+                    "global": {
+                        "stay_on_while_plugged_in": "3",
+                        "animator_duration_scale": "0.0",
+                    },
+                    "secure": {
+                        "immersive_mode_confirmations": "confirmed",
+                        "long_press_timeout": "400",
+                    },
+                    "system": {
+                        "screen_brightness": "100",
+                        "screen_off_timeout": "60000",
+                    },
+                },
+            }
+        })
+
   def test_is_installed(self):
     package_name = "com.example.app"
     self.expect_sh(

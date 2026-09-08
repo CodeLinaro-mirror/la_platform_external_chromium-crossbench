@@ -15,8 +15,8 @@ from typing_extensions import override
 from crossbench import __version__
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.action_runner.config import ActionRunnerType
+from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.browsers.splash_screen import SplashScreen, URLSplashScreen
 from crossbench.browsers.viewport import Viewport
 from crossbench.cli.config.env import ValidationMode
@@ -24,6 +24,7 @@ from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CBArgumentParser
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
+from crossbench.device_config import RequiredDeviceConfigMode
 from crossbench.runner.runner import CacheTemperature, Runner, ThreadMode
 from tests import test_helper
 from tests.crossbench import mock_browser
@@ -394,6 +395,25 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
   def test_env_validation_invalid(self) -> None:
     with self.assertRaises(argparse.ArgumentError):
       self.parse_args("--env-validation=invalid")
+
+  def test_required_device_config_mode_default(self) -> None:
+    args = self.parse_args()
+    self.assertEqual(args.required_device_config_mode,
+                     RequiredDeviceConfigMode.THROW)
+    runner_kwargs = Runner.kwargs_from_cli(args)
+    self.assertEqual(runner_kwargs["required_device_config_mode"],
+                     RequiredDeviceConfigMode.THROW)
+
+  def test_required_device_config_mode_modes(self) -> None:
+    for mode in RequiredDeviceConfigMode:
+      args = self.parse_args(f"--required-device-config-mode={mode.value}")
+      self.assertEqual(args.required_device_config_mode, mode)
+      runner_kwargs = Runner.kwargs_from_cli(args)
+      self.assertEqual(runner_kwargs["required_device_config_mode"], mode)
+
+  def test_required_device_config_mode_invalid(self) -> None:
+    with self.assertRaises(argparse.ArgumentError):
+      self.parse_args("--required-device-config-mode=invalid")
 
   def test_conflicting_env_flags(self) -> None:
     env_file = pth.LocalPath("/env.config.hjson")
@@ -1067,6 +1087,29 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
           "loading",
           f"--urls={self.URL}",
           "--env-validation=invalid",
+          "--throw",
+      )
+
+  def test_required_device_config_mode_default(self) -> None:
+    cli, runner = self._run_loading()
+    self.assertEqual(cli.args.required_device_config_mode,
+                     RequiredDeviceConfigMode.THROW)
+    self.assertEqual(runner._required_device_config_mode,
+                     RequiredDeviceConfigMode.THROW)
+
+  def test_required_device_config_mode_modes(self) -> None:
+    for mode in RequiredDeviceConfigMode:
+      cli, runner = self._run_loading(
+          f"--required-device-config-mode={mode.value}")
+      self.assertEqual(cli.args.required_device_config_mode, mode)
+      self.assertEqual(runner._required_device_config_mode, mode)
+
+  def test_required_device_config_mode_invalid(self) -> None:
+    with self.assertRaises((argparse.ArgumentError, SysExitTestException)):
+      self.run_cli(
+          "loading",
+          f"--urls={self.URL}",
+          "--required-device-config-mode=invalid",
           "--throw",
       )
 

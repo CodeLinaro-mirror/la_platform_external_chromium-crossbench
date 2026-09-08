@@ -351,6 +351,22 @@ class Platform(abc.ABC):
   def total_memory_mb(self) -> int:
     return self.system_memory_bytes // (1024 * 1024)
 
+  def device_config(self) -> dict[str, Any]:
+    """Returns a hierarchical dictionary of device/host configuration.
+
+    Subclasses override this method to provide platform-specific configuration
+    dumps (such as Android settings, getprop properties, and device_config).
+
+    The returned dictionary is nested under a platform namespace (e.g.
+    'android'). Intermediate nodes are mappings, and leaf nodes are string
+    values. Leaf keys may be composite identifiers (such as 'namespace/key'
+    or 'ro.product.model').
+
+    The configuration is validated against benchmark requirements
+    (Benchmark.REQUIRED_DEVICE_CONFIG) during run setup.
+    """
+    return {}
+
   @functools.lru_cache(maxsize=1)
   def system_details(self) -> dict[str, Any]:
     details = {
