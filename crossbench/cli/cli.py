@@ -175,6 +175,7 @@ class CrossBenchCLI:
       benchmarks.MotionMark12Benchmark,
       benchmarks.MotionMark13Benchmark,
       benchmarks.MotionMark131Benchmark,
+      benchmarks.MotionMark132Benchmark,
       benchmarks.MotionMarkMainBenchmark,
       # Powerline
       benchmarks.PowerlineBenchmark,
