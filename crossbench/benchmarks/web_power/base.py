@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final, Generic, Iterable, \
 
 from typing_extensions import override
 
+from crossbench import config
 from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.web_power.probe import WebPowerProbe
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
+  from crossbench.device_config import DeviceConfig
   from crossbench.flags.base import Flags
   from crossbench.path import LocalPath
   from crossbench.plt.base import Platform
@@ -323,6 +325,8 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
   """Base class for Power benchmarks to share common logic."""
 
   IS_SCENARIO_CLASS: ClassVar[bool] = False
+  REQUIRED_DEVICE_CONFIG: ClassVar[DeviceConfig | None] = (
+      config.config_dir() / "benchmark/web_power/device_config.hjson")
 
   _scenario_benchmarks: ClassVar[list[type[WebPowerBenchmarkBase]]] = []
 

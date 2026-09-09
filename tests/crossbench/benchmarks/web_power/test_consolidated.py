@@ -373,6 +373,8 @@ class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
         config.config_dir() / "benchmark/web_power/perfetto_basic.txtpb")
     if not self.fs.exists(perfetto_basic):
       self.fs.create_file(perfetto_basic, contents="duration_ms: 1000")
+    if config_file := WebPowerBenchmark.REQUIRED_DEVICE_CONFIG:
+      self.fs.add_real_file(config_file)
     mock_archive = pth.LocalPath("/mock/archive.wprgo")
     self.fs.create_file(mock_archive)
     archive_patcher = mock.patch(

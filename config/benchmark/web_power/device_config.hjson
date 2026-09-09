@@ -1,0 +1,75 @@
+{
+  "android": {
+    "settings": {
+      "secure": {
+        // Prevents system prompt dialogs from appearing when entering
+        // immersive (fullscreen) mode.
+        "immersive_mode_confirmations": "confirmed"
+      }
+      "global": {
+        // Keeps the display awake whenever the device is plugged in.
+        // 15 is a bitmask of BatteryManager.BATTERY_PLUGGED_* flags:
+        // AC(1) + USB(2) + WIRELESS(4) + DOCK(8) = 15. See:
+        // https://developer.android.com/reference/android/provider/Settings.Global#STAY_ON_WHILE_PLUGGED_IN
+        "stay_on_while_plugged_in": "15"
+
+        // Ensures standard system animation scales.
+        // TODO: Support null | 1.0.
+        "window_animation_scale": "1.0"
+        "transition_animation_scale": "1.0"
+        "animator_duration_scale": "null"
+
+        // Enables Airplane mode to prevent cellular radio power spikes.
+        // Values: 0 = OFF, 1 = ON.
+        "airplane_mode_on": "1"
+
+        // Ensures Battery Saver mode is OFF to prevent CPU throttling.
+        // Values: 0 = OFF, 1 = ON.
+        "low_power": "0"
+      }
+      "system": {
+        // Disables automatic brightness adjustments (0 = manual, 1 = auto) to
+        // ensure stable display power draw.
+        //
+        // TODO: RunnerEnv._check_screen_autobrightness checks host platform
+        // (e.g. Mac/Linux workstation) rather than target device platforms
+        // (browser.platform). Once RunnerEnv checks target device platforms
+        // and AndroidAdbPlatform.check_autobrightness() is implemented,
+        // this validation can be handled via env-validation.
+        "screen_brightness_mode": "0"
+
+        // Sets the display brightness level to a fixed standard value to
+        // ensure reproducible display power draw.
+        //
+        // TODO: Uncomment once RequiredDeviceConfigMode.SET is supported.
+        // "screen_brightness": "100"
+
+        // Ensures default display refresh rate policies.
+        "peak_refresh_rate": "null"
+        // TODO: Uncomment or remove `min_refresh_rate`.
+        // "min_refresh_rate": "null"
+
+        // Keeps display timeout sufficiently long (30 mins = 1800000 ms) to
+        // prevent screen dimming during runs.
+        // When benchmarking a disconnect device, this is also the best
+        // available replacement for `stay_on_while_plugged_in`.
+        "screen_off_timeout": "1800000"
+
+        // Enforces standard font scale (1.0) to avoid text reflow differences.
+        "font_scale": "1.0"
+      }
+    }
+    "device_config": {
+      // Disables aggressive background current drain restrictions to prevent
+      // unexpected app throttling or kills during runs.
+      "activity_manager/bg_current_drain_auto_restrict_abusive_apps_enabled": "false"
+
+      // Enforces standard font scale (1.0) to avoid text reflow differences.
+      // TODO: Support null | 1.0.
+      "accessibility/font_scale": "null"
+    }
+    // TODO: Add support in AndroidAdbPlatform.device_config() for querying
+    // services via 'cmd <service>'. Use it to validate night mode.
+    "cmd": {}
+  }
+}

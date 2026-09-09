@@ -26,6 +26,8 @@ from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CBArgumentParser
+from crossbench.device_config import RequiredDeviceConfigMode, \
+    check_device_config, parse_device_config
 from crossbench.env.runner_env import ValidationMode
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.probes.bits import BitsProbe
@@ -165,6 +167,15 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
   def test_default_cool_down(self) -> None:
     self.assertEqual(MockWebPowerBenchmark.DEFAULT_COOL_DOWN,
                      dt.timedelta(minutes=2))
+
+  def test_required_device_config(self) -> None:
+    config_path = WebPowerBenchmarkBase.REQUIRED_DEVICE_CONFIG
+    self.assertIsInstance(config_path, pth.AnyPath)
+    assert isinstance(config_path, pth.AnyPath)
+    self.fs.add_real_file(config_path)
+    config = parse_device_config(config_path)
+    self.assertTrue(config)
+    check_device_config(config, config, RequiredDeviceConfigMode.THROW)
 
   def test_kwargs_from_cli_site(self) -> None:
     args = self.parse_args("--site", "cnn")
