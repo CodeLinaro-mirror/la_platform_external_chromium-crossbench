@@ -128,6 +128,27 @@ class MotionMark14TestCase(MotionMark1BaseTestCase):
             "": "",
         })
 
+  @override
+  def test_run_default(self):
+    stories = self.story_cls.from_names(["Stories"])
+    benchmark = self.benchmark_cls(stories)
+    runner = Runner(
+        self.out_dir,
+        self.browsers,
+        benchmark,
+        env_config=EnvConfig(),
+        env_validation_mode=ValidationMode.SKIP,
+        platform=self.platform,
+        throw=True,
+        in_memory_result_db=True)
+    with self.assertRaises(ValueError) as cm:
+      benchmark.validate_url(runner)
+    self.assertIn("is not officially hosted yet", str(cm.exception))
+
+  @override
+  def test_run_throw(self):
+    self._test_run(custom_url="http://test.example.com/motionmark", throw=True)
+
 
 del MotionMark1BaseTestCase
 

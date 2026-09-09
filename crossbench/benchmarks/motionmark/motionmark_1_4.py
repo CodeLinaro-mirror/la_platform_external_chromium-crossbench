@@ -18,6 +18,7 @@ if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
+  from crossbench.runner.runner import Runner
 
 
 class MotionMark14Probe(MotionMark1Probe):
@@ -40,9 +41,6 @@ class MotionMark14ProbeContext(MotionMark1ProbeContext):
 
 class MotionMark14Story(MotionMark1Story):
   NAME: ClassVar = "motionmark_1.4"
-  URL: ClassVar[
-      str] = "https://chromium-workloads.web.app/motionmark/v1.4/MotionMark"
-  URL_OFFICIAL: ClassVar[str] = "https://browserbench.org/MotionMark1.4"
   READY_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=12)
   DEVELOPER_READY_JS: ClassVar[str] = (
       "return !(document.querySelector('#frame-rate-detection span'));")
@@ -142,8 +140,6 @@ class MotionMark14Story(MotionMark1Story):
 class MotionMark14Benchmark(MotionMark1Benchmark):
   """
   Benchmark runner for MotionMark 1.4.
-
-  See https://browserbench.org/MotionMark1.4/ for more details.
   """
 
   NAME: ClassVar = "motionmark_1.4"
@@ -154,3 +150,10 @@ class MotionMark14Benchmark(MotionMark1Benchmark):
   @override
   def version(cls) -> VersionParts:
     return (1, 4)
+
+  @override
+  def validate_url(self, runner: Runner) -> None:
+    if not self.custom_url:
+      raise ValueError(f"{self.NAME} is not officially hosted yet. "
+                       f"Please use a local server (--local or --url).")
+    super().validate_url(runner)
