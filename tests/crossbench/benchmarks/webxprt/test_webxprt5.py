@@ -117,7 +117,7 @@ class WebXPRT5TestCase(helper.PressBaseBenchmarkTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertIn(self.story_cls.URL, urls)
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
     with self.assertLogs(level="INFO") as log_cm:
       for probe in runner.probes:
@@ -166,7 +166,7 @@ class WebXPRT5TestCase(helper.PressBaseBenchmarkTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertIn(self.story_cls.URL, urls)
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
     with self.assertLogs(level="INFO") as log_cm:
       for probe in runner.probes:
@@ -216,7 +216,7 @@ class WebXPRT5TestCase(helper.PressBaseBenchmarkTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertIn(self.story_cls.URL, urls)
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
     with self.assertLogs(level="INFO") as log_cm:
       for probe in runner.probes:
@@ -546,7 +546,8 @@ class WebXPRT5TestCase(helper.PressBaseBenchmarkTestCase):
     args = parser.parse_args(["--story", "video-effects"])
     story_filter = self.story_filter_cls.from_cli_args(self.story_cls, args)
     self.assertEqual(len(story_filter.stories), 1)
-    self.assertEqual(story_filter.stories[0].substories, ("video-effects",))
+    self.assertSequenceEqual(story_filter.stories[0].substories,
+                             ("video-effects",))
 
   def test_story_filter_all(self):
     parser = CBArgumentParser()
@@ -571,8 +572,10 @@ class WebXPRT5TestCase(helper.PressBaseBenchmarkTestCase):
         ["--stories", "video-effects,face-detection", "--separate"])
     story_filter = self.story_filter_cls.from_cli_args(self.story_cls, args)
     self.assertEqual(len(story_filter.stories), 2)
-    self.assertEqual(story_filter.stories[0].substories, ("video-effects",))
-    self.assertEqual(story_filter.stories[1].substories, ("face-detection",))
+    self.assertSequenceEqual(story_filter.stories[0].substories,
+                             ("video-effects",))
+    self.assertSequenceEqual(story_filter.stories[1].substories,
+                             ("face-detection",))
 
 
 if __name__ == "__main__":

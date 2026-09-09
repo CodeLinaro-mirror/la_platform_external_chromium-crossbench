@@ -81,8 +81,8 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     result = LocalProbeResult(url=[url])
     self.assertFalse(result.is_empty)
     self.assertEqual(result.url, url)
-    self.assertListEqual(result.url_list, [url])
-    self.assertListEqual(list(result.all_files()), [])
+    self.assertSequenceEqual(result.url_list, [url])
+    self.assertSequenceEqual(list(result.all_files()), [])
     failed: Any = None
     with self.assertRaises(ValueError):
       failed = result.file
@@ -105,8 +105,8 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
             self.create_file("result2.txt"),
         ]))
     self.assertEqual(result.file, path)
-    self.assertListEqual(result.file_list, [path])
-    self.assertListEqual(list(result.all_files()), [path])
+    self.assertSequenceEqual(result.file_list, [path])
+    self.assertSequenceEqual(list(result.all_files()), [path])
     failed: Any = None
     with self.assertRaises(ValueError):
       failed = result.url
@@ -128,9 +128,9 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
         ]))
     self.assertEqual(result.csv, path)
     self.assertEqual(result.get("csv"), path)
-    self.assertListEqual(result.csv_list, [path])
-    self.assertListEqual(result.get_all("csv"), [path])
-    self.assertListEqual(list(result.all_files()), [path])
+    self.assertSequenceEqual(result.csv_list, [path])
+    self.assertSequenceEqual(result.get_all("csv"), [path])
+    self.assertSequenceEqual(list(result.all_files()), [path])
     self.assertEqual(result.file, path)
     failed: Any = None
     with self.assertRaises(ValueError):
@@ -153,9 +153,9 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
         ]))
     self.assertEqual(result.json, path)
     self.assertEqual(result.get("json"), path)
-    self.assertListEqual(result.json_list, [path])
-    self.assertListEqual(result.get_all("json"), [path])
-    self.assertListEqual(list(result.all_files()), [path])
+    self.assertSequenceEqual(result.json_list, [path])
+    self.assertSequenceEqual(result.get_all("json"), [path])
+    self.assertSequenceEqual(list(result.all_files()), [path])
     self.assertEqual(result.file, path)
     failed: Any = None
     with self.assertRaises(ValueError):
@@ -191,7 +191,7 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertSequenceEqual(result.json_list, (json1, json2))
     self.assertSequenceEqual(result.get_all("json"), (json1, json2))
     self.assertEqual(result.get("zip"), zip1)
-    self.assertEqual(result.get_all("zip"), [zip1])
+    self.assertSequenceEqual(result.get_all("zip"), [zip1])
     with self.assertRaises(ValueError):
       _ = result.get("other")
 
@@ -205,15 +205,15 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     result = LocalProbeResult(
         url=(url,), file=(file,), json=(json,), csv=(csv,), perfetto=(trace,))
     self.assertFalse(result.is_empty)
-    self.assertListEqual(list(result.all_files()), [file, json, csv, trace])
-    self.assertListEqual(result.url_list, [url])
-    self.assertListEqual(result.perfetto_list, [trace])
+    self.assertSequenceEqual(list(result.all_files()), [file, json, csv, trace])
+    self.assertSequenceEqual(result.url_list, [url])
+    self.assertSequenceEqual(result.perfetto_list, [trace])
 
     merged = result.merge(EmptyProbeResult())
     self.assertFalse(merged.is_empty)
-    self.assertListEqual(list(merged.all_files()), [file, json, csv, trace])
-    self.assertListEqual(merged.url_list, [url])
-    self.assertListEqual(merged.perfetto_list, [trace])
+    self.assertSequenceEqual(list(merged.all_files()), [file, json, csv, trace])
+    self.assertSequenceEqual(merged.url_list, [url])
+    self.assertSequenceEqual(merged.perfetto_list, [trace])
 
     file_2 = self.create_file("result.2.custom")
     json_2 = self.create_file("result.2.json")
@@ -228,21 +228,21 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
         perfetto=(trace_2,))
     merged = result.merge(other)
     self.assertFalse(merged.is_empty)
-    self.assertListEqual(
+    self.assertSequenceEqual(
         list(merged.all_files()),
         [file, file_2, json, json_2, csv, csv_2, trace, trace_2])
-    self.assertListEqual(merged.url_list, [url, url_2])
+    self.assertSequenceEqual(merged.url_list, [url, url_2])
     # result is unchanged:
     self.assertFalse(result.is_empty)
-    self.assertListEqual(list(result.all_files()), [file, json, csv, trace])
-    self.assertListEqual(result.url_list, [url])
-    self.assertListEqual(result.perfetto_list, [trace])
+    self.assertSequenceEqual(list(result.all_files()), [file, json, csv, trace])
+    self.assertSequenceEqual(result.url_list, [url])
+    self.assertSequenceEqual(result.perfetto_list, [trace])
     # other is unchanged:
     self.assertFalse(other.is_empty)
-    self.assertListEqual(
+    self.assertSequenceEqual(
         list(other.all_files()), [file_2, json_2, csv_2, trace_2])
-    self.assertListEqual(other.url_list, [url_2])
-    self.assertListEqual(other.perfetto_list, [trace_2])
+    self.assertSequenceEqual(other.url_list, [url_2])
+    self.assertSequenceEqual(other.perfetto_list, [trace_2])
 
   def test_merge_duplicate_files(self):
     path = self.create_file("result.custom")
@@ -265,31 +265,32 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
 
     merged = result_1.merge(result_2, result_3)
     self.assertFalse(merged.is_empty)
-    self.assertListEqual(list(merged.all_files()), [path_1, path_2, path_3])
+    self.assertSequenceEqual(list(merged.all_files()), [path_1, path_2, path_3])
 
     merged = result_1.merge(result_3, result_2)
     self.assertFalse(merged.is_empty)
-    self.assertListEqual(list(merged.all_files()), [path_1, path_3, path_2])
+    self.assertSequenceEqual(list(merged.all_files()), [path_1, path_3, path_2])
 
     # Test with empty
     merged_with_empty = result_1.merge(EmptyProbeResult(), result_2)
-    self.assertListEqual(list(merged_with_empty.all_files()), [path_1, path_2])
+    self.assertSequenceEqual(
+        list(merged_with_empty.all_files()), [path_1, path_2])
 
   def test_perfetto_list_are_files(self):
     trace = self.create_file("trace.pb")
 
     result = LocalProbeResult(perfetto=(trace,))
     self.assertFalse(result.is_empty)
-    self.assertListEqual(list(result.all_files()), [trace])
-    self.assertListEqual(list(result.perfetto_list), [trace])
+    self.assertSequenceEqual(list(result.all_files()), [trace])
+    self.assertSequenceEqual(list(result.perfetto_list), [trace])
 
   def test_perfetto_list_can_be_duplicate(self):
     trace = self.create_file("trace.pb")
 
     result = LocalProbeResult(perfetto=(trace,), file=(trace,))
     self.assertFalse(result.is_empty)
-    self.assertListEqual(list(result.all_files()), [trace])
-    self.assertListEqual(list(result.perfetto_list), [trace])
+    self.assertSequenceEqual(list(result.all_files()), [trace])
+    self.assertSequenceEqual(list(result.perfetto_list), [trace])
 
 
 class MockRun:

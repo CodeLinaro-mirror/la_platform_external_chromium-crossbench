@@ -145,7 +145,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertIn(self.story_cls.URL + expected_query, urls)
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
   def test_run_single_story(self):
     stories = self.story_cls.from_names(["language_model"])
@@ -190,7 +190,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertIn(self.story_cls.URL + "?stories=language_model", urls)
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
   def test_run_custom_url(self):
     custom_url = "http://test.example.com/blink_ai"
@@ -234,7 +234,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertIn(custom_url + "?stories=language_model", urls)
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
   def test_run_error(self):
     stories = self.story_cls.from_names(["language_model"])
@@ -269,7 +269,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     cm.assert_called_once()
 
     for browser in active_browsers:
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
   def test_run_multimodal(self):
     stories = self.story_cls.from_names(
@@ -331,7 +331,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       self.assertIn(
           self.story_cls.URL + "?stories=multimodal_image%2Cmultimodal_audio",
           urls)
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
 
 if __name__ == "__main__":

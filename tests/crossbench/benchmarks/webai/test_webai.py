@@ -98,7 +98,7 @@ class WebAITestCase(helper.PressBaseBenchmarkTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertIn(self.story_cls.URL, urls)
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
     # Check log output
     with self.assertLogs(level="INFO") as log_cm:
@@ -142,7 +142,7 @@ class WebAITestCase(helper.PressBaseBenchmarkTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertIn(custom_url, urls)
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
 
 if __name__ == "__main__":

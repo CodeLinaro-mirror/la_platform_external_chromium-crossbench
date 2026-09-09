@@ -44,7 +44,7 @@ class TestLoadLine2Helpers(BaseCrossbenchTestCase):
     )
     scores = process_scores(query_result, expected_metrics=2)
 
-    self.assertEqual(scores.shape, (3, 1))
+    self.assertSequenceEqual(scores.shape, (3, 1))
     self.assertEqual(scores["chrome"].loc["metric1"], "4.000")
     self.assertEqual(scores["chrome"].loc["metric2"], "16.000")
     self.assertEqual(scores["chrome"].loc["TOTAL_SCORE"], "8.000")

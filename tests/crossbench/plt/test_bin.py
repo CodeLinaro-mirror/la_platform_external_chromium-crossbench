@@ -131,7 +131,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
 
   def validate_known_binary_default(self, platform: plt.Platform,
                                     result: pth.AnyPath, binary: Binary):
-    self.assertEqual(
+    self.assertSequenceEqual(
         [path_entry.binary for path_entry in binary.platform_path(platform)],
         [result])
     with self.assertRaises(BinaryNotFoundError):
@@ -164,7 +164,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
                                              default_miss: pth.AnyPath,
                                              result: pth.AnyPath,
                                              binary: Binary):
-    self.assertEqual(
+    self.assertSequenceEqual(
         [path_entry.binary for path_entry in binary.platform_path(platform)],
         [default_miss, result])
     with self.assertRaises(BinaryNotFoundError):
@@ -207,7 +207,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     for platform in self.all_mock_platforms():
       if platform.is_chromeos:
         continue
-      self.assertEqual(binary.platform_path(platform), ())
+      self.assertSequenceEqual(binary.platform_path(platform), ())
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve(platform)
       with self.assertRaises(BinaryNotFoundError):
@@ -231,7 +231,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     for platform in self.all_mock_platforms():
       if platform.is_linux:
         continue
-      self.assertEqual(binary.platform_path(platform), ())
+      self.assertSequenceEqual(binary.platform_path(platform), ())
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve(platform)
       with self.assertRaises(BinaryNotFoundError):
@@ -253,7 +253,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     for platform in self.all_mock_platforms():
       if platform.is_macos:
         continue
-      self.assertEqual(binary.platform_path(platform), ())
+      self.assertSequenceEqual(binary.platform_path(platform), ())
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve(platform)
       with self.assertRaises(BinaryNotFoundError):
@@ -277,7 +277,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     for platform in self.all_mock_platforms():
       if platform.is_posix:
         continue
-      self.assertEqual(binary.platform_path(platform), ())
+      self.assertSequenceEqual(binary.platform_path(platform), ())
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve(platform)
       with self.assertRaises(BinaryNotFoundError):
@@ -301,7 +301,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     for platform in self.all_mock_platforms():
       if platform.is_win:
         continue
-      self.assertEqual(binary.platform_path(platform), ())
+      self.assertSequenceEqual(binary.platform_path(platform), ())
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve(platform)
       with self.assertRaises(BinaryNotFoundError):
@@ -341,7 +341,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
       mock_which.assert_called_with(result)
 
     for other_platform in self.all_mock_platforms():
-      self.assertEqual(binary.platform_path(other_platform), ())
+      self.assertSequenceEqual(binary.platform_path(other_platform), ())
       with self.assertRaises(BinaryNotFoundError):
         binary.resolve(other_platform)
       with self.assertRaises(BinaryNotFoundError):

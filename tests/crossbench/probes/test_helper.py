@@ -38,7 +38,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
     ]
     for delimiter in ["\t", ","]:
       merged = self.merge(data, delimiter=delimiter)
-      self.assertListEqual(merged, data)
+      self.assertSequenceEqual(merged, data)
 
   def test_merge_single_padding(self):
     data = [
@@ -47,7 +47,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
         ["Total", "200", "300"],
     ]
     merged = self.merge(data, headers=None)
-    self.assertListEqual(merged, [
+    self.assertSequenceEqual(merged, [
         ["Metric", "Run1", "Run2"],
         ["marker", None, None],
         ["Total", "200", "300"],
@@ -59,7 +59,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
     ]
     for delimiter in ["\t", ","]:
       merged = self.merge(data, delimiter=delimiter, headers=["custom"])
-      self.assertListEqual(merged, [
+      self.assertSequenceEqual(merged, [
           [None, "custom"],
           ["Total", "200"],
       ])
@@ -74,7 +74,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
         ["Total", "201"],
     ]
     merged = self.merge(data_1, data_2, headers=["col_1", "col_2"])
-    self.assertListEqual(merged, [
+    self.assertSequenceEqual(merged, [
         [None, "col_1", None, "col_2"],
         ["marker", None, None, None],
         ["Total", "101", "102", "201"],
@@ -91,7 +91,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
     ]
     merged = self.merge(
         data_1, data_2, headers=["col_1", "col_2"], row_header_len=2)
-    self.assertListEqual(merged, [
+    self.assertSequenceEqual(merged, [
         [None, None, "col_1", None, "col_2"],
         ["full-marker", "marker", None, None, None],
         ["Full/Total", "Total", "101", "102", "201"],
@@ -109,7 +109,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
         ["D", "201"],
     ]
     merged = self.merge(data_1, data_2)
-    self.assertListEqual(merged, [
+    self.assertSequenceEqual(merged, [
         ["marker", None, None, None],
         ["A", "101", "102", None],
         ["B", "101", "102", None],
@@ -129,7 +129,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
         ["D", "201"],
     ]
     merged = self.merge(data_1, data_2)
-    self.assertListEqual(merged, [
+    self.assertSequenceEqual(merged, [
         ["marker", None, None, None, None],
         ["A", None, None, "101", "102"],
         ["B", "101", "102", None, None],
@@ -157,7 +157,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
         ["Total-X", "203"],
     ]
     merged = self.merge(data_1, data_2, headers=["col_1", "col_2"])
-    self.assertListEqual(merged, [
+    self.assertSequenceEqual(merged, [
         [None, "col_1", None, "col_2", None],
         ["marker", None, None, None, None],
         ["Total-A0", None, None, None, None],
@@ -182,7 +182,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
         ["A", "401"],
     ]
     merged = self.merge(data_1, data_2)
-    self.assertListEqual(merged, [
+    self.assertSequenceEqual(merged, [
         ["A", "101", "301"],
         ["A", "201", "401"],
     ])
@@ -201,7 +201,7 @@ class TestMergeCSV(CrossbenchFakeFsTestCase):
         ["C", "C01"],
     ]
     merged = self.merge(data_1, data_2)
-    self.assertListEqual(merged, [
+    self.assertSequenceEqual(merged, [
         ["marker", None, None],
         ["A", "101", "301"],
         ["A", "201", "401"],
@@ -229,9 +229,9 @@ class TestFlatten(unittest.TestCase):
         "a": 1,
     }
     flattened_keys = tuple(self.flatten(data, sort=True).keys())
-    self.assertTupleEqual(flattened_keys, ("a", "b"))
+    self.assertSequenceEqual(flattened_keys, ("a", "b"))
     flattened_keys = tuple(self.flatten(data, sort=False).keys())
-    self.assertTupleEqual(flattened_keys, ("b", "a"))
+    self.assertSequenceEqual(flattened_keys, ("b", "a"))
 
   def test_single_nested(self):
     data = {

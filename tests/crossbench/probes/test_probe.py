@@ -79,9 +79,9 @@ class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_empty(self):
     probe_list = ProbeListConfig.parse({"probes": []})
-    self.assertEqual(probe_list.probes, ())
+    self.assertSequenceEqual(probe_list.probes, ())
     probe_list = ProbeListConfig.parse({"probes": {}})
-    self.assertEqual(probe_list.probes, ())
+    self.assertSequenceEqual(probe_list.probes, ())
 
 
 class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
@@ -276,7 +276,7 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
     base_kwargs = {k: (k,) for k in cmd_keys}
     probe = probe_cls(**base_kwargs)
 
-    self.assertEqual(probe.key[0], ("name", probe_cls.NAME))
+    self.assertSequenceEqual(probe.key[0], ("name", probe_cls.NAME))
 
     key_dict = dict(probe.key)
     for k, val in base_kwargs.items():
@@ -340,10 +340,10 @@ class ShellProbeExecutionTestCase(BaseProbeTestCase):
         for suffix in ("stdout", "stderr")
     ]
     actual_filenames = [f.name for f in result.file_list]
-    self.assertListEqual(actual_filenames, expected_filenames)
+    self.assertSequenceEqual(actual_filenames, expected_filenames)
 
     # Verify that no pending expected commands remain unexecuted.
-    self.assertListEqual(target_platform.sh_results, [])
+    self.assertSequenceEqual(target_platform.sh_results, [])
 
   def test_browser_shell_probe_execution(self):
     run = self.mock_run()

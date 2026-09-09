@@ -218,7 +218,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
     if bits_device:
       expected_device_args += ["--device", bits_device]
 
-    self.assertEqual(
+    self.assertSequenceEqual(
         call_args,
         (
             self.bits_path,
@@ -238,7 +238,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
 
     self.assertEqual(len(host_platform.sh.call_args_list), 2)
     stop_call, _ = host_platform.sh.call_args_list
-    self.assertEqual(
+    self.assertSequenceEqual(
         stop_call.args,
         (
             self.bits_path,

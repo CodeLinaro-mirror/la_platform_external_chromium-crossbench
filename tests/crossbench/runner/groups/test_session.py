@@ -68,7 +68,7 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     session = self.default_session()
     run_1 = MockRun(self.runner, session, "story 1")
     session.append(run_1)
-    self.assertListEqual(list(session.runs), [run_1])
+    self.assertSequenceEqual(list(session.runs), [run_1])
     self.assertEqual(session.info["runs"], 1)
     self.assertTrue(session.is_single_run)
     self.assertFalse(session.is_running)
@@ -77,7 +77,7 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
 
     run_2 = MockRun(self.runner, session, "story 2")
     session.append(run_2)
-    self.assertListEqual(list(session.runs), [run_1, run_2])
+    self.assertSequenceEqual(list(session.runs), [run_1, run_2])
     self.assertEqual(session.info["runs"], 2)
 
     session.set_ready()

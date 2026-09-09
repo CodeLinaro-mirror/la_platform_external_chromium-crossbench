@@ -48,7 +48,7 @@ class Speedometer20TestCase(Speedometer2BaseTestCase):
     all_story_names = [
         story.name for story in self.story_cls.all(separate=True)
     ]
-    self.assertListEqual(default_story_names, all_story_names)
+    self.assertSequenceEqual(default_story_names, all_story_names)
 
 
 del Speedometer2BaseTestCase

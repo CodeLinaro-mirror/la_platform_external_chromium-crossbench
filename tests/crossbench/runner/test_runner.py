@@ -90,25 +90,25 @@ class TestThreadModeTestCase(unittest.TestCase):
   def test_group_none(self):
     groups = ThreadMode.NONE.group(self.runs)
     self.assertEqual(len(groups), 1)
-    self.assertTupleEqual(groups[0].runs, self.runs)
+    self.assertSequenceEqual(groups[0].runs, self.runs)
     self.assertEqual(groups[0].index, 0)
 
   def test_group_platform(self):
     groups = ThreadMode.PLATFORM.group(self.runs)
     self.assertEqual(len(groups), 2)
     group_a, group_b = groups
-    self.assertTupleEqual(group_a.runs, self.runs[:4])
-    self.assertTupleEqual(group_b.runs, self.runs[4:])
+    self.assertSequenceEqual(group_a.runs, self.runs[:4])
+    self.assertSequenceEqual(group_b.runs, self.runs[4:])
     self.assertEqual(group_a.index, 0)
     self.assertEqual(group_b.index, 1)
 
   def test_group_browser(self):
     groups = ThreadMode.BROWSER.group(self.runs)
     self.assertEqual(len(groups), 4)
-    self.assertTupleEqual(groups[0].runs, (self.runs[0], self.runs[2]))
-    self.assertTupleEqual(groups[1].runs, (self.runs[1], self.runs[3]))
-    self.assertTupleEqual(groups[2].runs, (self.runs[4], self.runs[6]))
-    self.assertTupleEqual(groups[3].runs, (self.runs[5], self.runs[7]))
+    self.assertSequenceEqual(groups[0].runs, (self.runs[0], self.runs[2]))
+    self.assertSequenceEqual(groups[1].runs, (self.runs[1], self.runs[3]))
+    self.assertSequenceEqual(groups[2].runs, (self.runs[4], self.runs[6]))
+    self.assertSequenceEqual(groups[3].runs, (self.runs[5], self.runs[7]))
     for index, group in enumerate(groups):
       self.assertEqual(group.index, index)
 
@@ -116,7 +116,7 @@ class TestThreadModeTestCase(unittest.TestCase):
     groups = ThreadMode.SESSION.group(self.runs)
     self.assertEqual(len(groups), len(self.runs))
     for group, run in zip(groups, self.runs, strict=True):
-      self.assertTupleEqual(group.runs, (run,))
+      self.assertSequenceEqual(group.runs, (run,))
     for index, group in enumerate(groups):
       self.assertEqual(group.index, index)
 
@@ -131,8 +131,8 @@ class TestThreadModeTestCase(unittest.TestCase):
     )
     groups = ThreadMode.SESSION.group(runs)
     group_a, group_b = groups
-    self.assertTupleEqual(group_a.runs, (runs[0], runs[2]))
-    self.assertTupleEqual(group_b.runs, (runs[1], runs[3]))
+    self.assertSequenceEqual(group_a.runs, (runs[0], runs[2]))
+    self.assertSequenceEqual(group_b.runs, (runs[1], runs[3]))
     for index, group in enumerate(groups):
       self.assertEqual(group.index, index)
 
@@ -162,7 +162,7 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertEqual(len(runner.platforms), 1)
     self.assertTrue(runner.exceptions.is_success)
     default_probes = list(runner.default_probes)
-    self.assertListEqual(list(runner.probes), default_probes)
+    self.assertSequenceEqual(list(runner.probes), default_probes)
     self.assertEqual(
         len(default_probes), len(all_probes.DEFAULT_INTERNAL_PROBES))
     self.assertEqual(len(runner.runs), 0)
@@ -176,7 +176,8 @@ class RunnerTestCase(BaseRunnerTestCase):
 
     # Test default (no flag)
     args = parser.parse_args(["--out-dir", "out"])
-    self.assertEqual(args.cache_temperatures, [CacheTemperature.DEFAULT])
+    self.assertSequenceEqual(args.cache_temperatures,
+                             [CacheTemperature.DEFAULT])
 
     # Test flag present (no args)
     args = parser.parse_args(["--cache-temperatures", "--out-dir", "out"])

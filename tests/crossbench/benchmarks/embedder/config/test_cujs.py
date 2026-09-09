@@ -69,8 +69,8 @@ class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(cuj.label, "Google Story")
     self.assertEqual(len(cuj.blocks), 1)
     block = cuj.blocks[0]
-    self.assertListEqual([str(action.TYPE) for action in block],
-                         ["click", "wait"])
+    self.assertSequenceEqual([str(action.TYPE) for action in block],
+                             ["click", "wait"])
 
   def test_no_scenarios(self):
     with self.assertRaises(argparse.ArgumentTypeError):

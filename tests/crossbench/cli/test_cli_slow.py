@@ -147,7 +147,7 @@ class CliSlowTestCase(BaseCliTestCase):
                    "--env-validation=skip")
       mock_network_open.assert_called_once()
       for browser in browsers:
-        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         assert isinstance(browser.network, LocalFileNetwork)
         network: LocalFileNetwork = browser.network
         self.assertFalse(network.is_live)

@@ -125,14 +125,14 @@ class TestMeminfoProbe(GenericProbeTestCase):
           file for file in meminfo_result_files
           if browser.unique_name in file.parts
       ]
-      self.assertListEqual([file.name for file in files], [
+      self.assertSequenceEqual([file.name for file in files], [
           "test.setup_block_0_action_1.json",
           "test.playback_0_block_0_action_2.json",
           "test.playback_1_block_0_action_2.json",
           "test.playback_2_block_0_action_2.json",
           "teardown_block_0_action_1.json",
       ])
-      self.assertListEqual(
+      self.assertSequenceEqual(
           [json.loads(file.read_text(encoding="utf-8")) for file in files],
           mock_json)
 
@@ -142,7 +142,7 @@ class TestMeminfoProbe(GenericProbeTestCase):
           for i, mark in enumerate(browser.performance_marks)
           if mark == "crossbench-meminfo"
       ]
-      self.assertListEqual(details, mock_json)
+      self.assertSequenceEqual(details, mock_json)
 
 
 if __name__ == "__main__":

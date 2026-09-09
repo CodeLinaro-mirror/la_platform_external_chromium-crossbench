@@ -19,7 +19,7 @@ class LogcatAndroidProbeTestCase(BaseProbeTestCase):
   def test_parse_config(self):
     probe = LogcatAndroidProbe.config_parser().parse(
         {"filterspec": "ActivityManager:V"})
-    self.assertEqual(probe.filterspec, ("ActivityManager:V",))
+    self.assertSequenceEqual(probe.filterspec, ("ActivityManager:V",))
 
   def test_validate_browser_incompatible(self):
     probe = LogcatAndroidProbe(())

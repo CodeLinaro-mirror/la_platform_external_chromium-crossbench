@@ -58,10 +58,10 @@ class SetupCommandsConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(len(commands), 2)
     command1 = commands[0]
     self.assertEqual(command1.label, "echo hello")
-    self.assertTupleEqual(command1.command, ("echo", "hello"))
+    self.assertSequenceEqual(command1.command, ("echo", "hello"))
     command2 = commands[1]
     self.assertEqual(command2.label, "list files")
-    self.assertTupleEqual(command2.command, ("ls", "-l"))
+    self.assertSequenceEqual(command2.command, ("ls", "-l"))
 
   def test_no_commands(self):
     with self.assertRaises(argparse.ArgumentTypeError):

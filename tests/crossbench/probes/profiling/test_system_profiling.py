@@ -34,7 +34,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
   def test_simpleperf_command_line_with_tid(self):
     output_path = pathlib.Path("simpleperf.perf.data")
-    self.assertListEqual(
+    self.assertSequenceEqual(
         generate_simpleperf_command_line(
             target=TargetMode.RENDERER_MAIN_ONLY,
             app_name="com.android.chrome",
@@ -54,7 +54,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
   def test_simpleperf_command_line_with_pid(self):
     output_path = pathlib.Path("simpleperf.perf.data")
-    self.assertListEqual(
+    self.assertSequenceEqual(
         generate_simpleperf_command_line(
             target=TargetMode.RENDERER_PROCESS_ONLY,
             app_name="com.android.chrome",
@@ -74,7 +74,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
   def test_simpleperf_command_line_with_app(self):
     output_path = pathlib.Path("simpleperf.perf.data")
-    self.assertListEqual(
+    self.assertSequenceEqual(
         generate_simpleperf_command_line(
             target=TargetMode.BROWSER_APP_ONLY,
             app_name="com.chrome.beta",
@@ -94,7 +94,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
   def test_simpleperf_command_line_systemwide(self):
     output_path = pathlib.Path("simpleperf.perf.data")
-    self.assertListEqual(
+    self.assertSequenceEqual(
         generate_simpleperf_command_line(
             target=TargetMode.SYSTEM_WIDE,
             app_name="org.chromium.chrome",
@@ -114,7 +114,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
   def test_simpleperf_command_line_with_frequency(self):
     output_path = pathlib.Path("simpleperf.perf.data")
-    self.assertListEqual(
+    self.assertSequenceEqual(
         generate_simpleperf_command_line(
             target=TargetMode.SYSTEM_WIDE,
             app_name="org.chromium.chrome",
@@ -134,7 +134,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
   def test_simpleperf_command_line_with_count(self):
     output_path = pathlib.Path("simpleperf.perf.data")
-    self.assertListEqual(
+    self.assertSequenceEqual(
         generate_simpleperf_command_line(
             target=TargetMode.SYSTEM_WIDE,
             app_name="org.chromium.chrome",
@@ -154,7 +154,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
   def test_simpleperf_command_line_with_cpu(self):
     output_path = pathlib.Path("simpleperf.perf.data")
-    self.assertListEqual(
+    self.assertSequenceEqual(
         generate_simpleperf_command_line(
             target=TargetMode.SYSTEM_WIDE,
             app_name="org.chromium.chrome",
@@ -178,7 +178,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
   def test_simpleperf_command_line_with_events(self):
     output_path = pathlib.Path("simpleperf.perf.data")
-    self.assertListEqual(
+    self.assertSequenceEqual(
         generate_simpleperf_command_line(
             target=TargetMode.SYSTEM_WIDE,
             app_name="org.chromium.chrome",
@@ -201,7 +201,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
   def test_simpleperf_command_line_with_grouped_events(self):
     output_path = pathlib.Path("simpleperf.perf.data")
-    self.assertListEqual(
+    self.assertSequenceEqual(
         generate_simpleperf_command_line(
             target=TargetMode.SYSTEM_WIDE,
             app_name="org.chromium.chrome",
@@ -224,7 +224,7 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
   def test_simpleperf_command_line_with_add_counters(self):
     output_path = pathlib.Path("simpleperf.perf.data")
-    self.assertListEqual(
+    self.assertSequenceEqual(
         generate_simpleperf_command_line(
             target=TargetMode.SYSTEM_WIDE,
             app_name="org.chromium.chrome",
@@ -362,10 +362,11 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     self.assertEqual(probe.call_graph_mode, CallGraphMode.DWARF)
     self.assertEqual(probe.frequency, 1200)
     self.assertEqual(probe.count, 430)
-    self.assertEqual(probe.cpu, (1, 2, 3))
-    self.assertEqual(probe.events, ("instructions", "cache-misses"))
-    self.assertEqual(probe.grouped_events, ("cache-references", "cache-misses"))
-    self.assertEqual(probe.add_counters, ("aa", "bb"))
+    self.assertSequenceEqual(probe.cpu, (1, 2, 3))
+    self.assertSequenceEqual(probe.events, ("instructions", "cache-misses"))
+    self.assertSequenceEqual(probe.grouped_events,
+                             ("cache-references", "cache-misses"))
+    self.assertSequenceEqual(probe.add_counters, ("aa", "bb"))
 
   def test_v8_interpreted_frames_default(self):
     probe = ProfilingProbe()

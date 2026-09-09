@@ -337,7 +337,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pth.AnyPosixPath("com.android.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
@@ -347,7 +347,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pth.AnyPosixPath("com.chrome.beta"),
             DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
@@ -357,7 +357,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pth.AnyPosixPath("com.chrome.beta"),
             DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
@@ -367,7 +367,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pth.AnyPosixPath("com.chrome.dev"),
             DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
@@ -377,7 +377,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pth.AnyPosixPath("com.chrome.canary"),
             DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
@@ -387,7 +387,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pth.AnyPosixPath("org.chromium.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
@@ -397,7 +397,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pth.AnyPosixPath("org.chromium.webview_shell"),
             DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
@@ -407,7 +407,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pth.AnyPosixPath("org.chromium.webview_shell"),
             DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
@@ -417,7 +417,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pth.AnyPosixPath("webview_embedder"),
             DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
@@ -427,7 +427,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pth.AnyPosixPath("com.google.android.googlequicksearchbox"),
             DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
@@ -437,7 +437,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig.parse(f"adb:{package}"),
         BrowserConfig(
             pth.AnyPosixPath(package), DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
   def test_parse_simple_with_local_apk(self):
     self.platform.sh_results = [
@@ -540,7 +540,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig(
             pth.AnyPath("com.android.chrome"),
             DriverConfig(BrowserDriverType.ANDROID)))
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
 
   def test_parse_invalid_android_package(self):
     self.platform.sh_results = [ADB_DEVICES_SINGLE_OUTPUT]
@@ -580,7 +580,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT, ADB_DEVICES_OUTPUT]
     config = BrowserConfig.parse("0a388e93:chrome")
     assert isinstance(config, BrowserConfig)
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
     self.assertEqual(len(self.platform.sh_cmds), 2)
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
@@ -689,7 +689,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
 
   def test_parse_with_range_simple(self):
     versions = BrowserConfig.parse_with_range("chrome-m100")
-    self.assertTupleEqual(versions, (BrowserConfig.parse("chrome-m100"),))
+    self.assertSequenceEqual(versions, (BrowserConfig.parse("chrome-m100"),))
 
   def test_parse_with_range(self):
     result = (BrowserConfig.parse("chrome-m99"),
@@ -697,11 +697,11 @@ class BrowserConfigTestCase(BaseConfigTestCase):
               BrowserConfig.parse("chrome-m101"),
               BrowserConfig.parse("chrome-m102"))
     versions = BrowserConfig.parse_with_range("chrome-m99...chrome-m102")
-    self.assertTupleEqual(versions, result)
+    self.assertSequenceEqual(versions, result)
     versions = BrowserConfig.parse_with_range("chrome-m99...m102")
-    self.assertTupleEqual(versions, result)
+    self.assertSequenceEqual(versions, result)
     versions = BrowserConfig.parse_with_range("chrome-m99...102")
-    self.assertTupleEqual(versions, result)
+    self.assertSequenceEqual(versions, result)
 
   def test_parse_with_range_invalid_empty(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -740,7 +740,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
                            "2222 device usb:2 product:p2 model:m2 device:d2\n"
                            "3333 device usb:3 product:p3 model:m3 device:d3\n")
     self.platform.sh_results = [adb_devices] * 13
-    self.assertTupleEqual(
+    self.assertSequenceEqual(
         BrowserConfig.parse_with_range("adb-all:chrome"),
         (BrowserConfig.parse("1111:chrome"), BrowserConfig.parse("2222:chrome"),
          BrowserConfig.parse("3333:chrome")))
@@ -760,7 +760,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
           unittest.mock.patch(
               "crossbench.cli.config.driver.ios_devices",
               return_value=ios_devices)):
-      self.assertTupleEqual(
+      self.assertSequenceEqual(
           BrowserConfig.parse_with_range("ios-all:safari"),
           (BrowserConfig.parse("ID-1:safari"),
            BrowserConfig.parse("ID-2:safari"),
@@ -846,7 +846,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         "192.168.0.1:5555 device product:p1 model:m1 device:d1\n"
         "192.168.0.1:5556 device product:p2 model:m2 device:d2\n")
     self.platform.sh_results = [adb_devices] * 9
-    self.assertTupleEqual(
+    self.assertSequenceEqual(
         BrowserConfig.parse_with_range("adb-all:chrome"),
         (BrowserConfig.parse("192.168.0.1:5555:chrome"),
          BrowserConfig.parse("192.168.0.1:5556:chrome")))

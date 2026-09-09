@@ -40,7 +40,7 @@ class RunTestCase(BaseRunGroupTestCase):
     with run.actions("Some_Custom_Action", **kwargs):
       pass
     new_marks = run.browser.performance_marks
-    self.assertListEqual(new_marks[:len(initial_marks)], initial_marks)
+    self.assertSequenceEqual(new_marks[:len(initial_marks)], initial_marks)
     return new_marks[len(initial_marks):]
 
   def test_find_probe_context(self):
@@ -110,14 +110,14 @@ class RunTestCase(BaseRunGroupTestCase):
     self.assertIn("Some warning", " ".join(cm.output))
 
   def test_actions_no_performance_mark(self):
-    self.assertListEqual(self._run_actions_and_get_new_marks(), [])
+    self.assertSequenceEqual(self._run_actions_and_get_new_marks(), [])
 
   def test_actions_explicit_empty_performance_mark(self):
-    self.assertListEqual(
+    self.assertSequenceEqual(
         self._run_actions_and_get_new_marks(performance_mark=""), [])
 
   def test_actions_with_performance_mark(self):
-    self.assertListEqual(
+    self.assertSequenceEqual(
         self._run_actions_and_get_new_marks(performance_mark="custom-marker"),
         ["crossbench-custom-marker-start", "crossbench-custom-marker-stop"])
 

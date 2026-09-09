@@ -66,7 +66,7 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
 
     summary_metrics = probe.summary_metrics
     # Should contain everything in 'metrics' plus 'summary_metrics'
-    self.assertListEqual(
+    self.assertSequenceEqual(
         list(summary_metrics),
         ["trace_stats", "file_metric_def_textproto", "inline_textproto_metric"])
 
@@ -540,7 +540,7 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
       metrics = json.load(f)
     self.assertTrue("foo/bar" in metrics)
     self.assertTrue("values" in metrics["foo/bar"])
-    self.assertEqual([7, 9], metrics["foo/bar"]["values"])
+    self.assertSequenceEqual([7, 9], metrics["foo/bar"]["values"])
 
   def _assert_independent_results(self, config1: dict[str, Any],
                                   config2: dict[str, Any]) -> None:

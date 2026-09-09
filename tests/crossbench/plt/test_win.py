@@ -53,7 +53,7 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.expect_sh("cmd", "/c", "ver", result=ver_output)
     self.assertEqual(self.platform.version_str, ver_output.strip())
     version = self.platform.version
-    self.assertEqual(version.parts, (10, 0, 22631, 3593))
+    self.assertSequenceEqual(version.parts, (10, 0, 22631, 3593))
     self.assertEqual(version.version_str, ver_output.strip())
 
   def test_killall(self):
@@ -224,7 +224,7 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
   def test_platform_version_cls(self):
     ver_output = "\nMicrosoft Windows [Version 10.0.22631.3593]\n"
     version = WinVersion.parse(ver_output)
-    self.assertEqual(version.parts, (10, 0, 22631, 3593))
+    self.assertSequenceEqual(version.parts, (10, 0, 22631, 3593))
     self.assertEqual(version.version_str, ver_output)
     with self.assertRaises(VersionParseError):
       WinVersion.parse("foo")

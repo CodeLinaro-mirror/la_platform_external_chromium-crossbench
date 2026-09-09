@@ -44,8 +44,8 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   def tearDown(self):
     expected_sh_cmds = self.host_platform.expected_sh_cmds
     if expected_sh_cmds is not None:
-      self.assertListEqual(expected_sh_cmds, [],
-                           "Got additional unused shell cmds.")
+      self.assertSequenceEqual(expected_sh_cmds, [],
+                               "Got additional unused shell cmds.")
     self.assertTrue(self.platform.ports.is_empty)
     super().tearDown()
 

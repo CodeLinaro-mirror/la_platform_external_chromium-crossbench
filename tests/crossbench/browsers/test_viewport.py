@@ -62,15 +62,15 @@ class ViewportTestCase(unittest.TestCase):
     for invalid in self.NON_SIZED_DEFAULTS:
       with self.assertRaises(AssertionError):
         _ = invalid.position
-    self.assertTupleEqual(Viewport.DEFAULT.position, (10, 50))
-    self.assertTupleEqual(Viewport(x=100, y=200).position, (100, 200))
+    self.assertSequenceEqual(Viewport.DEFAULT.position, (10, 50))
+    self.assertSequenceEqual(Viewport(x=100, y=200).position, (100, 200))
 
   def test_size(self):
     for invalid in self.NON_SIZED_DEFAULTS:
       with self.assertRaises(AssertionError):
         _ = invalid.size
-    self.assertTupleEqual(Viewport.DEFAULT.size, (1500, 1000))
-    self.assertTupleEqual(Viewport(100, 200).size, (100, 200))
+    self.assertSequenceEqual(Viewport.DEFAULT.size, (1500, 1000))
+    self.assertSequenceEqual(Viewport(100, 200).size, (100, 200))
 
   def test_width(self):
     for invalid in self.NON_SIZED_DEFAULTS:
@@ -130,11 +130,11 @@ class ViewportTestCase(unittest.TestCase):
 
   def test_parse(self):
     viewport: Viewport = Viewport.parse("100x200")
-    self.assertTupleEqual(viewport.size, (100, 200))
-    self.assertTupleEqual(viewport.position, Viewport.DEFAULT.position)
+    self.assertSequenceEqual(viewport.size, (100, 200))
+    self.assertSequenceEqual(viewport.position, Viewport.DEFAULT.position)
     viewport = Viewport.parse("100x200,22x33")
-    self.assertTupleEqual(viewport.size, (100, 200))
-    self.assertTupleEqual(viewport.position, (22, 33))
+    self.assertSequenceEqual(viewport.size, (100, 200))
+    self.assertSequenceEqual(viewport.position, (22, 33))
 
   def test_parse_sized_invalid(self):
     invalid: Any

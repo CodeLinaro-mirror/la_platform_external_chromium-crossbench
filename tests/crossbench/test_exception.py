@@ -73,7 +73,7 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     annotator: ExceptionAnnotator = exception.annotator
     self.assertTrue(len(annotator), 1)
     entry: Entry = annotator[0]
-    self.assertTupleEqual(entry.info_stack, ("BBB", "AAA"))
+    self.assertSequenceEqual(entry.info_stack, ("BBB", "AAA"))
     self.assertIsInstance(entry.exception, ValueError)
 
   def test_annotate_argparse(self):
@@ -87,7 +87,7 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     annotator: ExceptionAnnotator = exception.annotator
     self.assertTrue(len(annotator), 1)
     entry: Entry = annotator[0]
-    self.assertTupleEqual(entry.info_stack, ("BBB", "AAA", "000"))
+    self.assertSequenceEqual(entry.info_stack, ("BBB", "AAA", "000"))
     self.assertIsInstance(entry.exception, ValueError)
 
   def test_annotate_argparse_nested(self):
@@ -101,11 +101,11 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     annotator: ExceptionAnnotator = exception.annotator
     self.assertTrue(len(annotator), 1)
     entry: Entry = annotator[0]
-    self.assertListEqual(
+    self.assertSequenceEqual(
         annotator.matching(CustomValueError), [
             entry.exception,
         ])
-    self.assertTupleEqual(entry.info_stack, ("BBB", "AAA", "000"))
+    self.assertSequenceEqual(entry.info_stack, ("BBB", "AAA", "000"))
     self.assertIsInstance(entry.exception, ValueError)
 
   def test_annotate_argparse_pass_through(self):
@@ -131,14 +131,14 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertFalse(annotator.is_success)
     self.assertTrue(len(annotator), 1)
     entry: Entry = annotator[0]
-    self.assertTupleEqual(entry.info_stack, ("AAA", "000"))
+    self.assertSequenceEqual(entry.info_stack, ("AAA", "000"))
     self.assertIsInstance(entry.exception, ValueError)
 
   def test_empty(self):
     annotator = ExceptionAnnotator()
     self.assertTrue(annotator.is_success)
     self.assertEqual(len(annotator), 0)
-    self.assertListEqual(annotator.to_json(), [])
+    self.assertSequenceEqual(annotator.to_json(), [])
     with mock.patch("logging.error") as logging_mock:
       annotator.log("custom title")
     # No exceptions => no error output
@@ -178,7 +178,7 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     exception = ValueError("custom message")
     with self.assertRaises(ValueError) as cm, annotator.info(
         "info 1", "info 2"):
-      self.assertTupleEqual(annotator.info_stack, ("info 1", "info 2"))
+      self.assertSequenceEqual(annotator.info_stack, ("info 1", "info 2"))
       try:
         raise exception
       except ValueError as e:
@@ -187,11 +187,11 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertFalse(annotator.is_success)
     self.assertEqual(len(annotator), 1)
     entry = annotator[0]
-    self.assertTupleEqual(entry.info_stack, ("info 1", "info 2"))
+    self.assertSequenceEqual(entry.info_stack, ("info 1", "info 2"))
     serialized = annotator.to_json()
     self.assertEqual(len(serialized), 1)
     self.assertEqual(serialized[0]["title"], str(exception))
-    self.assertEqual(serialized[0]["info_stack"], ("info 1", "info 2"))
+    self.assertSequenceEqual(serialized[0]["info_stack"], ("info 1", "info 2"))
 
   def test_info_stack_logging(self):
     annotator = ExceptionAnnotator()
@@ -269,10 +269,10 @@ class ExceptionHandlerTestCase(unittest.TestCase):
       annotator_1.extend(annotator_2, is_nested=True)
     self.assertEqual(len(annotator_1), 2)
     self.assertEqual(len(annotator_2), 1)
-    self.assertTupleEqual(annotator_1[0].info_stack, ("info 1", "info 2"))
-    self.assertTupleEqual(annotator_1[1].info_stack,
-                          ("info 1", "info 2", "info 3", "info 4"))
-    self.assertTupleEqual(annotator_2[0].info_stack, ("info 3", "info 4"))
+    self.assertSequenceEqual(annotator_1[0].info_stack, ("info 1", "info 2"))
+    self.assertSequenceEqual(annotator_1[1].info_stack,
+                             ("info 1", "info 2", "info 3", "info 4"))
+    self.assertSequenceEqual(annotator_2[0].info_stack, ("info 3", "info 4"))
 
   def test_contextmanager(self):
     annotator = ExceptionAnnotator()

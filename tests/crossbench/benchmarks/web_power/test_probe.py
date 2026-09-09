@@ -188,7 +188,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
                     "chrome,test,0,rail_1,10.0\n"
                     "chrome,test,0,rail_2,20.0\n")
     records = self._test_merge_browsers(csv_contents)
-    self.assertEqual(records, [
+    self.assertSequenceEqual(records, [
         {
             "cb_browser": "chrome",
             "cb_story": "test",
@@ -205,7 +205,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
                     "chrome,test,1,rail_1,200.0\n"
                     "chrome,test,1,rail_2,400.0\n")
     records = self._test_merge_browsers(csv_contents)
-    self.assertEqual(records, [
+    self.assertSequenceEqual(records, [
         {
             "cb_browser": "chrome",
             "cb_story": "test",
@@ -232,7 +232,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         "chrome,test,3,rail_2,80.0\n")
     records = self._test_merge_browsers(csv_contents)
     score = ((10 + 20) + (30 + 40) + (50 + 60) + (70 + 80)) / 4.0
-    self.assertEqual(records, [
+    self.assertSequenceEqual(records, [
         {
             "cb_browser": "chrome",
             "cb_story": "test",
@@ -261,7 +261,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         "chrome,test,4,rail_1,90.0\n"
         "chrome,test,4,rail_2,100.0\n")
     records = self._test_merge_browsers(csv_contents)
-    self.assertEqual(records, [
+    self.assertSequenceEqual(records, [
         {
             "cb_browser": "chrome",
             "cb_story": "test",
@@ -290,7 +290,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         "chrome,test,4,rail_1,30.0\n"
         "chrome,test,4,rail_2,40.0\n")
     records = self._test_merge_browsers(csv_contents)
-    self.assertEqual(records, [
+    self.assertSequenceEqual(records, [
         {
             "cb_browser": "chrome",
             "cb_story": "test",
@@ -314,7 +314,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
                     "chrome,test,8,rail,90.0\n"
                     "chrome,test,9,rail,100.0\n")
     records = self._test_merge_browsers(csv_contents)
-    self.assertEqual(records, [
+    self.assertSequenceEqual(records, [
         {
             "cb_browser": "chrome",
             "cb_story": "test",
@@ -331,7 +331,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
                     "chrome,msn,0,rail_1,5000.0\n"
                     "chrome,msn,0,rail_2,6000.0\n")
     records = self._test_merge_browsers(csv_contents)
-    self.assertEqual(records, [
+    self.assertSequenceEqual(records, [
         {
             "cb_browser": "chrome",
             "cb_story": "cnn",
@@ -353,7 +353,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
                     "safari,cnn,0,rail_1,100.0\n"
                     "safari,cnn,0,rail_2,200.0\n")
     records = self._test_merge_browsers(csv_contents)
-    self.assertEqual(records, [
+    self.assertSequenceEqual(records, [
         {
             "cb_browser": "chrome",
             "cb_story": "cnn",
@@ -378,7 +378,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
 
     records = self._test_merge_browsers(csv_contents)
 
-    self.assertEqual(records, [
+    self.assertSequenceEqual(records, [
         {
             "cb_browser": "safari",
             "cb_story": "cnn",
@@ -397,7 +397,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
                     "chrome,msn,0,rail_1,5000.0\n"
                     "chrome,msn,0,rail_2,6000.0\n")
     records = self._test_merge_browsers(csv_contents)
-    self.assertEqual(records, [
+    self.assertSequenceEqual(records, [
         {
             "cb_browser": "chrome",
             "cb_story": "cnn",
@@ -437,7 +437,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     self.group.runs = [run_p9, run_p10, run_safari]
 
     records = self._test_merge_browsers(csv_contents)
-    self.assertEqual(records, [
+    self.assertSequenceEqual(records, [
         {
             "cb_browser": "chrome_pixel_10",
             "cb_story": "test",
@@ -471,7 +471,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
 
     result = self.probe.merge_browsers(self.group)
 
-    self.assertEqual(
+    self.assertSequenceEqual(
         self._extract_csv_records(result), [
             {
                 "cb_browser": "chrome",
@@ -505,7 +505,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
 
     result = self.probe.merge_browsers(self.group)
 
-    self.assertEqual(
+    self.assertSequenceEqual(
         self._extract_csv_records(result), [
             {
                 "cb_browser": "chrome",
@@ -751,7 +751,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         "custom_first_col", "cb_browser", "cb_story", "custom_middle_col",
         "odpm_total_mw"
     ]
-    self.assertListEqual(list(result_df.columns), expected_cols)
+    self.assertSequenceEqual(list(result_df.columns), expected_cols)
 
   def test_merge_browsers_multiple_power_rails(self):
     """Verify that merge fails if multiple power rails CSVs are found,
@@ -794,17 +794,17 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
   def test_get_extra_probes_with_perfetto(self):
     extra_probes = self._test_get_extra_probes(lambda name: name == "perfetto")
     probe_names = tuple(p.name for p in extra_probes)
-    self.assertEqual(probe_names, ("trace_processor",))
+    self.assertSequenceEqual(probe_names, ("trace_processor",))
 
   def test_get_extra_probes_without_perfetto(self):
     extra_probes = self._test_get_extra_probes(lambda name: False)
-    self.assertEqual(extra_probes, ())
+    self.assertSequenceEqual(extra_probes, ())
 
   def test_get_extra_probes_with_bits(self):
     bits_probe = mock.MagicMock(spec=BitsProbe, name="bits")
     self.mock_benchmark.bits_probe = bits_probe
     extra_probes = self._test_get_extra_probes(lambda name: False)
-    self.assertEqual(extra_probes, (bits_probe,))
+    self.assertSequenceEqual(extra_probes, (bits_probe,))
 
   def test_get_extra_probes_with_bits_and_perfetto(self):
     bits_probe = mock.MagicMock(spec=BitsProbe, name="bits")

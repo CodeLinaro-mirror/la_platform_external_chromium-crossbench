@@ -41,7 +41,7 @@ class ListStoriesTest(MockHttpRequestsMixin):
 
   def test_fetch_stories(self):
     stories = fetch_stories("benchmark1")
-    self.assertEqual(stories, ["story1", "story2"])
+    self.assertSequenceEqual(stories, ["story1", "story2"])
     self.mock_post.assert_called_once_with(
         CHROMEPERF_DESCRIBE_API_URL,
         params={
@@ -51,7 +51,7 @@ class ListStoriesTest(MockHttpRequestsMixin):
 
   def test_fetch_stories_no_stories(self):
     stories = fetch_stories("benchmark_no_stories")
-    self.assertEqual(stories, [])
+    self.assertSequenceEqual(stories, [])
 
   def test_fetch_stories_api_error(self):
     self.mock_post.side_effect = requests.exceptions.HTTPError("API Error")

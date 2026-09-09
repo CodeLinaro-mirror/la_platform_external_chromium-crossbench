@@ -277,7 +277,7 @@ class IOsMockPlatformTestCase(BaseMockPlatformTestCase):
   def test_process_children(self):
     self.expect_startup_devices(DEVICES_MULTIPLE)
     platform_a = IOSPlatform(self.host_platform, "iPhone Pro")
-    self.assertEqual(platform_a.process_children(123), [])
+    self.assertSequenceEqual(platform_a.process_children(123), [])
 
   def test_os_details(self):
     self.expect_startup_devices(DEVICES_MULTIPLE)

@@ -355,7 +355,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     version_str = "13 (Tiramisu)"
     self.expect_sh("getprop ro.build.description", result=version_str)
     version = self.platform.version
-    self.assertEqual(version.parts, (13,))
+    self.assertSequenceEqual(version.parts, (13,))
     self.assertEqual(version.version_str, version_str)
     self.assertIs(version, self.platform.version)
 
@@ -363,7 +363,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     version_str = "oriole-user 13 TQ3A.230805.001 10452339 release-keys"
     self.expect_sh("getprop ro.build.description", result=version_str)
     version = self.platform.version
-    self.assertEqual(version.parts, (13,))
+    self.assertSequenceEqual(version.parts, (13,))
     self.assertEqual(version.version_str, version_str)
     self.assertIs(version, self.platform.version)
 
@@ -897,7 +897,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     privileged_process = "com.android.chrome:privileged_process0"
     sandbox_prefix = ("com.android.chrome:sandboxed_process0:org.chromium."
                       "content.app.SandboxedProcessService0:")
-    self.assertEqual(meminfo, [
+    self.assertSequenceEqual(meminfo, [
         ProcessMeminfo(20533, privileged_process, 37794, 186356, 203),
         ProcessMeminfo(20527, f"{sandbox_prefix}0", 49907, 184636, 245),
         ProcessMeminfo(20596, f"{sandbox_prefix}1", 30679, 156928, 244),
@@ -980,12 +980,12 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         "pm list users",
         result=("Users:\n\tUserInfo{0:Owner:13} running\n\t"
                 "UserInfo{10:Guest:10} running"))
-    self.assertListEqual(self.platform.adb.users(), ["0", "10"])
+    self.assertSequenceEqual(self.platform.adb.users(), ["0", "10"])
 
   def test_users_fallback(self):
     self.expect_sh("pm list users", result=ShResult(returncode=1))
     self.expect_sh("am get-current-user", result="10")
-    self.assertListEqual(self.platform.adb.users(), ["10"])
+    self.assertSequenceEqual(self.platform.adb.users(), ["10"])
 
   def test_force_stop(self):
     self.expect_sh("pm list users", result="UserInfo{0:Owner:13}")
@@ -1015,7 +1015,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_platform_version_cls(self):
     version = AndroidVersion.parse("13 (Tiramisu)")
-    self.assertEqual(version.parts, (13,))
+    self.assertSequenceEqual(version.parts, (13,))
     self.assertEqual(version.version_str, "13 (Tiramisu)")
     with self.assertRaises(VersionParseError):
       AndroidVersion.parse("foo")

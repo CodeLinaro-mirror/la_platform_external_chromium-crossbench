@@ -59,7 +59,7 @@ class BrowserVersionChannelTestCase(unittest.TestCase):
         BrowserVersionChannel.STABLE, BrowserVersionChannel.BETA,
         BrowserVersionChannel.LTS, BrowserVersionChannel.ANY
     ]
-    self.assertListEqual(
+    self.assertSequenceEqual(
         sorted(unsorted), [
             BrowserVersionChannel.LTS, BrowserVersionChannel.STABLE,
             BrowserVersionChannel.BETA, BrowserVersionChannel.ALPHA,
@@ -297,10 +297,14 @@ class _BrowserVersionTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     version_b = self.VERSION_CLS.any((100, 0, 4947, 3))
     version_c = self.VERSION_CLS.any((120, 0, 4947, 2))
     sorted_list = [version_a, version_b, version_c]
-    self.assertListEqual(sorted([version_a, version_c, version_b]), sorted_list)
-    self.assertListEqual(sorted([version_c, version_a, version_b]), sorted_list)
-    self.assertListEqual(sorted([version_c, version_b, version_a]), sorted_list)
-    self.assertListEqual(sorted([version_b, version_c, version_a]), sorted_list)
+    self.assertSequenceEqual(
+        sorted([version_a, version_c, version_b]), sorted_list)
+    self.assertSequenceEqual(
+        sorted([version_c, version_a, version_b]), sorted_list)
+    self.assertSequenceEqual(
+        sorted([version_c, version_b, version_a]), sorted_list)
+    self.assertSequenceEqual(
+        sorted([version_b, version_c, version_a]), sorted_list)
 
 
 class ChromiumVersionTestCase(_BrowserVersionTestCase):
@@ -956,7 +960,7 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
     # Some developer versions on mac don't have 3-part version numbers.
     alternative = self._parse_helper("Firefox Developer Edition 116.0")
     self.assertTrue(alternative.is_beta)
-    self.assertEqual(alternative.parts, (116, 0, 0))
+    self.assertSequenceEqual(alternative.parts, (116, 0, 0))
 
   def test_parse_alpha_firefox(self):
     version: BrowserVersion = self._parse_helper(self.ALPHA_VERSION_STR)
@@ -973,7 +977,7 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
     # Test verbose lookup without short channel
     nightly = self._parse_helper("Firefox Nightly 117.0")
     self.assertTrue(nightly.is_alpha)
-    self.assertEqual(nightly.parts, (117, 0, 0))
+    self.assertSequenceEqual(nightly.parts, (117, 0, 0))
 
   def test_parse_channel_error(self):
     # Tests the "channel_long and channel_short != '.'" error branch
@@ -1047,7 +1051,7 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
   def test_parse_stable_alternative(self):
     version: BrowserVersion = self._parse_helper("Safari 18.1.1")
     self.assertTrue(version.is_stable)
-    self.assertEqual(version.parts, (18, 1, 1, 0))
+    self.assertSequenceEqual(version.parts, (18, 1, 1, 0))
     self.assertTrue(version.is_complete)
 
   def test_parse_beta_safari(self):
@@ -1063,7 +1067,7 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
     version: BrowserVersion = self._parse_helper(
         "Safari Technology Preview 20621.1.6")
     self.assertTrue(version.is_beta)
-    self.assertEqual(version.parts, (20621, 1, 6, 0))
+    self.assertSequenceEqual(version.parts, (20621, 1, 6, 0))
     self.assertTrue(version.is_complete)
 
   def test_parse_with_driver_version(self):
@@ -1071,13 +1075,13 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
         "Safari 18.1.1 Included with Safari 18.1.1 (20619.2.8.11.12)")
     self.assertTrue(version.is_stable)
     self.assertEqual(version.major, 18)
-    self.assertEqual(version.parts, (18, 1, 1, 0, 20619, 2, 8, 11, 12))
+    self.assertSequenceEqual(version.parts, (18, 1, 1, 0, 20619, 2, 8, 11, 12))
     version = self._parse_helper(
         "Safari 18.2 "
         "Included with Safari Technology Preview (Release 209, 20621.1.6)")
     self.assertTrue(version.is_beta)
     self.assertEqual(version.major, 18)
-    self.assertEqual(version.parts, (18, 2, 0, 209, 20621, 1, 6))
+    self.assertSequenceEqual(version.parts, (18, 2, 0, 209, 20621, 1, 6))
 
   def test_str(self):
     self.assertEqual(
@@ -1153,7 +1157,7 @@ class UnknownBrowserVersionTestCase(unittest.TestCase):
     self.assertFalse(version.is_beta)
     self.assertFalse(version.is_alpha)
     self.assertFalse(version.is_pre_alpha)
-    self.assertEqual(version.parts, ())
+    self.assertSequenceEqual(version.parts, ())
 
   def test_compare(self):
     version = UnknownBrowserVersion()
@@ -1173,7 +1177,7 @@ class D8VersionTestCase(unittest.TestCase):
 
   def test_parse_basic(self):
     version = D8Version.parse("V8 version 13.5.0 (candidate)")
-    self.assertEqual(version.parts, (13, 5, 0))
+    self.assertSequenceEqual(version.parts, (13, 5, 0))
 
 
 # Hide the abstract base test class from all test runner

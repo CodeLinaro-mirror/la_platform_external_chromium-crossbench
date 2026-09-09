@@ -77,7 +77,7 @@ class MetricTestCase(unittest.TestCase):
 
   def test_to_json_numeric_repeated(self):
     json_data = Metric([1, 1, 1]).to_json()
-    self.assertListEqual(json_data["values"], [1, 1, 1])
+    self.assertSequenceEqual(json_data["values"], [1, 1, 1])
     self.assertEqual(json_data["min"], 1)
     self.assertEqual(json_data["max"], 1)
     self.assertEqual(json_data["geomean"], 1)
@@ -86,7 +86,7 @@ class MetricTestCase(unittest.TestCase):
 
   def test_to_json_numeric_average_0(self):
     json_data = Metric([-1, 0, 1]).to_json()
-    self.assertListEqual(json_data["values"], [-1, 0, 1])
+    self.assertSequenceEqual(json_data["values"], [-1, 0, 1])
     self.assertEqual(json_data["min"], -1)
     self.assertEqual(json_data["max"], 1)
     self.assertEqual(json_data["geomean"], 0)
@@ -130,7 +130,7 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
   def test_empty(self):
     merger = MetricsMerger()
     self.assertDictEqual(merger.to_json(), {})
-    self.assertListEqual(CSVFormatter(merger).table, [])
+    self.assertSequenceEqual(CSVFormatter(merger).table, [])
 
   def test_add_flat(self):
     input_data = {"a": 1, "b": 2}
@@ -140,14 +140,14 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(len(data), 2)
     self.assertIsInstance(data["a"], Metric)
     self.assertIsInstance(data["b"], Metric)
-    self.assertListEqual(data["a"].values, [1])
-    self.assertListEqual(data["b"].values, [2])
+    self.assertSequenceEqual(data["a"].values, [1])
+    self.assertSequenceEqual(data["b"].values, [2])
 
     merger.add(input_data)
     data = merger.data
     self.assertEqual(len(data), 2)
-    self.assertListEqual(data["a"].values, [1, 1])
-    self.assertListEqual(data["b"].values, [2, 2])
+    self.assertSequenceEqual(data["a"].values, [1, 1])
+    self.assertSequenceEqual(data["b"].values, [2, 2])
 
   def test_add_hierarchical(self):
     input_data = {
@@ -162,7 +162,7 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     merger = MetricsMerger()
     merger.add(input_data)
     data = merger.data
-    self.assertListEqual(list(data.keys()), ["a/a/a", "a/a/b", "b"])
+    self.assertSequenceEqual(list(data.keys()), ["a/a/a", "a/a/b", "b"])
     self.assertIsInstance(data["a/a/a"], Metric)
     self.assertIsInstance(data["a/a/b"], Metric)
     self.assertIsInstance(data["b"], Metric)
@@ -185,15 +185,15 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     merger.add(input_data)
     data = merger.data
     self.assertEqual(len(data), 4)
-    self.assertListEqual(data["a/aa"].values, [1, 1])
-    self.assertListEqual(data["a/ab"].values, [2, 2])
-    self.assertListEqual(data["b"].values, [3, 3])
-    self.assertListEqual(data["c/cc/ccc"].values, [4, 4])
+    self.assertSequenceEqual(data["a/aa"].values, [1, 1])
+    self.assertSequenceEqual(data["a/ab"].values, [2, 2])
+    self.assertSequenceEqual(data["b"].values, [3, 3])
+    self.assertSequenceEqual(data["c/cc/ccc"].values, [4, 4])
     json_data = merger.to_json()
-    self.assertListEqual(json_data["a/aa"]["values"], [1, 1])
-    self.assertListEqual(json_data["a/ab"]["values"], [2, 2])
-    self.assertListEqual(json_data["b"]["values"], [3, 3])
-    self.assertListEqual(json_data["c/cc/ccc"]["values"], [4, 4])
+    self.assertSequenceEqual(json_data["a/aa"]["values"], [1, 1])
+    self.assertSequenceEqual(json_data["a/ab"]["values"], [2, 2])
+    self.assertSequenceEqual(json_data["b"]["values"], [3, 3])
+    self.assertSequenceEqual(json_data["c/cc/ccc"]["values"], [4, 4])
 
   def test_repeated_non_numeric(self):
     merger = MetricsMerger()
@@ -202,8 +202,8 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     merger.add(input_data)
     data = merger.data
     self.assertEqual(len(data), 2)
-    self.assertListEqual(data["a/aa"].values, ["a.aa", "a.aa"])
-    self.assertListEqual(data["a/ab"].values, ["a.ab", "a.ab"])
+    self.assertSequenceEqual(data["a/aa"].values, ["a.aa", "a.aa"])
+    self.assertSequenceEqual(data["a/ab"].values, ["a.ab", "a.ab"])
     json_data = merger.to_json()
     self.assertDictEqual(json_data, {"a/aa": "a.aa", "a/ab": "a.ab"})
 
@@ -214,9 +214,9 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     merger.add(input_data)
     data = merger.data
     self.assertEqual(len(data), 3)
-    self.assertListEqual(data["a/aa"].values, ["a.aa", "a.aa"])
-    self.assertListEqual(data["a/ab/cccA"].values, ["cccA", "cccA"])
-    self.assertListEqual(data["a/ab/cccB"].values, ["cccB", "cccB"])
+    self.assertSequenceEqual(data["a/aa"].values, ["a.aa", "a.aa"])
+    self.assertSequenceEqual(data["a/ab/cccA"].values, ["cccA", "cccA"])
+    self.assertSequenceEqual(data["a/ab/cccB"].values, ["cccB", "cccB"])
     json_data = merger.to_json()
     self.assertDictEqual(json_data, {
         "a/aa": "a.aa",
@@ -242,12 +242,12 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     merger = MetricsMerger(key_fn=under_join)
     merger.add(self.BASIC_NESTED_DATA)
     data = merger.data
-    self.assertListEqual(list(data.keys()), ["a_a_a", "a_a_b", "b"])
+    self.assertSequenceEqual(list(data.keys()), ["a_a_a", "a_a_b", "b"])
 
   def test_merge_serialized_same(self):
     merger = MetricsMerger()
     merger.add(self.BASIC_NESTED_DATA)
-    self.assertListEqual(list(merger.data.keys()), ["a/a/a", "a/a/b", "b"])
+    self.assertSequenceEqual(list(merger.data.keys()), ["a/a/a", "a/a/b", "b"])
     path_a = pathlib.Path("merged_a.json")
     path_b = pathlib.Path("merged_b.json")
     with path_a.open("w", encoding="utf-8") as f:
@@ -258,15 +258,15 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     merger = MetricsMerger.merge_json_list([path_a, path_b],
                                            merge_duplicate_paths=True)
     data = merger.data
-    self.assertListEqual(list(data.keys()), ["a/a/a", "a/a/b", "b"])
-    self.assertListEqual(data["a/a/a"].values, [1, 1])
-    self.assertListEqual(data["a/a/b"].values, [2, 2])
-    self.assertListEqual(data["b"].values, [3, 3])
+    self.assertSequenceEqual(list(data.keys()), ["a/a/a", "a/a/b", "b"])
+    self.assertSequenceEqual(data["a/a/a"].values, [1, 1])
+    self.assertSequenceEqual(data["a/a/b"].values, [2, 2])
+    self.assertSequenceEqual(data["b"].values, [3, 3])
 
     # All duplicate entries are ignored
     merger = MetricsMerger.merge_json_list([path_a, path_b],
                                            merge_duplicate_paths=False)
-    self.assertListEqual(list(merger.data.keys()), [])
+    self.assertSequenceEqual(list(merger.data.keys()), [])
 
   def test_merge_serialized_different_data(self):
     merger_a = MetricsMerger({"a": {"a": 1}})
@@ -281,14 +281,14 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     merger = MetricsMerger.merge_json_list([path_a, path_b],
                                            merge_duplicate_paths=True)
     data = merger.data
-    self.assertListEqual(list(data.keys()), ["a/a", "a/b"])
-    self.assertListEqual(data["a/a"].values, [1])
-    self.assertListEqual(data["a/b"].values, [2])
+    self.assertSequenceEqual(list(data.keys()), ["a/a", "a/b"])
+    self.assertSequenceEqual(data["a/a"].values, [1])
+    self.assertSequenceEqual(data["a/b"].values, [2])
 
     merger = MetricsMerger.merge_json_list([path_a, path_b],
                                            merge_duplicate_paths=False)
     data = merger.data
-    self.assertListEqual(list(data.keys()), ["a/a", "a/b"])
+    self.assertSequenceEqual(list(data.keys()), ["a/a", "a/b"])
 
   def test_to_csv_no_path(self) -> None:
     merger = MetricsMerger()
@@ -296,7 +296,7 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     csv = CSVFormatter(
         merger, lambda metric: round(metric.geomean, 10),
         include_parts=False).table
-    self.assertListEqual(csv, [
+    self.assertSequenceEqual(csv, [
         ("a/a/a", 1.0),
         ("a/a/b", 2.0),
         ("b", 3.0),
@@ -308,7 +308,7 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     csv = CSVFormatter(
         merger, lambda metric: round(metric.geomean, 10),
         include_parts=True).table
-    self.assertListEqual(csv, [
+    self.assertSequenceEqual(csv, [
         ("a/a/a", "a", "a", "a", 1.0),
         ("a/a/b", "a", "a", "b", 2.0),
         ("b", "b", "", "", 3.0),
@@ -326,7 +326,7 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
         lambda metric: metric.geomean,
         headers=headers,
         include_parts=True).table
-    self.assertListEqual(csv, [
+    self.assertSequenceEqual(csv, [
         ("a", "", "", "", "custom", "header", "line"),
         (1, "", "", "", 2, 3, 4, 5),
         ("a/b/c", "a", "b", "c", 1.0),

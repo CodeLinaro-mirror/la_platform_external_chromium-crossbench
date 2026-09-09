@@ -53,13 +53,14 @@ class TestPerfettoInfoProbe(unittest.TestCase):
     self.assertIn("blink", categories_dict)
     self.assertEqual(categories_dict["blink"].name, "blink")
     self.assertEqual(categories_dict["blink"].description, "Blink engine")
-    self.assertEqual(categories_dict["blink"].tags, ("benchmark", "loading"))
+    self.assertSequenceEqual(categories_dict["blink"].tags,
+                             ("benchmark", "loading"))
     self.assertEqual(categories_dict["blink"].data_source, "track_event")
 
     self.assertIn("v8", categories_dict)
     self.assertEqual(categories_dict["v8"].name, "v8")
     self.assertEqual(categories_dict["v8"].description, "V8 engine")
-    self.assertEqual(categories_dict["v8"].tags, ("javascript",))
+    self.assertSequenceEqual(categories_dict["v8"].tags, ("javascript",))
     self.assertEqual(categories_dict["v8"].data_source, "track_event")
 
   def test_get_adb_categories(self):
@@ -135,7 +136,7 @@ class CategoryDescriptionTestCase(unittest.TestCase):
     self.assertEqual(cat.data_source, "track_event")
     self.assertEqual(cat.name, "blink")
     self.assertEqual(cat.description, "")
-    self.assertEqual(cat.tags, ())
+    self.assertSequenceEqual(cat.tags, ())
 
   def test_parse_full(self):
     data = {
@@ -148,7 +149,7 @@ class CategoryDescriptionTestCase(unittest.TestCase):
     self.assertEqual(cat.data_source, "track_event")
     self.assertEqual(cat.name, "v8")
     self.assertEqual(cat.description, "V8 engine")
-    self.assertEqual(cat.tags, ("js", "v8"))
+    self.assertSequenceEqual(cat.tags, ("js", "v8"))
 
   def test_parse_invalid_types(self):
     with self.assertRaises(ValueError):

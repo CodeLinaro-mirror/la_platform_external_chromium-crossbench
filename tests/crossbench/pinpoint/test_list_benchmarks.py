@@ -36,7 +36,8 @@ class ListBenchmarksTest(MockHttpRequestsMixin):
   def test_fetch_benchmarks(self):
     benchmarks = fetch_benchmarks()
 
-    self.assertEqual(benchmarks, ["benchmark1", "benchmark2", "benchmark3"])
+    self.assertSequenceEqual(benchmarks,
+                             ["benchmark1", "benchmark2", "benchmark3"])
     self.mock_post.assert_called_once_with(CHROMEPERF_TEST_SUITES_API_URL)
 
   def test_fetch_benchmarks_api_error(self):

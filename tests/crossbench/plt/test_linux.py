@@ -54,7 +54,7 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertEqual(self.platform.version_str, "5.4.0-104-generic")
 
     version = self.platform.version
-    self.assertEqual(version.parts, (5, 4, 0))
+    self.assertSequenceEqual(version.parts, (5, 4, 0))
     self.assertEqual(version.version_str, "5.4.0-104-generic")
 
   @mock.patch("psutil.cpu_count")
@@ -98,7 +98,7 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def test_platform_version_cls(self):
     version = PosixVersion.parse("5.4.0-104-generic")
-    self.assertEqual(version.parts, (5, 4, 0))
+    self.assertSequenceEqual(version.parts, (5, 4, 0))
     self.assertEqual(version.version_str, "5.4.0-104-generic")
     with self.assertRaises(VersionParseError):
       PosixVersion.parse("foo")
@@ -136,7 +136,7 @@ Swap:                400 kB
 
     self.platform.sh_results = [ShResult(self._MEMINFO_SCRIPT_OUTPUT)]
     meminfo = LinuxPlatform.process_meminfo(self.platform, "some_process")
-    self.assertListEqual(meminfo, [
+    self.assertSequenceEqual(meminfo, [
         ProcessMeminfo(926961, "/usr/bin/some_process -a", 17815, 80364, 0),
         ProcessMeminfo(930293, "/usr/bin/some_process -b", 5074, 44860, 0),
         ProcessMeminfo(930304, "/usr/bin/some_process -c", 521, 2680, 400),

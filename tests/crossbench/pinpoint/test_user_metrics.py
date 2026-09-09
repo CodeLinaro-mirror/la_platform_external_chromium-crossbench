@@ -60,7 +60,7 @@ class TestUserMetrics(unittest.TestCase):
     mock_client.insert_rows_json.assert_called_once()
     call_args = mock_client.insert_rows_json.call_args[0]
     self.assertEqual(call_args[0], "pinpoint_cli_metrics.usage")
-    self.assertEqual(call_args[1], [{
+    self.assertSequenceEqual(call_args[1], [{
         "user": "test-user-id",
         "command": "test_command"
     }])

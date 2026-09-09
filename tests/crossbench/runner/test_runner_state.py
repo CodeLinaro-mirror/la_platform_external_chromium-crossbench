@@ -48,7 +48,7 @@ class TestRunnerStateMachine(fake_filesystem_unittest.TestCase):
     self.assertEqual(data["pid"], os.getpid())
     self.assertEqual(data["status"], "INITIAL")
     self.assertEqual(data["runs"]["total"], 0)
-    self.assertListEqual(data["runs"]["current"], [])
+    self.assertSequenceEqual(data["runs"]["current"], [])
 
   def test_transition(self):
     self.state.transition(RunnerState.INITIAL, to=RunnerState.SETUP)
@@ -71,10 +71,10 @@ class TestRunnerStateMachine(fake_filesystem_unittest.TestCase):
 
     with self.state.active_run(run):
       data = self.status_json()
-      self.assertListEqual(data["runs"]["current"], [5])
+      self.assertSequenceEqual(data["runs"]["current"], [5])
 
     data = self.status_json()
-    self.assertListEqual(data["runs"]["current"], [])
+    self.assertSequenceEqual(data["runs"]["current"], [])
     self.assertEqual(data["runs"]["success"], 1)
 
   def test_multiple_active_runs(self):
@@ -87,21 +87,21 @@ class TestRunnerStateMachine(fake_filesystem_unittest.TestCase):
     run2.is_success = True
 
     data = self.status_json()
-    self.assertListEqual(data["runs"]["current"], [])
+    self.assertSequenceEqual(data["runs"]["current"], [])
 
     with self.state.active_run(run2):
       data = self.status_json()
-      self.assertListEqual(data["runs"]["current"], [2])
+      self.assertSequenceEqual(data["runs"]["current"], [2])
 
       with self.state.active_run(run1):
         data = self.status_json()
-        self.assertListEqual(data["runs"]["current"], [1, 2])
+        self.assertSequenceEqual(data["runs"]["current"], [1, 2])
 
       data = self.status_json()
-      self.assertListEqual(data["runs"]["current"], [2])
+      self.assertSequenceEqual(data["runs"]["current"], [2])
 
     data = self.status_json()
-    self.assertListEqual(data["runs"]["current"], [])
+    self.assertSequenceEqual(data["runs"]["current"], [])
 
   def test_interrupt(self):
     data = self.status_json()

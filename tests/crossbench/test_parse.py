@@ -654,11 +654,13 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
         ObjectParser.optional_bool(invalid, strict=True)
 
   def test_parse_sh_cmd(self):
-    self.assertListEqual(ObjectParser.sh_cmd("ls -al ."), ["ls", "-al", "."])
-    self.assertListEqual(ObjectParser.sh_cmd("ls -al '.'"), ["ls", "-al", "."])
-    self.assertListEqual(
+    self.assertSequenceEqual(
+        ObjectParser.sh_cmd("ls -al ."), ["ls", "-al", "."])
+    self.assertSequenceEqual(
+        ObjectParser.sh_cmd("ls -al '.'"), ["ls", "-al", "."])
+    self.assertSequenceEqual(
         ObjectParser.sh_cmd(";ls -al '.'"), [";ls", "-al", "."])
-    self.assertListEqual(
+    self.assertSequenceEqual(
         ObjectParser.sh_cmd(("ls", "-al", ".")), ["ls", "-al", "."])
 
   def test_parse_sh_cmd_invalid(self):
@@ -688,10 +690,10 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertDictEqual(result, {"a": 1})
 
   def test_parse_unique_sequence(self):
-    self.assertListEqual(ObjectParser.unique_sequence([]), [])
-    self.assertTupleEqual(ObjectParser.unique_sequence(()), ())
-    self.assertListEqual(ObjectParser.unique_sequence([1, 2, 3]), [1, 2, 3])
-    self.assertTupleEqual(ObjectParser.unique_sequence((1, 2, 3)), (1, 2, 3))
+    self.assertSequenceEqual(ObjectParser.unique_sequence([]), [])
+    self.assertSequenceEqual(ObjectParser.unique_sequence(()), ())
+    self.assertSequenceEqual(ObjectParser.unique_sequence([1, 2, 3]), [1, 2, 3])
+    self.assertSequenceEqual(ObjectParser.unique_sequence((1, 2, 3)), (1, 2, 3))
 
   def test_parse_unique_sequence_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -713,14 +715,15 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertIn("custom test name", str(cm.exception))
 
   def test_str_list(self):
-    self.assertListEqual(ObjectParser.str_list([]), [])
-    self.assertListEqual(ObjectParser.str_list(""), [])
-    self.assertListEqual(ObjectParser.str_list(None), [])
-    self.assertListEqual(ObjectParser.str_list("a,b, c"), ["a", "b", "c"])
-    self.assertListEqual(ObjectParser.str_list("a"), ["a"])
-    self.assertListEqual(ObjectParser.str_list(["a", "b, c"]), ["a", "b, c"])
-    self.assertListEqual(ObjectParser.str_list([1, 2]), ["1", "2"])
-    self.assertListEqual(ObjectParser.str_list((1, "2, 3")), ["1", "2, 3"])
+    self.assertSequenceEqual(ObjectParser.str_list([]), [])
+    self.assertSequenceEqual(ObjectParser.str_list(""), [])
+    self.assertSequenceEqual(ObjectParser.str_list(None), [])
+    self.assertSequenceEqual(ObjectParser.str_list("a,b, c"), ["a", "b", "c"])
+    self.assertSequenceEqual(ObjectParser.str_list("a"), ["a"])
+    self.assertSequenceEqual(
+        ObjectParser.str_list(["a", "b, c"]), ["a", "b, c"])
+    self.assertSequenceEqual(ObjectParser.str_list([1, 2]), ["1", "2"])
+    self.assertSequenceEqual(ObjectParser.str_list((1, "2, 3")), ["1", "2, 3"])
 
   def test_str_list_invalid(self):
     invalid: Any
@@ -730,10 +733,10 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
           ObjectParser.str_list(invalid)
 
   def test_parse_sequence(self):
-    self.assertListEqual(ObjectParser.sequence([]), [])
-    self.assertListEqual(ObjectParser.sequence([1, 2]), [1, 2])
-    self.assertTupleEqual(ObjectParser.sequence(()), ())
-    self.assertTupleEqual(ObjectParser.sequence((1, 2)), (1, 2))
+    self.assertSequenceEqual(ObjectParser.sequence([]), [])
+    self.assertSequenceEqual(ObjectParser.sequence([1, 2]), [1, 2])
+    self.assertSequenceEqual(ObjectParser.sequence(()), ())
+    self.assertSequenceEqual(ObjectParser.sequence((1, 2)), (1, 2))
 
   def test_parse_sequence_invalid(self):
     invalid: Any
@@ -743,9 +746,9 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
           ObjectParser.sequence(invalid)
 
   def test_parse_iterable(self):
-    self.assertListEqual(list(ObjectParser.iterable([])), [])
-    self.assertListEqual(list(ObjectParser.iterable([1, 2])), [1, 2])
-    self.assertTupleEqual(tuple(ObjectParser.iterable((1, 2))), (1, 2))
+    self.assertSequenceEqual(list(ObjectParser.iterable([])), [])
+    self.assertSequenceEqual(list(ObjectParser.iterable([1, 2])), [1, 2])
+    self.assertSequenceEqual(tuple(ObjectParser.iterable((1, 2))), (1, 2))
     self.assertSetEqual(set(ObjectParser.iterable({1, 2})), {1, 2})
 
   def test_parse_iterable_invalid(self):
@@ -758,10 +761,10 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
   def test_parse_non_empty_sequence(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = ObjectParser.non_empty_sequence([])
-    self.assertListEqual(ObjectParser.non_empty_sequence([1, 2]), [1, 2])
+    self.assertSequenceEqual(ObjectParser.non_empty_sequence([1, 2]), [1, 2])
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = ObjectParser.non_empty_sequence(())
-    self.assertTupleEqual(ObjectParser.non_empty_sequence((1, 2)), (1, 2))
+    self.assertSequenceEqual(ObjectParser.non_empty_sequence((1, 2)), (1, 2))
 
   def test_parse_non_empty_sequence_invalid(self):
     invalid: Any
@@ -991,17 +994,18 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
       B = "b"
       C = "c"
 
-    self.assertListEqual(
+    self.assertSequenceEqual(
         ObjectParser.enum_list("DummyEnum", DummyEnum, "a,b,c"),
         [DummyEnum.A, DummyEnum.B, DummyEnum.C])
-    self.assertListEqual(
+    self.assertSequenceEqual(
         ObjectParser.enum_list("DummyEnum", DummyEnum, ["a", "b", "c"]),
         [DummyEnum.A, DummyEnum.B, DummyEnum.C])
-    self.assertListEqual(
+    self.assertSequenceEqual(
         ObjectParser.enum_list("DummyEnum", DummyEnum,
                                (DummyEnum.A, DummyEnum.B)),
         [DummyEnum.A, DummyEnum.B])
-    self.assertListEqual(ObjectParser.enum_list("DummyEnum", DummyEnum, ""), [])
+    self.assertSequenceEqual(
+        ObjectParser.enum_list("DummyEnum", DummyEnum, ""), [])
     with self.assertRaises(argparse.ArgumentTypeError):
       ObjectParser.enum_list("DummyEnum", DummyEnum, "invalid_value")
     with self.assertRaises(argparse.ArgumentTypeError):

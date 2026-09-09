@@ -12,14 +12,14 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 class PerfettoVersionTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse(self):
-    self.assertEqual(
+    self.assertSequenceEqual(
         traceconv.PerfettoVersion.parse("Perfetto v53.0").parts, (53, 0))
-    self.assertEqual(
+    self.assertSequenceEqual(
         traceconv.PerfettoVersion.parse("Perfetto v53.1").parts, (53, 1))
-    self.assertEqual(
+    self.assertSequenceEqual(
         traceconv.PerfettoVersion.parse("Perfetto v53.0-7a9a6a0").parts,
         (53, 0))
-    self.assertEqual(
+    self.assertSequenceEqual(
         traceconv.PerfettoVersion.parse(
             "some noise Perfetto v54.2-abc (hash)").parts, (54, 2))
 

@@ -159,7 +159,7 @@ class ProbeConfigTestCase(unittest.TestCase):
     self.assertDictEqual(config_data, {"custom": [1, 2, "stuff"]})
     result = kwargs["custom"]
     self.assertIsInstance(result, CustomArgType)
-    self.assertListEqual(result.value, [1, 2, "stuff"])
+    self.assertSequenceEqual(result.value, [1, 2, "stuff"])
 
   def test_no_type(self):
     parser = ProbeConfigParser(MockProbe)

@@ -39,10 +39,10 @@ class RunGroupTestCase(BaseRunGroupTestCase):
     session = self.default_session(throw=True)
     run_0 = MockRun(self.runner, session, "story 0")
     browser_group = self.create_groups([run_0])
-    self.assertListEqual(list(browser_group.runs), [run_0])
+    self.assertSequenceEqual(list(browser_group.runs), [run_0])
     story_groups = list(browser_group.story_groups)
     self.assertEqual(len(story_groups), 1)
-    self.assertListEqual(list(story_groups[0].runs), [run_0])
+    self.assertSequenceEqual(list(story_groups[0].runs), [run_0])
     repetitions_group = list(story_groups[0].repetitions_groups)
     self.assertEqual(len(repetitions_group), 1)
 
@@ -51,7 +51,7 @@ class RunGroupTestCase(BaseRunGroupTestCase):
     run_0 = MockRun(self.runner, session, "story 0", None, repetition=0)
     run_1 = MockRun(self.runner, session, "story 0", None, repetition=1)
     browser_group = self.create_groups([run_0, run_1])
-    self.assertListEqual(list(browser_group.runs), [run_0, run_1])
+    self.assertSequenceEqual(list(browser_group.runs), [run_0, run_1])
     story_groups = list(browser_group.story_groups)
     self.assertEqual(len(story_groups), 1)
     repetitions_groups = list(story_groups[0].repetitions_groups)
@@ -59,12 +59,12 @@ class RunGroupTestCase(BaseRunGroupTestCase):
     repetitions_group = repetitions_groups[0]
     cache_temp_groups = list(repetitions_group.cache_temperatures_groups)
     self.assertEqual(len(cache_temp_groups), 2)
-    self.assertListEqual(list(cache_temp_groups[0].runs), [run_0])
-    self.assertListEqual(list(cache_temp_groups[1].runs), [run_1])
+    self.assertSequenceEqual(list(cache_temp_groups[0].runs), [run_0])
+    self.assertSequenceEqual(list(cache_temp_groups[1].runs), [run_1])
     cache_temp_repetitions_group = list(
         repetitions_group.cache_temperature_repetitions_groups)
     self.assertEqual(len(cache_temp_repetitions_group), 1)
-    self.assertListEqual(
+    self.assertSequenceEqual(
         list(cache_temp_repetitions_group[0].runs), [run_0, run_1])
     self.assertEqual(cache_temp_repetitions_group[0].cache_temperature,
                      "default")
@@ -81,7 +81,8 @@ class RunGroupTestCase(BaseRunGroupTestCase):
         self.runner, session, "story 0", None, repetition=1, temperature="warm")
 
     browser_group = self.create_groups([run_0, run_1, run_2, run_3])
-    self.assertListEqual(list(browser_group.runs), [run_0, run_1, run_2, run_3])
+    self.assertSequenceEqual(
+        list(browser_group.runs), [run_0, run_1, run_2, run_3])
     story_groups = list(browser_group.story_groups)
     self.assertEqual(len(story_groups), 1)
     repetitions_groups = list(story_groups[0].repetitions_groups)
@@ -89,14 +90,14 @@ class RunGroupTestCase(BaseRunGroupTestCase):
     repetitions_group = repetitions_groups[0]
     cache_temp_groups = list(repetitions_group.cache_temperatures_groups)
     self.assertEqual(len(cache_temp_groups), 2)
-    self.assertListEqual(list(cache_temp_groups[0].runs), [run_0, run_1])
-    self.assertListEqual(list(cache_temp_groups[1].runs), [run_2, run_3])
+    self.assertSequenceEqual(list(cache_temp_groups[0].runs), [run_0, run_1])
+    self.assertSequenceEqual(list(cache_temp_groups[1].runs), [run_2, run_3])
     cache_temp_repetitions_group = list(
         repetitions_group.cache_temperature_repetitions_groups)
     self.assertEqual(len(cache_temp_groups), 2)
-    self.assertListEqual(
+    self.assertSequenceEqual(
         list(cache_temp_repetitions_group[0].runs), [run_0, run_2])
-    self.assertListEqual(
+    self.assertSequenceEqual(
         list(cache_temp_repetitions_group[1].runs), [run_1, run_3])
     self.assertEqual(cache_temp_repetitions_group[0].cache_temperature, "cold")
     self.assertEqual(cache_temp_repetitions_group[1].cache_temperature, "warm")

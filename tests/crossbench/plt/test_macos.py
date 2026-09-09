@@ -264,14 +264,14 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
   def test_version(self):
     self.platform.mock_version_str = "15.6.1"
     version = self.platform.version
-    self.assertEqual(version.parts, (15, 6, 1))
+    self.assertSequenceEqual(version.parts, (15, 6, 1))
     self.assertEqual(version.version_str, "15.6.1")
 
   def test_version_sh_call(self):
     self.platform.mock_version_str = None
     self.expect_sh("sw_vers", "-productVersion", result="15.6.7")
     version = self.platform.version
-    self.assertEqual(version.parts, (15, 6, 7))
+    self.assertSequenceEqual(version.parts, (15, 6, 7))
     self.assertEqual(version.version_str, "15.6.7")
 
   def test_display_details(self):
@@ -339,7 +339,7 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
         "resolution": (3360, 1890),
         "refresh_rate": 30
     })
-    self.assertTupleEqual(
+    self.assertSequenceEqual(
         self.platform.display_resolution(),
         (1728, 1117),
     )
@@ -354,7 +354,7 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
 
   def test_platform_version_cls(self):
     version = MacOsVersion.parse("12.3.4")
-    self.assertEqual(version.parts, (12, 3, 4))
+    self.assertSequenceEqual(version.parts, (12, 3, 4))
     self.assertEqual(version.version_str, "12.3.4")
     with self.assertRaises(VersionParseError):
       MacOsVersion.parse("foo")

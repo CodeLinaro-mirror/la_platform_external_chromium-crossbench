@@ -580,13 +580,13 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(config.name, "foo")
     config = CustomConfigObject.parse({"name": "foo", "array": []})
     self.assertEqual(config.name, "foo")
-    self.assertListEqual(config.array, [])
+    self.assertSequenceEqual(config.array, [])
     data = {"name": "foo", "array": [1, 2, 3], "integer": 153}
     config = CustomConfigObject.parse(dict(data))
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "foo")
     assert config.array
-    self.assertListEqual(config.array, [1, 2, 3])
+    self.assertSequenceEqual(config.array, [1, 2, 3])
     self.assertEqual(config.integer, 153)
     config_2 = CustomConfigObject.parse_dict(dict(data))
     assert isinstance(config, CustomConfigObject)
@@ -597,7 +597,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
         "name": "foo",
     }, array=[], integer=123)
     self.assertEqual(config.name, "foo")
-    self.assertListEqual(config.array, [])
+    self.assertSequenceEqual(config.array, [])
     self.assertEqual(config.integer, 123)
 
   def test_load_dict_extra_kwargs_invalid(self):
@@ -771,7 +771,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
     assert config.array
-    self.assertListEqual(config.array, [1, 3])
+    self.assertSequenceEqual(config.array, [1, 3])
     self.assertEqual(config.integer, 166)
     self.assertIsNone(config.nested)
     config_2 = CustomConfigObject.parse(str(path))
@@ -782,7 +782,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
     assert config.array
-    self.assertListEqual(config.array, [1, 3])
+    self.assertSequenceEqual(config.array, [1, 3])
     self.assertEqual(config.integer, 166)
     self.assertIsNone(config.nested)
 
@@ -796,7 +796,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     assert isinstance(config, CustomConfigObject)
     self.assertEqual(config.name, "Config Name")
     assert config.array
-    self.assertListEqual(config.array, [1, 3])
+    self.assertSequenceEqual(config.array, [1, 3])
     self.assertEqual(config.integer, 166)
     self.assertEqual(config.nested,
                      CustomNestedConfigObject(name="a nested name"))
@@ -1553,7 +1553,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     }
 
     config = CustomConfigObject.parse(config)
-    self.assertListEqual(config.array, ["some", "string", "values"])
+    self.assertSequenceEqual(config.array, ["some", "string", "values"])
 
   def test_parse_template_unbound_list_spread_arg(self):
     config = {
@@ -1578,7 +1578,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
-    self.assertListEqual(config.nested.array, ["first", "second", "third"])
+    self.assertSequenceEqual(config.nested.array, ["first", "second", "third"])
 
 
 class ConfigEnumTestCase(unittest.TestCase):

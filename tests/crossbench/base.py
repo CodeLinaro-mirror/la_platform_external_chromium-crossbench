@@ -211,14 +211,14 @@ class BaseCrossbenchTestCase(
             "stable", settings=Settings(platform=self.platform))
     ]
     for browser in self.browsers:
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
   def setup_platform(self) -> MockPlatform:
     return MockPlatform()
 
   def tearDown(self) -> None:
     logging.getLogger().setLevel(self._default_log_level)
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
     super().tearDown()
 
   def mock_run(

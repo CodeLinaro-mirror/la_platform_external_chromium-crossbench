@@ -42,7 +42,7 @@ class TestBrowserStartupBenchmark(BaseCrossbenchTestCase):
 
   def test_properties(self) -> None:
     self.assertEqual(BrowserStartupBenchmark.NAME, "browser-startup")
-    self.assertEqual(BrowserStartupBenchmark.aliases(), ())
+    self.assertSequenceEqual(BrowserStartupBenchmark.aliases(), ())
     self.assertTrue(
         BrowserStartupBenchmark.default_probe_config_path().is_file())
     self.assertTrue(
@@ -53,8 +53,8 @@ class TestBrowserStartupBenchmark(BaseCrossbenchTestCase):
     self.assertIsInstance(config, PagesConfig)
     self.assertEqual(len(config.pages), 3)
     page_labels = [page.label for page in config.pages]
-    self.assertListEqual(page_labels,
-                         ["newtab_startup", "blank_startup", "google_startup"])
+    self.assertSequenceEqual(
+        page_labels, ["newtab_startup", "blank_startup", "google_startup"])
 
 
 

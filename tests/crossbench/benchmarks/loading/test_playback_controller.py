@@ -87,23 +87,23 @@ class PlaybackControllerTestCase(unittest.TestCase):
 
   def test_once(self):
     iterations = list(PlaybackController.once())
-    self.assertListEqual(iterations, [0])
+    self.assertSequenceEqual(iterations, [0])
     iterations = list(PlaybackController.default())
-    self.assertListEqual(iterations, [0])
+    self.assertSequenceEqual(iterations, [0])
 
   def test_repeat(self):
     iterations = list(PlaybackController.repeat(1))
-    self.assertListEqual(iterations, [0])
+    self.assertSequenceEqual(iterations, [0])
     iterations = list(PlaybackController.repeat(11))
-    self.assertListEqual(iterations, list(range(11)))
+    self.assertSequenceEqual(iterations, list(range(11)))
 
   def test_timeout(self):
     # Even 0-duration playback should run once
     iterations = list(PlaybackController.timeout(dt.timedelta()))
-    self.assertListEqual(iterations, [0])
+    self.assertSequenceEqual(iterations, [0])
     iterations = list(
         PlaybackController.timeout(dt.timedelta(milliseconds=0.1)))
-    self.assertListEqual(iterations, list(range(len(iterations))))
+    self.assertSequenceEqual(iterations, list(range(len(iterations))))
 
   def test_timeout_mocked(self):
     controller = PlaybackController.timeout(dt.timedelta(seconds=1))

@@ -120,7 +120,7 @@ class SpeedometerBaseTestCase(
     args.stories = "all"
     args.separate = True
     stories_all = self.benchmark_cls.stories_from_cli_args(args)
-    self.assertListEqual(
+    self.assertSequenceEqual(
         [story.name for story in stories],
         [story.name for story in stories_all],
     )
@@ -144,7 +144,7 @@ class SpeedometerBaseTestCase(
   def test_story_filtering_regexp(self):
     stories = self.story_cls.all(separate=True)
     stories_b = self.story_filter([".*"], separate=True).stories
-    self.assertListEqual(
+    self.assertSequenceEqual(
         [story.name for story in stories],
         [story.name for story in stories_b],
     )
@@ -221,7 +221,7 @@ class SpeedometerBaseTestCase(
       if expected_num_urls is not None:
         self.assertEqual(len(urls), expected_num_urls)
       self.assertTrue(browser.was_js_invoked(self.probe_context_cls.JS))
-      self.assertListEqual(browser.expected_js, [])
+      self.assertSequenceEqual(browser.expected_js, [])
 
     with self.assertLogs(level="INFO") as cm:
       for probe in runner.probes:
@@ -245,7 +245,8 @@ class SpeedometerBaseTestCase(
     with csv_file.open(encoding="utf-8") as f:
       reader = csv.DictReader(f, delimiter="\t")
       rows = list(reader)
-    self.assertListEqual(list(rows[0].keys()), ["label", "", "dev", "stable"])
+    self.assertSequenceEqual(
+        list(rows[0].keys()), ["label", "", "dev", "stable"])
     self.assertDictEqual(
         rows[1],
         {
@@ -360,7 +361,7 @@ class Speedometer1BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
       data_2 = json.load(f)
     keys_1 = tuple(data_1.keys())
     keys_2 = tuple(data_2.keys())
-    self.assertTupleEqual(keys_1, keys_2)
+    self.assertSequenceEqual(keys_1, keys_2)
     self.assertIn("Score", keys_1)
     self.assertIn("Total", keys_1)
 
@@ -448,13 +449,14 @@ class Speedometer2BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
       data_2 = json.load(f)
     keys_1 = tuple(data_1.keys())
     keys_2 = tuple(data_2.keys())
-    self.assertTupleEqual(keys_1, keys_2)
+    self.assertSequenceEqual(keys_1, keys_2)
     # Make sure the aggregate metrics are at the end
-    self.assertTupleEqual(keys_1[-2:], ("Geomean", "Score"))
+    self.assertSequenceEqual(keys_1[-2:], ("Geomean", "Score"))
 
     with (runner.story_groups[0].path / probe_file).open() as f:
       stories_data = json.load(f)
-    self.assertTupleEqual(tuple(stories_data.keys())[-2:], ("Geomean", "Score"))
+    self.assertSequenceEqual(
+        tuple(stories_data.keys())[-2:], ("Geomean", "Score"))
 
   @override
   def test_run_combined(self):
@@ -571,15 +573,15 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
       data_2 = json.load(f)
     keys_1 = tuple(data_1.keys())
     keys_2 = tuple(data_2.keys())
-    self.assertTupleEqual(keys_1, keys_2)
+    self.assertSequenceEqual(keys_1, keys_2)
     # Make sure the aggregate metrics are at the end
     expected_keys = (*story_names, "Iteration-0-Total", "Iteration-1-Total",
                      "Geomean", "Score")
-    self.assertTupleEqual(keys_1, expected_keys)
+    self.assertSequenceEqual(keys_1, expected_keys)
 
     with (runner.story_groups[0].path / probe_file).open() as f:
       stories_data = json.load(f)
-    self.assertTupleEqual(tuple(stories_data.keys()), expected_keys)
+    self.assertSequenceEqual(tuple(stories_data.keys()), expected_keys)
 
   def test_cli_sync_wait(self):
     parser = self.create_parser()

@@ -89,7 +89,7 @@ class TestFlags(unittest.TestCase):
 
   def test_get_list(self):
     flags = self.CLASS({"--foo": "v1", "--bar": None})
-    self.assertEqual(list(flags), ["--foo=v1", "--bar"])
+    self.assertSequenceEqual(list(flags), ["--foo=v1", "--bar"])
 
   def test_copy(self):
     flags = self.CLASS({"--foo": "v1", "--bar": None})
@@ -225,8 +225,8 @@ class TestFlags(unittest.TestCase):
 
   def test_iter(self):
     flags = self.CLASS.parse("--foo --bar=1")
-    self.assertListEqual(list(flags), ["--foo", "--bar=1"])
-    self.assertListEqual([*flags], ["--foo", "--bar=1"])
+    self.assertSequenceEqual(list(flags), ["--foo", "--bar=1"])
+    self.assertSequenceEqual([*flags], ["--foo", "--bar=1"])
 
   def test_bool_basic(self):
     self.assertFalse(self.CLASS())

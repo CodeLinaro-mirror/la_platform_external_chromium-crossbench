@@ -154,7 +154,7 @@ class ListJobsTest(MockHttpRequestsMixin):
     self.assertEqual(len(parsed_output), 2)
     job_ids = [job["job_id"] for job in parsed_output]
     # Reversed order because job "1" has earlier creation date.
-    self.assertEqual(job_ids, ["2", "1"])
+    self.assertSequenceEqual(job_ids, ["2", "1"])
 
   def test_list_jobs_all_users(self):
     job_data = {

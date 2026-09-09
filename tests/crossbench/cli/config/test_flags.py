@@ -97,7 +97,7 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(len(config["a"]), 2)
     self.assertEqual(len(config["b"]), 1)
     labels = tuple(v.label for v in config["a"])
-    self.assertTupleEqual(labels, ("foo=1_bar=1", "foo=1_bar=2"))
+    self.assertSequenceEqual(labels, ("foo=1_bar=1", "foo=1_bar=2"))
     variants_a = config["a"]
     flags_a_1 = variants_a[0].flags
     flags_a_2 = variants_a[1].flags
@@ -118,7 +118,7 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(len(config), 1)
     self.assertEqual(len(config["a"]), 2)
 
-    self.assertTupleEqual(
+    self.assertSequenceEqual(
         tuple(v.label for v in config["a"]), ("label_a_1", "label_a_2"))
     variants_a = config["a"]
     flags_a_1 = variants_a[0].flags
@@ -135,7 +135,7 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     })
     self.assertEqual(len(config), 1)
     self.assertEqual(len(config["a"]), 2)
-    self.assertTupleEqual(
+    self.assertSequenceEqual(
         tuple(v.label for v in config["a"]), ("label_a_1", "label_a_2"))
     variants_a = config["a"]
     flags_a_1 = variants_a[0].flags
@@ -158,7 +158,7 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     })
     self.assertEqual(len(config), 1)
     self.assertEqual(len(config["a"]), 2)
-    self.assertTupleEqual(
+    self.assertSequenceEqual(
         tuple(v.label for v in config["a"]), ("label_a_1", "label_a_2"))
     variants_a = config["a"]
     flags_a_1 = variants_a[0].flags
@@ -175,7 +175,7 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(len(config), 1)
     self.assertEqual(len(config["a"]), 4)
 
-    self.assertTupleEqual(
+    self.assertSequenceEqual(
         tuple(v.label for v in config["a"]),
         ("bar=1", "bar=2", "foo=1_bar=1", "foo=1_bar=2"))
     variants_a = config["a"]

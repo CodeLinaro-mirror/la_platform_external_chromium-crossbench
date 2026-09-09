@@ -101,7 +101,7 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
     metrics = parse_histogram_metrics(
         {self.HISTOGRAM_NAME: ["p25", "p50", "p75", "p90", "p99"]})
     values = [m.compute(self._delta(), self._baseline()) for m in metrics]
-    self.assertListEqual([16.875, 43, 75, 90, 90], values)
+    self.assertSequenceEqual([16.875, 43, 75, 90, 90], values)
 
   def test_sample_invalid_header(self):
     with pytest.raises(
@@ -172,7 +172,7 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
     probe = probes[0]
     self.assertIsInstance(probe, ChromeHistogramsProbe)
     isinstance(probe, ChromeHistogramsProbe)
-    self.assertListEqual([metric.name for metric in probe.metrics], [
+    self.assertSequenceEqual([metric.name for metric in probe.metrics], [
         "WebVitals.FirstContentfulPaint3_count",
         "WebVitals.FirstContentfulPaint3_mean",
         "WebVitals.FirstContentfulPaint3_p50",
@@ -191,7 +191,7 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
         },
         "baseline": False,
     })
-    self.assertListEqual([metric.name for metric in probe.metrics], [
+    self.assertSequenceEqual([metric.name for metric in probe.metrics], [
         "PageLoad.PaintTiming.NavigationToFirstContentfulPaint_mean",
     ])
     self.assertEqual(probe.use_baseline, False)

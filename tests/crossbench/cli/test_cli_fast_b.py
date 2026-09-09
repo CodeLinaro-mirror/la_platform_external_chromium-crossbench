@@ -98,8 +98,8 @@ class FastCliTestCasePartB(BaseCliTestCase):
     self.assertIsInstance(runner, Runner)
     self.assertEqual(len(runner.browsers), 1)
     browser = runner.browsers[0]
-    self.assertListEqual(["--chrome-flag1=value1", "--chrome-flag2"],
-                         list(browser.flags))
+    self.assertSequenceEqual(["--chrome-flag1=value1", "--chrome-flag2"],
+                             list(browser.flags))
 
   def test_browser_identifiers_duplicate(self):
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -358,7 +358,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
       self.run_cli("loading", "--probe=v8.log{}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         for flag in js_flags:
           self.assertNotIn(flag, browser.js_flags)
 
@@ -370,7 +370,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
       self.run_cli("loading", f"--probe=v8.log{json_config}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
 
@@ -485,7 +485,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
       for browser in cli.last_subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertEqual(browser.settings.splash_screen, SplashScreen.NONE)
-        self.assertListEqual([url], browser.url_list)
+        self.assertSequenceEqual([url], browser.url_list)
         self.assertEqual(len(browser.js_flags), 0)
 
   def test_splash_screen_minimal(self):
@@ -558,7 +558,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
       for browser in subcommand.runner.browsers:
         assert isinstance(browser, mock_browser.MockChromeStable)
         self.assertIs(browser.settings.splash_screen, SplashScreen.NONE)
-        self.assertListEqual(browser.url_list, [url])
+        self.assertSequenceEqual(browser.url_list, [url])
         self.assertEqual(len(browser.js_flags), 0)
 
   def test_fast_implicit_mode(self):

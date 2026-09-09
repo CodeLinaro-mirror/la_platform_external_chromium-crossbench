@@ -33,10 +33,10 @@ class BenchmarksTest(BaseCrossbenchTestCase):
 
   def test_all_stories_without_substories(self):
     stories = all_stories("devtools_frontend.crossbench")
-    self.assertEqual(stories, ["default"])
+    self.assertSequenceEqual(stories, ["default"])
 
   def test_all_stories_invalid(self):
-    self.assertEqual(all_stories("invalid_benchmark"), [])
+    self.assertSequenceEqual(all_stories("invalid_benchmark"), [])
 
   def test_default_story(self):
     self.assertEqual(default_story("speedometer3.0.crossbench"), "default")

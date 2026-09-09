@@ -42,7 +42,7 @@ class BaseProbeTestCase(
     return MockPlatform()
 
   def tearDown(self) -> None:
-    self.assertListEqual(self.platform.sh_results, [])
+    self.assertSequenceEqual(self.platform.sh_results, [])
     super().tearDown()
 
 

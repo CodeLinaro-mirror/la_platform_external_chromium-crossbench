@@ -381,7 +381,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       b = tmp_dir / "b"
       self.platform.touch(a)
       self.platform.touch(b)
-      self.assertListEqual(sorted(self.platform.glob(tmp_dir, "*")), [a, b])
+      self.assertSequenceEqual(sorted(self.platform.glob(tmp_dir, "*")), [a, b])
 
   def test_write_text(self):
     if self.platform.is_remote:
@@ -537,7 +537,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
 
     process_iter.assert_called_once_with(attrs=attrs)
     self.assertEqual(fake_process.attrs, attrs)
-    self.assertEqual(processes, [{"name": "name", "pid": "pid"}])
+    self.assertSequenceEqual(processes, [{"name": "name", "pid": "pid"}])
 
   def test_process_running(self):
     if self.platform.is_remote:

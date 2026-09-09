@@ -272,8 +272,8 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(page.first_url, "https://www.google.com")
     self.assertEqual(len(page.blocks), 1)
     block = page.blocks[0]
-    self.assertListEqual([str(action.TYPE) for action in block],
-                         ["get", "wait", "scroll"])
+    self.assertSequenceEqual([str(action.TYPE) for action in block],
+                             ["get", "wait", "scroll"])
 
   def test_secrets(self):
     config_data = {

@@ -162,13 +162,13 @@ class McpSubcommandTest(unittest.TestCase):
   def test_split_args(self):
     cb_args, browser_args = self.mcp_cmd._split_args(
         ["--url=https://google.com", "--", "--chrome-flag"])
-    self.assertEqual(cb_args, ["--url=https://google.com"])
-    self.assertEqual(browser_args, ["--", "--chrome-flag"])
+    self.assertSequenceEqual(cb_args, ["--url=https://google.com"])
+    self.assertSequenceEqual(browser_args, ["--", "--chrome-flag"])
 
     cb_args, browser_args = self.mcp_cmd._split_args(
         ["--url=https://google.com"])
-    self.assertEqual(cb_args, ["--url=https://google.com"])
-    self.assertEqual(browser_args, [])
+    self.assertSequenceEqual(cb_args, ["--url=https://google.com"])
+    self.assertSequenceEqual(browser_args, [])
 
     # Test that _start_build_command preserves them and adds MCP flags
     with mock.patch(

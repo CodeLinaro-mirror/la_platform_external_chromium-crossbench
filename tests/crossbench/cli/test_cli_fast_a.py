@@ -334,7 +334,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       cli = self.run_cli("loading", "run", f"--urls={url}",
                          "--env-validation=skip", "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
       runner = cli.last_subcommand.runner
       self.assertEqual(len(runner.cache_temperatures), 1)
       self.assertIn(CacheTemperature.DEFAULT, runner.cache_temperatures)
@@ -351,7 +351,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("loading", "--probe=v8.log", f"--urls={url}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertIn("--log-deopt", browser.js_flags)
 
   def test_cache_temperatures_flag(self):
@@ -377,7 +377,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.assertIn("--probe-config", message)
       self.assertIn("empty", message)
       for browser in self.browsers:
-        self.assertListEqual([], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertNotIn("--log", browser.js_flags)
 
   def test_empty_probe_config_file(self):
@@ -391,7 +391,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertNotIn("--log", browser.js_flags)
 
   def test_invalid_probe_config_file(self):
@@ -405,7 +405,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
         self.run_cli("loading", f"--probe-config={config_file}",
                      f"--urls={url}", "--env-validation=skip", "--throw")
       for browser in self.browsers:
-        self.assertListEqual([], browser.url_list)
+        self.assertSequenceEqual([], browser.url_list)
         self.assertEqual(len(browser.js_flags), 0)
 
   def test_probe_config_file(self):
@@ -420,7 +420,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
 
@@ -505,7 +505,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                    "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
 
@@ -528,7 +528,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
       cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
                          "--env-validation=skip")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
         self.assertFalse(browser.js_flags)
       config = cli.last_subcommand.runner.env.config
       self.assertEqual(config.disk_min_free_space_gib, EnvConfig.IGNORE)

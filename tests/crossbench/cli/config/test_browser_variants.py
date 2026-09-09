@@ -645,8 +645,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         args=self.mock_args())
     browsers = config.variants
     self.assertEqual(len(browsers), 2)
-    self.assertListEqual(["--no-sandbox"], list(browsers[0].flags))
-    self.assertListEqual(
+    self.assertSequenceEqual(["--no-sandbox"], list(browsers[0].flags))
+    self.assertSequenceEqual(
         ["--no-sandbox", "--enable-features=ConsumeCompileHints"],
         list(browsers[1].flags))
 
@@ -664,7 +664,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         args=self.mock_args())
     browsers = config.variants
     self.assertEqual(len(browsers), 1)
-    self.assertListEqual(["--no-sandbox"], list(browsers[0].flags))
+    self.assertSequenceEqual(["--no-sandbox"], list(browsers[0].flags))
 
   def test_flag_direct_inline_list(self):
     config = BrowserVariantsConfigDict(
@@ -680,7 +680,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         args=self.mock_args())
     browsers = config.variants
     self.assertEqual(len(browsers), 1)
-    self.assertListEqual(["--foo", "--bar=12"], list(browsers[0].flags))
+    self.assertSequenceEqual(["--foo", "--bar=12"], list(browsers[0].flags))
     self.assertIsNone(browsers[0].flags["--foo"])
     self.assertEqual(browsers[0].flags["--bar"], "12")
 
@@ -728,8 +728,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         args=self.mock_args())
     browsers = config.variants
     self.assertEqual(len(browsers), 2)
-    self.assertListEqual(["--foo", "--bar=12"], list(browsers[0].flags))
-    self.assertListEqual(
+    self.assertSequenceEqual(["--foo", "--bar=12"], list(browsers[0].flags))
+    self.assertSequenceEqual(
         ["--foo", "--bar=12", "--enable-features=ConsumeCompileHints"],
         list(browsers[1].flags))
 
@@ -767,8 +767,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         args=self.mock_args())
     browsers = config.variants
     self.assertEqual(len(browsers), 2)
-    self.assertListEqual(["--no-sandbox"], list(browsers[0].flags))
-    self.assertListEqual(
+    self.assertSequenceEqual(["--no-sandbox"], list(browsers[0].flags))
+    self.assertSequenceEqual(
         ["--no-sandbox", "--enable-features=ConsumeCompileHints"],
         list(browsers[1].flags))
 

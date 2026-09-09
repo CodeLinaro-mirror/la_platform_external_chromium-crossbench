@@ -36,7 +36,7 @@ class ListBotsTest(MockHttpRequestsMixin):
   def test_fetch_bots(self):
     bots = fetch_bots()
 
-    self.assertEqual(bots, ["bot1", "bot2", "bot3"])
+    self.assertSequenceEqual(bots, ["bot1", "bot2", "bot3"])
     self.mock_post.assert_called_once_with(PINPOINT_CONFIG_API_URL)
 
   def test_fetch_bots_api_error(self):

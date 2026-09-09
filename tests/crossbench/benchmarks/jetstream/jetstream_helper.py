@@ -116,7 +116,7 @@ class JetStream2BaseTestCase(
     csv_file = self.out_dir / f"{self.probe_cls.NAME}.csv"
     with csv_file.open(encoding="utf-8") as f:
       csv_data = list(csv.DictReader(f, delimiter="\t"))
-    self.assertListEqual(
+    self.assertSequenceEqual(
         list(csv_data[0].keys()), ["label", "", "dev", "stable"])
     self.assertDictEqual(
         csv_data[1],

@@ -49,7 +49,7 @@ class ListBuildsTest(MockHttpRequestsMixin):
 
   def test_fetch_builds_contain_correct_builds(self):
     builds = fetch_builds("test-bot")
-    self.assertEqual(builds, [
+    self.assertSequenceEqual(builds, [
         Build(commit="commit2", number=2, date="2025-11-12 00:00:00"),
         Build(commit="commit1", number=1, date="2025-11-11 00:00:00"),
         Build(commit="commit0", number=0, date="2025-11-10 00:00:00"),

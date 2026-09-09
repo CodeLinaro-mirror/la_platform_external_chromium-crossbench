@@ -251,7 +251,7 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
   def test_filter_by_name(self):
     for preset_page in PAGE_LIST:
       stories = self.story_filter([preset_page.name]).stories
-      self.assertListEqual([p.url for p in stories], [preset_page.url])
+      self.assertSequenceEqual([p.url for p in stories], [preset_page.url])
     with self.assertRaisesRegex(argparse.ArgumentTypeError,
                                 r"(?i)non-empty string"):
       self.story_filter([])
@@ -260,8 +260,8 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
     pages = PAGE_LIST
     filtered_pages = self.story_filter([pages[0].name, pages[1].name,
                                         "1001"]).stories
-    self.assertListEqual([p.url for p in filtered_pages],
-                         [pages[0].url, pages[1].url])
+    self.assertSequenceEqual([p.url for p in filtered_pages],
+                             [pages[0].url, pages[1].url])
     self.assertEqual(filtered_pages[0].duration, pages[0].duration)
     self.assertEqual(filtered_pages[1].duration, dt.timedelta(seconds=1001))
 
@@ -449,7 +449,7 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
 
     for browser in self.browsers:
       # one mark for iteration start, one for iteration end
-      self.assertListEqual(
+      self.assertSequenceEqual(
           browser.performance_marks,
           ["crossbench-iteration-start", "crossbench-iteration-end"])
 
@@ -464,7 +464,7 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
     self._test_run(stories)
 
     for browser in self.browsers:
-      self.assertListEqual(
+      self.assertSequenceEqual(
           browser.performance_marks,
           (["crossbench-iteration-start", "crossbench-iteration-end"] *
            repeats))
@@ -746,8 +746,8 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       self.run_cli("loading", "run", f"--urls-file={config}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url_1, url_2],
-                             browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url_1, url_2],
+                                 browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_page_list_file_separate(self):
     config = pathlib.Path("test/pages.txt")
@@ -770,7 +770,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       self.run_cli("loading", "run", f"--urls={url}", "--env-validation=skip",
                    "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_urls_multiple(self):
     with self._patch_get_browser():
@@ -779,8 +779,8 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       self.run_cli("loading", "run", f"--urls={url_1},{url_2}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url_1, url_2],
-                             browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url_1, url_2],
+                                 browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_urls_multiple_separate(self):
     with self._patch_get_browser():
@@ -800,8 +800,8 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       self.run_cli("loading", "run", f"--urls={url_1},{url_2}", "--playback=2x",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url_1, url_2, url_1, url_2],
-                             browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url_1, url_2, url_1, url_2],
+                                 browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_repeat_playback_separate(self):
     with self._patch_get_browser():
@@ -811,11 +811,11 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                    "--separate", "--env-validation=skip", "--throw")
       for browser in self.browsers:
         self.assertEqual(len(browser.url_list), (self.SPLASH_URLS_LEN + 2) * 2)
-        self.assertListEqual(
+        self.assertSequenceEqual(
             [url_1, url_1],
             browser.url_list[self.SPLASH_URLS_LEN:self.SPLASH_URLS_LEN + 2])
-        self.assertListEqual([url_2, url_2],
-                             browser.url_list[self.SPLASH_URLS_LEN * 2 + 2:])
+        self.assertSequenceEqual(
+            [url_2, url_2], browser.url_list[self.SPLASH_URLS_LEN * 2 + 2:])
 
   def simple_pages_config(self):
     url_1 = "http://one.test.com"
@@ -841,8 +841,8 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       self.run_cli("loading", "run", f"--page-config={config_file}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url_1, url_2],
-                             browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url_1, url_2],
+                                 browser.url_list[self.SPLASH_URLS_LEN:])
 
   def multiple_pages_with_setup_and_teardown_blocks_config(self):
     config = {
@@ -1000,8 +1000,8 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       self.run_cli("loading", "run", f"--page-config={config_file}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
-        self.assertListEqual([GOOGLE_LOGIN_URL, url_1, url_2],
-                             browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([GOOGLE_LOGIN_URL, url_1, url_2],
+                                 browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_actions_config_with_login_preset_global_secrets(self):
     url_1, url_2, config = self.simple_pages_with_login_config()
@@ -1025,8 +1025,8 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                      f"--secrets={json.dumps(secrets_data)}")
         self.assertEqual(mock_get_secrets.call_count, 2)
       for browser in self.browsers:
-        self.assertListEqual([GOOGLE_LOGIN_URL, url_1, url_2],
-                             browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([GOOGLE_LOGIN_URL, url_1, url_2],
+                                 browser.url_list[self.SPLASH_URLS_LEN:])
 
   def test_actions_config_with_login_preset_missing_secrets(self):
     _, _, config = self.simple_pages_with_login_config()
@@ -1064,8 +1064,8 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
       self.run_cli("loading", "run", f"--config={global_config_file}",
                    "--env-validation=skip", "--throw")
       for browser in self.browsers:
-        self.assertListEqual([url_1, url_2],
-                             browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([url_1, url_2],
+                                 browser.url_list[self.SPLASH_URLS_LEN:])
 
 
 class ActionBlockListConfigTestCase(unittest.TestCase):

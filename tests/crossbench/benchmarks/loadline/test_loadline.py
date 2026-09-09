@@ -159,7 +159,7 @@ class TestLoadLine1Helpers(BaseCrossbenchTestCase):
     )
     scores = loadline_1.process_scores(query_result)
 
-    self.assertEqual(scores.shape, (1, 3))
+    self.assertSequenceEqual(scores.shape, (1, 3))
     self.assertAlmostEqual(scores["TOTAL_SCORE"].iloc[0], 10)
     self.assertAlmostEqual(scores["story1"].iloc[0], 5)
     self.assertAlmostEqual(scores["story2"].iloc[0], 20)
@@ -187,7 +187,7 @@ class TestLoadLine1Helpers(BaseCrossbenchTestCase):
     )
     breakdown = loadline_1.process_breakdown(query_result)
 
-    self.assertEqual(breakdown.shape, (2, 5))
+    self.assertSequenceEqual(breakdown.shape, (2, 5))
     self.assertAlmostEqual(breakdown["os"].iloc[0], 5)
     self.assertAlmostEqual(breakdown["os"].iloc[1], 10)
     self.assertAlmostEqual(breakdown["renderer"].iloc[0], 10)

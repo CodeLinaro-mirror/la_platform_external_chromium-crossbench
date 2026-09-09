@@ -88,8 +88,8 @@ class PerfettoProbeTestCase(unittest.TestCase):
 
   def test_parse_tags_mixed(self):
     probe = PerfettoProbe.parse_tags("tag1,+tag2,-tag3")
-    self.assertEqual(probe.enabled_tags, ("tag1", "tag2"))
-    self.assertEqual(probe.disabled_tags, ("tag3",))
+    self.assertSequenceEqual(probe.enabled_tags, ("tag1", "tag2"))
+    self.assertSequenceEqual(probe.disabled_tags, ("tag3",))
 
   def test_merged_simple(self):
     probe = PerfettoProbe.parse_str("v8")

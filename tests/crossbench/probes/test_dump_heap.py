@@ -35,7 +35,7 @@ class DumpHeapProbeTestCase(GenericProbeTestCase):
         label="test_1984-06-14_000000",
         trace_buffer_size_kb=256 * 1024,
         timeout=timedelta(seconds=1))
-    self.assertListEqual(context._results, [dump_path])
+    self.assertSequenceEqual(context._results, [dump_path])
 
   def test_invoke_all_args(self):
     mock_run = MagicMock(spec=Run)
@@ -57,7 +57,7 @@ class DumpHeapProbeTestCase(GenericProbeTestCase):
         label="test_suffix",
         trace_buffer_size_kb=12345,
         timeout=timedelta(seconds=5))
-    self.assertListEqual(context._results, [dump_path])
+    self.assertSequenceEqual(context._results, [dump_path])
 
   def test_invoke_invalid_type(self):
     mock_run = MagicMock(spec=Run)

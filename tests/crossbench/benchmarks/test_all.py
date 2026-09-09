@@ -105,7 +105,7 @@ ALL = (
 class AllBenchmarksTestCase(unittest.TestCase):
 
   def test_unique_classes(self):
-    self.assertTupleEqual(ALL, tuple(OrderedSet(ALL)))
+    self.assertSequenceEqual(ALL, tuple(OrderedSet(ALL)))
 
   def test_aliases(self):
     seen_names: MutableSet[str] = OrderedSet()

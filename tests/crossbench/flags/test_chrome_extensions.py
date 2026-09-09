@@ -64,17 +64,17 @@ class ChromeExtensionsTestCase(unittest.TestCase):
     self.assertFalse(extensions_a)
     extensions_a.merge(ChromeExtensions(["foo", "bar"]))
     self.assertTrue(extensions_a)
-    self.assertEqual(extensions_a.extensions, ("foo", "bar"))
+    self.assertSequenceEqual(extensions_a.extensions, ("foo", "bar"))
 
   def test_merge(self):
     extensions_a = ChromeExtensions(["ext_a"])
     extensions_a.merge(ChromeExtensions())
     self.assertTrue(extensions_a)
-    self.assertEqual(extensions_a.extensions, ("ext_a",))
+    self.assertSequenceEqual(extensions_a.extensions, ("ext_a",))
 
     extensions_a.merge(ChromeExtensions(["foo", "bar"]))
     self.assertTrue(extensions_a)
-    self.assertEqual(extensions_a.extensions, ("ext_a", "foo", "bar"))
+    self.assertSequenceEqual(extensions_a.extensions, ("ext_a", "foo", "bar"))
 
     extensions_b = ChromeExtensions()
     extensions_b.disable()
@@ -88,19 +88,19 @@ class ChromeExtensionsTestCase(unittest.TestCase):
     with self.assertRaisesRegex(ValueError, r"(?i)empty extension"):
       extensions.add("")
     extensions.add("ext_b")
-    self.assertEqual(extensions.extensions, ("ext_a", "ext_b"))
+    self.assertSequenceEqual(extensions.extensions, ("ext_a", "ext_b"))
     extensions.add("ext_c")
-    self.assertEqual(extensions.extensions, ("ext_a", "ext_b", "ext_c"))
+    self.assertSequenceEqual(extensions.extensions, ("ext_a", "ext_b", "ext_c"))
 
   def test_enable(self):
     extensions = ChromeExtensions(["ext_a"])
     with self.assertRaisesRegex(ValueError, r"(?i)empty extensions"):
       extensions.enable("")
     extensions.enable("ext_b")
-    self.assertEqual(extensions.extensions, ("ext_a", "ext_b"))
+    self.assertSequenceEqual(extensions.extensions, ("ext_a", "ext_b"))
     extensions.enable("ext_c,ext_d")
-    self.assertEqual(extensions.extensions,
-                     ("ext_a", "ext_b", "ext_c", "ext_d"))
+    self.assertSequenceEqual(extensions.extensions,
+                             ("ext_a", "ext_b", "ext_c", "ext_d"))
 
   def test_disable(self):
     extensions = ChromeExtensions(["ext_a"])
@@ -116,7 +116,7 @@ class ChromeExtensionsTestCase(unittest.TestCase):
   def test_set(self):
     extensions = ChromeExtensions()
     extensions.set("--load-extension", "foo,bar")
-    self.assertEqual(extensions.extensions, ("foo", "bar"))
+    self.assertSequenceEqual(extensions.extensions, ("foo", "bar"))
     with self.assertRaisesRegex(ValueError, "--foo-bar"):
       extensions.set("--foo-bar")
 

@@ -40,10 +40,10 @@ class ActionRunnerTestCase(CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase):
   def tearDown(self):
     expected_sh_cmds = self.platform.expected_sh_cmds
     if expected_sh_cmds is not None:
-      self.assertListEqual(expected_sh_cmds, [],
-                           "Got additional unused shell cmds.")
+      self.assertSequenceEqual(expected_sh_cmds, [],
+                               "Got additional unused shell cmds.")
 
     expected_js = self.browser.expected_js
     if expected_js is not None:
-      self.assertListEqual(expected_js, [],
-                           "Got additional unused expected JS.")
+      self.assertSequenceEqual(expected_js, [],
+                               "Got additional unused expected JS.")

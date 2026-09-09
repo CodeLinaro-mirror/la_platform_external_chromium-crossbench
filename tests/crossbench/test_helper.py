@@ -36,16 +36,16 @@ class WaitTestCase(unittest.TestCase):
 
   def test_range(self):
     durations = list(WaitRange(min=1, max=16, factor=2, max_iterations=5))
-    self.assertListEqual(durations, [(0, dt.timedelta(seconds=1)),
-                                     (1, dt.timedelta(seconds=2)),
-                                     (2, dt.timedelta(seconds=4)),
-                                     (3, dt.timedelta(seconds=8)),
-                                     (4, dt.timedelta(seconds=16))])
+    self.assertSequenceEqual(durations, [(0, dt.timedelta(seconds=1)),
+                                         (1, dt.timedelta(seconds=2)),
+                                         (2, dt.timedelta(seconds=4)),
+                                         (3, dt.timedelta(seconds=8)),
+                                         (4, dt.timedelta(seconds=16))])
 
   def test_range_with_delay(self):
     durations = list(
         WaitRange(min=1, max=16, factor=2, max_iterations=5, delay=5.5))
-    self.assertListEqual(durations, [
+    self.assertSequenceEqual(durations, [
         (0, dt.timedelta(seconds=5.5)),
         (1, dt.timedelta(seconds=1)),
         (2, dt.timedelta(seconds=2)),
@@ -54,7 +54,7 @@ class WaitTestCase(unittest.TestCase):
     ])
     durations = list(
         WaitRange(min=1, max=16, factor=2, max_iterations=10, delay=5.5))
-    self.assertListEqual(durations, [
+    self.assertSequenceEqual(durations, [
         (0, dt.timedelta(seconds=5.5)),
         (1, dt.timedelta(seconds=1)),
         (2, dt.timedelta(seconds=2)),
@@ -69,7 +69,7 @@ class WaitTestCase(unittest.TestCase):
 
   def test_range_extended(self):
     durations = list(WaitRange(min=1, max=16, factor=2, max_iterations=5 + 4))
-    self.assertListEqual(
+    self.assertSequenceEqual(
         durations,
         [
             (0, dt.timedelta(seconds=1)),
@@ -134,7 +134,7 @@ class DurationsTestCase(unittest.TestCase):
     with self.assertRaises(AssertionError), durations.measure("a"):
       pass
     self.assertTrue(len(durations) == 1)
-    self.assertListEqual(list(durations.to_json().keys()), ["a"])
+    self.assertSequenceEqual(list(durations.to_json().keys()), ["a"])
 
   def test_multiple(self):
     durations = Durations()
@@ -142,7 +142,7 @@ class DurationsTestCase(unittest.TestCase):
       with durations.measure(name):
         pass
     self.assertEqual(len(durations), 3)
-    self.assertListEqual(list(durations.to_json().keys()), ["a", "b", "c"])
+    self.assertSequenceEqual(list(durations.to_json().keys()), ["a", "b", "c"])
 
 
 class ChangeCWDTestCase(CrossbenchFakeFsTestCase):
@@ -192,11 +192,11 @@ class FileSizeTestCase(CrossbenchFakeFsTestCase):
     self.fs.create_file(medium, st_size=200)
     self.fs.create_file(large, st_size=300)
     result = fs_helper.sort_by_file_size([small, medium, large])
-    self.assertListEqual(result, [small, medium, large])
+    self.assertSequenceEqual(result, [small, medium, large])
     result = fs_helper.sort_by_file_size([medium, large, small])
-    self.assertListEqual(result, [small, medium, large])
+    self.assertSequenceEqual(result, [small, medium, large])
     result = fs_helper.sort_by_file_size([large, medium, small])
-    self.assertListEqual(result, [small, medium, large])
+    self.assertSequenceEqual(result, [small, medium, large])
 
 
 class GroupByTestCase(unittest.TestCase):
@@ -209,14 +209,14 @@ class GroupByTestCase(unittest.TestCase):
     grouped: dict[str,
                   list[int]] = collection_helper.group_by([1, 1, 1, 2, 2, 3],
                                                           key=str)
-    self.assertListEqual(list(grouped.keys()), ["1", "2", "3"])
+    self.assertSequenceEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_out_of_order(self):
     grouped: dict[str,
                   list[int]] = collection_helper.group_by([2, 3, 2, 1, 1, 1],
                                                           key=str)
-    self.assertListEqual(list(grouped.keys()), ["1", "2", "3"])
+    self.assertSequenceEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_input_order(self):
@@ -224,18 +224,18 @@ class GroupByTestCase(unittest.TestCase):
                   list[int]] = collection_helper.group_by([2, 3, 2, 1, 1, 1],
                                                           key=str,
                                                           sort_key=None)
-    self.assertListEqual(list(grouped.keys()), ["2", "3", "1"])
+    self.assertSequenceEqual(list(grouped.keys()), ["2", "3", "1"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_custom_order(self):
     grouped: dict[str, list[int]] = collection_helper.group_by(
         [2, 3, 2, 1, 1, 1], key=str, sort_key=lambda item: int(item[0]))
-    self.assertListEqual(list(grouped.keys()), ["1", "2", "3"])
+    self.assertSequenceEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
     # Try reverse sorting
     grouped: dict[str, list[int]] = collection_helper.group_by(
         [2, 3, 2, 1, 1, 1], key=str, sort_key=lambda item: -int(item[0]))
-    self.assertListEqual(list(grouped.keys()), ["3", "2", "1"])
+    self.assertSequenceEqual(list(grouped.keys()), ["3", "2", "1"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_custom_key(self):
@@ -329,12 +329,12 @@ class StrEnumWithHelpTestCase(unittest.TestCase):
 
   def test_list(self):
     self.assertEqual(len(self.TestEnum), 2)
-    self.assertListEqual(
+    self.assertSequenceEqual(
         list(self.TestEnum), [self.TestEnum.A, self.TestEnum.B])
 
   def test_help_items(self):
-    self.assertListEqual(self.TestEnum.help_text_items(), [("'a'", "help a"),
-                                                           ("'b'", "help b")])
+    self.assertSequenceEqual(self.TestEnum.help_text_items(),
+                             [("'a'", "help a"), ("'b'", "help b")])
 
 
 class UpdateUrlQueryTestCase(unittest.TestCase):
