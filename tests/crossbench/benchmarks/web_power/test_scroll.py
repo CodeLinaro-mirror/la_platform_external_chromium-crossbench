@@ -12,7 +12,6 @@ from typing_extensions import override
 from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.scroll import WebPowerScrollBenchmark, \
     WebPowerScrollStory
-from crossbench.cli.parser import CBArgumentParser
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 from tests.crossbench.benchmarks.web_power.test_base import \
@@ -52,8 +51,7 @@ class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
   def test_kwargs_from_cli_defaults(self) -> None:
     args = self.parse_args("--site", "cnn")
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
-    self.assertEqual(len(kwargs["stories"]), 1)
-    story = kwargs["stories"][0]
+    [story] = kwargs["stories"]
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.scroll_count,
                      WebPowerScrollStory.DEFAULT_SCROLL_COUNT)
@@ -69,28 +67,64 @@ class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         "--stabilization-time=15s",
     )
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
-    self.assertEqual(len(kwargs["stories"]), 1)
-    story = kwargs["stories"][0]
+    [story] = kwargs["stories"]
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.scroll_count, 12)
     self.assertEqual(story.input_rate, 100)
     self.assertEqual(story.stabilization_time, dt.timedelta(seconds=15))
 
-  def test_kwargs_from_cli_invalid(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerScrollBenchmark.add_cli_arguments(parser)
-    with self.assertRaises(argparse.ArgumentError):
-      parser.parse_args(["--scrolls=-1"])
-    with self.assertRaises(argparse.ArgumentError):
-      parser.parse_args(["--scrolls=0"])
-    with self.assertRaises(argparse.ArgumentError):
-      parser.parse_args(["--scrolls=foo"])
-    with self.assertRaises(argparse.ArgumentError):
-      parser.parse_args(["--input-rate=-100"])
-    with self.assertRaises(argparse.ArgumentError):
-      parser.parse_args(["--input-rate=0"])
-    with self.assertRaises(argparse.ArgumentError):
-      parser.parse_args(["--input-rate=bar"])
+  def test_kwargs_from_cli_aliases(self) -> None:
+    args = self.parse_args(
+        "--site=cnn",
+        "--scroll-count=15",
+        "--rate=90",
+    )
+    kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
+    [story] = kwargs["stories"]
+    self.assertEqual(story.scroll_count, 15)
+    self.assertEqual(story.input_rate, 90)
+
+  def test_kwargs_from_cli_scrolls_invalid(self) -> None:
+    with self.assertRaisesRegex(argparse.ArgumentError, "--scrolls"):
+      self.parse_args("--scrolls=-1")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--scrolls"):
+      self.parse_args("--scrolls=0")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--scrolls"):
+      self.parse_args("--scrolls=foo")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--scroll-count"):
+      self.parse_args("--scroll-count=-1")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--scroll-count"):
+      self.parse_args("--scroll-count=0")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--scroll-count"):
+      self.parse_args("--scroll-count=foo")
+
+  def test_kwargs_from_cli_input_rate_invalid(self) -> None:
+    with self.assertRaisesRegex(argparse.ArgumentError, "--input-rate"):
+      self.parse_args("--input-rate=-100")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--input-rate"):
+      self.parse_args("--input-rate=0")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--input-rate"):
+      self.parse_args("--input-rate=bar")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--rate"):
+      self.parse_args("--rate=-100")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--rate"):
+      self.parse_args("--rate=0")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--rate"):
+      self.parse_args("--rate=bar")
+
+  def test_from_cli_args(self) -> None:
+    args = self.parse_args(
+        "--site=cnn",
+        "--scroll-count=8",
+        "--rate=60",
+    )
+    benchmark = WebPowerScrollBenchmark.from_cli_args(args)
+    self.assertEqual(len(benchmark.stories), 1)
+    story = benchmark.stories[0]
+    self.assertIsInstance(story, WebPowerScrollStory)
+    self.assertEqual(story.scroll_count, 8)
+    self.assertEqual(story.input_rate, 60)
+
 
 
 if __name__ == "__main__":

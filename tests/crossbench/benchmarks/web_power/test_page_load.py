@@ -14,7 +14,6 @@ from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.page_load import \
     WebPowerPageLoadBenchmark, WebPowerPageLoadStory
-from crossbench.cli.parser import CBArgumentParser
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 from tests.crossbench.benchmarks.web_power.test_base import \
@@ -110,8 +109,7 @@ class WebPowerPageLoadBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
   def test_kwargs_from_cli_defaults(self) -> None:
     args = self.parse_args("--site", "cnn")
     kwargs = WebPowerPageLoadBenchmark.kwargs_from_cli(args)
-    self.assertEqual(len(kwargs["stories"]), 1)
-    story = kwargs["stories"][0]
+    [story] = kwargs["stories"]
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.page_load_count,
                      WebPowerPageLoadStory.DEFAULT_CNN_PAGE_LOAD_COUNT)
@@ -127,22 +125,58 @@ class WebPowerPageLoadBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         "--stabilization-time=15s",
     )
     kwargs = WebPowerPageLoadBenchmark.kwargs_from_cli(args)
-    self.assertEqual(len(kwargs["stories"]), 1)
-    story = kwargs["stories"][0]
+    [story] = kwargs["stories"]
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.page_load_count, 15)
     self.assertEqual(story.interval, dt.timedelta(seconds=10))
     self.assertEqual(story.stabilization_time, dt.timedelta(seconds=15))
 
-  def test_kwargs_from_cli_invalid(self) -> None:
-    parser = CBArgumentParser()
-    parser = WebPowerPageLoadBenchmark.add_cli_arguments(parser)
-    with self.assertRaises(argparse.ArgumentError):
-      parser.parse_args(["--page-loads=-1"])
-    with self.assertRaises(argparse.ArgumentError):
-      parser.parse_args(["--page-loads=0"])
-    with self.assertRaises(argparse.ArgumentError):
-      parser.parse_args(["--page-loads=foo"])
+  def test_kwargs_from_cli_aliases(self) -> None:
+    args = self.parse_args(
+        "--site=cnn",
+        "--page-load-count=12",
+        "--interval=6s",
+    )
+    kwargs = WebPowerPageLoadBenchmark.kwargs_from_cli(args)
+    [story] = kwargs["stories"]
+    self.assertEqual(story.page_load_count, 12)
+    self.assertEqual(story.interval, dt.timedelta(seconds=6))
+
+  def test_kwargs_from_cli_page_loads_invalid(self) -> None:
+    with self.assertRaisesRegex(argparse.ArgumentError, "--page-loads"):
+      self.parse_args("--page-loads=-1")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--page-loads"):
+      self.parse_args("--page-loads=0")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--page-loads"):
+      self.parse_args("--page-loads=foo")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--page-load-count"):
+      self.parse_args("--page-load-count=-1")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--page-load-count"):
+      self.parse_args("--page-load-count=0")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--page-load-count"):
+      self.parse_args("--page-load-count=foo")
+
+  def test_kwargs_from_cli_interval_invalid(self) -> None:
+    with self.assertRaisesRegex(argparse.ArgumentError, "--interval"):
+      self.parse_args("--interval=-1s")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--interval"):
+      self.parse_args("--interval=0s")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--interval"):
+      self.parse_args("--interval=foo")
+
+  def test_from_cli_args(self) -> None:
+    args = self.parse_args(
+        "--site=cnn",
+        "--page-loads=7",
+        "--interval=4s",
+    )
+    benchmark = WebPowerPageLoadBenchmark.from_cli_args(args)
+    self.assertEqual(len(benchmark.stories), 1)
+    story = benchmark.stories[0]
+    self.assertIsInstance(story, WebPowerPageLoadStory)
+    self.assertEqual(story.page_load_count, 7)
+    self.assertEqual(story.interval, dt.timedelta(seconds=4))
+
 
 
 if __name__ == "__main__":

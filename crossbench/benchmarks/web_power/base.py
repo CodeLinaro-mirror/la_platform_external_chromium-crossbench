@@ -247,8 +247,10 @@ class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
       args: argparse.Namespace,
       separate: bool = True,
       tags: Iterable[str] = (),
+      url: str = "",
       **story_kwargs: Any,
   ) -> None:
+    self._url: str = url
     self._story_kwargs = story_kwargs
     super().__init__(story_cls, patterns, args, separate, tags)
 
@@ -256,7 +258,10 @@ class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
   @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
+    if site := args.site:
+      kwargs["patterns"] = (site,)
     kwargs.update(vars(args))
+    kwargs["url"] = args.url or ""
     return kwargs
 
   @classmethod
@@ -277,7 +282,13 @@ class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
         choices=cls.STORY_CLS.all_story_names(),
         help="Specific pre-recorded site to run (from a closed list).",
     )
-    group.add_argument("--url", help="Custom URL to run.")
+    group.add_argument("--url", default="", help="Custom URL to run.")
+
+  @override
+  def filter(self) -> tuple[WebPowerStoryT, ...]:
+    if self._url:
+      return (self._instantiate_story_from_url(self.story_cls, self._url),)
+    return super().filter()
 
   @override
   def stories_from_names(self,
@@ -285,29 +296,27 @@ class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
     return tuple(
         self._instantiate_story(self.story_cls, name) for name in names)
 
-  def _instantiate_story(self, story_cls: type[WebPowerStoryT],
-                         site_name: str) -> WebPowerStoryT:
-    """Instantiates a story class with site-specific configurations.
-
-    Filters all parsed CLI arguments to only forward parameters accepted by the
-    target story constructor (preventing TypeErrors).
-
-    This means that we can run `./cb.py web-power --stories=#cnn` and specify
-    `--scrolls` to affect the scroll-cnn story, without it raising an error for
-    the stories where it's not relevant, such as idle-cnn.
-    """
+  def _filter_kwargs(self, story_cls: type[WebPowerStoryT]) -> dict[str, Any]:
+    """Filters all parsed CLI arguments to only forward parameters accepted by
+    the target story constructor (preventing TypeErrors)."""
     constructor_sig = inspect.signature(story_cls.__init__)
     accepted_params = constructor_sig.parameters
 
-    filtered_kwargs = {}
-    for key in self._story_kwargs:
-      if key not in accepted_params:
-        continue
-      value = self._story_kwargs[key]
-      if value is not None:
-        filtered_kwargs[key] = value
+    return {
+        key: value
+        for key, value in self._story_kwargs.items()
+        if key in accepted_params and value is not None
+    }
 
-    return story_cls.from_site(site_name, **filtered_kwargs)
+  def _instantiate_story(self, story_cls: type[WebPowerStoryT],
+                         site_name: str) -> WebPowerStoryT:
+    """Instantiates a story class with site-specific configurations."""
+    return story_cls.from_site(site_name, **self._filter_kwargs(story_cls))
+
+  def _instantiate_story_from_url(self, story_cls: type[WebPowerStoryT],
+                                  url: str) -> WebPowerStoryT:
+    """Instantiates a story class with custom URL configuration."""
+    return story_cls.from_url(url, **self._filter_kwargs(story_cls))
 
 
 class WebPowerBenchmarkBase(SubStoryBenchmark):
@@ -343,7 +352,7 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
   DEFAULT_REPETITIONS: ClassVar[int] = 5
   DEFAULT_COOL_DOWN: ClassVar[dt.timedelta] = dt.timedelta(minutes=2)
   SITE_REQUIRED: ClassVar[bool] = True
-  STORY_FILTER_CLS: ClassVar[type[StoryFilter]] = WebPowerStoryFilter
+  STORY_FILTER_CLS: ClassVar[type[WebPowerStoryFilter]] = WebPowerStoryFilter
   DEFAULT_STORY_CLS: ClassVar[type[WebPowerStory]]
   PROBES: ClassVar = (WebPowerProbe,)
 
@@ -365,17 +374,6 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     assert stories, "No stories provided"
     assert all(isinstance(story, WebPowerStory) for story in stories)
     return list(stories)
-
-  @classmethod
-  @override
-  def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Story]:
-    if args.url:
-      filter_kwargs = cls.STORY_FILTER_CLS.kwargs_from_cli(args)
-      story_kwargs = filter_kwargs.get("story_kwargs", {})
-      return [cls.DEFAULT_STORY_CLS.from_url(args.url, **story_kwargs)]
-    if args.site:
-      args.stories = args.site
-    return super().stories_from_cli_args(args)
 
   @override
   def setup(self, runner: Runner) -> None:

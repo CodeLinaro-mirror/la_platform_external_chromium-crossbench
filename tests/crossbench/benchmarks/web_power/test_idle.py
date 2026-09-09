@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 
 from typing_extensions import override
@@ -64,8 +65,7 @@ class WebPowerIdleBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
   def test_kwargs_from_cli_defaults(self) -> None:
     args = self.parse_args("--site", "cnn")
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
-    self.assertEqual(len(kwargs["stories"]), 1)
-    story = kwargs["stories"][0]
+    [story] = kwargs["stories"]
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.idle_duration, WebPowerIdleStory.DEFAULT_DURATION)
     self.assertEqual(story.stabilization_time,
@@ -78,11 +78,52 @@ class WebPowerIdleBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         "--stabilization-time=15s",
     )
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
-    self.assertEqual(len(kwargs["stories"]), 1)
-    story = kwargs["stories"][0]
+    [story] = kwargs["stories"]
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.idle_duration, dt.timedelta(seconds=45))
     self.assertEqual(story.stabilization_time, dt.timedelta(seconds=15))
+
+  def test_kwargs_from_cli_url(self) -> None:
+    args = self.parse_args(
+        "--url=https://www.google.com",
+        "--duration=20s",
+    )
+    kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
+    [story] = kwargs["stories"]
+    self.assertEqual(story.url, "https://www.google.com")
+    self.assertEqual(story.idle_duration, dt.timedelta(seconds=20))
+
+  def test_kwargs_from_cli_forever(self) -> None:
+    args = self.parse_args(
+        "--site=cnn",
+        "--duration=0s",
+    )
+    kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
+    [story] = kwargs["stories"]
+    self.assertGreaterEqual(story.idle_duration, dt.timedelta(days=365))
+
+  def test_kwargs_from_cli_invalid(self) -> None:
+    with self.assertRaisesRegex(argparse.ArgumentError, "--duration"):
+      self.parse_args("--duration=-1s")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--duration"):
+      self.parse_args("--duration=invalid")
+    with self.assertRaisesRegex(argparse.ArgumentError, "--site"):
+      self.parse_args("--site=invalid_site")
+
+  def test_from_cli_args(self) -> None:
+    args = self.parse_args(
+        "--site=cnn",
+        "--duration=30s",
+        "--stabilization=5s",
+    )
+    benchmark = WebPowerIdleBenchmark.from_cli_args(args)
+    self.assertEqual(len(benchmark.stories), 1)
+    story = benchmark.stories[0]
+    self.assertIsInstance(story, WebPowerIdleStory)
+    self.assertEqual(story.url, "https://www.cnn.com")
+    self.assertEqual(story.idle_duration, dt.timedelta(seconds=30))
+    self.assertEqual(story.stabilization_time, dt.timedelta(seconds=5))
+
 
 
 if __name__ == "__main__":

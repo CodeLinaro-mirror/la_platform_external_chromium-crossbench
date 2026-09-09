@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import io
 from typing import Final
 from unittest import mock
 
@@ -12,6 +13,7 @@ from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
+from crossbench.benchmarks.web_power.base import VERSION_STRING
 from crossbench.benchmarks.web_power.consolidated import WebPowerBenchmark, \
     WebPowerConsolidatedStoryFilter
 from crossbench.benchmarks.web_power.idle import WebPowerIdleStory
@@ -28,7 +30,8 @@ from crossbench.probes.trace_processor.query_config import QUERIES_DIR
 from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
 from tests import test_helper
-from tests.crossbench.base import BaseCliTestCase, BaseCrossbenchTestCase
+from tests.crossbench.base import BaseCliTestCase, BaseCrossbenchTestCase, \
+    SysExitTestException
 from tests.crossbench.benchmarks.web_power.test_base import \
     BaseWebPowerBenchmarkTestCase
 
@@ -251,27 +254,27 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
     # 1. WebPowerIdleStory
     self.assertEqual(stories[0].name, "web-power-idle-msn")
-    self.assertTrue(isinstance(stories[0], WebPowerIdleStory))
+    self.assertIsInstance(stories[0], WebPowerIdleStory)
     self.assertEqual(stories[0].idle_duration, dt.timedelta(seconds=45))
     self.assertEqual(stories[0].stabilization_time, dt.timedelta(seconds=5))
 
     # 2. WebPowerScrollStory
     self.assertEqual(stories[1].name, "web-power-scroll-cnn")
-    self.assertTrue(isinstance(stories[1], WebPowerScrollStory))
+    self.assertIsInstance(stories[1], WebPowerScrollStory)
     self.assertEqual(stories[1].scroll_count, 12)
     self.assertEqual(stories[1].input_rate, 120)
     self.assertEqual(stories[1].stabilization_time, dt.timedelta(seconds=5))
 
     # 3. WebPowerPageLoadStory
     self.assertEqual(stories[2].name, "web-power-page-load-cnn")
-    self.assertTrue(isinstance(stories[2], WebPowerPageLoadStory))
+    self.assertIsInstance(stories[2], WebPowerPageLoadStory)
     self.assertEqual(stories[2].page_load_count, 15)
     self.assertEqual(stories[2].interval, dt.timedelta(seconds=4))
     self.assertEqual(stories[2].stabilization_time, dt.timedelta(seconds=5))
 
     # 4. WebPowerMediaPlaybackStory
     self.assertEqual(stories[3].name, "web-power-media-playback-youtube")
-    self.assertTrue(isinstance(stories[3], WebPowerMediaPlaybackStory))
+    self.assertIsInstance(stories[3], WebPowerMediaPlaybackStory)
     self.assertEqual(stories[3].playback_duration, dt.timedelta(seconds=45))
     self.assertEqual(stories[3].stabilization_time, dt.timedelta(seconds=5))
     self.assertTrue(stories[3].stats)
@@ -290,6 +293,74 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
       self.assertEqual("--autoplay-policy" in flags, is_playback)
       if is_playback:
         self.assertEqual(flags["--autoplay-policy"], "no-user-gesture-required")
+
+  def test_kwargs_from_cli_fullscreen(self) -> None:
+    args = self.parse_args(
+        "--stories=media-playback-youtube",
+        "--fullscreen",
+    )
+    kwargs = WebPowerBenchmark.kwargs_from_cli(args)
+    [story] = kwargs["stories"]
+    self.assertTrue(story.fullscreen)
+
+    args = self.parse_args(
+        "--stories=media-playback-youtube",
+        "--no-fullscreen",
+    )
+    kwargs = WebPowerBenchmark.kwargs_from_cli(args)
+    [story] = kwargs["stories"]
+    self.assertFalse(story.fullscreen)
+
+  def test_kwargs_from_cli_benchmark_version(self) -> None:
+    parser = WebPowerBenchmark.add_cli_arguments(CBArgumentParser())
+    with mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+      with self.assertRaises((SystemExit, SysExitTestException)):
+        parser.parse_args(["--benchmark-version"])
+      self.assertIn(VERSION_STRING, mock_stdout.getvalue())
+
+  def test_from_cli_args_combined_options(self) -> None:
+    args = self.parse_args(
+        "--stories=idle-msn,scroll-cnn,page-load-cnn,media-playback-youtube",
+        "--duration=50s",
+        "--stabilization-time=8s",
+        "--scrolls=14",
+        "--input-rate=110",
+        "--page-loads=16",
+        "--interval=5s",
+        "--stats",
+        "--volume=off",
+        "--ambient-mode=on",
+        "--no-fullscreen",
+    )
+    benchmark = WebPowerBenchmark.from_cli_args(args)
+    stories = benchmark.stories
+    self.assertEqual(len(stories), 4)
+
+    self.assertIsInstance(stories[0], WebPowerIdleStory)
+    self.assertEqual(stories[0].name, "web-power-idle-msn")
+    self.assertEqual(stories[0].idle_duration, dt.timedelta(seconds=50))
+    self.assertEqual(stories[0].stabilization_time, dt.timedelta(seconds=8))
+
+    self.assertIsInstance(stories[1], WebPowerScrollStory)
+    self.assertEqual(stories[1].name, "web-power-scroll-cnn")
+    self.assertEqual(stories[1].scroll_count, 14)
+    self.assertEqual(stories[1].input_rate, 110)
+    self.assertEqual(stories[1].stabilization_time, dt.timedelta(seconds=8))
+
+    self.assertIsInstance(stories[2], WebPowerPageLoadStory)
+    self.assertEqual(stories[2].name, "web-power-page-load-cnn")
+    self.assertEqual(stories[2].page_load_count, 16)
+    self.assertEqual(stories[2].interval, dt.timedelta(seconds=5))
+    self.assertEqual(stories[2].stabilization_time, dt.timedelta(seconds=8))
+
+    self.assertIsInstance(stories[3], WebPowerMediaPlaybackStory)
+    self.assertEqual(stories[3].name, "web-power-media-playback-youtube")
+    self.assertEqual(stories[3].playback_duration, dt.timedelta(seconds=50))
+    self.assertEqual(stories[3].stabilization_time, dt.timedelta(seconds=8))
+    self.assertTrue(stories[3].stats)
+    self.assertEqual(stories[3].volume, VolumeMode.OFF)
+    self.assertEqual(stories[3].ambient_mode, AmbientMode.ON)
+    self.assertFalse(stories[3].fullscreen)
 
 
 class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
