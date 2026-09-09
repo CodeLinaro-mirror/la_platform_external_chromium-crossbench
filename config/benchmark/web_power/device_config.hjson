@@ -46,6 +46,11 @@
         // 2. Values: 0 = OFF, 1 = ON.
         "ble_scan_always_enabled": "0"
 
+        // Disables background Wi-Fi scanning by apps and services when
+        // Wi-Fi is toggled off, avoiding periodic radio scanning power draw.
+        // Values: 0 = OFF, 1 = ON.
+        "wifi_scan_always_enabled": "0"
+
         // Ensures Battery Saver mode is OFF to prevent CPU throttling.
         // Values: 0 = OFF, 1 = ON.
         "low_power": "0"
