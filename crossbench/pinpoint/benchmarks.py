@@ -38,6 +38,7 @@ _BENCHMARK_BY_PINPOINT_NAME: Final[immutabledict[
         "motionmark1.3.crossbench": benchmarks.MotionMark13Benchmark,
         "motionmark1.3.1.crossbench": benchmarks.MotionMark131Benchmark,
         "motionmark1.3.2.crossbench": benchmarks.MotionMark132Benchmark,
+        "motionmark1.4.crossbench": benchmarks.MotionMark14Benchmark,
         "speedometer": benchmarks.Speedometer10Benchmark,
         "speedometer2.crossbench": benchmarks.Speedometer21Benchmark,
         "speedometer2.0.crossbench": benchmarks.Speedometer20Benchmark,
