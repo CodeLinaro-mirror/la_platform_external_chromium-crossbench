@@ -5,6 +5,11 @@
         // Prevents system prompt dialogs from appearing when entering
         // immersive (fullscreen) mode.
         "immersive_mode_confirmations": "confirmed"
+
+        // Disables location services to avoid background GPS/GNSS receiver
+        // activity and polling. Values:
+        // 0 = OFF, 1 = SENSORS_ONLY, 2 = BATTERY_SAVING, 3 = HIGH_ACCURACY.
+        "location_mode": "0"
       }
       "global": {
         // Keeps the display awake whenever the device is plugged in.
