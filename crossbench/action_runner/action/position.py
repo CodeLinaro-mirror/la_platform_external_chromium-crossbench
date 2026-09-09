@@ -85,6 +85,7 @@ class UiSelectorConfig(ConfigObject):
   res: str | None = None
   clazz: str | None = None
   text: str | None = None
+  required: bool = True
 
   @classmethod
   @override
@@ -118,6 +119,11 @@ class UiSelectorConfig(ConfigObject):
         type=ObjectParser.non_empty_str,
         required=False,
         help="Text of the UI element to match.")
+    parser.add_argument(
+        "required",
+        type=ObjectParser.bool,
+        default=True,
+        help="Whether the UI element is required to exist.")
     return parser
 
   def to_json(self) -> JsonDict:
@@ -182,8 +188,11 @@ class PositionConfig(ConfigObject):
   def from_ui_selector(cls,
                        res: str | None = None,
                        clazz: str | None = None,
-                       text: str | None = None) -> PositionConfig:
-    return cls(ui_selector=UiSelectorConfig(res=res, clazz=clazz, text=text))
+                       text: str | None = None,
+                       required: bool = True) -> PositionConfig:
+    return cls(
+        ui_selector=UiSelectorConfig(
+            res=res, clazz=clazz, text=text, required=required))
 
   @override
   def validate(self) -> None:

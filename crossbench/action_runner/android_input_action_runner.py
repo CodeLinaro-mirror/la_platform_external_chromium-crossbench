@@ -317,6 +317,10 @@ return [
       selector_dict = ui_selector.to_json()
       ui_object = ad.ui(**ui_selector.to_json())
       # This verification step verifies if the element exists.
-      assert ui_object.wait.exists(
-          timeout=timeout), (f"Element with selector {selector_dict} not found")
+      if not ui_object.wait.exists(timeout=timeout):
+        if not ui_selector.required:
+          logging.debug("Optional UI element %s not found within %s",
+                        selector_dict, timeout)
+          return
+        raise AssertionError(f"Element with selector {selector_dict} not found")
       ui_object.click()

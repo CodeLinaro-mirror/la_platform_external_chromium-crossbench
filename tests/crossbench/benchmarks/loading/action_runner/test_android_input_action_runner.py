@@ -3,10 +3,12 @@
 # found in the LICENSE file.
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import pathlib
 import unittest
 from typing import TYPE_CHECKING
+from unittest import mock
 
 from typing_extensions import override
 
@@ -450,6 +452,84 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.platform.expect_sh("input", "swipe", "50", "90", "50", "51", "39")
 
     self.run_action(scroll_action)
+
+  def test_click_ui_selector_required_element_not_found_raises(self):
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_ui_selector(
+            text="mock_target", required=True))
+
+    mock_ad = mock.MagicMock()
+    mock_ui_object = mock.MagicMock()
+    mock_ui_object.wait.exists.return_value = False
+    mock_ad.ui.return_value = mock_ui_object
+
+    with mock.patch.object(
+        self.platform,
+        "uiautomator_device",
+        return_value=contextlib.nullcontext(mock_ad)):
+      with self.assertRaises(AssertionError) as cm:
+        self.run_action(click_action)
+      self.assertIn("Element with selector", str(cm.exception))
+      self.assertIn("mock_target", str(cm.exception))
+      mock_ad.ui.assert_called_once_with(text="mock_target")
+      mock_ui_object.click.assert_not_called()
+
+  def test_click_ui_selector_non_required_element_not_found_success(self):
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_ui_selector(
+            text="mock_target", required=False))
+
+    mock_ad = mock.MagicMock()
+    mock_ui_object = mock.MagicMock()
+    mock_ui_object.wait.exists.return_value = False
+    mock_ad.ui.return_value = mock_ui_object
+
+    with mock.patch.object(
+        self.platform,
+        "uiautomator_device",
+        return_value=contextlib.nullcontext(mock_ad)):
+      self.run_action(click_action)
+      mock_ad.ui.assert_called_once_with(text="mock_target")
+      mock_ui_object.click.assert_not_called()
+
+  def test_click_ui_selector_required_element_found_clicks(self):
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_ui_selector(res="mock_res", required=True))
+
+    mock_ad = mock.MagicMock()
+    mock_ui_object = mock.MagicMock()
+    mock_ui_object.wait.exists.return_value = True
+    mock_ad.ui.return_value = mock_ui_object
+
+    with mock.patch.object(
+        self.platform,
+        "uiautomator_device",
+        return_value=contextlib.nullcontext(mock_ad)):
+      self.run_action(click_action)
+      mock_ad.ui.assert_called_once_with(res="mock_res")
+      mock_ui_object.click.assert_called_once()
+
+  def test_click_ui_selector_non_required_element_found_clicks(self):
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_ui_selector(
+            clazz="mock_clazz", required=False))
+
+    mock_ad = mock.MagicMock()
+    mock_ui_object = mock.MagicMock()
+    mock_ui_object.wait.exists.return_value = True
+    mock_ad.ui.return_value = mock_ui_object
+
+    with mock.patch.object(
+        self.platform,
+        "uiautomator_device",
+        return_value=contextlib.nullcontext(mock_ad)):
+      self.run_action(click_action)
+      mock_ad.ui.assert_called_once_with(clazz="mock_clazz")
+      mock_ui_object.click.assert_called_once()
 
 
 if __name__ == "__main__":
