@@ -28,6 +28,24 @@
         // Values: 0 = OFF, 1 = ON.
         "airplane_mode_on": "1"
 
+        // Disables Bluetooth to eliminate radio transmission and scanning
+        // power draw.
+        //
+        // Values (BluetoothAdapter states):
+        // 0 = STATE_OFF, 1 = STATE_TURNING_ON, 2 = STATE_ON,
+        // 3 = STATE_TURNING_OFF.
+        //
+        // Note: Disabling Bluetooth in Settings UI may leave bluetooth_on=2
+        // if background Bluetooth scanning is enabled. To fully turn it off,
+        // also set settings.global.ble_scan_always_enabled=0 or run:
+        // 'adb shell cmd bluetooth disable'.
+        "bluetooth_on": "0"
+
+        // Disables background Bluetooth LE scanning by apps and services when
+        // Bluetooth is toggled off. If left enabled (1), bluetooth_on remains
+        // 2. Values: 0 = OFF, 1 = ON.
+        "ble_scan_always_enabled": "0"
+
         // Ensures Battery Saver mode is OFF to prevent CPU throttling.
         // Values: 0 = OFF, 1 = ON.
         "low_power": "0"
