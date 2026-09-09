@@ -80,6 +80,15 @@
 
         // Enforces standard font scale (1.0) to avoid text reflow differences.
         "font_scale": "1.0"
+
+        // Disables auto-rotation to keep the display orientation locked.
+        // Values: 0 = OFF (locked), 1 = ON (auto-rotate).
+        "accelerometer_rotation": "0"
+
+        // Enforces Portrait orientation when rotation is locked.
+        // Values: 0 = PORTRAIT (0 deg), 1 = LANDSCAPE (90 deg),
+        // 2 = REVERSE_PORTRAIT (180 deg), 3 = REVERSE_LANDSCAPE (270 deg).
+        "user_rotation": "0"
       }
     }
     "device_config": {
