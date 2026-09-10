@@ -4,25 +4,30 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, Self
+from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
-  import datetime as dt
-
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
   from crossbench.types import JsonDict
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class WaitForElementAction(Action):
   TYPE: ClassVar[ActionType] = ActionType.WAIT_FOR_ELEMENT
+
+  selector: str = ""
+  expected_count: int = 1
+  check_rect: bool = False
+  or_more: bool = False
 
   @classmethod
   @override
@@ -39,35 +44,6 @@ class WaitForElementAction(Action):
     parser.add_argument("check_rect", type=bool, required=False, default=False)
     parser.add_argument("or_more", type=bool, required=False, default=False)
     return parser
-
-  def __init__(self,
-               selector: str,
-               expected_count: int,
-               or_more: bool,
-               check_rect: bool,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._selector = selector
-    self._expected_count = expected_count
-    self._or_more = or_more
-    self._check_rect = check_rect
-    super().__init__(timeout, index)
-
-  @property
-  def selector(self) -> str:
-    return self._selector
-
-  @property
-  def expected_count(self) -> int:
-    return self._expected_count
-
-  @property
-  def or_more(self) -> bool:
-    return self._or_more
-
-  @property
-  def check_rect(self) -> bool:
-    return self._check_rect
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:

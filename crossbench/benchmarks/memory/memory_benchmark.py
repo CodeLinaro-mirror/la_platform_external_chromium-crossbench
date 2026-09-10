@@ -403,8 +403,7 @@ class MemoryPage(LivePage):
       # Allocations are done via an injected script instead of via a test
       # page to ensure that if a killed tab is reloaded it does not attempt
       # to reallocate its payload.
-      actions = (JsAction(
-          script=None,
+      actions = (JsAction.create(
           script_path=pth.LocalPath(__file__).parent / "scripts" / "alloc.js",
           replacements=Replacements.create({
               "TARGET_MB": str(blocksize),

@@ -447,7 +447,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.assertEqual(actual_playback, str(expected_event))
 
   def test_click_touch_coordinates(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH, position=PositionConfig.from_coordinates(x=50, y=50))
 
     self.expect_touch_setup(expected_js=self._NO_ELEMENT_JS_RESULT)
@@ -457,7 +457,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.assert_coordinates_touched(Point(50, 50))
 
   def test_click_mouse_coordinates(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.MOUSE, position=PositionConfig.from_coordinates(x=50, y=50))
 
     self.expect_mouse_click(
@@ -469,7 +469,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
   def test_click_touch_coordinates_duration(self):
     click_duration = dt.timedelta(seconds=100)
 
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_coordinates(x=50, y=50),
         duration=click_duration)
@@ -483,7 +483,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
   def test_click_mouse_coordinates_duration(self):
     click_duration = dt.timedelta(seconds=100)
 
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.MOUSE,
         position=PositionConfig.from_coordinates(x=50, y=50),
         duration=click_duration)
@@ -496,7 +496,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_click_touch_selector_non_existent_element_raises(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(selector="div[]", required=True))
 
@@ -507,7 +507,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
       self.run_action(click_action)
 
   def test_click_mouse_selector_non_existent_element_raises(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.MOUSE,
         position=PositionConfig.from_selector(selector="div[]", required=True))
 
@@ -520,7 +520,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
       self.run_action(click_action)
 
   def test_click_touch_selector_non_required_element_success(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(selector="div[]", required=False))
 
@@ -530,7 +530,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_click_mouse_selector_non_required_element_success(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.MOUSE,
         position=PositionConfig.from_selector(selector="div[]", required=False))
 
@@ -541,7 +541,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_touch_selector_success(self):
 
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(selector="div[]", required=True))
 
@@ -570,7 +570,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_click_mouse_selector_success(self):
 
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.MOUSE,
         position=PositionConfig.from_selector(selector="div[]", required=True))
 
@@ -597,7 +597,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_click_wait_timeout_required(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(
             selector="#selector", required=True, wait=True),
@@ -611,7 +611,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
       self.run_action(click_action)
 
   def test_click_wait_timeout_unrequired(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(
             selector="#selector", required=False, wait=True),
@@ -628,7 +628,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
 
     scroll_duration: dt.timedelta = dt.timedelta(seconds=2)
 
-    scroll_action = ScrollAction(
+    scroll_action = ScrollAction.create(
         InputSource.TOUCH, distance=100, duration=scroll_duration)
 
     self.expect_touch_setup(
@@ -659,7 +659,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
 
     scroll_duration: dt.timedelta = dt.timedelta(seconds=2)
 
-    scroll_action = ScrollAction(
+    scroll_action = ScrollAction.create(
         InputSource.TOUCH, distance=1600, duration=scroll_duration)
 
     self.expect_touch_setup(
@@ -690,7 +690,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
         Point(960, 972), Point(960, 172), scroll_duration * 0.5)
 
   def test_scroll_touch_selector_required_not_found_raises(self):
-    scroll_action = ScrollAction(
+    scroll_action = ScrollAction.create(
         InputSource.TOUCH,
         distance=100,
         duration=dt.timedelta(seconds=2),
@@ -721,7 +721,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
       self.run_action(scroll_action)
 
   def test_scroll_touch_selector_not_found_does_nothing(self):
-    scroll_action = ScrollAction(
+    scroll_action = ScrollAction.create(
         InputSource.TOUCH,
         distance=100,
         duration=dt.timedelta(seconds=2),
@@ -756,7 +756,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
   def test_scroll_touch_selector_success(self):
     scroll_duration: dt.timedelta = dt.timedelta(seconds=0.5)
 
-    scroll_action = ScrollAction(
+    scroll_action = ScrollAction.create(
         InputSource.TOUCH,
         distance=100,
         duration=scroll_duration,

@@ -90,9 +90,9 @@ class ActionBlock(ConfigObject):
 
   @classmethod
   def from_url(cls, url: str, duration: dt.timedelta) -> ActionBlock:
-    actions: tuple[Action, ...] = (GetAction(url, duration),)
+    actions: tuple[Action, ...] = (GetAction.create(url, duration=duration),)
     if not duration:
-      actions += (WaitForReadyStateAction(),)
+      actions += (WaitForReadyStateAction.create(),)
     return ActionBlock(actions=actions)
 
   @override

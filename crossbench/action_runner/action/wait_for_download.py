@@ -4,10 +4,12 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import re
-from typing import TYPE_CHECKING, ClassVar, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
+from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench.action_runner.action.action import ACTION_TIMEOUT
@@ -25,8 +27,29 @@ if TYPE_CHECKING:
 # Left here for backwards compatibility.
 # New probe actions should not have individual class implementations.
 # They should just be used as ProbeActions directly.
+@dataclasses.dataclass(frozen=True, eq=False)
 class WaitForDownloadAction(BaseProbeAction):
   TYPE: ClassVar[ActionType] = ActionType.WAIT_FOR_DOWNLOAD
+  PROBE: ClassVar[str] = "downloads"
+
+  pattern: re.Pattern | None = None
+
+  @property
+  @override
+  def probe(self) -> str:
+    return self.PROBE
+
+  @classmethod
+  @override
+  def create(cls: type[Self],
+             pattern: re.Pattern | None = None,
+             timeout: dt.timedelta = ACTION_TIMEOUT,
+             index: int = 0) -> Self:
+    if pattern:
+      kwargs: immutabledict[str, Any] = immutabledict({"pattern": pattern})
+    else:
+      kwargs = immutabledict()
+    return cls(kwargs=kwargs, pattern=pattern, timeout=timeout, index=index)
 
   @classmethod
   @override
@@ -40,21 +63,9 @@ class WaitForDownloadAction(BaseProbeAction):
         required=True)
     return parser
 
-  def __init__(self,
-               pattern: re.Pattern,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    kwargs = {
-        "pattern": pattern,
-    }
-    super().__init__(
-        probe="downloads", kwargs=kwargs, timeout=timeout, index=index)
-
   @override
   def kwargs_to_json(self) -> JsonDict:
-    pattern = self.kwargs["pattern"]
-
+    pattern = self.pattern
     if isinstance(pattern, re.Pattern):
       pattern = pattern.pattern
-
     return {"pattern": pattern}

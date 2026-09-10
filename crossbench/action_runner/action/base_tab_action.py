@@ -5,23 +5,28 @@
 from __future__ import annotations
 
 import abc
+import dataclasses
 import functools
 from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, Self
+from crossbench.action_runner.action.action import Action, Self
 from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
-  import datetime as dt
   import re
 
   from crossbench.config import ConfigParser
   from crossbench.types import JsonDict
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class BaseTabAction(Action, metaclass=abc.ABCMeta):
+  tab_index: int | None = None
+  relative_tab_index: int | None = None
+  title: re.Pattern | None = None
+  url: re.Pattern | None = None
 
   @classmethod
   @override
@@ -44,44 +49,21 @@ class BaseTabAction(Action, metaclass=abc.ABCMeta):
     parser.add_argument("url", type=ObjectParser.regexp)
     return parser
 
-  def __init__(self,
-               tab_index: int | None = None,
-               relative_tab_index: int | None = None,
-               title: re.Pattern | None = None,
-               url: re.Pattern | None = None,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._tab_index = tab_index
-    self._title = title
-    self._url = url
-    self._relative_tab_index = relative_tab_index
-    super().__init__(timeout, index)
-
-  @property
-  def title(self) -> re.Pattern | None:
-    return self._title
-
-  @property
-  def url(self) -> re.Pattern | None:
-    return self._url
-
-  @property
-  def tab_index(self) -> int | None:
-    return self._tab_index
-
-  @property
-  def relative_tab_index(self) -> int | None:
-    return self._relative_tab_index
+  @override
+  def validate(self) -> None:
+    super().validate()
+    if self.relative_tab_index is not None and self.tab_index is not None:
+      raise ValueError("relative_tab_index and tab_index can not both be set")
 
   @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    if self._tab_index:
-      details["tab_index"] = self._tab_index
-    if self._title:
-      details["title"] = str(self._title.pattern)
-    if self._url:
-      details["url"] = str(self._url.pattern)
-    if self._relative_tab_index is not None:
-      details["relative_tab_index"] = self._relative_tab_index
+    if self.tab_index:
+      details["tab_index"] = self.tab_index
+    if self.title:
+      details["title"] = str(self.title.pattern)
+    if self.url:
+      details["url"] = str(self.url.pattern)
+    if self.relative_tab_index is not None:
+      details["relative_tab_index"] = self.relative_tab_index
     return details

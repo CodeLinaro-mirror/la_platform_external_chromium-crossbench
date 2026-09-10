@@ -94,11 +94,11 @@ class BlinkAIStory(PressBenchmarkStory):
       # Chrome's Built-in AI API strictly requires a trusted user gesture
       # to download and compile on-device models.
       if run.browser.attributes().is_chromium_based:
-        action = ClickAction(InputSource.DRIVER,
-                             PositionConfig.parse_str("#start-button"))
+        input_source = InputSource.DRIVER
       else:
-        action = ClickAction(InputSource.JS,
-                             PositionConfig.parse_str("#start-button"))
+        input_source = InputSource.JS
+      action = ClickAction.create(input_source,
+                                  PositionConfig.parse_str("#start-button"))
       run.action_runner.click(action)
       actions.wait_js_condition(
           "return window.testStatus !== 'running' && "

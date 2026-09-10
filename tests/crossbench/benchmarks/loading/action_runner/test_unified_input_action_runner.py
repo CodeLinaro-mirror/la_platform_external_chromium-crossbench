@@ -60,8 +60,8 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
     self.assertListEqual(actual_events, expected_events)
 
   def test_text_input_text_zero_duration(self):
-    text_input_action = TextInputAction(InputSource.KEYBOARD, dt.timedelta(),
-                                        "a")
+    text_input_action = TextInputAction.create(
+        InputSource.KEYBOARD, text="a", duration=dt.timedelta())
     self.run_action(text_input_action)
 
     self.assert_input_events_injected(
@@ -69,8 +69,8 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
          KeyEvent("KeyA", is_down=False)])
 
   def test_text_input_text_shift_modifier(self):
-    text_input_action = TextInputAction(InputSource.KEYBOARD, dt.timedelta(),
-                                        "A")
+    text_input_action = TextInputAction.create(
+        InputSource.KEYBOARD, text="A", duration=dt.timedelta())
     self.run_action(text_input_action)
 
     self.assert_input_events_injected([
@@ -83,8 +83,8 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
   def test_text_input_text_with_duration(self):
     # 2 seconds total for an action of length 4 ("abcd").
     # Each char has weight 10 (4 hold, 6 gap) -> 200ms hold, 300ms gap.
-    text_input_action = TextInputAction(InputSource.KEYBOARD,
-                                        dt.timedelta(seconds=2), "abcd")
+    text_input_action = TextInputAction.create(
+        InputSource.KEYBOARD, text="abcd", duration=dt.timedelta(seconds=2))
     self.run_action(text_input_action)
 
     self.assert_input_events_injected([
@@ -107,8 +107,8 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
     ])
 
   def test_text_input_text_shift_with_duration(self):
-    text_input_action = TextInputAction(InputSource.KEYBOARD,
-                                        dt.timedelta(milliseconds=100), "A")
+    text_input_action = TextInputAction.create(
+        InputSource.KEYBOARD, text="A", duration=dt.timedelta(milliseconds=100))
     self.run_action(text_input_action)
 
     self.assert_input_events_injected([
@@ -123,8 +123,8 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
     ])
 
   def test_text_input_keyevent_zero_duration(self):
-    text_input_action = TextInputAction(
-        InputSource.KEYBOARD, dt.timedelta(), keyevent="Enter")
+    text_input_action = TextInputAction.create(
+        InputSource.KEYBOARD, keyevent="Enter", duration=dt.timedelta())
     self.run_action(text_input_action)
 
     self.assert_input_events_injected(
@@ -132,8 +132,10 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
          KeyEvent("Enter", is_down=False)])
 
   def test_text_input_keyevent_with_duration(self):
-    text_input_action = TextInputAction(
-        InputSource.KEYBOARD, dt.timedelta(seconds=1), keyevent="Enter")
+    text_input_action = TextInputAction.create(
+        InputSource.KEYBOARD,
+        keyevent="Enter",
+        duration=dt.timedelta(seconds=1))
     self.run_action(text_input_action)
 
     self.assert_input_events_injected([
@@ -144,10 +146,10 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
     ])
 
   def test_text_input_with_source_device(self):
-    text_input_action = TextInputAction(
+    text_input_action = TextInputAction.create(
         InputSource.KEYBOARD,
-        dt.timedelta(),
-        "a",
+        duration=dt.timedelta(),
+        text="a",
         source_device="my_custom_keyboard")
     self.run_action(text_input_action)
 

@@ -4,26 +4,28 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.bond import BondAction
 from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.bond.bond import AddBotsConfig
 
 if TYPE_CHECKING:
-  import datetime as dt
-
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class MeetCreateAction(BondAction):
   TYPE: ClassVar[ActionType] = ActionType.MEET_CREATE
+
+  bots: AddBotsConfig | None = None
+  target: WindowTarget = WindowTarget.SELF
 
   @classmethod
   @override
@@ -35,22 +37,11 @@ class MeetCreateAction(BondAction):
         "target", type=WindowTarget.parse, default=WindowTarget.SELF)
     return parser
 
-  def __init__(self,
-               bots: AddBotsConfig | None = None,
-               target: WindowTarget = WindowTarget.SELF,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._bots = bots
-    self._target = target
-    super().__init__(timeout, index)
-
-  @property
-  def bots(self) -> AddBotsConfig | None:
-    return self._bots
-
-  @property
-  def target(self) -> WindowTarget:
-    return self._target
+  @override
+  def validate(self) -> None:
+    super().validate()
+    if self.bots is not None:
+      self.bots.validate()
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:

@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import logging
 from typing import TYPE_CHECKING, ClassVar
@@ -24,8 +25,40 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class JsAction(Action):
   TYPE: ClassVar[ActionType] = ActionType.JS
+
+  script: str = ""
+  script_path: pth.LocalPath | None = None
+  replacements: Replacements | None = None
+
+  @classmethod
+  @override
+  def create(cls: type[Self],
+             script: str | None = None,
+             script_path: pth.LocalPath | None = None,
+             replacements: Replacements | None = None,
+             timeout: dt.timedelta = ACTION_TIMEOUT,
+             index: int = 0) -> Self:
+    if bool(script) == bool(script_path):
+      raise ValueError(
+          f"One of {cls.__name__}.script or {cls.__name__}.script_path, "
+          "but not both, have to be specified.")
+    compiled: str = ""
+    if script:
+      compiled = script
+    elif script_path:
+      compiled = script_path.read_text()
+      logging.debug("Loading script from %s: %s", script_path, compiled)
+    if replacements:
+      compiled = replacements.apply(compiled)
+    return cls(
+        script=compiled,
+        script_path=script_path,
+        replacements=replacements,
+        timeout=timeout,
+        index=index)
 
   @classmethod
   @override
@@ -37,34 +70,6 @@ class JsAction(Action):
         "script_path", aliases=("path",), type=PathParser.existing_file_path)
     parser.add_argument("replacements", aliases=("replace",), type=Replacements)
     return parser
-
-  def __init__(self,
-               script: str | None,
-               script_path: pth.LocalPath | None,
-               replacements: Replacements | None = None,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._original_script = script
-    self._script_path = script_path
-    self._final_script = ""
-    self._replacements = replacements
-    if bool(script) == bool(script_path):
-      raise ValueError(
-          f"One of {self}.script or {self}.script_path, but not both, "
-          "have to specified. ")
-    if script:
-      self._final_script = script
-    elif script_path:
-      self._final_script = script_path.read_text()
-      logging.debug("Loading script from %s: %s", script_path, script)
-      # TODO: Support argument injection into shared file script.
-    if replacements:
-      self._final_script = replacements.apply(self._final_script)
-    super().__init__(timeout, index)
-
-  @property
-  def script(self) -> str:
-    return self._final_script
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:
@@ -80,10 +85,10 @@ class JsAction(Action):
   @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    if self._original_script:
-      details["script"] = self._original_script
-    if self._script_path:
-      details["script_path"] = str(self._script_path)
-    if self._replacements:
-      details["replacements"] = self._replacements.to_json()
+    if self.script_path:
+      details["script_path"] = str(self.script_path)
+    elif self.script:
+      details["script"] = self.script
+    if self.replacements:
+      details["replacements"] = self.replacements.to_json()
     return details

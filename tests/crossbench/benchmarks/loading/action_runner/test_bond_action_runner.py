@@ -109,7 +109,7 @@ class BondActionRunnerTestCase(BaseCrossbenchTestCase):
     mock_bond_client.add_bots.assert_called_once_with(
         "mock-conference-code", action.bots, timeout=dt.timedelta(seconds=29))
     mock_action_runner.get.assert_called_once_with(
-        GetAction(
+        GetAction.create(
             "https://meet.google.com/mock-conference-code",
             ready_state=ReadyState.COMPLETE,
             target=action.target,

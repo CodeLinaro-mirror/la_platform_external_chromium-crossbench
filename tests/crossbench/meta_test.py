@@ -209,37 +209,6 @@ class MetaTestCase(unittest.TestCase):
 class ConfigObjectMetaTest(unittest.TestCase):
 
   exempt_classes: Final[frozenset[str]] = frozenset({
-      "crossbench.action_runner.action.base_probe.BaseProbeAction",
-      "crossbench.action_runner.action.clear_cache.ClearCacheAction",
-      "crossbench.action_runner.action.click.ClickAction",
-      "crossbench.action_runner.action.close_all_tabs.CloseAllTabsAction",
-      "crossbench.action_runner.action.close_tab.CloseTabAction",
-      "crossbench.action_runner.action.dump_html.DumpHtmlAction",
-      "crossbench.action_runner.action.get.GetAction",
-      "crossbench.action_runner.action."
-      "inject_new_document_script.InjectNewDocumentScriptAction",
-      "crossbench.action_runner.action.js.JsAction",
-      "crossbench.action_runner.action.meet_create.MeetCreateAction",
-      "crossbench.action_runner.action.meet_script.MeetScriptAction",
-      "crossbench.action_runner.action.meminfo.MeminfoAction",
-      "crossbench.action_runner.action.open_devtools.OpenDevToolsAction",
-      "crossbench.action_runner.action.probe.ProbeAction",
-      "crossbench.action_runner.action.screenshot.ScreenshotAction",
-      "crossbench.action_runner.action.scroll.ScrollAction",
-      "crossbench.action_runner.action.swipe.SwipeAction",
-      "crossbench.action_runner.action.switch_frame.SwitchFrameAction",
-      "crossbench.action_runner.action.switch_tab.SwitchTabAction",
-      "crossbench.action_runner.action.text_input.TextInputAction",
-      "crossbench.action_runner.action.wait.WaitAction",
-      "crossbench.action_runner.action."
-      "wait_for_condition.WaitForConditionAction",
-      "crossbench.action_runner.action."
-      "wait_for_download.WaitForDownloadAction",
-      "crossbench.action_runner.action.wait_for_element.WaitForElementAction",
-      ("crossbench.action_runner.action."
-       "wait_for_url_matches.WaitForUrlMatchesAction"),
-      "crossbench.action_runner.action."
-      "wait_for_ready_state.WaitForReadyStateAction",
       "crossbench.benchmarks.loading.config.login.base.BaseLoginBlock",
       "crossbench.cli.config.flags.FlagsConfig",
   })

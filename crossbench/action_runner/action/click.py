@@ -4,13 +4,13 @@
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import functools
 from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_input_source import InputSourceAction
 from crossbench.action_runner.action.position import PositionConfig, \
@@ -24,8 +24,13 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class ClickAction(InputSourceAction):
   TYPE: ClassVar[ActionType] = ActionType.CLICK
+
+  position: PositionConfig = dataclasses.field(default_factory=PositionConfig)
+  attempts: int = 1
+  verify: str | None = None
 
   @classmethod
   @override
@@ -46,37 +51,11 @@ class ClickAction(InputSourceAction):
 
     return parser
 
-  def __init__(self,
-               source: InputSource,
-               position: PositionConfig,
-               attempts: int = 1,
-               duration: dt.timedelta = dt.timedelta(),
-               verify: str | None = None,
-               source_device: str | None = None,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._position = position
-    self._attempts = attempts
-    self._verify = verify
-    super().__init__(source, duration, source_device, timeout, index)
-
-  @property
-  def position(self) -> PositionConfig:
-    return self._position
-
   @property
   def selector(self) -> SelectorConfig:
-    if selector := self._position.selector:
+    if selector := self.position.selector:
       return selector
     raise ValueError(f"{self.position} has no selector")
-
-  @property
-  def attempts(self) -> int:
-    return self._attempts
-
-  @property
-  def verify(self) -> str | None:
-    return self._verify
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:
@@ -86,10 +65,13 @@ class ClickAction(InputSourceAction):
   def validate(self) -> None:
     super().validate()
 
-    if self._input_source is InputSource.JS and self.position.coordinates:
+    if not self.position:
+      raise ValueError(f"{self}.position is missing")
+
+    if self.input_source is InputSource.JS and self.position.coordinates:
       raise ValueError("X,Y Coordinates cannot be used with JS click source.")
 
-    if self._attempts != 1:
+    if self.attempts != 1:
       if not self.position.selector:
         raise ValueError(
             "multiple attempts can only be used with a selector position.")
@@ -109,8 +91,8 @@ class ClickAction(InputSourceAction):
   @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    details["position"] = self._position.to_json()
-    if self._verify:
-      details["verify"] = self._verify
-    details["attempts"] = self._attempts
+    details["position"] = self.position.to_json()
+    if self.verify:
+      details["verify"] = self.verify
+    details["attempts"] = self.attempts
     return details

@@ -290,8 +290,8 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
 
     selector_config = SelectorConfig(
         self.BUTTON_SELECTOR, required=True, scroll_into_view=False, wait=False)
-    action = ClickAction(InputSource.TOUCH,
-                         PositionConfig(selector=selector_config))
+    action = ClickAction.create(InputSource.TOUCH,
+                                PositionConfig(selector=selector_config))
     try:
       run.action_runner.click_touch(action)
       return True

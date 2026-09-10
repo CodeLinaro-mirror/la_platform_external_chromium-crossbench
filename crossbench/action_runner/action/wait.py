@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class WaitAction(DurationAction):
   TYPE: ClassVar[ActionType] = ActionType.WAIT
 

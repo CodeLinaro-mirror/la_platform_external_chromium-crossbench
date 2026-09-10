@@ -4,16 +4,16 @@
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, ClassVar, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
-from crossbench.action_runner.action.base_duration import DurationAction
-from crossbench.parse import NumberParser
+from crossbench.action_runner.action.base_duration import BaseDurationAction
+from crossbench.parse import DurationParser, NumberParser
 
 if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
@@ -21,8 +21,21 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
-class SwipeAction(DurationAction):
+@dataclasses.dataclass(frozen=True, eq=False)
+class SwipeAction(BaseDurationAction):
+  DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=1)
   TYPE: ClassVar[ActionType] = ActionType.SWIPE
+
+  start_x: int = 0
+  start_y: int = 0
+  end_x: int = 0
+  end_y: int = 0
+
+  @classmethod
+  @override
+  def create(cls: type[Self], *args: Any, **kwargs: Any) -> Self:
+    kwargs.setdefault("duration", cls.DEFAULT_DURATION)
+    return super().create(*args, **kwargs)
 
   @classmethod
   @override
@@ -43,37 +56,19 @@ class SwipeAction(DurationAction):
         "end_x", aliases=("endx",), type=NumberParser.any_int, required=True)
     parser.add_argument(
         "end_y", aliases=("endy",), type=NumberParser.any_int, required=True)
+    parser.add_argument(
+        "duration",
+        type=DurationParser.positive_duration,
+        default=cls.DEFAULT_DURATION)
     return parser
 
-  def __init__(self,
-               start_x: int,
-               start_y: int,
-               end_x: int,
-               end_y: int,
-               duration: dt.timedelta = dt.timedelta(seconds=1),
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._start_x: int = start_x
-    self._start_y: int = start_y
-    self._end_x: int = end_x
-    self._end_y: int = end_y
-    super().__init__(duration, timeout, index)
-
-  @property
-  def start_x(self) -> int:
-    return self._start_x
-
-  @property
-  def start_y(self) -> int:
-    return self._start_y
-
-  @property
-  def end_x(self) -> int:
-    return self._end_x
-
-  @property
-  def end_y(self) -> int:
-    return self._end_y
+  @override
+  def validate(self) -> None:
+    super().validate()
+    NumberParser.any_int(self.start_x, f"{self}.start_x")
+    NumberParser.any_int(self.start_y, f"{self}.start_y")
+    NumberParser.any_int(self.end_x, f"{self}.end_x")
+    NumberParser.any_int(self.end_y, f"{self}.end_y")
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:
@@ -82,8 +77,8 @@ class SwipeAction(DurationAction):
   @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    details["start_x"] = self._start_x
-    details["start_y"] = self._start_y
-    details["end_x"] = self._end_x
-    details["end_y"] = self._end_y
+    details["start_x"] = self.start_x
+    details["start_y"] = self.start_y
+    details["end_x"] = self.end_x
+    details["end_y"] = self.end_y
     return details

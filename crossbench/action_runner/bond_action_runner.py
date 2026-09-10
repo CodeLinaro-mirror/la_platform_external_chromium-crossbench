@@ -86,7 +86,7 @@ class BondActionRunner:
           timeout=self._timeout_from_deadline(deadline))
     url = f"https://meet.google.com/{conference_code}"
     self._action_runner.get(
-        GetAction(
+        GetAction.create(
             url,
             ready_state=ReadyState.COMPLETE,
             target=action.target,

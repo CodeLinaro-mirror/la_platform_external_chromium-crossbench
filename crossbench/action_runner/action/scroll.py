@@ -4,13 +4,13 @@
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, ClassVar, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_input_source import InputSourceAction
 from crossbench.benchmarks.loading.input_source import InputSource
@@ -22,8 +22,20 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class ScrollAction(InputSourceAction):
+  DEFAULT_DURATION: ClassVar[dt.timedelta] = dt.timedelta(seconds=1)
   TYPE: ClassVar[ActionType] = ActionType.SCROLL
+
+  distance: float = 500.0
+  selector: str | None = None
+  required: bool = False
+
+  @classmethod
+  @override
+  def create(cls: type[Self], *args: Any, **kwargs: Any) -> Self:
+    kwargs.setdefault("duration", cls.DEFAULT_DURATION)
+    return super().create(*args, **kwargs)
 
   @classmethod
   @override
@@ -34,38 +46,10 @@ class ScrollAction(InputSourceAction):
     parser.add_argument(
         "duration",
         type=DurationParser.positive_duration,
-        default=dt.timedelta(seconds=1))
+        default=cls.DEFAULT_DURATION)
     parser.add_argument("selector", type=ObjectParser.non_empty_str)
     parser.add_argument("required", type=ObjectParser.bool, default=False)
     return parser
-
-  def __init__(self,
-               source: InputSource,
-               distance: float = 500.0,
-               duration: dt.timedelta = dt.timedelta(seconds=1),
-               selector: str | None = None,
-               required: bool = False,
-               source_device: str | None = None,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._distance = distance
-
-    # TODO: convert to custom selector object.
-    self._selector = selector
-    self._required = required
-    super().__init__(source, duration, source_device, timeout, index)
-
-  @property
-  def distance(self) -> float:
-    return self._distance
-
-  @property
-  def selector(self) -> str | None:
-    return self._selector
-
-  @property
-  def required(self) -> bool:
-    return self._required
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:
@@ -88,5 +72,9 @@ class ScrollAction(InputSourceAction):
   @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    details["distance"] = str(self.distance)
+    details["distance"] = self.distance
+    if self.selector:
+      details["selector"] = self.selector
+    if self.required:
+      details["required"] = self.required
     return details

@@ -4,13 +4,13 @@
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import functools
 from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_duration import BaseDurationAction
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
@@ -24,8 +24,13 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class GetAction(BaseDurationAction):
   TYPE: ClassVar[ActionType] = ActionType.GET
+
+  url: str = ""
+  ready_state: ReadyState = ReadyState.ANY
+  target: WindowTarget = WindowTarget.SELF
 
   @classmethod
   @override
@@ -54,45 +59,18 @@ class GetAction(BaseDurationAction):
         "target", type=WindowTarget.parse, default=WindowTarget.SELF)
     return parser
 
-  def __init__(self,
-               url: str,
-               duration: dt.timedelta = dt.timedelta(),
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               ready_state: ReadyState = ReadyState.ANY,
-               target: WindowTarget = WindowTarget.SELF,
-               index: int = 0) -> None:
-    if not url:
+  @override
+  def validate(self) -> None:
+    if not self.url:
       raise ValueError(f"{self}.url is missing")
-    self._url: str = url
-    self._ready_state = ready_state
-    self._target = target
-    super().__init__(duration, timeout, index)
+    super().validate()
 
   @override
   def validate_duration(self) -> None:
-    if self.ready_state != ReadyState.ANY:
-      if self.duration != dt.timedelta():
-        raise ValueError(
-            f"Expected empty duration with ReadyState {self.ready_state} "
-            f"but got: {self.duration}")
-      self._duration = dt.timedelta()
-
-  @property
-  def url(self) -> str:
-    return self._url
-
-  @property
-  def ready_state(self) -> ReadyState:
-    return self._ready_state
-
-  @property
-  @override
-  def duration(self) -> dt.timedelta:
-    return self._duration
-
-  @property
-  def target(self) -> WindowTarget:
-    return self._target
+    if self.ready_state != ReadyState.ANY and self.duration != dt.timedelta():
+      raise ValueError(
+          f"Expected empty duration with ReadyState {self.ready_state} "
+          f"but got: {self.duration}")
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:

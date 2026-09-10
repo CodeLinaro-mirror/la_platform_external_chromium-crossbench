@@ -10,6 +10,7 @@ import unittest
 from crossbench.action_runner.action.action import ACTION_TIMEOUT, ACTIONS, \
     Action
 from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.all import ACTIONS_TUPLE
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.close_all_tabs import CloseAllTabsAction
 from crossbench.action_runner.action.close_tab import CloseTabAction
@@ -1230,6 +1231,12 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.TYPE, ActionType.DUMP_HTML)
     self.assertEqual(action.probe_cls, DumpHtmlProbe)
     self.assertFalse(action.kwargs)
+
+  def test_all_actions_validate_on_init(self):
+    for action_cls in ACTIONS_TUPLE:
+      with self.subTest(action_cls=action_cls.__name__):
+        with self.assertRaises(ValueError):
+          action_cls.config_parser().parse({"timeout": "-10s"})
 
 
 class PositionConfigTestCase(unittest.TestCase):

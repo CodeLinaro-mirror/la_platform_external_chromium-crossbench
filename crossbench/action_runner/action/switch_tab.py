@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 from typing import TYPE_CHECKING, ClassVar, Self
 
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
   from crossbench.config import ConfigParser
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class SwitchTabAction(BaseTabAction):
   TYPE: ClassVar[ActionType] = ActionType.SWITCH_TAB
 

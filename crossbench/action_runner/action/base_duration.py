@@ -4,35 +4,27 @@
 
 from __future__ import annotations
 
+import dataclasses
+import datetime as dt
 import functools
 from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, Self
+from crossbench.action_runner.action.action import Action, Self
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.parse import DurationParser
 
 if TYPE_CHECKING:
-  import datetime as dt
-
   from crossbench.config import ConfigParser
   from crossbench.types import JsonDict
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class BaseDurationAction(Action):
-
-  def __init__(self,
-               duration: dt.timedelta,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._duration: dt.timedelta = duration
-    super().__init__(timeout, index)
-
-  @property
-  @override
-  def duration(self) -> dt.timedelta:
-    return self._duration
+  """Base class for actions with a duration (swipe, scroll, get, etc.)."""
+  duration: dt.timedelta = dataclasses.field(
+      default=dt.timedelta(), kw_only=True)
 
   @override
   def validate(self) -> None:
@@ -51,7 +43,9 @@ class BaseDurationAction(Action):
     return details
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class DurationAction(BaseDurationAction):
+  """Base class for wait actions requiring an explicit duration argument."""
   TYPE: ClassVar[ActionType] = ActionType.WAIT
 
   @classmethod

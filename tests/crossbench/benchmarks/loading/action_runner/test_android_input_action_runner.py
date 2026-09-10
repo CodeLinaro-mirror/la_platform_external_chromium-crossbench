@@ -193,20 +193,21 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_swipe(self):
     self.platform.expect_sh("input", "swipe", "0", "1", "2", "3", "3000")
-    swipe_action = SwipeAction(0, 1, 2, 3, dt.timedelta(milliseconds=3000))
+    swipe_action = SwipeAction.create(
+        0, 1, 2, 3, duration=dt.timedelta(milliseconds=3000))
     self.run_action(swipe_action)
 
   def test_text_input_zero_duration(self):
     self.platform.expect_sh("input", "keyboard", "text", "Some%ssample%stext")
-    text_input_action = TextInputAction(InputSource.KEYBOARD, dt.timedelta(),
-                                        "Some sample text")
+    text_input_action = TextInputAction.create(
+        InputSource.KEYBOARD, text="Some sample text", duration=dt.timedelta())
     self.assertFalse(self.runner.mock_waits)
     self.run_action(text_input_action)
     self.assertFalse(self.runner.mock_waits)
 
   def test_text_input_non_zero_duration(self):
-    text_input_action = TextInputAction(InputSource.KEYBOARD,
-                                        dt.timedelta(seconds=1), "aaa")
+    text_input_action = TextInputAction.create(
+        InputSource.KEYBOARD, text="aaa", duration=dt.timedelta(seconds=1))
     for _ in range(3):
       self.platform.expect_sh("input", "keyboard", "text", "a")
     self.assertFalse(self.runner.mock_waits)
@@ -214,7 +215,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.assertTrue(self.runner.mock_waits)
 
   def test_click_touch_coordinates(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_coordinates(x=100, y=200))
 
@@ -223,7 +224,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_click_mouse_coordinates(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.MOUSE,
         position=PositionConfig.from_coordinates(x=100, y=200))
 
@@ -232,7 +233,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_click_mouse_non_zero_duration_fails(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.MOUSE,
         duration=dt.timedelta(seconds=1),
         position=PositionConfig.from_coordinates(x=0, y=0))
@@ -242,7 +243,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.assertIn("Non-zero", str(cm.exception))
 
   def test_click_touch_non_zero_duration_fails(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         duration=dt.timedelta(seconds=1),
         position=PositionConfig.from_coordinates(x=0, y=0))
@@ -252,7 +253,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.assertIn("Non-zero", str(cm.exception))
 
   def test_click_selector_passes_selector_string(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(selector="div[]", required=False))
 
@@ -261,7 +262,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_click_selector_scroll_into_view_passes_scroll_true(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(
             selector="div[]", required=False, scroll_into_view=True))
@@ -271,7 +272,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_click_selector_non_existant_element_raises(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(selector="div[]", required=True))
 
@@ -282,7 +283,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.assertIn("matching DOM", str(cm.exception))
 
   def test_click_touch_selector_non_required_element_success(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(selector="div[]", required=False))
 
@@ -291,7 +292,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_click_mouse_selector_non_required_element_success(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.MOUSE,
         position=PositionConfig.from_selector(selector="div[]", required=False))
 
@@ -300,7 +301,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_click_touch_selector_success(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(selector="div[]", required=True))
 
@@ -314,7 +315,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_click_mouse_selector_success(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.MOUSE,
         position=PositionConfig.from_selector(selector="div[]", required=True))
 
@@ -328,7 +329,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_click_wait_timeout_required(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.MOUSE,
         position=PositionConfig.from_selector(
             selector="#selector", required=True, wait=True),
@@ -340,7 +341,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
       self.run_action(click_action)
 
   def test_click_wait_timeout_unrequired(self):
-    click_action = ClickAction(
+    click_action = ClickAction.create(
         InputSource.MOUSE,
         position=PositionConfig.from_selector(
             selector="#selector", required=False, wait=True),
@@ -354,7 +355,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(click_action)
 
   def test_scroll_selector_non_required_element_success(self):
-    scroll_action = ScrollAction(
+    scroll_action = ScrollAction.create(
         InputSource.TOUCH, distance=100, selector="div[]", required=False)
 
     self.expect_action_setup(found_element=False)
@@ -362,7 +363,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
   def test_scroll_touch_selector_non_existant_element_raises(self):
-    scroll_action = ScrollAction(
+    scroll_action = ScrollAction.create(
         InputSource.TOUCH, distance=100, selector="div[]", required=True)
 
     self.expect_action_setup(found_element=False)
@@ -372,7 +373,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.assertIn("matching DOM", str(cm.exception))
 
   def test_scroll_distance_converted_to_css_pixels(self):
-    scroll_action = ScrollAction(InputSource.TOUCH, distance=100)
+    scroll_action = ScrollAction.create(InputSource.TOUCH, distance=100)
 
     self.expect_action_setup(
         found_element=False,
@@ -385,7 +386,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
   def test_scroll_positive_direction(self):
-    scroll_action = ScrollAction(InputSource.TOUCH, distance=1)
+    scroll_action = ScrollAction.create(InputSource.TOUCH, distance=1)
 
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 10, 10))
@@ -395,7 +396,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
   def test_scroll_negative_direction(self):
-    scroll_action = ScrollAction(InputSource.TOUCH, distance=-1)
+    scroll_action = ScrollAction.create(InputSource.TOUCH, distance=-1)
 
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 10, 10))
@@ -405,7 +406,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
   def test_scroll_window_scrolls_window_bounds(self):
-    scroll_action = ScrollAction(InputSource.TOUCH, distance=80)
+    scroll_action = ScrollAction.create(InputSource.TOUCH, distance=80)
 
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 100, 100))
@@ -415,7 +416,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
   def test_scroll_element_scrolls_element_bounds(self):
-    scroll_action = ScrollAction(
+    scroll_action = ScrollAction.create(
         InputSource.TOUCH, distance=10, selector="div[]", required=True)
 
     self.expect_action_setup(
@@ -428,7 +429,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
   def test_scroll_touch_duration_single_scroll(self):
-    scroll_action = ScrollAction(
+    scroll_action = ScrollAction.create(
         InputSource.TOUCH,
         distance=80,
         duration=dt.timedelta(milliseconds=3000))
@@ -441,7 +442,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(scroll_action)
 
   def test_scroll_is_chunked(self):
-    scroll_action = ScrollAction(InputSource.TOUCH, distance=999)
+    scroll_action = ScrollAction.create(InputSource.TOUCH, distance=999)
 
     self.expect_action_setup(
         found_element=False, app_bounds=DisplayRectangle(Point(0, 0), 100, 100))

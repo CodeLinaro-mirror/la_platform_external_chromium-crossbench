@@ -69,7 +69,7 @@ class WebPowerPageLoadStory(WebPowerStory):
         #  1. Currently available cache-clearing mechanisms.
         #  2. The resolution of power-measuring instruments such as ODPM.
         with run.actions(f"Cache_Clear_{i}"):
-          run.action_runner.clear_cache(ClearCacheAction())
+          run.action_runner.clear_cache(ClearCacheAction.create())
         with run.actions(f"Close_Tab_{i}"):
           run.browser.close_tab(tab_index=0, timeout=dt.timedelta(seconds=1))
         with run.actions(f"Page_Load_{i}") as actions:

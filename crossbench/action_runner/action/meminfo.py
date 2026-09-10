@@ -4,14 +4,16 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
-from typing import TYPE_CHECKING, ClassVar, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Self
 
+from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
-from crossbench.action_runner.action.probe import BaseProbeAction
+from crossbench.action_runner.action.base_probe import BaseProbeAction
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
@@ -23,8 +25,45 @@ if TYPE_CHECKING:
 # Left here for backwards compatibility.
 # New probe actions should not have individual class implementations.
 # They should just be used as ProbeActions directly.
+@dataclasses.dataclass(frozen=True, eq=False)
 class MeminfoAction(BaseProbeAction):
   TYPE: ClassVar[ActionType] = ActionType.MEMINFO
+  PROBE: ClassVar[str] = "meminfo"
+
+  browser: bool = True
+  packages: tuple[str, ...] = ()
+  title: str | None = None
+  system: bool = False
+
+  @property
+  @override
+  def probe(self) -> str:
+    return self.PROBE
+
+  @classmethod
+  @override
+  def create(cls: type[Self],
+             browser: bool = True,
+             packages: Iterable[str] = (),
+             title: str | None = None,
+             system: bool = False,
+             timeout: dt.timedelta = ACTION_TIMEOUT,
+             index: int = 0) -> Self:
+    packages = tuple(packages)
+    kwargs: immutabledict[str, Any] = immutabledict({
+        "browser": browser,
+        "system": system,
+        "packages": packages,
+        "title": title,
+    })
+    return cls(
+        kwargs=kwargs,
+        browser=browser,
+        packages=packages,
+        title=title,
+        system=system,
+        timeout=timeout,
+        index=index)
 
   @classmethod
   @override
@@ -38,18 +77,9 @@ class MeminfoAction(BaseProbeAction):
     parser.add_argument("title", type=ObjectParser.non_empty_str, default=None)
     return parser
 
-  def __init__(self,
-               browser: bool = True,
-               packages: tuple[str, ...] = (),
-               title: str | None = None,
-               system: bool = False,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    kwargs = {
-        "browser": browser,
-        "system": system,
-        "packages": packages,
-        "title": title
-    }
-    super().__init__(
-        probe="meminfo", kwargs=kwargs, timeout=timeout, index=index)
+  @override
+  def validate(self) -> None:
+    super().validate()
+    if not self.browser and not self.system and not self.packages:
+      raise ValueError(f"{self} requires at least one of browser, system, "
+                       "or packages to be specified.")

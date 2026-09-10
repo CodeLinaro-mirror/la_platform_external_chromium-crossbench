@@ -4,7 +4,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar
+import dataclasses
+from typing import TYPE_CHECKING, Any, ClassVar, Self
+
+from immutabledict import immutabledict
+from typing_extensions import override
 
 from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
@@ -17,15 +21,24 @@ if TYPE_CHECKING:
 # Left here for backwards compatibility.
 # New probe actions should not have individual class implementations.
 # They should just be used as ProbeActions directly.
+@dataclasses.dataclass(frozen=True, eq=False)
 class DumpHtmlAction(BaseProbeAction):
   TYPE: ClassVar[ActionType] = ActionType.DUMP_HTML
+  PROBE: ClassVar[str] = "dump_html"
 
-  def __init__(self,
-               suffix: str | None = None,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    kwargs = {}
+  @property
+  @override
+  def probe(self) -> str:
+    return self.PROBE
+
+  @classmethod
+  @override
+  def create(cls: type[Self],
+             suffix: str | None = None,
+             timeout: dt.timedelta = ACTION_TIMEOUT,
+             index: int = 0) -> Self:
     if suffix:
-      kwargs["suffix"] = suffix
-    super().__init__(
-        probe="dump_html", kwargs=kwargs, timeout=timeout, index=index)
+      kwargs: immutabledict[str, Any] = immutabledict({"suffix": suffix})
+    else:
+      kwargs = immutabledict()
+    return cls(kwargs=kwargs, timeout=timeout, index=index)

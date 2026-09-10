@@ -8,6 +8,7 @@ import datetime as dt
 import unittest
 
 from crossbench.action_runner.action.get import GetAction
+from crossbench.action_runner.action.js import JsAction
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.config.login.custom import LoginBlock
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin
@@ -27,7 +28,8 @@ class ActionBlockTestCase(unittest.TestCase):
     self.assertSetEqual({block}, {block, block})
 
   def test_single_action(self):
-    action = GetAction("http://test.com", duration=dt.timedelta(seconds=3))
+    action = GetAction.create(
+        "http://test.com", duration=dt.timedelta(seconds=3))
     block = ActionBlock(actions=(action,))
     self.assertTrue(bool(block))
     self.assertFalse(block.is_login)
@@ -44,8 +46,10 @@ class ActionBlockTestCase(unittest.TestCase):
     self.assertEqual(block.duration, dt.timedelta(seconds=3))
 
   def test_multi_action(self):
-    action_2 = GetAction("http://test.com/0", duration=dt.timedelta(seconds=1))
-    action_1 = GetAction("http://test.com/1", duration=dt.timedelta(seconds=2))
+    action_2 = GetAction.create(
+        "http://test.com/0", duration=dt.timedelta(seconds=1))
+    action_1 = GetAction.create(
+        "http://test.com/1", duration=dt.timedelta(seconds=2))
     block = ActionBlock(actions=(action_1, action_2))
     self.assertTrue(bool(block))
     self.assertFalse(block.is_login)
@@ -61,11 +65,28 @@ class ActionBlockTestCase(unittest.TestCase):
     self.assertEqual(len(block), 2)
     self.assertEqual(block.duration, dt.timedelta(seconds=3))
 
+  def test_multi_action_with_zero_duration(self):
+    action_1 = GetAction.create(
+        "http://test.com/1", duration=dt.timedelta(seconds=2))
+    action_2 = JsAction.create("console.log('hi');")
+    self.assertEqual(action_2.duration, dt.timedelta())
+    with self.assertRaises(TypeError):
+      JsAction(duration=dt.timedelta(seconds=1))  # type: ignore[call-arg]
+    with self.assertRaises(TypeError):
+      JsAction.create(
+          duration=dt.timedelta(seconds=1))  # type: ignore[call-arg]
+    block = ActionBlock(actions=(action_1, action_2))
+    self.assertEqual(block.duration, dt.timedelta(seconds=2))
+
+    block = ActionBlock.parse(block.to_json())
+    self.assertEqual(block.duration, dt.timedelta(seconds=2))
+
 
 class LoginBlockTestCase(unittest.TestCase):
 
   def test_single_action(self):
-    action = GetAction("http://test.com", duration=dt.timedelta(seconds=3))
+    action = GetAction.create(
+        "http://test.com", duration=dt.timedelta(seconds=3))
     block = LoginBlock(actions=(action,))
     self.assertTrue(bool(block))
     self.assertTrue(block.is_login)
@@ -80,8 +101,10 @@ class LoginBlockTestCase(unittest.TestCase):
     self.assertEqual(block.duration, dt.timedelta(seconds=3))
 
   def test_multi_action(self):
-    action_2 = GetAction("http://test.com/0", duration=dt.timedelta(seconds=1))
-    action_1 = GetAction("http://test.com/1", duration=dt.timedelta(seconds=2))
+    action_2 = GetAction.create(
+        "http://test.com/0", duration=dt.timedelta(seconds=1))
+    action_1 = GetAction.create(
+        "http://test.com/1", duration=dt.timedelta(seconds=2))
     block = LoginBlock(actions=(action_1, action_2))
     self.assertTrue(bool(block))
     self.assertTrue(block.is_login)

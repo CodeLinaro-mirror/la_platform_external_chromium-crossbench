@@ -4,25 +4,27 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, Self
+from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
-  import datetime as dt
-
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
   from crossbench.types import JsonDict
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class WaitForConditionAction(Action):
   TYPE: ClassVar[ActionType] = ActionType.WAIT_FOR_CONDITION
+
+  condition: str = ""
 
   @classmethod
   @override
@@ -32,17 +34,6 @@ class WaitForConditionAction(Action):
     parser.add_argument(
         "condition", type=ObjectParser.non_empty_str, required=True)
     return parser
-
-  def __init__(self,
-               condition: str,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._condition = condition
-    super().__init__(timeout, index)
-
-  @property
-  def condition(self) -> str:
-    return self._condition
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:

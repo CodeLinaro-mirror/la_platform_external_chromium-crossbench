@@ -4,13 +4,13 @@
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import functools
 from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_input_source import InputSourceAction
 from crossbench.benchmarks.loading.input_source import InputSource
@@ -22,8 +22,12 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class TextInputAction(InputSourceAction):
   TYPE: ClassVar[ActionType] = ActionType.TEXT_INPUT
+
+  text: str | None = None
+  keyevent: str | None = None
 
   @classmethod
   @override
@@ -42,26 +46,6 @@ class TextInputAction(InputSourceAction):
         type=DurationParser.positive_or_zero_duration,
         default=dt.timedelta())
     return parser
-
-  def __init__(self,
-               source: InputSource,
-               duration: dt.timedelta,
-               text: str | None = None,
-               keyevent: str | None = None,
-               source_device: str | None = None,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._text: str | None = text
-    self._keyevent: str | None = keyevent
-    super().__init__(source, duration, source_device, timeout, index)
-
-  @property
-  def text(self) -> str | None:
-    return self._text
-
-  @property
-  def keyevent(self) -> str | None:
-    return self._keyevent
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:
@@ -86,8 +70,8 @@ class TextInputAction(InputSourceAction):
   @override
   def to_json(self) -> JsonDict:
     details = super().to_json()
-    if text := self._text:
+    if text := self.text:
       details["text"] = text
-    if keyevent := self._keyevent:
+    if keyevent := self.keyevent:
       details["keyevent"] = keyevent
     return details

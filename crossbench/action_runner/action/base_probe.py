@@ -4,50 +4,47 @@
 
 from __future__ import annotations
 
-import functools
+import abc
+import dataclasses
 from typing import TYPE_CHECKING, Any
 
 from immutabledict import immutabledict
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, Self
+from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.probes.all import PROBE_LOOKUP
 
 if TYPE_CHECKING:
-  import datetime as dt
-
   from crossbench.action_runner.base import ActionRunner
-  from crossbench.config import ConfigParser
   from crossbench.probes.probe import Probe
   from crossbench.types import JsonDict
 
 
-class BaseProbeAction(Action):
+@dataclasses.dataclass(frozen=True, eq=False)
+class BaseProbeAction(Action, metaclass=abc.ABCMeta):
+  kwargs: immutabledict[str,
+                        Any] = dataclasses.field(default_factory=immutabledict)
 
-  @classmethod
-  @override
-  @functools.cache
-  def config_parser(cls: type[Self]) -> ConfigParser[Self]:
-    parser = super().config_parser()
-    return parser
-
-  def __init__(self,
-               probe: str,
-               kwargs: dict[str, Any],
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._probe_cls = PROBE_LOOKUP[probe]
-    self._kwargs: immutabledict[str, Any] = immutabledict(kwargs)
-    super().__init__(timeout, index)
+  @property
+  @abc.abstractmethod
+  def probe(self) -> str:
+    pass
 
   @property
   def probe_cls(self) -> type[Probe]:
-    return self._probe_cls
+    return PROBE_LOOKUP[self.probe]
 
-  @property
-  def kwargs(self) -> immutabledict[str, Any]:
-    return self._kwargs
+  @override
+  def validate(self) -> None:
+    super().validate()
+    if not self.probe:
+      raise ValueError(f"{self}.probe is missing")
+    if self.probe not in PROBE_LOOKUP:
+      raise ValueError(f"Unknown probe: {self.probe}")
+    if not isinstance(self.kwargs, immutabledict):
+      raise ValueError(f"{self}.kwargs must be an immutabledict, "
+                       f"but got {type(self.kwargs).__name__}")
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:

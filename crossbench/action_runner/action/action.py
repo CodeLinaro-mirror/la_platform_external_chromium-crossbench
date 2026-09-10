@@ -5,17 +5,18 @@
 from __future__ import annotations
 
 import abc
+import dataclasses
 import datetime as dt
 import functools
 import json
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Self, cast
 
 from typing_extensions import override
 
 from crossbench import exception
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.config import ConfigObject, ConfigParser, UnusedPropertiesMode
-from crossbench.parse import DurationParser, NumberParser, ObjectParser
+from crossbench.parse import DurationParser, NumberParser
 
 if TYPE_CHECKING:
   import urllib.parse as urlparse
@@ -24,8 +25,8 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
-class ActionTypeConfigParser(ConfigParser):
-  """Custom ConfigParser for ActionType that works on
+class ActionTypeConfigParser(ConfigParser[ActionType]):
+  """Special parser that does not warn about unused properties for generic
   Action Configs. This way we can pop the 'value' or 'type' key from the
   config dict."""
 
@@ -33,13 +34,11 @@ class ActionTypeConfigParser(ConfigParser):
     super().__init__(
         ActionType, unused_properties_mode=UnusedPropertiesMode.IGNORE)
     self.add_argument(
-        "action",
-        aliases=("type",),
-        type=ObjectParser.non_empty_str,
-        required=True)
+        "action", aliases=("type",), type=ActionType.parse, required=True)
 
   def new_instance_from_kwargs(self, kwargs: dict[str, Any]) -> ActionType:
-    return ActionType(kwargs["action"])  # type: ignore
+    action_type: ActionType = kwargs["action"]
+    return action_type
 
 
 _ACTION_TYPE_CONFIG_PARSER: Final = ActionTypeConfigParser()
@@ -50,8 +49,12 @@ ACTION_TIMEOUT: Final = dt.timedelta(seconds=20)
 ACTIONS: dict[ActionType, type[Action]] = {}
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True, eq=False)
 class Action(ConfigObject, metaclass=abc.ABCMeta):
-  TYPE: ClassVar[ActionType] = ActionType.GET
+  TYPE: ClassVar[ActionType]
+
+  timeout: dt.timedelta = ACTION_TIMEOUT
+  index: int = 0
 
   @classmethod
   @override
@@ -68,7 +71,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
   @override
   def parse_dict(cls, config: dict[str, Any], **kwargs) -> Self:
     action_type: ActionType = _ACTION_TYPE_CONFIG_PARSER.parse(config)
-    action_cls: type[Self] = ACTIONS[action_type]  # type: ignore
+    action_cls: type[Action] = ACTIONS[action_type]
     # Drop _ACTION_TYPE_CONFIG_PARSER arguments/aliases and avoid warnings
     config = dict(config)
     config.pop("action", None)
@@ -78,7 +81,7 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
         f'Parsing Action details  ...{{ action: "{action_type}", ...}}:'):
       action = action_cls.config_parser().parse(config, **kwargs)
     assert isinstance(action, cls), f"Expected {cls} but got {type(action)}"
-    return action
+    return cast(Self, action)
 
   @classmethod
   @override
@@ -92,28 +95,13 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
         default=ACTION_TIMEOUT)
     return parser
 
-  def __init__(self,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               index: int = 0) -> None:
-    self._timeout: dt.timedelta = timeout
-    self._index = index
-    self.validate()
-
   @property
-  def index(self) -> int:
-    return self._index
+  def has_timeout(self) -> bool:
+    return self.timeout != dt.timedelta.max
 
   @property
   def duration(self) -> dt.timedelta:
     return dt.timedelta()
-
-  @property
-  def timeout(self) -> dt.timedelta:
-    return self._timeout
-
-  @property
-  def has_timeout(self) -> bool:
-    return self._timeout != dt.timedelta.max
 
   @abc.abstractmethod
   def run_with(self, action_runner: ActionRunner) -> None:
@@ -121,9 +109,11 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
 
   @override
   def validate(self) -> None:
-    if self._timeout.total_seconds() < 0:
+    super().validate()
+    if self.timeout.total_seconds() < 0:
       raise ValueError(
           f"{self}.timeout should be positive, but got {self.timeout}")
+    NumberParser.positive_zero_int(self.index, f"{self}.index")
 
   def to_json(self) -> JsonDict:
     return {"type": str(self.TYPE), "timeout": self.timeout.total_seconds()}

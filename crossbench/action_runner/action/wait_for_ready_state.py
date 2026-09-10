@@ -4,25 +4,27 @@
 
 from __future__ import annotations
 
+import dataclasses
 import functools
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action, Self
+from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.enums import ReadyState
 
 if TYPE_CHECKING:
-  import datetime as dt
-
   from crossbench.action_runner.base import ActionRunner
   from crossbench.config import ConfigParser
   from crossbench.types import JsonDict
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
 class WaitForReadyStateAction(Action):
   TYPE: ClassVar[ActionType] = ActionType.WAIT_FOR_READY_STATE
+
+  ready_state: ReadyState = ReadyState.COMPLETE
 
   @classmethod
   @override
@@ -33,16 +35,11 @@ class WaitForReadyStateAction(Action):
         "ready_state", type=ReadyState.parse, default=ReadyState.COMPLETE)
     return parser
 
-  def __init__(self,
-               timeout: dt.timedelta = ACTION_TIMEOUT,
-               ready_state: ReadyState = ReadyState.COMPLETE,
-               index: int = 0) -> None:
-    self._ready_state = ready_state
-    super().__init__(timeout, index)
-
-  @property
-  def ready_state(self) -> ReadyState:
-    return self._ready_state
+  @override
+  def validate(self) -> None:
+    super().validate()
+    if not isinstance(self.ready_state, ReadyState):
+      raise ValueError(f"Invalid ready_state: {self.ready_state}")
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:

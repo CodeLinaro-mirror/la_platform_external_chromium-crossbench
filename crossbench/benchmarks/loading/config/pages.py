@@ -173,7 +173,7 @@ class DevToolsRecorderPagesConfig(PagesConfig):
       if maybe_actions := cls.parse_step(step):
         actions.extend(maybe_actions)
         # TODO(cbruni): make this configurable
-        actions.append(WaitAction(duration=dt.timedelta(seconds=1)))
+        actions.append(WaitAction.create(duration=dt.timedelta(seconds=1)))
     return tuple(actions)
 
   @classmethod
@@ -193,14 +193,13 @@ class DevToolsRecorderPagesConfig(PagesConfig):
   def _parse_navigate_step(cls, step: dict[str, Any],
                            default_timeout: dt.timedelta) -> Action:
     del default_timeout
-    return GetAction(  # type: ignore
-        step["url"], ready_state=ReadyState.COMPLETE)
+    return GetAction.create(step["url"], ready_state=ReadyState.COMPLETE)
 
   @classmethod
   def _parse_click_step(cls, step: dict[str, Any],
                         default_timeout: dt.timedelta) -> Action:
     selector = cls._parse_selectors(step["selectors"])
-    return ClickAction(
+    return ClickAction.create(
         InputSource.JS,
         position=PositionConfig.from_selector(
             selector=selector, scroll_into_view=True),

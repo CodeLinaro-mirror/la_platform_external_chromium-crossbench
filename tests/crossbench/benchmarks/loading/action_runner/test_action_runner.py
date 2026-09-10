@@ -153,7 +153,7 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_probe_action_unsupported_probe(self):
     self.set_up_with_probe(ShellProbe(""))
-    action_block = ActionBlock(actions=(ProbeAction(probe="shell", kwargs={}),))
+    action_block = ActionBlock(actions=(ProbeAction.create(probe="shell"),))
 
     with self.assertRaisesRegex(MultiException,
                                 "Invoke not implemented for probe"):
@@ -162,7 +162,7 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
   def test_probe_action_screenshot(self):
     self.set_up_with_probe(ScreenshotProbe())
     action_block = ActionBlock(
-        actions=(ProbeAction(probe="screenshot", kwargs={}),))
+        actions=(ProbeAction.create(probe="screenshot"),))
     self.action_runner.run_block(self.mock_run, action_block)
     self.assertEqual(len(self.platform.screenshots), 1)
 
@@ -172,8 +172,7 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
         FileWatchDownloadsProbeContext,
         {"downloads_dir": "/Downloads"},
     )
-    action_block = ActionBlock(
-        actions=(ProbeAction(probe="downloads", kwargs={}),))
+    action_block = ActionBlock(actions=(ProbeAction.create(probe="downloads"),))
 
     with self.assertRaisesRegex(MultiException, "pattern"):
       self.action_runner.run_block(self.mock_run, action_block)
@@ -187,16 +186,15 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
         {"downloads_dir": downloads_dir},
     )
     action_block = ActionBlock(
-        actions=(
-            ProbeAction(probe="downloads", kwargs={"pattern": "a_download"}),))
+        actions=(ProbeAction.create(
+            probe="downloads", kwargs={"pattern": "a_download"}),))
 
     with self.assertRaisesRegex(MultiException, "Waited for"):
       self.action_runner.run_block(self.mock_run, action_block)
 
   def test_probe_action_meminfo_no_kwargs(self):
     self.set_up_with_probe(MeminfoProbe())
-    action_block = ActionBlock(
-        actions=(ProbeAction(probe="meminfo", kwargs={}),))
+    action_block = ActionBlock(actions=(ProbeAction.create(probe="meminfo"),))
 
     self.action_runner.run_block(self.mock_run, action_block)
     self.assertEqual(self.browser.performance_marks[-1], "crossbench-meminfo")
@@ -204,7 +202,7 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
   def test_probe_action_meminfo_all_kwargs(self):
     self.set_up_with_probe(MeminfoProbe())
     action_block = ActionBlock(
-        actions=(ProbeAction(
+        actions=(ProbeAction.create(
             probe="meminfo",
             kwargs={
                 "browser": False,
@@ -219,8 +217,7 @@ class DefaultActionRunnerTestCase(ActionRunnerTestCase):
 
   def test_probe_action_dump_html(self):
     self.set_up_with_probe(DumpHtmlProbe())
-    action_block = ActionBlock(
-        actions=(ProbeAction(probe="dump_html", kwargs={}),))
+    action_block = ActionBlock(actions=(ProbeAction.create(probe="dump_html"),))
     self.browser.set_default_js_return(True)
     self.action_runner.run_block(self.mock_run, action_block)
     self.assertEqual(
