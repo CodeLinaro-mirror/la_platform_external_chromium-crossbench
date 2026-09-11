@@ -32,6 +32,8 @@ class BrowserDriverTypeTestCase(unittest.TestCase):
         "osa": BrowserDriverType.APPLE_SCRIPT,
         "android": BrowserDriverType.ANDROID,
         "adb": BrowserDriverType.ANDROID,
+        "cdp": BrowserDriverType.ANDROID_CDP,
+        "android-cdp": BrowserDriverType.ANDROID_CDP,
         "iphone": BrowserDriverType.IOS,
         "ios": BrowserDriverType.IOS,
         "ssh": BrowserDriverType.LINUX_SSH,
@@ -69,8 +71,10 @@ class BrowserDriverTypeTestCase(unittest.TestCase):
 
   def test_is_remote_browser(self):
     remote_browser_types = {
-        BrowserDriverType.ANDROID, BrowserDriverType.CHROMEOS_SSH,
-        BrowserDriverType.LINUX_SSH
+        BrowserDriverType.ANDROID,
+        BrowserDriverType.ANDROID_CDP,
+        BrowserDriverType.CHROMEOS_SSH,
+        BrowserDriverType.LINUX_SSH,
     }
     for driver_type in BrowserDriverType:
       self.assertEqual(driver_type.is_remote_browser, driver_type

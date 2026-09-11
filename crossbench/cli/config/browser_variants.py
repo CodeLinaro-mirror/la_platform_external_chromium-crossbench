@@ -286,6 +286,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
       return cls.get_chromium_browser_cls(browser_config)
 
     driver = browser_config.driver.driver_type
+    if driver == BrowserDriverType.ANDROID_CDP:
+      return all_browsers.CdpAndroidBrowser
     if driver == BrowserDriverType.WEB_DRIVER:
       return all_browsers.ChromeWebDriver
     if driver == BrowserDriverType.APPLE_SCRIPT:
@@ -305,6 +307,8 @@ class BaseBrowserVariantsConfig(abc.ABC):
   def get_chromium_browser_cls(cls,
                                browser_config: BrowserConfig) -> type[Browser]:
     driver = browser_config.driver.driver_type
+    if driver == BrowserDriverType.ANDROID_CDP:
+      return all_browsers.CdpAndroidBrowser
     # TODO: technically this should be ChromiumWebDriver
     if driver == BrowserDriverType.WEB_DRIVER:
       return all_browsers.ChromiumWebDriver

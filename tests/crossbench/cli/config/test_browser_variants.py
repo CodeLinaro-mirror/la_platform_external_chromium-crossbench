@@ -17,6 +17,7 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.browsers.cdp_android import CdpAndroidBrowser
 from crossbench.browsers.chrome.applescript import ChromeAppleScript
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.chrome.version import ChromeVersion
@@ -1467,6 +1468,16 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         browser=pth.AnyPath("chrome.apk"),
         driver=DriverConfig(driver_type=BrowserDriverType.ANDROID))
     self.assertIs(variants.get_browser_cls(config), ChromeWebDriverAndroid)
+
+  def test_get_browser_cls_cdp_android(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT,
+    ]
+    variants = BrowserVariantsConfig()
+    config = BrowserConfig(
+        browser=pth.AnyPath("com.android.chrome"),
+        driver=DriverConfig(driver_type=BrowserDriverType.ANDROID_CDP))
+    self.assertIs(variants.get_browser_cls(config), CdpAndroidBrowser)
 
   def test_get_browser_cls_chrome_android_local_helper(self):
     self.platform.sh_results = [

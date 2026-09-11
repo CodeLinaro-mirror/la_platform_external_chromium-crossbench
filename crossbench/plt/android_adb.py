@@ -24,6 +24,7 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.benchmarks.loading.point import Point
+from crossbench.browsers.chromium.devtools import DevToolsRemoteClient
 from crossbench.flags.base import Flags, FlagsData
 from crossbench.helper.path_finder import BundletoolFinder
 from crossbench.parse import NumberParser
@@ -751,17 +752,50 @@ class _AndroidDeviceConfigReader:
 
 class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
 
-  def __init__(self,
-               host_platform: Platform,
-               device_identifier: str | None = None,
-               adb: Adb | None = None) -> None:
+  def __init__(
+      self,
+      host_platform: Platform,
+      device_identifier: str | None = None,
+      adb: Adb | None = None,
+  ) -> None:
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
     self._adb: Final[Adb] = adb or Adb(host_platform, device_identifier)
+    self._devtools_client: DevToolsRemoteClient | None = None
     self._uiautomator_device_instance: (android_device.AndroidDevice
                                         | None) = None
     self._uiautomator_device_root: bool = False
     super().__init__(host_platform)
+
+  def start_devtools(self) -> None:
+    if not self._devtools_client:
+      self._devtools_client = DevToolsRemoteClient(platform=self)
+    self._devtools_client.connect()
+
+  def stop_devtools(self) -> None:
+    if self._devtools_client:
+      self._devtools_client.disconnect()
+
+  def send_cdp_command(self,
+                       method: str,
+                       params: dict[str, Any] | None = None) -> dict[str, Any]:
+    if not self._devtools_client:
+      self.start_devtools()
+    assert self._devtools_client is not None, "DevTools client not initialized"
+    success, res = self._devtools_client.send_command({
+        "id": self._devtools_client.get_next_id(),
+        "method": method,
+        "params": params or {},
+    })
+    if not success or "error" in res:
+      raise RuntimeError(f"CDP command '{method}' failed: {res}")
+    return res
+
+  def switch_to_new_tab(self, url: str = "about:blank") -> None:
+    if not self._devtools_client:
+      self.start_devtools()
+    assert self._devtools_client is not None, "DevTools client not initialized"
+    self._devtools_client.switch_to_new_tab(url)
 
   def _create_port_manager(self) -> PortManager:
     return AndroidAdbPortManager(self, self._adb)

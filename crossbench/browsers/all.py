@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from crossbench.browsers.cdp_android import CdpAndroidBrowser
 from crossbench.browsers.chrome.applescript import ChromeAppleScript
 from crossbench.browsers.chrome.chrome import Chrome
 from crossbench.browsers.chrome.webdriver import ChromeWebDriver, \
@@ -30,6 +31,7 @@ from crossbench.browsers.webview.browser import WebviewBrowser
 from crossbench.browsers.webview.embedder import WebviewEmbedder
 
 __all__ = [
+    "CdpAndroidBrowser",
     "Chrome",
     "ChromeAppleScript",
     "ChromeWebDriver",

@@ -14,6 +14,8 @@ from typing import TYPE_CHECKING, Any, Callable, Final, Iterator, Self
 import websocket
 from websocket import create_connection
 
+from crossbench.helper import wait
+
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.plt.base import Platform
@@ -40,35 +42,63 @@ class DevToolsInBrowserClient:
         raise RuntimeError(f"Failed to open DevTools. Response: {result}")
       if "targetId" not in result["result"]:
         raise RuntimeError(f"Failed to open DevTools, no targetId: {result}")
-      self._devtools_window_id = result["result"]["targetId"]
 
 
 class DevToolsRemoteClient:
   """Manages communication with the Chrome DevTools Protocol."""
 
-  def __init__(self,
-               platform: Platform,
-               requested_local_port: int = 0,
-               remote_devtools_identifier: str = "chrome_devtools_remote"):
+  def __init__(
+      self,
+      platform: Platform,
+      requested_local_port: int = 0,
+      remote_devtools_identifier: str = "chrome_devtools_remote",
+  ) -> None:
     self._platform: Final[Platform] = platform
     self._requested_local_port: Final[int] = requested_local_port
     self._remote_devtools_identifier: Final[str] = remote_devtools_identifier
     self._ws: websocket.WebSocket | None = None
     self._devtools_port: int = 0
+    self._session_id: str | None = None
+    self._next_id: int = 0
 
-  def connect(self) -> None:
+  def get_next_id(self) -> int:
+    self._next_id += 1
+    return self._next_id
+
+  def _get_next_id(self) -> int:
+    return self.get_next_id()
+
+  def connect(self, timeout: dt.timedelta = dt.timedelta(seconds=10)) -> None:
     """Establishes a WebSocket connection to the DevTools service."""
     if self._ws and self._ws.connected:
       return
     try:
-      self._devtools_port = self._platform.ports.forward_devtools(
-          local_port=self._requested_local_port,
-          remote_identifier=self._remote_devtools_identifier)
-      self._ws = websocket.WebSocket()
-      self._ws.connect(
-          f"ws://localhost:{self._devtools_port}/devtools/browser/")
-      logging.debug("DevTools connected: ws://localhost:%s/devtools/browser/",
-                    self._devtools_port)
+      if not self._devtools_port:
+        self._devtools_port = self._platform.ports.forward_devtools(
+            local_port=self._requested_local_port,
+            remote_identifier=self._remote_devtools_identifier)
+      url = f"ws://localhost:{self._devtools_port}/devtools/browser/"
+      last_error: Exception | None = None
+      try:
+        for _ in wait.wait_with_backoff(timeout):
+          try:
+            self._ws = websocket.WebSocket()
+            self._ws.connect(url)
+            logging.debug(
+                "DevTools connected: ws://localhost:%s/devtools/browser/",
+                self._devtools_port)
+            return
+          except (websocket.WebSocketException, ConnectionRefusedError,
+                  TimeoutError) as e:
+            last_error = e
+            if self._ws:
+              with contextlib.suppress(Exception):
+                self._ws.close()
+              self._ws = None
+      except TimeoutError as e:
+        if last_error:
+          raise last_error from e
+        raise
     except (websocket.WebSocketException, ConnectionRefusedError,
             TimeoutError) as e:
       logging.error("DevTools connection error: %s", e)
@@ -86,6 +116,7 @@ class DevToolsRemoteClient:
       except websocket.WebSocketException as e:
         logging.warning("Error closing DevTools WebSocket: %s", e)
     self._ws = None
+    self._session_id = None
     if self._devtools_port:
       try:
         self._platform.ports.stop_forward(self._devtools_port)
@@ -101,39 +132,115 @@ class DevToolsRemoteClient:
     self._disconnect_internal()
     logging.debug("DevTools disconnected")
 
-  def send_command(self, command_payload: dict[str, Any]) -> tuple[bool, dict]:
+  def _send_raw_command(
+      self, command_payload: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
+    if not self._ws or not self._ws.connected:
+      raise RuntimeError("DevTools is not connected. Cannot send command.")
+
+    expected_id = command_payload.get("id")
+    if expected_id is None:
+      raise ValueError("DevTools command requires an 'id' in the payload.")
+
+    self._ws.send(json.dumps(command_payload).encode("utf-8"))
+    while True:
+      data = self._ws.recv()
+      response = json.loads(data)
+      if response.get("id") == expected_id:
+        return True, response
+
+  def _get_page_session_id(self) -> str:
+    if self._session_id:
+      return self._session_id
+    _, response = self._send_raw_command({
+        "id": self._get_next_id(),
+        "method": "Target.getTargets"
+    })
+    if "result" not in response:
+      raise RuntimeError(f"Target.getTargets failed: {response}")
+    target_infos = response["result"].get("targetInfos", [])
+    page_target_id = None
+    for info in target_infos:
+      if info.get("type") == "page":
+        page_target_id = info.get("targetId")
+        break
+    if not page_target_id:
+      _, response = self._send_raw_command({
+          "id": self._get_next_id(),
+          "method": "Target.createTarget",
+          "params": {
+              "url": "about:blank"
+          },
+      })
+      if "result" not in response:
+        raise RuntimeError(f"Target.createTarget failed: {response}")
+      page_target_id = response["result"].get("targetId")
+    if not page_target_id:
+      raise RuntimeError("Failed to obtain a page targetId")
+    _, response = self._send_raw_command({
+        "id": self._get_next_id(),
+        "method": "Target.attachToTarget",
+        "params": {
+            "targetId": page_target_id,
+            "flatten": True
+        },
+    })
+    if "result" not in response or "sessionId" not in response["result"]:
+      raise RuntimeError(f"Target.attachToTarget failed: {response}")
+    self._session_id = response["result"]["sessionId"]
+    return self._session_id
+
+  def switch_to_new_tab(self, url: str = "about:blank") -> str:
+    """Creates a new page target and attaches to it as the active session."""
+    _, response = self._send_raw_command({
+        "id": self._get_next_id(),
+        "method": "Target.createTarget",
+        "params": {
+            "url": url
+        },
+    })
+    if "result" not in response:
+      raise RuntimeError(f"Could not create new tab: {response}")
+    page_target_id = response["result"].get("targetId")
+    if not page_target_id:
+      raise RuntimeError(f"Could not get targetId for new tab: {response}")
+    _, response = self._send_raw_command({
+        "id": self._get_next_id(),
+        "method": "Target.attachToTarget",
+        "params": {
+            "targetId": page_target_id,
+            "flatten": True
+        },
+    })
+    if "result" not in response or "sessionId" not in response["result"]:
+      raise RuntimeError(
+          f"Could not attach to new tab {page_target_id}: {response}")
+    self._session_id = response["result"]["sessionId"]
+    return self._session_id
+
+  def send_command(
+      self, command_payload: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
     """Sends a command to DevTools and checks the response ID.
 
     Args:
-      command_payload: The command payload to send. Must include an 'id'.
+      command_payload: The command payload to send.
 
     Returns:
       Tuple of [bool, dict]
       bool: True if the command was sent successfully and the response ID
             matches, False otherwise.
-      dict: the full response message returned by the websocket. Empty on error.
+      dict: the full response message returned by the websocket.
     """
-    if not self._ws or not self._ws.connected:
-      logging.error("DevTools is not connected. Cannot send command.")
-      return False, {}
-
-    expected_id = command_payload.get("id")
-    if expected_id is None:
-      logging.error("DevTools command requires an 'id' in the payload.")
-      return False, {}
-
-    try:
-      self._ws.send(json.dumps(command_payload).encode("utf-8"))
-      data = self._ws.recv()
-      response = json.loads(data)
-      return response.get("id") == expected_id, response
-    except (websocket.WebSocketException, ConnectionRefusedError,
-            TimeoutError) as e:
-      logging.error("DevTools communication error: %s", e)
-      return False, {}
-    except json.JSONDecodeError as e:
-      logging.error("Error decoding JSON response from DevTools: %s", e)
-      return False, {}
+    if "id" not in command_payload:
+      command_payload = dict(command_payload)
+      command_payload["id"] = self._get_next_id()
+    method = str(command_payload.get("method", ""))
+    if (not method.startswith(("Target.", "Browser.")) and
+        "sessionId" not in command_payload):
+      session_id = self._get_page_session_id()
+      if session_id:
+        command_payload = dict(command_payload)
+        command_payload["sessionId"] = session_id
+    return self._send_raw_command(command_payload)
 
   def dispatch_command(self, command_payload: dict[str, Any]) -> bool:
     """Dispatches a command to DevTools. Does not wait for any response.

@@ -215,7 +215,10 @@ class DriverConfig(ConfigObject):
 
   @override
   def validate(self) -> None:
-    if self.driver_type == BrowserDriverType.ANDROID:
+    if self.driver_type in (
+        BrowserDriverType.ANDROID,
+        BrowserDriverType.ANDROID_CDP,
+    ):
       self.validate_android()
     elif self.adb_bin:
       raise argparse.ArgumentTypeError("adb_bin is only valid for Android.")
@@ -285,7 +288,10 @@ class DriverConfig(ConfigObject):
           f"Choices are {names}.")
 
   def get_platform(self) -> plt.Platform:
-    if self.driver_type == BrowserDriverType.ANDROID:
+    if self.driver_type in (
+        BrowserDriverType.ANDROID,
+        BrowserDriverType.ANDROID_CDP,
+    ):
       return self.get_adb_platform()
     if self.driver_type == BrowserDriverType.IOS:
       return self.get_ios_platform()

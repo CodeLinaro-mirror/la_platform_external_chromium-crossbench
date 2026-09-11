@@ -18,6 +18,10 @@ class BrowserDriverType(StrEnumWithHelp):
   APPLE_SCRIPT = ("AppleScript", "Use AppleScript, for local macOS runs only")
   ANDROID = ("Android",
              "Use Webdriver for android. Allows to specify additional settings")
+  ANDROID_CDP = (
+      "Android CDP",
+      "Use Chrome DevTools Protocol over ADB directly without ChromeDriver",
+  )
   IOS = ("iOS", "Placeholder, unsupported at the moment")
   LINUX_SSH = ("Remote Linux",
                "Use remote webdriver and execute commands via SSH")
@@ -40,6 +44,8 @@ class BrowserDriverType(StrEnumWithHelp):
       return BrowserDriverType.WEB_DRIVER
     if identifier in ("applescript", "osa"):
       return BrowserDriverType.APPLE_SCRIPT
+    if identifier in ("android-cdp", "adb-cdp", "cdp"):
+      return BrowserDriverType.ANDROID_CDP
     if identifier in ("android", "adb"):
       return BrowserDriverType.ANDROID
     if identifier in ("iphone", "ios"):
@@ -60,8 +66,12 @@ class BrowserDriverType(StrEnumWithHelp):
 
   @property
   def is_remote_browser(self) -> bool:
-    return self in (BrowserDriverType.ANDROID, BrowserDriverType.CHROMEOS_SSH,
-                    BrowserDriverType.LINUX_SSH)
+    return self in (
+        BrowserDriverType.ANDROID,
+        BrowserDriverType.ANDROID_CDP,
+        BrowserDriverType.CHROMEOS_SSH,
+        BrowserDriverType.LINUX_SSH,
+    )
 
   @property
   def is_local_browser(self) -> bool:

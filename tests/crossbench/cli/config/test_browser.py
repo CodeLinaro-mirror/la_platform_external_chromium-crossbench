@@ -349,6 +349,29 @@ class BrowserConfigTestCase(BaseConfigTestCase):
             DriverConfig(BrowserDriverType.ANDROID)))
     self.assertSequenceEqual(self.platform.sh_results, [])
 
+  def test_parse_cdp_android(self):
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
+    ]
+    self.assertEqual(
+        BrowserConfig.parse("cdp:chrome"),
+        BrowserConfig(
+            pth.AnyPosixPath("com.android.chrome"),
+            DriverConfig(BrowserDriverType.ANDROID_CDP)))
+    self.assertListEqual(self.platform.sh_results, [])
+
+    self.platform.sh_results = [
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
+    ]
+    self.assertEqual(
+        BrowserConfig.parse("cdp:chrome-beta"),
+        BrowserConfig(
+            pth.AnyPosixPath("com.chrome.beta"),
+            DriverConfig(BrowserDriverType.ANDROID_CDP)))
+    self.assertListEqual(self.platform.sh_results, [])
+
     self.platform.sh_results = [
         ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
     ]

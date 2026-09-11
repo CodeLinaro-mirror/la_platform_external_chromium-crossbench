@@ -272,7 +272,10 @@ class BrowserConfig(ConfigObject):
         return maybe_path
       if cls._is_downloadable_identifier(maybe_path_or_identifier):
         return maybe_path_or_identifier
-      if driver_type == BrowserDriverType.ANDROID:
+      if driver_type in (
+          BrowserDriverType.ANDROID,
+          BrowserDriverType.ANDROID_CDP,
+      ):
         if ANDROID_PACKAGE_RE.fullmatch(maybe_path_or_identifier):
           return pth.AnyPosixPath(maybe_path_or_identifier)
     if not path:
@@ -284,7 +287,10 @@ class BrowserConfig(ConfigObject):
       return path
     if cls.is_supported_browser_path(path):
       return path
-    if driver_type == BrowserDriverType.ANDROID:
+    if driver_type in (
+        BrowserDriverType.ANDROID,
+        BrowserDriverType.ANDROID_CDP,
+    ):
       if cls._is_known_android_browser(path.name):
         return path
       # Additionally support unknown chrome apk helper binaries.
@@ -318,26 +324,44 @@ class BrowserConfig(ConfigObject):
     # TODO: handle remote platforms.
     platform = plt.PLATFORM
     if identifier in ("chrome", "chrome-stable", "chr-stable", "chr"):
-      if driver_type == BrowserDriverType.ANDROID:
+      if driver_type in (
+          BrowserDriverType.ANDROID,
+          BrowserDriverType.ANDROID_CDP,
+      ):
         return pth.AnyPosixPath("com.android.chrome")
       return all_browsers.Chrome.stable_path(platform)
     if identifier in ("chrome-app"):
-      if driver_type == BrowserDriverType.ANDROID:
+      if driver_type in (
+          BrowserDriverType.ANDROID,
+          BrowserDriverType.ANDROID_CDP,
+      ):
         return pth.AnyPosixPath("com.google.android.apps.chrome")
     if identifier in ("chrome-beta", "chr-beta"):
-      if driver_type == BrowserDriverType.ANDROID:
+      if driver_type in (
+          BrowserDriverType.ANDROID,
+          BrowserDriverType.ANDROID_CDP,
+      ):
         return pth.AnyPosixPath("com.chrome.beta")
       return all_browsers.Chrome.beta_path(platform)
     if identifier in ("chrome-dev", "chr-dev"):
-      if driver_type == BrowserDriverType.ANDROID:
+      if driver_type in (
+          BrowserDriverType.ANDROID,
+          BrowserDriverType.ANDROID_CDP,
+      ):
         return pth.AnyPosixPath("com.chrome.dev")
       return all_browsers.Chrome.dev_path(platform)
     if identifier in ("chrome-canary", "chr-canary"):
-      if driver_type == BrowserDriverType.ANDROID:
+      if driver_type in (
+          BrowserDriverType.ANDROID,
+          BrowserDriverType.ANDROID_CDP,
+      ):
         return pth.AnyPosixPath("com.chrome.canary")
       return all_browsers.Chrome.canary_path(platform)
     if identifier == "chromium":
-      if driver_type == BrowserDriverType.ANDROID:
+      if driver_type in (
+          BrowserDriverType.ANDROID,
+          BrowserDriverType.ANDROID_CDP,
+      ):
         return pth.AnyPosixPath("org.chromium.chrome")
       return all_browsers.Chromium.default_path(platform)
     if identifier in ("edge", "edge-stable"):
