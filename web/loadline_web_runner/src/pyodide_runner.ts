@@ -170,7 +170,7 @@ export class PyodideRunner {
     };
 
     let loadOpts: any = {
-      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.4/full/',
+      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.3/full/',
       stdout: stdoutHandler,
       stderr: stderrHandler,
     };

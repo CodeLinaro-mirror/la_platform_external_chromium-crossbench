@@ -11,7 +11,7 @@
  */
 
 import {Adb, type AdbCredentialStore, AdbDaemonTransport,} from '@yume-chan/adb';
-import {ADB_DEFAULT_DEVICE_FILTER, AdbWebUsbBackend,} from '@yume-chan/adb-backend-webusb';
+import {AdbDaemonWebUsbDevice, AdbDaemonWebUsbDeviceManager,} from '@yume-chan/adb-daemon-webusb';
 
 import {DevToolsSocketStream, WebAdbSocketStream,} from './devtools_discovery';
 import {WebAdbCredentialStore,} from './webadb_crypto';
@@ -33,7 +33,7 @@ export function isWebUsbSupported(): boolean {
  */
 export class WebAdbBridge {
   private adbInstance: Adb|null = null;
-  private backend: AdbWebUsbBackend|null = null;
+  private device: AdbDaemonWebUsbDevice|null = null;
   private credentialStore: AdbCredentialStore;
 
   constructor(credentialStore?: AdbCredentialStore) {
@@ -51,39 +51,37 @@ export class WebAdbBridge {
   /**
    * Prompts the user to select an Android USB device using WebUSB API.
    */
-  async requestDevice(): Promise<AdbWebUsbBackend|null> {
+  async requestDevice(): Promise<AdbDaemonWebUsbDevice|null> {
     if (!isWebUsbSupported()) {
       throw new Error(
           'WebUSB API is not supported in this browser. Please use a browser ' +
           'with WebUSB support (e.g. Google Chrome).');
     }
-    const device = await navigator.usb.requestDevice({
-      filters: [ADB_DEFAULT_DEVICE_FILTER],
-    });
+    const manager = new AdbDaemonWebUsbDeviceManager(navigator.usb);
+    const device = await manager.requestDevice();
     if (!device) {
       return null;
     }
-    this.backend = new AdbWebUsbBackend(
-        device, [ADB_DEFAULT_DEVICE_FILTER], navigator.usb);
-    return this.backend;
+    this.device = device;
+    return this.device;
   }
 
   /**
-   * Connects to the provided or requested WebUSB backend using @yume-chan/adb.
+   * Connects to the provided or requested WebUSB device using @yume-chan/adb.
    */
-  async connect(backend?: AdbWebUsbBackend): Promise<void> {
-    const activeBackend = backend || this.backend;
-    if (!activeBackend) {
-      throw new Error('No USB device backend provided or selected.');
+  async connect(device?: AdbDaemonWebUsbDevice): Promise<void> {
+    const activeDevice = device || this.device;
+    if (!activeDevice) {
+      throw new Error('No USB device provided or selected.');
     }
-    this.backend = activeBackend;
-    const connection = await this.backend.connect();
+    this.device = activeDevice;
+    const connection = await this.device.connect();
 
     console.log(
-        `[WebADB] Connecting to ${activeBackend.serial || 'usb-device'} ` +
+        `[WebADB] Connecting to ${activeDevice.serial || 'usb-device'} ` +
         'with RSA authentication...');
     const transport = await AdbDaemonTransport.authenticate({
-      serial: activeBackend.serial || 'usb-device',
+      serial: activeDevice.serial || 'usb-device',
       connection: connection as any,
       credentialStore: this.credentialStore,
     });
@@ -415,7 +413,7 @@ export class WebAdbBridge {
   }
 
   /**
-   * Disconnects the current ADB session and closes USB backend.
+   * Disconnects the current ADB session and closes USB device.
    */
   async disconnect(): Promise<void> {
     try {
@@ -427,7 +425,7 @@ export class WebAdbBridge {
         await this.adbInstance.close();
         this.adbInstance = null;
       }
-      this.backend = null;
+      this.device = null;
     }
   }
 }

@@ -14,15 +14,16 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@yume-chan/adb": "^2.6.2",
-    "@yume-chan/adb-backend-webusb": "^0.0.19",
-    "pyodide": "^0.29.4"
+    "@yume-chan/adb": "2.6.0",
+    "@yume-chan/adb-daemon-webusb": "2.3.2",
+    "pyodide": "0.29.3"
   },
   "devDependencies": {
-    "@types/node": "^20.19.43",
-    "happy-dom": "^14.12.3",
-    "typescript": "^5.9.3",
-    "vite": "^5.4.21",
-    "vitest": "^2.1.9"
+    "@types/node": "20.19.43",
+    "happy-dom": "14.12.3",
+    "typescript": "5.9.3",
+    "undici": "6.21.1",
+    "vite": "5.4.21",
+    "vitest": "2.1.9"
   }
 }

@@ -124,7 +124,7 @@ describe('WebAdbBridge Integration & WebUSB Mock', () => {
     globalThis.navigator = originalNavigator;
   });
 
-  it('connects to mock USB backend with authenticate', async () => {
+  it('connects to mock USB device with authenticate', async () => {
     const mockTransport = {
       serial: 'mock-serial-123',
       banner: {device: 'Pixel 10 Pro', raw: 'device::'},
@@ -145,13 +145,13 @@ describe('WebAdbBridge Integration & WebUSB Mock', () => {
       writable: new WritableStream({write() {}}),
     };
 
-    const mockBackend = {
+    const mockDevice = {
       serial: 'mock-serial-123',
       connect: vi.fn().mockResolvedValue(mockConnection),
     };
 
     // @ts-ignore
-    await bridge.connect(mockBackend);
+    await bridge.connect(mockDevice);
     expect(authSpy).toHaveBeenCalledWith(expect.objectContaining({
       serial: 'mock-serial-123',
       connection: mockConnection,

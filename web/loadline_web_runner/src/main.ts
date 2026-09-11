@@ -13,8 +13,8 @@ import {isTestEnvironment, log, setInitializing, setupUIEventListeners, updateUI
 import {isWebUsbSupported, WebAdbBridge} from './webadb_bridge';
 
 export * from './ui_state';
-export * from './auth_ui';
 export * from './benchmark_controller';
+export {type Logger, type LogLevel, getTargetArchiveUrl, setupAuthUIEventListeners, setAuthLogger, startGcsUpdateInterval, stopGcsUpdateInterval, updateGcsUI,} from './auth_ui';
 
 // Global state instance
 export const webAdbBridge = new WebAdbBridge();
@@ -36,14 +36,14 @@ export function setupDeviceEventListeners(): void {
       }
       try {
         log('Prompting for USB Android device selection...');
-        const backend = await webAdbBridge.requestDevice();
-        if (!backend) {
+        const device = await webAdbBridge.requestDevice();
+        if (!device) {
           log('Device selection cancelled by user.', 'warn');
           return;
         }
 
         log('Establishing ADB transport connection...');
-        await webAdbBridge.connect(backend);
+        await webAdbBridge.connect(device);
         log(`Successfully connected to Android device (${webAdbBridge.serial})`,
             'success');
         updateUI(true, webAdbBridge.serial);
