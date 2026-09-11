@@ -1,0 +1,571 @@
+// Copyright 2026 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+/**
+ * Crossbench benchmark execution controller, file bundling, and worker RPC
+ * proxy.
+ */
+
+import {getTargetArchiveUrl, updateGcsUI} from './auth_ui';
+import {CdpClient} from './cdp_client';
+import {downloadGcsArchive, fetchGcsMetadata, getCachedGcsArchive, getStoredAccessToken, parseGcsUrl,} from './gcs_cache';
+import {PyodideWorkerClient} from './pyodide_worker';
+import {log, setBenchmarkRunning, updateDownloadProgressBar, updateUI,} from './ui_state';
+import {getBrowserUpgradePath, WebAdbBridge} from './webadb_bridge';
+
+const crossbenchPyFiles = import.meta.glob(
+                              [
+                                '../../../crossbench/**/*',
+                                '../../../config/**/*',
+                                '../../../protoc/**/*',
+                                '../../../third_party/webpagereplay/*',
+                                '../../../third_party/webpagereplay/scripts/*',
+                              ],
+                              {
+                                query: '?raw',
+                                import: 'default',
+                                eager: true,
+                              }) as Record<string, string>;
+
+export function getCrossbenchVirtualFiles(): Record<string, string> {
+  const files: Record<string, string> = {};
+  for (const [relativePath, content] of Object.entries(crossbenchPyFiles)) {
+    const match = relativePath.match(
+        /^(?:\.\.[/\\])*((?:crossbench|config|protoc|third_party)[/\\].*)$/);
+    if (match) {
+      files['/' + match[1].replace(/\\/g, '/')] = content;
+    }
+  }
+  return files;
+}
+
+const CB_BINARIES = new Set(['./cb.py', 'cb.py', 'cb', 'crossbench']);
+const PYTHON_RUNNERS = new Set(['python', 'python3', 'vpython3']);
+
+export function parseCommandLine(cmdStr: string): string[] {
+  const trimmed = cmdStr.trim();
+  if (!trimmed) {
+    return [];
+  }
+  const tokens: string[] = [];
+  let current = '';
+  let inDoubleQuote = false;
+  let inSingleQuote = false;
+  let escape = false;
+
+  for (let i = 0; i < trimmed.length; i++) {
+    const char = trimmed[i];
+    if (escape) {
+      current += char;
+      escape = false;
+    } else if (char === '\\') {
+      escape = true;
+    } else if (char === '"' && !inSingleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+    } else if (char === '\'' && !inDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+    } else if (/\s/.test(char) && !inDoubleQuote && !inSingleQuote) {
+      if (current.length > 0) {
+        tokens.push(current);
+        current = '';
+      }
+    } else {
+      current += char;
+    }
+  }
+  if (current.length > 0) {
+    tokens.push(current);
+  }
+
+  if (tokens.length > 0) {
+    if (CB_BINARIES.has(tokens[0])) {
+      tokens.shift();
+    } else if (
+        PYTHON_RUNNERS.has(tokens[0]) && tokens.length > 1 &&
+        (tokens[1] === 'cb.py' || tokens[1] === './cb.py')) {
+      tokens.splice(0, 2);
+    }
+  }
+
+  return tokens;
+}
+
+let activeCdpClient: CdpClient|null = null;
+let workerClient: PyodideWorkerClient|null = null;
+let isWorkerInitialized = false;
+let latestResultsZip: Uint8Array|null = null;
+let interruptAttempt = 0;
+
+export function getOrCreateWorkerClient(webAdbBridge: WebAdbBridge):
+    PyodideWorkerClient {
+  if (workerClient) {
+    return workerClient;
+  }
+  const worker = new Worker(
+      new URL('./pyodide_worker.ts', import.meta.url), {type: 'module'});
+  workerClient = new PyodideWorkerClient(
+      worker,
+      async (method, args) => {
+        if (method === 'shell') {
+          const cmd = args[0] as string;
+          if (!webAdbBridge.isConnected) {
+            throw new Error(
+                `ADB device is not connected. Cannot execute shell command: ${
+                    cmd}`);
+          }
+          return await webAdbBridge.shell(cmd);
+        }
+        if (method === 'startDevTools') {
+          if (!webAdbBridge.isConnected) {
+            throw new Error(
+                'ADB device is not connected. Please connect your Android ' +
+                'device first.');
+          }
+          if (activeCdpClient) {
+            try {
+              await activeCdpClient.disconnect();
+            } catch (err) {
+              console.warn('Failed to disconnect active CDP client:', err);
+            }
+            activeCdpClient = null;
+          }
+          const maxAttempts = 20;  // 20 attempts * 500ms = 10s timeout
+          let lastError: any = null;
+
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+              const socketName = await webAdbBridge.discoverDevToolsSocket();
+              const versionInfo =
+                  await webAdbBridge.getDevToolsVersion(socketName);
+              const upgradePath = getBrowserUpgradePath(versionInfo);
+              const socketStream =
+                  await webAdbBridge.createDevToolsSocket(socketName);
+              const client = new CdpClient(socketStream);
+              await client.connect(socketStream, upgradePath);
+              await client.initBrowserSession();
+              activeCdpClient = client;
+              return 'OK';
+            } catch (err: any) {
+              lastError = err;
+              if (activeCdpClient) {
+                try {
+                  await activeCdpClient.disconnect();
+                } catch (discErr) {
+                  console.warn(
+                      'Failed to disconnect CDP client during retry:', discErr);
+                }
+                activeCdpClient = null;
+              }
+              await new Promise((resolve) => setTimeout(resolve, 500));
+            }
+          }
+          const errorMsg =
+              `Failed to connect to Chrome DevTools after ${maxAttempts} ` +
+              `attempts: ${lastError?.message || lastError}`;
+          log(errorMsg, 'error');
+          throw new Error(errorMsg);
+        }
+        if (method === 'stopDevTools') {
+          if (activeCdpClient) {
+            try {
+              await activeCdpClient.disconnect();
+            } catch (err) {
+              console.warn('Error disconnecting active CDP client:', err);
+            }
+            activeCdpClient = null;
+          }
+          return 'OK';
+        }
+        if (method === 'switchTab') {
+          const [url] = args;
+          if (!activeCdpClient || !activeCdpClient.isConnected) {
+            const errMsg = 'DevTools is not connected. Cannot switch tab.';
+            log(`[CDP Error] ${errMsg}`, 'error');
+            throw new Error(errMsg);
+          }
+          try {
+            const sessionId =
+                await activeCdpClient.switchTab(url || 'about:blank');
+            return sessionId;
+          } catch (err: any) {
+            const errMsg = err?.message || String(err);
+            log(`[CDP SwitchTab Error] ${errMsg}`, 'error');
+            throw err;
+          }
+        }
+        if (method === 'sendCdpCommand') {
+          const [cdpMethod, paramsJson] = args;
+          if (!activeCdpClient || !activeCdpClient.isConnected) {
+            const errMsg =
+                `DevTools is not connected. Cannot send CDP command '${
+                    cdpMethod}'`;
+            log(`[CDP Error] ${errMsg}`, 'error');
+            throw new Error(errMsg);
+          }
+          const params = paramsJson ? JSON.parse(paramsJson) : {};
+          try {
+            const res = await activeCdpClient.send(cdpMethod, params);
+            return JSON.stringify(res ?? {});
+          } catch (err: any) {
+            const errMsg = err?.message || String(err);
+            log(`[CDP Command Error] ${cdpMethod}: ${errMsg}`, 'error');
+            return JSON.stringify({error: errMsg});
+          }
+        }
+        if (method === 'push') {
+          const [, dest, fileBytes] = args;
+          if (!webAdbBridge.isConnected) {
+            throw new Error(
+                `ADB device is not connected. Cannot push to ${dest}`);
+          }
+          if (!(fileBytes instanceof Uint8Array)) {
+            throw new TypeError(`push expected Uint8Array for ${dest}, got: ${
+                typeof fileBytes}`);
+          }
+          await webAdbBridge.push(dest, fileBytes);
+          return 'OK';
+        }
+        if (method === 'pull') {
+          const [src] = args;
+          if (!webAdbBridge.isConnected) {
+            throw new Error(`ADB device is not connected. Cannot pull ${src}`);
+          }
+          return await webAdbBridge.pull(src);
+        }
+        if (method === 'gcsGetMetadata') {
+          const [url] = args;
+          const targetUrl = url || getTargetArchiveUrl();
+          const cached = await getCachedGcsArchive(targetUrl);
+          if (cached) {
+            return JSON.stringify({
+              name: cached.filename,
+              md5Hash: cached.md5Hash,
+              size: cached.size,
+            });
+          }
+          const token = getStoredAccessToken();
+          const meta = await fetchGcsMetadata(targetUrl, token);
+          return JSON.stringify(meta);
+        }
+        if (method === 'gcsDownloadFile') {
+          const [url] = args;
+          const targetUrl = url || getTargetArchiveUrl();
+          let cached = await getCachedGcsArchive(targetUrl);
+          if (!cached) {
+            const token = getStoredAccessToken();
+            if (!token) {
+              throw new Error(`Cannot download ${
+                  targetUrl}: No GCP access token provided.`);
+            }
+            cached = await downloadGcsArchive(targetUrl, token);
+          }
+          return cached.data;
+        }
+        if (method === 'spawnProcess') {
+          const [cmd] = args;
+          if (!webAdbBridge.isConnected) {
+            throw new Error(
+                `ADB device is not connected. Cannot spawn process: ${cmd}`);
+          }
+          const procId = await webAdbBridge.spawnProcess(cmd);
+          return String(procId);
+        }
+        if (method === 'readProcessLog') {
+          const [procId, offset] = args;
+          const status =
+              webAdbBridge.readProcessLog(Number(procId), Number(offset));
+          return JSON.stringify(status);
+        }
+        if (method === 'killProcess') {
+          const [procId] = args;
+          await webAdbBridge.killProcess(Number(procId));
+          return 'OK';
+        }
+        return '';
+      },
+      (pythonMessage, level) => {
+        const formatted = pythonMessage.startsWith('[Python]') ?
+            pythonMessage :
+            `[Python] ${pythonMessage}`;
+        log(formatted, level || 'info');
+      });
+  return workerClient;
+}
+
+/**
+ * Initializes event listeners for Benchmark Execution, stopping, and results
+ * zip download.
+ */
+export function setupBenchmarkEventListeners(webAdbBridge: WebAdbBridge): void {
+  const btnRunBenchmark =
+      document.getElementById('btn-run-benchmark') as HTMLButtonElement | null;
+  const btnStopBenchmark =
+      document.getElementById('btn-stop-benchmark') as HTMLButtonElement | null;
+  const btnDownloadResults =
+      document.getElementById('btn-download-results') as HTMLButtonElement |
+      null;
+  const benchmarkCmdInput =
+      document.getElementById('benchmark-cmd') as HTMLInputElement | null;
+  const statusBadge =
+      document.getElementById('connection-status') as HTMLElement | null;
+  const gcsTokenInput =
+      document.getElementById('gcs-token-input') as HTMLInputElement | null;
+  const downloadProgressContainer =
+      document.getElementById('download-progress-container') as HTMLElement |
+      null;
+
+  if (btnRunBenchmark) {
+    btnRunBenchmark.addEventListener('click', async () => {
+      if (!webAdbBridge.isConnected) {
+        log('Cannot run benchmark: No ADB device connected.', 'error');
+        return;
+      }
+
+      const rawCmd = benchmarkCmdInput ? benchmarkCmdInput.value.trim() : '';
+      const benchmarkArgs = parseCommandLine(rawCmd);
+      if (benchmarkArgs.length === 0) {
+        log('Cannot run benchmark: No benchmark arguments provided.', 'error');
+        return;
+      }
+
+      btnRunBenchmark.style.display = 'inline-block';
+      btnRunBenchmark.disabled = true;
+      btnRunBenchmark.innerText = '⏳ Running...';
+      setBenchmarkRunning(true);
+      if (btnStopBenchmark) {
+        btnStopBenchmark.style.display = 'inline-block';
+        btnStopBenchmark.disabled = false;
+        btnStopBenchmark.innerText = '⏹️ Interrupt Execution';
+      }
+      if (btnDownloadResults)
+        btnDownloadResults.style.display = 'none';
+      if (benchmarkCmdInput)
+        benchmarkCmdInput.disabled = true;
+      if (statusBadge) {
+        statusBadge.innerText = 'Benchmark in Progress...';
+        statusBadge.className = 'status-badge tracing';
+      }
+
+      let client: PyodideWorkerClient|null = null;
+      try {
+        const useWorkerSab = typeof Worker !== 'undefined' &&
+            typeof SharedArrayBuffer !== 'undefined' &&
+            typeof Atomics !== 'undefined';
+        if (!useWorkerSab) {
+          const errorMsg =
+              'Crossbench requires Web Worker + SharedArrayBuffer for ' +
+              'synchronous ADB execution. Cross-Origin-Opener-Policy (COOP) ' +
+              'and Cross-Origin-Embedder-Policy (COEP) headers must be set.';
+          log(errorMsg, 'error');
+          throw new Error(errorMsg);
+        }
+
+        // Check WPR Archive cache before launching benchmark
+        const targetUrl = getTargetArchiveUrl();
+        let cachedArchive = await getCachedGcsArchive(targetUrl);
+        if (!cachedArchive) {
+          const token = (gcsTokenInput?.value || getStoredAccessToken()).trim();
+          if (token) {
+            log(`[GCS] Target archive not in cache. Downloading ${
+                    targetUrl}...`,
+                'info');
+            if (downloadProgressContainer) {
+              downloadProgressContainer.style.display = 'block';
+            }
+            try {
+              cachedArchive = await downloadGcsArchive(
+                  targetUrl, token, (loaded, total) => {
+                    updateDownloadProgressBar(
+                        loaded, total, 'Auto-downloading');
+                  });
+              await updateGcsUI();
+              log(`[GCS] Downloaded ${cachedArchive.filename} successfully.`,
+                  'success');
+            } catch (dlErr: any) {
+              log(`[GCS Error] Auto-download failed: ${
+                      dlErr?.message || dlErr}`,
+                  'error');
+              throw new Error(
+                  'Failed to download required benchmark archive: ' +
+                  (dlErr?.message || dlErr));
+            } finally {
+              if (downloadProgressContainer) {
+                downloadProgressContainer.style.display = 'none';
+              }
+            }
+          } else {
+            log('WPR Archive is not cached and no GCP token was provided. ' +
+                    `If the benchmark requires ${targetUrl}, please paste a ` +
+                    'token in Section 2.',
+                'warn');
+          }
+        }
+
+        client = getOrCreateWorkerClient(webAdbBridge);
+        client.clearInterrupt();
+        if (!isWorkerInitialized) {
+          log('Initializing Pyodide WebAssembly runtime...');
+          await client.sendRequest('INIT', {
+            interruptBuffer: client.getInterruptBuffer(),
+            stopFlag: client.getStopFlag(),
+          });
+          log('Pyodide runtime initialized.', 'success');
+
+          log('Mounting Crossbench Python package into Pyodide virtual ' +
+              'filesystem (MEMFS)...');
+          const pyFiles = getCrossbenchVirtualFiles();
+          await client.sendRequest('MOUNT_FILES', {files: pyFiles});
+          const count = Object.keys(pyFiles).length;
+          log(`Mounted ${count} Crossbench Python modules into MEMFS.`,
+              'success');
+          isWorkerInitialized = true;
+        } else {
+          await client.sendRequest('SET_INTERRUPT_BUFFER', {
+            interruptBuffer: client.getInterruptBuffer(),
+            stopFlag: client.getStopFlag(),
+          });
+        }
+
+        // Mount cached WPR archive into Pyodide's /cache/wpr/ directory
+        if (cachedArchive && cachedArchive.data) {
+          log('Mounting cached WPR archive into Pyodide ' +
+              `/cache/wpr/${cachedArchive.filename}...`);
+          await client.mountBinaryFile(
+              `/cache/wpr/${cachedArchive.filename}`, cachedArchive.data);
+          // Also mount with canonical name
+          const {objectName} = parseGcsUrl(targetUrl);
+          const baseName = objectName.split('/').pop();
+          if (baseName && baseName !== cachedArchive.filename) {
+            await client.mountBinaryFile(
+                `/cache/wpr/${baseName}`, cachedArchive.data);
+          }
+          const mb = (cachedArchive.size / (1024 * 1024)).toFixed(1);
+          log(`Mounted WPR archive (${mb} MB) into MEMFS.`, 'success');
+        }
+
+        // Mount prebuilt WPR binary for Android
+        log('Fetching and mounting prebuilt WPR binary for Android ' +
+            '(/cache/webpagereplay/android/arm64/wpr)...');
+        const wprRes = await fetch('/bin/android/arm64/wpr');
+        if (!wprRes.ok) {
+          throw new Error(
+              'Failed to fetch required WPR binary at ' +
+              '/bin/android/arm64/wpr: ' + wprRes.status);
+        }
+        const wprBuf = await wprRes.arrayBuffer();
+        const wprBytes = new Uint8Array(wprBuf);
+        await client.mountBinaryFile(
+            '/cache/webpagereplay/android/arm64/wpr', wprBytes);
+        await client.mountBinaryFile(
+            '/third_party/webpagereplay/wpr', wprBytes);
+        const wprKb = Math.round(wprBytes.length / 1024);
+        log(`Mounted prebuilt WPR binary (${wprKb} KB) into MEMFS.`, 'success');
+
+        log(`Executing Crossbench CLI command: cb.py ${
+            benchmarkArgs.join(' ')}`);
+        const result = await client.sendRequest('RUN_BENCHMARK', {
+          benchmarkArgs,
+        });
+        if (result === 'INTERRUPTED') {
+          log('Benchmark execution was stopped / interrupted by user.', 'warn');
+        } else {
+          log('Benchmark execution completed successfully!', 'success');
+        }
+      } catch (err: any) {
+        log(`Benchmark execution error: ${err?.message || err}`, 'error');
+      } finally {
+        if (client) {
+          client.clearInterrupt();
+        }
+        if (isWorkerInitialized && client) {
+          try {
+            log('Packaging benchmark results into zip archive...');
+            const zipBytes = await client.exportResultsZip();
+            if (zipBytes && zipBytes.length > 0) {
+              latestResultsZip = zipBytes;
+              if (btnDownloadResults) {
+                btnDownloadResults.style.display = 'inline-block';
+                btnDownloadResults.disabled = false;
+              }
+              const zipKb = Math.round(zipBytes.length / 1024);
+              log(`Results archive ready (${
+                      zipKb} KB). Click "Download Results ` +
+                      '(.zip)" to save.',
+                  'success');
+            } else {
+              log('No results files found to package.', 'info');
+            }
+          } catch (zipErr: any) {
+            log(`Failed to package results zip: ${zipErr?.message || zipErr}`,
+                'warn');
+          }
+        }
+        setBenchmarkRunning(false);
+        interruptAttempt = 0;
+        if (btnStopBenchmark) {
+          btnStopBenchmark.style.display = 'none';
+          btnStopBenchmark.disabled = true;
+          btnStopBenchmark.innerText = '⏹️ Interrupt Execution';
+        }
+        btnRunBenchmark.style.display = 'inline-block';
+        btnRunBenchmark.disabled = false;
+        btnRunBenchmark.innerText = 'Run Benchmark';
+        if (benchmarkCmdInput)
+          benchmarkCmdInput.disabled = false;
+        updateUI(true, webAdbBridge.serial);
+      }
+    });
+  }
+
+  if (btnStopBenchmark) {
+    btnStopBenchmark.addEventListener('click', () => {
+      interruptAttempt++;
+      if (interruptAttempt === 1) {
+        log('Stopping benchmark execution (sending SIGINT)...', 'warn');
+      } else {
+        log('Re-sending interrupt signal (SIGINT, attempt ' +
+                `#${interruptAttempt})...`,
+            'warn');
+      }
+      if (btnRunBenchmark)
+        btnRunBenchmark.innerText = '⏹️ Stopping...';
+      if (statusBadge) {
+        statusBadge.innerText = 'Stopping Benchmark...';
+        statusBadge.className = 'status-badge warning';
+      }
+      if (workerClient) {
+        workerClient.interrupt();
+      }
+    });
+  }
+
+  if (benchmarkCmdInput) {
+    benchmarkCmdInput.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        if (btnRunBenchmark && !btnRunBenchmark.disabled) {
+          btnRunBenchmark.click();
+        }
+      }
+    });
+  }
+
+  if (btnDownloadResults) {
+    btnDownloadResults.addEventListener('click', () => {
+      if (!latestResultsZip)
+        return;
+      const blob =
+          new Blob([latestResultsZip as BlobPart], {type: 'application/zip'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      a.download = `crossbench_results_${timestamp}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+}

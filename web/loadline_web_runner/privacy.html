@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy - LoadLine Web Runner</title>
+    <link rel="icon" type="image/png" href="/loadline_logo.png" />
+    <style>
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      :root {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: #0f172a;
+        color: #f8fafc;
+        line-height: 1.6;
+      }
+      body {
+        margin: 0;
+        padding: 32px 16px;
+        display: flex;
+        justify-content: center;
+      }
+      .container {
+        max-width: 860px;
+        width: 100%;
+        background: #1e293b;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        border: 1px solid #334155;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 24px;
+        margin-bottom: 32px;
+      }
+      .logo {
+        height: 64px;
+        width: auto;
+        border-radius: 10px;
+      }
+      h1 {
+        margin: 0 0 6px 0;
+        font-size: 1.8rem;
+        color: #f8fafc;
+      }
+      .subtitle {
+        color: #94a3b8;
+        font-size: 0.95rem;
+        margin: 0;
+      }
+      .effective-date {
+        display: inline-block;
+        background: #0f172a;
+        color: #38bdf8;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-top: 8px;
+        border: 1px solid #334155;
+      }
+      h2 {
+        color: #38bdf8;
+        font-size: 1.3rem;
+        margin-top: 32px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 6px;
+      }
+      h3 {
+        color: #e2e8f0;
+        font-size: 1.05rem;
+        margin-top: 20px;
+        margin-bottom: 8px;
+      }
+      p, li {
+        color: #cbd5e1;
+        font-size: 0.95rem;
+      }
+      ul {
+        padding-left: 24px;
+        margin: 10px 0;
+      }
+      li {
+        margin-bottom: 6px;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        background: #0f172a;
+        color: #38bdf8;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        border: 1px solid #334155;
+      }
+      .callout {
+        background: #0f172a;
+        border-left: 4px solid #38bdf8;
+        padding: 16px;
+        border-radius: 0 8px 8px 0;
+        margin: 20px 0;
+        border-top: 1px solid #334155;
+        border-right: 1px solid #334155;
+        border-bottom: 1px solid #334155;
+      }
+      .callout p {
+        margin: 0;
+      }
+      .callout-title {
+        font-weight: 600;
+        color: #f8fafc;
+        margin-bottom: 6px !important;
+      }
+      a {
+        color: #38bdf8;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
+      a:hover {
+        color: #7dd3fc;
+      }
+      .footer {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #334155;
+        text-align: center;
+        color: #64748b;
+        font-size: 0.85rem;
+      }
+      .nav-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 0.9rem;
+        margin-bottom: 16px;
+      }
+      .nav-back:hover {
+        color: #38bdf8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <a href="/" class="nav-back">&larr; Back to LoadLine Web Runner</a>
+
+      <div class="header">
+        <img src="/loadline_logo.png" alt="LoadLine Logo" class="logo" />
+        <div>
+          <h1>Privacy Policy</h1>
+          <p class="subtitle">LoadLine Web Runner (Crossbench)</p>
+          <div class="effective-date">Effective Date: August 19, 2026</div>
+        </div>
+      </div>
+
+      <section>
+        <h2>1. Introduction and Overview</h2>
+        <p>
+          This Privacy Policy describes how <strong>LoadLine Web Runner</strong> (part of the open-source
+          <a href="https://chromium.googlesource.com/crossbench" target="_blank" rel="noopener noreferrer">Crossbench</a>
+          performance benchmarking suite) accesses, uses, stores, and protects user data when you use the application.
+        </p>
+        <p>
+          LoadLine Web Runner is a client-side web application designed to run browser performance benchmarks
+          (such as LoadLine) directly within modern web browsers using WebAssembly (Pyodide) and WebUSB.
+        </p>
+      </section>
+
+      <section>
+        <h2>2. Google User Data Accessed and Collected</h2>
+        <p>
+          LoadLine Web Runner requests authorization via Google Identity Services (OAuth 2.0) solely to enable
+          access to required test fixtures stored in Google Cloud Storage.
+        </p>
+        <p>Specifically, the application interacts with the following data:</p>
+        <ul>
+          <li>
+            <strong>OAuth 2.0 Scope:</strong> <code>https://www.googleapis.com/auth/devstorage.read_only</code>
+            (Read-only access to Google Cloud Storage).
+          </li>
+          <li>
+            <strong>Google Account Email:</strong> If authorized, the user's email address is retrieved via
+            Google's <code>tokeninfo</code> endpoint solely to verify that the signed-in user has permissions to read
+            the target Google Cloud Storage bucket and to display the active authenticated account in the user interface.
+          </li>
+          <li>
+            <strong>Google Cloud Storage Objects:</strong> Read-only access to download pre-recorded website archives
+            (Web Page Replay <code>.wprgo</code> archive files, such as <code>gs://chrome-partner-loadline/...</code>)
+            used as deterministic test fixtures during benchmark runs.
+          </li>
+        </ul>
+
+        <div class="callout">
+          <p class="callout-title">What We Do NOT Collect</p>
+          <p>
+            LoadLine Web Runner does <strong>not</strong> access, collect, or store any personal user information,
+            Google Drive files, Gmail messages, contacts, calendar events, photos, browsing history, or private data.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>3. Purpose and Use of Google User Data</h2>
+        <p>
+          The access to Google Cloud Storage is used for a single, specific purpose:
+        </p>
+        <ul>
+          <li>
+            <strong>Downloading Benchmark Workload Archives:</strong> The LoadLine web performance benchmark reproduces
+            real-world web browsing scenarios using recorded web page replays. These archive files are hosted in
+            authorized Google Cloud Storage buckets. The application uses the read-only OAuth token to authenticate
+            direct browser downloads of these archive files so they can be replayed during local benchmark runs.
+          </li>
+        </ul>
+        <p>
+          We do not use Google user data for any other purpose, including advertising, marketing, analytics, profiling,
+          or tracking.
+        </p>
+      </section>
+
+      <section>
+        <h2>4. Data Storage, Retention, and Processing</h2>
+        <p>
+          LoadLine Web Runner is an entirely <strong>client-side</strong> application running in your web browser.
+        </p>
+        <ul>
+          <li>
+            <strong>No Server-Side Transmission:</strong> The application does not operate a developer backend server.
+            OAuth tokens and downloaded files are never transmitted to, processed by, or stored on any third-party or
+            remote servers. All API requests are sent directly from your browser to Google's official endpoints
+            (<code>accounts.google.com</code>, <code>storage.googleapis.com</code>, and <code>oauth2.googleapis.com</code>).
+          </li>
+          <li>
+            <strong>Local Token Storage:</strong> The temporary OAuth access token is stored locally on your device in
+            browser <code>localStorage</code> (or session memory) to maintain authentication between page reloads.
+          </li>
+          <li>
+            <strong>Local Archive Caching:</strong> Downloaded benchmark archive files (<code>.wprgo</code>) are cached
+            locally on your device in your browser's IndexedDB storage to avoid re-downloading large archive files on
+            subsequent benchmark runs.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>5. Data Sharing and Disclosure</h2>
+        <p>
+          LoadLine Web Runner does <strong>not</strong> sell, rent, trade, license, or share any user data or Google
+          account information with third parties.
+        </p>
+        <p>
+          No analytics trackers, third-party advertising SDKs, or external monitoring services are embedded in the application.
+        </p>
+      </section>
+
+      <section>
+        <h2>6. User Control, Data Deletion, and Revocation</h2>
+        <p>
+          You have full control over your data and authentication sessions at all times:
+        </p>
+        <ul>
+          <li>
+            <strong>Sign Out / Clear Tokens:</strong> You can click the <strong>Sign Out</strong> button in the application
+            interface at any time. This immediately purges the stored OAuth access token and session details from your
+            browser's <code>localStorage</code>.
+          </li>
+          <li>
+            <strong>Delete Cached Archives:</strong> You can click the <strong>Clear Cache</strong> button in the application
+            interface to remove all cached Google Cloud Storage archive files from your browser's IndexedDB storage.
+          </li>
+          <li>
+            <strong>Revoke Account Permissions:</strong> You can revoke LoadLine Web Runner's access to your Google Account
+            at any time by visiting your
+            <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">Google Account Third-Party Apps &amp; Services Settings</a>.
+          </li>
+          <li>
+            <strong>Clear Browser Storage:</strong> Clearing your browser cookies and site data for this domain will
+            delete all locally stored tokens, settings, and cached benchmark fixtures.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>7. Google API Services User Data Policy Compliance</h2>
+        <div class="callout">
+          <p class="callout-title">Google Limited Use Disclosure</p>
+          <p>
+            LoadLine Web Runner's use and transfer to any other app of information received from Google APIs will adhere to the
+            <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>,
+            including the Limited Use requirements.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>8. Security Safeguards</h2>
+        <p>
+          We employ industry-standard technical measures to safeguard your session and data:
+        </p>
+        <ul>
+          <li>All communication with Google APIs is encrypted in transit using Transport Layer Security (HTTPS).</li>
+          <li>Browser security headers, including Cross-Origin-Opener-Policy (COOP), are configured to isolate application execution.</li>
+          <li>OAuth access tokens are short-lived (typically expiring within 1 hour) and are managed according to Google Identity Services best practices.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>9. Updates to This Policy</h2>
+        <p>
+          We may update this Privacy Policy from time to time to reflect changes in our practices or legal obligations.
+          Any revisions will be posted on this page with an updated Effective Date.
+        </p>
+      </section>
+
+      <section>
+        <h2>10. Contact Information</h2>
+        <p>
+          If you have questions, concerns, or feedback regarding this Privacy Policy or the data practices of LoadLine Web Runner,
+          please contact the LoadLine team at:
+        </p>
+        <p>
+          <a href="mailto:loadline@chromium.org">loadline@chromium.org</a>
+        </p>
+        <p>
+          You can also view the source code and documentation in the
+          <a href="https://chromium.googlesource.com/crossbench" target="_blank" rel="noopener noreferrer">Crossbench Project Repository</a>.
+        </p>
+      </section>
+
+      <div class="footer">
+        <p>&copy; 2026 The Chromium Authors. Open-source under BSD-style license.</p>
+        <p><a href="/">LoadLine Web Runner Home</a> &bull; <a href="/privacy.html">Privacy Policy</a></p>
+      </div>
+    </div>
+  </body>
+</html>
