@@ -173,6 +173,8 @@ hooks = [
 ]
 
 recursedeps = [
+  # Required to get the clang-format binaries via buildtools/DEPS.
+  'buildtools',
   # WebPageReplay includes a go compiler in its DEPS.
-  'third_party/webpagereplay'
+  'third_party/webpagereplay',
 ]
