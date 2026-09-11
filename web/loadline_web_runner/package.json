@@ -1,0 +1,28 @@
+{
+  "name": "loadline-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "prepare:bin": "node scripts/fetch_binaries.mjs",
+    "predev": "npm run prepare:bin",
+    "prebuild": "npm run prepare:bin",
+    "pretest": "npm run prepare:bin",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@yume-chan/adb": "^2.6.2",
+    "@yume-chan/adb-backend-webusb": "^0.0.19",
+    "pyodide": "^0.29.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "happy-dom": "^14.12.3",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vitest": "^2.1.9"
+  }
+}
