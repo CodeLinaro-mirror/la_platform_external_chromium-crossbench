@@ -21,6 +21,7 @@ from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, adb_devices
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.ios import IOSPlatform, ios_devices
+from crossbench.plt.pyodide_adb import PyodideAndroidAdbPlatform
 
 
 class AmbiguousDriverIdentifier(argparse.ArgumentTypeError):
@@ -241,6 +242,8 @@ class DriverConfig(ConfigObject):
 
   def validate_android(self) -> None:
     platform = plt.PLATFORM
+    if platform.is_pyodide:
+      return
     devices = adb_devices(platform, self.adb_bin)
     names = list(devices.keys())
     if not devices:
@@ -341,6 +344,9 @@ class DriverConfig(ConfigObject):
         ssh_user=ssh_user)
 
   def get_adb_platform(self) -> plt.Platform:
+    if plt.PLATFORM.is_pyodide:
+      return PyodideAndroidAdbPlatform(
+          plt.PLATFORM, device_identifier=self.device_id)
     adb = Adb(plt.PLATFORM, self.device_id, self.adb_bin, self.bundletool)
     return AndroidAdbPlatform(plt.PLATFORM, self.device_id, adb)
 

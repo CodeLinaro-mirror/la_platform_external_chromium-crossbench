@@ -18,6 +18,7 @@ from crossbench.browsers.chromium.version import ChromiumVersion
 from crossbench.browsers.settings import Settings
 from crossbench.flags.base import Flags
 from crossbench.plt.android_adb import AndroidAdbPlatform
+from crossbench.plt.pyodide_adb import PyodideAndroidAdbPlatform
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -224,6 +225,28 @@ class CdpAndroidBrowserTest(CrossbenchFakeFsTestCase):
     )
     url = self.browser.current_url
     self.assertEqual(url, "https://example.com")
+
+  def test_webadb_cdp_bridge(self) -> None:
+    mock_webadb = mock.Mock()
+    mock_webadb.isInterrupted.return_value = False
+    mock_webadb.sendCdpCommand.return_value = '{"frameId": "mock_frame"}'
+    pyodide_platform = PyodideAndroidAdbPlatform(
+        self.host_platform,
+        device_identifier="mock-android",
+        webadb=mock_webadb,
+    )
+    pyodide_platform.app_path_to_package = (  # type: ignore[method-assign]
+        mock.Mock(return_value="com.android.chrome"))
+    pyodide_platform.app_version = (  # type: ignore[method-assign]
+        mock.Mock(return_value="130.0.6723.58"))
+    browser = CdpAndroidBrowser(
+        label="cdp-chrome",
+        path=pyodide_platform.path("/system/app/Chrome.apk"),
+        settings=Settings(platform=pyodide_platform),
+    )
+    browser.show_url("https://example.com")
+    mock_webadb.sendCdpCommand.assert_called_once_with(
+        "Page.navigate", '{"url": "https://example.com"}')
 
 
 class DevToolsRemoteClientTest(CrossbenchFakeFsTestCase):

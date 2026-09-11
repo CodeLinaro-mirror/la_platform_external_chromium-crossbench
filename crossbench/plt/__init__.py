@@ -12,6 +12,7 @@ from crossbench.plt.base import Platform, SubprocessError
 from crossbench.plt.linux import LinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
 from crossbench.plt.macos import MacOSPlatform
+from crossbench.plt.pyodide import PyodidePlatform, is_pyodide_env
 from crossbench.plt.win import WinPlatform
 
 
@@ -20,6 +21,8 @@ def _get_default() -> Platform:
   # pyfakefs.
   if default := globals().get("PLATFORM"):
     return default
+  if is_pyodide_env():
+    return PyodidePlatform()
   if sys.platform == "linux":
     return LinuxPlatform()
   if sys.platform == "darwin":
@@ -37,6 +40,7 @@ __all__ = [
     "MachineArch",
     "MacOSPlatform",
     "Platform",
+    "PyodidePlatform",
     "SubprocessError",
     "WinPlatform",
 ]
