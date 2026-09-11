@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import gzip
 import pathlib
 import textwrap
 from unittest import mock
@@ -141,6 +142,32 @@ Swap:                400 kB
         ProcessMeminfo(930293, "/usr/bin/some_process -b", 5074, 44860, 0),
         ProcessMeminfo(930304, "/usr/bin/some_process -c", 521, 2680, 400),
     ])
+
+  def test_gzip(self):
+    test_file = self.platform.path("/tmp/test.txt")
+    self.fs.create_file(test_file, contents="hello gzip")
+    with mock.patch.object(
+        self.platform,
+        "which",
+        return_value=self.platform.path("/usr/bin/gzip")):
+      self.expect_sh("gzip", str(test_file))
+      gz_file = self.platform.gzip(test_file)
+    self.assertEqual(gz_file, self.platform.path("/tmp/test.txt.gz"))
+
+  def test_gzip_python_fallback(self):
+    test_file = self.platform.path("/tmp/test.txt")
+    self.fs.create_file(test_file, contents="hello python gzip")
+    with mock.patch.object(self.platform, "which", return_value=None):
+      if self.platform.is_remote:
+        with self.assertRaises(RuntimeError):
+          self.platform.gzip(test_file)
+        return
+      gz_file = self.platform.gzip(test_file)
+    self.assertEqual(gz_file, self.platform.path("/tmp/test.txt.gz"))
+    self.assertFalse(self.fs.exists(test_file))
+    self.assertTrue(self.fs.exists(gz_file))
+    with gzip.open(gz_file, "rt", encoding="utf-8") as f:
+      self.assertEqual(f.read(), "hello python gzip")
 
 
 class LocalLinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,

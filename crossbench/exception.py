@@ -27,6 +27,8 @@ TInfoStack = tuple[str, ...]
 
 TExceptionTypes = tuple[type[BaseException], ...]
 
+TExceptionId = int
+
 _TRACEBACK_SOURCE_POSITION_RE = re.compile(r'  File "([^"]+)", line (\d+)')
 
 
@@ -146,7 +148,7 @@ class ExceptionAnnotator:
     # Associates raised exception with the info_stack at that time for later
     # use in the `handle` method.
     # This is cleared whenever we enter a  new ExceptionAnnotationScope.
-    self._pending_exceptions: dict[BaseException, TInfoStack] = {}
+    self._pending_exceptions: dict[TExceptionId, TInfoStack] = {}
     self._depth = 0
 
   @property
@@ -189,8 +191,12 @@ class ExceptionAnnotator:
 
   def leave_pending(self, exception_value: BaseException,
                     previous_stack: tuple[str, ...]) -> None:
-    if exception_value not in self._pending_exceptions:
-      self._pending_exceptions[exception_value] = self.info_stack
+    # Certain FFI/interop exception types (e.g. pyodide.ffi.JsException)
+    # do not implement __hash__ and cannot be stored as dictionary keys.
+    # We use id() to work around that.
+    exc_id = id(exception_value)
+    if exc_id not in self._pending_exceptions:
+      self._pending_exceptions[exc_id] = self.info_stack
     self._info_stack = previous_stack
 
   def matching(self, *args: type[BaseException]) -> list[BaseException]:
@@ -275,9 +281,7 @@ class ExceptionAnnotator:
       # Directly add exceptions from nested annotators.
       self.extend(exception.exceptions, is_nested=True)
     else:
-      stack = self.info_stack
-      if exception in self._pending_exceptions:
-        stack = self._pending_exceptions[exception]
+      stack = self._pending_exceptions.get(id(exception), self.info_stack)
       self._exceptions.add(Entry(traceback, exception, stack))
     if self.throw:
       raise  # noqa: PLE0704

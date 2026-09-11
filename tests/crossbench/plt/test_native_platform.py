@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import gzip
 import json
 import os
 import pathlib
@@ -227,6 +228,45 @@ class BaseNativePlatformTestCase(unittest.TestCase):
         self.assertTrue(tmp_file_renamed.exists())
       self.assertFalse(self.platform.exists(tmp_file))
       self.assertTrue(self.platform.exists(tmp_file_renamed))
+
+  def test_gzip(self):
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      test_file = tmp_dir / "test.txt"
+      content = "Hello, Crossbench gzip test!"
+      self.platform.write_text(test_file, content)
+      self.assertTrue(self.platform.exists(test_file))
+
+      gz_file = self.platform.gzip(test_file)
+      self.assertEqual(gz_file, test_file.with_name(f"{test_file.name}.gz"))
+      self.assertTrue(self.platform.exists(gz_file))
+      self.assertFalse(self.platform.exists(test_file))
+
+      if self.platform.is_local:
+        with gzip.open(
+            self.platform.local_path(gz_file), "rt", encoding="utf-8") as f:
+          self.assertEqual(f.read(), content)
+
+  def test_gzip_python_fallback(self):
+    with self.platform.TemporaryDirectory() as tmp_dir:
+      test_file = tmp_dir / "test_fallback.txt"
+      content = "Testing python gzip fallback!"
+      self.platform.write_text(test_file, content)
+      self.assertTrue(self.platform.exists(test_file))
+
+      with mock.patch.object(self.platform, "which", return_value=None):
+        if self.platform.is_remote:
+          with self.assertRaises(RuntimeError):
+            self.platform.gzip(test_file)
+          return
+        gz_file = self.platform.gzip(test_file)
+
+      self.assertEqual(gz_file, test_file.with_name(f"{test_file.name}.gz"))
+      self.assertTrue(self.platform.exists(gz_file))
+      self.assertFalse(self.platform.exists(test_file))
+
+      with gzip.open(
+          self.platform.local_path(gz_file), "rt", encoding="utf-8") as f:
+        self.assertEqual(f.read(), content)
 
   def test_default_tmp_dir(self):
     self.assertTrue(self.platform.is_dir(self.platform.default_tmp_dir))

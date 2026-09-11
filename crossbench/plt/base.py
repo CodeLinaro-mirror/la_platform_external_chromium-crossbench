@@ -10,6 +10,7 @@ import collections.abc
 import contextlib
 import dataclasses
 import functools
+import gzip
 import inspect
 import logging
 import os
@@ -224,6 +225,11 @@ class Platform(abc.ABC):
     return not self.is_remote
 
   @property
+  def is_pyodide(self) -> bool:
+    """Returns True if running in a Pyodide WebAssembly environment."""
+    return False
+
+  @property
   def host_platform(self) -> Platform:
     return self
 
@@ -236,8 +242,12 @@ class Platform(abc.ABC):
       return MachineArch.X64
     if raw in ("arm64", "aarch64"):
       return MachineArch.ARM_64
-    if raw in ("arm"):
+    if raw in ("arm",):
       return MachineArch.ARM_32
+    if raw in ("wasm32",):
+      return MachineArch.WASM_32
+    if raw in ("wasm64",):
+      return MachineArch.WASM_64
     raise NotImplementedError(f"Unsupported machine type: {raw}")
 
   def _raw_machine_arch(self) -> str:
@@ -255,6 +265,10 @@ class Platform(abc.ABC):
   @property
   def is_arm64(self) -> bool:
     return self.machine == MachineArch.ARM_64
+
+  @property
+  def is_wasm(self) -> bool:
+    return self.machine.is_wasm
 
   @property
   def type_key(self) -> tuple[str, str]:
@@ -837,6 +851,21 @@ class Platform(abc.ABC):
              dst_path: pth.AnyPathLike) -> pth.AnyPath:
     """Remove a single file on this platform."""
     return self.local_path(src_path).rename(dst_path)
+
+  def gzip(self, path: pth.AnyPathLike) -> pth.AnyPath:
+    """Compress a file with gzip and return the compressed path."""
+    if self.which("gzip"):
+      platform_path = self.path(path)
+      self.sh("gzip", platform_path)
+      return platform_path.with_name(f"{platform_path.name}.gz")
+    self.assert_is_local()
+    local_path = self.local_path(path)
+    dst_path = local_path.with_name(f"{local_path.name}.gz")
+    logging.info("Compressing %s with python gzip", local_path)
+    with local_path.open("rb") as f_in, gzip.open(dst_path, "wb") as f_out:
+      shutil.copyfileobj(f_in, f_out)
+    local_path.unlink()
+    return dst_path
 
   def symlink_or_copy(self, src: pth.AnyPathLike,
                       dst: pth.AnyPathLike) -> pth.AnyPath:

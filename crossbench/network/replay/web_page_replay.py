@@ -244,7 +244,7 @@ class WprBase(abc.ABC):
 
   def _forward_ports(self) -> None:
     assert self._process, "Should not forward ports if WPR is not running"
-    if self._platform.is_remote:
+    if self._platform.is_remote and not self._platform.is_pyodide:
       ports = self._platform.ports
       self._host_http_port = ports.forward(0, self._device_http_port)
       self._host_https_port = ports.forward(0, self._device_https_port)

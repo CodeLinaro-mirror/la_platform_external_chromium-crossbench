@@ -13,6 +13,8 @@ class MachineArch(enum.Enum):
   X64 = ("x64", "intel", 64)
   ARM_32 = ("arm32", "arm", 32)
   ARM_64 = ("arm64", "arm", 64)
+  WASM_32 = ("wasm32", "wasm", 32)
+  WASM_64 = ("wasm64", "wasm", 64)
 
   def __init__(self, name: str, arch: str, bits: int) -> None:
     self.identifier: Final[str] = name
@@ -26,6 +28,10 @@ class MachineArch(enum.Enum):
   @property
   def is_intel(self) -> bool:
     return self.arch == "intel"
+
+  @property
+  def is_wasm(self) -> bool:
+    return self.arch == "wasm"
 
   @property
   def is_32bit(self) -> bool:

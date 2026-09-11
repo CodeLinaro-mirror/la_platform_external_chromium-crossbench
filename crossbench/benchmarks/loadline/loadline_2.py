@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 import numpy as np
 import pandas as pd
-import scipy.stats
+from scipy.stats import t as scipy_t
 from typing_extensions import override
 
 from crossbench import config
@@ -47,7 +47,7 @@ def _metric_stats(df: pd.DataFrame) -> dict[str, dict[str, Any]]:
     if n > 1:
       s = float(np.std(values, ddof=1))
       se = s / np.sqrt(n)
-      t = float(scipy.stats.t.ppf(1 - (1 - 0.95) / 2, n - 1))
+      t = float(scipy_t.ppf(1 - (1 - 0.95) / 2, n - 1))
       delta = t * se
     else:
       delta = 0.0
@@ -114,7 +114,7 @@ def process_scores(df: pd.DataFrame,
       if total_df > 0:
         total_se = (
             total_mean * float(np.sqrt(np.sum(rel_vars))) / len(log_means))
-        total_t = float(scipy.stats.t.ppf(0.975, total_df))
+        total_t = float(scipy_t.ppf(0.975, total_df))
         total_delta = total_t * total_se
         metric_results["TOTAL_SCORE"] = (
             f"{total_mean:.3f} ± {total_delta:.3f}")

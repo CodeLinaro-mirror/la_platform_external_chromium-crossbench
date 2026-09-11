@@ -408,6 +408,22 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertIsInstance(annotator_1[1].exception, ValueError)
     self.assertIsInstance(annotator_1[2].exception, TypeError)
 
+  def test_unhashable_exception(self):
+    annotator = ExceptionAnnotator()
+
+    class UnhashableException(Exception):
+      __hash__ = None  # type: ignore[assignment]
+
+    with annotator.capture("info 1"):
+      with annotator.info("info 2", "info 3"):
+        raise UnhashableException("unhashable error")
+
+    self.assertFalse(annotator.is_success)
+    self.assertEqual(len(annotator), 1)
+    self.assertEqual(str(annotator[0].exception), "unhashable error")
+    self.assertTupleEqual(annotator[0].info_stack,
+                          ("info 1", "info 2", "info 3"))
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

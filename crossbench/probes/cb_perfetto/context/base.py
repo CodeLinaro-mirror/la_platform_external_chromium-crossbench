@@ -164,13 +164,13 @@ class PerfettoProbeContext(
     renamed_result_file = local_result_file.with_name(PERFETTO_TRACE_NAME)
     self.host_platform.rename(local_result_file, renamed_result_file)
 
-    self.host_platform.sh("gzip", renamed_result_file)
-    renamed_result_file = renamed_result_file.with_suffix(
-        f"{local_result_file.suffix}.gz")
-    assert renamed_result_file.is_file(), (
-        f"Could not compress {renamed_result_file}")
+    compressed_result_file = self.host_platform.local_path(
+        self.host_platform.gzip(renamed_result_file))
+    assert compressed_result_file.is_file(), (
+        f"Could not compress {compressed_result_file}")
+    logging.info("Perfetto trace compressed: %s", compressed_result_file)
 
-    return LocalProbeResult(perfetto=(renamed_result_file,))
+    return LocalProbeResult(perfetto=(compressed_result_file,))
 
   def _cleanup_remote_perfetto_files(self) -> None:
     # Especially on android, the perfetto files are not in the default tmp dir.

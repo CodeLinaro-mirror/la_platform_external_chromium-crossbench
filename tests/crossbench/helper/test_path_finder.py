@@ -10,6 +10,7 @@ from unittest import mock
 
 from typing_extensions import override
 
+from crossbench.helper import path_finder_base
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder, \
     ChromiumCheckoutFinder, TraceboxFinder, TraceconvFinder, \
     TraceProcessorFinder, V8CheckoutFinder, V8ToolsFinder, WprGoFinder
@@ -66,6 +67,11 @@ class ChromiumCheckoutFinderTestCase(BaseCheckoutTestCase):
         self.assertEqual(
             pathlib.Path(ChromiumCheckoutFinder(self.platform).path),
             fake_chrome_root)
+
+  def test_chromium_src_relative_local_path_shallow(self):
+    with mock.patch("crossbench.path.ROOT_DIR", pathlib.Path("/crossbench")):
+      path = path_finder_base.chromium_src_relative_local_path()
+      self.assertIsNone(path)
 
 
 class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
