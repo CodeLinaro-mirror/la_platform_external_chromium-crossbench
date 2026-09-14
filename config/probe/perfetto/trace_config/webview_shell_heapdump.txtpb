@@ -10,7 +10,7 @@ data_sources {
       process_cmdline: "org.chromium.webview_shell"
       continuous_dump_config {
         dump_phase_ms: 0
-        dump_interval_ms: 1000
+        dump_interval_ms: 5000
       }
       shmem_size_bytes: 8388608
       block_client: true
@@ -25,7 +25,7 @@ data_sources {
       process_cmdline: "org.chromium.webview_shell"
       continuous_dump_config {
         dump_phase_ms: 0
-        dump_interval_ms: 1000
+        dump_interval_ms: 5000
       }
     }
   }
