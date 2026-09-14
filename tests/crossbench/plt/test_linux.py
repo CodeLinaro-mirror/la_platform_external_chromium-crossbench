@@ -293,6 +293,41 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
   def test_local_port_forward(self):
     pass
 
+  def test_gpu_vram_used_nvidia(self):
+    self.fs.create_file("/usr/bin/nvidia-smi")
+    self.expect_sh(
+        "/usr/bin/nvidia-smi",
+        "--query-gpu=memory.used",
+        "--format=csv,noheader,nounits",
+        result="1024\n2048\n",
+    )
+    vram = self.platform.gpu_vram_used()
+    self.assertEqual(vram, {"gpu_0": 1024.0, "gpu_1": 2048.0})
+
+  def test_gpu_vram_used_amd(self):
+    self.fs.create_file(
+        "/sys/class/drm/card0/device/mem_info_vram_used",
+        contents=str(1024 * 1024 * 512),
+    )
+    self.fs.create_file(
+        "/sys/class/drm/card0/device/mem_info_gtt_used",
+        contents=str(1024 * 1024 * 256),
+    )
+    vram = self.platform.gpu_vram_used()
+    self.assertEqual(vram, {"amd_gpu": 768.0})
+
+  def test_gpu_vram_used_intel(self):
+    self.fs.create_file(
+        "/sys/class/drm/card0/lmem_used_bytes",
+        contents=str(1024 * 1024 * 1024),
+    )
+    vram = self.platform.gpu_vram_used()
+    self.assertEqual(vram, {"intel_gpu": 1024.0})
+
+  def test_gpu_vram_used_none(self):
+    vram = self.platform.gpu_vram_used()
+    self.assertEqual(vram, {})
+
 
 class LinuxPlatformClipboardTestCase(PlatformClipboardTestCase):
   __test__ = True

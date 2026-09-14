@@ -1399,3 +1399,18 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     self.adb.shell("input", "keyevent", "KEYCODE_WAKEUP")
     # Unlock the device
     self.adb.shell("input", "keyevent", "KEYCODE_MENU")
+
+  @override
+  def gpu_vram_used(self) -> dict[str, float]:
+    """Queries graphics / unified memory allocation on Android."""
+    # Try Qualcomm Adreno sysfs if available
+    try:
+      page_alloc = self.path("/sys/class/kgsl/kgsl-3d0/page_alloc")
+      if self.exists(page_alloc):
+        val = int(self.cat(page_alloc).strip())
+        if val > 0:
+          return {"adreno_gpu": val / (1024.0 * 1024.0)}
+    except Exception as e:  # noqa: BLE001
+      logging.debug("Failed to read kgsl page_alloc: %s", e)
+
+    return super().gpu_vram_used()

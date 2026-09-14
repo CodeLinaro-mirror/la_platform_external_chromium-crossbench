@@ -719,3 +719,39 @@ class MacOSPlatform(PosixPlatform):
       return super().last_modified(path)
     # Get seconds since epoch
     return float(self.sh_stdout("stat", "-f", "%m", self.path(path)))
+
+  @override
+  def gpu_vram_used(self) -> dict[str, float]:
+    """Queries GPU / Unified memory usage via IOKit IOAccelerator."""
+    try:
+      plist_bytes = self.sh_stdout_bytes("ioreg", "-a", "-r", "-d", "1", "-c",
+                                         "IOAccelerator")
+    except SubprocessError as e:
+      logging.debug("Failed to query macOS IOAccelerator: %s", e)
+      return {}
+
+    if not plist_bytes:
+      return {}
+
+    data = plistlib.loads(plist_bytes)
+    accelerators = data if isinstance(data, list) else [data]
+
+    results: dict[str, float] = {}
+    for i, accel in enumerate(accelerators):
+      if not isinstance(accel, dict):
+        continue
+      perf_stats = accel.get("PerformanceStatistics", {})
+      if not isinstance(perf_stats, dict):
+        continue
+      # Unified memory (Apple Silicon) or Dedicated VRAM (Intel/dGPU)
+      in_use_sys = perf_stats.get("In use system memory", 0)
+      alloc_sys = perf_stats.get("Alloc system memory", 0)
+      in_use_vid = perf_stats.get("In use video memory", 0)
+      alloc_vid = perf_stats.get("Alloc video memory", 0)
+
+      total_bytes = (in_use_sys or alloc_sys) + (in_use_vid or alloc_vid)
+      if (total_bytes and isinstance(total_bytes, (int, float)) and
+          total_bytes > 0):
+        results[f"gpu_{i}"] = float(total_bytes) / (1024.0 * 1024.0)
+
+    return results

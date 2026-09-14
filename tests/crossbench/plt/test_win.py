@@ -229,6 +229,43 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     with self.assertRaises(VersionParseError):
       WinVersion.parse("foo")
 
+  def test_gpu_vram_used_nvidia(self):
+    nvidia_smi = self.path(
+        "C:/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe")
+    self.fs.create_file(nvidia_smi)
+    self.expect_sh(
+        nvidia_smi,
+        "--query-gpu=memory.used",
+        "--format=csv,noheader,nounits",
+        result="1024\n2048\n",
+    )
+    vram = self.platform.gpu_vram_used()
+    self.assertEqual(vram, {"gpu_0": 1024.0, "gpu_1": 2048.0})
+
+  def test_gpu_vram_used_wmic(self):
+    self.expect_sh(
+        "wmic",
+        "path",
+        "Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory",
+        "get",
+        "DedicatedUsage,SharedUsage",
+        result="DedicatedUsage  SharedUsage\n1073741824      536870912\n",
+    )
+    vram = self.platform.gpu_vram_used()
+    self.assertEqual(vram, {"gpu_wmic": 1536.0})
+
+  def test_gpu_vram_used_none(self):
+    self.expect_sh(
+        "wmic",
+        "path",
+        "Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory",
+        "get",
+        "DedicatedUsage,SharedUsage",
+        result="DedicatedUsage  SharedUsage\n0               0\n",
+    )
+    vram = self.platform.gpu_vram_used()
+    self.assertEqual(vram, {})
+
 
 class WinPlatformClipboardTestCase(PlatformClipboardTestCase):
   __test__ = True

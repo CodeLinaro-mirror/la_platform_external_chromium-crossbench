@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import functools
 import logging
@@ -197,3 +198,48 @@ class WinPlatform(Platform):
   def set_clipboard(self, text: str) -> None:
     assert self._clipboard_bin
     self.sh(*self._clipboard_bin, input=text.encode("utf-8"), check=True)
+
+  @override
+  def gpu_vram_used(self) -> dict[str, float]:
+    # 1. Try nvidia-smi
+    nvidia_smi = self.which("nvidia-smi")
+    if not nvidia_smi:
+      default_path = self.path(
+          r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe")
+      if self.exists(default_path):
+        nvidia_smi = default_path
+
+    if nvidia_smi:
+      out = self.sh_stdout(
+          nvidia_smi,
+          "--query-gpu=memory.used",
+          "--format=csv,noheader,nounits",
+          check=False)
+      vram_dict: dict[str, float] = {}
+      for i, line in enumerate(out.splitlines()):
+        if line := line.strip():
+          with contextlib.suppress(ValueError):
+            vram_dict[f"gpu_{i}"] = float(line.split()[0])
+      if vram_dict:
+        return vram_dict
+
+    # 2. Try WMIC / Performance Counters (DedicatedUsage + SharedUsage)
+    out = self.sh_stdout(
+        "wmic",
+        "path",
+        "Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory",
+        "get",
+        "DedicatedUsage,SharedUsage",
+        check=False)
+    total_bytes = 0
+    for line in out.splitlines():
+      line = line.strip()
+      if not line or "DedicatedUsage" in line:
+        continue
+      for part in line.split():
+        if part.isdigit():
+          total_bytes += int(part)
+    if total_bytes > 0:
+      return {"gpu_wmic": total_bytes / (1024.0 * 1024.0)}
+
+    return super().gpu_vram_used()

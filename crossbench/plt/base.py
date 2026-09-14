@@ -708,6 +708,11 @@ class Platform(abc.ABC):
     del timeout
     raise NotImplementedError(f"system_meminfo not implemented for {self}.")
 
+  def gpu_vram_used(self) -> dict[str, float]:
+    """Returns a dictionary of GPU identifiers to VRAM / Unified memory
+    used in MB."""
+    return {}
+
   def foreground_process(self) -> dict[str, Any] | None:
     return None
 

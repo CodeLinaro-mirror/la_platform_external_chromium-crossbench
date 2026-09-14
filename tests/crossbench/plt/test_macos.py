@@ -363,6 +363,31 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.expect_sh("killall", "-9", "Google Chrome", result="")
     self.platform.killall("Google Chrome")
 
+  def test_gpu_vram_used_ioreg(self):
+    sample_plist = plistlib.dumps([{
+        "PerformanceStatistics": {
+            "In use system memory": 1024 * 1024 * 1024,
+            "In use video memory": 512 * 1024 * 1024,
+        }
+    }])
+    self.expect_sh(
+        "ioreg",
+        "-a",
+        "-r",
+        "-d",
+        "1",
+        "-c",
+        "IOAccelerator",
+        result=sample_plist)
+    vram = self.platform.gpu_vram_used()
+    self.assertEqual(vram, {"gpu_0": 1536.0})
+
+  def test_gpu_vram_used_none(self):
+    self.expect_sh(
+        "ioreg", "-a", "-r", "-d", "1", "-c", "IOAccelerator", result=b"")
+    vram = self.platform.gpu_vram_used()
+    self.assertEqual(vram, {})
+
 
 class MacOSPlatformClipboardTestCase(PlatformClipboardTestCase):
   __test__ = True

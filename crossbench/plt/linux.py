@@ -4,9 +4,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import datetime as dt
 import functools
+import logging
 import os
 import re
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterator
@@ -233,6 +235,53 @@ class LinuxPlatform(PosixPlatform):
                 rss_total=int(match["rss_total"]),
                 swap_total=int(match["swap_total"])))
       return meminfos
+
+  @override
+  def gpu_vram_used(self) -> dict[str, float]:
+    # 1. Try nvidia-smi
+    if nvidia_smi := self.which("nvidia-smi"):
+      try:
+        out = self.sh_stdout(nvidia_smi, "--query-gpu=memory.used",
+                             "--format=csv,noheader,nounits")
+        vram_dict: dict[str, float] = {}
+        for i, line in enumerate(out.splitlines()):
+          if line := line.strip():
+            vram_dict[f"gpu_{i}"] = float(line.split()[0])
+        if vram_dict:
+          return vram_dict
+      except (SubprocessError, OSError, ValueError) as e:
+        logging.debug("Failed to query nvidia-smi: %s", e)
+
+    # 2. Try AMD DRM sysfs (both VRAM and GTT for APUs)
+    try:
+      total_bytes = 0
+      for drm_path in self.glob(self.path("/sys/class/drm"), "card*/device"):
+        vram_file = drm_path / "mem_info_vram_used"
+        gtt_file = drm_path / "mem_info_gtt_used"
+        if self.exists(vram_file):
+          with contextlib.suppress(OSError, ValueError):
+            total_bytes += int(self.cat(vram_file).strip())
+        if self.exists(gtt_file):
+          with contextlib.suppress(OSError, ValueError):
+            total_bytes += int(self.cat(gtt_file).strip())
+      if total_bytes > 0:
+        return {"amd_gpu": total_bytes / (1024.0 * 1024.0)}
+    except OSError as e:
+      logging.debug("Failed to query AMD sysfs: %s", e)
+
+    # 3. Try Intel DRM sysfs (lmem_used_bytes for Intel Arc dGPU)
+    try:
+      total_lmem = 0
+      for lmem_file in self.glob(
+          self.path("/sys/class/drm"), "card*/lmem_used_bytes"):
+        with contextlib.suppress(OSError, ValueError):
+          total_lmem += int(self.cat(lmem_file).strip())
+      if total_lmem > 0:
+        return {"intel_gpu": total_lmem / (1024.0 * 1024.0)}
+    except OSError as e:
+      logging.debug("Failed to query Intel sysfs: %s", e)
+
+    return super().gpu_vram_used()
 
   @functools.cached_property
   def _clipboard_bin(self) -> TupleCmdArgs | None:

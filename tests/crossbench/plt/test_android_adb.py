@@ -1013,6 +1013,22 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("pkill com.example.app")
     self.platform.killall("com.example.app")
 
+  def test_gpu_vram_used_adreno(self):
+    self.expect_sh("'[' -e /sys/class/kgsl/kgsl-3d0/page_alloc ']'", result="")
+    self.expect_sh(
+        "cat /sys/class/kgsl/kgsl-3d0/page_alloc",
+        result=str(1024 * 1024 * 512),
+    )
+    vram = self.platform.gpu_vram_used()
+    self.assertEqual(vram, {"adreno_gpu": 512.0})
+
+  def test_gpu_vram_used_none(self):
+    self.expect_sh(
+        "'[' -e /sys/class/kgsl/kgsl-3d0/page_alloc ']'",
+        result=ShResult(returncode=1))
+    vram = self.platform.gpu_vram_used()
+    self.assertEqual(vram, {})
+
   def test_platform_version_cls(self):
     version = AndroidVersion.parse("13 (Tiramisu)")
     self.assertSequenceEqual(version.parts, (13,))
