@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
-from typing import Any
+from typing import Any, Iterator
 from unittest import mock
 
 import websocket
@@ -249,6 +250,29 @@ class CdpAndroidBrowserTest(CrossbenchFakeFsTestCase):
         "Page.navigate", '{"url": "https://example.com"}')
 
 
+@contextlib.contextmanager
+def _mock_transport(
+    client: DevToolsRemoteClient,
+    response: dict[str, Any] | None = None
+) -> Iterator[tuple[list[dict[str, Any]], mock.Mock]]:
+  """Records the payloads reaching the websocket and fakes page sessions.
+
+  Yields the list of sent payloads and the mocked page-session lookup.
+  """
+  sent_payloads: list[dict[str, Any]] = []
+
+  def mock_send(payload: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
+    sent_payloads.append(payload)
+    return True, {"id": payload["id"], **(response or {"result": {}})}
+
+  patch_send = mock.patch.object(
+      client, "_send_raw_command", side_effect=mock_send)
+  patch_session_id = mock.patch.object(
+      client, "_get_page_session_id", return_value="mock-session")
+  with patch_send, patch_session_id as mock_session_id:
+    yield sent_payloads, mock_session_id
+
+
 class DevToolsRemoteClientTest(CrossbenchFakeFsTestCase):
   __test__ = True
 
@@ -295,6 +319,67 @@ class DevToolsRemoteClientTest(CrossbenchFakeFsTestCase):
 
     self.assertIsNone(self.client._ws)
     self.assertEqual(self.client._devtools_port, 0)
+
+  def test_send_command_browser_domains(self) -> None:
+    with _mock_transport(self.client) as (payloads, mock_session_id):
+      self.client.send_command(
+          {"method": "NativeProfiling.dumpProfilingDataOfAllProcesses"})
+      self.client.send_command({"method": "Browser.getVersion"})
+      self.client.send_command({"method": "Target.getTargets"})
+
+    mock_session_id.assert_not_called()
+    self.assertEqual(len(payloads), 3)
+    for payload in payloads:
+      self.assertNotIn("sessionId", payload)
+    self.assertEqual(len({payload["id"] for payload in payloads}), 3)
+
+  def test_send_command_page_domain(self) -> None:
+    with _mock_transport(self.client) as (payloads, _):
+      self.client.send_command({
+          "method": "Page.navigate",
+          "params": {
+              "url": "https://example.com"
+          }
+      })
+      # Storage is implemented by frame targets as well, so it must keep
+      # using the page session.
+      self.client.send_command({"method": "Storage.getStorageKeyForFrame"})
+
+    self.assertEqual(len(payloads), 2)
+    for payload in payloads:
+      self.assertEqual(payload.get("sessionId"), "mock-session")
+
+  def test_send_command_explicit_session(self) -> None:
+    with _mock_transport(self.client) as (payloads, mock_session_id):
+      self.client.send_command({
+          "method": "Page.navigate",
+          "sessionId": "custom-session"
+      })
+
+    mock_session_id.assert_not_called()
+    self.assertEqual(payloads[0]["sessionId"], "custom-session")
+
+  def test_send_command_explicit_no_session(self) -> None:
+    with _mock_transport(self.client) as (payloads, mock_session_id):
+      self.client.send_command({"method": "Custom.command", "sessionId": None})
+
+    mock_session_id.assert_not_called()
+    self.assertNotIn("sessionId", payloads[0])
+
+  def test_send_command_does_not_modify_payload(self) -> None:
+    payload: dict[str, Any] = {"method": "Page.navigate"}
+    with _mock_transport(self.client):
+      self.client.send_command(payload)
+
+    self.assertEqual(payload, {"method": "Page.navigate"})
+
+  def test_send_command_protocol_error(self) -> None:
+    error = {"code": -32601, "message": "'Custom.command' wasn't found"}
+    with _mock_transport(self.client, response={"error": error}):
+      success, response = self.client.send_command({"method": "Custom.command"})
+
+    self.assertFalse(success)
+    self.assertEqual(response["error"], error)
 
 
 if __name__ == "__main__":

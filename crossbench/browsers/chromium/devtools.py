@@ -44,6 +44,18 @@ class DevToolsInBrowserClient:
         raise RuntimeError(f"Failed to open DevTools, no targetId: {result}")
 
 
+# CDP domains that are only implemented by BrowserDevToolsAgentHost and thus
+# must never be routed to a page session. Note that Storage is not part of
+# this list: frame targets implement it as well.
+BROWSER_CDP_PREFIXES: Final[tuple[str, ...]] = (
+    "Browser.",
+    "NativeProfiling.",
+    "SystemInfo.",
+    "Target.",
+    "Tethering.",
+)
+
+
 class DevToolsRemoteClient:
   """Manages communication with the Chrome DevTools Protocol."""
 
@@ -219,28 +231,37 @@ class DevToolsRemoteClient:
 
   def send_command(
       self, command_payload: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
-    """Sends a command to DevTools and checks the response ID.
+    """Sends a command to DevTools and waits for the matching response.
+
+    Commands are routed to a page session by default. Commands for
+    browser-level domains (see BROWSER_CDP_PREFIXES) are sent to the browser
+    session instead, since page targets do not implement them. Callers can
+    override the routing by setting "sessionId" explicitly: to a session of
+    their choice, or to None to target the browser session, in which case the
+    key is stripped from the payload instead of being sent as null.
+
+    An "id" is added automatically if the payload does not provide one.
 
     Args:
       command_payload: The command payload to send.
 
     Returns:
       Tuple of [bool, dict]
-      bool: True if the command was sent successfully and the response ID
-            matches, False otherwise.
+      bool: True if the command succeeded, False if DevTools replied with a
+            protocol error.
       dict: the full response message returned by the websocket.
     """
-    if "id" not in command_payload:
-      command_payload = dict(command_payload)
-      command_payload["id"] = self._get_next_id()
+    command_payload = dict(command_payload)
+    command_payload.setdefault("id", self._get_next_id())
     method = str(command_payload.get("method", ""))
-    if (not method.startswith(("Target.", "Browser.")) and
-        "sessionId" not in command_payload):
-      session_id = self._get_page_session_id()
-      if session_id:
-        command_payload = dict(command_payload)
+    if "sessionId" in command_payload:
+      if command_payload["sessionId"] is None:
+        del command_payload["sessionId"]
+    elif not method.startswith(BROWSER_CDP_PREFIXES):
+      if session_id := self._get_page_session_id():
         command_payload["sessionId"] = session_id
-    return self._send_raw_command(command_payload)
+    success, response = self._send_raw_command(command_payload)
+    return success and "error" not in response, response
 
   def dispatch_command(self, command_payload: dict[str, Any]) -> bool:
     """Dispatches a command to DevTools. Does not wait for any response.

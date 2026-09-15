@@ -787,7 +787,7 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
         "method": method,
         "params": params or {},
     })
-    if not success or "error" in res:
+    if not success:
       raise RuntimeError(f"CDP command '{method}' failed: {res}")
     return res
 

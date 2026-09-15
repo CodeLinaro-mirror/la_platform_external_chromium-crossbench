@@ -128,12 +128,12 @@ class ChromiumPgoProbeContextAndroid(ChromiumPgoProbeContext):
     }
     logging.debug("Triggering PGO dump.")
     with self._get_devtools_client().open() as devtools_client:
-      success, _ = devtools_client.send_command(request)
+      success, response = devtools_client.send_command(request)
       if success:
         logging.info("PGO dump triggered successfully.")
-      else:
-        logging.error("Failed to trigger PGO dump.")
-      return success
+        return True
+      logging.error("Failed to trigger PGO dump: %s", response)
+      return False
 
   def _list_pgo_profiles(self) -> list[pth.AnyPath]:
     """Lists PGO profile files in the specified directory on the device."""
