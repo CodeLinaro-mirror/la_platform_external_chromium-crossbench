@@ -252,6 +252,7 @@ class Browser(abc.ABC):
   def validate_env(self, env: RunnerEnv) -> None:
     """Called before starting a browser / browser session to perform
     a pre-run checklist."""
+    self.network.validate_env(env)
 
   @property
   def is_local(self) -> bool:

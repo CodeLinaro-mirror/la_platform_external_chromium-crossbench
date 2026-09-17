@@ -1011,6 +1011,22 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       ObjectParser.enum_list("DummyEnum", DummyEnum, 123)
 
+  def test_md5_hash(self):
+    self.assertEqual(ObjectParser.md5_hash(""), b"")
+    self.assertEqual(ObjectParser.md5_hash(b""), b"")
+    hex_str = "8375843a6828b282eef16042c21e903b"
+    expected_bytes = bytes.fromhex(hex_str)
+    self.assertEqual(ObjectParser.md5_hash(hex_str), expected_bytes)
+    self.assertEqual(ObjectParser.md5_hash(hex_str.upper()), expected_bytes)
+    self.assertEqual(ObjectParser.md5_hash(f"  {hex_str}  "), expected_bytes)
+    self.assertEqual(ObjectParser.md5_hash(expected_bytes), expected_bytes)
+
+  def test_md5_hash_invalid(self):
+    for invalid in ("123", "g" * 32, b"short", b"a" * 32, 12345):
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          ObjectParser.md5_hash(invalid)
+
 
 class TimeUnitTestCase(unittest.TestCase):
 

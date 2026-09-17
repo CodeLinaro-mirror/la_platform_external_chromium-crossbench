@@ -632,6 +632,24 @@ class ObjectParser:
   def safe_filename(cls, value: Any, name: str = "safe filename") -> str:
     return pth.safe_filename(cls.non_empty_str(value, name))
 
+  @classmethod
+  def md5_hash(cls, value: Any) -> bytes:
+    if not value:
+      return b""
+    if isinstance(value, bytes):
+      if len(value) == 16:
+        return value
+      raise argparse.ArgumentTypeError(
+          f"Invalid MD5 hash bytes length: {len(value)}. Expected 16 bytes.")
+    value_str = cls.any_str(value).strip()
+    if len(value_str) == 32:
+      try:
+        return bytes.fromhex(value_str)
+      except ValueError:
+        pass
+    raise argparse.ArgumentTypeError(
+        f"Invalid MD5 hash: {value!r}. Expected 32-char hex digest.")
+
 
 _MAX_LEN = 70
 

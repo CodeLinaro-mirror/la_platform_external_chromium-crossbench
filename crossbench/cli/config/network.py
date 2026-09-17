@@ -22,7 +22,7 @@ from crossbench.network.replay.wpr import LocalWprReplayNetwork, \
     RemoteWprReplayNetwork
 from crossbench.network.traffic_shaping import ts_proxy
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
-from crossbench.parse import NumberParser, PathParser
+from crossbench.parse import NumberParser, ObjectParser, PathParser
 
 if TYPE_CHECKING:
   import urllib.parse as urlparse
@@ -71,6 +71,7 @@ class NetworkConfig(ConfigObject):
   host: str | None = None
   http_port: int | None = None
   https_port: int | None = None
+  expected_md5_hash: bytes = b""
 
   @classmethod
   @functools.cache
@@ -143,6 +144,11 @@ class NetworkConfig(ConfigObject):
         "http_port", type=NumberParser.port_number, help="HTTP port for WPR.")
     parser.add_argument(
         "https_port", type=NumberParser.port_number, help="HTTPS port for WPR.")
+    parser.add_argument(
+        "expected_md5_hash",
+        type=ObjectParser.md5_hash,
+        default=b"",
+        help=("Expected archive MD5 hash for WPR replay network verification."))
     return parser
 
   @classmethod
@@ -268,7 +274,7 @@ class NetworkConfig(ConfigObject):
                         "skip_deterministic_script_injection", "host",
                         "no_archive_certificates",
                         "response_transformations_file", "cross_platform_mode",
-                        "http_port", "https_port")
+                        "http_port", "https_port", "expected_md5_hash")
     for option in wpr_only_options:
       if getattr(self, option) and self.type is not NetworkType.WPR:
         raise argparse.ArgumentTypeError(
@@ -308,7 +314,8 @@ class NetworkConfig(ConfigObject):
               .skip_deterministic_script_injection,
               host=self.host,
               http_port=self.http_port,
-              https_port=self.https_port)
+              https_port=self.https_port,
+              expected_md5_hash=self.expected_md5_hash)
         return LocalWprReplayNetwork(
             self.url or str(self.path),
             traffic_shaper,
@@ -321,7 +328,8 @@ class NetworkConfig(ConfigObject):
             cross_platform_mode=self.cross_platform_mode,
             host=self.host,
             http_port=self.http_port,
-            https_port=self.https_port)
+            https_port=self.https_port,
+            expected_md5_hash=self.expected_md5_hash)
     raise ValueError(f"Unknown network type {self.type}")
 
   def is_default(self) -> bool:

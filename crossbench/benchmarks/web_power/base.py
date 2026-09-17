@@ -21,7 +21,7 @@ from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.wpr import WprReplayNetwork
-from crossbench.parse import DurationParser, PathParser
+from crossbench.parse import DurationParser, ObjectParser, PathParser
 from crossbench.probes.bits import BitsProbe
 from crossbench.probes.junction_temperature import \
     JunctionTemperatureProbe as JtProbe
@@ -65,6 +65,7 @@ def _value_or(value: _T | None, alternative: _T) -> _T:
 class WebPowerSiteConfig:
   url: str
   archive: str | None = None
+  archive_md5_hash: bytes = b""
   default_stabilization_time: dt.timedelta = dt.timedelta(seconds=10)
 
 
@@ -90,28 +91,36 @@ class WebPowerStory(Story):
   _WEB_POWER_GCS = "gs://chrome-partner-loadline/power"
   _LEGACY_WPR_RECORDING = (
       f"{_WEB_POWER_GCS}/CHROME_EFFICIENCY_KPI_2026_04_03.wprgo")
+  _LEGACY_WPR_MD5_HASH: Final[bytes] = ObjectParser.md5_hash(
+      "8375843a6828b282eef16042c21e903b")
 
   _CANONICAL_SITES: ClassVar[dict[str, WebPowerSiteConfig]] = {
       "ajnews":
           WebPowerSiteConfig(
               url="https://aljazeera.com",
               archive=_LEGACY_WPR_RECORDING,
+              archive_md5_hash=_LEGACY_WPR_MD5_HASH,
           ),
       "cnn":
           WebPowerSiteConfig(
               url="https://www.cnn.com",
               archive=f"{_WEB_POWER_GCS}/cnn_20260513.wprgo",
+              archive_md5_hash=ObjectParser.md5_hash(
+                  "04d258d7a6c207b41c591fbb55c53397"),
           ),
       "msn":
           WebPowerSiteConfig(
               url="https://msn.com/en-us",
               archive=_LEGACY_WPR_RECORDING,
+              archive_md5_hash=_LEGACY_WPR_MD5_HASH,
               default_stabilization_time=dt.timedelta(seconds=60),
           ),
       "youtube":
           WebPowerSiteConfig(
               url="https://www.youtube.com/watch?v=XITHbsUUlYI",
               archive=f"{_WEB_POWER_GCS}/youtube_2026_05_18.wprgo",
+              archive_md5_hash=ObjectParser.md5_hash(
+                  "fcfa2979d058d5a5d8e4900cfc994570"),
           ),
   }
 
@@ -120,16 +129,21 @@ class WebPowerStory(Story):
           WebPowerSiteConfig(
               url="https://www.allrecipes.com",
               archive=f"{_WEB_POWER_GCS}/allrecipes_2026_08_20.wprgo",
+              archive_md5_hash=ObjectParser.md5_hash(
+                  "25ce6da90f35259679183edb6c118f7c"),
           ),
       "telegraph":
           WebPowerSiteConfig(
               url="https://www.telegraph.co.uk",
               archive=f"{_WEB_POWER_GCS}/telegraph_2026_08_20.wprgo",
+              archive_md5_hash=ObjectParser.md5_hash(
+                  "acb3bafa7081ede2c74d25d882b72c40"),
           ),
       "yahoo":
           WebPowerSiteConfig(
               url="https://www.yahoo.com",
               archive=_LEGACY_WPR_RECORDING,
+              archive_md5_hash=_LEGACY_WPR_MD5_HASH,
           ),
   }
 
@@ -562,4 +576,5 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     args.network_config = NetworkConfig(
         type=NetworkType.WPR,
         url=site_config.archive,
+        expected_md5_hash=site_config.archive_md5_hash,
         no_archive_certificates=True)

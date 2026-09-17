@@ -14,6 +14,7 @@ from crossbench.network.traffic_shaping.live import NoTrafficShaper
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.browser import Browser
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.flags.base import Flags
   from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -82,6 +83,9 @@ class Network(abc.ABC):
 
   def validate(self, browser: Browser) -> None:
     self.traffic_shaper.validate(browser)
+
+  def validate_env(self, env: RunnerEnv) -> None:
+    self.traffic_shaper.validate_env(env)
 
   def extra_flags(self, browser_attributes: BrowserAttributes) -> Flags:
     assert self.is_running, "Network is not running."

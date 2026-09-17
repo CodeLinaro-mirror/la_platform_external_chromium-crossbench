@@ -30,6 +30,7 @@ from crossbench.device_config import RequiredDeviceConfigMode, \
     check_device_config, parse_device_config
 from crossbench.env.runner_env import ValidationMode
 from crossbench.network.replay.wpr import WprReplayNetwork
+from crossbench.parse import ObjectParser
 from crossbench.probes.bits import BitsProbe
 from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe, TraceConfig
 from crossbench.probes.junction_temperature import JunctionTemperatureProbe
@@ -124,6 +125,36 @@ class WebPowerStoryTestCase(unittest.TestCase):
     self.assertEqual(story.url, "https://www.google.com")
     self.assertEqual(story.name, "web-power-mock-story-custom")
     self.assertEqual(story.duration, dt.timedelta(seconds=123))
+
+  def test_all_sites_have_valid_archive_md5_hash(self) -> None:
+    for site_key, site_config in WebPowerStory.SITES.items():
+      if site_config.archive:
+        self.assertEqual(
+            ObjectParser.md5_hash(site_config.archive_md5_hash),
+            site_config.archive_md5_hash,
+            f"Invalid archive_md5_hash for site {site_key}")
+        self.assertEqual(len(site_config.archive_md5_hash), 16)
+      else:
+        self.assertEqual(site_config.archive_md5_hash, b"")
+
+  def test_setup_pre_recorded_site_network_sets_expected_md5_hash(self) -> None:
+    args = argparse.Namespace(site="cnn", network_config=None)
+    MockWebPowerBenchmark._setup_pre_recorded_site_network(args)
+    self.assertIsNotNone(args.network_config)
+    self.assertEqual(args.network_config.type, NetworkType.WPR)
+    self.assertEqual(args.network_config.url,
+                     WebPowerStory.SITES["cnn"].archive)
+    self.assertEqual(args.network_config.expected_md5_hash,
+                     WebPowerStory.SITES["cnn"].archive_md5_hash)
+
+  def test_select_network_live_mode(self) -> None:
+    args = argparse.Namespace(
+        site=None,
+        url="https://example.com",
+        network_config=NetworkConfig(type=NetworkType.LIVE))
+    MockWebPowerBenchmark._select_network(args)
+    self.assertEqual(args.network_config.type, NetworkType.LIVE)
+    self.assertEqual(args.network_config.expected_md5_hash, b"")
 
 
 class BaseWebPowerBenchmarkTestCase(BaseBenchmarkTestCase):

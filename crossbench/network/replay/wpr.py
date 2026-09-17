@@ -44,8 +44,10 @@ class WprReplayNetwork(ReplayNetwork):
                cross_platform_mode: bool,
                host: str | None,
                http_port: int | None = None,
-               https_port: int | None = None) -> None:
-    super().__init__(archive, traffic_shaper, browser_platform)
+               https_port: int | None = None,
+               expected_md5_hash: bytes | str = b"") -> None:
+    super().__init__(archive, traffic_shaper, browser_platform,
+                     expected_md5_hash)
     self._server: WprReplayServer | None = None
     self._tmp_dir: AnyPath | None = None
     self._persist_server: Final[bool] = persist_server
@@ -233,7 +235,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
                response_transformations_file: LocalPath | None,
                host: str | None,
                http_port: int | None = None,
-               https_port: int | None = None) -> None:
+               https_port: int | None = None,
+               expected_md5_hash: bytes | str = b"") -> None:
     super().__init__(
         archive=archive,
         traffic_shaper=traffic_shaper,
@@ -245,7 +248,8 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         cross_platform_mode=False,
         host=host,
         http_port=http_port,
-        https_port=https_port)
+        https_port=https_port,
+        expected_md5_hash=expected_md5_hash)
 
   @property
   @override

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
+import hashlib
 import logging
 from typing import TYPE_CHECKING, Final, Iterator, Self, TypeVar
 from urllib.parse import urlparse
@@ -16,10 +17,11 @@ from crossbench import exception
 from crossbench import path as pth
 from crossbench.cli.ui import ui
 from crossbench.network.base import Network
-from crossbench.parse import PathParser
+from crossbench.parse import ObjectParser, PathParser
 
 if TYPE_CHECKING:
   from crossbench import plt
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.path import LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -35,9 +37,32 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
   def __init__(self,
                archive: pth.LocalPath | str,
                traffic_shaper: TrafficShaper | None = None,
-               browser_platform: plt.Platform | None = None) -> None:
+               browser_platform: plt.Platform | None = None,
+               expected_md5_hash: bytes | str = b"") -> None:
     super().__init__(traffic_shaper, browser_platform)
+    self._expected_md5_hash: Final[bytes] = ObjectParser.md5_hash(
+        expected_md5_hash)
+    self._cached_archive_md5_hash: bytes = b""
     self._archive_path: pth.LocalPath = self.ensure_archive(archive)
+
+  @property
+  def _archive_md5_hash(self) -> bytes:
+    if not self._cached_archive_md5_hash:
+      with self._archive_path.open("rb") as f:
+        self._cached_archive_md5_hash = hashlib.file_digest(f, "md5").digest()
+    return self._cached_archive_md5_hash
+
+  @override
+  def validate_env(self, env: RunnerEnv) -> None:
+    super().validate_env(env)
+    if not self._expected_md5_hash:
+      return
+    assert len(self._expected_md5_hash) == 16
+    actual_hash = self._archive_md5_hash
+    if actual_hash != self._expected_md5_hash:
+      env.handle_warning(f"WPR archive hash mismatch for {self._archive_path}: "
+                         f"expected '{self._expected_md5_hash.hex()}', "
+                         f"but actual archive MD5 was '{actual_hash.hex()}'.")
 
   @property
   @override
@@ -51,6 +76,7 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
   def set_archive_path(self, path: pth.LocalPath) -> None:
     assert not self.is_running
     self._archive_path = path
+    self._cached_archive_md5_hash = b""
 
   @contextlib.contextmanager
   @override
