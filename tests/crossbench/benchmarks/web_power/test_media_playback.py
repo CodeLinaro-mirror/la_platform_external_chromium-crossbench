@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+from unittest import mock
 
 from typing_extensions import override
 
@@ -52,6 +53,28 @@ class WebPowerMediaPlaybackStoryTestCase(BaseCrossbenchTestCase):
     self.assertTrue(story.stats)
     self.assertEqual(story.volume, VolumeMode.OFF)
     self.assertEqual(story.ambient_mode, AmbientMode.UNCHANGED)
+
+  def test_has_ambient_mode(self) -> None:
+    story = WebPowerMediaPlaybackStory(
+        name_suffix="test",
+        site_config=WebPowerSiteConfig(url="https://youtube.com"),
+    )
+    mock_actions = mock.MagicMock()
+    mock_actions.js.return_value = True
+    self.assertTrue(story._has_ambient_mode(mock_actions))
+    mock_actions.js.return_value = False
+    self.assertFalse(story._has_ambient_mode(mock_actions))
+
+  def test_is_ambient_mode_on(self) -> None:
+    story = WebPowerMediaPlaybackStory(
+        name_suffix="test",
+        site_config=WebPowerSiteConfig(url="https://youtube.com"),
+    )
+    mock_actions = mock.MagicMock()
+    mock_actions.js.return_value = True
+    self.assertTrue(story._is_ambient_mode_on(mock_actions))
+    mock_actions.js.return_value = False
+    self.assertFalse(story._is_ambient_mode_on(mock_actions))
 
 
 class WebPowerMediaPlaybackBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):

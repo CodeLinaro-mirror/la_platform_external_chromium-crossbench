@@ -143,6 +143,10 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
   def _resume_video(self, actions: Actions) -> None:
     self._control_video(actions, "play")
 
+  def _has_ambient_mode(self, actions: Actions) -> bool:
+    selector = self._by_type_and_text("span", "Ambient mode")
+    return bool(actions.js(f"return !!({selector});"))
+
   def _is_ambient_mode_on(self, actions: Actions) -> bool:
     selector = self._by_type_and_text("span", "Ambient mode")
     js_code = f"""
@@ -207,7 +211,8 @@ class WebPowerMediaPlaybackStory(WebPowerStory):
       is_on = self.ambient_mode == AmbientMode.ON
       with run.actions("Set_Ambient_Mode", verbose=True) as actions:
         self._enter_settings(actions)
-        if self._is_ambient_mode_on(actions) != is_on:
+        if (self._has_ambient_mode(actions) and
+            self._is_ambient_mode_on(actions) != is_on):
           self._click_element(actions,
                               self._by_type_and_text("span", "Ambient mode"))
         else:
