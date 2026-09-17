@@ -126,6 +126,8 @@ class PinpointSubcommandTest(unittest.TestCase):
         *["--exp-commit", "recent"],
         *["--base-patch", "http://base.patch"],
         *["--exp-patch", "http://exp.patch"],
+        "--base-flags=--base-flag",
+        "--exp-flags=--exp-flag",
         "--base-js-flags=--flag1",
         "--exp-js-flags=--flag2",
         *["--base-enable-features", "base_feat"],
@@ -145,6 +147,8 @@ class PinpointSubcommandTest(unittest.TestCase):
         exp_commit="recent",
         base_patch="http://base.patch",
         exp_patch="http://exp.patch",
+        base_flags="--base-flag",
+        exp_flags="--exp-flag",
         base_js_flags="--flag1",
         exp_js_flags="--flag2",
         base_enable_features="base_feat",
@@ -182,6 +186,7 @@ class PinpointSubcommandTest(unittest.TestCase):
         *["--bug", "12345"],
         *["--start-commit", "HEAD"],
         *["--end-commit", "recent"],
+        "--flags=--bisect-flag",
         "--js-flags=--flag1",
         *["--enable-features", "base_feat"],
         *["--disable-features", "base_dis"],
@@ -197,11 +202,25 @@ class PinpointSubcommandTest(unittest.TestCase):
         bug=12345,
         start_commit="HEAD",
         end_commit="recent",
+        flags="--bisect-flag",
         js_flags="--flag1",
         enable_features="base_feat",
         disable_features="base_dis",
     )
     mock_bisect_job.assert_called_with(test_config)
+
+    mock_parse_and_override.reset_mock()
+    self.cli.run([
+        "pinpoint",
+        "bisect",
+        "--config",
+        "{benchmark: 'speedometer3', bot: 'linux-r350-perf'}",
+        "--chart",
+        "my_chart",
+        "--browser-flags=--bisect-flag",
+    ])
+    self.assertEqual(mock_parse_and_override.call_args.kwargs["flags"],
+                     "--bisect-flag")
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
   @mock.patch(
@@ -328,6 +347,8 @@ class PinpointSubcommandTest(unittest.TestCase):
         exp_commit=None,
         base_patch=None,
         exp_patch=None,
+        base_flags=None,
+        exp_flags=None,
         base_js_flags=None,
         exp_js_flags=None,
         base_enable_features=None,
@@ -336,6 +357,102 @@ class PinpointSubcommandTest(unittest.TestCase):
         exp_disable_features=None,
     )
     mock_start_job.assert_called_with(test_config)
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointTryJobConfig.parse_and_override")
+  def test_pinpoint_start_job_flags(self, mock_parse_and_override,
+                                    _mock_start_job):
+    test_config = PinpointTryJobConfig(
+        benchmark="speedometer3", bot="linux-r350-perf")
+    mock_parse_and_override.return_value = test_config
+
+    self.cli.run([
+        *["pinpoint", "start"],
+        *["--benchmark", "speedometer3"],
+        "--flags=--no-sandbox",
+    ])
+
+    self.assertEqual(
+        {
+            key: value
+            for key, value in mock_parse_and_override.call_args.kwargs.items()
+            if value is not None
+        }, {
+            "benchmark": "speedometer3",
+            "base_flags": "--no-sandbox",
+            "exp_flags": "--no-sandbox",
+        })
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointTryJobConfig.parse_and_override")
+  def test_pinpoint_start_job_base_exp_flags(self, mock_parse_and_override,
+                                             _mock_start_job):
+    test_config = PinpointTryJobConfig(
+        benchmark="speedometer3", bot="linux-r350-perf")
+    mock_parse_and_override.return_value = test_config
+
+    self.cli.run([
+        *["pinpoint", "start"],
+        *["--benchmark", "speedometer3"],
+        "--base-flags=--flag1",
+        "--exp-flags=--flag2",
+    ])
+
+    self.assertEqual(
+        {
+            key: value
+            for key, value in mock_parse_and_override.call_args.kwargs.items()
+            if value is not None
+        }, {
+            "benchmark": "speedometer3",
+            "base_flags": "--flag1",
+            "exp_flags": "--flag2",
+        })
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointTryJobConfig.parse_and_override")
+  def test_pinpoint_start_job_browser_flags_aliases(self,
+                                                    mock_parse_and_override,
+                                                    _mock_start_job):
+    test_config = PinpointTryJobConfig(
+        benchmark="speedometer3", bot="linux-r350-perf")
+    mock_parse_and_override.return_value = test_config
+
+    self.cli.run([
+        *["pinpoint", "start"],
+        *["--benchmark", "speedometer3"],
+        "--browser-flags=--no-sandbox",
+    ])
+    self.assertEqual(
+        {
+            key: value
+            for key, value in mock_parse_and_override.call_args.kwargs.items()
+            if value is not None
+        }, {
+            "benchmark": "speedometer3",
+            "base_flags": "--no-sandbox",
+            "exp_flags": "--no-sandbox",
+        })
+
+    self.cli.run([
+        *["pinpoint", "start"],
+        *["--benchmark", "speedometer3"],
+        "--base-browser-flags=--flag1",
+        "--exp-browser-flags=--flag2",
+    ])
+    self.assertEqual(
+        {
+            key: value
+            for key, value in mock_parse_and_override.call_args.kwargs.items()
+            if value is not None
+        }, {
+            "benchmark": "speedometer3",
+            "base_flags": "--flag1",
+            "exp_flags": "--flag2",
+        })
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.print_job_config")
   def test_pinpoint_job_config(self, mock_print_job_config):

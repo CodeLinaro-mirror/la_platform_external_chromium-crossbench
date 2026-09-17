@@ -137,6 +137,28 @@ class VariantConfigTest(MockHttpRequestsMixin):
             "--disable-features": "disablefeature0",
         })
 
+  def test_override_generic_flags(self):
+    config = VariantConfig()
+    config = config.override_flags(flags="--no-sandbox --disable-gpu")
+    self.assertDictEqual(config.flags_as_dict(), {
+        "--no-sandbox": None,
+        "--disable-gpu": None,
+    })
+
+  def test_override_generic_and_specific_flags(self):
+    config = VariantConfig()
+    config = config.override_flags(
+        flags="--no-sandbox --js-flags=--old",
+        js_flags="--new",
+        enable_features="feature1",
+    )
+    self.assertDictEqual(
+        config.flags_as_dict(), {
+            "--no-sandbox": None,
+            "--js-flags": "--new",
+            "--enable-features": "feature1",
+        })
+
 
 class PinpointTryJobConfigTest(MockHttpRequestsMixin):
   _get_auth_session_patch_target = "crossbench.pinpoint.auth.get_auth_session"
@@ -348,6 +370,21 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
                 '--disable-features=disable3,disable4"',
             "tags": '{"origin": "pinpoint_cli"}',
         })
+
+  def test_to_request_dict_with_generic_flags(self):
+    config = PinpointTryJobConfig.parse_and_override(
+        benchmark="test_benchmark",
+        bot="test_bot",
+        story="test_story",
+        base_commit="abcdef00",
+        exp_commit="12345678",
+        base_flags="--no-sandbox",
+        exp_flags="--disable-gpu",
+    )
+    self.assertEqual(config.to_request_dict()["base_extra_args"],
+                     '--extra-browser-args="--no-sandbox"')
+    self.assertEqual(config.to_request_dict()["experiment_extra_args"],
+                     '--extra-browser-args="--disable-gpu"')
 
   def test_to_request_dict_no_flags(self):
     config = PinpointTryJobConfig.parse_and_override(
@@ -655,6 +692,19 @@ class PinpointBisectJobConfigTest(MockHttpRequestsMixin):
                                         "--disable-features=disable1,disable2"),
             ),
             end=BisectEndVariantConfig(commit="12345678",)))
+
+  def test_override_generic_flags(self):
+    config = PinpointBisectJobConfig.parse_and_override(
+        benchmark="test_benchmark",
+        bot="test_bot",
+        story="test_story",
+        chart="test_chart",
+        start_commit="abcdef00",
+        end_commit="12345678",
+        flags="--no-sandbox",
+    )
+    self.assertEqual(config.to_request_dict()["extra_test_args"],
+                     '--extra-browser-args="--no-sandbox"')
 
 
 if __name__ == "__main__":

@@ -99,16 +99,20 @@ class VariantConfig(ConfigObject):
     return dataclasses.replace(self, patch=self.parse_patch(patch))
 
   def override_flags(self,
+                     flags: str | None = None,
                      js_flags: str | None = None,
                      enable_features: str | None = None,
                      disable_features: str | None = None) -> Self:
+    extra_flags: dict[str, str | None] = {}
+    if flags and flags.strip():
+      extra_flags = dict(FlagsConfig.parse(flags)["default"][0].flags.items())
     input_flags = {
         "--js-flags": js_flags,
         "--enable-features": enable_features,
         "--disable-features": disable_features,
     }
     filtered_flags = {k: v for k, v in input_flags.items() if v is not None}
-    combined_flags = self.flags_as_dict() | filtered_flags
+    combined_flags = self.flags_as_dict() | extra_flags | filtered_flags
     if combined_flags_str := self.flags_dict_to_str(combined_flags):
       return dataclasses.replace(
           self, flags=FlagsConfig.parse(combined_flags_str))
@@ -314,6 +318,8 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
       exp_commit: str | None = None,
       base_patch: str | None = None,
       exp_patch: str | None = None,
+      base_flags: str | None = None,
+      exp_flags: str | None = None,
       base_js_flags: str | None = None,
       exp_js_flags: str | None = None,
       base_enable_features: str | None = None,
@@ -349,6 +355,7 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
       base = parsed.base.override_commit(base_commit, bot=resolved_bot)
       base = base.override_patch(base_patch)
       base = base.override_flags(
+          flags=base_flags,
           js_flags=base_js_flags,
           enable_features=base_enable_features,
           disable_features=base_disable_features,
@@ -358,6 +365,7 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
           exp_commit, bot=resolved_bot)
       experiment = experiment.override_patch(exp_patch)
       experiment = experiment.override_flags(
+          flags=exp_flags,
           js_flags=exp_js_flags,
           enable_features=exp_enable_features,
           disable_features=exp_disable_features,
@@ -560,6 +568,7 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
       bug: int | None = None,
       start_commit: str | None = None,
       end_commit: str | None = None,
+      flags: str | None = None,
       js_flags: str | None = None,
       enable_features: str | None = None,
       disable_features: str | None = None,
@@ -597,6 +606,7 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
       end = parsed.end.override_commit(end_commit, bot=resolved_bot)
 
       start = start.override_flags(
+          flags=flags,
           js_flags=js_flags,
           enable_features=enable_features,
           disable_features=disable_features,

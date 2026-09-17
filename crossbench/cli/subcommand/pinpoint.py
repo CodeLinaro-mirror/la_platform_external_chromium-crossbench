@@ -277,6 +277,22 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
 
     # Extra browser args.
     start_parser.add_argument(
+        "--flags",
+        "--browser-flags",
+        help="Chrome flags to pass to both base and experiment commits. "
+        "Can be overridden by --base-flags or --exp-flags.\n"
+        "Example: --flags=--no-sandbox")
+    start_parser.add_argument(
+        "--base-flags",
+        "--base-browser-flags",
+        help="Chrome flags to pass for the base commit.\n"
+        "Example: --base-flags=--no-sandbox")
+    start_parser.add_argument(
+        "--exp-flags",
+        "--exp-browser-flags",
+        help="Chrome flags to pass for the experiment commit.\n"
+        "Example: --exp-flags=--no-sandbox")
+    start_parser.add_argument(
         "--js-flags",
         help="JavaScript flags to pass to V8 for both base and experiment "
         "commits. Can be overridden by --base-js-flags or --exp-js-flags.\n"
@@ -333,6 +349,8 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         exp_commit=args.exp_commit or args.commit,
         base_patch=args.base_patch,
         exp_patch=args.exp_patch,
+        base_flags=args.base_flags or args.flags,
+        exp_flags=args.exp_flags or args.flags,
         base_js_flags=args.base_js_flags or args.js_flags,
         exp_js_flags=args.exp_js_flags or args.js_flags,
         base_enable_features=args.base_enable_features or args.enable_features,
@@ -371,6 +389,7 @@ class PinpointStartSubcommand(PinpointBaseStartSubcommand):
     --exp-commit=recent \\
     --base-patch-url=https://chromium-review.googlesource.com/c/v8/v8/+/12345 \\
     --exp-patch-url=https://chromium-review.googlesource.com/c/v8/v8/+/67890 \\
+    --flags=--no-sandbox \\
     --base-js-flags=--flag1,--flag2 \\
     --exp-js-flags=--flag3,--flag4 \\
     --base-enable-features=feature1,feature2 \\
@@ -434,6 +453,11 @@ class PinpointBisectSubcommand(PinpointBaseSubcommand):
 
     # Extra browser args.
     parser.add_argument(
+        "--flags",
+        "--browser-flags",
+        help="Chrome flags to pass.\n"
+        "Example: --flags=--no-sandbox")
+    parser.add_argument(
         "--js-flags",
         help="JavaScript flags to pass to V8.\n"
         "Example: --js-flags=--turbolev-future")
@@ -458,6 +482,7 @@ class PinpointBisectSubcommand(PinpointBaseSubcommand):
     --bug-id=123456 \\
     --start-commit=HEAD \\
     --end-commit=recent \\
+    --flags=--no-sandbox \\
     --js-flags=--flag1,--flag2 \\
     --enable-features=feature1,feature2 \\
     --disable-features=feature5,feature6
@@ -477,6 +502,7 @@ class PinpointBisectSubcommand(PinpointBaseSubcommand):
         bug=args.bug,
         start_commit=args.start_commit,
         end_commit=args.end_commit,
+        flags=args.flags,
         js_flags=args.js_flags,
         enable_features=args.enable_features,
         disable_features=args.disable_features,
