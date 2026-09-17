@@ -35,23 +35,28 @@ class BlinkAIStory(PressBenchmarkStory):
   URL_OFFICIAL: ClassVar[str] = (
       "https://chromium-workloads.web.app/blink-ai/main/")
   URL_LOCAL: ClassVar[str] = "http://localhost:8000/"
-  SUBSTORIES: ClassVar[tuple[str, ...]] = (
+  DEFAULT_SUBSTORIES: ClassVar[tuple[str, ...]] = (
       "language_model",
       "multimodal_image",
       "multimodal_images",
       "multimodal_audio",
   )
+  SUBSTORIES: ClassVar[tuple[str, ...]] = DEFAULT_SUBSTORIES + (
+      "mtp_summary",
+      "mtp_flight",
+      "mtp_emoji",
+  )
 
   @classmethod
   @override
   def default_story_names(cls) -> tuple[str, ...]:
-    return cls.SUBSTORIES
+    return cls.DEFAULT_SUBSTORIES
 
   def __init__(self,
                substories: Sequence[str] = (),
                url: str | None = None) -> None:
     if not substories:
-      substories = self.SUBSTORIES
+      substories = self.default_story_names()
     super().__init__(substories=substories, url=url or self.URL)
 
   @property

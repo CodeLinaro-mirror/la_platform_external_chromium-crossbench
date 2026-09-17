@@ -333,6 +333,70 @@ class BlinkAITestCase(helper.SubStoryTestCase):
           urls)
       self.assertSequenceEqual(browser.expected_js, [])
 
+  def test_substories_and_default(self):
+    default_stories = self.story_cls.default_story_names()
+    self.assertEqual(
+        default_stories,
+        (
+            "language_model",
+            "multimodal_image",
+            "multimodal_images",
+            "multimodal_audio",
+        ),
+    )
+    for mtp_story in ("mtp_summary", "mtp_flight", "mtp_emoji"):
+      self.assertIn(mtp_story, self.story_cls.SUBSTORIES)
+      self.assertNotIn(mtp_story, default_stories)
+
+  def test_run_mtp_stories(self):
+    stories = self.story_cls.from_names(
+        ["mtp_summary", "mtp_flight", "mtp_emoji"])
+    benchmark = self.benchmark_cls(stories)
+
+    probe_results = {
+        "mtp_summary": {
+            "sessionCreationTimeMs": 50.0,
+            "coldTimeToFirstTokenMs": 10.0,
+            "coldTotalPromptTimeMs": 100.0,
+            "coldChunksPerSecond": 10.0,
+            "warmTimeToFirstTokenMs": [2.0],
+            "warmTotalPromptTimeMs": [20.0],
+            "warmChunksPerSecond": [50.0],
+        }
+    }
+    mock_metrics = copy.deepcopy(probe_results)
+    mock_metrics.update(probe_results["mtp_summary"])
+
+    repetitions = 1
+    for _ in range(repetitions):
+      for browser in self.browsers:
+        self._setup_run_js_expect(browser, mock_metrics)
+
+    for browser in self.browsers:
+      browser.expected_js = copy.deepcopy(browser.expected_js)
+
+    runner = Runner(
+        self.out_dir,
+        self.browsers,
+        benchmark,
+        env_config=EnvConfig(),
+        env_validation_mode=ValidationMode.SKIP,
+        platform=self.platform,
+        repetitions=repetitions,
+        throw=True,
+        in_memory_result_db=True)
+
+    with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
+      runner.run()
+    cm.assert_called_once()
+
+    expected_query = "?stories=mtp_summary%2Cmtp_flight%2Cmtp_emoji"
+    for browser in self.browsers:
+      urls = self.filter_splashscreen_urls(browser.url_list)
+      self.assertEqual(len(urls), repetitions)
+      self.assertIn(self.story_cls.URL + expected_query, urls)
+      self.assertSequenceEqual(browser.expected_js, [])
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
