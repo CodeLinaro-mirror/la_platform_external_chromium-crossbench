@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import unittest
 from unittest import mock
 
@@ -394,6 +395,22 @@ class PinpointSubcommandTest(unittest.TestCase):
     help_text = parser.format_help()
 
     self.assertRegex(help_text, r"(?s)list.*Benchmarks:.*speedometer_main")
+
+  def test_pinpoint_help_contains_bug_link(self):
+    with mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+      with self.assertRaises(SystemExit) as cm:
+        self.cli.run(["pinpoint", "--help"])
+      self.assertEqual(cm.exception.code, 0)
+      self.assertIn("https://issues.chromium.org/issues/new?component=1456889",
+                    mock_stdout.getvalue())
+
+  def test_pinpoint_subcommand_help_contains_bug_link(self):
+    with mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+      with self.assertRaises(SystemExit) as cm:
+        self.cli.run(["pinpoint", "start", "--help"])
+      self.assertEqual(cm.exception.code, 0)
+      self.assertIn("https://issues.chromium.org/issues/new?component=1456889",
+                    mock_stdout.getvalue())
 
 
 if __name__ == "__main__":

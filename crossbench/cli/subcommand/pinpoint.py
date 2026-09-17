@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import argparse
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, final
+from typing import TYPE_CHECKING, Final, final
 
 from typing_extensions import override
 
@@ -32,6 +32,10 @@ from crossbench.pinpoint.start_job import bisect_job, start_job
 from crossbench.pinpoint.user import UserEnum, list_user
 from crossbench.pinpoint.user_metrics import collect_metrics, init_metrics
 
+_BUG_REPORT_URL: Final[str] = (
+    "https://issues.chromium.org/issues/new?component=1456889")
+_BUG_EPILOG: Final[str] = f"File bugs at {_BUG_REPORT_URL}"
+
 if TYPE_CHECKING:
   from crossbench.cli.cli import BenchmarkClass, CrossBenchCLI
   from crossbench.cli.types import Subparsers
@@ -43,6 +47,10 @@ class PinpointBaseSubcommand(abc.ABC):
     self._parent = parent
     self._parser = self.add_cli_arguments()
     self._parser.set_defaults(pinpoint_subcommand=self)
+    if epilog := self._parser.epilog:
+      self._parser.epilog = f"{epilog.rstrip()}\n\n{_BUG_EPILOG}\n"
+    else:
+      self._parser.epilog = _BUG_EPILOG
 
   @abc.abstractmethod
   def add_cli_arguments(self) -> argparse.ArgumentParser:
@@ -686,6 +694,7 @@ class PinpointSubcommand(CrossbenchSubcommand):
         "pinpoint",
         aliases=("pp",),
         help="Interact with the Pinpoint service.",
+        epilog=_BUG_EPILOG,
         formatter_class=PinpointHelpFormatter)
     self._parser.set_defaults(crossbench_subcommand=self)
 
