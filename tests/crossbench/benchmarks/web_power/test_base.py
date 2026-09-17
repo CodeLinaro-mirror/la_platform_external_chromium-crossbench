@@ -129,6 +129,11 @@ class WebPowerStoryTestCase(unittest.TestCase):
   def test_all_sites_have_valid_archive_md5_hash(self) -> None:
     for site_key, site_config in WebPowerStory.SITES.items():
       if site_config.archive:
+        parsed = ObjectParser.url(site_config.archive, schemes=("gs",))
+        self.assertTrue(
+            parsed.fragment.isdigit(),
+            f"Missing numeric GCS generation fragment for site {site_key}: "
+            f"{site_config.archive}")
         self.assertEqual(
             ObjectParser.md5_hash(site_config.archive_md5_hash),
             site_config.archive_md5_hash,
@@ -240,7 +245,7 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     self.assertIsInstance(args.network_config, NetworkConfig)
     self.assertEqual(args.network_config.type, NetworkType.WPR)
     self.assertEqual(args.network_config.url,
-                     "gs://chrome-partner-loadline/power/cnn_20260513.wprgo")
+                     WebPowerStory.SITES["cnn"].archive)
 
   def test_kwargs_from_cli_url_live_default(self) -> None:
     args = self.parse_args("--url", "https://www.google.com")

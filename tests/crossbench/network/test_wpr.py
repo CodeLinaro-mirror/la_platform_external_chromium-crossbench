@@ -134,6 +134,27 @@ class WprReplayNetworkTestCase(BaseCrossbenchTestCase):
       NetworkConfig(
           type=NetworkType.LIVE, expected_md5_hash=b"\xaa" * 16).validate()
 
+  @mock.patch("crossbench.plt.base.gcloud_storage.Client")
+  def test_get_gcs_blob_generation(self, mock_client_cls):
+    mock_bucket = mock_client_cls.return_value.bucket.return_value
+    self.platform.get_gcs_blob(
+        "gs://chrome-partner-loadline/power/cnn_20260513.wprgo#1778683962813986"
+    )
+    mock_bucket.blob.assert_called_once_with(
+        "power/cnn_20260513.wprgo", generation=1778683962813986)
+
+    mock_bucket.blob.reset_mock()
+    self.platform.get_gcs_blob(
+        "gs://chrome-partner-loadline/power/cnn_20260513.wprgo")
+    mock_bucket.blob.assert_called_once_with(
+        "power/cnn_20260513.wprgo", generation=None)
+
+    for invalid_fragment in ("0", "-1", "invalid"):
+      with self.subTest(fragment=invalid_fragment):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          self.platform.get_gcs_blob("gs://chrome-partner-loadline/power/"
+                                     f"cnn_20260513.wprgo#{invalid_fragment}")
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

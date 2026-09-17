@@ -34,7 +34,7 @@ import psutil
 from crossbench import __version__, parse
 from crossbench import path as pth
 from crossbench.helper import wait
-from crossbench.parse import ObjectParser
+from crossbench.parse import NumberParser, ObjectParser
 from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
@@ -1157,9 +1157,13 @@ class Platform(abc.ABC):
     object_name = parsed.path.lstrip("/")
     if not bucket_name:
       raise ValueError(f"Missing bucket name in URL: {gcs_url}")
+    generation: int | None = None
+    if parsed.fragment:
+      generation = NumberParser.positive_int(parsed.fragment,
+                                             f"GCS generation in {gcs_url}")
     client = gcloud_storage.Client(project="")
     bucket = client.bucket(bucket_name)
-    return bucket.blob(object_name)
+    return bucket.blob(object_name, generation=generation)
 
   def check_gcs_file_exists(self, gcs_url: str) -> bool:
     blob = self.get_gcs_blob(gcs_url)

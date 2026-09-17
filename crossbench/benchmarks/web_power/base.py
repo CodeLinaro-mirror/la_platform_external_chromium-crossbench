@@ -90,7 +90,8 @@ class WebPowerStory(Story):
 
   _WEB_POWER_GCS = "gs://chrome-partner-loadline/power"
   _LEGACY_WPR_RECORDING = (
-      f"{_WEB_POWER_GCS}/CHROME_EFFICIENCY_KPI_2026_04_03.wprgo")
+      f"{_WEB_POWER_GCS}/"
+      "CHROME_EFFICIENCY_KPI_2026_04_03.wprgo#1775177008532597")
   _LEGACY_WPR_MD5_HASH: Final[bytes] = ObjectParser.md5_hash(
       "8375843a6828b282eef16042c21e903b")
 
@@ -104,7 +105,8 @@ class WebPowerStory(Story):
       "cnn":
           WebPowerSiteConfig(
               url="https://www.cnn.com",
-              archive=f"{_WEB_POWER_GCS}/cnn_20260513.wprgo",
+              archive=(f"{_WEB_POWER_GCS}/"
+                       "cnn_20260513.wprgo#1778683962813986"),
               archive_md5_hash=ObjectParser.md5_hash(
                   "04d258d7a6c207b41c591fbb55c53397"),
           ),
@@ -118,7 +120,8 @@ class WebPowerStory(Story):
       "youtube":
           WebPowerSiteConfig(
               url="https://www.youtube.com/watch?v=XITHbsUUlYI",
-              archive=f"{_WEB_POWER_GCS}/youtube_2026_05_18.wprgo",
+              archive=(f"{_WEB_POWER_GCS}/"
+                       "youtube_2026_05_18.wprgo#1779096503585939"),
               archive_md5_hash=ObjectParser.md5_hash(
                   "fcfa2979d058d5a5d8e4900cfc994570"),
           ),
@@ -128,14 +131,16 @@ class WebPowerStory(Story):
       "allrecipes":
           WebPowerSiteConfig(
               url="https://www.allrecipes.com",
-              archive=f"{_WEB_POWER_GCS}/allrecipes_2026_08_20.wprgo",
+              archive=(f"{_WEB_POWER_GCS}/"
+                       "allrecipes_2026_08_20.wprgo#1787264877985233"),
               archive_md5_hash=ObjectParser.md5_hash(
                   "25ce6da90f35259679183edb6c118f7c"),
           ),
       "telegraph":
           WebPowerSiteConfig(
               url="https://www.telegraph.co.uk",
-              archive=f"{_WEB_POWER_GCS}/telegraph_2026_08_20.wprgo",
+              archive=(f"{_WEB_POWER_GCS}/"
+                       "telegraph_2026_08_20.wprgo#1787267900613867"),
               archive_md5_hash=ObjectParser.md5_hash(
                   "acb3bafa7081ede2c74d25d882b72c40"),
           ),
