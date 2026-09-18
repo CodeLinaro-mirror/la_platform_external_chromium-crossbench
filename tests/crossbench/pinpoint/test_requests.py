@@ -9,8 +9,10 @@ import unittest
 from unittest import mock
 
 import requests
+from google.auth import exceptions as google_auth_exceptions
 
 from crossbench.pinpoint import http_requests as pinpoint_requests
+from crossbench.pinpoint.exceptions import AuthenticationError
 from tests import test_helper
 
 
@@ -19,6 +21,7 @@ class RequestsTest(unittest.TestCase):
   def setUp(self):
     super().setUp()
     self.mock_response = mock.Mock()
+    self.mock_response.status_code = 500
     self.mock_response.raise_for_status.return_value = None
     error = requests.exceptions.HTTPError(
         "Base Error", response=self.mock_response)
@@ -72,6 +75,25 @@ class RequestsTest(unittest.TestCase):
       pinpoint_requests.get("http://example.com")
 
     self.assertEqual(str(cm.exception), "Base Error")
+
+  def test_error_unauthorized_401(self):
+    self.mock_response.status_code = 401
+    with self.assertRaises(AuthenticationError) as cm:
+      pinpoint_requests.get("http://example.com")
+    self.assertIn("gcloud auth application-default login", str(cm.exception))
+
+  def test_error_forbidden_403(self):
+    self.mock_response.status_code = 403
+    with self.assertRaises(AuthenticationError) as cm:
+      pinpoint_requests.post("http://example.com")
+    self.assertIn("gcloud auth application-default login", str(cm.exception))
+
+  def test_error_refresh_error(self):
+    self.mock_session.request.side_effect = (
+        google_auth_exceptions.RefreshError("Token expired"))
+    with self.assertRaises(AuthenticationError) as cm:
+      pinpoint_requests.get("http://example.com")
+    self.assertIn("gcloud auth application-default login", str(cm.exception))
 
 
 if __name__ == "__main__":

@@ -12,7 +12,8 @@ from google.auth.transport import requests as auth_requests
 
 from crossbench import plt
 from crossbench.cli.ui import ui
-from crossbench.pinpoint.exceptions import GCloudNotInstalledError
+from crossbench.pinpoint.exceptions import AuthenticationError, \
+    GCloudNotInstalledError
 from crossbench.pinpoint.helper import annotate
 
 
@@ -30,7 +31,10 @@ def get_auth_session() -> auth_requests.AuthorizedSession:
       credentials, _ = google_auth.default(
           scopes=["https://www.googleapis.com/auth/userinfo.email"])
       return auth_requests.AuthorizedSession(credentials)
-    except google_auth.exceptions.DefaultCredentialsError:
+    except (
+        google_auth.exceptions.DefaultCredentialsError,
+        google_auth.exceptions.RefreshError,
+    ) as e:
       user_input = ui.prompt(
           "Authentication failed. "
           "Please run 'gcloud auth application-default login' "
@@ -40,4 +44,4 @@ def get_auth_session() -> auth_requests.AuthorizedSession:
         plt.PLATFORM.sh(
             "gcloud", "auth", "application-default", "login", check=True)
         return get_auth_session()
-      raise
+      raise AuthenticationError from e
