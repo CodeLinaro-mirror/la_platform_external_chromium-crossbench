@@ -5,19 +5,21 @@
 from __future__ import annotations
 
 import abc
+import dataclasses
 import datetime as dt
 import subprocess
-from typing import TYPE_CHECKING, Final, Iterable, cast
+import time
+from typing import TYPE_CHECKING, Final, Iterable
 
 from immutabledict import immutabledict
 
 from crossbench.action_runner.config import VirtualDeviceType
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
     WaitEvent
+from crossbench.plt.base import Platform
 
 if TYPE_CHECKING:
   from crossbench.action_runner.config import VirtualDeviceConfig
-  from crossbench.plt.base import Platform
   from crossbench.plt.types import TupleCmdArgs
 
 # Simplified mapping for common W3C to Linux EV_KEY codes
@@ -116,7 +118,24 @@ B: 12 00 00 00 00 00 00 00 00
 """
 
 
-class EvemuPlatformMixin(abc.ABC):
+# Buffer added to timestamps on consecutive injections to ensure events arrive
+# on the device ahead of their target playback time, preventing uinput/evemu
+# from discarding inter-event delays in "catch-up" mode due to transport latency
+# or clock drift.
+_INPUT_LEAD_BUFFER: Final[dt.timedelta] = dt.timedelta(milliseconds=50)
+# Buffer added to the sleep duration after injection to allow the virtual
+# device process and OS input pipeline to fully drain and dispatch queued
+# events before Crossbench proceeds.
+_INPUT_DRAIN_BUFFER: Final[dt.timedelta] = dt.timedelta(milliseconds=50)
+
+
+@dataclasses.dataclass
+class VirtualDeviceState:
+  proc: subprocess.Popen
+  start_time: dt.timedelta | None = None
+
+
+class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
   """
   Mixin for Platforms that support executing standard
   Linux (evemu) strings.
@@ -124,7 +143,7 @@ class EvemuPlatformMixin(abc.ABC):
 
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
-    self._virtual_devices: dict[str, subprocess.Popen] = {}
+    self._virtual_devices: dict[str, VirtualDeviceState] = {}
 
   @abc.abstractmethod
   def _get_evemu_device_cmd(self,
@@ -141,37 +160,66 @@ class EvemuPlatformMixin(abc.ABC):
             f"Unsupported virtual device type: {device_config.device_type}")
 
   def _init_virtual_keyboard(self, device_name: str) -> None:
-    proc = self._virtual_devices.get(device_name)
-    if proc is None or proc.poll() is not None:
+    state = self._virtual_devices.get(device_name)
+    if state is None or state.proc.poll() is not None:
       cmd = self._get_evemu_device_cmd(VirtualDeviceType.KEYBOARD)
-      platform = cast("Platform", self)
-      proc = platform.popen(*cmd, stdin=subprocess.PIPE)
+      proc = self.popen(*cmd, stdin=subprocess.PIPE)
       assert proc.stdin is not None
       proc.stdin.write(_EVEMU_KEYBOARD_HEADER)
       proc.stdin.flush()
-      self._virtual_devices[device_name] = proc
+      self._virtual_devices[device_name] = VirtualDeviceState(proc)
 
   def _execute_evemu_script(self, device_name: str, script: str) -> None:
-    proc = self._virtual_devices.get(device_name)
-    if proc is None:
+    state = self._virtual_devices.get(device_name)
+    if state is None:
       raise RuntimeError(f"Virtual device '{device_name}' was not initialized. "
                          "Call setup_virtual_devices() first.")
-    assert proc.stdin is not None
-    proc.stdin.write(script.encode("utf-8"))
-    proc.stdin.flush()
+    assert state.proc.stdin is not None
+    state.proc.stdin.write(script.encode("utf-8"))
+    state.proc.stdin.flush()
 
   def inject_input_events(self, device_name: str,
                           events: Iterable[InputEvent]) -> None:
-    """
-    Injects abstract input events by translating them into an
-    evemu script.
-    """
-    if script := self._generate_evemu_events_string(events):
-      self._execute_evemu_script(device_name, script)
+    """Injects abstract input events by translating them into an evemu script.
 
-  def _generate_evemu_events_string(self, events: Iterable[InputEvent]) -> str:
+    Blocks until all events are processed. Applies a lead buffer on consecutive
+    injections so events arrive ahead of their target timestamps and a drain
+    buffer to ensure all dispatched events finish processing.
+    """
+    state = self._virtual_devices.get(device_name)
+    if state is None:
+      raise RuntimeError(f"Virtual device '{device_name}' was not initialized. "
+                         "Call setup_virtual_devices() first.")
+    now = dt.timedelta(seconds=time.monotonic())
+    if state.start_time is None:
+      state.start_time = now
+      start_time = dt.timedelta()
+      lead_buffer = dt.timedelta()
+    else:
+      # Pad consecutive injections with a lead buffer so timestamps are in the
+      # future relative to the device playback clock, preventing catch-up mode.
+      lead_buffer = _INPUT_LEAD_BUFFER
+      start_time = (now - state.start_time) + lead_buffer
+
+    script, end_time = self._generate_evemu_events_string(events, start_time)
+
+    if not script:
+      return
+
+    duration = end_time - start_time
+    self._execute_evemu_script(device_name, script)
+    # Block for the playback duration plus lead and drain buffers so the host
+    # waits until the device completes event playback and pipeline dispatch.
+    if duration or lead_buffer:
+      self.sleep(duration + lead_buffer + _INPUT_DRAIN_BUFFER)
+
+  def _generate_evemu_events_string(
+      self,
+      events: Iterable[InputEvent],
+      start_time: dt.timedelta = dt.timedelta()
+  ) -> tuple[str, dt.timedelta]:
     lines: list[str] = []
-    current_time = dt.timedelta()
+    current_time = start_time
 
     for event in events:
       if isinstance(event, WaitEvent):
@@ -183,9 +231,8 @@ class EvemuPlatformMixin(abc.ABC):
 
         value = 1 if event.is_down else 0
 
-        total_sec = current_time.total_seconds()
-        sec = int(total_sec)
-        usec = int((total_sec - sec) * 1_000_000)
+        sec = int(current_time.total_seconds())
+        usec = current_time.microseconds
         timestamp = f"{sec}.{usec:06d}"
 
         lines.append(
@@ -194,4 +241,4 @@ class EvemuPlatformMixin(abc.ABC):
       else:
         raise ValueError(f"Unsupported event type: {type(event).__name__}")
 
-    return "\n".join(lines) + "\n" if lines else ""
+    return ("\n".join(lines) + "\n" if lines else ""), current_time

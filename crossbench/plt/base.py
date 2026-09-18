@@ -532,6 +532,10 @@ class Platform(abc.ABC):
 
   def inject_input_events(self, device_name: str,
                           events: Iterable[InputEvent]) -> None:
+    """
+    Injects abstract input events and blocks until all events are
+    processed.
+    """
     raise NotImplementedError(
         f"inject_input_events not implemented for {self}.")
 

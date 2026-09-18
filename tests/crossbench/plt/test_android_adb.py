@@ -27,6 +27,7 @@ from crossbench.plt.arch import MachineArch
 from crossbench.plt.axml import RES_STRING_POOL_TYPE, \
     RES_XML_START_ELEMENT_TYPE, RES_XML_TYPE, \
     parse_binary_manifest_package_name
+from crossbench.plt.evemu_platform_mixin import VirtualDeviceState
 from crossbench.plt.port_manager import PortForwardException
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
@@ -317,7 +318,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
           name="kb1", device_type=VirtualDeviceType.KEYBOARD),))
       mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
       self.assertIn("kb1", self.platform._virtual_devices)
-      self.assertIs(self.platform._virtual_devices["kb1"], mock_proc)
+      self.assertIs(self.platform._virtual_devices["kb1"].proc, mock_proc)
       mock_proc.stdin.write.assert_called_once()
       mock_proc.stdin.flush.assert_called_once()
 
@@ -333,7 +334,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     mock_proc = mock.MagicMock()
     mock_proc.poll.return_value = None
     mock_proc.stdin = mock.MagicMock()
-    self.platform._virtual_devices["kb1"] = mock_proc
+    self.platform._virtual_devices["kb1"] = VirtualDeviceState(mock_proc)
 
     self.platform._execute_evemu_script("kb1", "E: 0.000000 0001 001e 0001\n")
     mock_proc.stdin.write.assert_called_once_with(
