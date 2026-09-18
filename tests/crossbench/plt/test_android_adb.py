@@ -857,6 +857,18 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     rect = self.platform.get_window_rect("com.android.chrome")
     self.assertEqual(rect, DisplayRectangle(Point(0, 0), 1080, 2400))
 
+  def test_get_window_rect_with_insets(self):
+    dumpsys_output = (
+        "Window #0 Window{1a2b3c4 u0 com.android.chrome/Main}:\n"
+        "  mAppBounds=Rect(0, 0 - 1080, 1920)\n"
+        "  InsetsFrameProvider: {type=statusBars,"
+        " insetsSize=Insets{left=0, top=72, right=0, bottom=0}}\n"
+        "  InsetsFrameProvider: {type=navigationBars,"
+        " insetsSize=Insets{left=0, top=0, right=0, bottom=72}}\n")
+    self.expect_sh("dumpsys window windows", result=dumpsys_output)
+    rect = self.platform.get_window_rect("com.android.chrome")
+    self.assertEqual(rect, DisplayRectangle(Point(0, 72), 1080, 1776))
+
   def test_get_window_rect_multi_window(self):
     dumpsys_output = ("Window #0 Window{1a2b3c4 u0 com.android.chrome/Main}:\n"
                       "  mAppBounds=Rect(191, 83 - 1174, 635)\n")
