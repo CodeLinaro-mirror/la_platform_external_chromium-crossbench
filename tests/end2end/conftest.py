@@ -47,13 +47,6 @@ def pytest_addoption(parser):
       TEST_BROWSER_FLAG, "--browserpath", default=None, type=PathParser.path)
   parser.addoption(
       TEST_DRIVER_FLAG, "--driverpath", default=None, type=PathParser.path)
-  # TODO: Remove after bot configs are updated to no longer pass this flag
-  parser.addoption(
-      "--test-gsutil-path",
-      "--gsutilpath",
-      default=None,
-      type=PathParser.path,
-      help="Deprecated")
   parser.addoption(ADB_DEVICE_ID_FLAG, default=None, type=str)
   parser.addoption(ADB_PATH_FLAG, default=None, type=str)
   parser.addoption(BUNDLETOOL_FLAG, default=None, type=str)

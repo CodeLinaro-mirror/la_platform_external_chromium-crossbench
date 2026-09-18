@@ -27,8 +27,6 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(allow_abbrev=False)
   parser.add_argument("--ignore-tests", required=False)
   parser.add_argument("--adb-device-id", required=False)
-  # TODO: Remove after bot configs are updated to no longer pass this flag
-  parser.add_argument("--test-gsutil-path", required=False, help="Deprecated")
 
   args, _ = parser.parse_known_args()
   if args.ignore_tests:
