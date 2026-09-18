@@ -43,11 +43,12 @@
       {
         "action": "text_input"
         "duration": "1s"
-        "text":
-          '''
-          https://cnn.com/
-
-          '''
+        "text": "https://cnn.com/"
+        "source": "keyboard"
+      }
+      {
+        "action": "text_input"
+        "keyevent": "KEYCODE_ENTER"
         "source": "keyboard"
       }
       {

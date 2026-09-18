@@ -8,11 +8,12 @@
       {
         "action": "text_input"
         "duration": "1s"
-        "text":
-          '''
-          Hello World
-
-          '''
+        "text": "Hello World"
+        "source": "keyboard"
+      }
+      {
+        "action": "text_input"
+        "keyevent": "KEYCODE_ENTER"
         "source": "keyboard"
       }
       {
