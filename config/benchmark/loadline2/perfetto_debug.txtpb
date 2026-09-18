@@ -66,8 +66,6 @@ data_sources {
       ftrace_events: "power/cpu_frequency"
       ftrace_events: "power/cpu_idle"
       ftrace_events: "sched/sched_blocked_reason"
-      ftrace_events: "sched/sched_cpu_util_cfs"
-      ftrace_events: "sched/sched_find_energy_efficient_cpu"
       ftrace_events: "sched/sched_switch"
       ftrace_events: "sched/sched_wakeup"
       ftrace_events: "sched/sched_wakeup_new"
@@ -82,6 +80,29 @@ data_sources {
         enabled: true
       }
       symbolize_ksyms: true
+    }
+  }
+}
+data_sources {
+  config {
+    name: "linux.perf"
+    perf_event_config {
+      ring_buffer_pages: 1024
+      ring_buffer_read_period_ms: 50
+      timebase {
+        period: 1
+        tracepoint {
+          name: "sched/sched_switch"
+        }
+      }
+      followers {
+        counter: HW_INSTRUCTIONS
+        name: "instructions"
+      }
+      followers {
+        counter: HW_CPU_CYCLES
+        name: "cycles"
+      }
     }
   }
 }
