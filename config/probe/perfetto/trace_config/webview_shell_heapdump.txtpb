@@ -8,6 +8,7 @@ data_sources {
     heapprofd_config {
       sampling_interval_bytes: 4096
       process_cmdline: "org.chromium.webview_shell"
+      process_cmdline: "com.google.android.webview.debug:sandboxed_process0:org.chromium.content.app.SandboxedProcessServi"
       continuous_dump_config {
         dump_phase_ms: 0
         dump_interval_ms: 5000
@@ -23,6 +24,7 @@ data_sources {
     name: "android.java_hprof"
     java_hprof_config {
       process_cmdline: "org.chromium.webview_shell"
+      process_cmdline: "com.google.android.webview.debug:sandboxed_process0:org.chromium.content.app.SandboxedProcessServi"
       continuous_dump_config {
         dump_phase_ms: 0
         dump_interval_ms: 5000
