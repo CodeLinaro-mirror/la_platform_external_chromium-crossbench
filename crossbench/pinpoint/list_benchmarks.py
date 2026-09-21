@@ -13,5 +13,8 @@ def fetch_benchmarks() -> list[str]:
   """Fetches the list of available benchmarks from the Chromeperf API."""
   with annotate("Fetching benchmarks"):
     response = http_requests.post(CHROMEPERF_TEST_SUITES_API_URL)
-    response.raise_for_status()
-    return response.json()
+    benchmarks = response.json()
+    if not benchmarks:
+      raise ValueError(
+          "Could not fetch benchmarks from Pinpoint: empty list received.")
+    return benchmarks

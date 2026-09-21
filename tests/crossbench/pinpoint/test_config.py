@@ -310,10 +310,20 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
             )))
 
   def test_parse_and_override_missing_benchmark(self):
-    with self.assertRaises(ValueError):
+    with self.assertRaises(ValueError) as cm:
       PinpointTryJobConfig.parse_and_override(config="{bot: 'test_bot'}")
-    with self.assertRaises(ValueError):
+    self.assertIn(
+        "Benchmark is required. "
+        "Run 'cb pp benchmarks' to list all available benchmarks.",
+        str(cm.exception),
+    )
+    with self.assertRaises(ValueError) as cm:
       PinpointTryJobConfig.parse_and_override(bot="test_bot")
+    self.assertIn(
+        "Benchmark is required. "
+        "Run 'cb pp benchmarks' to list all available benchmarks.",
+        str(cm.exception),
+    )
 
   def test_parse_and_override_missing_bot(self):
     with self.assertRaises(ValueError):
@@ -451,12 +461,31 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
           benchmark="test_benchmark", bot="test_bot")
     self.mock_fetch_stories.assert_called_once_with("test_benchmark")
 
+  def test_parse_and_override_empty_benchmarks_fails(self):
+    self.mock_fetch_benchmarks.side_effect = ValueError(
+        "Could not fetch benchmarks from Pinpoint: empty list received.")
+    with self.assertRaises(ValueError) as cm:
+      PinpointTryJobConfig.parse_and_override(
+          benchmark="test_benchmark", bot="test_bot", story="test_story")
+    self.assertIn("Could not fetch benchmarks from Pinpoint", str(cm.exception))
+
   def test_parse_and_override_unknown_benchmark_show_warning(self):
     self.mock_fetch_benchmarks.return_value = ["other_benchmark"]
     PinpointTryJobConfig.parse_and_override(
         benchmark="test_benchmark", bot="test_bot", story="test_story")
-    self.mock_show_warnings.assert_called_once_with(
-        ["Unknown benchmark: test_benchmark"])
+    self.mock_show_warnings.assert_called_once_with([
+        "Invalid benchmark: 'test_benchmark'. Did you mean 'other_benchmark'?\n"
+        "Run 'cb pp benchmarks' to list all available benchmarks."
+    ])
+
+  def test_parse_and_override_unknown_benchmark_no_match_show_warning(self):
+    self.mock_fetch_benchmarks.return_value = ["something_else"]
+    PinpointTryJobConfig.parse_and_override(
+        benchmark="x", bot="test_bot", story="test_story")
+    self.mock_show_warnings.assert_called_once_with([
+        "Invalid benchmark: 'x'. Choices are something_else\n"
+        "Run 'cb pp benchmarks' to list all available benchmarks."
+    ])
 
   def test_parse_and_override_unknown_bot_show_warning(self):
     self.mock_fetch_bots.return_value = ["other_bot"]
@@ -472,12 +501,23 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
         ["Unknown story: test_story"])
 
   def test_parse_and_override_crossbench_benchmark_no_warning(self):
+    self.mock_fetch_benchmarks.return_value = ["speedometer3.0.crossbench"]
     config = PinpointTryJobConfig.parse_and_override(
         benchmark="speedometer3.0.crossbench", bot="test_bot")
     self.mock_show_warnings.assert_called_once_with([])
     self.assertEqual(config.story, "default")
 
+  def test_parse_and_override_crossbench_benchmark_not_on_server(self):
+    self.mock_fetch_benchmarks.return_value = ["speedometer3"]
+    PinpointTryJobConfig.parse_and_override(
+        benchmark="jetstream3.crossbench", bot="test_bot")
+    self.mock_show_warnings.assert_called_once_with([
+        "Invalid benchmark: 'jetstream3.crossbench'. Choices are speedometer3\n"
+        "Run 'cb pp benchmarks' to list all available benchmarks."
+    ])
+
   def test_parse_and_override_crossbench_benchmark_valid_story(self):
+    self.mock_fetch_benchmarks.return_value = ["speedometer3.0.crossbench"]
     config = PinpointTryJobConfig.parse_and_override(
         benchmark="speedometer3.0.crossbench",
         bot="test_bot",
@@ -486,6 +526,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
     self.assertEqual(config.story, "TodoMVC-JavaScript-ES5")
 
   def test_parse_and_override_crossbench_benchmark_invalid_story(self):
+    self.mock_fetch_benchmarks.return_value = ["speedometer3.0.crossbench"]
     PinpointTryJobConfig.parse_and_override(
         benchmark="speedometer3.0.crossbench",
         bot="test_bot",

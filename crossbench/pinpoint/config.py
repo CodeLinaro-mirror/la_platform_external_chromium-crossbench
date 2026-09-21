@@ -13,6 +13,7 @@ from typing_extensions import override
 from crossbench.cli.config.flags import FlagsConfig
 from crossbench.cli.ui import ui
 from crossbench.config import ConfigObject, ConfigParser
+from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import NumberParser
 from crossbench.pinpoint import patch_resolver
 from crossbench.pinpoint.benchmarks import all_stories, default_story, \
@@ -176,10 +177,14 @@ class PinpointJobConfigMixin:
   @classmethod
   def resolve_benchmark(cls, benchmark: str) -> str | None:
     if not benchmark:
-      raise ValueError("Benchmark is required.")
-    if not is_crossbench_benchmark(
-        benchmark) and benchmark not in fetch_benchmarks():
-      return f"Unknown benchmark: {benchmark}"
+      raise ValueError(
+          "Benchmark is required. "
+          "Run 'cb pp benchmarks' to list all available benchmarks.")
+    available_benchmarks = fetch_benchmarks()
+    if benchmark not in available_benchmarks:
+      msg, _ = close_matches_message(benchmark, available_benchmarks,
+                                     "benchmark")
+      return f"{msg}\nRun 'cb pp benchmarks' to list all available benchmarks."
     return None
 
   @classmethod

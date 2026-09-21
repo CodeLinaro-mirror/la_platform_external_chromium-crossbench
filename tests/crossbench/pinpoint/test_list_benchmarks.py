@@ -48,6 +48,18 @@ class ListBenchmarksTest(MockHttpRequestsMixin):
 
     self.mock_post.assert_called_once_with(CHROMEPERF_TEST_SUITES_API_URL)
 
+  def test_fetch_benchmarks_empty(self):
+    mock_response = mock.Mock()
+    mock_response.json.return_value = []
+    mock_response.raise_for_status.return_value = None
+    self.mock_post.side_effect = None
+    self.mock_post.return_value = mock_response
+
+    with self.assertRaises(MultiException) as cm:
+      fetch_benchmarks()
+
+    self.assertIn("Could not fetch benchmarks from Pinpoint", str(cm.exception))
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
