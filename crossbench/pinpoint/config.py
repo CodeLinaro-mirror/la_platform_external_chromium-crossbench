@@ -103,7 +103,9 @@ class VariantConfig(ConfigObject):
                      flags: str | None = None,
                      js_flags: str | None = None,
                      enable_features: str | None = None,
-                     disable_features: str | None = None) -> Self:
+                     disable_features: str | None = None,
+                     enable_blink_features: str | None = None,
+                     disable_blink_features: str | None = None) -> Self:
     extra_flags: dict[str, str | None] = {}
     if flags and flags.strip():
       extra_flags = dict(FlagsConfig.parse(flags)["default"][0].flags.items())
@@ -111,6 +113,8 @@ class VariantConfig(ConfigObject):
         "--js-flags": js_flags,
         "--enable-features": enable_features,
         "--disable-features": disable_features,
+        "--enable-blink-features": enable_blink_features,
+        "--disable-blink-features": disable_blink_features,
     }
     filtered_flags = {k: v for k, v in input_flags.items() if v is not None}
     combined_flags = self.flags_as_dict() | extra_flags | filtered_flags
@@ -331,6 +335,10 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
       exp_enable_features: str | None = None,
       base_disable_features: str | None = None,
       exp_disable_features: str | None = None,
+      base_enable_blink_features: str | None = None,
+      exp_enable_blink_features: str | None = None,
+      base_disable_blink_features: str | None = None,
+      exp_disable_blink_features: str | None = None,
   ) -> PinpointTryJobConfig:
     """Create a new valid PinpointTryJobConfig instance for new jobs."""
     with annotate("Parsing job configuration"):
@@ -364,6 +372,8 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
           js_flags=base_js_flags,
           enable_features=base_enable_features,
           disable_features=base_disable_features,
+          enable_blink_features=base_enable_blink_features,
+          disable_blink_features=base_disable_blink_features,
       )
 
       experiment = parsed.experiment.override_commit(
@@ -374,6 +384,8 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
           js_flags=exp_js_flags,
           enable_features=exp_enable_features,
           disable_features=exp_disable_features,
+          enable_blink_features=exp_enable_blink_features,
+          disable_blink_features=exp_disable_blink_features,
       )
 
     show_warnings([w for w in warnings if w])
@@ -577,6 +589,8 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
       js_flags: str | None = None,
       enable_features: str | None = None,
       disable_features: str | None = None,
+      enable_blink_features: str | None = None,
+      disable_blink_features: str | None = None,
   ) -> PinpointBisectJobConfig:
     """Create a new valid PinpointBisectJobConfig instance for new jobs."""
     with annotate("Parsing job configuration"):
@@ -615,6 +629,8 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
           js_flags=js_flags,
           enable_features=enable_features,
           disable_features=disable_features,
+          enable_blink_features=enable_blink_features,
+          disable_blink_features=disable_blink_features,
       )
 
       start.validate()

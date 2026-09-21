@@ -108,6 +108,17 @@ class VariantConfigTest(MockHttpRequestsMixin):
             "--disable-features": "disablefeature1,disablefeature2",
         })
 
+  def test_override_blink_features(self):
+    config = VariantConfig()
+    config = config.override_flags(
+        enable_blink_features="BlinkFeat1,BlinkFeat2",
+        disable_blink_features="BlinkFeat3,BlinkFeat4")
+    self.assertDictEqual(
+        config.flags_as_dict(), {
+            "--enable-blink-features": "BlinkFeat1,BlinkFeat2",
+            "--disable-blink-features": "BlinkFeat3,BlinkFeat4",
+        })
+
   def test_override_existing_flags(self):
     config = VariantConfig.parse(
         "{flags: '--standalone --js-flags=--js-flag0 "
@@ -378,6 +389,40 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
                 '--extra-browser-args="--js-flags=--exp-js-flag '
                 '--enable-features=enable3,enable4 '
                 '--disable-features=disable3,disable4"',
+            "tags": '{"origin": "pinpoint_cli"}',
+        })
+
+  def test_to_request_dict_blink_features(self):
+    config = PinpointTryJobConfig.parse_and_override(
+        benchmark="test_benchmark",
+        bot="test_bot",
+        story="test_story",
+        base_enable_blink_features="BlinkFeat1,BlinkFeat2",
+        exp_enable_blink_features="BlinkFeat3,BlinkFeat4",
+        base_disable_blink_features="BlinkFeat5,BlinkFeat6",
+        exp_disable_blink_features="BlinkFeat7,BlinkFeat8",
+    )
+    self.assertDictEqual(
+        config.to_request_dict(), {
+            "comparison_mode": "try",
+            "benchmark": "test_benchmark",
+            "configuration": "test_bot",
+            "story": "test_story",
+            "story_tags": None,
+            "initial_attempt_count": 30,
+            "bug_id": None,
+            "base_git_hash": _TEST_RECENT_COMMIT,
+            "end_git_hash": _TEST_RECENT_COMMIT,
+            "base_patch": None,
+            "experiment_patch": None,
+            "base_extra_args":
+                '--extra-browser-args="--enable-blink-features='
+                'BlinkFeat1,BlinkFeat2 '
+                '--disable-blink-features=BlinkFeat5,BlinkFeat6"',
+            "experiment_extra_args":
+                '--extra-browser-args="--enable-blink-features='
+                'BlinkFeat3,BlinkFeat4 '
+                '--disable-blink-features=BlinkFeat7,BlinkFeat8"',
             "tags": '{"origin": "pinpoint_cli"}',
         })
 

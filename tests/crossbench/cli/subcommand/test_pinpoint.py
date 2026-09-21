@@ -155,6 +155,10 @@ class PinpointSubcommandTest(unittest.TestCase):
         exp_enable_features="exp_feat",
         base_disable_features="base_dis",
         exp_disable_features="exp_dis",
+        base_enable_blink_features=None,
+        exp_enable_blink_features=None,
+        base_disable_blink_features=None,
+        exp_disable_blink_features=None,
     )
     mock_start_job.assert_called_with(test_config)
 
@@ -206,6 +210,8 @@ class PinpointSubcommandTest(unittest.TestCase):
         js_flags="--flag1",
         enable_features="base_feat",
         disable_features="base_dis",
+        enable_blink_features=None,
+        disable_blink_features=None,
     )
     mock_bisect_job.assert_called_with(test_config)
 
@@ -303,6 +309,60 @@ class PinpointSubcommandTest(unittest.TestCase):
   @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
   @mock.patch(
       "crossbench.pinpoint.config.PinpointTryJobConfig.parse_and_override")
+  def test_pinpoint_start_job_enable_blink_features(self,
+                                                    mock_parse_and_override,
+                                                    _mock_start_job):
+    test_config = PinpointTryJobConfig(
+        benchmark="speedometer3", bot="linux-r350-perf")
+    mock_parse_and_override.return_value = test_config
+
+    self.cli.run([
+        *["pinpoint", "start"],
+        *["--benchmark", "speedometer3"],
+        "--enable-blink-features=BlinkFeature1",
+    ])
+
+    self.assertEqual(
+        {
+            key: value
+            for key, value in mock_parse_and_override.call_args.kwargs.items()
+            if value is not None
+        }, {
+            "benchmark": "speedometer3",
+            "base_enable_blink_features": "BlinkFeature1",
+            "exp_enable_blink_features": "BlinkFeature1",
+        })
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointTryJobConfig.parse_and_override")
+  def test_pinpoint_start_job_disable_blink_features(self,
+                                                     mock_parse_and_override,
+                                                     _mock_start_job):
+    test_config = PinpointTryJobConfig(
+        benchmark="speedometer3", bot="linux-r350-perf")
+    mock_parse_and_override.return_value = test_config
+
+    self.cli.run([
+        *["pinpoint", "start"],
+        *["--benchmark", "speedometer3"],
+        "--disable-blink-features=BlinkFeature1",
+    ])
+
+    self.assertEqual(
+        {
+            key: value
+            for key, value in mock_parse_and_override.call_args.kwargs.items()
+            if value is not None
+        }, {
+            "benchmark": "speedometer3",
+            "base_disable_blink_features": "BlinkFeature1",
+            "exp_disable_blink_features": "BlinkFeature1",
+        })
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointTryJobConfig.parse_and_override")
   def test_pinpoint_start_job_commit(self, mock_parse_and_override,
                                      _mock_start_job):
     test_config = PinpointTryJobConfig(
@@ -355,6 +415,10 @@ class PinpointSubcommandTest(unittest.TestCase):
         exp_enable_features=None,
         base_disable_features=None,
         exp_disable_features=None,
+        base_enable_blink_features=None,
+        exp_enable_blink_features=None,
+        base_disable_blink_features=None,
+        exp_disable_blink_features=None,
     )
     mock_start_job.assert_called_with(test_config)
 

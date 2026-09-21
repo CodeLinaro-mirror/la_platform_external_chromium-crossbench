@@ -335,6 +335,38 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         "--exp-disable-features",
         help="Comma-separated list of Chrome features to disable for the "
         "experiment commit.\nExample: --exp-disable-features=FeatureA,FeatureB")
+    start_parser.add_argument(
+        "--enable-blink-features",
+        help="Blink features to enable for both base and experiment commits. "
+        "Can be overridden by --base-blink-features or --exp-blink-features.\n"
+        "Example: --enable-blink-features=Feature1,Feature2")
+    start_parser.add_argument(
+        "--base-blink-features",
+        "--base-enable-blink-features",
+        dest="base_enable_blink_features",
+        help="Comma-separated list of Blink features to enable for the base "
+        "commit.\nExample: --base-blink-features=Feature1,Feature2")
+    start_parser.add_argument(
+        "--exp-blink-features",
+        "--exp-enable-blink-features",
+        dest="exp_enable_blink_features",
+        help="Comma-separated list of Blink features to enable for the "
+        "experiment commit.\nExample: --exp-blink-features=FeatureA,FeatureB")
+    start_parser.add_argument(
+        "--disable-blink-features",
+        help="Blink features to disable for both base and experiment commits. "
+        "Can be overridden by --base-disable-blink-features or "
+        "--exp-disable-blink-features.\n"
+        "Example: --disable-blink-features=Feature1,Feature2")
+    start_parser.add_argument(
+        "--base-disable-blink-features",
+        help="Comma-separated list of Blink features to disable for the base "
+        "commit.\nExample: --base-disable-blink-features=Feature1,Feature2")
+    start_parser.add_argument(
+        "--exp-disable-blink-features",
+        help="Comma-separated list of Blink features to disable for the "
+        "experiment commit.\n"
+        "Example: --exp-disable-blink-features=FeatureA,FeatureB")
 
     return start_parser
 
@@ -361,6 +393,14 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         base_disable_features=args.base_disable_features or
         args.disable_features,
         exp_disable_features=args.exp_disable_features or args.disable_features,
+        base_enable_blink_features=args.base_enable_blink_features or
+        args.enable_blink_features,
+        exp_enable_blink_features=args.exp_enable_blink_features or
+        args.enable_blink_features,
+        base_disable_blink_features=args.base_disable_blink_features or
+        args.disable_blink_features,
+        exp_disable_blink_features=args.exp_disable_blink_features or
+        args.disable_blink_features,
     )
     start_job(config)
 
@@ -472,6 +512,14 @@ class PinpointBisectSubcommand(PinpointBaseSubcommand):
         "--disable-features",
         help="Chrome features to disable.\n"
         "Example: --disable-features=Feature1,Feature2")
+    parser.add_argument(
+        "--enable-blink-features",
+        help="Blink features to enable.\n"
+        "Example: --enable-blink-features=Feature1,Feature2")
+    parser.add_argument(
+        "--disable-blink-features",
+        help="Blink features to disable.\n"
+        "Example: --disable-blink-features=Feature1,Feature2")
 
     parser.epilog = """Example:
   pinpoint bisect \\
@@ -509,6 +557,8 @@ class PinpointBisectSubcommand(PinpointBaseSubcommand):
         js_flags=args.js_flags,
         enable_features=args.enable_features,
         disable_features=args.disable_features,
+        enable_blink_features=args.enable_blink_features,
+        disable_blink_features=args.disable_blink_features,
     )
     bisect_job(config)
 
