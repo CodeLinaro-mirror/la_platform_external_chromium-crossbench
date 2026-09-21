@@ -441,7 +441,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
         "probes": {},
         "env": {},
         "browsers": {},
-        "network": {}
+        "network": {},
     }
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
@@ -470,7 +470,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
         "probes": {},
         "env": {},
         "browsers": {},
-        "network": {}
+        "network": {},
     }
     for config_flag in ("--probe-config", "--env-config", "--browser-config",
                         "--network-config"):
@@ -490,8 +490,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
     config_data = {
         "probes": {
             "v8.log": {
-                "js_flags": js_flags
-            }
+                "js_flags": js_flags,
+            },
         },
         "env": {},
         "browsers": {},
@@ -545,8 +545,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
                 "path": "chrome-dev",
             },
             "browser_2": {
-                "path": "chrome-stable"
-            }
+                "path": "chrome-stable",
+            },
         },
         "network": {},
     }
@@ -625,7 +625,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.fs.create_file(network_path, st_size=100)
     network_arg = f'{{"type": "wpr", "path": "{network_path}"}}'
     with unittest.mock.patch(
-        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run"
+        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
     ) as mock_run:
       self.run_cli("loading", "--browser=chrome", f"--network={network_arg}")
     self.assertTrue(mock_run.called)
@@ -638,7 +638,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     network_path = pathlib.Path("/test/archive.wprgo")
     self.fs.create_file(network_path, st_size=100)
     with unittest.mock.patch(
-        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run"
+        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
     ) as mock_run:
       self.run_cli("loading", "--browser=chrome", "--network=default")
     self.assertTrue(mock_run.called)
@@ -651,7 +651,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.fs.create_dir(local_path)
     self.fs.create_file(local_path / "index.html", st_size=100)
     with unittest.mock.patch(
-        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run"
+        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
     ) as mock_run:
       self.run_cli("loading", "--browser=chrome",
                    f"--local-file-server={local_path}")
@@ -665,7 +665,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     network_path = pathlib.Path("/test/archive.wprgo")
     self.fs.create_file(network_path, st_size=100)
     with unittest.mock.patch(
-        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run"
+        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
     ) as mock_run:
       self.run_cli("loading", "--browser=chrome", f"--wpr={network_path}")
     self.assertTrue(mock_run.called)
@@ -690,8 +690,8 @@ class NoProbeFlagCliTestCase(BaseCliTestCase):
         "probes": {
             self._PROBE_1: {},
             self._PROBE_2: {},
-            self._PROBE_3: {}
-        }
+            self._PROBE_3: {},
+        },
     }
     with self.config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)

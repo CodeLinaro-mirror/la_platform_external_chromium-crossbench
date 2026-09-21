@@ -110,8 +110,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
           "browser": "chrome",
           "reinstall": True,
           "apk": {
-              "path": str(apk_path)
-          }
+              "path": str(apk_path),
+          },
       })
 
   def test_parse_invalid_name(self):
@@ -141,7 +141,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     path = Chrome.stable_path(self.platform)
     config = BrowserConfig.parse({
         "path": str(path),
-        "version": "120.0.6099.224"
+        "version": "120.0.6099.224",
     })
     self.assertEqual(config.path, path)
     self.assertEqual(config.version, "120.0.6099.224")
@@ -330,7 +330,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
 
   def test_parse_simple_with_driver_android(self):
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("adb:chrome"),
@@ -340,7 +341,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("android:com.chrome.beta"),
@@ -373,7 +375,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertListEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("android:chrome-beta"),
@@ -383,7 +386,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("adb:chrome-dev"),
@@ -393,7 +397,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("android:chrome-canary"),
@@ -403,7 +408,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("android:chromium"),
@@ -413,7 +419,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("adb:webview"),
@@ -423,7 +430,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("adb:org.chromium.webview_shell"),
@@ -433,7 +441,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("adb:webview_embedder"),
@@ -443,7 +452,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("adb:com.google.android.googlequicksearchbox"),
@@ -453,7 +463,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertSequenceEqual(self.platform.sh_results, [])
 
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     package = "com.google.android.libraries.ads.mobile.maitier.testapps.webview"
     self.assertEqual(
@@ -464,7 +475,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
 
   def test_parse_simple_with_local_apk(self):
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("adb:/chrome/src/out/Release/chromium.apk"),
@@ -474,7 +486,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
 
   def test_parse_simple_with_local_built_apk_helper(self):
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     self.assertEqual(
         BrowserConfig.parse("adb:/chrome/src/out/Release/chrome_public_apk"),
@@ -508,7 +521,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
 
   def test_parse_arbitrary_apk_no_prefix(self):
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     path_str = "/test/my_app.apk"
     path = pth.LocalPath(path_str)
@@ -534,7 +548,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         "/out/android-arm64-release/bin/chrome_public_bundle",
     )
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ] * len(paths)
     for path_str in paths:
       with self.subTest(path=path_str):
@@ -552,7 +567,8 @@ class BrowserConfigTestCase(BaseConfigTestCase):
                  "in complex configs.")
   def test_parse_inline_hjson_android(self):
     self.platform.sh_results = [
-        ADB_DEVICES_SINGLE_OUTPUT, ADB_DEVICES_SINGLE_OUTPUT
+        ADB_DEVICES_SINGLE_OUTPUT,
+        ADB_DEVICES_SINGLE_OUTPUT,
     ]
     config_dict: JsonDict = {
         "browser": "com.android.chrome",
@@ -651,7 +667,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
       BrowserConfig.parse("{path:something}")
 
   def test_parse_inline_hjson(self):
-    config_dict: JsonDict = {"browser": "chrome", "driver": {"type": "adb",}}
+    config_dict: JsonDict = {"browser": "chrome", "driver": {"type": "adb"}}
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     with self.assertRaises(MultiException) as cm:

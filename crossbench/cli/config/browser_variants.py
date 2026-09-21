@@ -97,9 +97,10 @@ class BaseBrowserVariantsConfig(abc.ABC):
   def parse_args(cls, args: argparse.Namespace) -> BaseBrowserVariantsConfig:
     pass
 
-  def __init__(self,
-               browser_lookup_override: BrowserLookupTableT | None = None
-              ) -> None:
+  def __init__(
+      self,
+      browser_lookup_override: BrowserLookupTableT | None = None,
+  ) -> None:
     self.flags_config: FlagsConfig = FlagsConfig()
     self._variants: list[BrowserVariantConfig] = []
     self._unique_labels: set[str] = set()

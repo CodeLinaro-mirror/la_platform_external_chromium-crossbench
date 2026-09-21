@@ -141,7 +141,7 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
     self.assertEqual(self.platform.sleep_calls, [
         dt.timedelta(milliseconds=500) + _INPUT_DRAIN_BUFFER,
         (dt.timedelta(milliseconds=200) + _INPUT_LEAD_BUFFER +
-         _INPUT_DRAIN_BUFFER)
+         _INPUT_DRAIN_BUFFER),
     ])
 
   @mock.patch("time.monotonic")
@@ -173,7 +173,7 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
     self.assertEqual(self.platform.sleep_calls, [
         dt.timedelta(milliseconds=500) + _INPUT_DRAIN_BUFFER,
         (dt.timedelta(milliseconds=200) + _INPUT_LEAD_BUFFER +
-         _INPUT_DRAIN_BUFFER)
+         _INPUT_DRAIN_BUFFER),
     ])
 
   def test_unsupported_key(self) -> None:

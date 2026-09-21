@@ -133,7 +133,7 @@ class TestFlags(unittest.TestCase):
     flags = self.CLASS({
         "--flag1": "value1",
         "--flag2": None,
-        "--flag3": "value3"
+        "--flag3": "value3",
     })
     self.assertEqual(str(flags), "--flag1=value1 --flag2 --flag3=value3")
 

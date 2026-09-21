@@ -254,7 +254,7 @@ class CdpAndroidBrowser(ChromiumBased):
     expression = f"(function(){{{script}}}).apply(window, {args_json})"
     res = self._send_cdp("Runtime.evaluate", {
         "expression": expression,
-        "returnByValue": True
+        "returnByValue": True,
     })
     result = res.get("result", {})
     if "exceptionDetails" in result:

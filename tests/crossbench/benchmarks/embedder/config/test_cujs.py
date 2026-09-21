@@ -41,15 +41,15 @@ class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
                     "action": "click",
                     "source": "touch",
                     "position": {
-                        "res": "com.package.name/resourceId"
+                        "res": "com.package.name/resourceId",
                     },
                 },
                 {
                     "action": "wait",
-                    "duration": 5
+                    "duration": 5,
                 },
             ],
-        }
+        },
     }
     config = CUJsConfig.parse(config_data)
     self.assert_single_google_story(config.cujs)
@@ -92,8 +92,8 @@ class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
           {"cujs": {
               "TEST": [{
                   "action___": "wait",
-                  "duration": 5.0
-              }]
+                  "duration": 5.0,
+              }],
           }})
     self.assertIn("Invalid data:", str(cm.exception))
 
@@ -104,9 +104,9 @@ class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
           "cujs": {
               "TEST": [{
                   "action": invalid_action,
-                  "duration": 5.0
-              }]
-          }
+                  "duration": 5.0,
+              }],
+          },
       }
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(argparse.ArgumentTypeError):

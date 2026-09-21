@@ -115,7 +115,7 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
                    exceptions: ExceptionAnnotator) -> LocalProbeResult:
 
     def run_query(
-        query: TraceProcessorQueryConfig
+        query: TraceProcessorQueryConfig,
     ) -> tuple[pth.LocalPath, pth.LocalPath]:
       csv_file = self.local_result_path / f"{query.name}.csv"
       json_file = self.local_result_path / f"{query.name}.json"

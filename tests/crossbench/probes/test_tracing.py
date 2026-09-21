@@ -41,7 +41,7 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
   def test_parse_config_empty(self):
     probe: TracingProbe = TracingProbe.parse_dict({
         "preset": "empty",
-        "categories": ["one", "two"]
+        "categories": ["one", "two"],
     })
     self.assertEqual(probe.categories, {"one", "two"})
 
@@ -76,7 +76,7 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
           {
               "startup_duration": 10,
               "trace_config": {},
-              "result_file": "path/to/result"
+              "result_file": "path/to/result",
           }, f)
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "result_file"):
       TracingProbe.parse_dict({"trace_config": str(trace_config_file)})
@@ -88,8 +88,8 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
           {
               "startup_duration": 10,
               "trace_config": {
-                  "included_categories": ["one", "two"]
-              }
+                  "included_categories": ["one", "two"],
+              },
           }, f)
     probe: TracingProbe = TracingProbe.parse_dict(
         {"trace_config": str(trace_config_file)})
@@ -106,20 +106,20 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
           {
               "startup_duration": 10,
               "trace_config": {
-                  "included_categories": ["one", "two"]
-              }
+                  "included_categories": ["one", "two"],
+              },
           }, f)
     with self.assertRaisesRegex(argparse.ArgumentTypeError,
                                 "trace categories or a trace_config"):
       TracingProbe.parse_dict({
           "preset": "v8",
-          "trace_config": str(trace_config_file)
+          "trace_config": str(trace_config_file),
       })
     with self.assertRaisesRegex(argparse.ArgumentTypeError,
                                 "trace categories or a trace_config"):
       TracingProbe.parse_dict({
           "categories": ["one", "two"],
-          "trace_config": str(trace_config_file)
+          "trace_config": str(trace_config_file),
       })
 
   def test_parse_example_config(self):

@@ -48,8 +48,15 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=(),
             add_counters=(),
             output_path=output_path), [
-                "simpleperf", "record", "-t", "5678", "--call-graph", "dwarf",
-                "--post-unwind=yes", "-o", output_path
+                "simpleperf",
+                "record",
+                "-t",
+                "5678",
+                "--call-graph",
+                "dwarf",
+                "--post-unwind=yes",
+                "-o",
+                output_path,
             ])
 
   def test_simpleperf_command_line_with_pid(self):
@@ -68,8 +75,15 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=(),
             add_counters=(),
             output_path=output_path), [
-                "simpleperf", "record", "-p", "1234", "--call-graph", "dwarf",
-                "--post-unwind=yes", "-o", output_path
+                "simpleperf",
+                "record",
+                "-p",
+                "1234",
+                "--call-graph",
+                "dwarf",
+                "--post-unwind=yes",
+                "-o",
+                output_path,
             ])
 
   def test_simpleperf_command_line_with_app(self):
@@ -88,8 +102,15 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=(),
             add_counters=(),
             output_path=output_path), [
-                "simpleperf", "record", "--app", "com.chrome.beta",
-                "--call-graph", "dwarf", "--post-unwind=yes", "-o", output_path
+                "simpleperf",
+                "record",
+                "--app",
+                "com.chrome.beta",
+                "--call-graph",
+                "dwarf",
+                "--post-unwind=yes",
+                "-o",
+                output_path,
             ])
 
   def test_simpleperf_command_line_systemwide(self):
@@ -108,8 +129,14 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=(),
             add_counters=(),
             output_path=output_path), [
-                "simpleperf", "record", "-a", "--call-graph", "dwarf",
-                "--post-unwind=yes", "-o", output_path
+                "simpleperf",
+                "record",
+                "-a",
+                "--call-graph",
+                "dwarf",
+                "--post-unwind=yes",
+                "-o",
+                output_path,
             ])
 
   def test_simpleperf_command_line_with_frequency(self):
@@ -128,8 +155,15 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=(),
             add_counters=(),
             output_path=output_path), [
-                "simpleperf", "record", "-a", "--call-graph", "fp", "-f",
-                "1234", "-o", output_path
+                "simpleperf",
+                "record",
+                "-a",
+                "--call-graph",
+                "fp",
+                "-f",
+                "1234",
+                "-o",
+                output_path,
             ])
 
   def test_simpleperf_command_line_with_count(self):
@@ -148,8 +182,15 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=(),
             add_counters=(),
             output_path=output_path), [
-                "simpleperf", "record", "-a", "--call-graph", "fp", "-c", "5",
-                "-o", output_path
+                "simpleperf",
+                "record",
+                "-a",
+                "--call-graph",
+                "fp",
+                "-c",
+                "5",
+                "-o",
+                output_path,
             ])
 
   def test_simpleperf_command_line_with_cpu(self):
@@ -172,8 +213,15 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=(),
             add_counters=(),
             output_path=output_path), [
-                "simpleperf", "record", "-a", "--call-graph", "fp", "--cpu",
-                "0,1,2", "-o", output_path
+                "simpleperf",
+                "record",
+                "-a",
+                "--call-graph",
+                "fp",
+                "--cpu",
+                "0,1,2",
+                "-o",
+                output_path,
             ])
 
   def test_simpleperf_command_line_with_events(self):
@@ -195,8 +243,17 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             grouped_events=(),
             add_counters=(),
             output_path=output_path), [
-                "simpleperf", "record", "-a", "-f", "1234", "-c", "5", "-e",
-                "cpu-cycles,instructions", "-o", output_path
+                "simpleperf",
+                "record",
+                "-a",
+                "-f",
+                "1234",
+                "-c",
+                "5",
+                "-e",
+                "cpu-cycles,instructions",
+                "-o",
+                output_path,
             ])
 
   def test_simpleperf_command_line_with_grouped_events(self):
@@ -218,8 +275,17 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
             ),
             add_counters=(),
             output_path=output_path), [
-                "simpleperf", "record", "-a", "-f", "1234", "-c", "5",
-                "--group", "cpu-cycles,instructions", "-o", output_path
+                "simpleperf",
+                "record",
+                "-a",
+                "-f",
+                "1234",
+                "-c",
+                "5",
+                "--group",
+                "cpu-cycles,instructions",
+                "-o",
+                output_path,
             ])
 
   def test_simpleperf_command_line_with_add_counters(self):
@@ -241,9 +307,20 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
                 "instructions",
             ),
             output_path=output_path), [
-                "simpleperf", "record", "-a", "-f", "1234", "-c", "5", "-e",
-                "sched:sched_switch", "--add-counter",
-                "cpu-cycles,instructions", "--no-inherit", "-o", output_path
+                "simpleperf",
+                "record",
+                "-a",
+                "-f",
+                "1234",
+                "-c",
+                "5",
+                "-e",
+                "sched:sched_switch",
+                "--add-counter",
+                "cpu-cycles,instructions",
+                "--no-inherit",
+                "-o",
+                output_path,
             ])
 
   def test_parse_target_preset(self):

@@ -130,8 +130,11 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(
         list(df.columns),
         [
-            "cb_browser", "cb_story", "odpm_total_mw", "bits_cpu_mw",
-            "bits_soc_total_mw"
+            "cb_browser",
+            "cb_story",
+            "odpm_total_mw",
+            "bits_cpu_mw",
+            "bits_soc_total_mw",
         ],
     )
 
@@ -192,7 +195,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "odpm_total_mw": 10.0 + 20.0
+            "odpm_total_mw": 10.0 + 20.0,
         },
     ])
 
@@ -209,7 +212,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "odpm_total_mw": ((10.0 + 20.0) + (200.0 + 400.0)) / 2.0
+            "odpm_total_mw": ((10.0 + 20.0) + (200.0 + 400.0)) / 2.0,
         },
     ])
 
@@ -236,7 +239,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "odpm_total_mw": score
+            "odpm_total_mw": score,
         },
     ])
 
@@ -265,7 +268,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "odpm_total_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0
+            "odpm_total_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0,
         },
     ])
 
@@ -294,7 +297,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "odpm_total_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0
+            "odpm_total_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0,
         },
     ])
 
@@ -318,7 +321,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "test",
-            "odpm_total_mw": (20 + 30 + 40 + 50 + 60 + 70 + 80 + 90) / 8.0
+            "odpm_total_mw": (20 + 30 + 40 + 50 + 60 + 70 + 80 + 90) / 8.0,
         },
     ])
 
@@ -335,12 +338,12 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "cnn",
-            "odpm_total_mw": 10.0 + 20.0
+            "odpm_total_mw": 10.0 + 20.0,
         },
         {
             "cb_browser": "chrome",
             "cb_story": "msn",
-            "odpm_total_mw": 5000.0 + 6000.0
+            "odpm_total_mw": 5000.0 + 6000.0,
         },
     ])
 
@@ -357,12 +360,12 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "cnn",
-            "odpm_total_mw": 10.0 + 20.0
+            "odpm_total_mw": 10.0 + 20.0,
         },
         {
             "cb_browser": "safari",
             "cb_story": "cnn",
-            "odpm_total_mw": 100.0 + 200.0
+            "odpm_total_mw": 100.0 + 200.0,
         },
     ])
 
@@ -382,7 +385,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "safari",
             "cb_story": "cnn",
-            "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True)
+            "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
         },
     ])
 
@@ -401,17 +404,17 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome",
             "cb_story": "cnn",
-            "odpm_total_mw": 10.0 + 20.0
+            "odpm_total_mw": 10.0 + 20.0,
         },
         {
             "cb_browser": "chrome",
             "cb_story": "msn",
-            "odpm_total_mw": 5000.0 + 6000.0
+            "odpm_total_mw": 5000.0 + 6000.0,
         },
         {
             "cb_browser": "safari",
             "cb_story": "cnn",
-            "odpm_total_mw": 200.0 + 400.0
+            "odpm_total_mw": 200.0 + 400.0,
         },
     ])
 
@@ -441,17 +444,17 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         {
             "cb_browser": "chrome_pixel_10",
             "cb_story": "test",
-            "odpm_total_mw": 5000.0 + 6000.0
+            "odpm_total_mw": 5000.0 + 6000.0,
         },
         {
             "cb_browser": "chrome_pixel_9",
             "cb_story": "test",
-            "odpm_total_mw": 10.0 + 20.0
+            "odpm_total_mw": 10.0 + 20.0,
         },
         {
             "cb_browser": "safari",
             "cb_story": "test",
-            "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True)
+            "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
         },
     ])
 
@@ -476,7 +479,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
             {
                 "cb_browser": "chrome",
                 "cb_story": "cnn",
-                "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True)
+                "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
             },
         ])
 
@@ -510,7 +513,7 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
             {
                 "cb_browser": "chrome",
                 "cb_story": "cnn",
-                "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True)
+                "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
             },
         ])
 
@@ -748,8 +751,11 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         result_dir, base_df, reprocess=False)
 
     expected_cols = [
-        "custom_first_col", "cb_browser", "cb_story", "custom_middle_col",
-        "odpm_total_mw"
+        "custom_first_col",
+        "cb_browser",
+        "cb_story",
+        "custom_middle_col",
+        "odpm_total_mw",
     ]
     self.assertSequenceEqual(list(result_df.columns), expected_cols)
 

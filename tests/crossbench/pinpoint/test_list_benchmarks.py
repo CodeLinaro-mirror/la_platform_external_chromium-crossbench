@@ -26,7 +26,9 @@ class ListBenchmarksTest(MockHttpRequestsMixin):
 
       mock_response = mock.Mock()
       mock_response.json.return_value = [
-          "benchmark1", "benchmark2", "benchmark3"
+          "benchmark1",
+          "benchmark2",
+          "benchmark3",
       ]
       mock_response.raise_for_status.return_value = None
       return mock_response

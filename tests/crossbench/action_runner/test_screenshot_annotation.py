@@ -42,7 +42,7 @@ class ScreenshotAnnotationTestCase(unittest.TestCase):
     svg = ET.fromstring(
         annotate_screenshot_svg(1366, 768, "screenshot.png", [
             ScreenshotRectAnnotation("rect",
-                                     DisplayRectangle(Point(123, 456), 89, 97))
+                                     DisplayRectangle(Point(123, 456), 89, 97)),
         ]))
     rect = svg.find(
         ".//rect[title='rect'][@x='123'][@y='456'][@width='89'][@height='97']",

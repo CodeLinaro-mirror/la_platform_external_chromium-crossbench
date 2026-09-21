@@ -212,7 +212,7 @@ class ProfilingProbe(Probe):
       cpu: Sequence[int] = (),
       events: Sequence[str] = (),
       grouped_events: Sequence[str] = (),
-      add_counters: Sequence[str] = ()
+      add_counters: Sequence[str] = (),
   ) -> None:
     super().__init__()
     self._sample_js: bool = js
@@ -328,9 +328,10 @@ class ProfilingProbe(Probe):
     return TargetMode.BROWSER_APP_ONLY
 
   def start_profiling_after_setup(self, target: TargetMode) -> bool:
-    return target in (TargetMode.RENDERER_MAIN_ONLY,
-                      TargetMode.RENDERER_PROCESS_ONLY
-                     ) or self.pin_renderer_main_core is not None
+    return target in (
+        TargetMode.RENDERER_MAIN_ONLY,
+        TargetMode.RENDERER_PROCESS_ONLY,
+    ) or self.pin_renderer_main_core is not None
 
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:

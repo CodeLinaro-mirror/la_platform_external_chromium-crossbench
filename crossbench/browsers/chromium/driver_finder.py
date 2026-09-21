@@ -98,7 +98,7 @@ class ChromeDriverFinder:
     error_message: list[str] = [f"Driver '{driver_path}' does not exist."]
     error_message += [
         helper.get_chromedriver_build_instructions(
-            build_dir, self.browser.platform.is_android)
+            build_dir, self.browser.platform.is_android),
     ]
     raise DriverNotFoundError("\n".join(error_message))
 
@@ -394,7 +394,7 @@ class ChromeDriverFinder:
     base_prefix = str(chromium_base_position)[:4]
     listing_url: str = url_helper.update_url_query(self.CHROMIUM_LISTING_URL, {
         "prefix": f"{listing_prefix}/{base_prefix}",
-        "maxResults": "10000"
+        "maxResults": "10000",
     })
     listing = url_helper.get(listing_url).json()
 

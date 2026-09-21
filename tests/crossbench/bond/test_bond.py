@@ -31,7 +31,7 @@ class AddBotsConfigTestCase(unittest.TestCase):
                 "mute_audio": False,
                 "video_fps": 24,
                 "mute_video": False,
-                "requested_layout": str(MeetLayout.BRADY_BUNCH)
+                "requested_layout": str(MeetLayout.BRADY_BUNCH),
             },
             "backend_options": {
                 "mesi_apiary_url": MESI_APIARY_URL,
@@ -55,7 +55,7 @@ class AddBotsConfigTestCase(unittest.TestCase):
         "video_fps": 144,
         "mute_video": True,
         "requested_layout": MeetLayout.SPOTLIGHT,
-        "video_file_path": "video.raw"
+        "video_file_path": "video.raw",
     }
     config = AddBotsConfig.parse_dict(config_dict)
     config.validate()

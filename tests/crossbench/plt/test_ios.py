@@ -23,103 +23,103 @@ DEVICES_SINGLE = {
     "result": {
         "devices": [{
             "hardwareProperties": {
-                "udid": "00001111-11AA22BB33DD"
+                "udid": "00001111-11AA22BB33DD",
             },
             "deviceProperties": {
                 "name": "An iPhone",
-                "osVersionNumber": "17.1.2"
+                "osVersionNumber": "17.1.2",
             },
             "connectionProperties": {
-                "tunnelState": "connected"
-            }
+                "tunnelState": "connected",
+            },
         }, {
             "hardwareProperties": {
-                "udid": "00002222-11AA22BB33DD"
+                "udid": "00002222-11AA22BB33DD",
             },
             "deviceProperties": {
                 "name": "An iPhone Pro",
-                "osVersionNumber": "17.1.1"
+                "osVersionNumber": "17.1.1",
             },
             "connectionProperties": {
-                "tunnelState": "unavailable"
-            }
-        }]
-    }
+                "tunnelState": "unavailable",
+            },
+        }],
+    },
 }
 
 DEVICES_MULTIPLE = {
     "result": {
         "devices": [{
             "hardwareProperties": {
-                "udid": "00001111-11AA22BB33DD"
+                "udid": "00001111-11AA22BB33DD",
             },
             "deviceProperties": {
                 "name": "An iPhone",
-                "osVersionNumber": "17.1.2"
+                "osVersionNumber": "17.1.2",
             },
             "connectionProperties": {
-                "tunnelState": "connected"
-            }
+                "tunnelState": "connected",
+            },
         }, {
             "hardwareProperties": {
-                "udid": "00002222-11AA22BB33DD"
+                "udid": "00002222-11AA22BB33DD",
             },
             "deviceProperties": {
                 "name": "An iPhone Pro",
-                "osVersionNumber": "17.1.1"
+                "osVersionNumber": "17.1.1",
             },
             "connectionProperties": {
-                "tunnelState": "connected"
-            }
+                "tunnelState": "connected",
+            },
         }, {
             "hardwareProperties": {
-                "udid": "00003333-11AA22BB33DD"
+                "udid": "00003333-11AA22BB33DD",
             },
             "deviceProperties": {
                 "name": "An iPhone Pro Max",
-                "osVersionNumber": "17.1.0"
+                "osVersionNumber": "17.1.0",
             },
             "connectionProperties": {
-                "tunnelState": "unavailable"
-            }
-        }]
-    }
+                "tunnelState": "unavailable",
+            },
+        }],
+    },
 }
 
 DEVICES_NONE = {
     "result": {
         "devices": [{
             "hardwareProperties": {
-                "udid": "00002222-11AA22BB33DD"
+                "udid": "00002222-11AA22BB33DD",
             },
             "deviceProperties": {
                 "name": "An iPhone Pro",
-                "osVersionNumber": "17.1.1"
+                "osVersionNumber": "17.1.1",
             },
             "connectionProperties": {
-                "tunnelState": "unavailable"
-            }
-        }]
-    }
+                "tunnelState": "unavailable",
+            },
+        }],
+    },
 }
 
 IPHONE_SIMULATOR = {
     "udid": "SIM-UDID-1111",
     "name": "iPhone 15 Simulator",
-    "state": "Booted"
+    "state": "Booted",
 }
 
 WATCH_SIMULATOR = {
     "udid": "SIM-UDID-2222",
     "name": "Apple Watch Simulator",
-    "state": "Booted"
+    "state": "Booted",
 }
 
 SIMULATORS_SAMPLE = {
     "devices": {
         "com.apple.CoreSimulator.SimRuntime.iOS-17-5": [IPHONE_SIMULATOR],
-        "com.apple.CoreSimulator.SimRuntime.watchOS-10-0": [WATCH_SIMULATOR]
-    }
+        "com.apple.CoreSimulator.SimRuntime.watchOS-10-0": [WATCH_SIMULATOR],
+    },
 }
 
 
@@ -287,7 +287,7 @@ class IOsMockPlatformTestCase(BaseMockPlatformTestCase):
             "system": "ios",
             "platform": "ios 17.1.1",
             "version": "17.1.1",
-            "release": "17.1.1"
+            "release": "17.1.1",
         })
 
   def test_version(self):
@@ -325,7 +325,7 @@ class IOsMockPlatformTestCase(BaseMockPlatformTestCase):
     self.assertEqual(
         devices, {
             "00001111-11AA22BB33DD": expected_physical,
-            IPHONE_SIMULATOR["udid"]: expected_sim
+            IPHONE_SIMULATOR["udid"]: expected_sim,
         })
     # Implied, but for clarity's sake.
     self.assertNotIn(WATCH_SIMULATOR["udid"], devices)

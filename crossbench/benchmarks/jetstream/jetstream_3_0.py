@@ -144,7 +144,7 @@ JETSTREAM_3_0_STORY_DATA = {
     "Air": ("all", "ares", "default", "js"),
     "ai-astar": ("all", "default", "js", "seamonster"),
     "acorn-wtb": ("all", "default", "js", "wtb"),
-    "8bitbench-wasm": ("all", "default", "wasm")
+    "8bitbench-wasm": ("all", "default", "wasm"),
 }
 
 

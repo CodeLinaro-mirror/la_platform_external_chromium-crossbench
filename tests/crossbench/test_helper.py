@@ -81,7 +81,7 @@ class WaitTestCase(unittest.TestCase):
             (5, dt.timedelta(seconds=16)),
             (6, dt.timedelta(seconds=16)),
             (7, dt.timedelta(seconds=16)),
-            (8, dt.timedelta(seconds=16))
+            (8, dt.timedelta(seconds=16)),
         ])
 
   def test_wait_with_backoff(self):
@@ -249,7 +249,7 @@ class GroupByTestCase(unittest.TestCase):
     self.assertDictEqual({
         "1": [100, 100, 100],
         "2": [200, 200],
-        "3": [300]
+        "3": [300],
     }, grouped)
 
   def test_custom_group(self):
@@ -259,7 +259,7 @@ class GroupByTestCase(unittest.TestCase):
         {
             "1": ["custom", 1, 1, 1],
             "2": ["custom", 2, 2],
-            "3": ["custom", 3]
+            "3": ["custom", 3],
         }, grouped)
 
   def test_custom_group_out_of_order(self):
@@ -269,7 +269,7 @@ class GroupByTestCase(unittest.TestCase):
         {
             "1": ["custom", 1, 1, 1],
             "2": ["custom", 2, 2],
-            "3": ["custom", 3]
+            "3": ["custom", 3],
         }, grouped)
 
 

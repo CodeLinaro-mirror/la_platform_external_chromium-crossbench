@@ -42,7 +42,7 @@ _CONFLICTING_EXTRA_HEADERS: Final[frozenset[str]] = frozenset(
 # served directory.
 _DEFAULT_HEADERS: Final[immutabledict[str, str]] = immutabledict({
     "Cross-Origin-Opener-Policy": "same-origin",
-    "Cross-Origin-Embedder-Policy": "require-corp"
+    "Cross-Origin-Embedder-Policy": "require-corp",
 })
 
 

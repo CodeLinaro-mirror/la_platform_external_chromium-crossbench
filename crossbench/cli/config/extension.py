@@ -95,7 +95,7 @@ class ExtensionConfig(ConfigObject):
                 "response": "redirect",
                 "prodversion": version_str,
                 "acceptformat": "crx2,crx3",
-                "x": f"id={self.id}&uc"
+                "x": f"id={self.id}&uc",
             })
         response = url_helper.get(crx_url)
         response.raise_for_status()

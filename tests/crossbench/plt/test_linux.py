@@ -86,7 +86,7 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertEqual(len(parsed), 1)
     self.assertDictEqual(parsed[0], {
         "resolution": (1728, 946),
-        "refresh_rate": 120.0
+        "refresh_rate": 120.0,
     })
 
   def test_meminfo_no_proc(self):
@@ -338,7 +338,7 @@ class LinuxPlatformClipboardTestCase(PlatformClipboardTestCase):
 
   @override
   def clipboard_tool_configs(
-      self,) -> list[tuple[str, pth.LocalPath, list[str]]]:
+      self) -> list[tuple[str, pth.LocalPath, list[str]]]:
     return [
         ("xclip", pth.LocalPath("/usr/bin/xclip"), ["-selection", "clipboard"]),
         ("wl-copy", pth.LocalPath("/usr/bin/wl-copy"), []),

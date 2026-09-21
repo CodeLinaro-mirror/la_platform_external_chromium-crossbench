@@ -34,7 +34,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
     probe = BitsProbe.parse_dict({
         "bits_path": str(self.bits_path),
         "bits_out": "run_id",
-        "duration": "1s"
+        "duration": "1s",
     })
     self.assertEqual(probe.bits_path, self.bits_path)
     self.assertEqual(probe.bits_out, "run_id")
@@ -81,7 +81,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
       BitsProbe.parse_dict({
           "bits_path": str(self.bits_path),
           "bits_out": "run_id",
-          "duration": "0s"
+          "duration": "0s",
       })
 
   def test_bits_probe_parsing_subsecond_duration(self) -> None:
@@ -89,7 +89,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
       BitsProbe.parse_dict({
           "bits_path": str(self.bits_path),
           "bits_out": "run_id",
-          "duration": "500ms"
+          "duration": "500ms",
       })
 
   def test_bits_probe_parsing_negative_duration(self) -> None:
@@ -97,13 +97,13 @@ class BitsProbeTestCase(BaseProbeTestCase):
       BitsProbe.parse_dict({
           "bits_path": str(self.bits_path),
           "bits_out": "run_id",
-          "duration": "-5s"
+          "duration": "-5s",
       })
 
   def test_bits_probe_parsing_default_duration(self) -> None:
     probe = BitsProbe.parse_dict({
         "bits_path": str(self.bits_path),
-        "bits_out": "test_run_id"
+        "bits_out": "test_run_id",
     })
     self.assertEqual(probe.bits_path, self.bits_path)
     self.assertEqual(probe.bits_out, "test_run_id")
@@ -113,7 +113,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
     probe = BitsProbe.parse_dict({
         "bits_path": str(self.bits_path),
         "bits_out": "test_run_id",
-        "duration": "2m"
+        "duration": "2m",
     })
     self.assertEqual(probe.bits_path, self.bits_path)
     self.assertEqual(probe.bits_out, "test_run_id")
@@ -139,7 +139,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
   def test_bits_probe_parsing_no_port_specified(self) -> None:
     probe = BitsProbe.parse_dict({
         "bits_path": str(self.bits_path),
-        "bits_out": "test_run_id"
+        "bits_out": "test_run_id",
     })
     self.assertEqual(probe.port, BitsProbe.DEFAULT_PORT)
 
@@ -147,7 +147,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
     probe = BitsProbe.parse_dict({
         "bits_path": str(self.bits_path),
         "bits_out": "test_run_id",
-        "port": 1234
+        "port": 1234,
     })
     self.assertEqual(probe.port, 1234)
 
@@ -156,7 +156,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
       BitsProbe.parse_dict({
           "bits_path": str(self.bits_path),
           "bits_out": "run_id",
-          "port": 0
+          "port": 0,
       })
 
   def test_bits_probe_parsing_negative_port(self) -> None:
@@ -164,7 +164,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
       BitsProbe.parse_dict({
           "bits_path": str(self.bits_path),
           "bits_out": "run_id",
-          "port": -8080
+          "port": -8080,
       })
 
   def test_validate_browser_incompatible(self) -> None:

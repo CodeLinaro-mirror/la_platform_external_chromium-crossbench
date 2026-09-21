@@ -34,7 +34,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
             "auth_provider_x509_cert_url": "https://example.com/certs",
             "client_x509_cert_url": "https://example.com/x509/my-project.cert",
             "universe_domain": "example.com",
-        }
+        },
     }
 
   def google_workspace_config_dict(self):
@@ -64,8 +64,8 @@ class SecretsConfigTestCase(BaseConfigTestCase):
                 "universe_domain":
                     "example.com",
             },
-            "shared_drive_id": "my-shared-drive-id"
-        }
+            "shared_drive_id": "my-shared-drive-id",
+        },
     }
 
   def test_parse_empty(self):
@@ -80,7 +80,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
     secrets = Secrets.parse(
         {"google": {
             "password": "pw",
-            "account": "user@test.com"
+            "account": "user@test.com",
         }})
     self.assertEqual(secrets.google,
                      GoogleUsernamePassword("user@test.com", "pw"))
@@ -88,7 +88,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
     secrets = Secrets.parse(
         {"google": {
             "user": "user@test.com",
-            "password": ""
+            "password": "",
         }})
     self.assertEqual(secrets.google,
                      GoogleUsernamePassword("user@test.com", ""))
@@ -145,12 +145,12 @@ class SecretsConfigTestCase(BaseConfigTestCase):
     secrets_1 = Secrets.parse(
         {"google": {
             "password": "pw",
-            "account": "user@test.com"
+            "account": "user@test.com",
         }})
     secrets_2 = Secrets.parse(
         {"google": {
             "password": "pw",
-            "account": "user@test.com"
+            "account": "user@test.com",
         }})
     self.assertEqual(secrets_1, secrets_1)
     self.assertEqual(secrets_1, secrets_2)
@@ -164,12 +164,12 @@ class SecretsConfigTestCase(BaseConfigTestCase):
     secrets_1 = Secrets.parse(
         {"google": {
             "password": "pw",
-            "account": "user@test.com"
+            "account": "user@test.com",
         }})
     secrets_2 = Secrets.parse(
         {"google": {
             "password": "PASSWORD",
-            "account": "user@test.com"
+            "account": "user@test.com",
         }})
     self.assertNotEqual(secrets_1, secrets_2)
 
@@ -206,12 +206,12 @@ class SecretsConfigTestCase(BaseConfigTestCase):
     secrets_1 = Secrets.parse(
         {"google": {
             "password": "pw",
-            "account": "user1@test.com"
+            "account": "user1@test.com",
         }})
     secrets_2 = Secrets.parse(
         {"google": {
             "password": "PASSWORD",
-            "account": "user2@test.com"
+            "account": "user2@test.com",
         }})
     merged = secrets_1.merge(fallback=secrets_2)
     self.assertEqual(secrets_1, merged)
@@ -220,12 +220,12 @@ class SecretsConfigTestCase(BaseConfigTestCase):
     secrets_1 = Secrets.parse(
         {"google": {
             "password": "pw",
-            "account": "user1@test.com"
+            "account": "user1@test.com",
         }})
     secrets_2 = Secrets.parse(
         {"google": {
             "password": "PASSWORD",
-            "account": "user2@test.com"
+            "account": "user2@test.com",
         }})
     merged = secrets_1.merge(fallback=secrets_1, strict=True)
     self.assertEqual(secrets_1, merged)
@@ -237,7 +237,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
   def test_cycled_account_default(self):
     cycled_account = CycledUsernamePassword.parse({
         "username": "user@user.com",
-        "password": "password"
+        "password": "password",
     })
 
     self.assertEqual(cycled_account.username, "user@user.com")

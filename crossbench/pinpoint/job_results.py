@@ -137,9 +137,14 @@ class PinpointJobResults:
                             out_dir: pth.LocalPath) -> None:
     spinner.write(self._next_progress_message())
     cmd: list[pth.AnyPathLike] = [
-        self.cas_path, "download", "-cas-instance",
-        "projects/chrome-swarming/instances/default_instance", "-digest",
-        isolate, "-dir", out_dir
+        self.cas_path,
+        "download",
+        "-cas-instance",
+        "projects/chrome-swarming/instances/default_instance",
+        "-digest",
+        isolate,
+        "-dir",
+        out_dir,
     ]
     plt.PLATFORM.sh(*cmd)
 

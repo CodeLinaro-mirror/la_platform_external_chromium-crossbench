@@ -52,11 +52,12 @@ class FastCliTestCasePartB(BaseCliTestCase):
   """
 
   def _expect_mock_browsers(
-      self, mock_browsers: Sequence[type[mock_browser.MockBrowser]]
+      self,
+      mock_browsers: Sequence[type[mock_browser.MockBrowser]],
   ) -> Callable[[BrowserConfig], type[mock_browser.MockBrowser]]:
 
     def mock_get_browser_cls(
-        browser_config: BrowserConfig,) -> type[mock_browser.MockBrowser]:
+        browser_config: BrowserConfig) -> type[mock_browser.MockBrowser]:
       self.assertEqual(browser_config.driver.driver_type,
                        BrowserDriverType.WEB_DRIVER)
       for mock_browser_cls in mock_browsers:
@@ -147,9 +148,9 @@ class FastCliTestCasePartB(BaseCliTestCase):
         "browsers": {
             "chrome_stable_config": {
                 "path": "chrome-stable",
-                "flags": ["--no-sandbox"]
-            }
-        }
+                "flags": ["--no-sandbox"],
+            },
+        },
     }
     config_file = pth.LocalPath("/browser_config.hjson")
     config_file.write_text(hjson.dumps(browser_config_data), encoding="utf-8")
@@ -187,9 +188,9 @@ class FastCliTestCasePartB(BaseCliTestCase):
         "browsers": {
             "chrome_stable_config": {
                 "path": "chrome-stable",
-                "flags": ["--disable-gpu"]
-            }
-        }
+                "flags": ["--disable-gpu"],
+            },
+        },
     }
     config_file = pth.LocalPath("/browser_config_multi.hjson")
     config_file.write_text(hjson.dumps(browser_config_data), encoding="utf-8")
@@ -388,18 +389,24 @@ class FastCliTestCasePartB(BaseCliTestCase):
     with self.cli() as cli:
       with self.assertRaises(SysExitTestException):
         cli.run([
-            "loading", "--env=not a valid name", "--urls=http://test.com",
-            "--env-validation=skip"
+            "loading",
+            "--env=not a valid name",
+            "--urls=http://test.com",
+            "--env-validation=skip",
         ])
       with self.assertRaises(SysExitTestException):
         cli.run([
-            "loading", "--env={not valid hjson}", "--urls=http://test.com",
-            "--env-validation=skip"
+            "loading",
+            "--env={not valid hjson}",
+            "--urls=http://test.com",
+            "--env-validation=skip",
         ])
       with self.assertRaises(SysExitTestException):
         cli.run([
-            "loading", "--env={unknown_property:1}", "--urls=http://test.com",
-            "--env-validation=skip"
+            "loading",
+            "--env={unknown_property:1}",
+            "--urls=http://test.com",
+            "--env-validation=skip",
         ])
 
   def test_conflicting_driver_path(self):
@@ -433,23 +440,29 @@ class FastCliTestCasePartB(BaseCliTestCase):
         hjson.dump({}, f)
       with self.assertRaises(SysExitTestException):
         cli.run([
-            "loading", f"--env-config={config}", "--urls=http://test.com",
-            "--env-validation=skip"
+            "loading",
+            f"--env-config={config}",
+            "--urls=http://test.com",
+            "--env-validation=skip",
         ])
       # "env" not a dict
       with config.open("w", encoding="utf-8") as f:
         hjson.dump({"env": []}, f)
       with self.assertRaises(SysExitTestException):
         cli.run([
-            "loading", f"--env-config={config}", "--urls=http://test.com",
-            "--env-validation=skip"
+            "loading",
+            f"--env-config={config}",
+            "--urls=http://test.com",
+            "--env-validation=skip",
         ])
       with config.open("w", encoding="utf-8") as f:
         hjson.dump({"env": {"unknown_property_name": 1}}, f)
       with self.assertRaises(SysExitTestException):
         cli.run([
-            "loading", f"--env-config={config}", "--urls=http://test.com",
-            "--env-validation=skip"
+            "loading",
+            f"--env-config={config}",
+            "--urls=http://test.com",
+            "--env-validation=skip",
         ])
 
   def test_parse_env_config_file(self):
@@ -815,7 +828,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
     probe_config_file = pth.LocalPath("/custom_probe_config.hjson")
     self.fs.create_file(
         probe_config_file, contents=hjson.dumps({"probes": {
-            "js": {}
+            "js": {},
         }}))
 
     class MockCustomProbeBenchmark(Benchmark):

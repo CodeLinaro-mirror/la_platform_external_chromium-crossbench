@@ -31,13 +31,13 @@ class ListBuildsTest(MockHttpRequestsMixin):
             "builds": [{
                 "input": {
                     "gitilesCommit": {
-                        "id": f"commit{i}"
-                    }
+                        "id": f"commit{i}",
+                    },
                 },
                 "endTime": F"2025-11-1{i}T00:00:00Z",
                 "number": i,
-                "status": "SUCCESS"
-            } for i in range(3)]
+                "status": "SUCCESS",
+            } for i in range(3)],
         }
       else:
         mock_response.json.return_value = {"builds": []}

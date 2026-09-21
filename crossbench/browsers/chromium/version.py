@@ -39,7 +39,7 @@ class ChromiumVersion(BrowserVersion):
   def _parse(
       cls,
       full_version: str) -> tuple[tuple[int, ...], BrowserVersionChannel, str]:
-    matches = cls._VERSION_RE.fullmatch(full_version.strip(),)
+    matches = cls._VERSION_RE.fullmatch(full_version.strip())
     if not matches:
       raise cls.parse_error("Could not extract version number.", full_version)
     channel_str = cls._parse_channel(full_version)

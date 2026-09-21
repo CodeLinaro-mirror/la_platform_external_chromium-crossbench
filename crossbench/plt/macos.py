@@ -462,10 +462,12 @@ class MacOSPlatform(PosixPlatform):
         "/System/Library/PrivateFrameworks/DisplayServices.framework"
         "/DisplayServices")
     display_services.DisplayServicesSetBrightness.argtypes = [
-        ctypes.c_int, ctypes.c_float
+        ctypes.c_int,
+        ctypes.c_float,
     ]
     display_services.DisplayServicesGetBrightness.argtypes = [
-        ctypes.c_int, ctypes.POINTER(ctypes.c_float)
+        ctypes.c_int,
+        ctypes.POINTER(ctypes.c_float),
     ]
     return display_services, main_display
 

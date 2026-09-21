@@ -221,7 +221,7 @@ class MotionMark1Story(PressBenchmarkStory):
           "Canvas arc segments, fill",
           "Canvas rects, fill",
           "Canvas ellipses, fill",
-      )
+      ),
   }
   SUBSTORIES: ClassVar = tuple(
       itertools.chain.from_iterable(ALL_STORIES.values()))

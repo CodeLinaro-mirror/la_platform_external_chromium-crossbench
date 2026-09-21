@@ -63,7 +63,7 @@ class PyodideAdb(android_adb.Adb):
   @override
   def _start(
       self,
-      device_identifier: str | None = None
+      device_identifier: str | None = None,
   ) -> tuple[str, android_adb.AndroidDeviceInfo]:
     serial_id = device_identifier or str(self._webadb.serial)
     device_info = android_adb.AndroidDeviceInfo(

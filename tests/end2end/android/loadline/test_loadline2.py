@@ -22,8 +22,8 @@ def _browser_config(device_id, adb_path) -> str:
       "driver": {
           "type": "adb",
           "device_id": device_id,
-          "adb_bin": adb_path
-      }
+          "adb_bin": adb_path,
+      },
   })
 
 
@@ -97,8 +97,13 @@ def _test_loadline2_default(device_id, adb_path, benchmark_type,
   browser_config = _browser_config(device_id, adb_path)
   out_dir = test_env.results_dir / f"default_{benchmark_type}"
   cli.run([
-      benchmark_type, f"--browser={browser_config}", "--repeat=1", "--debug",
-      f"--out-dir={out_dir}", "--time-unit=2s", *list(test_env.cq_flags)
+      benchmark_type,
+      f"--browser={browser_config}",
+      "--repeat=1",
+      "--debug",
+      f"--out-dir={out_dir}",
+      "--time-unit=2s",
+      *list(test_env.cq_flags),
   ])
 
   # With only 1 repetition, there's a chance that one story won't produce a

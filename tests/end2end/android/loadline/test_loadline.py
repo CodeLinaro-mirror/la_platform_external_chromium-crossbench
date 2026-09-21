@@ -32,13 +32,23 @@ def _verify_metrics(out_dir, benchmark_type: BenchmarkType, only_total=False):
   match benchmark_type:
     case BenchmarkType.PHONE:
       expected_titles = [
-          "browser", "TOTAL_SCORE", "amazon_product", "cnn_article",
-          "globo_homepage", "google_search_result", "wikipedia_article"
+          "browser",
+          "TOTAL_SCORE",
+          "amazon_product",
+          "cnn_article",
+          "globo_homepage",
+          "google_search_result",
+          "wikipedia_article",
       ]
     case BenchmarkType.TABLET:
       expected_titles = [
-          "browser", "TOTAL_SCORE", "amazon_product", "cnn_article",
-          "google_doc", "google_search_result", "youtube_video"
+          "browser",
+          "TOTAL_SCORE",
+          "amazon_product",
+          "cnn_article",
+          "google_doc",
+          "google_search_result",
+          "youtube_video",
       ]
     case _:
       raise AssertionError(f"Invalid benchmark type {benchmark_type}")
@@ -67,8 +77,13 @@ def _verify_breakdown(out_dir):
 
     titles = lines[0].strip().split(",")
     expected_titles = [
-        "browser", "story", "os", "renderer", "compositor", "gpu",
-        "surfaceflinger"
+        "browser",
+        "story",
+        "os",
+        "renderer",
+        "compositor",
+        "gpu",
+        "surfaceflinger",
     ]
     assert titles == expected_titles, (
         f"Titles mismatch: expected {expected_titles}, got {titles}")
@@ -96,8 +111,13 @@ def _test_loadline_default(browser_config: str, benchmark_type: BenchmarkType,
   cli = CrossBenchCLI()
   out_dir = test_env.results_dir / f"default_{benchmark_type}"
   cli.run([
-      benchmark_type, f"--browser={browser_config}", "--repeat=1", "--throw",
-      f"--out-dir={out_dir}", "--debug", *list(test_env.cq_flags)
+      benchmark_type,
+      f"--browser={browser_config}",
+      "--repeat=1",
+      "--throw",
+      f"--out-dir={out_dir}",
+      "--debug",
+      *list(test_env.cq_flags),
   ])
   # With only 1 repetition, there's a chance that one story won't produce a
   # metric. To avoid flaky failures, we only check the total score here.
@@ -111,10 +131,14 @@ def test_loadline_batch(browser_config, test_env: TestEnv) -> None:
   # We run the benchmark with increased time units to account for
   # the slowness of emulators on test bots.
   cli.run([
-      BenchmarkType.PHONE, f"--browser={browser_config}", "--repeat=2",
-      "--throw", f"--out-dir={out_dir}", "--time-unit=3s",
+      BenchmarkType.PHONE,
+      f"--browser={browser_config}",
+      "--repeat=2",
+      "--throw",
+      f"--out-dir={out_dir}",
+      "--time-unit=3s",
       f"--probe=trace_processor:{_batch_trace_process_config()}",
-      *list(test_env.cq_flags)
+      *list(test_env.cq_flags),
   ])
   _verify_metrics(out_dir, BenchmarkType.PHONE)
   _verify_breakdown(out_dir)

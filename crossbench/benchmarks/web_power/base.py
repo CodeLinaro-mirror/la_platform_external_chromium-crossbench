@@ -440,7 +440,9 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
       httparchive_path: LocalPath,
   ) -> None:
     args: ListCmdArgs = [
-        httparchive_path, "read-metadata", network.archive_path
+        httparchive_path,
+        "read-metadata",
+        network.archive_path,
     ]
     metadata = host_platform.sh_stdout(*args)
     if res := WprBannerDismisser.create_rules(metadata):

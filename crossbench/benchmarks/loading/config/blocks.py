@@ -117,7 +117,7 @@ class ActionBlock(ConfigObject):
   def to_json(self) -> dict[str, Any]:
     return {
         "label": self.label,
-        "actions": [action.to_json() for action in self.actions]
+        "actions": [action.to_json() for action in self.actions],
     }
 
   @property

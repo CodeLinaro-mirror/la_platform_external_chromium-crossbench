@@ -128,8 +128,8 @@ class ChromeDownloader(Downloader):
       ]
     except Exception as e:
       raise ValueError(
-          f"Could not find version {version} "
-          f"for {self._browser_platform.name} {self._browser_platform.machine} "
+          f"Could not find version {version} for "
+          f"{self._browser_platform.name} {self._browser_platform.machine}",
       ) from e
     self.info(f"Filtering {len(version_urls)} candidates")
     return self._filter_candidate_urls(version_urls)
@@ -148,7 +148,8 @@ class ChromeDownloader(Downloader):
     return self._filter_candidate_urls([(version, test_url)])
 
   def _filter_candidate_urls(
-      self, versions_urls: list[tuple[BrowserVersion, str]]
+      self,
+      versions_urls: list[tuple[BrowserVersion, str]],
   ) -> tuple[BrowserVersion, str | None]:
     versions_urls.sort(key=lambda version_url: version_url[0], reverse=True)
     # Iterate from new to old version and and the first one that is older or

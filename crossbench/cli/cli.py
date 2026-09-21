@@ -376,9 +376,9 @@ class CrossBenchCLI:
         plt.PLATFORM.set_binary_lookup_override(name,
                                                 plt.PLATFORM.path(path_str))
       except ValueError:
-        self.error(
-            f"Invalid --bin-override format: {bin_override}. Expected name=path"
-        )
+        msg = (f"Invalid --bin-override format: {bin_override}. "
+               "Expected name=path")
+        self.error(msg)
 
     try:
       self._last_subcommand = self.args.crossbench_subcommand

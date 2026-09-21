@@ -127,13 +127,14 @@ class LoadingBenchmarkCliTestCaseMixin:
     config_file = pathlib.Path("pages.json")
     self.fs.create_file(
         config_file,
-        contents=json.dumps(
-            {"pages": {
+        contents=json.dumps({
+            "pages": {
                 "p": [{
                     "action": "get",
-                    "url": "https://example.com"
-                }]
-            }}))
+                    "url": "https://example.com",
+                }],
+            },
+        }))
     args = self.parse_args(f"--page-config={config_file}")
     args.config = pathlib.Path("config.hjson")
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "config"):
@@ -319,12 +320,12 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
     secrets1 = Secrets.parse(
         {"google": {
             "password": "pw1",
-            "account": "user1@test.com"
+            "account": "user1@test.com",
         }})
     secrets2 = Secrets.parse(
         {"google": {
             "password": "pw2",
-            "account": "user2@test.com"
+            "account": "user2@test.com",
         }})
     page_0 = InteractivePage(
         "test_0",
@@ -341,12 +342,12 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
     secrets1 = Secrets.parse(
         {"google": {
             "password": "pw1",
-            "account": "user1@test.com"
+            "account": "user1@test.com",
         }})
     secrets2 = Secrets.parse(
         {"google": {
             "password": "pw1",
-            "account": "user1@test.com"
+            "account": "user1@test.com",
         }})
     self.assertEqual(secrets1, secrets2)
     page_0 = InteractivePage(
@@ -365,7 +366,7 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
     secrets1 = Secrets.parse(
         {"google": {
             "password": "pw1",
-            "account": "user1@test.com"
+            "account": "user1@test.com",
         }})
     secrets2 = Secrets.parse({
         "bond": {
@@ -380,7 +381,7 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
             "auth_provider_x509_cert_url": "https://example.com/certs",
             "client_x509_cert_url": "https://example.com/x509/my-project.cert",
             "universe_domain": "example.com",
-        }
+        },
     })
     self.assertNotEqual(secrets1, secrets2)
     page_0 = InteractivePage(
@@ -544,10 +545,10 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
                 "login": "google",
                 "actions": [{
                     "action": "get",
-                    "url": "https://example.com"
-                }]
-            }
-        }
+                    "url": "https://example.com",
+                }],
+            },
+        },
     }
     self.fs.create_file(config_file, contents=json.dumps(config))
     args = self.parse_args(f"--page-config={config_file}", "--skip-login",
@@ -566,14 +567,14 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
             "test_page": {
                 "setup": [{
                     "action": "js",
-                    "script": "console.log(1);"
+                    "script": "console.log(1);",
                 }],
                 "actions": [{
                     "action": "get",
-                    "url": "https://example.com"
-                }]
-            }
-        }
+                    "url": "https://example.com",
+                }],
+            },
+        },
     }
     self.fs.create_file(config_file, contents=json.dumps(config))
     args = self.parse_args(f"--page-config={config_file}", "--skip-setup",
@@ -637,13 +638,13 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
         "pages": {
             "page1": [{
                 "action": "get",
-                "url": "https://example.com/1"
+                "url": "https://example.com/1",
             }],
             "page2": [{
                 "action": "get",
-                "url": "https://example.com/2"
+                "url": "https://example.com/2",
             }],
-        }
+        },
     }
     self.fs.create_file(config_file, contents=json.dumps(config))
     args = self.parse_args(f"--page-config={config_file}", "--separate")
@@ -713,14 +714,14 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
   def test_conflicting_global_config(self):
     config_data = {
         "browsers": {
-            "chrome": "chrome-stable"
+            "chrome": "chrome-stable",
         },
         "pages": {
             "google_search_result": [{
                 "action": "get",
-                "url": "https://www.google.com/search?q=cats"
-            },]
-        }
+                "url": "https://www.google.com/search?q=cats",
+            }],
+        },
     }
     config_file = pathlib.Path("config.hjson")
     with config_file.open("w", encoding="utf-8") as f:
@@ -824,12 +825,12 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
         "pages": {
             "test_one": [{
                 "action": "get",
-                "url": url_1
+                "url": url_1,
             }, {
                 "action": "get",
-                "url": url_2
-            }]
-        }
+                "url": url_2,
+            }],
+        },
     }
     return url_1, url_2, config
 
@@ -854,7 +855,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                 }],
                 "actions": [{
                     "action": "wait",
-                    "duration": "1s"
+                    "duration": "1s",
                 }],
                 "teardown": [{
                     "action": "js",
@@ -868,14 +869,14 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                 }],
                 "actions": [{
                     "action": "wait",
-                    "duration": "1s"
+                    "duration": "1s",
                 }],
                 "teardown": [{
                     "action": "js",
                     "script": "TEARDOWN TWO",
                 }],
-            }
-        }
+            },
+        },
     }
     return config
 
@@ -912,7 +913,7 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                     "script": "SETUP ONLY",
                 }],
             },
-        }
+        },
     }
     return config
 
@@ -973,13 +974,13 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
                     "google",
                 "actions": [{
                     "action": "get",
-                    "url": url_1
+                    "url": url_1,
                 }, {
                     "action": "get",
-                    "url": url_2
-                }]
-            }
-        }
+                    "url": url_2,
+                }],
+            },
+        },
     }
     return url_1, url_2, config
 
@@ -989,8 +990,8 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
         "secrets": {
             "google": {
                 "username": "user@test.com",
-                "password": "s3cr3t"
-            }
+                "password": "s3cr3t",
+            },
         },
     })
     config_file = pathlib.Path("test/page_config.json")
@@ -1010,8 +1011,8 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     secrets_data = {
         "google": {
             "username": "user@test.com",
-            "password": "s3cr3t"
-        }
+            "password": "s3cr3t",
+        },
     }
     secrets = Secrets.parse(secrets_data)
     self.setup_expected_google_login_js()
@@ -1046,17 +1047,17 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     global_config_data = {
         # Dummy entry, not actually used by the test
         "browsers": {
-            "chrome": "chrome-stable"
+            "chrome": "chrome-stable",
         },
         "pages": {
             "test_one": [{
                 "action": "get",
-                "url": url_1
+                "url": url_1,
             }, {
                 "action": "get",
-                "url": url_2
-            }]
-        }
+                "url": url_2,
+            }],
+        },
     }
     with global_config_file.open("w", encoding="utf-8") as f:
       json.dump(global_config_data, f)
@@ -1112,8 +1113,8 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
         "label": "block 1",
         "actions": [{
             "action": "get",
-            "url": "http://test.com"
-        }]
+            "url": "http://test.com",
+        }],
     }])
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
@@ -1129,7 +1130,7 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
             "action": "get",
             "url": "http://test.com/0",
             "duration": "10s",
-        }]
+        }],
     }, {
         "label":
             "block 1",
@@ -1137,7 +1138,7 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
             "action": "get",
             "url": "http://test.com/1",
             "duration": "11s",
-        }]
+        }],
     }])
     self.assertEqual(len(config.blocks), 2)
     for index, block in enumerate(config.blocks):
@@ -1148,13 +1149,14 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
       self.assertEqual(block.duration, dt.timedelta(seconds=10 + index))
 
   def test_parse_single_block_dict(self):
-    config = ActionBlockListConfig.parse(
-        {"block 1": {
+    config = ActionBlockListConfig.parse({
+        "block 1": {
             "actions": [{
                 "action": "get",
-                "url": "http://test.com"
-            }]
-        }})
+                "url": "http://test.com",
+            }],
+        },
+    })
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
     self.assertEqual(block.label, "block 1")
@@ -1165,11 +1167,11 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
     config = ActionBlockListConfig.parse({
         "block 1": [{
             "action": "get",
-            "url": "http://test.com"
+            "url": "http://test.com",
         }, {
             "action": "wait",
-            "duration": "2s"
-        }]
+            "duration": "2s",
+        }],
     })
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
@@ -1189,8 +1191,8 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
                 "action": "get",
                 "url": "http://test.com/1",
                 "duration": "20s",
-            }]
-        }
+            }],
+        },
     })
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
@@ -1222,15 +1224,15 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
         "block 0": {
             "actions": [{
                 "action": "get",
-                "url": "http://test.com/0"
-            }]
+                "url": "http://test.com/0",
+            }],
         },
         "block 1": {
             "actions": [{
                 "action": "get",
-                "url": "http://test.com/1"
-            }]
-        }
+                "url": "http://test.com/1",
+            }],
+        },
     })
     self.assertEqual(len(config.blocks), 2)
     for index, block in enumerate(config.blocks):
@@ -1243,12 +1245,12 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
     config = ActionBlockListConfig.parse({
         "block 0": [{
             "action": "get",
-            "url": "http://test.com/0"
+            "url": "http://test.com/0",
         }],
         "block 1": [{
             "action": "get",
-            "url": "http://test.com/1"
-        }]
+            "url": "http://test.com/1",
+        }],
     })
     self.assertEqual(len(config.blocks), 2)
     for index, block in enumerate(config.blocks):
@@ -1264,9 +1266,9 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
               "label": "block 2",
               "actions": [{
                   "action": "get",
-                  "url": "http://test.com"
-              }]
-          }
+                  "url": "http://test.com",
+              }],
+          },
       })
     self.assertIn("block 2", str(cm.exception))
 
@@ -1280,12 +1282,12 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
       _ = ActionBlockListConfig.parse({
           "login": [{
               "action": "get",
-              "url": "http://test.com/login"
+              "url": "http://test.com/login",
           }],
           "block 0": [{
               "action": "get",
-              "url": "http://test.com/1"
-          }]
+              "url": "http://test.com/1",
+          }],
       })
     self.assertIn("login", str(cm.exception))
 

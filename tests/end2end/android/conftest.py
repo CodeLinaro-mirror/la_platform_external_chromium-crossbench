@@ -31,6 +31,6 @@ def browser_config(device_id, adb_path, bundletool) -> str:
           "type": "adb",
           "device_id": device_id,
           "adb_bin": adb_path,
-          "bundletool": bundletool
-      }
+          "bundletool": bundletool,
+      },
   })

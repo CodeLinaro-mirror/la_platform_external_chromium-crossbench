@@ -199,7 +199,7 @@ class EnvConfig(ConfigObject):
         "screen_refresh_rate": merge_number_max,
         "system_allow_monitoring": merge_bool,
         "system_forbidden_process_names": merge_str_list,
-        "system_min_uptime": merge_duration_max
+        "system_min_uptime": merge_duration_max,
     }
     kwargs = {}
     for name, merger in mergers.items():

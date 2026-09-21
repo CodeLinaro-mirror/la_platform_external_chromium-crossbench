@@ -28,7 +28,7 @@ class CancelJobTest(http_requests_mixin.MockHttpRequestsMixin):
         api.PINPOINT_CANCEL_JOB_API_URL,
         data={
             "job_id": job_id,
-            "reason": reason
+            "reason": reason,
         })
     self.mock_post.return_value.raise_for_status.assert_called_once()
 
@@ -51,13 +51,13 @@ class CancelJobTest(http_requests_mixin.MockHttpRequestsMixin):
             api.PINPOINT_CANCEL_JOB_API_URL,
             data={
                 "job_id": "123456",
-                "reason": reason
+                "reason": reason,
             }),
         mock.call(
             api.PINPOINT_CANCEL_JOB_API_URL,
             data={
                 "job_id": "789012",
-                "reason": reason
+                "reason": reason,
             }),
     ])
     self.assertEqual(mock_logging_info.call_args_list, [

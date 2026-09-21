@@ -435,7 +435,7 @@ class ProbeResultDictTestCase(CrossbenchFakeFsTestCase):
     self.assertDictEqual(
         json, {MockProbe.NAME: {
             "csv": [str(csv)],
-            "txt": [str(txt)]
+            "txt": [str(txt)],
         }})
 
 

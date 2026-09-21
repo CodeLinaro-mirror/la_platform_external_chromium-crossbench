@@ -276,7 +276,7 @@ class WinPlatformClipboardTestCase(PlatformClipboardTestCase):
 
   @override
   def clipboard_tool_configs(
-      self,) -> list[tuple[str, pth.LocalPath, list[str]]]:
+      self) -> list[tuple[str, pth.LocalPath, list[str]]]:
     return [("clip", pth.LocalPath("C:/Windows/System32/clip.exe"), [])]
 
 

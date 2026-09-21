@@ -365,7 +365,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
         # Use the decoder timebase.
         "-copytb", "0", \
         *self.probe.VIDEO_QUALITY,
-        self.result_path
+        self.result_path,
     )
     if not self.local_result_path.exists() or self.local_result_path.stat(
     ).st_size == 0:

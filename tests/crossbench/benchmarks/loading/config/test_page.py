@@ -43,13 +43,13 @@ class PageConfigTestsCase(unittest.TestCase):
   def test_parse_tags(self):
     config = PageConfig.parse({
         "actions": ["http://a.com"],
-        "tags": "tag1,tag2"
+        "tags": "tag1,tag2",
     })
     self.assertEqual(config.tags, frozenset(["tag1", "tag2"]))
 
     config2 = PageConfig.parse({
         "actions": ["http://a.com"],
-        "tags": ["tag1", "tag2"]
+        "tags": ["tag1", "tag2"],
     })
     self.assertEqual(config2.tags, frozenset(["tag1", "tag2"]))
 
@@ -162,10 +162,10 @@ class PageConfigTestsCase(unittest.TestCase):
   def test_parse_action_sequence(self):
     config = PageConfig.parse([{
         "action": "get",
-        "url": "http://test.com/click"
+        "url": "http://test.com/click",
     }, {
         "action": "click",
-        "selector": "#foo"
+        "selector": "#foo",
     }])
     self.assertEqual(config.first_url, "http://test.com/click")
     self.assertIsNone(config.login)
@@ -177,11 +177,11 @@ class PageConfigTestsCase(unittest.TestCase):
     config_data = {
         "actions": [{
             "action": "get",
-            "url": "http://test.com/click"
+            "url": "http://test.com/click",
         }, {
             "action": "click",
-            "selector": "#foo"
-        }]
+            "selector": "#foo",
+        }],
     }
     config_1 = PageConfig.parse(config_data)
     self.assertIsNone(config_1.login)
@@ -198,12 +198,12 @@ class PageConfigTestsCase(unittest.TestCase):
     config_data = {
         "login": [{
             "action": "get",
-            "url": "http://test.com/login"
+            "url": "http://test.com/login",
         }, {
             "action": "click",
-            "selector": "#foo"
+            "selector": "#foo",
         }],
-        "urls": ["http://test.com/charts",]
+        "urls": ["http://test.com/charts"],
     }
     config = PageConfig.parse(config_data)
     login = config.login
@@ -223,12 +223,12 @@ class PageConfigTestsCase(unittest.TestCase):
         "login": ["http://test.com/login"],
         "setup": [{
             "action": "get",
-            "url": "http://test.com/setup"
+            "url": "http://test.com/setup",
         }, {
             "action": "click",
-            "selector": "#foo"
+            "selector": "#foo",
         }],
-        "actions": ["http://test.com/charts",]
+        "actions": ["http://test.com/charts"],
     }
     config = PageConfig.parse(config_data)
     self.assertEqual(len(config.login), 1)
@@ -240,7 +240,7 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config.blocks[0].first_url, "http://test.com/charts")
 
   def test_parse_login_block_preset(self):
-    config_data = {"login": "google", "urls": ["http://test.com/charts",]}
+    config_data = {"login": "google", "urls": ["http://test.com/charts"]}
     config = PageConfig.parse(config_data)
     login = config.login
     assert login
@@ -254,13 +254,13 @@ class PageConfigTestsCase(unittest.TestCase):
 
   def test_parse_teardown_block(self):
     config_data = {
-        "actions": ["http://test.com/charts",],
+        "actions": ["http://test.com/charts"],
         "teardown": [{
             "action": "get",
-            "url": "http://test.com/teardown"
+            "url": "http://test.com/teardown",
         }, {
             "action": "click",
-            "selector": "#foo"
+            "selector": "#foo",
         }],
     }
 

@@ -477,7 +477,7 @@ class TsProxyTrafficShaper(TrafficShaper):
         "--proxy-server":
             f"socks://127.0.0.1:{self._ts_proxy.socks_proxy_port}",
         "--proxy-bypass-list":
-            "<-loopback>"
+            "<-loopback>",
     })
 
   def __str__(self) -> str:

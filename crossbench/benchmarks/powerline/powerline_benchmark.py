@@ -63,7 +63,7 @@ class PowerlineStory(Story):
       "podcast_vorbis_muted": "podcast-vorbis.html",
       "podcast_opus": "podcast-opus.html",
       "podcast_mp3": "podcast-mp3.html",
-      "podcast_aac": "podcast-aac.html"
+      "podcast_aac": "podcast-aac.html",
   }
 
   def __init__(self,
@@ -207,7 +207,7 @@ class PowerlineBenchmark(SubStoryBenchmark):
     return Flags({
         "--autoplay-policy": "no-user-gesture-required",
         "--enable-renderer-backgrounding": None,
-        "--enable-background-timer-throttling": None
+        "--enable-background-timer-throttling": None,
     })
 
   @classmethod

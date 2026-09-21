@@ -242,7 +242,7 @@ class WebXPRT5TestCase(helper.PressBaseBenchmarkTestCase):
                 "score": 60,
                 "variance": 1.25,
                 "geomean": 1438.88,
-            }
+            },
         }],
         "workloads": [
             {
@@ -294,14 +294,14 @@ class WebXPRT5TestCase(helper.PressBaseBenchmarkTestCase):
                 "score": 0,
                 "variance": 0,
                 "geomean": 0,
-            }
+            },
         }],
         "workloads": [{
             "workloadID": 0,
             "workload": "Video background blur with AI",
             "dur": 3343.7,
             "iter": 0,
-        },],
+        }],
     }
     with mock.patch.object(context, "_get_expected_iters", return_value=1):
       flattened = context.flatten_json_data(raw_data)
@@ -435,7 +435,7 @@ class WebXPRT5TestCase(helper.PressBaseBenchmarkTestCase):
             "iters": 7,
             "additionalInfo": {
                 "scoreCalculated": 1,
-                "score": 60
+                "score": 60,
             },
         }],
         "workloads": [{
@@ -443,7 +443,7 @@ class WebXPRT5TestCase(helper.PressBaseBenchmarkTestCase):
             "workload": "Video background blur with AI",
             "iter": 0,
             "dur": 2924.1,
-        },],
+        }],
     }
     with self.assertRaises(ValueError) as cm:
       context.flatten_json_data(raw_data)
@@ -489,24 +489,24 @@ class WebXPRT5TestCase(helper.PressBaseBenchmarkTestCase):
         self.probe_cls(benchmark=self.benchmark_cls(stories)), mock.MagicMock())
     json_data = {
         "tests": [{
-            "iters": 2
+            "iters": 2,
         }],
         "workloads": [
             {
                 "workloadID": 0,
-                "dur": 1000.0
+                "dur": 1000.0,
             },
             {
                 "workloadID": 0,
-                "dur": 1500.0
+                "dur": 1500.0,
             },
             {
                 "workloadID": 1,
-                "dur": 800.0
+                "dur": 800.0,
             },
             {
                 "workloadID": 1,
-                "dur": 900.0
+                "dur": 900.0,
             },
         ],
     }
@@ -521,16 +521,16 @@ class WebXPRT5TestCase(helper.PressBaseBenchmarkTestCase):
         self.probe_cls(benchmark=self.benchmark_cls(stories)), mock.MagicMock())
     json_data = {
         "tests": [{
-            "iters": 3
+            "iters": 3,
         }],
         "workloads": [
             {
                 "workloadID": 0,
-                "dur": 1000.0
+                "dur": 1000.0,
             },
             {
                 "workloadID": 0,
-                "dur": 1500.0
+                "dur": 1500.0,
             },
         ],
     }

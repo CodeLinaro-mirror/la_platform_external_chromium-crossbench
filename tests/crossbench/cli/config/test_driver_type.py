@@ -63,7 +63,8 @@ class BrowserDriverTypeTestCase(unittest.TestCase):
 
   def test_is_remote_driver(self):
     remote_driver_types = {
-        BrowserDriverType.CHROMEOS_SSH, BrowserDriverType.LINUX_SSH
+        BrowserDriverType.CHROMEOS_SSH,
+        BrowserDriverType.LINUX_SSH,
     }
     for driver_type in BrowserDriverType:
       self.assertEqual(driver_type.is_remote_driver, driver_type

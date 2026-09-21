@@ -135,8 +135,8 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
     display_info = {
         "embedded_display": {
             "resolution_horizontal": 1,
-            "resolution_vertical": 2
-        }
+            "resolution_vertical": 2,
+        },
     }
     self._expect_sh_ssh(
         "cros-health-tool telem --category=display",

@@ -333,11 +333,11 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertEqual(len(displays), 2)
     self.assertDictEqual(displays[0], {
         "resolution": (1728, 1117),
-        "refresh_rate": 60
+        "refresh_rate": 60,
     })
     self.assertDictEqual(displays[1], {
         "resolution": (3360, 1890),
-        "refresh_rate": 30
+        "refresh_rate": 30,
     })
     self.assertSequenceEqual(
         self.platform.display_resolution(),
@@ -368,7 +368,7 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
         "PerformanceStatistics": {
             "In use system memory": 1024 * 1024 * 1024,
             "In use video memory": 512 * 1024 * 1024,
-        }
+        },
     }])
     self.expect_sh(
         "ioreg",
@@ -398,7 +398,7 @@ class MacOSPlatformClipboardTestCase(PlatformClipboardTestCase):
 
   @override
   def clipboard_tool_configs(
-      self,) -> list[tuple[str, pth.LocalPath, list[str]]]:
+      self) -> list[tuple[str, pth.LocalPath, list[str]]]:
     return [("pbcopy", pth.LocalPath("/usr/bin/pbcopy"), [])]
 
 

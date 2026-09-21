@@ -74,7 +74,7 @@ class McpSubcommandTest(unittest.TestCase):
     self.mock_state_file.read_text.return_value = json.dumps({
         "pid": 123,
         "endpoint": "ws://localhost:1234",
-        "cmd": []
+        "cmd": [],
     })
 
     with mock.patch(
@@ -180,9 +180,17 @@ class McpSubcommandTest(unittest.TestCase):
 
     expected_cmd = [
         sys.executable,
-        str(pth.ROOT_DIR / "cb.py"), "manual", "--url=https://google.com",
-        "--expose-cdp", "--start-after=0s", "--run-for=1800s", "--no-splash",
-        "--headless", mock.ANY, "--", "--chrome-flag"
+        str(pth.ROOT_DIR / "cb.py"),
+        "manual",
+        "--url=https://google.com",
+        "--expose-cdp",
+        "--start-after=0s",
+        "--run-for=1800s",
+        "--no-splash",
+        "--headless",
+        mock.ANY,
+        "--",
+        "--chrome-flag",
     ]
     self.assertEqual(cmd, expected_cmd)
     self.assertTrue(cmd[9].startswith("--out-dir="))
@@ -192,7 +200,7 @@ class McpSubcommandTest(unittest.TestCase):
     self.mock_state_file.read_text.return_value = json.dumps({
         "pid": 123,
         "endpoint": "ws://localhost:1234",
-        "cmd": []
+        "cmd": [],
     })
 
     mock_process = mock.MagicMock()

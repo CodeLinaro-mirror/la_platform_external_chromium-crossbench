@@ -34,7 +34,7 @@ class DevToolsInBrowserClient:
               "method": "Target.openDevTools",
               "params": {
                   "targetId": browser.current_window_id(),
-                  "panelId": panel_name
+                  "panelId": panel_name,
               },
           }))
       result = json.loads(ws.recv())
@@ -165,7 +165,7 @@ class DevToolsRemoteClient:
       return self._session_id
     _, response = self._send_raw_command({
         "id": self._get_next_id(),
-        "method": "Target.getTargets"
+        "method": "Target.getTargets",
     })
     if "result" not in response:
       raise RuntimeError(f"Target.getTargets failed: {response}")
@@ -180,7 +180,7 @@ class DevToolsRemoteClient:
           "id": self._get_next_id(),
           "method": "Target.createTarget",
           "params": {
-              "url": "about:blank"
+              "url": "about:blank",
           },
       })
       if "result" not in response:
@@ -193,7 +193,7 @@ class DevToolsRemoteClient:
         "method": "Target.attachToTarget",
         "params": {
             "targetId": page_target_id,
-            "flatten": True
+            "flatten": True,
         },
     })
     if "result" not in response or "sessionId" not in response["result"]:
@@ -207,7 +207,7 @@ class DevToolsRemoteClient:
         "id": self._get_next_id(),
         "method": "Target.createTarget",
         "params": {
-            "url": url
+            "url": url,
         },
     })
     if "result" not in response:
@@ -220,7 +220,7 @@ class DevToolsRemoteClient:
         "method": "Target.attachToTarget",
         "params": {
             "targetId": page_target_id,
-            "flatten": True
+            "flatten": True,
         },
     })
     if "result" not in response or "sessionId" not in response["result"]:

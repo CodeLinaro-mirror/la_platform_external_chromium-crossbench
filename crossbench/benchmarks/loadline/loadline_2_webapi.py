@@ -68,7 +68,7 @@ class LoadLine2WebApiProbe(LoadLineProbe):
   BENCHMARK_VERSION: ClassVar[str] = VERSION_STRING
 
   @override
-  def get_context_cls(self,) -> type[LoadLine2WebApiProbeContext]:
+  def get_context_cls(self) -> type[LoadLine2WebApiProbeContext]:
     return LoadLine2WebApiProbeContext
 
   @override
@@ -77,7 +77,7 @@ class LoadLine2WebApiProbe(LoadLineProbe):
         "cb_browser": [],
         "metric": [],
         "cb_run": [],
-        "value": []
+        "value": [],
     }
     browsers = list(group.browsers)
     assert len(browsers) == 1, (

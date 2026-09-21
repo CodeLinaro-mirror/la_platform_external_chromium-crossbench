@@ -405,12 +405,12 @@ def test_chrome_stdout_logging(test_env: TestEnv) -> None:
       "pages": {
           "STDOUT TEST": [{
               "action": "get",
-              "url": "https://www.google.com"
+              "url": "https://www.google.com",
           }, {
               "action": "js",
-              "script": "%DebugPrint('TestOutput'.repeat(3))"
-          }]
-      }
+              "script": "%DebugPrint('TestOutput'.repeat(3))",
+          }],
+      },
   }
   _run_cli(
       "loading",

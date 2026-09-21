@@ -53,7 +53,7 @@ class AuthTestCase(BaseCrossbenchTestCase):
     # Second call needs to succeed otherwise we loop
     self.google_auth_default.side_effect = [
         google.auth.exceptions.DefaultCredentialsError(),
-        (mock.Mock(), "project_id")
+        (mock.Mock(), "project_id"),
     ]
 
     auth.get_auth_session()

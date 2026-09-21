@@ -69,7 +69,7 @@ class VideoAccelerationProbeContext(
   def _get_page_target_id(self, client: DevToolsClient) -> str | None:
     success, targets = client.send_command({
         "id": 0,
-        "method": "Target.getTargets"
+        "method": "Target.getTargets",
     })
     if not success:
       raise RuntimeError("Failed to query target")
@@ -106,7 +106,7 @@ class VideoAccelerationProbeContext(
           "params": {
               "targetId": target_id,
               "flatten": True,
-          }
+          },
       })
       session_id = response.get("params", {}).get("sessionId")
       if not session_id:
@@ -115,7 +115,7 @@ class VideoAccelerationProbeContext(
       client.dispatch_command({
           "sessionId": session_id,
           "id": 2,
-          "method": "Media.enable"
+          "method": "Media.enable",
       })
 
       # Listen for events until either no event is received within timeout, or
@@ -130,7 +130,7 @@ class VideoAccelerationProbeContext(
       client.send_command({
           "sessionId": session_id,
           "id": 3,
-          "method": "Media.disable"
+          "method": "Media.disable",
       })
 
   @override

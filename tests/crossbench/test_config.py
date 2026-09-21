@@ -145,7 +145,7 @@ class CustomConfigObject(ConfigObject):
       return None
     return {
         "value": ObjectParser.non_empty_str(value),
-        "nested": ObjectParser.not_none(nested, "nested")
+        "nested": ObjectParser.not_none(nested, "nested"),
     }
 
   @classmethod
@@ -346,7 +346,7 @@ class ConfigParserTestCase(unittest.TestCase):
         {"data": {
             "name": "a name",
             "integer": 1,
-            "array": [1, 2]
+            "array": [1, 2],
         }})
     self.assertDictEqual(result, {"data": ("a name", [1, 2], 1)})
 
@@ -445,7 +445,7 @@ class ConfigParserTestCase(unittest.TestCase):
         parser.parse({"foo": 1}), {
             "foo": 1,
             "bar": None,
-            "baz": None
+            "baz": None,
         })
 
     # Multiple should fail
@@ -571,7 +571,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       CustomConfigObject.parse_dict({
           "name": "foo",
           "array": [],
-          "integer": "a"
+          "integer": "a",
       })
 
   def test_parse_dict(self):
@@ -678,7 +678,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
                                  ("default", CustomValueEnum.DEFAULT)):
       config = CustomConfigObject.parse({
           "name_alias": "foo",
-          "custom_value_enum": config_value
+          "custom_value_enum": config_value,
       })
       self.assertIs(config.custom_value_enum, result)
 
@@ -688,7 +688,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         CustomConfigObject.parse({
             "name_alias": "foo",
-            "custom_value_enum": invalid
+            "custom_value_enum": invalid,
         })
       self.assertIn(f"{invalid}", str(cm.exception))
 
@@ -760,7 +760,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   TEST_DICT: immutabledict[str, Any] = immutabledict({
       "name": "Config Name",
       "array": [1, 3],
-      "integer": 166
+      "integer": 166,
   })
 
   def test_parse_path_full(self):
@@ -843,7 +843,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
       CustomConfigObject.parse({
           "name": "foo",
           "depending_nested": "a value",
-          "nested": None
+          "nested": None,
       })
     self.assertIn("depending_nested", str(cm.exception))
     self.assertIn("Expected nested", str(cm.exception))
@@ -852,11 +852,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = CustomConfigObject.parse({
         "name": "foo",
         "nested": "nested string value",
-        "depending_nested": "a value"
+        "depending_nested": "a value",
     })
     self.assertDictEqual(config.depending_nested, {
         "value": "a value",
-        "nested": config.nested
+        "nested": config.nested,
     })
 
   def test_parse_generic_enum(self):
@@ -928,11 +928,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_missing_arg_throws(self):
     config = {
         "template": {
-            "name": "$[MISSING_ARG]"
+            "name": "$[MISSING_ARG]",
         },
         "args": {
-            "ARG": "arg_value"
-        }
+            "ARG": "arg_value",
+        },
     }
 
     with self.assertRaisesRegex(MultiException, "MISSING_ARG"):
@@ -941,11 +941,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_multiple_missing_args_throws(self):
     config = {
         "template": {
-            "name": "$[MISSING_ARG] $[MISSING_ARG2]"
+            "name": "$[MISSING_ARG] $[MISSING_ARG2]",
         },
         "args": {
-            "ARG": "arg_value"
-        }
+            "ARG": "arg_value",
+        },
     }
 
     with self.assertRaises(MultiException) as cm:
@@ -956,13 +956,13 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_unsupported_arg_throws(self):
     config = {
         "template": {
-            "name": "text and $[DICT_ARG]"
+            "name": "text and $[DICT_ARG]",
         },
         "args": {
             "DICT_ARG": {
-                "key": "value"
-            }
-        }
+                "key": "value",
+            },
+        },
     }
 
     with self.assertRaisesRegex(argparse.ArgumentTypeError,
@@ -973,13 +973,13 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = {
         "template": {
             "name": "top level",
-            "nested": "$[ARG]"
+            "nested": "$[ARG]",
         },
         "args": {
             "ARG": {
-                "name": "nested"
-            }
-        }
+                "name": "nested",
+            },
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1006,12 +1006,12 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_templated_config_unused_arg(self):
     config = {
         "template": {
-            "name": "$[ARG]"
+            "name": "$[ARG]",
         },
         "args": {
             "ARG": "arg_value",
-            "UNUSED_ARG": "unused"
-        }
+            "UNUSED_ARG": "unused",
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1028,8 +1028,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "ONE": "1",
             "TWO": "2",
             "THREE": "3",
-            "FOUR": "4"
-        }
+            "FOUR": "4",
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1046,8 +1046,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "ONE": "1",
             "TWO": 2,
             "THREE": 3.0,
-            "FOUR": 4.56
-        }
+            "FOUR": 4.56,
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1063,8 +1063,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
         "args": {
             "ARG": "ARG2",
             "ARG2": "ARG3",
-            "ARG3": "the true arg"
-        }
+            "ARG3": "the true arg",
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1075,12 +1075,12 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_parse_template_full_string_substitute_finishes_substitution(self):
     config = {
         "template": {
-            "name": "$[ARG]"
+            "name": "$[ARG]",
         },
         "args": {
             "ARG": "prefix$[ARG2]",
-            "ARG2": "name"
-        }
+            "ARG2": "name",
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1091,11 +1091,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = {
         "template": {
             "name": "name",
-            "integer": "$[ARG]"
+            "integer": "$[ARG]",
         },
         "args": {
-            "ARG": 4
-        }
+            "ARG": 4,
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1107,11 +1107,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = {
         "template": {
             "name": "name",
-            "float_field": "$[ARG]"
+            "float_field": "$[ARG]",
         },
         "args": {
-            "ARG": 1.3
-        }
+            "ARG": 1.3,
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1167,16 +1167,16 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "name": "$[TOP_LEVEL_ARG]",
             "nested": {
                 "template": {
-                    "name": "$[SECOND_LEVEL_ARG]"
+                    "name": "$[SECOND_LEVEL_ARG]",
                 },
                 "args": {
-                    "SECOND_LEVEL_ARG": "second-level-name"
-                }
-            }
+                    "SECOND_LEVEL_ARG": "second-level-name",
+                },
+            },
         },
         "args": {
-            "TOP_LEVEL_ARG": "top-level-name"
-        }
+            "TOP_LEVEL_ARG": "top-level-name",
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1189,11 +1189,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     nested_path_str = "nested.hjson"
     nested = {
         "template": {
-            "name": "$[NESTED_NAME]"
+            "name": "$[NESTED_NAME]",
         },
         "args": {
-            "NESTED_NAME": "nested"
-        }
+            "NESTED_NAME": "nested",
+        },
     }
 
     path = pathlib.Path(nested_path_str)
@@ -1203,11 +1203,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = {
         "template": {
             "name": "$[TOP_LEVEL_ARG]",
-            "nested": nested_path_str
+            "nested": nested_path_str,
         },
         "args": {
-            "TOP_LEVEL_ARG": "top-level-name"
-        }
+            "TOP_LEVEL_ARG": "top-level-name",
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1222,8 +1222,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "name": "some text $[[ARG] on either side",
         },
         "args": {
-            "PLACEHOLDER": "nothing"
-        }
+            "PLACEHOLDER": "nothing",
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1237,8 +1237,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "name": "$[[$[[ARG]]",
         },
         "args": {
-            "PLACEHOLDER": "nothing"
-        }
+            "PLACEHOLDER": "nothing",
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1252,8 +1252,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "name": "$[[ARG] $[ARG]",
         },
         "args": {
-            "ARG": "arg_value"
-        }
+            "ARG": "arg_value",
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1267,14 +1267,14 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "name": "$[ARG]",
             "nested": {
                 "template": {
-                    "name": "$[ARG]"
+                    "name": "$[ARG]",
                 },
-                "unbound_args": ["ARG"]
-            }
+                "unbound_args": ["ARG"],
+            },
         },
         "args": {
-            "ARG": "from-top-level"
-        }
+            "ARG": "from-top-level",
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1289,15 +1289,15 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "name": "$[ARG]",
             "nested": {
                 "template": {
-                    "name": "$[ARG] $[ARG2]"
+                    "name": "$[ARG] $[ARG2]",
                 },
-                "unbound_args": ["ARG", "ARG2"]
-            }
+                "unbound_args": ["ARG", "ARG2"],
+            },
         },
         "args": {
             "ARG": "hello",
-            "ARG2": "world"
-        }
+            "ARG2": "world",
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1312,14 +1312,14 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "name": "$[ARG]",
             "nested": {
                 "template": {
-                    "name": "$[NOT_AN_ARG]"
+                    "name": "$[NOT_AN_ARG]",
                 },
-                "unbound_args": ["NOT_AN_ARG"]
-            }
+                "unbound_args": ["NOT_AN_ARG"],
+            },
         },
         "args": {
             "ARG": "hello",
-        }
+        },
     }
     with self.assertRaisesRegex(MultiException, "'NOT_AN_ARG'"):
       config = CustomConfigObject.parse(config)
@@ -1330,8 +1330,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "name": "$[ARG]",
         },
         "args": {
-            "ARG": "some other $[ARG] text"
-        }
+            "ARG": "some other $[ARG] text",
+        },
     }
     with self.assertRaisesRegex(MultiException, "self-referencing"):
       config = CustomConfigObject.parse(config)
@@ -1342,8 +1342,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "name": "$[ARG]",
         },
         "args": {
-            "ARG": "some other $[[ARG] text"
-        }
+            "ARG": "some other $[[ARG] text",
+        },
     }
     config = CustomConfigObject.parse(config)
 
@@ -1353,8 +1353,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
             "name": "$[ARG]",
         },
         "args": {
-            "ARG": "some other arg text"
-        }
+            "ARG": "some other arg text",
+        },
     }
     config = CustomConfigObject.parse(config)
 
@@ -1362,13 +1362,13 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = {
         "template": {
             "name": "name",
-            "nested": "$[ARG]"
+            "nested": "$[ARG]",
         },
         "args": {
             "ARG": {
-                "name": "https://www.google.com"
-            }
-        }
+                "name": "https://www.google.com",
+            },
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1393,7 +1393,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(config.array[0], "/templates/test_file")
 
   def test_parse_templated_config_relative_filepaths_as_str_preserved(self):
-    config = {"template": "./templates/template.hjson", "args": {"UNUSED": "",}}
+    config = {"template": "./templates/template.hjson", "args": {"UNUSED": ""}}
     config_file = pathlib.Path("/config.hjson")
     config_file.write_text(json.dumps(config, indent=2), encoding="utf-8")
 
@@ -1414,11 +1414,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_template_list_spread_in_non_list_does_nothing(self):
     config = {
         "template": {
-            "name": "$[...NAME]"
+            "name": "$[...NAME]",
         },
         "args": {
-            "NAME": ["my name",]
-        }
+            "NAME": ["my name"],
+        },
     }
     config = CustomConfigObject.parse(config)
     self.assertEqual(config.name, "$[...NAME]")
@@ -1426,11 +1426,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
   def test_template_list_spread_non_list_value_throws(self):
     config = {
         "template": {
-            "array": ["some", "string", "values", "$[...ARG]"]
+            "array": ["some", "string", "values", "$[...ARG]"],
         },
         "args": {
-            "ARG": "arg_value"
-        }
+            "ARG": "arg_value",
+        },
     }
     with self.assertRaisesRegex(MultiException, "is not a list"):
       config = CustomConfigObject.parse(config)
@@ -1439,11 +1439,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = {
         "template": {
             "name": "name",
-            "array": ["some", "string", "values", "$[...ARG]"]
+            "array": ["some", "string", "values", "$[...ARG]"],
         },
         "args": {
-            "ARG": ["arg_value"]
-        }
+            "ARG": ["arg_value"],
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1459,11 +1459,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
                 "some",
                 "string",
                 "values",
-            ]
+            ],
         },
         "args": {
-            "ARG": ["arg_value"]
-        }
+            "ARG": ["arg_value"],
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1479,11 +1479,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
                 "string",
                 "$[...ARG]",
                 "values",
-            ]
+            ],
         },
         "args": {
-            "ARG": ["arg_value"]
-        }
+            "ARG": ["arg_value"],
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1499,11 +1499,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
                 "string",
                 "$[...ARG]",
                 "values",
-            ]
+            ],
         },
         "args": {
-            "ARG": ["arg_value", "another arg value"]
-        }
+            "ARG": ["arg_value", "another arg value"],
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1520,16 +1520,16 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
                 "string",
                 "$[...ARG]",
                 "values",
-            ]
+            ],
         },
         "args": {
             "ARG": {
                 "template": ["$[ARG2]"],
                 "args": {
-                    "ARG2": "list entry"
-                }
+                    "ARG2": "list entry",
+                },
             },
-        }
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1545,11 +1545,11 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
                 "string",
                 "$[...ARG]",
                 "values",
-            ]
+            ],
         },
         "args": {
-            "ARG": []
-        }
+            "ARG": [],
+        },
     }
 
     config = CustomConfigObject.parse(config)
@@ -1566,14 +1566,14 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
                         "first",
                         "$[...ARG]",
                         "third",
-                    ]
+                    ],
                 },
-                "unbound_args": ["ARG"]
-            }
+                "unbound_args": ["ARG"],
+            },
         },
         "args": {
-            "ARG": ["second"]
-        }
+            "ARG": ["second"],
+        },
     }
 
     config = CustomConfigObject.parse(config)

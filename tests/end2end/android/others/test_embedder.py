@@ -20,8 +20,8 @@ def _browser_config(device_id, adb_path) -> str:
       "driver": {
           "type": "adb",
           "device_id": device_id,
-          "adb_bin": adb_path
-      }
+          "adb_bin": adb_path,
+      },
   })
 
 

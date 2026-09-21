@@ -27,7 +27,8 @@ class CrossbenchTraceUriResolver(TraceUriResolver):
         traces)
 
   def _init_resolved(
-      self, traces: Iterable[Run] | TraceProcessorProbeContext
+      self,
+      traces: Iterable[Run] | TraceProcessorProbeContext,
   ) -> list[TraceUriResolver.Result]:
     if isinstance(traces, ProbeContext):
       return self._init_resolved_from_probe_context(traces)
@@ -46,12 +47,13 @@ class CrossbenchTraceUriResolver(TraceUriResolver):
     return resolved
 
   def _init_resolved_from_probe_context(
-      self, probe_context: TraceProcessorProbeContext
+      self,
+      probe_context: TraceProcessorProbeContext,
   ) -> list[TraceUriResolver.Result]:
     return [
         TraceUriResolver.Result(
             trace=str(probe_context.merged_trace_path.absolute()),
-            metadata=self._run_metadata(probe_context.run))
+            metadata=self._run_metadata(probe_context.run)),
     ]
 
   def _run_metadata(self, run: Run) -> dict[str, str]:
@@ -59,7 +61,7 @@ class CrossbenchTraceUriResolver(TraceUriResolver):
         "cb_browser": run.browser.unique_name,
         "cb_story": run.story.name,
         "cb_temperature": run.temperature,
-        "cb_run": str(run.repetition)
+        "cb_run": str(run.repetition),
     }
 
   @override

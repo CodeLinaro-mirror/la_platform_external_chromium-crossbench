@@ -27,7 +27,7 @@ _PLATFORM_NAME_LOOKUP: Final[dict[tuple[str, str], str]] = {
     ("linux", "x64"): "linux-x86-64",
     ("linux", "ia32"): "linux-i686",
     ("macos", "x64"): "mac",
-    ("macos", "arm64"): "mac"
+    ("macos", "arm64"): "mac",
 }
 
 

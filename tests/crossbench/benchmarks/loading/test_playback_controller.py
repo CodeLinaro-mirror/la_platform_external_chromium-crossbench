@@ -19,8 +19,22 @@ class PlaybackControllerTestCase(unittest.TestCase):
 
   def test_parse_invalid(self):
     for invalid in [
-        "11", "something", "1.5x", "4.3.h", "4.5.x", "-1x", "-1.4x", "-2h",
-        "-2.1h", "1h30", "infx", "infh", "nanh", "nanx", "0s", "0"
+        "11",
+        "something",
+        "1.5x",
+        "4.3.h",
+        "4.5.x",
+        "-1x",
+        "-1.4x",
+        "-2h",
+        "-2.1h",
+        "1h30",
+        "infx",
+        "infh",
+        "nanh",
+        "nanx",
+        "0s",
+        "0",
     ]:
       with self.subTest(pattern=invalid):
         with self.assertRaises((argparse.ArgumentTypeError, ValueError)):
@@ -136,7 +150,7 @@ class PlaybackControllerTestCase(unittest.TestCase):
         period=dt.timedelta(seconds=1), count=2)
     now = dt.datetime.now()
     with mock.patch(
-        "crossbench.benchmarks.loading.playback_controller.dt"
+        "crossbench.benchmarks.loading.playback_controller.dt",
     ) as mock_dt, mock.patch(
         "crossbench.benchmarks.loading.playback_controller.time") as mock_time:
       mock_dt.datetime.now.return_value = now

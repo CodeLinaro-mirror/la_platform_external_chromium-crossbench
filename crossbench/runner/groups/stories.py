@@ -105,7 +105,7 @@ class StoriesRunGroup(RunGroup):
         "binary": str(self.browser.path),
         "flags": str(self.browser.flags),
         "runs": len(tuple(self.runs)),
-        "failed runs": len(tuple(self.failed_runs))
+        "failed runs": len(tuple(self.failed_runs)),
     }
     info.update(super().info)
     return info

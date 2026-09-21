@@ -283,7 +283,7 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
   def test_extra_flags_story_autoplay_assignment(self) -> None:
     args = self.parse_args(
-        "--stories=idle-msn,page-load-cnn,media-playback-youtube",)
+        "--stories=idle-msn,page-load-cnn,media-playback-youtube")
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
     benchmark = WebPowerBenchmark(**kwargs)
 

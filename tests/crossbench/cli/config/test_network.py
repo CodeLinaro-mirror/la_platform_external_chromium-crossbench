@@ -61,7 +61,7 @@ class NetworkSpeedConfigTestCase(BaseConfigTestCase):
         "rtt_ms": 100,
         "in_kbps": 200,
         "out_kbps": 300,
-        "window": 400
+        "window": 400,
     })
     self.assertIsNone(config.ts_proxy)
     self.assertEqual(config.rtt_ms, 100)
@@ -218,7 +218,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     config = NetworkConfig.parse({
         "type": "wpr",
         "path": str(path),
-        "response_transformations_file": str(rules_file)
+        "response_transformations_file": str(rules_file),
     })
     self.assertEqual(config.type, NetworkType.WPR)
     self.assertEqual(config.path, path)
@@ -295,7 +295,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
         "type": "wpr",
         "path": str(path),
         "http_port": 8080,
-        "https_port": 8081
+        "https_port": 8081,
     })
     self.assertEqual(config.type, NetworkType.WPR)
     self.assertEqual(config.path, path)
@@ -419,7 +419,7 @@ class NetworkConfigTestCase(BaseConfigTestCase):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       NetworkConfig.parse({
           "type": "live",
-          "skip_deterministic_script_injection": True
+          "skip_deterministic_script_injection": True,
       })
     self.assertIn("can only be used for the WPR", str(cm.exception))
     with self.assertRaises(argparse.ArgumentTypeError) as cm:

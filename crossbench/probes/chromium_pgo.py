@@ -124,7 +124,7 @@ class ChromiumPgoProbeContextAndroid(ChromiumPgoProbeContext):
     """Triggers a PGO profile dump via DevTools."""
     request = {
         "method": "NativeProfiling.dumpProfilingDataOfAllProcesses",
-        "id": self.PGO_CMD_ID
+        "id": self.PGO_CMD_ID,
     }
     logging.debug("Triggering PGO dump.")
     with self._get_devtools_client().open() as devtools_client:

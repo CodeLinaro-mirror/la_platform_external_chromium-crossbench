@@ -43,7 +43,7 @@ class RepoStatusProbeTestCase(CrossbenchFakeFsTestCase):
       return mock.MagicMock()
 
     runner.platform.crossbench_details.return_value = {
-        "canonical_parent_hash": "abcdef123"
+        "canonical_parent_hash": "abcdef123",
     }
     runner.platform.sh.side_effect = mock_sh
 

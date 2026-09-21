@@ -78,7 +78,7 @@ class WaitRange:
       i += 1
 
   def wait_with_backoff(
-      self,) -> Iterator[tuple[int, dt.timedelta, dt.timedelta]]:
+      self) -> Iterator[tuple[int, dt.timedelta, dt.timedelta]]:
     start = dt.datetime.now()
     timeout = self._timeout
     for i, sleep_for in self:

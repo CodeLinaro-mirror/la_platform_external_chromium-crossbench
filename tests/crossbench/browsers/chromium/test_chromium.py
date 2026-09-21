@@ -410,9 +410,8 @@ class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
     self.fs.create_file(driver_path, st_size=1000)
     self.fs.create_file(out_dir / "args.gn")
 
-    self.platform.host_platform.sh_stdout = mock.MagicMock(
-        return_value="Package name: org.chromium.chrome\nversionName: 120.0.0.0"
-    )
+    output = "Package name: org.chromium.chrome\nversionName: 120.0.0.0"
+    self.platform.host_platform.sh_stdout = mock.MagicMock(return_value=output)
 
     browser = MockLocalChromiumWebDriverAndroid(
         "test-label",

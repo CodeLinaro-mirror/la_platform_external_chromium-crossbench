@@ -374,7 +374,7 @@ class TestChromeFlags(TestFlags):
         "--enable-features": "feature_1,feature_2",
         "--disable-features": "feature_3",
         "--enable-blink-features": "blink_feature_1,blink_feature_2",
-        "--disable-blink-features": "blink_feature_3"
+        "--disable-blink-features": "blink_feature_3",
     })
     with self.assertRaises(ValueError):
       flags.merge({"--bar": "v2"})
@@ -391,21 +391,21 @@ class TestChromeFlags(TestFlags):
         "--enable-features": "feature_x",
         "--disable-features": "feature_y,feature_z",
         "--enable-blink-features": "blink_feature_x",
-        "--disable-blink-features": "blink_feature_y,blink_feature_z"
+        "--disable-blink-features": "blink_feature_y,blink_feature_z",
     })
     self.assertSequenceEqual(
         list(flags.js_flags), ["--log-maps", "--log-ic", "--log-all"])
     self.assertSequenceEqual(
         list(flags.features), [
             "--enable-features=feature_1,feature_2,feature_x",
-            "--disable-features=feature_3,feature_y,feature_z"
+            "--disable-features=feature_3,feature_y,feature_z",
         ])
     self.assertSequenceEqual(
         list(flags.blink_features), [
             "--enable-blink-features="
             "blink_feature_1,blink_feature_2,blink_feature_x",
             "--disable-blink-features="
-            "blink_feature_3,blink_feature_y,blink_feature_z"
+            "blink_feature_3,blink_feature_y,blink_feature_z",
         ])
 
   def test_flag_typos_enable_features(self):

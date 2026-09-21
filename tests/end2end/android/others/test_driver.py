@@ -25,8 +25,8 @@ def test_cdp_driver(device_id, adb_path, test_env) -> None:
       "driver": {
           "type": "cdp",
           "device_id": device_id,
-          "adb_bin": adb_path
-      }
+          "adb_bin": adb_path,
+      },
   })
   args = [
       "loading",

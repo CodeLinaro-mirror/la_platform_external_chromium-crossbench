@@ -709,7 +709,7 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
             flags=cls.parse_extra_browser_args(
                 arguments.get("extra_test_args")),
         ),
-        end=BisectEndVariantConfig(commit=arguments.get("end_git_hash"),),
+        end=BisectEndVariantConfig(commit=arguments.get("end_git_hash")),
     )
 
   def to_dict(self) -> dict[str, Any]:

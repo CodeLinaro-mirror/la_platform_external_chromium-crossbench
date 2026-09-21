@@ -51,7 +51,10 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
       raise ValueError(f"{self} platform does not support custom cwd")
     self.validate_shell_args(args, shell)
     ssh_cmd: ListCmdArgs = [
-        "ssh", "-p", f"{self._ssh_port}", f"{self._ssh_user}@{self._host}"
+        "ssh",
+        "-p",
+        f"{self._ssh_port}",
+        f"{self._ssh_user}@{self._host}",
     ]
     ssh_cmd.append(shlex.join(map(str, args)))
 
@@ -99,8 +102,11 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     self._host_platform.mkdir(to_path.parent, parents=True, exist_ok=True)
 
     scp_cmd: CmdArgs = [
-        "scp", "-P", f"{self._ssh_port}",
-        f"{self._ssh_user}@{self._host}:{from_path}", to_path
+        "scp",
+        "-P",
+        f"{self._ssh_port}",
+        f"{self._ssh_user}@{self._host}:{from_path}",
+        to_path,
     ]
     self._host_platform.sh_stdout(*scp_cmd)
     return to_path

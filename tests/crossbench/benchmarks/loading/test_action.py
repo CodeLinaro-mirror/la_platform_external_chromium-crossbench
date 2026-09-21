@@ -102,7 +102,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "duration": "12s",
         "timeout": "34s",
         "ready_state": "any",
-        "target": "_top"
+        "target": "_top",
     }
     action = GetAction.parse_dict(config_dict)
 
@@ -123,7 +123,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     config_dict = {
         "action": "get",
         "url": "http://crossben.ch",
-        "target": "_new_tab"
+        "target": "_new_tab",
     }
     action = GetAction.parse_dict(config_dict)
     self.assertEqual(action.target, WindowTarget.NEW_TAB)
@@ -137,7 +137,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     config_dict = {
         "action": "get",
         "url": "http://crossben.ch",
-        "target": "_new_window"
+        "target": "_new_window",
     }
     action = GetAction.parse_dict(config_dict)
     self.assertEqual(action.target, WindowTarget.NEW_WINDOW)
@@ -160,7 +160,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       GetAction.parse_dict({
           "action": "get",
           "url": "http://crossben.ch",
-          "duration": "-12s"
+          "duration": "-12s",
       })
     self.assertIn("duration", str(cm.exception))
 
@@ -170,7 +170,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
           "action": "get",
           "url": "http://crossben.ch",
           "ready_state": "interactive",
-          "duration": "12s"
+          "duration": "12s",
       })
 
   def test_parse_wait_default(self):
@@ -217,7 +217,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "duration": "34s",
         "source": "js",
         "selector": "#button",
-        "required": "true"
+        "required": "true",
     }
     action = ScrollAction.parse_dict(config_dict)
 
@@ -311,8 +311,8 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "source": "touch",
         "position": {
             "x": 1,
-            "y": 2
-        }
+            "y": 2,
+        },
     }
     action = ClickAction.parse_dict(config_dict)
 
@@ -343,7 +343,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         },
         "verify": "#id",
         "attempts": 7,
-        "timeout": "12s"
+        "timeout": "12s",
     }
     action = ClickAction.parse_dict(config_dict)
 
@@ -377,7 +377,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       ClickAction.parse_dict({
           "action": "click",
           "source": "invalid_source",
-          "selector": "#button"
+          "selector": "#button",
       })
     self.assertIn("source", str(cm.exception))
 
@@ -386,7 +386,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       ClickAction.parse_dict({
           "action": "click",
           "source": "keyboard",
-          "selector": "#button"
+          "selector": "#button",
       })
     self.assertIn("source", str(cm.exception))
 
@@ -397,8 +397,8 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "source_device": "my_touchscreen",
         "position": {
             "x": 1,
-            "y": 2
-        }
+            "y": 2,
+        },
     })
     self.assertEqual(action.source_device, "my_touchscreen")
     self.assertEqual(action.input_source, InputSource.TOUCH)
@@ -422,7 +422,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
           "position": {
               "selector": "#button",
               "x": 0,
-              "y": 0
+              "y": 0,
           },
       })
     self.assertIn("contains unused properties", str(cm.exception))
@@ -433,8 +433,8 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
           "action": "click",
           "source": "TOUCH",
           "position": {
-              "x": 0
-          }
+              "x": 0,
+          },
       })
     self.assertIn("is not a valid coordinate or selector", str(cm.exception))
 
@@ -460,7 +460,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       ClickAction.parse_dict({
           "action": "click",
           "source": "TOUCH",
-          "position": {}
+          "position": {},
       })
     self.assertIn("coordinate or selector", str(cm.exception))
 
@@ -471,7 +471,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "starty": 200,
         "endx": 110,
         "endy": 220,
-        "duration": "12s"
+        "duration": "12s",
     }
     action = SwipeAction.parse_dict(config_dict)
 
@@ -493,7 +493,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     config_dict = {
         "action": "text_input",
         "duration": "10s",
-        "text": "some text"
+        "text": "some text",
     }
     action = TextInputAction.parse_dict(config_dict)
 
@@ -558,7 +558,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     config_dict = {
         "action": "text_input",
         "text": "some text",
-        "duration": "-1s"
+        "duration": "-1s",
     }
     with self.assertRaises(ValueError) as cm:
       ClickAction.parse_dict(config_dict)
@@ -575,7 +575,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "text_input",
         "source": "keyboard",
         "duration": "1s",
-        "keyevent": "KEYCODE_BACK"
+        "keyevent": "KEYCODE_BACK",
     }
     action = TextInputAction.parse_dict(config_dict)
 
@@ -598,7 +598,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "source": "keyboard",
         "duration": "1s",
         "text": "some text",
-        "keyevent": "KEYCODE_BACK"
+        "keyevent": "KEYCODE_BACK",
     }
     with self.assertRaisesRegex(ValueError, "Exactly one"):
       TextInputAction.parse_dict(config_dict)
@@ -641,7 +641,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     config_dict = {
         "action": "wait_for_element",
         "selector": "#button",
-        "timeout": "12s"
+        "timeout": "12s",
     }
     action = WaitForElementAction.parse_dict(config_dict)
 
@@ -659,7 +659,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     config_dict = {
         "action": "wait_for_element",
         "selector": "#button",
-        "expected_count": "5"
+        "expected_count": "5",
     }
     action = WaitForElementAction.parse_dict(config_dict)
 
@@ -678,7 +678,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "wait_for_element",
         "selector": "#button",
         "expected_count": "15",
-        "or_more": True
+        "or_more": True,
     }
     action = WaitForElementAction.parse_dict(config_dict)
 
@@ -696,7 +696,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     config_dict = {
         "action": "wait_for_element",
         "selector": "#button",
-        "check_rect": True
+        "check_rect": True,
     }
     action = WaitForElementAction.parse_dict(config_dict)
 
@@ -750,8 +750,8 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "js",
         "script_path": str(path),
         "replace": {
-            "$ALERT$": "'something'"
-        }
+            "$ALERT$": "'something'",
+        },
     }
     action = JsAction.parse_dict(config_dict)
 
@@ -808,7 +808,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "replacements": {
             1: 1,
             "one": 1,
-        }
+        },
     }
     with self.assertRaises(ValueError) as cm:
       JsAction.parse_dict(config_dict)
@@ -855,8 +855,8 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "inject_new_document_script",
         "script_path": str(path),
         "replace": {
-            "$ALERT$": "'something'"
-        }
+            "$ALERT$": "'something'",
+        },
     }
     action = InjectNewDocumentScriptAction.parse_dict(config_dict)
 
@@ -913,7 +913,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "replacements": {
             1: 1,
             "one": 1,
-        }
+        },
     }
     with self.assertRaises(ValueError) as cm:
       InjectNewDocumentScriptAction.parse_dict(config_dict)
@@ -924,7 +924,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "switch_tab",
         "tab_index": 17,
         "title": "^Example.*",
-        "url": "http(s)?://example.com"
+        "url": "http(s)?://example.com",
     }
     action = SwitchTabAction.parse_dict(config_dict)
 
@@ -950,7 +950,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "switch_tab",
         "relative_tab_index": 17,
         "title": "^Example.*",
-        "url": "http(s)?://example.com"
+        "url": "http(s)?://example.com",
     }
     action = SwitchTabAction.parse_dict(config_dict)
 
@@ -1024,7 +1024,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         "action": "close_tab",
         "tab_index": 17,
         "title": "^Example.*",
-        "url": "http(s)?://example.com"
+        "url": "http(s)?://example.com",
     }
     action = CloseTabAction.parse_dict(config_dict)
 
@@ -1102,7 +1102,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     config_dict = {
         "action": "wait_for_url_matches",
         "url_pattern": "example\\.com",
-        "timeout": "8s"
+        "timeout": "8s",
     }
     action = WaitForUrlMatchesAction.parse_dict(config_dict)
 
@@ -1182,7 +1182,7 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
             "browser": False,
             "system": False,
             "packages": ("netflix", "minecraft"),
-            "title": None
+            "title": None,
         })
 
     action_2 = ProbeAction.parse(action.to_json())

@@ -79,7 +79,7 @@ class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
   @override
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     parser = super().add_cli_arguments(parser)
-    parser.set_defaults(duration=cls.DEFAULT_STORY_CLS.DEFAULT_DURATION,)
+    parser.set_defaults(duration=cls.DEFAULT_STORY_CLS.DEFAULT_DURATION)
     return parser
 
   @classmethod

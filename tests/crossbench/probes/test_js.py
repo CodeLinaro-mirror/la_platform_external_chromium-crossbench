@@ -65,7 +65,7 @@ class JSProbeTestCase(GenericProbeTestCase):
     probe = JSProbe.parse_dict(config)
     stories = [
         LivePage("google", "https://google.com"),
-        LivePage("amazon", "https://amazon.com")
+        LivePage("amazon", "https://amazon.com"),
     ]
     repetitions = 2
     runner = self.create_runner(
@@ -76,8 +76,8 @@ class JSProbeTestCase(GenericProbeTestCase):
             # js:
             {
                 "metric1": 1.1,
-                "metric2": 2.2
-            }
+                "metric2": 2.2,
+            },
         ],
         repetitions=repetitions,
         separate=True,
@@ -112,7 +112,7 @@ class JSProbeTestCase(GenericProbeTestCase):
     probe = JSProbe.parse_dict(config)
     stories = [
         LivePage("google", "https://google.com"),
-        LivePage("amazon", "https://amazon.com")
+        LivePage("amazon", "https://amazon.com"),
     ]
     repetitions = 2
     runner = self.create_runner(
@@ -123,8 +123,8 @@ class JSProbeTestCase(GenericProbeTestCase):
             # js:
             {
                 "metric1": 1.1,
-                "metric2": 2.2
-            }
+                "metric2": 2.2,
+            },
         ],
         repetitions=repetitions,
         separate=True,
@@ -155,8 +155,8 @@ class JSProbeTestCase(GenericProbeTestCase):
         "action": "probe",
         "probe": "js",
         "kwargs": {
-            "js": "return {'intermediateValue': 1};"
-        }
+            "js": "return {'intermediateValue': 1};",
+        },
     }]),)
     page = InteractivePage(
         name="test_page",
@@ -168,12 +168,12 @@ class JSProbeTestCase(GenericProbeTestCase):
         js_side_effects=[
             # probe invoke js:
             {
-                "intermediateValue": 1
+                "intermediateValue": 1,
             },
             # probe teardown js:
             {
-                "finalValue": 2
-            }
+                "finalValue": 2,
+            },
         ],
         repetitions=1,
         throw=True)

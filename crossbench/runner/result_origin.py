@@ -94,7 +94,9 @@ class ResultOrigin(DecoratorTargetProtocol, ProbeResultOrigin, abc.ABC):
 
   @override
   def exception_capture(
-      self, *stack_entries: str, exceptions: TExceptionTypes = (Exception,)
+      self,
+      *stack_entries: str,
+      exceptions: TExceptionTypes = (Exception,),
   ) -> ExceptionAnnotationScope:
     return self.exceptions.capture(*stack_entries, exceptions=exceptions)
 

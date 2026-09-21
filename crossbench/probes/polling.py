@@ -47,7 +47,7 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
   def __init__(
       self,
       cmd: Iterable[CmdArg],
-      interval: dt.timedelta = dt.timedelta(seconds=1)
+      interval: dt.timedelta = dt.timedelta(seconds=1),
   ) -> None:
     super().__init__()
     self._cmd: TupleCmdArgs = tuple(cmd)

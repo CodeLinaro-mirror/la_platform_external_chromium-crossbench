@@ -229,14 +229,19 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
   def _aggregate_metric_runs(cls, df: pd.DataFrame,
                              columns: list[str]) -> pd.DataFrame:
     """Averages metrics across story runs, discarding outliers for >=5 runs."""
-    return (df.groupby(["cb_browser", "cb_story"
-                       ])[columns].agg(_mean_without_outliers).reset_index())
+    return (df.groupby([
+        "cb_browser",
+        "cb_story",
+    ])[columns].agg(_mean_without_outliers).reset_index())
 
   @classmethod
   def _aggregate_odpm_power_rails(cls, df: pd.DataFrame) -> pd.DataFrame:
     df_sum = (
-        df.groupby(["cb_browser", "cb_story", "cb_run"
-                   ])["avg_power_mw"].sum().reset_index(name="odpm_total_mw"))
+        df.groupby([
+            "cb_browser",
+            "cb_story",
+            "cb_run",
+        ])["avg_power_mw"].sum().reset_index(name="odpm_total_mw"))
     return cls._aggregate_metric_runs(df_sum, ["odpm_total_mw"])
 
   @classmethod

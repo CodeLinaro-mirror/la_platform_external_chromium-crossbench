@@ -151,7 +151,7 @@ class ChromeFeaturesTestCase(_ChromeBaseFeaturesTestCase):
     self.assertDictEqual(features.enabled, {
         "feature0": None,
         "feature1": ":k1/v1",
-        "feature2": "<Trial.Group:k2/v2"
+        "feature2": "<Trial.Group:k2/v2",
     })
     self.assertSetEqual(features.disabled, {"feature3"})
 

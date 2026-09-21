@@ -84,13 +84,13 @@ class BaseLoadLineTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
         "pages": {
             "custom_p1": [{
                 "action": "get",
-                "url": "https://example.com/1"
+                "url": "https://example.com/1",
             }],
             "custom_p2": [{
                 "action": "get",
-                "url": "https://example.com/2"
+                "url": "https://example.com/2",
             }],
-        }
+        },
     }
     self.fs.create_file(config_file, contents=json.dumps(config_data))
     args = self.parse_args(f"--page-config={config_file}")

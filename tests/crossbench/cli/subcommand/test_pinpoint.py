@@ -65,7 +65,9 @@ class PinpointSubcommandTest(unittest.TestCase):
   @mock.patch("crossbench.cli.subcommand.pinpoint.fetch_bots")
   def test_pinpoint_bots_prints_filtered_bots(self, mock_fetch_bots):
     mock_fetch_bots.return_value = [
-        "linux-r350-perf", "win-10-perf", "win-11-perf"
+        "linux-r350-perf",
+        "win-10-perf",
+        "win-11-perf",
     ]
     self.cli.run(["pinpoint", "bots", "--filter", "win"])
     self.mock_print.assert_called_once_with("win-10-perf\nwin-11-perf")
@@ -74,7 +76,9 @@ class PinpointSubcommandTest(unittest.TestCase):
   def test_pinpoint_benchmarks_prints_filtered_benchmarks(
       self, mock_fetch_benchmarks):
     mock_fetch_benchmarks.return_value = [
-        "speedometer2", "speedometer3", "jetstream2"
+        "speedometer2",
+        "speedometer3",
+        "jetstream2",
     ]
     self.cli.run(["pinpoint", "benchmarks", "--filter", "speedometer"])
     self.mock_print.assert_called_once_with("speedometer2\nspeedometer3")
@@ -174,8 +178,8 @@ class PinpointSubcommandTest(unittest.TestCase):
         story_tags="tag1,tag2",
         repeat=42,
         bug="12345",
-        start=BisectStartVariantConfig(commit="HEAD",),
-        end=BisectEndVariantConfig(commit="recent",),
+        start=BisectStartVariantConfig(commit="HEAD"),
+        end=BisectEndVariantConfig(commit="recent"),
     )
     mock_parse_and_override.return_value = test_config
     self.cli.run([
@@ -549,8 +553,13 @@ class PinpointSubcommandTest(unittest.TestCase):
   @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_jobs")
   def test_pinpoint_cancel_multiple_jobs_flag(self, mock_cancel_jobs):
     self.cli.run([
-        "pinpoint", "cancel", "--job", "123abc", "456def", "--reason",
-        "test reason"
+        "pinpoint",
+        "cancel",
+        "--job",
+        "123abc",
+        "456def",
+        "--reason",
+        "test reason",
     ])
     mock_cancel_jobs.assert_called_once_with(
         job_ids=["123abc", "456def"], reason="test reason")
@@ -558,8 +567,12 @@ class PinpointSubcommandTest(unittest.TestCase):
   @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_jobs")
   def test_pinpoint_cancel_multiple_jobs_repeated_flag(self, mock_cancel_jobs):
     self.cli.run([
-        "pinpoint", "cancel", "--job=123abc", "--job=456def", "--reason",
-        "test reason"
+        "pinpoint",
+        "cancel",
+        "--job=123abc",
+        "--job=456def",
+        "--reason",
+        "test reason",
     ])
     mock_cancel_jobs.assert_called_once_with(
         job_ids=["123abc", "456def"], reason="test reason")
@@ -567,8 +580,12 @@ class PinpointSubcommandTest(unittest.TestCase):
   @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_jobs")
   def test_pinpoint_cancel_multiple_jobs_comma(self, mock_cancel_jobs):
     self.cli.run([
-        "pinpoint", "cancel", "--job", "123abc,456def", "--reason",
-        "test reason"
+        "pinpoint",
+        "cancel",
+        "--job",
+        "123abc,456def",
+        "--reason",
+        "test reason",
     ])
     mock_cancel_jobs.assert_called_once_with(
         job_ids=["123abc", "456def"], reason="test reason")
@@ -583,8 +600,13 @@ class PinpointSubcommandTest(unittest.TestCase):
   def test_pinpoint_cancel_job_positional_and_explicit_job_id(self):
     with self.assertRaises(SystemExit) as cm:
       self.cli.run([
-          "pinpoint", "cancel", "123abc", "--job", "123abc", "--reason",
-          "test reason"
+          "pinpoint",
+          "cancel",
+          "123abc",
+          "--job",
+          "123abc",
+          "--reason",
+          "test reason",
       ])
     self.assertEqual(cm.exception.code, 2)
 

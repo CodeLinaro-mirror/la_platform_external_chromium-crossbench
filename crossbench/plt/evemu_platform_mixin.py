@@ -216,7 +216,7 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
   def _generate_evemu_events_string(
       self,
       events: Iterable[InputEvent],
-      start_time: dt.timedelta = dt.timedelta()
+      start_time: dt.timedelta = dt.timedelta(),
   ) -> tuple[str, dt.timedelta]:
     lines: list[str] = []
     current_time = start_time

@@ -90,11 +90,13 @@ class GoogleWorkspaceProbeContext(ProbeContext[GoogleWorkspaceProbe]):
         "name": f"Crossbench-Test-Copy-{template_id}",
         "parents": [gw_secrets.shared_drive_id],
         "appProperties": {
-            "crossbench_test": "true",
-            "template_id": template_id,
+            "crossbench_test":
+                "true",
+            "template_id":
+                template_id,
             "ttl":
-                (dt.datetime.now(dt.UTC) + dt.timedelta(hours=4)).isoformat()
-        }
+                (dt.datetime.now(dt.UTC) + dt.timedelta(hours=4)).isoformat(),
+        },
     }
     copied_file = (
         drive_service.files().copy(

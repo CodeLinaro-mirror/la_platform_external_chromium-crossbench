@@ -27,7 +27,7 @@ class TimingTestCase(unittest.TestCase):
         "coolDownTime": 1.0,
         "runTimeout": 0.0,
         "timeoutUnit": 0.0,
-        "unit": 1.0
+        "unit": 1.0,
     })
     t = Timing(
         unit=dt.timedelta(seconds=10), timeout_unit=dt.timedelta(seconds=11))
@@ -35,7 +35,7 @@ class TimingTestCase(unittest.TestCase):
         "coolDownTime": 1.0,
         "runTimeout": 0.0,
         "timeoutUnit": 11.0,
-        "unit": 10.0
+        "unit": 10.0,
     })
 
   def test_default_instance_slowdown(self):

@@ -36,12 +36,12 @@ class TsProxyBaseTestCase(BaseCrossbenchTestCase):
     proc = mock.Mock()
     proc.configure_mock(**{
         "poll.return_value": None,
-        "communicate.return_value": (None, None)
+        "communicate.return_value": (None, None),
     })
     proc.stdout = mock.Mock()
     proc.stdout.configure_mock(**{
         "readline.return_value":
-            "Started Socks5 proxy server on 127.0.0.1:43210"
+            "Started Socks5 proxy server on 127.0.0.1:43210",
     })
     proc.stderr = mock.Mock()
 

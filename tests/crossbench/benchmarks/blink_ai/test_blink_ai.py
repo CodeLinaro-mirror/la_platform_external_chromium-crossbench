@@ -160,7 +160,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
         "coldChunksPerSecond": 45.8,
         "warmTimeToFirstTokenMs": [12.5, 10.2, 9.8],
         "warmTotalPromptTimeMs": [110.0, 95.0, 92.0],
-        "warmChunksPerSecond": [50.2, 55.1, 56.3]
+        "warmChunksPerSecond": [50.2, 55.1, 56.3],
     }
 
     repetitions = 1
@@ -205,7 +205,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
         "coldChunksPerSecond": 50.0,
         "warmTimeToFirstTokenMs": [10.0],
         "warmTotalPromptTimeMs": [90.0],
-        "warmChunksPerSecond": [55.0]
+        "warmChunksPerSecond": [55.0],
     }
     repetitions = 1
     for _ in range(repetitions):
@@ -285,7 +285,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
             "coldChunksPerSecond": 10.0,
             "warmTimeToFirstTokenMs": [2.0],
             "warmTotalPromptTimeMs": [20.0],
-            "warmChunksPerSecond": [50.0]
+            "warmChunksPerSecond": [50.0],
         },
         "multimodal_audio": {
             "downloadTimeMs": 200.0,
@@ -295,8 +295,8 @@ class BlinkAITestCase(helper.SubStoryTestCase):
             "coldChunksPerSecond": 8.0,
             "warmTimeToFirstTokenMs": [3.0],
             "warmTotalPromptTimeMs": [25.0],
-            "warmChunksPerSecond": [40.0]
-        }
+            "warmChunksPerSecond": [40.0],
+        },
     }
 
     mock_metrics = copy.deepcopy(probe_results)
@@ -362,7 +362,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
             "warmTimeToFirstTokenMs": [2.0],
             "warmTotalPromptTimeMs": [20.0],
             "warmChunksPerSecond": [50.0],
-        }
+        },
     }
     mock_metrics = copy.deepcopy(probe_results)
     mock_metrics.update(probe_results["mtp_summary"])

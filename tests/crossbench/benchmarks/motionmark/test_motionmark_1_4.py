@@ -36,28 +36,28 @@ class MotionMark14TestCase(MotionMark1BaseTestCase):
                           "confidenceHigh": 1210.464520355893,
                           "median": 1180.8987652049277,
                           "mean": 1163.0061487765158,
-                          "confidencePercentage": 0.8
+                          "confidencePercentage": 0.8,
                       },
                       "segment1": [[1, 16.666666666666668],
                                    [1, 16.666666666666668]],
                       "segment2": [[1, 6.728874992470971],
-                                   [3105, 13.858528114770454]]
+                                   [3105, 13.858528114770454]],
                   },
                   "controller": {
                       "score": 1168.106104032434,
                       "average": 1168.106104032434,
                       "stdev": 37.027504395081785,
-                      "percent": 3.1698750881669624
+                      "percent": 3.1698750881669624,
                   },
                   "score": 1180.8987652049277,
                   "scoreLowerBound": 1154.0859381321234,
-                  "scoreUpperBound": 1210.464520355893
-              }
-          }
+                  "scoreUpperBound": 1210.464520355893,
+              },
+          },
       },
       "score": 1180.8987652049277,
       "scoreLowerBound": 1154.0859381321234,
-      "scoreUpperBound": 1210.464520355893
+      "scoreUpperBound": 1210.464520355893,
   }]
 
   @property

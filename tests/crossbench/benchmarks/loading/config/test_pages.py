@@ -80,14 +80,14 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(page_config.duration.total_seconds(), 123)
 
   def test_parse_single_url_with_comma_and_duration(self):
+    url_1 = ("https://www.google.com/maps/place/Japan/"
+             "@33.33,44.4,55m/data=!3m2,123s")
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "Invalid"):
-      PagesConfig.parse(
-          "https://www.google.com/maps/place/Japan/@33.33,44.4,55m/data=!3m2,123s"
-      )
+      PagesConfig.parse(url_1)
+    url_2 = ("https://www.google.com/maps/place/Japan/"
+             "@33.33,44.4,55m/data=!3m2,123s/http.google.com")
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "Invalid"):
-      PagesConfig.parse(
-          "https://www.google.com/maps/place/Japan/@33.33,44.4,55m/data=!3m2,123s/http.google.com"
-      )
+      PagesConfig.parse(url_2)
 
   def test_parse_multiple(self):
     config = PagesConfig.parse("http://a.com,http://b.com")
@@ -174,19 +174,19 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
             "Google Story": [
                 {
                     "action": "get",
-                    "url": "https://www.google.com"
+                    "url": "https://www.google.com",
                 },
                 {
                     "action": "wait",
-                    "duration": 5
+                    "duration": 5,
                 },
                 {
                     "action": "scroll",
                     "direction": "down",
-                    "duration": 3
+                    "duration": 3,
                 },
             ],
-        }
+        },
     }
     config = PagesConfig.parse(config_data)
     self.assert_single_google_story(config.pages)
@@ -210,25 +210,25 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
             "Google Story": {
                 "login": [{
                     "action": "get",
-                    "url": "https://www.google.com/login"
-                },],
+                    "url": "https://www.google.com/login",
+                }],
                 "actions": [
                     {
                         "action": "get",
-                        "url": "https://www.google.com"
+                        "url": "https://www.google.com",
                     },
                     {
                         "action": "wait",
-                        "duration": 5
+                        "duration": 5,
                     },
                     {
                         "action": "scroll",
                         "direction": "down",
-                        "duration": 3
+                        "duration": 3,
                     },
-                ]
+                ],
             },
-        }
+        },
     }
     config = PagesConfig.parse(config_data)
     self.assert_single_google_story(config.pages)
@@ -245,19 +245,19 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
                 "actions": [
                     {
                         "action": "get",
-                        "url": "https://www.google.com"
+                        "url": "https://www.google.com",
                     },
                     {
                         "action": "wait",
-                        "duration": 5
+                        "duration": 5,
                     },
                     {
                         "action": "scroll",
-                        "duration": 3
+                        "duration": 3,
                     },
-                ]
+                ],
             },
-        }
+        },
     }
     config = PagesConfig.parse(config_data)
     self.assert_single_google_story(config.pages)
@@ -280,12 +280,12 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
         "secrets": {
             "google": {
                 "username": "test",
-                "password": "s3cr3t"
-            }
+                "password": "s3cr3t",
+            },
         },
         "pages": {
             "Google Story": ["http://google.com"],
-        }
+        },
     }
     pages = PagesConfig.parse(config_data)
     secret = GoogleUsernamePassword("test", "s3cr3t")
@@ -312,8 +312,8 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
           {"pages": {
               "TEST": [{
                   "action___": "wait",
-                  "duration": 5.0
-              }]
+                  "duration": 5.0,
+              }],
           }})
     self.assertIn("Invalid data:", str(cm.exception))
 
@@ -324,9 +324,9 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
           "pages": {
               "TEST": [{
                   "action": invalid_action,
-                  "duration": 5.0
-              }]
-          }
+                  "duration": 5.0,
+              }],
+          },
       }
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(argparse.ArgumentTypeError):
@@ -367,14 +367,14 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
                 "TEST": [
                     {
                         "action": "get",
-                        "url": "google.com"
+                        "url": "google.com",
                     },
                     {
                         "action": "wait",
-                        "duration": input_value
+                        "duration": input_value,
                     },
-                ]
-            }
+                ],
+            },
         })
         self.assertEqual(len(page_config.pages), 1)
         page = page_config.pages[0]
@@ -385,8 +385,24 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_action_invalid_duration(self):
     invalid_durations: list[Any] = [
-        "1.1.1", None, "", -1, "-1", "-1ms", "1msss", "1ss", "2hh", "asdfasd",
-        "---", "1.1.1", "1_123ms", "1'200h", (), [], {}, "-1h"
+        "1.1.1",
+        None,
+        "",
+        -1,
+        "-1",
+        "-1ms",
+        "1msss",
+        "1ss",
+        "2hh",
+        "asdfasd",
+        "---",
+        "1.1.1",
+        "1_123ms",
+        "1'200h",
+        (),
+        [],
+        {},
+        "-1h",
     ]
     for invalid_duration in invalid_durations:
       with self.subTest(duration=invalid_duration), self.assertRaises(
@@ -396,14 +412,14 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
                 "TEST": [
                     {
                         "action": "get",
-                        "url": "google.com"
+                        "url": "google.com",
                     },
                     {
                         "action": "wait",
-                        "duration": invalid_duration
+                        "duration": invalid_duration,
                     },
-                ]
-            }
+                ],
+            },
         })
 
 
@@ -418,7 +434,7 @@ DEVTOOLS_RECORDER_EXAMPLE = {
             "deviceScaleFactor": 1,
             "isMobile": False,
             "hasTouch": False,
-            "isLandscape": False
+            "isLandscape": False,
         },
         {
             "type":
@@ -428,8 +444,8 @@ DEVTOOLS_RECORDER_EXAMPLE = {
             "assertedEvents": [{
                 "type": "navigation",
                 "url": "https://edition.cnn.com/",
-                "title": ""
-            }]
+                "title": "",
+            }],
         },
         {
             "type": "click",
@@ -437,20 +453,20 @@ DEVTOOLS_RECORDER_EXAMPLE = {
             "selectors": [["aria/Opinion"],
                           [
                               "#pageHeader > div > div > "
-                              "div.header__container div:nth-of-type(5) > a"
+                              "div.header__container div:nth-of-type(5) > a",
                           ],
                           [
                               'xpath///*[@id="pageHeader"]/'
-                              "div/div/div[1]/div[1]/nav/div/div[5]/a"
+                              "div/div/div[1]/div[1]/nav/div/div[5]/a",
                           ],
                           [
                               "pierce/#pageHeader > div > div > "
-                              "div.header__container div:nth-of-type(5) > a"
+                              "div.header__container div:nth-of-type(5) > a",
                           ]],
             "offsetY": 17,
-            "offsetX": 22.515625
+            "offsetX": 22.515625,
         },
-    ]
+    ],
 }
 
 
@@ -487,7 +503,7 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
     config = {
         "type": "click",
         "target": "main",
-        "selectors": [["aria/Search Google"],],
+        "selectors": [["aria/Search Google"]],
     }
     actions = DevToolsRecorderPagesConfig.parse_step(config)
     self.assertEqual(len(actions), 1)

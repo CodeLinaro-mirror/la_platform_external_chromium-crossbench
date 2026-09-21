@@ -153,7 +153,7 @@ class Run(ResultOrigin):
         },
         "session": {
             "index": self.browser_session.index,
-            "cwd": str(self.browser_session.path)
+            "cwd": str(self.browser_session.path),
         },
         "probes": self.results.to_json(),
         "timing": {
@@ -167,7 +167,7 @@ class Run(ResultOrigin):
         "annotations": [
             annotation.to_json() for annotation in self._annotations
         ],
-        "errors": self.exceptions.error_messages()
+        "errors": self.exceptions.error_messages(),
     }
 
   @property

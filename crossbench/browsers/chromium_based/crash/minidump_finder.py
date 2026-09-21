@@ -58,7 +58,8 @@ class MinidumpFinder:
     return self._minidump_path_crashpad_retrieval.get(minidump, True)
 
   def get_all_crashpad_minidumps(
-      self, minidump_dir: pth.AnyPath
+      self,
+      minidump_dir: pth.AnyPath,
   ) -> tuple[list[tuple[datetime.datetime, pth.AnyPath]] | None, list[str]]:
     """Returns all minidumps in the given directory findable by Crashpad.
 
@@ -73,7 +74,7 @@ class MinidumpFinder:
     """
     self._explanation = [
         "Attempting to find all Crashpad minidump files for a "
-        "suspected Chrome crash."
+        "suspected Chrome crash.",
     ]
     return self._get_all_crashpad_minidumps(minidump_dir), self._explanation
 
@@ -98,7 +99,7 @@ class MinidumpFinder:
         "Attempting to find all minidump files for a "
         "suspected Chrome crash. Crashpad minidumps will be "
         "searched for first, falling back to Breakpad "
-        "minidumps if none are found."
+        "minidumps if none are found.",
     ]
     return self._get_all_minidump_paths(minidump_dir), self._explanation
 
@@ -119,7 +120,7 @@ class MinidumpFinder:
         "Attempting to find the most recent minidump file for "
         "a suspected Chrome crash. Crashpad minidumps will be "
         "searched for first, falling back to Breakpad "
-        "minidumps if none are found."
+        "minidumps if none are found.",
     ]
     return self._get_most_recent_minidump(minidump_dir), self._explanation
 

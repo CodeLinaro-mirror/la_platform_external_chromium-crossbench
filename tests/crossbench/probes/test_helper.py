@@ -238,7 +238,7 @@ class TestFlatten(unittest.TestCase):
         "a": 1,
         "b": {
             "a": 2,
-            "b": 3
+            "b": 3,
         },
     }
     flattened = self.flatten(data)
@@ -272,7 +272,7 @@ class TestFlatten(unittest.TestCase):
         "a": 1,
         "b": {
             "a": 2,
-            "b": 3
+            "b": 3,
         },
     }
     with self.assertRaises(ValueError):
@@ -292,7 +292,7 @@ class TestFlatten(unittest.TestCase):
         "a": 1,
         "b": {
             "a": 2,
-            "b": 3
+            "b": 3,
         },
     }
     flattened = self.flatten(

@@ -154,8 +154,8 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
         "a": {
             "a": {
                 "a": 1,
-                "b": 2
-            }
+                "b": 2,
+            },
         },
         "b": 2,
     }
@@ -172,13 +172,13 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     input_data = {
         "a": {
             "aa": 1,
-            "ab": 2
+            "ab": 2,
         },
         "b": 3,
         "c": {
             "cc": {
-                "ccc": 4
-            }
+                "ccc": 4,
+            },
         },
     }
     merger.add(input_data)
@@ -221,15 +221,15 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     self.assertDictEqual(json_data, {
         "a/aa": "a.aa",
         "a/ab/cccA": "cccA",
-        "a/ab/cccB": "cccB"
+        "a/ab/cccB": "cccB",
     })
 
   BASIC_NESTED_DATA = {
       "a": {
           "a": {
               "a": 1,
-              "b": 2
-          }
+              "b": 2,
+          },
       },
       "b": 3,
   }

@@ -163,7 +163,7 @@ class ChromiumBuildBinaryFinderTestCase(BaseCheckoutTestCase):
     assert checkout_dir.is_dir()
     self._add_chrome_checkout_files(checkout_dir)
     self.assertIsNone(
-        ChromiumBuildBinaryFinder(self.platform, "custom_binary", ()).path,)
+        ChromiumBuildBinaryFinder(self.platform, "custom_binary", ()).path)
     self.assertEqual(
         ChromiumBuildBinaryFinder(self.platform, "custom_binary",
                                   (checkout_dir / "out",)).path, candidate)

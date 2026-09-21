@@ -958,10 +958,10 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
         platform or self.platform.name: {
             "settings": {
                 "secure": {
-                    "test_key": value
-                }
-            }
-        }
+                    "test_key": value,
+                },
+            },
+        },
     }
 
   def _setup_runner(

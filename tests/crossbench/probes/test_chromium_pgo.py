@@ -40,7 +40,7 @@ class ChromiumPgoProbeContextAndroidTestCase(GenericProbeTestCase):
       self.assertTrue(context._trigger_pgo_dump())
     client.send_command.assert_called_once_with({
         "method": "NativeProfiling.dumpProfilingDataOfAllProcesses",
-        "id": context.PGO_CMD_ID
+        "id": context.PGO_CMD_ID,
     })
 
   def test_trigger_pgo_dump_failure(self) -> None:

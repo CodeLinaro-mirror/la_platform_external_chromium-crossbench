@@ -47,13 +47,13 @@ class TraceConfigTestCase(unittest.TestCase):
   def test_parse_dict_raw_proto(self):
     config = TraceConfig.parse({
         "buffers": [{
-            "size_kb": 1024
+            "size_kb": 1024,
         }],
         "data_sources": [{
             "config": {
-                "name": "linux.process_stats"
-            }
-        }]
+                "name": "linux.process_stats",
+            },
+        }],
     })
     self.assertIsInstance(config, TraceConfig)
     self.assertEqual(len(config.trace_config.buffers), 1)
@@ -113,7 +113,7 @@ class PerfettoProbeTestCase(unittest.TestCase):
     probe = PerfettoProbe.parse_dict({
         "enabled_categories": ["cat1"],
         "disabled_categories": ["cat2"],
-        "enabled_tags": ["cat4"]
+        "enabled_tags": ["cat4"],
     })
     merged = probe.trace_config
     self.assertIsInstance(merged, trace_config_pb2.TraceConfig)
@@ -132,7 +132,7 @@ class PerfettoProbeTestCase(unittest.TestCase):
     probe = PerfettoProbe.parse_dict({
         "trace_config": "v8",
         "tags": ["tag1"],
-        "categories": ["cat1"]
+        "categories": ["cat1"],
     })
     self.assertIsInstance(probe, PerfettoProbe)
     # v8 preset has some data sources

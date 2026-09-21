@@ -159,7 +159,7 @@ class PowerSamplerProbe(Probe):
     error_message = [
         "Could not find custom chromium power_sampler helper binary.",
         "Please build 'power_sampler manually for local builds'",
-        f"autoninja -C {maybe_build_dir} power_sampler"
+        f"autoninja -C {maybe_build_dir} power_sampler",
     ]
     return ProbeValidationError(self, "\n".join(error_message))
 

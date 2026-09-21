@@ -172,7 +172,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if python3 := self.which("python3"):
       return {
           "version": self.sh_stdout(python3, "--version").strip(),
-          "bits": int(self.sh_stdout(python3, "-c", self._PY_VERSION).strip())
+          "bits": int(self.sh_stdout(python3, "-c", self._PY_VERSION).strip()),
       }
     return {"version": "unknown", "bits": 64}
 

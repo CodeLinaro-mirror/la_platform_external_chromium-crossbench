@@ -52,8 +52,8 @@ class TestProbeListConfig(BaseConfigTestCase):
                 "prof": True,
                 "log_all": True,
                 "js_flags": js_flags,
-            }
-        }
+            },
+        },
     })
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
@@ -70,8 +70,8 @@ class TestProbeListConfig(BaseConfigTestCase):
                 "prof": True,
                 "log_all": True,
                 "js_flags": js_flags,
-            }
-        }
+            },
+        },
     }
     with file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
@@ -216,9 +216,9 @@ class TestProbeListConfig(BaseConfigTestCase):
                 "log_all": True,
             },
             "powersampler": {
-                "bin_path": str(powersampler_bin)
-            }
-        }
+                "bin_path": str(powersampler_bin),
+            },
+        },
     })
     self.assertTrue(len(config.probes), 2)
     log_probe = config.probes[0]

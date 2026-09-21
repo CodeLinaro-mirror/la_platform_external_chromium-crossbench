@@ -27,14 +27,14 @@ WARN_COLORS_LOOKUP: Final = {
     WarnLevel.FATAL: "❌",
     WarnLevel.ERROR: "❗",
     WarnLevel.WARNING: "🔶",
-    WarnLevel.INFO: "🔵"
+    WarnLevel.INFO: "🔵",
 }
 
 LOG_LEVEL_LOOKUP: Final = {
     WarnLevel.FATAL: logging.FATAL,
     WarnLevel.ERROR: logging.ERROR,
     WarnLevel.WARNING: logging.WARNING,
-    WarnLevel.INFO: logging.INFO
+    WarnLevel.INFO: logging.INFO,
 }
 
 

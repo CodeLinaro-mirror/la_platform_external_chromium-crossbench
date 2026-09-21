@@ -380,7 +380,7 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
     self.fs.create_file(
         env_file,
         contents=hjson.dumps({"env": {
-            "power_use_battery": False
+            "power_use_battery": False,
         }}),
     )
     args = self.parse_args(f"--env-config={env_file}")
@@ -420,7 +420,7 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
     self.fs.create_file(
         env_file,
         contents=hjson.dumps({"env": {
-            "power_use_battery": False
+            "power_use_battery": False,
         }}),
     )
     with self.assertRaises(argparse.ArgumentError):
@@ -446,8 +446,8 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
         contents=hjson.dumps(
             {"browsers": {
                 "chrome-stable": {
-                    "path": "chrome-stable"
-                }
+                    "path": "chrome-stable",
+                },
             }}),
     )
     args = self.parse_args(f"--browser-config={browser_config_file}")
@@ -570,7 +570,7 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
     probe_config_file = pth.LocalPath("/probes.config.hjson")
     self.fs.create_file(
         probe_config_file, contents=hjson.dumps({"probes": {
-            "js": {}
+            "js": {},
         }}))
     args = self.parse_args(f"--probe-config={probe_config_file}")
     self.assertEqual(args.probe_config, probe_config_file)
@@ -735,7 +735,7 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     ]
 
     def mock_get_browser_cls(
-        browser_config: BrowserConfig,) -> type[mock_browser.MockBrowser]:
+        browser_config: BrowserConfig) -> type[mock_browser.MockBrowser]:
       for mock_cls in mock_browsers:
         if mock_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_cls
@@ -1068,7 +1068,7 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     self.fs.create_file(
         env_file,
         contents=hjson.dumps({"env": {
-            "power_use_battery": False
+            "power_use_battery": False,
         }}),
     )
     cli, runner = self._run_loading(f"--env-config={env_file}")
@@ -1118,7 +1118,7 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     self.fs.create_file(
         env_file,
         contents=hjson.dumps({"env": {
-            "power_use_battery": False
+            "power_use_battery": False,
         }}),
     )
     with self.assertRaises((argparse.ArgumentError, SysExitTestException)):
@@ -1148,8 +1148,8 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
         contents=hjson.dumps(
             {"browsers": {
                 "chrome-stable": {
-                    "path": "chrome-stable"
-                }
+                    "path": "chrome-stable",
+                },
             }}),
     )
     cli, runner = self._run_loading(f"--browser-config={browser_config_file}")
@@ -1252,7 +1252,7 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     probe_config_file = pth.LocalPath("/probes.config.hjson")
     self.fs.create_file(
         probe_config_file, contents=hjson.dumps({"probes": {
-            "js": {}
+            "js": {},
         }}))
     cli, runner = self._run_loading(f"--probe-config={probe_config_file}")
     self.assertIsInstance(cli.args.probe_config, ProbeListConfig)
@@ -1263,7 +1263,7 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     probe_config_file = pth.LocalPath("/probes.config.hjson")
     self.fs.create_file(
         probe_config_file, contents=hjson.dumps({"probes": {
-            "js": {}
+            "js": {},
         }}))
     with self._patch_get_browser_cls():
       with self.assertRaisesRegex(
@@ -1370,7 +1370,7 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
 
   def test_extra_browser_args(self) -> None:
     cli, runner = self._run_loading(
-        "--extra-browser-args=--custom-arg1 --custom-arg2=value",)
+        "--extra-browser-args=--custom-arg1 --custom-arg2=value")
     self.assertSequenceEqual(cli.args.extra_browser_args,
                              ["--custom-arg1 --custom-arg2=value"])
     browser = runner.browsers[0]

@@ -199,7 +199,7 @@ class CheckNoBannedBuiltinsTestCase(unittest.TestCase):
     input_api = self._mock_input_api(
         {
             "foo.py": ("x = getattr(obj, 'field', None)\n"
-                       "setattr(obj, 'field', 123)\n")
+                       "setattr(obj, 'field', 123)\n"),
         },
         description=("Fix something\n\n"
                      "ALLOW_GETATTR=Need dynamic lookup\n"
@@ -218,7 +218,7 @@ class CheckNoBannedBuiltinsTestCase(unittest.TestCase):
     input_api = self._mock_input_api(
         {
             "foo.py": ("x = getattr(obj, 'field', None)\n"
-                       "setattr(obj, 'field', 123)\n")
+                       "setattr(obj, 'field', 123)\n"),
         },
         description="Fix something\n\nALLOW_GETATTR=Dynamic lookup",
     )

@@ -609,8 +609,11 @@ class Adb:
     else:
       binary = [str(self._bundletool)]
     cmd = [
-        *binary, "install-apks", f"--apks={apks}", f"--adb={self._adb_bin}",
-        f"--device-id={self._serial_id}"
+        *binary,
+        "install-apks",
+        f"--apks={apks}",
+        f"--adb={self._adb_bin}",
+        f"--device-id={self._serial_id}",
     ]
     if allow_downgrade:
       cmd.append("--allow-downgrade")
@@ -850,9 +853,10 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   def key(self) -> tuple[Any, ...]:
     return ("android", self.serial_id)
 
-  def _uiautomator_device(self,
-                          root_device: bool = True
-                         ) -> android_device.AndroidDevice:
+  def _uiautomator_device(
+      self,
+      root_device: bool = True,
+  ) -> android_device.AndroidDevice:
     if self._uiautomator_device_instance is not None:
       # We are reusing the device except if it's not rooted and root is
       # required.
@@ -875,7 +879,7 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   @contextlib.contextmanager
   def uiautomator_device(
       self,
-      root_device: bool = True
+      root_device: bool = True,
   ) -> Generator[android_device.AndroidDevice, Any, None]:
     # uiautomator requires adb in PATH
     adb_dir = os.path.dirname(self.adb.adb_bin)  # noqa: PTH120
@@ -1150,7 +1154,9 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
 
   @override
   def process_meminfo(
-      self, process_name: str, timeout: dt.timedelta = dt.timedelta(seconds=10)
+      self,
+      process_name: str,
+      timeout: dt.timedelta = dt.timedelta(seconds=10),
   ) -> list[ProcessMeminfo]:
     timeout_ms = int(timeout / dt.timedelta(milliseconds=1))
     meminfo_output: bytes = self.adb.dumpsys_bytes("-T", str(timeout_ms),
@@ -1281,7 +1287,7 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
             "device_config": reader.device_config(),
             "getprop": reader.getprop(),
             "settings": reader.settings(),
-        }
+        },
     }
 
   @functools.lru_cache(maxsize=1)

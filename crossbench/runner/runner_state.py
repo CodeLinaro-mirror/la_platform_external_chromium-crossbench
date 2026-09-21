@@ -124,7 +124,7 @@ class RunnerStateMachine(StateMachine[RunnerState]):
             "current": sorted(self._active_runs),
             "success": self._success_count,
             "failed": self._failed_count,
-        }
+        },
     }
     with self._status_file.open("w") as f:
       json.dump(status_data, f, indent=2)

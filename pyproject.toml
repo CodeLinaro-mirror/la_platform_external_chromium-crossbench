@@ -107,6 +107,9 @@ extend-select = [
     "S",    # flake8-bandit security checks
     "T10",  # flake8-debugger
     "C4",   # flake8-comprehensions
+    "COM812", # flake8-commas: missing-trailing-comma
+    "COM818", # flake8-commas: trailing-comma-on-bare-tuple
+    "COM819", # flake8-commas: prohibited-trailing-comma
     "BLE",  # flake8-blind-except
     "FA",   # flake8-future-annotations
     "ISC",  # flake8-implicit-str-concat

@@ -122,7 +122,7 @@ class WprReplayNetworkTestCase(BaseCrossbenchTestCase):
     config = NetworkConfig.parse({
         "type": "wpr",
         "path": str(self.archive_path),
-        "expected_md5_hash": valid_hash_str
+        "expected_md5_hash": valid_hash_str,
     })
     self.assertEqual(config.expected_md5_hash, valid_hash_bytes)
     network = config.create_network(self.platform)
@@ -137,9 +137,9 @@ class WprReplayNetworkTestCase(BaseCrossbenchTestCase):
   @mock.patch("crossbench.plt.base.gcloud_storage.Client")
   def test_get_gcs_blob_generation(self, mock_client_cls):
     mock_bucket = mock_client_cls.return_value.bucket.return_value
-    self.platform.get_gcs_blob(
-        "gs://chrome-partner-loadline/power/cnn_20260513.wprgo#1778683962813986"
-    )
+    blob_url = ("gs://chrome-partner-loadline/power/cnn_20260513.wprgo"
+                "#1778683962813986")
+    self.platform.get_gcs_blob(blob_url)
     mock_bucket.blob.assert_called_once_with(
         "power/cnn_20260513.wprgo", generation=1778683962813986)
 

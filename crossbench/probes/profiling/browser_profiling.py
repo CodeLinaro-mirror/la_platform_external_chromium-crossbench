@@ -57,7 +57,8 @@ class MozProfilerStartupFeatures(StrEnumWithHelp):
                    "Have the JavaScript engine track allocations")
   NOSTACKSAMPLING = (
       "nostacksampling",
-      "Disable all stack sampling: Cancels 'js', 'leaf', 'stackwalk' and labels"
+      "Disable all stack sampling: Cancels 'js', 'leaf', 'stackwalk' and "
+      "labels",
   )
   PREFERENCEREADS = ("preferencereads", "Track when preferences are read")
   NATIVEALLOCATIONS = (
@@ -178,8 +179,10 @@ class BrowserProfilingProbeContext(
     pass
 
 
-class ChromiumWebDriverBrowserProfilingProbeContext(BrowserProfilingProbeContext
-                                                   ):
+_BaseContext = BrowserProfilingProbeContext
+
+
+class ChromiumWebDriverBrowserProfilingProbeContext(_BaseContext):
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:

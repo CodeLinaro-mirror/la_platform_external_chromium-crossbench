@@ -79,7 +79,7 @@ class JetStream2BaseTestCase(
         "FirstIteration": 1,
         "Average": 0.1,
         "Worst4": 1.1,
-        "Score": 1
+        "Score": 1,
     }
     # The order should match Runner.get_runs
     for _ in range(repetitions):
@@ -125,7 +125,7 @@ class JetStream2BaseTestCase(
             "dev": "102.22.33.44",
             "stable": "100.22.33.44",
             # One padding element
-            "": ""
+            "": "",
         })
 
     with self.assertLogs(level="INFO") as cm:

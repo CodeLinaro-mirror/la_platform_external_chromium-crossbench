@@ -100,7 +100,7 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
 
     meminfo_json: dict[str, Any] = {
         "info_stack": list(info_stack),
-        "processes": []
+        "processes": [],
     }
 
     if title is not None:

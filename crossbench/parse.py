@@ -209,7 +209,7 @@ class ObjectParser:
       cls,
       value: Any,
       name: str = "tuple",
-      error_cls: type[Exception] = argparse.ArgumentTypeError
+      error_cls: type[Exception] = argparse.ArgumentTypeError,
   ) -> tuple[str, ...]:
     return tuple(cls.str_list(value, name, error_cls))
 
@@ -450,7 +450,7 @@ class ObjectParser:
       return proto_instance
     except text_format.ParseError as decode_e:
       raise argparse.ArgumentTypeError(
-          f"Failed to parse {type(proto_instance).__name__}: {decode_e}"
+          f"Failed to parse {type(proto_instance).__name__}: {decode_e}",
       ) from decode_e
 
   @classmethod
@@ -462,7 +462,7 @@ class ObjectParser:
       return proto_instance
     except google.protobuf.message.DecodeError as decode_e:
       raise argparse.ArgumentTypeError(
-          f"Failed to parse {type(proto_instance).__name__}: {decode_e}"
+          f"Failed to parse {type(proto_instance).__name__}: {decode_e}",
       ) from decode_e
 
   @classmethod

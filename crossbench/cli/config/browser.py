@@ -396,7 +396,8 @@ class BrowserConfig(ConfigObject):
 
   @classmethod
   def _parse_inline_short_form(
-      cls, value: str
+      cls,
+      value: str,
   ) -> tuple[DriverConfig, pth.AnyPathLike, NetworkConfig | None, EnvConfig
              | None]:
     assert ":" in value, f"Invalid short config {value!r} for {cls}"

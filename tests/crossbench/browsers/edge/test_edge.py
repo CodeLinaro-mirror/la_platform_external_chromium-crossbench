@@ -33,7 +33,8 @@ class EdgeWebdriverTestCase(BaseCrossbenchTestCase):
           settings=Settings(
               js_flags=[],
               flags=[
-                  "--disable-field-trial-config", "--enable-field-trial-config"
+                  "--disable-field-trial-config",
+                  "--enable-field-trial-config",
               ],
               platform=self.platform))
     msg = str(cm.exception)

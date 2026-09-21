@@ -20,19 +20,19 @@ class VramProbeTestCase(BaseProbeTestCase):
   def test_vram_probe(self):
     mock_returns = [
         {
-            "gpu_0": 100.0
+            "gpu_0": 100.0,
         },
         {
-            "gpu_0": 150.0
+            "gpu_0": 150.0,
         },
         {
-            "gpu_0": 200.0
+            "gpu_0": 200.0,
         },
         {
-            "gpu_0": 120.0
+            "gpu_0": 120.0,
         },
     ] + [{
-        "gpu_0": 120.0
+        "gpu_0": 120.0,
     }] * 10
 
     self.platform.gpu_vram_used = mock.Mock(side_effect=mock_returns)
@@ -75,19 +75,19 @@ class VramProbeTestCase(BaseProbeTestCase):
     mock_returns = [
         {
             "gpu_0": 100.0,
-            "gpu_1": 200.0
+            "gpu_1": 200.0,
         },
         {
             "gpu_0": 150.0,
-            "gpu_1": 250.0
+            "gpu_1": 250.0,
         },
         {
             "gpu_0": 300.0,
-            "gpu_1": 220.0
+            "gpu_1": 220.0,
         },
     ] + [{
         "gpu_0": 100.0,
-        "gpu_1": 200.0
+        "gpu_1": 200.0,
     }] * 10
 
     self.platform.gpu_vram_used = mock.Mock(side_effect=mock_returns)

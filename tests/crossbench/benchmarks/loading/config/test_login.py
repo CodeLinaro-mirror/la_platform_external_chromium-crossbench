@@ -27,18 +27,18 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
       "secrets": {
           "google": {
               "username": "test",
-              "password": "s3cr3t"
-          }
+              "password": "s3cr3t",
+          },
       },
       "pages": {
           "Google Story": {
               "login": "google",
               "actions": [{
                   "action": "get",
-                  "url": "https://www.google.com"
-              },]
-          }
-      }
+                  "url": "https://www.google.com",
+              }],
+          },
+      },
   }
 
   def setUp(self) -> None:
@@ -139,9 +139,9 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
     self.browser.expect_js(result=True)
 
     # Return passkey URL
-    self.browser.expect_js(
-        result="https://accounts.google.com/v3/signin/speedbump/passkeyenrollment"
-    )
+    passkey_url = (
+        "https://accounts.google.com/v3/signin/speedbump/passkeyenrollment")
+    self.browser.expect_js(result=passkey_url)
     # Wait for skip element
     self.browser.expect_js(result=1)
     # Click skip element

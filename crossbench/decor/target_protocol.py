@@ -15,6 +15,8 @@ class DecoratorTargetProtocol(Protocol):
 
   @abc.abstractmethod
   def exception_capture(
-      self, *stack_entries: str, exceptions: TExceptionTypes = (Exception,)
+      self,
+      *stack_entries: str,
+      exceptions: TExceptionTypes = (Exception,),
   ) -> ExceptionAnnotationScope:
     pass

@@ -134,7 +134,7 @@ class LoadLine2Probe(LoadLineProbe):
   BENCHMARK_VERSION: ClassVar[str] = VERSION_STRING
 
   @override
-  def get_context_cls(self,) -> type[LoadLine2ProbeContext]:
+  def get_context_cls(self) -> type[LoadLine2ProbeContext]:
     return LoadLine2ProbeContext
 
   @override
@@ -152,8 +152,11 @@ class LoadLine2Probe(LoadLineProbe):
     df = self._load_query_result(group, "loadline2_breakdown")
     df["os"] = df[["network", "process_launch"]].max(axis=1)
     df = df.groupby(["cb_browser", "page"])[[
-        "os", "renderer_visual", "renderer_interactive", "gpu_visual",
-        "gpu_interactive"
+        "os",
+        "renderer_visual",
+        "renderer_interactive",
+        "gpu_visual",
+        "gpu_interactive",
     ]].mean()
     df.index.names = ["browser", "story"]
     return df

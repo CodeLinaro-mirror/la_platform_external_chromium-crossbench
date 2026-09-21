@@ -133,7 +133,7 @@ class Actions(TimeScope):
       delay: AnyTimeUnit = 0,
       absolute_time: bool = False,
       arguments: Sequence[object] = (),
-      success_condition: Callable[[Any], bool] = _default_success_condition
+      success_condition: Callable[[Any], bool] = _default_success_condition,
   ) -> None:
     """
     Runs the `js_code` at a regular interval until either the `timeout` is
@@ -197,7 +197,7 @@ class Actions(TimeScope):
       url: str,
       target: WindowTarget = WindowTarget.SELF,
       ready_state: ReadyState = ReadyState.ANY,
-      timeout: dt.timedelta = dt.timedelta()
+      timeout: dt.timedelta = dt.timedelta(),
   ) -> None:
     self._assert_is_active()
     if target in (WindowTarget.BLANK, WindowTarget.PARENT, WindowTarget.TOP):

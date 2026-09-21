@@ -77,7 +77,7 @@ class SettingsTestCase(unittest.TestCase):
     flags = ChromeFlags({
         "--one": "1",
         "--two": "2",
-        "--js-flags": "--js-one=js-1"
+        "--js-flags": "--js-one=js-1",
     }).freeze()
     settings = Settings(flags)
     self.assertEqual(settings.flags, flags)

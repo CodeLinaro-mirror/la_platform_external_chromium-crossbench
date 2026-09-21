@@ -410,7 +410,9 @@ class ChromeOSInputActionRunner(ActionRunner):
           typing_process.wait(timeout=action.timeout.total_seconds())
 
   def _get_click_location(
-      self, actions: Actions, action: i_action.ClickAction
+      self,
+      actions: Actions,
+      action: i_action.ClickAction,
   ) -> tuple[Point | None, ChromeOSViewportInfo]:
     if selector_config := action.position.selector:
       if selector_config.wait:

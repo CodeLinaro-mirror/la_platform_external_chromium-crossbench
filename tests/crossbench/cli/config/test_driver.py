@@ -85,8 +85,8 @@ class DriverConfigTestCase(BaseConfigTestCase):
         "type": "adb",
         "device_id": "1234",
         "settings": {
-            "device_id": "ABCD"
-        }
+            "device_id": "ABCD",
+        },
     }
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       DriverConfig.parse(config_dict)
@@ -100,8 +100,8 @@ class DriverConfigTestCase(BaseConfigTestCase):
             "host": "chromeos6-row17-rack14-host7",
             "port": "9515",
             "ssh_port": "22",
-            "ssh_user": "root"
-        }
+            "ssh_user": "root",
+        },
     }
     ssh_user = config_dict["settings"]["ssh_user"]
     ssh_host = config_dict["settings"]["host"]
@@ -168,7 +168,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
     config_dict = {
         "type": "adb",
         "device_id": "0a388e93",
-        "adb_bin": str(adb_bin)
+        "adb_bin": str(adb_bin),
     }
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = DriverConfig.parse(hjson.dumps(config_dict))
@@ -242,7 +242,7 @@ class DriverConfigTestCase(BaseConfigTestCase):
         "type": "adb",
         "device_id": "0a388e93",
         "adb_bin": str(adb_bin),
-        "bundletool": str(bundletool)
+        "bundletool": str(bundletool),
     }
     self.fs.create_file(adb_bin, st_size=100)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:

@@ -430,7 +430,7 @@ class ChromeOSInputActionRunnerTestCase(ActionRunnerTestCase):
       self,
       start_coordinates: Point,
       end_coordinates: Point | None = None,
-      duration: dt.timedelta = dt.timedelta()
+      duration: dt.timedelta = dt.timedelta(),
   ) -> None:
 
     expected_event: ChromeOSTouchEvent = ChromeOSTouchEvent(

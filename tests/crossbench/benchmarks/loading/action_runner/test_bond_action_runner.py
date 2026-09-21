@@ -167,7 +167,7 @@ class BondActionRunnerTestCase(BaseCrossbenchTestCase):
     action = MeetScriptAction.parse_dict({
         "action": "meet_script",
         "script": "test script",
-        "timeout": 17
+        "timeout": 17,
     })
 
     mock_bond_client = mock_bond_client_cls.return_value

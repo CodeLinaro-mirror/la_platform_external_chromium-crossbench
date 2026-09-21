@@ -40,7 +40,7 @@ class SetupCommandsConfigTestCase(CrossbenchFakeFsTestCase):
         "setup_commands": {
             "echo hello": ["echo", "hello"],
             "list files": ["ls", "-l"],
-        }
+        },
     }
     config = SetupCommandsConfig.parse(config_data)
     self.assert_example_commands(config.commands)
@@ -74,8 +74,8 @@ class SetupCommandsConfigTestCase(CrossbenchFakeFsTestCase):
     for invalid_command in invalid_commands:
       config_dict: dict[str, Any] = {
           "setup_commands": {
-              "name": invalid_command
-          }
+              "name": invalid_command,
+          },
       }
       with self.subTest(invalid_command=invalid_command):
         with self.assertRaises(argparse.ArgumentTypeError):

@@ -68,7 +68,10 @@ def post(url: str,
   return retry_timeout_request(
       url, timeout, retry, verbose, "POST",
       lambda request_timeout_seconds: requests.post(
-          url, headers=headers, json=body_json, timeout=request_timeout_seconds
+          url,
+          headers=headers,
+          json=body_json,
+          timeout=request_timeout_seconds,
       ))
 
 

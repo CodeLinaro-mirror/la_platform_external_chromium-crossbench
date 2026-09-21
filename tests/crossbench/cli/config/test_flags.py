@@ -72,8 +72,8 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
         },
         "b": {
             "--foo": "2",
-            "--bar": None
-        }
+            "--bar": None,
+        },
     })
     self.assertEqual(len(config), 2)
     self.assertEqual(len(config["a"]), 1)
@@ -113,7 +113,7 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
         "a": {
             "label_a_1": "--foo=1 --bar=1",
             "label_a_2": "--foo=1 --bar=2",
-        }
+        },
     })
     self.assertEqual(len(config), 1)
     self.assertEqual(len(config["a"]), 2)
@@ -131,7 +131,7 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
         "a": {
             "label_a_1": ["--foo=1", "--bar=1"],
             "label_a_2": ["--foo=1", "--bar=2"],
-        }
+        },
     })
     self.assertEqual(len(config), 1)
     self.assertEqual(len(config["a"]), 2)
@@ -148,13 +148,13 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
         "a": {
             "label_a_1": {
                 "--foo": "1",
-                "--bar": "1"
+                "--bar": "1",
             },
             "label_a_2": {
                 "--bar": "2",
                 "--foo": "1",
-            }
-        }
+            },
+        },
     })
     self.assertEqual(len(config), 1)
     self.assertEqual(len(config["a"]), 2)

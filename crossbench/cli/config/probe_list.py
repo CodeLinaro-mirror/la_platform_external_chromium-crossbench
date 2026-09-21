@@ -31,7 +31,7 @@ class ProbeListConfig(ConfigObject):
   def from_probes(
       cls,
       probe_configs: Iterable[ProbeConfig] = (),
-      probes: Iterable[Probe] = ()
+      probes: Iterable[Probe] = (),
   ) -> Self:
     accumulator: dict[str, Probe] = {}
     for probe_config in probe_configs:

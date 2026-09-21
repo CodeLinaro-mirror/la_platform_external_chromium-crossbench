@@ -29,7 +29,7 @@ class CombinedPage(Page):
       name: str = "combined",
       playback: PlaybackController = PlaybackController.default(),
       tabs: TabController = TabController.default(),
-      about_blank_duration: dt.timedelta = dt.timedelta()
+      about_blank_duration: dt.timedelta = dt.timedelta(),
   ) -> None:
     self._pages = tuple(pages)
     assert self._pages, "No sub-pages provided for CombinedPage"

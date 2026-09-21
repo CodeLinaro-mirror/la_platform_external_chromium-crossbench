@@ -269,7 +269,7 @@ class TagsFilterTestCase(unittest.TestCase):
     story_tags = {
         "story1": ["tag1"],
         "story2": ["tag2"],
-        "story3": ["tag1", "tag3"]
+        "story3": ["tag1", "tag3"],
     }
     tags_filter = TagsFilter(story_tags, ["story1"])
     selected = tags_filter.process_all(["tag1"])
@@ -279,7 +279,7 @@ class TagsFilterTestCase(unittest.TestCase):
     story_tags = {
         "story1": ["tag1"],
         "story2": ["tag2"],
-        "story3": ["tag1", "tag3"]
+        "story3": ["tag1", "tag3"],
     }
     tags_filter = TagsFilter(story_tags, ["story1"])
     selected = tags_filter.process_all(["-tag1"])
@@ -289,7 +289,7 @@ class TagsFilterTestCase(unittest.TestCase):
     story_tags = {
         "story1": ["tag1"],
         "story2": ["tag2"],
-        "story3": ["tag1", "tag3"]
+        "story3": ["tag1", "tag3"],
     }
     tags_filter = TagsFilter(story_tags, ["story1"])
     selected = tags_filter.process_all(["tag1", "-tag3"])

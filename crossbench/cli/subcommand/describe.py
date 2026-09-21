@@ -403,7 +403,7 @@ class DescribeSubcommand(CrossbenchSubcommand):
   def _config_parser_help_data(
       self,
       config_parsers: list[ConfigParser],
-      usage_lookup: Mapping[str, list[str]] | None = None
+      usage_lookup: Mapping[str, list[str]] | None = None,
   ) -> dict[str, dict[str, Any]]:
     config_data: dict[str, dict[str, Any]] = {}
     for config_parser in config_parsers:

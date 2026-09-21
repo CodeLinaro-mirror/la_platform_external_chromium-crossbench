@@ -203,7 +203,9 @@ class LinuxPlatform(PosixPlatform):
 
   @override
   def process_meminfo(
-      self, process_name: str, timeout: dt.timedelta = dt.timedelta(seconds=10)
+      self,
+      process_name: str,
+      timeout: dt.timedelta = dt.timedelta(seconds=10),
   ) -> list[ProcessMeminfo]:
     del timeout
 
@@ -223,7 +225,9 @@ class LinuxPlatform(PosixPlatform):
       meminfos: list[ProcessMeminfo] = []
       for i in range(0, len(processes), 2):
         pid = int(processes[i])
-        [cmdline, smaps_rollup
+        [
+            cmdline,
+            smaps_rollup,
         ] = self._MEMINFO_SCRIPT_SMAPS_HEADER_PATTERN.split(processes[i + 1])
         match = self._SMAPS_ROLLUP_PATTERN.search(smaps_rollup)
         assert match

@@ -102,8 +102,11 @@ class CliSlowTestCase(BaseCliTestCase):
     with self._patch_get_browser_cls(browser_cls) as get_browser_cls:
       url = "http://test.com"
       cli.run([
-          "loading", f"--browser={identifier}", f"--urls={url}",
-          "--env-validation=skip", f"--out-dir={out_dir}"
+          "loading",
+          f"--browser={identifier}",
+          f"--urls={url}",
+          "--env-validation=skip",
+          f"--out-dir={out_dir}",
       ])
       self.assertTrue(out_dir.exists())
       get_browser_cls.assert_called_once()
@@ -176,31 +179,50 @@ class CliSlowTestCase(BaseCliTestCase):
             argparse.ArgumentTypeError), self._patch_get_browser_cls(
                 side_effect=mock_get_browser_cls):
           cli.run([
-              "loading", "--urls=http://test.com", "--env-validation=skip",
-              "--throw", "--browser=firefox", chrome_flag
+              "loading",
+              "--urls=http://test.com",
+              "--env-validation=skip",
+              "--throw",
+              "--browser=firefox",
+              chrome_flag,
           ])
         # Fail for mixed browsers and chrome flags
         with self.assertRaises(
             argparse.ArgumentTypeError), self._patch_get_browser_cls(
                 side_effect=mock_get_browser_cls):
           cli.run([
-              "loading", "--urls=http://test.com", "--env-validation=skip",
-              "--throw", "--browser=chrome", "--browser=firefox", chrome_flag
+              "loading",
+              "--urls=http://test.com",
+              "--env-validation=skip",
+              "--throw",
+              "--browser=chrome",
+              "--browser=firefox",
+              chrome_flag,
           ])
         with self.assertRaises(
             argparse.ArgumentTypeError), self._patch_get_browser_cls(
                 side_effect=mock_get_browser_cls):
           cli.run([
-              "loading", "--urls=http://test.com", "--env-validation=skip",
-              "--throw", "--browser=chrome", "--browser=firefox", "--",
-              chrome_flag
+              "loading",
+              "--urls=http://test.com",
+              "--env-validation=skip",
+              "--throw",
+              "--browser=chrome",
+              "--browser=firefox",
+              "--",
+              chrome_flag,
           ])
       # Flags for the same type are allowed.
       with self._patch_get_browser():
         cli.run([
-            "loading", "--urls=http://test.com", "--env-validation=skip",
-            "--throw", "--browser=chrome", "--browser=chrome-dev", "--",
-            "--js-flags=--no-opt"
+            "loading",
+            "--urls=http://test.com",
+            "--env-validation=skip",
+            "--throw",
+            "--browser=chrome",
+            "--browser=chrome-dev",
+            "--",
+            "--js-flags=--no-opt",
         ])
 
 

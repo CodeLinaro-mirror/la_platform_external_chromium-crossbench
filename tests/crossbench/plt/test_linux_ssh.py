@@ -89,7 +89,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
         set(self.platform.iterdir(pth.AnyWindowsPath("parent_dir\\child_dir"))),
         {
             pth.AnyPosixPath("parent_dir/child_dir/file1"),
-            pth.AnyPosixPath("parent_dir/child_dir/file2")
+            pth.AnyPosixPath("parent_dir/child_dir/file2"),
         })
 
   def test_cat_file(self):

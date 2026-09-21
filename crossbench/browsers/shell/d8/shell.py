@@ -79,7 +79,7 @@ class D8Shell:
         stdout=subprocess.PIPE,
         cwd=self._cwd,
         encoding="utf-8",
-        bufsize=1  # Line buffering
+        bufsize=1,  # Line buffering
     )
     self._state.transition(State.INITIAL, to=State.WAIT_FOR_OUTPUT)
     if stdin := self._process.stdin:

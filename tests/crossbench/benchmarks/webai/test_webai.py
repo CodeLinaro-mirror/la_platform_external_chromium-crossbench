@@ -66,8 +66,8 @@ class WebAITestCase(helper.PressBaseBenchmarkTestCase):
         "Score": 5678.9,
         "Total Time": {
             "average": 12.3,
-            "stddev": 1.1
-        }
+            "stddev": 1.1,
+        },
     }
 
     repetitions = 2

@@ -37,11 +37,11 @@ class DeviceConfigParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(
         parse_device_config(config), {
             "android": {
-                "key": "val"
+                "key": "val",
             },
             "macos": {
-                "other": "val2"
-            }
+                "other": "val2",
+            },
         })
 
   def test_parse_valid_json_file(self):
@@ -195,7 +195,7 @@ class DeviceConfigTestCase(unittest.TestCase):
     self.assert_check_raises(
         self._REQUIRED_IMMERSIVE_CONFIRMED,
         {"settings": {
-            "secure": {}
+            "secure": {},
         }},
         "settings.secure.immersive_mode_confirmations: "
         "expected 'confirmed', but value was absent",
@@ -604,7 +604,7 @@ class DeviceConfigTestCase(unittest.TestCase):
     self.assertIsNone(Benchmark.REQUIRED_DEVICE_CONFIG)
     self.assertEqual(CustomBenchmark.REQUIRED_DEVICE_CONFIG,
                      {"android": {
-                         "key": "val"
+                         "key": "val",
                      }})
     mock_story = MockStory("story_1")
     b = CustomBenchmark([mock_story])

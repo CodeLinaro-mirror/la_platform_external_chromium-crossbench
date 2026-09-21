@@ -61,7 +61,7 @@ class TestMeminfoProbe(GenericProbeTestCase):
     }])
     blocks = (ActionBlock.parse_sequence([{
         "action": "get",
-        "url": "https://google.com"
+        "url": "https://google.com",
     }, {
         "action": "meminfo",
         "title": "test",

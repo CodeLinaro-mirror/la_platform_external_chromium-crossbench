@@ -11,9 +11,13 @@ from tests import test_helper
 def test_screenshot(browser_config, test_env) -> None:
   cli = CrossBenchCLI()
   cli.run([
-      "loading", "--url=blank", f"--browser={browser_config}",
-      "--probe=screenshot:{}", "--throw", f"--out-dir={test_env.results_dir}",
-      *list(test_env.cq_flags)
+      "loading",
+      "--url=blank",
+      f"--browser={browser_config}",
+      "--probe=screenshot:{}",
+      "--throw",
+      f"--out-dir={test_env.results_dir}",
+      *list(test_env.cq_flags),
   ])
 
   screenshots = list(test_env.results_dir.rglob("*/screenshot/*.png"))

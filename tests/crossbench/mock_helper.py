@@ -352,7 +352,7 @@ class MockPlatformMixin:
       name: str,
       macos: Sequence[str] = (),
       win: Sequence[str] = (),
-      linux: Sequence[str] = ()
+      linux: Sequence[str] = (),
   ) -> pth.AnyPath:
     del macos, win, linux
     return self.path(f"/usr/bin/{name}")

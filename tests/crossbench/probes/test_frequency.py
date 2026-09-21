@@ -33,7 +33,7 @@ class FrequencyProbeTestCase(CrossbenchFakeFsTestCase):
         {"cpus": {
             "cpu10": "min",
             "cpu20": 20,
-            "cpu30": "max"
+            "cpu30": "max",
         }})
     self._create_cpu_dir("cpu10", [20, 10, 30])
     self._create_cpu_dir("cpu20", [10, 20, 30])

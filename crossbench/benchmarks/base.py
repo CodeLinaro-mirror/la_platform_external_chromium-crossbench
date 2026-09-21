@@ -125,7 +125,7 @@ class Benchmark(abc.ABC):
                     list(
                         txt_helper.wrap_lines((probe_cls.__doc__ or "").strip(),
                                               70))) for probe_cls in cls.PROBES
-        }
+        },
     }
 
   @classmethod
@@ -881,7 +881,7 @@ class PressBenchmark(SubStoryBenchmark):
       return
     msg = [
         f"Could not reach live benchmark URL: {url!r}."
-        f"Please make sure you're connected to the internet."
+        f"Please make sure you're connected to the internet.",
     ]
     local_url = first_story.URL_LOCAL
     if local_url:

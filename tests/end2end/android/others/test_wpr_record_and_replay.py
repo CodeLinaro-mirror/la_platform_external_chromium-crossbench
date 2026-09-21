@@ -26,7 +26,7 @@ def _network_replay_config(archive) -> str:
   return json.dumps({
       "type": "wpr",
       "path": str(archive),
-      "run_on_device": True
+      "run_on_device": True,
   })
 
 
@@ -35,9 +35,12 @@ def test_wpr_record_and_replay(browser_config, tmp_dir, test_env) -> None:
   result_record_dir = tmp_dir / "result_record"
   target_url = "https://www.google.com/search?q=cats"
   cli.run([
-      "loading", f"--url={target_url}", f"--browser={browser_config}",
-      "--probe=wpr:{}", f"--out-dir={result_record_dir}",
-      *list(test_env.cq_flags)
+      "loading",
+      f"--url={target_url}",
+      f"--browser={browser_config}",
+      "--probe=wpr:{}",
+      f"--out-dir={result_record_dir}",
+      *list(test_env.cq_flags),
   ])
 
   archives = list(

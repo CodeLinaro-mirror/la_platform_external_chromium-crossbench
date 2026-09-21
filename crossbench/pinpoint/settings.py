@@ -91,7 +91,9 @@ class _SettingsConfig(ConfigObject):
         "collect_metrics",
         type=bool,
         required=False,
-        help="Boolean flag indicating whether user metrics should be collected."
+        help=(
+            "Boolean flag indicating whether user metrics should be collected."
+        ),
     )
     return parser
 

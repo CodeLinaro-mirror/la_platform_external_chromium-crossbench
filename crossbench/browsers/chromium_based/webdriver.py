@@ -79,7 +79,7 @@ class ChromiumBasedWebDriver(
                        cmd_args: dict) -> Any:
     return driver.execute("executeCdpCommand", {
         "cmd": cmd,
-        "params": cmd_args
+        "params": cmd_args,
     })["value"]
 
   def perfetto_categories(self) -> TrackEventDescriptor:
@@ -164,7 +164,8 @@ class ChromiumBasedWebDriver(
     service_args: list[str] = []
     if self._settings.driver_logging:
       service_args += [
-          "--verbose", f"--log-path={os.fspath(self._setup_driver_log_file())}"
+          "--verbose",
+          f"--log-path={os.fspath(self._setup_driver_log_file())}",
       ]
 
     adb_port = os.environ.get("ANDROID_ADB_SERVER_PORT")
@@ -294,7 +295,7 @@ class ChromiumBasedWebDriver(
       url: re.Pattern | None = None,
       tab_index: int | None = None,
       relative_tab_index: int | None = None,
-      timeout: dt.timedelta = dt.timedelta(seconds=0)
+      timeout: dt.timedelta = dt.timedelta(seconds=0),
   ) -> str:
     assert not (tab_index is not None and relative_tab_index is not None)
     driver = self._private_driver
@@ -339,7 +340,7 @@ class ChromiumBasedWebDriver(
       url: re.Pattern | None = None,
       tab_index: int | None = None,
       relative_tab_index: int | None = None,
-      timeout: dt.timedelta = dt.timedelta(seconds=0)
+      timeout: dt.timedelta = dt.timedelta(seconds=0),
   ) -> None:
     driver = self._private_driver
     original_handle = driver.current_window_handle

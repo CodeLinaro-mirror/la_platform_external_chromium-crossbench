@@ -159,9 +159,13 @@ def _prepare_job_list_data(
   if all_users and "user" not in extra_columns:
     extra_columns = OrderedSet(["user", *extra_columns])
   headers = [
-      "Benchmark", "Config", "Type",
-      *[c.replace("_", " ").title() for c in extra_columns], "Start Time",
-      "Job URL", "Status"
+      "Benchmark",
+      "Config",
+      "Type",
+      *[c.replace("_", " ").title() for c in extra_columns],
+      "Start Time",
+      "Job URL",
+      "Status",
   ]
   table_data = []
 

@@ -407,7 +407,7 @@ class MemoryPage(LivePage):
           script_path=pth.LocalPath(__file__).parent / "scripts" / "alloc.js",
           replacements=Replacements.create({
               "TARGET_MB": str(blocksize),
-              "TAB_INDEX": str(tab_index)
+              "TAB_INDEX": str(tab_index),
           })),)
       block = ActionBlock(actions=actions)
       action_runner.run_block(run, block)

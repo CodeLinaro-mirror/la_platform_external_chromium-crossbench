@@ -26,7 +26,7 @@ class ListBotsTest(MockHttpRequestsMixin):
 
       mock_response = mock.Mock()
       mock_response.json.return_value = {
-          "configurations": ["bot1", "bot2", "bot3"]
+          "configurations": ["bot1", "bot2", "bot3"],
       }
       mock_response.raise_for_status.return_value = None
       return mock_response

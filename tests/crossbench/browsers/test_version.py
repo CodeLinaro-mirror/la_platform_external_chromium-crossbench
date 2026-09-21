@@ -55,15 +55,21 @@ class BrowserVersionChannelTestCase(unittest.TestCase):
 
   def test_sorting(self):
     unsorted = [
-        BrowserVersionChannel.ALPHA, BrowserVersionChannel.PRE_ALPHA,
-        BrowserVersionChannel.STABLE, BrowserVersionChannel.BETA,
-        BrowserVersionChannel.LTS, BrowserVersionChannel.ANY
+        BrowserVersionChannel.ALPHA,
+        BrowserVersionChannel.PRE_ALPHA,
+        BrowserVersionChannel.STABLE,
+        BrowserVersionChannel.BETA,
+        BrowserVersionChannel.LTS,
+        BrowserVersionChannel.ANY,
     ]
     self.assertSequenceEqual(
         sorted(unsorted), [
-            BrowserVersionChannel.LTS, BrowserVersionChannel.STABLE,
-            BrowserVersionChannel.BETA, BrowserVersionChannel.ALPHA,
-            BrowserVersionChannel.PRE_ALPHA, BrowserVersionChannel.ANY
+            BrowserVersionChannel.LTS,
+            BrowserVersionChannel.STABLE,
+            BrowserVersionChannel.BETA,
+            BrowserVersionChannel.ALPHA,
+            BrowserVersionChannel.PRE_ALPHA,
+            BrowserVersionChannel.ANY,
         ])
 
   def test_compare_invalid(self):
@@ -954,7 +960,7 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
     version: BrowserVersion = self._parse_helper(self.BETA_VERSION_STR)
     self.assertEqual(
         version,
-        self._parse_helper("Mozilla Firefox Developer Edition 116.0b4",))
+        self._parse_helper("Mozilla Firefox Developer Edition 116.0b4"))
     self.assertEqual(version,
                      self._parse_helper("Firefox Developer Edition 116.0b4"))
     # Some developer versions on mac don't have 3-part version numbers.

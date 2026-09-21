@@ -51,8 +51,9 @@ class ColoredLogFormatter(logging.Formatter):
 
   @override
   def formatException(
-      self, ei: tuple[type[BaseException], BaseException, TracebackType | None]
-      | tuple[None, ...]
+      self,
+      ei: tuple[type[BaseException], BaseException, TracebackType | None]
+      | tuple[None, ...],
   ) -> str:
     del ei
     return ""

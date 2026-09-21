@@ -84,7 +84,7 @@ class RunGroup(abc.ABC):
   def info(self) -> JsonMapping:
     return {
         "runs": len(tuple(self.runs)),
-        "failed runs": len(tuple(self.failed_runs))
+        "failed runs": len(tuple(self.failed_runs)),
     }
 
   def get_local_probe_result_path(self,

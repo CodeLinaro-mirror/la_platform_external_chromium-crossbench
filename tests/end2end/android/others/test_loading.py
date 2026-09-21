@@ -30,9 +30,11 @@ def _run_loading_test(browser_config: str,
     cli = CrossBenchCLI()
 
     args = [
-        "loading", f"--browser={browser_config}",
-        f"--page-config={page_config_file.name}", "--action-runner=android",
-        *list(test_env.cq_flags)
+        "loading",
+        f"--browser={browser_config}",
+        f"--page-config={page_config_file.name}",
+        "--action-runner=android",
+        *list(test_env.cq_flags),
     ]
 
     if probe_config_file:
@@ -96,9 +98,9 @@ def test_click(browser_config, input_source, test_env) -> None:
                       "verify": "button[id='clicked-button']",
                       "source": str(input_source),
                   },
-              ]
-          }
-      }
+              ],
+          },
+      },
   }
 
   _run_loading_test(browser_config, page_config, test_env)
@@ -144,12 +146,12 @@ def test_scroll(browser_config, test_env) -> None:
                   {
                       "action": "get",
                       "url": f"data:text/html;charset=utf-8,{test_page}",
-                      "ready_state": "complete"
+                      "ready_state": "complete",
                   },
                   {
                       "action": "wait_for_element",
                       "selector": "div[id='scrollable-area']",
-                      "timeout": "10s"
+                      "timeout": "10s",
                   },
                   {
                       "action": "scroll",
@@ -161,7 +163,7 @@ def test_scroll(browser_config, test_env) -> None:
                   {
                       "action": "wait_for_element",
                       "selector": "div[id='yes-scroll']",
-                      "timeout": "1s"
+                      "timeout": "1s",
                   },
                   {
                       "action":
@@ -169,11 +171,11 @@ def test_scroll(browser_config, test_env) -> None:
                       "condition":
                           "return !!document.getElementById('yes-scroll')",
                       "timeout":
-                          "1s"
+                          "1s",
                   },
-              ]
-          }
-      }
+              ],
+          },
+      },
   }
 
   _run_loading_test(browser_config, page_config, test_env)
@@ -204,26 +206,26 @@ def test_download(browser_config, test_env):
               "actions": [{
                   "action": "get",
                   "url": f"data:text/html;charset=utf-8,{test_page}",
-                  "ready_state": "complete"
+                  "ready_state": "complete",
               }, {
                   "action": "click",
                   "position": "#download",
               }, {
                   "action": "wait_for_download",
                   "timeout": "10s",
-                  "pattern": "car.txt"
-              }]
-          }
-      }
+                  "pattern": "car.txt",
+              }],
+          },
+      },
   }
 
   probe_config = {
       "probes": {
           "downloads": {
               "clear_downloads": True,
-              "save_downloads": True
-          }
-      }
+              "save_downloads": True,
+          },
+      },
   }
 
   _run_loading_test_with_probes(browser_config, page_config, test_env,
@@ -236,8 +238,8 @@ def _webview_shell_config(device_id, adb_path) -> str:
       "driver": {
           "type": "adb",
           "device_id": device_id,
-          "adb_bin": adb_path
-      }
+          "adb_bin": adb_path,
+      },
   })
 
 
@@ -264,10 +266,10 @@ def test_webview(device_id, adb_path, test_env) -> None:
               "actions": [{
                   "action": "get",
                   "url": f"data:text/html;charset=utf-8,{test_page}",
-                  "ready_state": "complete"
-              },]
-          }
-      }
+                  "ready_state": "complete",
+              }],
+          },
+      },
   }
 
   _run_loading_test(browser_config, page_config, test_env)

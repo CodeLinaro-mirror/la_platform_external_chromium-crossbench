@@ -44,8 +44,8 @@ class ConfigParserTestCase(unittest.TestCase):
     config = CustomConfigObjectWithReplacements.parse({
         "name": "crossbench",
         "replacements": {
-            "cross": "chrome"
-        }
+            "cross": "chrome",
+        },
     })
     self.assertIsInstance(config, CustomConfigObjectWithReplacements)
     self.assertEqual(config.name, "chromebench")
@@ -55,8 +55,8 @@ class ConfigParserTestCase(unittest.TestCase):
         "name": "crossbench",
         "replacements": {
             "cross": "chrome",
-            "chrome": "android"
-        }
+            "chrome": "android",
+        },
     })
     self.assertIsInstance(config, CustomConfigObjectWithReplacements)
     self.assertEqual(config.name, "androidbench")
@@ -66,7 +66,7 @@ class ConfigParserTestCase(unittest.TestCase):
         "name": "crossbench",
         "replacements": {
             "cross": 1,
-        }
+        },
     })
     self.assertIsInstance(config, CustomConfigObjectWithReplacements)
     self.assertEqual(config.name, "1bench")
@@ -77,7 +77,7 @@ class ConfigParserTestCase(unittest.TestCase):
           "name": "crossbench",
           "replacements": {
               1: 1,
-          }
+          },
       })
 
 

@@ -46,7 +46,7 @@ class ListStoriesTest(MockHttpRequestsMixin):
         CHROMEPERF_DESCRIBE_API_URL,
         params={
             "test_suite": "benchmark1",
-            "master": "ChromiumPerf"
+            "master": "ChromiumPerf",
         })
 
   def test_fetch_stories_no_stories(self):

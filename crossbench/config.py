@@ -1099,7 +1099,7 @@ class ConfigParser(Generic[ConfigResultObjectT]):
       key: str | None = None,
       title: str | None = None,
       default: ConfigResultObjectT | None = None,
-      unused_properties_mode: UnusedPropertiesMode = UnusedPropertiesMode.WARN
+      unused_properties_mode: UnusedPropertiesMode = UnusedPropertiesMode.WARN,
   ) -> None:
     self._cls: Final[type[ConfigResultObjectT]] = cls
     if key is None:

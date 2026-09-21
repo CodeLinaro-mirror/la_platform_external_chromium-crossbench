@@ -219,7 +219,7 @@ class ConfigObjectMetaTest(unittest.TestCase):
       return [
           f"{class_name}: Missing @dataclasses.dataclass(frozen=True) "
           "decorator. All concrete ConfigObject implementations in "
-          "Crossbench MUST be declared as frozen dataclasses."
+          "Crossbench MUST be declared as frozen dataclasses.",
       ]
     return []
 
@@ -229,7 +229,7 @@ class ConfigObjectMetaTest(unittest.TestCase):
       return [
           f"{class_name}: Declared with frozen=False. Concrete ConfigObject "
           "schemas MUST enforce strict, post-instantiation immutability ("
-          "@dataclasses.dataclass(frozen=True))."
+          "@dataclasses.dataclass(frozen=True)).",
       ]
     return []
 

@@ -20,5 +20,5 @@ class LoginType(ConfigEnum):
 
 
 LOGIN_LOOKUP: dict[LoginType, type[BaseLoginBlock]] = {
-    LoginType.GOOGLE: GoogleLogin
+    LoginType.GOOGLE: GoogleLogin,
 }

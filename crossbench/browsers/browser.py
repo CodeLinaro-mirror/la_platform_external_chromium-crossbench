@@ -335,7 +335,7 @@ class Browser(abc.ABC):
         "path": os.fspath(self.path),
         "clear_cache_dir": self.clear_cache_dir,
         "major_version": self.version.major,
-        "log": {}
+        "log": {},
     }
 
   def validate(self) -> None:
@@ -493,7 +493,7 @@ class Browser(abc.ABC):
       url: re.Pattern | None = None,
       tab_index: int | None = None,
       relative_tab_index: int | None = None,
-      timeout: dt.timedelta = dt.timedelta(seconds=0)
+      timeout: dt.timedelta = dt.timedelta(seconds=0),
   ) -> str:
     del title
     del url
@@ -508,7 +508,7 @@ class Browser(abc.ABC):
       url: re.Pattern | None = None,
       tab_index: int | None = None,
       relative_tab_index: int | None = None,
-      timeout: dt.timedelta = dt.timedelta(seconds=0)
+      timeout: dt.timedelta = dt.timedelta(seconds=0),
   ) -> None:
     del title
     del url

@@ -33,7 +33,7 @@ class GoogleWorkspaceProbeTestCase(CrossbenchFakeFsTestCase):
     mock_copy = mock.MagicMock()
     mock_copy.execute.return_value = {
         "id": "new_file_id",
-        "webViewLink": "https://docs.google.com/document/d/new_file_id/edit"
+        "webViewLink": "https://docs.google.com/document/d/new_file_id/edit",
     }
     mock_files.copy.return_value = mock_copy
 
@@ -65,8 +65,8 @@ class GoogleWorkspaceProbeTestCase(CrossbenchFakeFsTestCase):
             "appProperties": {
                 "crossbench_test": "true",
                 "template_id": "magic_template",
-                "ttl": mock.ANY
-            }
+                "ttl": mock.ANY,
+            },
         },
         supportsAllDrives=True,
         fields="id, webViewLink")

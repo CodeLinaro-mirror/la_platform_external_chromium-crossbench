@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 _MACOS_NAME_LOOKUP: Final[Mapping[int, str]] = {
     14: "mac-sonoma-x86_64%20arm64-release",
-    15: "mac-sequoia-x86_64%20arm64-release"
+    15: "mac-sequoia-x86_64%20arm64-release",
 }
 
 

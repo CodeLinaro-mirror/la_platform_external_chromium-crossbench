@@ -77,7 +77,7 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
         KeyEvent("ShiftLeft", is_down=True),
         KeyEvent("KeyA", is_down=True),
         KeyEvent("KeyA", is_down=False),
-        KeyEvent("ShiftLeft", is_down=False)
+        KeyEvent("ShiftLeft", is_down=False),
     ])
 
   def test_text_input_text_with_duration(self):

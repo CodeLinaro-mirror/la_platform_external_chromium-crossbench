@@ -237,7 +237,7 @@ class IOSPlatform(RemotePlatformMixin, Platform):
         "system": "ios",
         "platform": f"ios {self.version_str}",
         "version": self.version_str,
-        "release": self.version_str
+        "release": self.version_str,
     }
 
   @functools.lru_cache(maxsize=1)

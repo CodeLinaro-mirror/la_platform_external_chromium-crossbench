@@ -63,9 +63,9 @@ class ListJobsTest(MockHttpRequestsMixin):
         "created": "2024-01-01T00:00:00Z",
         "status": "completed",
         "arguments": {
-            "benchmark": "speedometer"
+            "benchmark": "speedometer",
         },
-        "comparison_mode": "performance"
+        "comparison_mode": "performance",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
@@ -84,9 +84,9 @@ class ListJobsTest(MockHttpRequestsMixin):
         "created": "2024-01-01T00:00:00Z",
         "status": "completed",
         "arguments": {
-            "benchmark": "speedometer"
+            "benchmark": "speedometer",
         },
-        "comparison_mode": "performance"
+        "comparison_mode": "performance",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
@@ -106,9 +106,9 @@ class ListJobsTest(MockHttpRequestsMixin):
         "created": "2024-01-01T00:00:00Z",
         "status": "completed",
         "arguments": {
-            "benchmark": "speedometer"
+            "benchmark": "speedometer",
         },
-        "comparison_mode": "performance"
+        "comparison_mode": "performance",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
@@ -127,24 +127,24 @@ class ListJobsTest(MockHttpRequestsMixin):
     page1 = {
         "jobs": [{
             "job_id": "1",
-            "created": "2024-01-01T00:00:00Z"
+            "created": "2024-01-01T00:00:00Z",
         }],
         "next_cursor": "cursor1",
-        "next": True
+        "next": True,
     }
     # Second page
     page2 = {
         "jobs": [{
             "job_id": "2",
-            "created": "2024-01-02T00:00:00Z"
+            "created": "2024-01-02T00:00:00Z",
         }],
         "next_cursor": None,
-        "next": False
+        "next": False,
     }
 
     self.mock_get.side_effect = [
         mock.Mock(json=lambda: page1),
-        mock.Mock(json=lambda: page2)
+        mock.Mock(json=lambda: page2),
     ]
 
     list_jobs("user@example.com", 10, None, ListFormatEnum.JSON)
@@ -160,7 +160,7 @@ class ListJobsTest(MockHttpRequestsMixin):
     job_data = {
         "job_id": "123",
         "user": "other@example.com",
-        "created": "2024-01-01T00:00:00Z"
+        "created": "2024-01-01T00:00:00Z",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
@@ -181,9 +181,9 @@ class ListJobsTest(MockHttpRequestsMixin):
         "created": "2024-01-01",
         "status": "queued",
         "arguments": {
-            "benchmark": "b"
+            "benchmark": "b",
         },
-        "comparison_mode": "try"
+        "comparison_mode": "try",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
@@ -216,7 +216,7 @@ class ListJobsTest(MockHttpRequestsMixin):
             "initial_attempt_count": "10",
         },
         "bug_id": "123456",
-        "comparison_mode": "performance"
+        "comparison_mode": "performance",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 

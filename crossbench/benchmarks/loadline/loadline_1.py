@@ -57,9 +57,10 @@ def process_scores(df: pd.DataFrame) -> pd.DataFrame:
 
 def process_breakdown(df: pd.DataFrame) -> pd.DataFrame:
   df["os"] = df[["network", "process_launch"]].max(axis=1)
-  df = df.groupby(["cb_browser", "cb_story"
-                  ])[["os", "renderer", "compositor", "gpu",
-                      "surfaceflinger"]].mean()
+  df = df.groupby([
+      "cb_browser",
+      "cb_story",
+  ])[["os", "renderer", "compositor", "gpu", "surfaceflinger"]].mean()
   df.index.names = ["browser", "story"]
   return df
 
@@ -74,7 +75,7 @@ class LoadLine1Probe(LoadLineProbe):
     self._warnings.append(_DEPRECATION_MESSAGE)
 
   @override
-  def get_context_cls(self,) -> type[LoadLine1ProbeContext]:
+  def get_context_cls(self) -> type[LoadLine1ProbeContext]:
     return LoadLine1ProbeContext
 
   @override

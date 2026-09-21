@@ -79,7 +79,7 @@ class RunTestCase(BaseRunGroupTestCase):
     with mock.patch.dict("crossbench.runner.probe_context_manager.PROBE_LOOKUP",
                          {
                              "probe_attached": MockProbe1,
-                             "probe_unattached": MockProbe2
+                             "probe_unattached": MockProbe2,
                          }):
       self._assert_has_probe_context(
           attached_probe=MockProbe1(),

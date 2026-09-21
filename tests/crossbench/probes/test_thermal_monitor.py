@@ -70,7 +70,7 @@ class TestThermalMonitorProbe(BaseRunnerTestCase):
         self.platform, adb=MockAdb(self.platform))
     runner = self.default_runner(browsers=[
         MockChromeAndroidStable(
-            "adb:chrome", settings=Settings(platform=adb_platform))
+            "adb:chrome", settings=Settings(platform=adb_platform)),
     ])
 
     adb_platform.expect_sh(

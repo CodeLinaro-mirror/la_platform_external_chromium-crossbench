@@ -254,7 +254,7 @@ class SpeedometerBaseTestCase(
             "dev": "102.22.33.44",
             "stable": "100.22.33.44",
             # Padding element after "label":
-            "": ""
+            "": "",
         })
     return rows
 

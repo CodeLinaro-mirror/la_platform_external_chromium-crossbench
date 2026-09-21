@@ -66,7 +66,7 @@ class PinpointBaseSubcommand(abc.ABC):
       [
           f.result() for f in [
               executor.submit(self.subcommand_run, args),
-              executor.submit(collect_metrics, args.action)
+              executor.submit(collect_metrics, args.action),
           ]
       ]
 
@@ -105,8 +105,11 @@ class PinpointListSubcommand(PinpointBaseSubcommand):
         "--format",
         "-f",
         choices=[
-            ListFormatEnum.TABLE, ListFormatEnum.JSON, ListFormatEnum.YAML,
-            ListFormatEnum.CSV, ListFormatEnum.TSV
+            ListFormatEnum.TABLE,
+            ListFormatEnum.JSON,
+            ListFormatEnum.YAML,
+            ListFormatEnum.CSV,
+            ListFormatEnum.TSV,
         ],
         default=ListFormatEnum.TABLE,
         help="The output format for the list of jobs. (default: table)")
@@ -325,7 +328,8 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         "--disable-features",
         help="Chrome features to disable for both base and experiment "
         "commits. Can be overridden by --base-disable-features or "
-        "--exp-disable-features.\nExample: --disable-features=Feature1,Feature2"
+        "--exp-disable-features.\n"
+        "Example: --disable-features=Feature1,Feature2",
     )
     start_parser.add_argument(
         "--base-disable-features",

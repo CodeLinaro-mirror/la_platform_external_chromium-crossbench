@@ -187,9 +187,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                     "settings": {
                         "host": "my-linux-machine",
                         "ssh_port": 22,
-                        "ssh_user": "user"
-                    }
-                }
+                        "ssh_user": "user",
+                    },
+                },
             },
             "linux-ssh-chrome-auto-start-driver-no-path": {
                 "path": "/path/to/google/chrome",
@@ -198,11 +198,11 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                     "settings": {
                         "host": "my-linux-machine",
                         "ssh_port": 22,
-                        "ssh_user": "user"
-                    }
-                }
+                        "ssh_user": "user",
+                    },
+                },
             },
-        }
+        },
     }
     config.parse_dict(config_dict, args)
     variants = config.variants
@@ -219,14 +219,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                 },
                 "chrome-stable-noopt": {
                     "path": "chrome-stable",
-                    "flags": ["--js-flags=--max-opt=0",]
+                    "flags": ["--js-flags=--max-opt=0"],
                 },
                 "chrome-stable-custom": {
                     "label": "custom-label-property",
                     "path": "chrome-stable",
-                    "flags": ["--js-flags=--max-opt=0",]
-                }
-            }
+                    "flags": ["--js-flags=--max-opt=0"],
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args()).variants
@@ -279,8 +279,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                   "chrome-stable-custom": {
                       "label": "chrome-stable-label",
                       "path": "chrome-stable",
-                  }
-              }
+                  },
+              },
           },
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args())
@@ -294,7 +294,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       with self.assertRaises(ConfigError) as cm:
         BrowserVariantsConfigDict(
             {"browsers": {
-                "chrome-stable-default": invalid
+                "chrome-stable-default": invalid,
             }},
             args=self.mock_args())
       self.assertIn("Expected str or dict", str(cm.exception))
@@ -334,10 +334,10 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                   "chrome-stable-adb": "adb:chrome",
                   "chrome-stable-adb2": {
                       "path": "chrome",
-                      "driver": "adb"
+                      "driver": "adb",
                   },
-                  "chrome-stable-adb-ip": "192.168.0.1:5555:chrome"
-              }
+                  "chrome-stable-adb-ip": "192.168.0.1:5555:chrome",
+              },
           },
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args())
@@ -367,9 +367,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
               "browsers": {
                   "chrome-stable": {
                       "path": "chrome-stable",
-                      "flags": ["group1",]
-                  }
-              }
+                      "flags": ["group1"],
+                  },
+              },
           },
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args()).variants
@@ -389,9 +389,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
               "browsers": {
                   "chrome-stable": {
                       "path": "chrome-stable",
-                      "flags": ["group1"]
-                  }
-              }
+                      "flags": ["group1"],
+                  },
+              },
           },
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args()).variants
@@ -407,14 +407,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                   },
                   "group2": {
                       "--duplicate-flag": [None, "", "v1"],
-                  }
+                  },
               },
               "browsers": {
                   "chrome-stable": {
                       "path": "chrome-stable",
-                      "flags": ["group1", "group2"]
-                  }
-              }
+                      "flags": ["group1", "group2"],
+                  },
+              },
           },
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args()).variants
@@ -425,7 +425,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       BrowserVariantsConfigDict({"other": {}}, args=self.mock_args()).variants
     with self.assertRaises(ConfigError):
       BrowserVariantsConfigDict({
-          "browsers": {}
+          "browsers": {},
       }, args=self.mock_args()).variants
 
   def test_unknown_group(self):
@@ -435,9 +435,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
               "browsers": {
                   "chrome-stable": {
                       "path": "chrome-stable",
-                      "flags": ["unknown-flag-group"]
-                  }
-              }
+                      "flags": ["unknown-flag-group"],
+                  },
+              },
           },
           args=self.mock_args()).variants
     self.assertIn("unknown-flag-group", str(cm.exception))
@@ -447,14 +447,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       BrowserVariantsConfigDict(
           {
               "flags": {
-                  "group1": {}
+                  "group1": {},
               },
               "browsers": {
                   "chrome-stable": {
                       "path": "chrome-stable",
-                      "flags": ["group1", "group1"]
-                  }
-              }
+                      "flags": ["group1", "group1"],
+                  },
+              },
           },
           args=self.mock_args()).browsers
 
@@ -462,14 +462,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     BrowserVariantsConfigDict(
         {
             "flags": {
-                "group1": {}
+                "group1": {},
             },
             "browsers": {
                 "chrome-stable": {
                     "path": "chrome-stable",
-                    "flags": "group1"
-                }
-            }
+                    "flags": "group1",
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args()).variants
@@ -477,14 +477,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       BrowserVariantsConfigDict(
           {
               "flags": {
-                  "group1": {}
+                  "group1": {},
               },
               "browsers": {
                   "chrome-stable": {
                       "path": "chrome-stable",
-                      "flags": 1
-                  }
-              }
+                      "flags": 1,
+                  },
+              },
           },
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args()).variants
@@ -495,16 +495,16 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
       BrowserVariantsConfigDict(
           {
               "flags": {
-                  "group1": {}
+                  "group1": {},
               },
               "browsers": {
                   "chrome-stable": {
                       "path": "chrome-stable",
                       "flags": {
-                          "group1": True
-                      }
-                  }
-              }
+                          "group1": True,
+                      },
+                  },
+              },
           },
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args()).variants
@@ -517,15 +517,15 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           {
               "flags": {
                   "group1": {
-                      "--flag": ["repeated", "repeated"]
-                  }
+                      "--flag": ["repeated", "repeated"],
+                  },
               },
               "browsers": {
                   "chrome-stable": {
                       "path": "chrome-stable",
                       "flags": "group1",
-                  }
-              }
+                  },
+              },
           },
           args=self.mock_args()).variants
     self.assertIn("group1", str(cm.exception))
@@ -538,8 +538,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
               "browsers": {
                   "chrome-stable": {
                       "path": "path/does/not/exist",
-                  }
-              }
+                  },
+              },
           },
           args=self.mock_args()).variants
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -548,8 +548,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
               "browsers": {
                   "chrome-stable": {
                       "path": "chrome-unknown",
-                  }
-              }
+                  },
+              },
           },
           args=self.mock_args()).variants
 
@@ -559,14 +559,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
             "flags": {
                 "group1": {
                     "--foo": [None, "", "v1"],
-                }
+                },
             },
             "browsers": {
                 "chrome-stable": {
                     "path": "chrome-stable",
-                    "flags": ["group1"]
-                }
-            }
+                    "flags": ["group1"],
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -587,14 +587,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                     "",
                     "--foo",
                     "-foo=v1",
-                ]
+                ],
             },
             "browsers": {
                 "chrome-stable": {
                     "path": "chrome-stable",
-                    "flags": ["group1"]
-                }
-            }
+                    "flags": ["group1"],
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -614,14 +614,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                 "group1": {
                     "--foo": [None, "", "v1"],
                     "--bar": [None, "", "v1"],
-                }
+                },
             },
             "browsers": {
                 "chrome-stable": {
                     "path": "chrome-stable",
-                    "flags": ["group1"]
-                }
-            }
+                    "flags": ["group1"],
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -632,15 +632,15 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         {
             "flags": {
                 "compile-hints-experiment": {
-                    "--enable-features": [None, "ConsumeCompileHints"]
-                }
+                    "--enable-features": [None, "ConsumeCompileHints"],
+                },
             },
             "browsers": {
                 "chrome-release": {
                     "path": "chrome-stable",
-                    "flags": ["--no-sandbox", "compile-hints-experiment"]
-                }
-            }
+                    "flags": ["--no-sandbox", "compile-hints-experiment"],
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -658,8 +658,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                 "chrome-release": {
                     "path": "chrome-stable",
                     "flags": "--no-sandbox",
-                }
-            }
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -674,8 +674,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                 "chrome-release": {
                     "path": "chrome-stable",
                     "flags": ["--foo", "--bar=12"],
-                }
-            }
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -693,10 +693,12 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                     "path":
                         "chrome-stable",
                     "flags": [
-                        "--foo", "--bar=12", "--js-flags=--no-opt,--max-opt=1"
+                        "--foo",
+                        "--bar=12",
+                        "--js-flags=--no-opt,--max-opt=1",
                     ],
-                }
-            }
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -715,15 +717,15 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         {
             "flags": {
                 "features-experiment": {
-                    "--enable-features": [None, "ConsumeCompileHints"]
-                }
+                    "--enable-features": [None, "ConsumeCompileHints"],
+                },
             },
             "browsers": {
                 "chrome-release": {
                     "path": "chrome-stable",
-                    "flags": ["--foo", "--bar=12", "features-experiment"]
-                }
-            }
+                    "flags": ["--foo", "--bar=12", "features-experiment"],
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -742,8 +744,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                   "chrome-release": {
                       "path": "chrome-stable",
                       "flags": ["--foo", "--foo"],
-                  }
-              }
+                  },
+              },
           },
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args())
@@ -754,15 +756,15 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
             "flags": {
                 "compile-hints-experiment": {
                     "--no-sandbox": "",
-                    "--enable-features": [None, "ConsumeCompileHints"]
-                }
+                    "--enable-features": [None, "ConsumeCompileHints"],
+                },
             },
             "browsers": {
                 "chrome-release": {
                     "path": "chrome-stable",
-                    "flags": "compile-hints-experiment"
-                }
-            }
+                    "flags": "compile-hints-experiment",
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -778,15 +780,15 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         {
             "flags": {
                 "custom-js-flags": {
-                    "--js-flags": [None, "--no-opt"]
-                }
+                    "--js-flags": [None, "--no-opt"],
+                },
             },
             "browsers": {
                 "chrome-release": {
                     "path": "chrome-stable",
-                    "flags": ["--user-data-dir=/tmp/dir", "custom-js-flags"]
-                }
-            }
+                    "flags": ["--user-data-dir=/tmp/dir", "custom-js-flags"],
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -803,8 +805,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           {
               "flags": {
                   "compile-hints-experiment": {
-                      "--enable-features": [None, "ConsumeCompileHints"]
-                  }
+                      "--enable-features": [None, "ConsumeCompileHints"],
+                  },
               },
               "browsers": {
                   "chrome-release": {
@@ -812,10 +814,10 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                           "chrome-stable",
                       "flags": [
                           "--disable-features=ConsumeCompileHints",
-                          "compile-hints-experiment"
-                      ]
-                  }
-              }
+                          "compile-hints-experiment",
+                      ],
+                  },
+              },
           },
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args())
@@ -831,8 +833,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                 },
                 "chrome-dev": {
                     "path": "chrome-dev",
-                }
-            }
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -849,8 +851,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
             "chrome-stable": {
                 "browser": "chrome-stable",
                 "driver": str(chromedriver),
-            }
-        }
+            },
+        },
     }
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       BrowserVariantsConfigDict(
@@ -884,9 +886,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
               "browsers": {
                   "stable": {
                       "path": "chrome-stable",
-                      "flags": ["--foo=bar"]
-                  }
-              }
+                      "flags": ["--foo=bar"],
+                  },
+              },
           },
           args=self.mock_args())
       browsers = config.browsers
@@ -905,7 +907,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         {"browsers": {
             "safari": {
                 "path": "safari",
-            }
+            },
         }}, args=self.mock_args())
     self.assertEqual(len(config.variants), 1)
     self.assertTrue(issubclass(config.variants[0].browser_cls, Safari))
@@ -920,14 +922,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                     "--always_1": "true",
                     "--always_2": "true",
                     "--always_3": "true",
-                }
+                },
             },
             "browsers": {
                 "chrome-stable": {
                     "path": "chrome-stable",
-                    "flags": ["group1"]
-                }
-            }
+                    "flags": ["group1"],
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -971,20 +973,22 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
             "flags": {
                 "group1": {
                     "--js-flags": [
-                        None, "--max-opt=1,--trace-ic", "--max-opt=2 --log-all",
-                        long_js_flags
+                        None,
+                        "--max-opt=1,--trace-ic",
+                        "--max-opt=2 --log-all",
+                        long_js_flags,
                     ],
                 },
                 "group2": {
-                    "default": "--bar=v1 --foo=w2"
-                }
+                    "default": "--bar=v1 --foo=w2",
+                },
             },
             "browsers": {
                 "chrome-stable": {
                     "path": "chrome-stable",
-                    "flags": ["group1", "group2"]
-                }
-            }
+                    "flags": ["group1", "group2"],
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -1005,19 +1009,21 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
             "flags": {
                 "group1": {
                     "--js-flags": [
-                        None, "--max-opt=2,--trace-ic", "--max-opt=3 --log-all"
+                        None,
+                        "--max-opt=2,--trace-ic",
+                        "--max-opt=3 --log-all",
                     ],
                 },
                 "group2": {
-                    "default": "--js-flags=--no-sparkplug"
-                }
+                    "default": "--js-flags=--no-sparkplug",
+                },
             },
             "browsers": {
                 "chrome-stable": {
                     "path": "chrome-stable",
-                    "flags": ["group1", "group2"]
-                }
-            }
+                    "flags": ["group1", "group2"],
+                },
+            },
         },
         args=self.mock_args())
     self.assertEqual(len(config.variants), 3)
@@ -1041,14 +1047,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                 },
                 "group3": {
                     "--other": ["x1", "x2"],
-                }
+                },
             },
             "browsers": {
                 "chrome-stable": {
                     "path": "chrome-stable",
-                    "flags": ["group1", "group2", "group3"]
-                }
-            }
+                    "flags": ["group1", "group2", "group3"],
+                },
+            },
         },
         browser_lookup_override=self.browser_lookup,
         args=self.mock_args())
@@ -1081,7 +1087,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     browser_cls = mock_browser.MockChromeStable
     browser_bin = browser_cls.mock_app_path().with_stem("Custom Google Chrome")
     browser_cls.setup_bin(self.fs, browser_bin, "Chrome")
-    config_data = {"browsers": {"chrome-stable": {"path": str(browser_bin),}}}
+    config_data = {"browsers": {"chrome-stable": {"path": str(browser_bin)}}}
     config_file = pth.LocalPath("config/config.hjson")
     config_file.parent.mkdir()
     with config_file.open("w", encoding="utf-8") as f:
@@ -1166,7 +1172,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIsInstance(browser, browser_cls)
     self.assertEqual(browser.js_flags.to_dict(), {
         "--max-opt": "1",
-        "--log-all": None
+        "--log-all": None,
     })
 
   def test_from_cli_args_browser_multiple_js_flags_empty_base(self):
@@ -1190,7 +1196,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIsInstance(browser_1, browser_cls)
     self.assertEqual(browser_1.js_flags.to_dict(), {
         "--max-opt": "2",
-        "--log-all": None
+        "--log-all": None,
     })
 
   def test_from_cli_args_browser_multiple_js_flags_empty_base_defaults(self):
@@ -1215,7 +1221,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(browser_1.js_flags.to_dict(), {
         "--no-turbofan": None,
         "--max-opt": "2",
-        "--log-all": None
+        "--log-all": None,
     })
 
   def test_from_cli_args_browser_multiple_js_flags(self):
@@ -1239,7 +1245,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIsInstance(browser_1, browser_cls)
     self.assertEqual(browser_1.js_flags.to_dict(), {
         "--max-opt": "2",
-        "--log-all": None
+        "--log-all": None,
     })
 
     for browser in config.variants:
@@ -1253,9 +1259,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "browsers": {
             "chrome_no_tf": {
                 "flags": ["--js-flags=--no-turbofan"],
-                "path": "chrome"
-            }
-        }
+                "path": "chrome",
+            },
+        },
     }
     with self.platform.NamedTemporaryFile() as config_file:
       with config_file.open("w", encoding="utf-8") as f:
@@ -1271,7 +1277,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(browser.js_flags.to_dict(), {
         "--no-turbofan": None,
         "--max-opt": "1",
-        "--log-all": None
+        "--log-all": None,
     })
 
   def test_from_cli_args_and_config(self):
@@ -1299,14 +1305,14 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "browsers": {
             "default-network": {
                 "path": "chrome-stable",
-                "network": "default"
+                "network": "default",
             },
             "default": "chrome-stable",
             "custom-network": {
                 "path": "chrome-stable",
-                "network": "4G"
-            }
-        }
+                "network": "4G",
+            },
+        },
     }
     config_file = pth.LocalPath("browsers.config.json")
     with config_file.open("w", encoding="utf-8") as f:
@@ -1320,7 +1326,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "crossbench.network.traffic_shaping.ts_proxy.TsProxyFinder") as finder:
       finder.return_value = mock.Mock(
           path=ts_proxy_path, local_path=ts_proxy_path)
-      config = BrowserVariantsConfig.parse_args(args,)
+      config = BrowserVariantsConfig.parse_args(args)
     browsers = config.browsers
     self.assertEqual(len(browsers), 3)
     browser_1, browser_2, browser_3 = browsers
@@ -1343,16 +1349,16 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "browsers": {
             "default-env": {
                 "path": "chrome-stable",
-                "env": "default"
+                "env": "default",
             },
             "default": "chrome-stable",
             "custom-env": {
                 "path": "chrome-stable",
                 "env": {
-                    "cpu_max_usage_percent": 42
-                }
-            }
-        }
+                    "cpu_max_usage_percent": 42,
+                },
+            },
+        },
     }
     config_file = pth.LocalPath("browsers.config.json")
     with config_file.open("w", encoding="utf-8") as f:
@@ -1414,9 +1420,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                 "custom-browser": {
                     "type": "chromium",
                     "path": str(path),
-                    "version": "120.0.6099.224"
-                }
-            }
+                    "version": "120.0.6099.224",
+                },
+            },
         },
         args=self.mock_args())
     variant = config.variants[0]
@@ -1543,9 +1549,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "browsers": {
             "chrome-release": {
                 "path": "chrome-stable",
-                "cache_dir": None
-            }
-        }
+                "cache_dir": None,
+            },
+        },
     }
     self.assertIsNone(args.browser_cache_dir)
     config = BrowserVariantsConfigDict(config_data, args=args)
@@ -1563,9 +1569,9 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         "browsers": {
             "chrome-release": {
                 "path": "chrome-stable",
-                "cache_dir": "foo/bar/cache"
-            }
-        }
+                "cache_dir": "foo/bar/cache",
+            },
+        },
     }
     config = BrowserVariantsConfigDict(config_data, args=args)
     browser = config.variants[0]
@@ -1611,8 +1617,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                 "path": "chrome-stable",
                 "cache_dir": "foo/bar/cache",
                 "clear_cache_dir": False,
-            }
-        }
+            },
+        },
     }
     config = BrowserVariantsConfigDict(config_data, args=args)
     browser = config.variants[0]
@@ -1640,8 +1646,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                 "path": "chrome-stable",
                 "cache_dir": "foo/bar/cache",
                 "clear_cache_dir": True,
-            }
-        }
+            },
+        },
     }
     config = BrowserVariantsConfigDict(config_data, args=args)
     browser = config.variants[0]

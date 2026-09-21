@@ -194,9 +194,11 @@ class CrossbenchDevToolsRecorderProxy:
       assert self._tmp_json.exists(), f"{self._tmp_json} does not exist."
       assert cb_path.exists(), f"{cb_path} does not exist."
       cmd = [
-          "load", "--env-validation=warn", "--verbose",
+          "load",
+          "--env-validation=warn",
+          "--verbose",
           f"--devtools-recorder={self._tmp_json.absolute()}",
-          *shlex.split(args.get("cmd"))
+          *shlex.split(args.get("cmd")),
       ]
     logging.info("CROSSBENCH COMMAND: %s", cmd)
     self._crossbench_process = await asyncio.create_subprocess_exec(

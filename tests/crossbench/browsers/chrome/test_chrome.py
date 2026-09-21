@@ -36,7 +36,8 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
           settings=Settings(
               js_flags=[],
               flags=[
-                  "--disable-field-trial-config", "--enable-field-trial-config"
+                  "--disable-field-trial-config",
+                  "--enable-field-trial-config",
               ],
               platform=self.platform))
     msg = str(cm.exception)
@@ -85,9 +86,9 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
                         "out/arm64.apk/bin/chrome_public_apk")))
     self.assertTrue(
         LocalChromeWebDriverAndroid.is_apk_helper(
-            pth.AnyPath("/home/user/Documents/chrome/src/"
-                        "out/arm64.apk/bin/trichrome_chrome_google_64_32_bundle"
-                       )))
+            pth.AnyPath(
+                "/home/user/Documents/chrome/src/"
+                "out/arm64.apk/bin/trichrome_chrome_google_64_32_bundle")))
     self.assertFalse(LocalChromeWebDriverAndroid.is_apk_helper(None))
     self.assertFalse(
         LocalChromeWebDriverAndroid.is_apk_helper(

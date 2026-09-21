@@ -27,7 +27,7 @@ class V8RCSProbeTestCase(GenericProbeTestCase):
     probe = V8RCSProbe()
     stories = [
         LivePage("google", "https://google.com"),
-        LivePage("amazon", "https://amazon.com")
+        LivePage("amazon", "https://amazon.com"),
     ]
     repetitions = 2
 
@@ -82,7 +82,7 @@ class V8RCSProbeTestCase(GenericProbeTestCase):
     probe = V8RCSProbe()
     stories = [
         LivePage("google", "https://google.com"),
-        LivePage("amazon", "https://amazon.com")
+        LivePage("amazon", "https://amazon.com"),
     ]
     repetitions = 2
     cache_temperatures = ("cold", "warm")

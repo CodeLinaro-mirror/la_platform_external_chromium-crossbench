@@ -404,19 +404,22 @@ class TraceProcessorProbe(Probe):
     btp_config = BatchTraceProcessorConfig(tp_config=self.tp_config)
 
     with change_cwd(group_dir), BatchTraceProcessor(
-        traces=CrossbenchTraceUriResolver(group.runs), config=btp_config
+        traces=CrossbenchTraceUriResolver(group.runs),
+        config=btp_config,
     ) as btp, ExceptionAnnotator().annotate() as exceptions:
       csv_files, json_files = self._run_btp_queries(btp, group_dir, exceptions)
       json_files += self._run_btp_metrics(btp, group_dir, exceptions)
     return LocalProbeResult(csv=csv_files, json=json_files)
 
   def _run_btp_queries(
-      self, btp: BatchTraceProcessor, group_dir: pth.LocalPath,
-      exceptions: ExceptionAnnotator
+      self,
+      btp: BatchTraceProcessor,
+      group_dir: pth.LocalPath,
+      exceptions: ExceptionAnnotator,
   ) -> tuple[list[pth.LocalPath], list[pth.LocalPath]]:
 
     def run_query(
-        query: TraceProcessorQueryConfig
+        query: TraceProcessorQueryConfig,
     ) -> tuple[pth.LocalPath, pth.LocalPath]:
       csv_file = group_dir / f"{query.name}.csv"
       json_file = group_dir / f"{query.name}.json"

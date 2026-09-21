@@ -180,8 +180,8 @@ class BondClient:
         "conference_type": "THOR",
         "backend_options": {
             "mesi_apiary_url": MESI_APIARY_URL,
-            "mas_one_platform_url": MAS_ONEPLATFORM_URL
-        }
+            "mas_one_platform_url": MAS_ONEPLATFORM_URL,
+        },
     }
     response = self._post_with_retry(
         url=f"{ENDPOINT}/v1/conferences:create",

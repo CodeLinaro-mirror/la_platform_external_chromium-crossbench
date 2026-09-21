@@ -326,8 +326,10 @@ class Runner:
   def _attach_benchmark_probes(self) -> None:
     for benchmark_probe_cls in self._benchmark.PROBES:
       benchmark_probe = benchmark_probe_cls(benchmark=self._benchmark)
-      assert isinstance(benchmark_probe, BenchmarkProbeMixin
-                       ), f"Expected BenchmarkProbe, got {benchmark_probe}"
+      assert isinstance(
+          benchmark_probe,
+          BenchmarkProbeMixin,
+      ), f"Expected BenchmarkProbe, got {benchmark_probe}"
       assert isinstance(benchmark_probe,
                         Probe), f"Expected Probe, got {benchmark_probe}"
       if benchmark_probe.name in self._disabled_probes:

@@ -57,7 +57,7 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
         "arguments": {
             "benchmark": "speedometer3",
             "configuration": "linux-perf",
-        }
+        },
     }
     out_dir = self.get_tmp_dir()
 
@@ -84,7 +84,7 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
         "arguments": {
             "benchmark": "speedometer3",
             "configuration": "linux-perf",
-        }
+        },
     }
     out_dir = self.get_tmp_dir()
 
@@ -119,7 +119,7 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
                         "details": [{
                             "key": "isolate",
                             "value": "123abc",
-                        }]
+                        }],
                     },
                     {  # 2: values
                         "details": [{
@@ -128,12 +128,12 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
                             "value":
                                 "trace.pb",
                             "url":
-                                "https://storage.cloud.google.com/res/trace.pb"
-                        }]
-                    }
-                ]
-            }]
-        }]
+                                "https://storage.cloud.google.com/res/trace.pb",
+                        }],
+                    },
+                ],
+            }],
+        }],
     }
 
     out_dir = self.get_tmp_dir()
@@ -178,9 +178,9 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
                 }],
             },
             "attempts": [{
-                "executions": []
-            }]
-        }]
+                "executions": [],
+            }],
+        }],
     }
 
     out_dir = self.get_tmp_dir()
@@ -200,9 +200,9 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
         "state": [{
             "change": {},
             "attempts": [{
-                "executions": []
-            }]
-        }]
+                "executions": [],
+            }],
+        }],
     }
 
     out_dir = self.get_tmp_dir()
@@ -220,7 +220,7 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
             "benchmark": "speedometer3",
             "configuration": "linux-perf",
         },
-        "state": []
+        "state": [],
     }
     out_dir = self.get_tmp_dir()
 
@@ -246,7 +246,7 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
             "benchmark": "speedometer3",
             "configuration": "linux-perf",
         },
-        "state": []
+        "state": [],
     }
     out_dir = self.get_tmp_dir()
 
@@ -275,7 +275,7 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
             "benchmark": "speedometer3",
             "configuration": "linux-perf",
         },
-        "state": []
+        "state": [],
     }
     out_dir = self.get_tmp_dir()
 
@@ -312,11 +312,11 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
                           "details": [{
                               "key": "isolate",
                               "value": "123abc_cached",
-                          }]
+                          }],
                       },
-                  ]
-              }]
-          }]
+                  ],
+              }],
+          }],
       }
       out_dir = self.get_tmp_dir() / "out"
       download_results(_JOB_ID, out_dir)
@@ -334,7 +334,7 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
         "arguments": {
             "benchmark": "speedometer3",
             "configuration": "linux-perf",
-        }
+        },
     }
     out_dir = self.get_tmp_dir()
     out_dir.mkdir(parents=True)
@@ -351,7 +351,7 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
         "arguments": {
             "benchmark": "speedometer3",
             "configuration": "linux-perf",
-        }
+        },
     }
     out_dir = self.get_tmp_dir()
     out_dir.mkdir(parents=True)
@@ -376,7 +376,7 @@ class PinpointJobResultsTestCase(unittest.TestCase):
         "arguments": {
             "benchmark": "speedometer3",
             "configuration": "linux-perf",
-        }
+        },
     }
 
   def test_created_date_valid(self):
@@ -413,13 +413,13 @@ class PinpointJobResultsTestCase(unittest.TestCase):
         "change": {
             "commits": [{
                 "repository": "chromium",
-                "commit_position": 123
+                "commit_position": 123,
             }, {
                 "repository": "v8",
-                "commit_position": 456
-            }]
+                "commit_position": 456,
+            }],
         },
-        "attempts": []
+        "attempts": [],
     }
     variant = PinpointVariantResults(data, 0)
     self.assertEqual(variant.name, "chromium_123_v8_456")
@@ -436,10 +436,10 @@ class PinpointJobResultsTestCase(unittest.TestCase):
             {  # 1: test
                 "details": [{
                     "key": "isolate",
-                    "value": "123abchash"
-                }]
-            }
-        ]
+                    "value": "123abchash",
+                }],
+            },
+        ],
     }
     attempt = PinpointAttemptResults(data, 0)
     self.assertEqual(attempt.cas_isolate, "123abchash")
@@ -458,10 +458,10 @@ class PinpointJobResultsTestCase(unittest.TestCase):
                 "details": [{
                     "key": "trace",
                     "value": "trace.pb",
-                    "url": "gs://bucket/trace.pb"
-                }]
-            }
-        ]
+                    "url": "gs://bucket/trace.pb",
+                }],
+            },
+        ],
     }
     attempt = PinpointAttemptResults(data, 0)
     self.assertEqual(attempt.perfetto_trace_url_by_name,
@@ -481,19 +481,19 @@ class PinpointJobResultsTestCase(unittest.TestCase):
                 "details": [{
                     "key": "trace",
                     "value": "trace1.pb",
-                    "url": "gs://bucket/trace1.pb"
+                    "url": "gs://bucket/trace1.pb",
                 }, {
                     "key": "trace",
                     "value": "trace2",
-                    "url": "gs://bucket/trace2.pb"
-                }]
-            }
-        ]
+                    "url": "gs://bucket/trace2.pb",
+                }],
+            },
+        ],
     }
     attempt = PinpointAttemptResults(data, 0)
     self.assertEqual(attempt.perfetto_trace_url_by_name, {
         "trace1.pb": "gs://bucket/trace1.pb",
-        "trace2.pb": "gs://bucket/trace2.pb"
+        "trace2.pb": "gs://bucket/trace2.pb",
     })
 
 

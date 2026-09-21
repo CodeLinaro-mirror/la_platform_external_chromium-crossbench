@@ -62,7 +62,7 @@ class TestUserMetrics(unittest.TestCase):
     self.assertEqual(call_args[0], "pinpoint_cli_metrics.usage")
     self.assertSequenceEqual(call_args[1], [{
         "user": "test-user-id",
-        "command": "test_command"
+        "command": "test_command",
     }])
 
   def test_collect_metrics_disabled(self):

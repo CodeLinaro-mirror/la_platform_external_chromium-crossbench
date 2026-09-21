@@ -28,7 +28,7 @@ class StartJobTest(MockHttpRequestsMixin):
       mock_response = mock.Mock()
       mock_response.json.return_value = {
           "jobId": "123",
-          "jobUrl": "https://example.com/123"
+          "jobUrl": "https://example.com/123",
       }
       mock_response.raise_for_status.return_value = None
       return mock_response
@@ -54,7 +54,7 @@ class StartJobTest(MockHttpRequestsMixin):
                     "commit": "abcd1234",
                     "patch": "https://chromium-review.googlesource.com/67890",
                     "flags": "--js-flags=--exp-js-flag",
-                }
+                },
             })))
     expected_payload = {
         "comparison_mode":

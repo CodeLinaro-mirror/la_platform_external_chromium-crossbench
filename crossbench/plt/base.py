@@ -388,7 +388,7 @@ class Platform(abc.ABC):
         "os": self.os_details(),
         "python": self.python_details(),
         "CPU": self.cpu_details(),
-        "display": self.display_details()
+        "display": self.display_details(),
     }
     if self.is_local:
       details["crossbench"] = self.crossbench_details()
@@ -481,7 +481,7 @@ class Platform(abc.ABC):
       name: str,
       macos: Sequence[str] = (),
       win: Sequence[str] = (),
-      linux: Sequence[str] = ()
+      linux: Sequence[str] = (),
   ) -> pth.AnyPath:
     return self._search_executable(name, macos, win, linux, self.search_app)
 
@@ -490,7 +490,7 @@ class Platform(abc.ABC):
       name: str,
       macos: Sequence[str] = (),
       win: Sequence[str] = (),
-      linux: Sequence[str] = ()
+      linux: Sequence[str] = (),
   ) -> pth.AnyPath:
     return self._search_executable(name, macos, win, linux, self.search_binary)
 

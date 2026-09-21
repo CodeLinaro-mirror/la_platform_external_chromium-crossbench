@@ -175,9 +175,16 @@ class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
                 include_pending: bool = True) -> Iterable[AndroidDownload]:
     result: list[AndroidDownload] = []
     args = [
-        "content", "query", "--user", self._user_id, "--uri",
-        "content://media/external/downloads", "--where", "is_download=1",
-        "--projection", "_display_name:_id"
+        "content",
+        "query",
+        "--user",
+        self._user_id,
+        "--uri",
+        "content://media/external/downloads",
+        "--where",
+        "is_download=1",
+        "--projection",
+        "_display_name:_id",
     ]
     if not include_pending:
       args.append("--where")

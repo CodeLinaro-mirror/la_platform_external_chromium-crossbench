@@ -60,8 +60,8 @@ class MockDevToolsRemoteClient:
     self.commands.append({
         "method": "Target.createTarget",
         "params": {
-            "url": url
-        }
+            "url": url,
+        },
     })
     return "mock_session_id"
 
@@ -154,9 +154,9 @@ class CdpAndroidBrowserTest(CrossbenchFakeFsTestCase):
             "id": 1,
             "result": {
                 "result": {
-                    "value": 42
-                }
-            }
+                    "value": 42,
+                },
+            },
         },
     )
     res = self.browser.js("return 42;")
@@ -175,9 +175,9 @@ class CdpAndroidBrowserTest(CrossbenchFakeFsTestCase):
             "id": 1,
             "result": {
                 "result": {
-                    "value": 30
-                }
-            }
+                    "value": 30,
+                },
+            },
         },
     )
     res = self.browser.js(
@@ -198,12 +198,12 @@ class CdpAndroidBrowserTest(CrossbenchFakeFsTestCase):
             "id": 1,
             "result": {
                 "result": {
-                    "type": "undefined"
+                    "type": "undefined",
                 },
                 "exceptionDetails": {
                     "exception": {
-                        "description": "SyntaxError: Illegal return statement"
-                    }
+                        "description": "SyntaxError: Illegal return statement",
+                    },
                 },
             },
         },
@@ -219,9 +219,9 @@ class CdpAndroidBrowserTest(CrossbenchFakeFsTestCase):
             "id": 1,
             "result": {
                 "result": {
-                    "value": "https://example.com"
-                }
-            }
+                    "value": "https://example.com",
+                },
+            },
         },
     )
     url = self.browser.current_url
@@ -253,7 +253,7 @@ class CdpAndroidBrowserTest(CrossbenchFakeFsTestCase):
 @contextlib.contextmanager
 def _mock_transport(
     client: DevToolsRemoteClient,
-    response: dict[str, Any] | None = None
+    response: dict[str, Any] | None = None,
 ) -> Iterator[tuple[list[dict[str, Any]], mock.Mock]]:
   """Records the payloads reaching the websocket and fakes page sessions.
 
@@ -298,7 +298,7 @@ class DevToolsRemoteClientTest(CrossbenchFakeFsTestCase):
     with mock.patch.object(
         self.platform.ports, "forward_devtools", return_value=12345), \
         mock.patch("websocket.WebSocket", side_effect=[
-            mock_ws_first, mock_ws_second
+            mock_ws_first, mock_ws_second,
         ]):
       self.client.connect(timeout=dt.timedelta(seconds=1))
 
@@ -338,8 +338,8 @@ class DevToolsRemoteClientTest(CrossbenchFakeFsTestCase):
       self.client.send_command({
           "method": "Page.navigate",
           "params": {
-              "url": "https://example.com"
-          }
+              "url": "https://example.com",
+          },
       })
       # Storage is implemented by frame targets as well, so it must keep
       # using the page session.
@@ -353,7 +353,7 @@ class DevToolsRemoteClientTest(CrossbenchFakeFsTestCase):
     with _mock_transport(self.client) as (payloads, mock_session_id):
       self.client.send_command({
           "method": "Page.navigate",
-          "sessionId": "custom-session"
+          "sessionId": "custom-session",
       })
 
     mock_session_id.assert_not_called()

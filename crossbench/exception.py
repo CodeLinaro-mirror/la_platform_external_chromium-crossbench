@@ -244,7 +244,7 @@ class ExceptionAnnotator:
       self,
       *stack_entries,
       exceptions: TExceptionTypes = (Exception,),
-      ignore: TExceptionTypes = ()
+      ignore: TExceptionTypes = (),
   ) -> Iterator[Self]:
     """Sets info stack entries and rethrows an annotated
       MultiException by default ."""
@@ -354,7 +354,7 @@ class ExceptionAnnotator:
         "info_stack": entry.info_stack,
         "type": txt_helper.type_name(type(entry.exception)),
         "title": self.format_exception(entry),
-        "trace": entry.traceback
+        "trace": entry.traceback,
     } for entry in self._exceptions]
 
   def format_exception(self, entry: Entry) -> str:
@@ -395,7 +395,7 @@ def annotate(
     *stack_entries: str,
     exceptions: TExceptionTypes = (Exception,),
     ignore: TExceptionTypes = (),
-    throw_cls: type[BaseException] | None = MultiException
+    throw_cls: type[BaseException] | None = MultiException,
 ) -> ExceptionAnnotationScope:
   """Use to annotate an exception.
   By default this will throw a MultiException which can keep track of
@@ -409,7 +409,8 @@ class ArgumentTypeMultiException(MultiException, argparse.ArgumentTypeError):
 
 
 def annotate_argparsing(
-    *stack_entries: str, exceptions: TExceptionTypes = (Exception,)
+    *stack_entries: str,
+    exceptions: TExceptionTypes = (Exception,),
 ) -> ExceptionAnnotationScope:
   """Use this to annotate argument parsing-related code blocks to get more
   readable annotated exception back.

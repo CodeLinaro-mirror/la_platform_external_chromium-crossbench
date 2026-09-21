@@ -75,7 +75,7 @@ class TestJSFlags(TestFlags):
     flags = self.CLASS({
         "--flag-a": "value1",
         "--flag-b": None,
-        "--flag-c": "value3"
+        "--flag-c": "value3",
     })
     self.assertEqual(str(flags), "--flag-a=value1,--flag-b,--flag-c=value3")
 
@@ -91,7 +91,7 @@ class TestJSFlags(TestFlags):
     flags = self.CLASS({
         "--flag-a": "value1",
         "--flag-b": None,
-        "--flag-c": "value3"
+        "--flag-c": "value3",
     })
     flags_copy = self.CLASS(flags)
     self.assertEqual(str(flags), str(flags_copy))

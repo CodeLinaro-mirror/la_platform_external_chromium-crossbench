@@ -172,7 +172,7 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.assertEqual(len(result), 1)
     self.assertDictEqual(result[0], {
         "resolution": (1920, 1080),
-        "refresh_rate": -1
+        "refresh_rate": -1,
     })
 
   def test_unique_name(self):
@@ -440,7 +440,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
                         "screen_off_timeout": "60000",
                     },
                 },
-            }
+            },
         })
 
   def test_is_installed(self):
@@ -721,7 +721,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         set(self.platform.iterdir(pth.AnyWindowsPath("parent_dir\\child_dir"))),
         {
             pth.AnyPosixPath("parent_dir/child_dir/file1"),
-            pth.AnyPosixPath("parent_dir/child_dir/file2")
+            pth.AnyPosixPath("parent_dir/child_dir/file2"),
         })
 
   def test_cat_file(self):
@@ -914,7 +914,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         ProcessMeminfo(20533, privileged_process, 37794, 186356, 203),
         ProcessMeminfo(20527, f"{sandbox_prefix}0", 49907, 184636, 245),
         ProcessMeminfo(20596, f"{sandbox_prefix}1", 30679, 156928, 244),
-        ProcessMeminfo(20438, "com.android.chrome", 200986, 412436, 148)
+        ProcessMeminfo(20438, "com.android.chrome", 200986, 412436, 148),
     ])
 
   def test_process_meminfo_timeout(self):

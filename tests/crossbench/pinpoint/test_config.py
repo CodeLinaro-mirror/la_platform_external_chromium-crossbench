@@ -45,7 +45,7 @@ class VariantConfigTest(MockHttpRequestsMixin):
     self.assertEqual(variant.patch, _TEST_PATCH)
     self.assertDictEqual(variant.flags_as_dict(), {
         "--test-flag": None,
-        "--js-flags": "--base-js-flag"
+        "--js-flags": "--base-js-flag",
     })
 
   def test_parse_variant_default(self):
@@ -215,7 +215,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
             "experiment_extra_args": "",
             "project": "",
             "bug_id": "",
-            "batch_id": ""
+            "batch_id": "",
         },
         "name": "Try job on win-11-perf/speedometer3",
     }
@@ -520,7 +520,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
         benchmark="test_benchmark", bot="test_bot", story="test_story")
     self.mock_show_warnings.assert_called_once_with([
         "Invalid benchmark: 'test_benchmark'. Did you mean 'other_benchmark'?\n"
-        "Run 'cb pp benchmarks' to list all available benchmarks."
+        "Run 'cb pp benchmarks' to list all available benchmarks.",
     ])
 
   def test_parse_and_override_unknown_benchmark_no_match_show_warning(self):
@@ -529,7 +529,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
         benchmark="x", bot="test_bot", story="test_story")
     self.mock_show_warnings.assert_called_once_with([
         "Invalid benchmark: 'x'. Choices are something_else\n"
-        "Run 'cb pp benchmarks' to list all available benchmarks."
+        "Run 'cb pp benchmarks' to list all available benchmarks.",
     ])
 
   def test_parse_and_override_unknown_bot_show_warning(self):
@@ -558,7 +558,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
         benchmark="jetstream3.crossbench", bot="test_bot")
     self.mock_show_warnings.assert_called_once_with([
         "Invalid benchmark: 'jetstream3.crossbench'. Choices are speedometer3\n"
-        "Run 'cb pp benchmarks' to list all available benchmarks."
+        "Run 'cb pp benchmarks' to list all available benchmarks.",
     ])
 
   def test_parse_and_override_crossbench_benchmark_valid_story(self):
@@ -667,7 +667,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
                 "--js-flags=--exp-js-flag "
                 "--enable-features=--exp-enabled-feature "
                 "--disable-features=--exp-disabled-feature",
-            "tags": '{"origin": "pinpoint_cli"}'
+            "tags": '{"origin": "pinpoint_cli"}',
         })
 
 
@@ -744,7 +744,7 @@ class PinpointBisectJobConfigTest(MockHttpRequestsMixin):
                 commit="abcdef00",
                 flags=FlagsConfig.parse("--js-flags=--start-js-flag"),
             ),
-            end=BisectEndVariantConfig(commit=_TEST_RECENT_COMMIT,)))
+            end=BisectEndVariantConfig(commit=_TEST_RECENT_COMMIT)))
 
   def test_override_all_fields(self):
     config = PinpointBisectJobConfig.parse_and_override(
@@ -777,7 +777,7 @@ class PinpointBisectJobConfigTest(MockHttpRequestsMixin):
                                         "--enable-features=enable1,enable2 "
                                         "--disable-features=disable1,disable2"),
             ),
-            end=BisectEndVariantConfig(commit="12345678",)))
+            end=BisectEndVariantConfig(commit="12345678")))
 
   def test_override_generic_flags(self):
     config = PinpointBisectJobConfig.parse_and_override(

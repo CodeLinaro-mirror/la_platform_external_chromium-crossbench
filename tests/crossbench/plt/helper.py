@@ -185,7 +185,7 @@ class PlatformClipboardTestCase(
 
   @abc.abstractmethod
   def clipboard_tool_configs(
-      self,) -> list[tuple[str, pth.LocalPath, list[str]]]:
+      self) -> list[tuple[str, pth.LocalPath, list[str]]]:
     pass
 
   def test_clipboard_not_found(self) -> None:

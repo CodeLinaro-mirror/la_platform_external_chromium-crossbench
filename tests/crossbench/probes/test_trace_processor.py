@@ -166,13 +166,13 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
         "queries": [
             {
                 "name": "pprof",
-                "sql": "select 1"
+                "sql": "select 1",
             },
             {
                 "name": "other",
-                "sql": "select 2"
+                "sql": "select 2",
             },
-        ]
+        ],
     })
     context = probe.create_context(run)
     self.assertTrue(context.has_pprof_query(context.queries))
@@ -180,16 +180,16 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     probe2 = TraceProcessorProbe.parse_dict(
         {"queries": [{
             "name": "other",
-            "sql": "select 2"
-        },]})
+            "sql": "select 2",
+        }]})
     context2 = probe2.create_context(run)
     self.assertFalse(context2.has_pprof_query(context2.queries))
 
     probe3 = TraceProcessorProbe.parse_dict(
         {"queries": [{
             "name": "my_perf_sample_query",
-            "sql": "select 3"
-        },]})
+            "sql": "select 3",
+        }]})
     context3 = probe3.create_context(run)
     self.assertTrue(context3.has_pprof_query(context3.queries))
 
@@ -205,8 +205,8 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     probe = TraceProcessorProbe.parse_dict(
         {"queries": [{
             "name": "other",
-            "sql": "select 1"
-        },]})
+            "sql": "select 1",
+        }]})
 
     context = TraceProcessorSymbolizingProbeContext(probe, run)
     with self.mock_has_symbols():
@@ -219,8 +219,8 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     probe = TraceProcessorProbe.parse_dict({
         "queries": [{
             "name": "jetstream_3/perf_sample_span",
-            "sql": "select 1"
-        },]
+            "sql": "select 1",
+        }],
     })
 
     context = TraceProcessorSymbolizingProbeContext(probe, run)
@@ -314,8 +314,8 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
         "name": "comment",
         "sql": "'replace me'",
         "replacements": {
-            "replace me": "new value"
-        }
+            "replace me": "new value",
+        },
     })
     self.assertEqual(query.name, "comment")
     self.assertEqual(query.sql, "'new value'")
@@ -327,7 +327,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
             r"Pixel 9.*": TARGET_P9,
             r"Pixel 10.*": TARGET_P10,
         },
-        "sql": TARGET_FALLBACK
+        "sql": TARGET_FALLBACK,
     })
     self.assertIsInstance(query, DeviceSpecificTraceProcessorQuery)
 
@@ -338,7 +338,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
           "device_override": {
               "[Pixel 9": TARGET_P9,
           },
-          "sql": TARGET_FALLBACK
+          "sql": TARGET_FALLBACK,
       })
 
   def test_device_specific_query_unresolved_sql_access_raises(self):
@@ -346,7 +346,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
         "name": "web_power_power_rails",
         "device_override": {
             r"Pixel 9.*": TARGET_P9,
-        }
+        },
     })
     # Accessing the SQL of an unresolved device-specific query must fail fast
     # since the final query contents are bound to a device platform at runtime.
@@ -429,7 +429,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
         "name": "web_power_power_rails",
         "device_override": {
             r"Pixel 9.*": TARGET_P9,
-        }
+        },
     })
 
     platform = unittest.mock.MagicMock()
@@ -444,7 +444,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
         "device_override": {
             r"Pixel.*": TARGET_P9,
             r"Pixel 10.*": TARGET_P10,
-        }
+        },
     })
     platform = unittest.mock.MagicMock()
     platform.model = "Pixel 10 Pro"
@@ -459,7 +459,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
         "device_override": {
             r"Pixel.*": TARGET_P9,
             r"Pixel 9.*": TARGET_P9,
-        }
+        },
     })
     platform = unittest.mock.MagicMock()
     platform.model = "Pixel 9 Pro"
@@ -484,7 +484,7 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     csv1 = self.create_file("run1/query.csv", contents="foo,bar\n1,2\n")
     json1 = self.create_file(
         "run1/metric.json", contents=json.dumps({"foo": {
-            "bar": 7
+            "bar": 7,
         }}))
     result1.csv_list = [csv1]
     result1.json_list = [json1]
@@ -500,7 +500,7 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     csv2 = self.create_file("run2/query.csv", contents="foo,bar\n3,4\n")
     json2 = self.create_file(
         "run2/metric.json", contents=json.dumps({"foo": {
-            "bar": 9
+            "bar": 9,
         }}))
     result2.csv_list = [csv2]
     result2.json_list = [json2]
@@ -563,18 +563,18 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     self._assert_independent_results(
         {"queries": [{
             "name": "query_cpu",
-            "sql": "SELECT 1"
+            "sql": "SELECT 1",
         }]},
         {"queries": [{
             "name": "query_memory",
-            "sql": "SELECT 2"
+            "sql": "SELECT 2",
         }]},
     )
     self._assert_independent_results(
         {"metrics": ["metric_cpu"]},
         {"queries": [{
             "name": "query_cpu",
-            "sql": "SELECT 1"
+            "sql": "SELECT 1",
         }]},
     )
 

@@ -208,7 +208,7 @@ class BaseCrossbenchTestCase(
         mock_browser.MockChromeDev(
             "dev", settings=Settings(platform=self.platform)),
         mock_browser.MockChromeStable(
-            "stable", settings=Settings(platform=self.platform))
+            "stable", settings=Settings(platform=self.platform)),
     ]
     for browser in self.browsers:
       self.assertSequenceEqual(browser.expected_js, [])
@@ -379,9 +379,10 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     return cli
 
   @contextlib.contextmanager
-  def _patch_get_browser(self,
-                         return_value: Sequence[Browser] | None = None
-                        ) -> Iterator[None]:
+  def _patch_get_browser(
+      self,
+      return_value: Sequence[Browser] | None = None,
+  ) -> Iterator[None]:
     if not return_value:
       return_value = self.browsers
     with mock.patch.object(

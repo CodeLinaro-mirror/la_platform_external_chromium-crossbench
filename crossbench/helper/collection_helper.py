@@ -32,7 +32,7 @@ def group_by(
     *,
     key: Callable[[InputT], KeyT],
     value: Callable[[InputT], ValueT] | None = None,
-    sort_key: Callable[[tuple[KeyT, Any]], Any] | None = str
+    sort_key: Callable[[tuple[KeyT, Any]], Any] | None = str,
 ) -> dict[KeyT, list[ValueT]]:
   """
   Works similar to itertools.groupby but does a global, SQL-style grouping
@@ -58,7 +58,7 @@ def group_by_custom(
     key: Callable[[InputT], KeyT],
     group: Callable[[KeyT], GroupT],
     value: Callable[[InputT], ValueT] | None = None,
-    sort_key: Callable[[tuple[KeyT, Any]], Any] | None = str
+    sort_key: Callable[[tuple[KeyT, Any]], Any] | None = str,
 ) -> dict[KeyT, GroupT]:
   """
   Works similar to itertools.groupby but does a global, SQL-style grouping
@@ -86,7 +86,7 @@ def _group_by(
     key_fn: Callable[[InputT], KeyT],
     group_fn: Callable[[KeyT], GroupT],
     value_fn: Callable[[InputT], ValueT],
-    sort_key_fn: Callable[[tuple[KeyT, Any]], Any] | None = str
+    sort_key_fn: Callable[[tuple[KeyT, Any]], Any] | None = str,
 ) -> dict[KeyT, GroupT]:
   if not key_fn:  # type: ignore
     raise ValueError("No key function provided")

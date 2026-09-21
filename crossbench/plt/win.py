@@ -79,7 +79,7 @@ class WinPlatform(Platform):
   @override
   def cpu(self) -> str:
     return self.powershell_stdout(
-        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Name"
+        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Name",
     ).strip().splitlines()[2].strip()
 
   @override
@@ -96,7 +96,7 @@ class WinPlatform(Platform):
     # because it uses py_platform.machine, which give the architecture of
     # the Python binary. It is possible to run x64 Python on ARM Windows.
     cpu_caption = self.powershell_stdout(
-        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption"
+        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption",
     ).strip().splitlines()[2].strip().lower()
     if cpu_caption.startswith("arm"):
       return "arm64" if "64-bit" in cpu_caption else "arm"

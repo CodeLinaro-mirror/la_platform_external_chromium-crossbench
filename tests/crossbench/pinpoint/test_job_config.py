@@ -31,7 +31,7 @@ _TEST_JOB_RESPONSE = {
         "end_git_hash": "HEAD",
         "base_extra_args":
             '--extra-browser-args="--my-flag --js-flags=--flag1 '
-            '--enable-features=enfeat1 --disable-features=disfeat1"'
+            '--enable-features=enfeat1 --disable-features=disfeat1"',
     },
     "bug_id": None,
     "comparison_mode": "try",
