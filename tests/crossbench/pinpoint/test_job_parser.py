@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse
 import unittest
 
-from crossbench.pinpoint.job_parser import parse_job_id
+from crossbench.pinpoint.job_parser import parse_job_id, parse_job_ids
 from tests import test_helper
 
 
@@ -36,6 +36,24 @@ class JobParserTest(unittest.TestCase):
       parse_job_id("go/j_/")
     with self.assertRaises(argparse.ArgumentTypeError):
       parse_job_id("go/j_/not_a_job_id")
+
+  def test_parse_job_ids_valid(self):
+    self.assertEqual(parse_job_ids(["123456"]), ["123456"])
+    self.assertEqual(parse_job_ids(["123abc", "456def"]), ["123abc", "456def"])
+    self.assertEqual(parse_job_ids(["123abc, 456def"]), ["123abc", "456def"])
+    self.assertEqual(
+        parse_job_ids(["go/j_/123abc", "456def,789abc"]),
+        ["123abc", "456def", "789abc"])
+
+  def test_parse_job_ids_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parse_job_ids([])
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parse_job_ids([""])
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parse_job_ids(["not_a_job_id"])
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parse_job_ids(["123abc, invalid"])
 
 
 if __name__ == "__main__":

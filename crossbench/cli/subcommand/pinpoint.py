@@ -16,11 +16,11 @@ from crossbench.cli.parser import CBArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.parse import NumberParser
 from crossbench.pinpoint.benchmarks import pinpoint_benchmark_name
-from crossbench.pinpoint.cancel_job import cancel_job
+from crossbench.pinpoint.cancel_job import cancel_jobs
 from crossbench.pinpoint.config import PinpointBisectJobConfig, \
     PinpointTryJobConfig
 from crossbench.pinpoint.job_config import print_job_config
-from crossbench.pinpoint.job_parser import parse_job_id
+from crossbench.pinpoint.job_parser import parse_job_id, parse_job_ids
 from crossbench.pinpoint.job_results import download_results
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
@@ -35,6 +35,9 @@ from crossbench.pinpoint.user_metrics import collect_metrics, init_metrics
 _BUG_REPORT_URL: Final[str] = (
     "https://issues.chromium.org/issues/new?component=1456889")
 _BUG_EPILOG: Final[str] = f"File bugs at {_BUG_REPORT_URL}"
+_JOB_ID_HELP: Final[str] = (
+    "The IDs of the jobs. Can be full URLs, parts of URLs with job IDs, "
+    "or just the IDs. Accepts multiple values and comma-separated lists.")
 
 if TYPE_CHECKING:
   from crossbench.cli.cli import BenchmarkClass, CrossBenchCLI
@@ -535,13 +538,17 @@ class PinpointBenchmarkSubcommand(PinpointBaseStartSubcommand):
     return pinpoint_benchmark_name(self._benchmark_cls.NAME)
 
 
-class PinpointCancelSubcommand(PinpointJobSubcommand):
-  """Cancel a specific Pinpoint job."""
+class PinpointCancelSubcommand(PinpointBaseSubcommand):
+  """Cancel Pinpoint jobs."""
 
   @override
-  def create_parser(self) -> argparse.ArgumentParser:
+  def add_cli_arguments(self) -> argparse.ArgumentParser:
     cancel_parser = self._parent.subparsers.add_parser(
-        "cancel", help="Cancel a specific Pinpoint job.")
+        "cancel", help="Cancel Pinpoint jobs.")
+    cancel_parser.add_argument(
+        "job_pos", nargs="*", default=None, help=_JOB_ID_HELP)
+    cancel_parser.add_argument(
+        "--job", nargs="+", action="extend", default=None, help=_JOB_ID_HELP)
     cancel_parser.add_argument(
         "--reason",
         required=False,
@@ -549,9 +556,23 @@ class PinpointCancelSubcommand(PinpointJobSubcommand):
         help="Reason for cancellation.")
     return cancel_parser
 
+  def _get_job_ids(self, args: argparse.Namespace) -> list[str]:
+    job_pos = args.job_pos
+    job_flag = args.job
+    if bool(job_pos) == bool(job_flag):
+      if job_pos and job_flag:
+        self._parser.error("Cannot specify both positional job IDs and --job.")
+      self._parser.error("Missing job ID(s).")
+    raw_jobs = job_pos if job_pos else job_flag
+    try:
+      return parse_job_ids(raw_jobs)
+    except argparse.ArgumentTypeError as e:
+      self._parser.error(str(e))
+
   @override
-  def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
-    cancel_job(job_id=job_id, reason=args.reason)
+  def subcommand_run(self, args: argparse.Namespace) -> None:
+    job_ids = self._get_job_ids(args)
+    cancel_jobs(job_ids=job_ids, reason=args.reason)
 
 
 class PinpointBaseFilteredListSubcommand(PinpointBaseSubcommand):

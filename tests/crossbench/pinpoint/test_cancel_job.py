@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 from unittest import mock
 
+from crossbench.exception import MultiException
 from crossbench.pinpoint import api, cancel_job
 from tests import test_helper
 from tests.crossbench.pinpoint import http_requests_mixin
@@ -34,6 +35,52 @@ class CancelJobTest(http_requests_mixin.MockHttpRequestsMixin):
     # Verify output
     mock_logging_info.assert_called_once_with(
         json.dumps(expected_response, indent=2))
+
+  def test_cancel_jobs(self):
+    job_ids = ["123456", "789012"]
+    reason = "test reason"
+    expected_response = {"status": "cancelled"}
+    self.mock_post.return_value.json.return_value = expected_response
+
+    with mock.patch("logging.info") as mock_logging_info:
+      cancel_job.cancel_jobs(job_ids, reason)
+
+    self.assertEqual(self.mock_post.call_count, 2)
+    self.assertEqual(self.mock_post.call_args_list, [
+        mock.call(
+            api.PINPOINT_CANCEL_JOB_API_URL,
+            data={
+                "job_id": "123456",
+                "reason": reason
+            }),
+        mock.call(
+            api.PINPOINT_CANCEL_JOB_API_URL,
+            data={
+                "job_id": "789012",
+                "reason": reason
+            }),
+    ])
+    self.assertEqual(mock_logging_info.call_args_list, [
+        mock.call("Cancelling job: %s", "123456"),
+        mock.call(json.dumps(expected_response, indent=2)),
+        mock.call("Cancelling job: %s", "789012"),
+        mock.call(json.dumps(expected_response, indent=2)),
+    ])
+
+  def test_cancel_jobs_continues_on_failure(self):
+    job_ids = ["123456", "789012"]
+    reason = "test reason"
+    expected_response = {"status": "cancelled"}
+    mock_failed_resp = mock.MagicMock()
+    mock_failed_resp.raise_for_status.side_effect = RuntimeError("Failed")
+    mock_success_resp = mock.MagicMock()
+    mock_success_resp.json.return_value = expected_response
+    self.mock_post.side_effect = [mock_failed_resp, mock_success_resp]
+
+    with self.assertRaises(MultiException):
+      cancel_job.cancel_jobs(job_ids, reason)
+
+    self.assertEqual(self.mock_post.call_count, 2)
 
 
 if __name__ == "__main__":

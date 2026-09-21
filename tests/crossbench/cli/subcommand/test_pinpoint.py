@@ -469,18 +469,52 @@ class PinpointSubcommandTest(unittest.TestCase):
     with self.assertRaises(ValueError):
       self.cli.run(["pinpoint", "config", "123abc", "--full"])
 
-  @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_job")
-  def test_pinpoint_cancel_job(self, mock_cancel_job):
+  @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_jobs")
+  def test_pinpoint_cancel_job(self, mock_cancel_jobs):
     self.cli.run(
         ["pinpoint", "cancel", "--job", "123abc", "--reason", "test reason"])
-    mock_cancel_job.assert_called_once_with(
-        job_id="123abc", reason="test reason")
+    mock_cancel_jobs.assert_called_once_with(
+        job_ids=["123abc"], reason="test reason")
 
-  @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_job")
-  def test_pinpoint_cancel_job_positional_job_id(self, mock_cancel_job):
+  @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_jobs")
+  def test_pinpoint_cancel_job_positional_job_id(self, mock_cancel_jobs):
     self.cli.run(["pinpoint", "cancel", "123abc", "--reason", "test reason"])
-    mock_cancel_job.assert_called_once_with(
-        job_id="123abc", reason="test reason")
+    mock_cancel_jobs.assert_called_once_with(
+        job_ids=["123abc"], reason="test reason")
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_jobs")
+  def test_pinpoint_cancel_multiple_jobs_flag(self, mock_cancel_jobs):
+    self.cli.run([
+        "pinpoint", "cancel", "--job", "123abc", "456def", "--reason",
+        "test reason"
+    ])
+    mock_cancel_jobs.assert_called_once_with(
+        job_ids=["123abc", "456def"], reason="test reason")
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_jobs")
+  def test_pinpoint_cancel_multiple_jobs_repeated_flag(self, mock_cancel_jobs):
+    self.cli.run([
+        "pinpoint", "cancel", "--job=123abc", "--job=456def", "--reason",
+        "test reason"
+    ])
+    mock_cancel_jobs.assert_called_once_with(
+        job_ids=["123abc", "456def"], reason="test reason")
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_jobs")
+  def test_pinpoint_cancel_multiple_jobs_comma(self, mock_cancel_jobs):
+    self.cli.run([
+        "pinpoint", "cancel", "--job", "123abc,456def", "--reason",
+        "test reason"
+    ])
+    mock_cancel_jobs.assert_called_once_with(
+        job_ids=["123abc", "456def"], reason="test reason")
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_jobs")
+  def test_pinpoint_cancel_multiple_jobs_positional(self, mock_cancel_jobs):
+    self.cli.run(
+        ["pinpoint", "cancel", "123abc", "456def", "--reason", "test reason"])
+    mock_cancel_jobs.assert_called_once_with(
+        job_ids=["123abc", "456def"], reason="test reason")
 
   def test_pinpoint_cancel_job_positional_and_explicit_job_id(self):
     with self.assertRaises(SystemExit) as cm:
