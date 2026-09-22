@@ -441,13 +441,25 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
   def test_validate_url_localhost_remote(self):
     self.mock_platform_default_tmp_dir(RemoteLinuxMockPlatform)
     remote_platform = RemoteLinuxMockPlatform(self.platform)
-    env = self.create_env()
+    env = self.create_env(validation_mode=ValidationMode.PROMPT)
     with mock.patch.object(url_helper, "get") as mock_get:
       self.assertTrue(
           env.validate_url("http://localhost:8000", remote_platform))
       self.assertTrue(
           env.validate_url("http://127.0.0.1:8000", remote_platform))
+      # This is the IP used by the macOS internet sharing feature.
+      self.assertTrue(
+          env.validate_url("http://192.168.2.1:8000", remote_platform))
+      self.assertTrue(env.validate_url("http://10.0.0.1:8000", remote_platform))
+      self.assertTrue(
+          env.validate_url("http://172.16.0.1:8000", remote_platform))
+      self.assertTrue(env.validate_url("http://[::1]:8000", remote_platform))
       mock_get.assert_not_called()
+      # Non-private hostnames (domain names or public IPs) are not skipped.
+      self.assertTrue(env.validate_url("http://google.com", remote_platform))
+      self.assertEqual(mock_get.call_count, 1)
+      self.assertTrue(env.validate_url("http://8.8.8.8", remote_platform))
+      self.assertEqual(mock_get.call_count, 2)
 
   def test_validate_url(self):
     with mock.patch.object(url_helper, "get") as mock_get:

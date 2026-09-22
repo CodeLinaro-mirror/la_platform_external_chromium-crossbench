@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import ipaddress
 import logging
 import os
 import re
@@ -33,6 +34,21 @@ STALE_RESULT_ICONS: Final = {
     500: "🤯",
     1000: "🧙🏼‍♂️",
 }
+
+
+def _is_local_or_private(hostname: str | None) -> bool:
+  if not hostname:
+    return False
+  if hostname == "localhost":
+    return True
+  try:
+    ip = ipaddress.ip_address(hostname)
+    return (ip.is_private or ip.is_loopback or ip.is_link_local or
+            ip.is_unspecified)
+  except ValueError:
+    # `hostname` is actual host requiring DNS resolution instead of an IP.
+    # In doubt, assume it's not local or private.
+    return False
 
 
 class RunnerEnv(BaseEnv):
@@ -87,7 +103,7 @@ class RunnerEnv(BaseEnv):
     result = ObjectParser.url(url)
     if result.scheme == "file":
       return platform.exists(result.path)
-    if platform.is_remote and result.hostname in ("localhost", "127.0.0.1"):
+    if platform.is_remote and _is_local_or_private(result.hostname):
       # TODO: support remote URL verification, for now we just assume that
       # checking a live site is ok.
       return True
