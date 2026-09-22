@@ -17,6 +17,15 @@ from tests.crossbench.probes.helper import BaseProbeTestCase
 
 class VramProbeTestCase(BaseProbeTestCase):
 
+  def _wait_for_vram_polls(self, min_calls: int = 3) -> None:
+    for _ in range(100):
+      if self.platform.gpu_vram_used.call_count >= min_calls:
+        return
+      threading.Event().wait(0.05)
+    self.fail(f"gpu_vram_used called only "
+              f"{self.platform.gpu_vram_used.call_count} times, "
+              f"expected >= {min_calls}")
+
   def test_vram_probe(self):
     mock_returns = [
         {
@@ -59,8 +68,7 @@ class VramProbeTestCase(BaseProbeTestCase):
     context.setup()
     context.start()
 
-    # Use threading.Event to wait on real wall clock since time.sleep is mocked.
-    threading.Event().wait(0.35)
+    self._wait_for_vram_polls(min_calls=3)
     context.stop()
 
     data = context.to_json(mock_actions)
@@ -107,7 +115,7 @@ class VramProbeTestCase(BaseProbeTestCase):
     context.setup()
     context.start()
 
-    threading.Event().wait(0.35)
+    self._wait_for_vram_polls(min_calls=3)
     context.stop()
 
     data = context.to_json(mock_actions)
