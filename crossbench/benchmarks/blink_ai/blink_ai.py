@@ -41,16 +41,21 @@ class BlinkAIStory(PressBenchmarkStory):
       "multimodal_images",
       "multimodal_audio",
   )
-  SUBSTORIES: ClassVar[tuple[str, ...]] = DEFAULT_SUBSTORIES + (
+  MTP_SUBSTORIES: ClassVar[tuple[str, ...]] = (
       "mtp_summary",
       "mtp_flight",
       "mtp_emoji",
   )
+  SUBSTORIES: ClassVar[tuple[str, ...]] = DEFAULT_SUBSTORIES + MTP_SUBSTORIES
 
   @classmethod
   @override
   def default_story_names(cls) -> tuple[str, ...]:
     return cls.DEFAULT_SUBSTORIES
+
+  @property
+  def has_mtp_substory(self) -> bool:
+    return any(substory in self.MTP_SUBSTORIES for substory in self.substories)
 
   def __init__(self,
                substories: Sequence[str] = (),
@@ -69,13 +74,21 @@ class BlinkAIStory(PressBenchmarkStory):
   def slow_duration(self) -> dt.timedelta:
     return dt.timedelta(minutes=15)
 
+  @property
+  def url_params(self) -> dict[str, str]:
+    if not self.substories:
+      return {}
+    return {"stories": ",".join(self.substories)}
+
+  @property
+  @override
+  def test_url(self) -> str:
+    return url_helper.update_url_query(self.url, self.url_params)
+
   @override
   def get_run_url(self, run: Run) -> str:
     url = super().get_run_url(run)
-    if self.substories:
-      url = url_helper.update_url_query(url,
-                                        {"stories": ",".join(self.substories)})
-    return url
+    return url_helper.update_url_query(url, self.url_params)
 
   @override
   def setup(self, run: Run) -> None:
@@ -163,4 +176,6 @@ class BlinkAIBenchmark(PressBenchmark):
         "AIRewriterAPI",
     ):
       chrome_flags.features.enable(feature)
+    if isinstance(story, BlinkAIStory) and story.has_mtp_substory:
+      chrome_flags.features.enable("OnDeviceModelSpeculativeDecoding")
     return chrome_flags

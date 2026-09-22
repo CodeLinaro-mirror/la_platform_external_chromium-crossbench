@@ -192,49 +192,13 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       self.assertIn(self.story_cls.URL + "?stories=language_model", urls)
       self.assertSequenceEqual(browser.expected_js, [])
 
-  def test_run_custom_url(self):
+  def test_custom_url(self):
     custom_url = "http://test.example.com/blink_ai"
     stories = self.story_cls.from_names(["language_model"], url=custom_url)
-    benchmark = self.benchmark_cls(stories)
-
-    probe_results = {
-        "downloadTimeMs": 0.0,
-        "sessionCreationTimeMs": 100.0,
-        "coldTimeToFirstTokenMs": 40.0,
-        "coldTotalPromptTimeMs": 200.0,
-        "coldChunksPerSecond": 50.0,
-        "warmTimeToFirstTokenMs": [10.0],
-        "warmTotalPromptTimeMs": [90.0],
-        "warmChunksPerSecond": [55.0],
-    }
-    repetitions = 1
-    for _ in range(repetitions):
-      for browser in self.browsers:
-        self._setup_run_js_expect(browser, probe_results)
-
-    for browser in self.browsers:
-      browser.expected_js = copy.deepcopy(browser.expected_js)
-
-    runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=True,
-        in_memory_result_db=True)
-
-    with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
-      runner.run()
-    cm.assert_called_once()
-
-    for browser in self.browsers:
-      urls = self.filter_splashscreen_urls(browser.url_list)
-      self.assertEqual(len(urls), repetitions)
-      self.assertIn(custom_url + "?stories=language_model", urls)
-      self.assertSequenceEqual(browser.expected_js, [])
+    self.assertEqual(len(stories), 1)
+    story = stories[0]
+    self.assertDictEqual(story.url_params, {"stories": "language_model"})
+    self.assertEqual(story.test_url, custom_url + "?stories=language_model")
 
   def test_run_error(self):
     stories = self.story_cls.from_names(["language_model"])
@@ -271,67 +235,16 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     for browser in active_browsers:
       self.assertSequenceEqual(browser.expected_js, [])
 
-  def test_run_multimodal(self):
+  def test_multimodal_stories(self):
     stories = self.story_cls.from_names(
         ["multimodal_image", "multimodal_audio"])
-    benchmark = self.benchmark_cls(stories)
-
-    probe_results = {
-        "multimodal_image": {
-            "downloadTimeMs": 100.0,
-            "sessionCreationTimeMs": 50.0,
-            "coldTimeToFirstTokenMs": 10.0,
-            "coldTotalPromptTimeMs": 100.0,
-            "coldChunksPerSecond": 10.0,
-            "warmTimeToFirstTokenMs": [2.0],
-            "warmTotalPromptTimeMs": [20.0],
-            "warmChunksPerSecond": [50.0],
-        },
-        "multimodal_audio": {
-            "downloadTimeMs": 200.0,
-            "sessionCreationTimeMs": 60.0,
-            "coldTimeToFirstTokenMs": 15.0,
-            "coldTotalPromptTimeMs": 120.0,
-            "coldChunksPerSecond": 8.0,
-            "warmTimeToFirstTokenMs": [3.0],
-            "warmTotalPromptTimeMs": [25.0],
-            "warmChunksPerSecond": [40.0],
-        },
-    }
-
-    mock_metrics = copy.deepcopy(probe_results)
-    mock_metrics.update(probe_results["multimodal_image"])
-
-    repetitions = 1
-    for _ in range(repetitions):
-      for browser in self.browsers:
-        self._setup_run_js_expect(browser, mock_metrics)
-
-    for browser in self.browsers:
-      browser.expected_js = copy.deepcopy(browser.expected_js)
-
-    runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=True,
-        in_memory_result_db=True)
-
-    with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
-      runner.run()
-    cm.assert_called_once()
-
-    for browser in self.browsers:
-      urls = self.filter_splashscreen_urls(browser.url_list)
-      self.assertEqual(len(urls), repetitions)
-      self.assertIn(
-          self.story_cls.URL + "?stories=multimodal_image%2Cmultimodal_audio",
-          urls)
-      self.assertSequenceEqual(browser.expected_js, [])
+    self.assertEqual(len(stories), 1)
+    story = stories[0]
+    self.assertDictEqual(story.url_params,
+                         {"stories": "multimodal_image,multimodal_audio"})
+    self.assertEqual(
+        story.test_url,
+        self.story_cls.URL + "?stories=multimodal_image%2Cmultimodal_audio")
 
   def test_substories_and_default(self):
     default_stories = self.story_cls.default_story_names()
@@ -348,54 +261,29 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       self.assertIn(mtp_story, self.story_cls.SUBSTORIES)
       self.assertNotIn(mtp_story, default_stories)
 
-  def test_run_mtp_stories(self):
+    default_story = self.story_cls.default()[0]
+    self.assertFalse(default_story.has_mtp_substory)
+    default_flags = self.benchmark_cls.extra_flags(
+        self.browsers[0].attributes(), default_story)
+    self.assertNotIn("OnDeviceModelSpeculativeDecoding", str(default_flags))
+
+    mtp_story_obj = self.story_cls.from_names(["mtp_summary"])[0]
+    self.assertTrue(mtp_story_obj.has_mtp_substory)
+    mtp_flags = self.benchmark_cls.extra_flags(self.browsers[0].attributes(),
+                                               mtp_story_obj)
+    self.assertIn("OnDeviceModelSpeculativeDecoding", str(mtp_flags))
+
+  def test_mtp_stories(self):
     stories = self.story_cls.from_names(
         ["mtp_summary", "mtp_flight", "mtp_emoji"])
-    benchmark = self.benchmark_cls(stories)
-
-    probe_results = {
-        "mtp_summary": {
-            "sessionCreationTimeMs": 50.0,
-            "coldTimeToFirstTokenMs": 10.0,
-            "coldTotalPromptTimeMs": 100.0,
-            "coldChunksPerSecond": 10.0,
-            "warmTimeToFirstTokenMs": [2.0],
-            "warmTotalPromptTimeMs": [20.0],
-            "warmChunksPerSecond": [50.0],
-        },
-    }
-    mock_metrics = copy.deepcopy(probe_results)
-    mock_metrics.update(probe_results["mtp_summary"])
-
-    repetitions = 1
-    for _ in range(repetitions):
-      for browser in self.browsers:
-        self._setup_run_js_expect(browser, mock_metrics)
-
-    for browser in self.browsers:
-      browser.expected_js = copy.deepcopy(browser.expected_js)
-
-    runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=True,
-        in_memory_result_db=True)
-
-    with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
-      runner.run()
-    cm.assert_called_once()
-
-    expected_query = "?stories=mtp_summary%2Cmtp_flight%2Cmtp_emoji"
-    for browser in self.browsers:
-      urls = self.filter_splashscreen_urls(browser.url_list)
-      self.assertEqual(len(urls), repetitions)
-      self.assertIn(self.story_cls.URL + expected_query, urls)
-      self.assertSequenceEqual(browser.expected_js, [])
+    self.assertEqual(len(stories), 1)
+    story = stories[0]
+    self.assertTrue(story.has_mtp_substory)
+    self.assertDictEqual(story.url_params,
+                         {"stories": "mtp_summary,mtp_flight,mtp_emoji"})
+    self.assertEqual(
+        story.test_url,
+        self.story_cls.URL + "?stories=mtp_summary%2Cmtp_flight%2Cmtp_emoji")
 
 
 if __name__ == "__main__":
