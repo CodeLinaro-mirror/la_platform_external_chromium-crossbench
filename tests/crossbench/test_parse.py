@@ -162,6 +162,108 @@ class DurationParserTestCase(unittest.TestCase):
         DurationParser.positive_duration("27.5 hours"),
         dt.timedelta(hours=27.5))
 
+  def test_duration_range(self):
+    self.assertEqual(DurationParser.duration_range()(0), dt.timedelta())
+    self.assertEqual(DurationParser.duration_range()("-10s"),
+                     dt.timedelta(seconds=-10))
+    self.assertEqual(DurationParser.duration_range()("10s"),
+                     dt.timedelta(seconds=10))
+    self.assertEqual(DurationParser.duration_range()(dt.timedelta(hours=1)),
+                     dt.timedelta(hours=1))
+
+    range_1_to_10 = DurationParser.duration_range(
+        min=dt.timedelta(seconds=1), max=dt.timedelta(seconds=10))
+    self.assertEqual(range_1_to_10("1s"), dt.timedelta(seconds=1))
+    self.assertEqual(range_1_to_10("5.5s"), dt.timedelta(seconds=5.5))
+    self.assertEqual(range_1_to_10("10s"), dt.timedelta(seconds=10))
+    self.assertEqual(
+        range_1_to_10(dt.timedelta(seconds=1)), dt.timedelta(seconds=1))
+
+    range_str = DurationParser.duration_range(min="1s", max="10s")
+    self.assertEqual(range_str("5s"), dt.timedelta(seconds=5))
+
+    range_int = DurationParser.duration_range(min=0, max=100)
+    self.assertEqual(range_int(50), dt.timedelta(seconds=50))
+
+    range_ms = DurationParser.duration_range(
+        min=100, max=500, default_time_unit=TimeUnit.MILLISECOND)
+    self.assertEqual(range_ms(250), dt.timedelta(milliseconds=250))
+    self.assertEqual(range_ms("250ms"), dt.timedelta(milliseconds=250))
+
+    range_inf = DurationParser.duration_range(min=-math.inf, max=math.inf)
+    self.assertEqual(range_inf("-10s"), dt.timedelta(seconds=-10))
+    self.assertEqual(range_inf("100h"), dt.timedelta(hours=100))
+
+    range_min_inf = DurationParser.duration_range(min=-math.inf, max=10)
+    self.assertEqual(range_min_inf("-100s"), dt.timedelta(seconds=-100))
+    self.assertEqual(range_min_inf("10s"), dt.timedelta(seconds=10))
+
+    range_max_inf = DurationParser.duration_range(min=10, max=math.inf)
+    self.assertEqual(range_max_inf("10s"), dt.timedelta(seconds=10))
+    self.assertEqual(range_max_inf("100s"), dt.timedelta(seconds=100))
+
+    range_max_only = DurationParser.duration_range(max=10)
+    self.assertEqual(range_max_only("-100s"), dt.timedelta(seconds=-100))
+    self.assertEqual(range_max_only(0), dt.timedelta())
+    self.assertEqual(range_max_only(10), dt.timedelta(seconds=10))
+
+    range_none_min = DurationParser.duration_range(min=None, max=10)
+    self.assertEqual(range_none_min("-100s"), dt.timedelta(seconds=-100))
+    self.assertEqual(range_none_min(10), dt.timedelta(seconds=10))
+
+    self.assertEqual(
+        DurationParser._duration_range("5s", dt.timedelta(seconds=1),
+                                       dt.timedelta(seconds=10)),
+        dt.timedelta(seconds=5))
+    self.assertEqual(
+        DurationParser._duration_range("-10s"), dt.timedelta(seconds=-10))
+    self.assertEqual(DurationParser._duration_range("0s"), dt.timedelta())
+
+  def test_duration_range_invalid(self):
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(max=10)(11)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(max=10)("10.1s")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(min=1, max=10)(0)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(min=1, max=10)("0.5s")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(min=1, max=10)(11)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(min=1, max=10)("10.1s")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(min=0, max=10)("-1s")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(min=1, max=10)("invalid")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(min=1, max=10)("")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(min=-math.inf, max=10)(15)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(min=10, max=math.inf)(5)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser._duration_range("0.5s", dt.timedelta(seconds=1),
+                                     dt.timedelta(seconds=10))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(min="invalid", max=10)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      DurationParser.duration_range(min=1, max="invalid")
+
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      DurationParser.duration_range(min=1, max=10, name="custom_dur")(0.5)
+    self.assertIn(
+        "Expected 0:00:01 <= custom_dur <= 0:00:10, but got: 0:00:00.500000",
+        str(cm.exception))
+
+    with self.assertRaises(AssertionError):
+      DurationParser.duration_range(min=1, max=1)
+    with self.assertRaises(AssertionError):
+      DurationParser.duration_range(min=10, max=1)
+    with self.assertRaises(AssertionError):
+      DurationParser.duration_range(
+          min=dt.timedelta(seconds=5), max=dt.timedelta(seconds=2))
+
 
 class PathParserTestCase(CrossbenchFakeFsTestCase):
 
@@ -365,6 +467,8 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
         _ = NumberParser.positive_zero_float(invalid)
 
   def test_parse_float_range(self):
+    self.assertEqual(NumberParser.float_range()(0.0), 0.0)
+    self.assertEqual(NumberParser.float_range()(100.0), 100.0)
     self.assertEqual(NumberParser.float_range(min=1, max=2)("1"), 1.0)
     self.assertEqual(NumberParser.float_range(min=0, max=1)(1), 1.0)
     self.assertEqual(NumberParser.float_range(min=0, max=1)("0"), 0.0)
@@ -375,6 +479,7 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(NumberParser.float_range(min=0, max=11)(1.23), 1.23)
     self.assertEqual(NumberParser.float_range(min=-2, max=11)("-1.1"), -1.1)
     self.assertEqual(NumberParser.float_range(min=-2, max=11)(-1.1), -1.1)
+    self.assertEqual(NumberParser._float_range("1.5", 1.0, 2.0), 1.5)
 
   def test_parse_float_range_invalid(self):
     with self.assertRaises(AssertionError):
@@ -383,6 +488,20 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
       NumberParser.float_range(10, 1.0)
     with self.assertRaises(AssertionError):
       NumberParser.float_range(-10.1, -11.0)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.float_range(1, 2)(0.9)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.float_range(1, 2)(2.1)
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.float_range(0, 10)(float("nan"))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser.float_range(0, 10)(float("inf"))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      NumberParser._float_range(0.9, 1.0, 2.0)
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      NumberParser.float_range(1, 10, name="custom_float")(0.5)
+    self.assertIn("Expected 1 <= custom_float <= 10, but got: 0.5",
+                  str(cm.exception))
     with self.assertRaises(argparse.ArgumentTypeError):
       NumberParser.int_range(-1.1, 10.1)(-1.2)
     with self.assertRaises(argparse.ArgumentTypeError):

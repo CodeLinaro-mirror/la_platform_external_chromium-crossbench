@@ -710,8 +710,20 @@ class NumberParser:
     return value_f
 
   @classmethod
+  def _float_range(cls,
+                   value: Any,
+                   min: float = 0.0,
+                   max: float = math.inf,
+                   name: str = "float") -> float:
+    value_f = cls.any_float(value, name)
+    if not math.isfinite(value_f) or value_f < min or max < value_f:
+      raise argparse.ArgumentTypeError(
+          f"Expected {min} <= {name} <= {max}, but got: {value_f}")
+    return value_f
+
+  @classmethod
   def positive_zero_float(cls, value: Any, name: str = "float") -> float:
-    return cls.float_range(0.0, math.inf, name=name)(value)
+    return cls._float_range(value, 0.0, math.inf, name=name)
 
   @classmethod
   def float_range(cls,
@@ -721,11 +733,7 @@ class NumberParser:
     assert min < max, f"Expected min={min} to be less than max={max}"
 
     def float_ranged(value: Any) -> float:
-      value_f = cls.any_float(value, name)
-      if not math.isfinite(value_f) or value_f < min or max < value_f:
-        raise argparse.ArgumentTypeError(
-            f"Expected {min} <= {name} <= {max}, but got: {value_f}")
-      return value_f
+      return cls._float_range(value, min, max, name)
 
     return float_ranged
 
@@ -903,16 +911,56 @@ class DurationParser:
     return duration
 
   @classmethod
+  def _duration_range(
+      cls,
+      value: Any,
+      min: dt.timedelta = dt.timedelta.min,
+      max: dt.timedelta = dt.timedelta.max,
+      name: str = "duration",
+      default_time_unit: TimeUnit = TimeUnit.SECOND,
+  ) -> dt.timedelta:
+    duration: dt.timedelta = cls.any_duration(
+        value, name, default_time_unit=default_time_unit)
+    if duration < min or max < duration:
+      raise DurationParseError(
+          f"Expected {min} <= {name} <= {max}, but got: {duration}")
+    return duration
+
+  @classmethod
   def positive_or_zero_duration(
       cls,
       time_value: Any,
       name: str = "duration",
       default_time_unit: TimeUnit = TimeUnit.SECOND) -> dt.timedelta:
-    duration: dt.timedelta = cls.any_duration(
-        time_value, name, default_time_unit=default_time_unit)
-    if duration.total_seconds() < 0:
-      raise DurationParseError(f"Expected positive {name}, but got {duration}")
-    return duration
+    return cls._duration_range(
+        time_value,
+        dt.timedelta(),
+        dt.timedelta.max,
+        name=name,
+        default_time_unit=default_time_unit)
+
+  @classmethod
+  def duration_range(
+      cls,
+      min: dt.timedelta | float | str | None = dt.timedelta.min,
+      max: dt.timedelta | float | str | None = dt.timedelta.max,
+      name: str = "duration",
+      default_time_unit: TimeUnit = TimeUnit.SECOND,
+  ) -> Callable[[Any], dt.timedelta]:
+    if min is None or min == -math.inf:
+      min = dt.timedelta.min
+    elif not isinstance(min, dt.timedelta):
+      min = cls.any_duration(min, f"min {name}", default_time_unit)
+    if max is None or max == math.inf:
+      max = dt.timedelta.max
+    elif not isinstance(max, dt.timedelta):
+      max = cls.any_duration(max, f"max {name}", default_time_unit)
+    assert min < max, f"Expected min={min} to be less than max={max}"
+
+    def duration_ranged(value: Any) -> dt.timedelta:
+      return cls._duration_range(value, min, max, name, default_time_unit)
+
+    return duration_ranged
 
   @classmethod
   def duration_or_user_input(
