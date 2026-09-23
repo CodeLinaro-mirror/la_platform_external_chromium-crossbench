@@ -17,17 +17,24 @@ from tests.crossbench.probes.helper import BaseProbeTestCase
 
 class VramProbeTestCase(BaseProbeTestCase):
 
-  def _wait_for_vram_polls(self, min_calls: int = 3) -> None:
-    for _ in range(100):
-      if self.platform.gpu_vram_used.call_count >= min_calls:
-        return
-      threading.Event().wait(0.05)
-    self.fail(f"gpu_vram_used called only "
-              f"{self.platform.gpu_vram_used.call_count} times, "
-              f"expected >= {min_calls}")
+  def _mock_gpu_vram_poller(self,
+                            samples: list[dict[str, float]]) -> threading.Event:
+    all_sampled = threading.Event()
+    call_count = 0
+
+    def side_effect() -> dict[str, float]:
+      nonlocal call_count
+      result = samples[min(call_count, len(samples) - 1)]
+      call_count += 1
+      if call_count >= len(samples):
+        all_sampled.set()
+      return result
+
+    self.platform.gpu_vram_used = mock.Mock(side_effect=side_effect)
+    return all_sampled
 
   def test_vram_probe(self):
-    mock_returns = [
+    all_sampled = self._mock_gpu_vram_poller([
         {
             "gpu_0": 100.0,
         },
@@ -40,13 +47,9 @@ class VramProbeTestCase(BaseProbeTestCase):
         {
             "gpu_0": 120.0,
         },
-    ] + [{
-        "gpu_0": 120.0,
-    }] * 10
+    ])
 
-    self.platform.gpu_vram_used = mock.Mock(side_effect=mock_returns)
-
-    probe = VramProbe(interval=dt.timedelta(seconds=0.1))
+    probe = VramProbe(interval=dt.timedelta(seconds=0.05))
 
     mock_browser = mock.Mock(spec=Browser)
     mock_browser.platform = self.platform
@@ -68,7 +71,7 @@ class VramProbeTestCase(BaseProbeTestCase):
     context.setup()
     context.start()
 
-    self._wait_for_vram_polls(min_calls=3)
+    self.assertTrue(all_sampled.wait(timeout=5.0))
     context.stop()
 
     data = context.to_json(mock_actions)
@@ -80,7 +83,7 @@ class VramProbeTestCase(BaseProbeTestCase):
     self.assertEqual(data["delta_mb"], 100.0)
 
   def test_vram_probe_multi_gpu(self):
-    mock_returns = [
+    all_sampled = self._mock_gpu_vram_poller([
         {
             "gpu_0": 100.0,
             "gpu_1": 200.0,
@@ -93,13 +96,12 @@ class VramProbeTestCase(BaseProbeTestCase):
             "gpu_0": 300.0,
             "gpu_1": 220.0,
         },
-    ] + [{
-        "gpu_0": 100.0,
-        "gpu_1": 200.0,
-    }] * 10
-
-    self.platform.gpu_vram_used = mock.Mock(side_effect=mock_returns)
-    probe = VramProbe(interval=dt.timedelta(seconds=0.1))
+        {
+            "gpu_0": 100.0,
+            "gpu_1": 200.0,
+        },
+    ])
+    probe = VramProbe(interval=dt.timedelta(seconds=0.05))
 
     mock_browser = mock.Mock(spec=Browser)
     mock_browser.platform = self.platform
@@ -115,7 +117,7 @@ class VramProbeTestCase(BaseProbeTestCase):
     context.setup()
     context.start()
 
-    self._wait_for_vram_polls(min_calls=3)
+    self.assertTrue(all_sampled.wait(timeout=5.0))
     context.stop()
 
     data = context.to_json(mock_actions)
