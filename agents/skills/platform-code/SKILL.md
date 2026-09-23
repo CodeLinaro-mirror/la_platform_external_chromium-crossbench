@@ -1,0 +1,67 @@
+---
+name: platform-code
+description: Enforces usage of Platform helpers, path abstractions (LocalPath vs AnyPath), and bans raw shell commands or shell=True.
+---
+
+# Crossbench Platform & Path Abstractions
+
+This skill enforces platform abstractions and path hygiene across the Crossbench
+codebase to ensure reliable cross-platform execution (Linux, macOS, Windows,
+Android, ChromeOS).
+
+## Crossbench Path Abstraction (`crossbench.path`)
+
+- **Never** use raw strings for file or directory paths.
+- Always import the path module as `pth`:
+  ```python
+  from crossbench import path as pth
+  ```
+  This aliasing ensures seamless compatibility with `pyfakefs` during unit
+  testing.
+- **`pth.LocalPath`**: Use for paths that are exclusively local to the host
+  running the script.
+- **`pth.AnyPath`**: Use for paths that can represent either local or remote
+  locations (such as an Android device, a ChromeOS device, or an SSH target).
+
+```python
+# GOOD: typed path abstraction
+def save_log(self, log_dir: pth.LocalPath) -> pth.LocalPath:
+  log_file = log_dir / "output.txt"
+  return log_file
+```
+
+## Platform & Command Abstractions
+
+Direct shell commands create fragile, non-portable code. System commands must
+always go through `Platform` objects.
+
+- **Never** execute raw shell commands (e.g. `subprocess.run`, `os.system`).
+- **Strictly avoid** `shell=True`. Either use or extend the explicit platform
+  helpers or find a simple workaround.
+- Use `self.host_platform` or the target browser's platform helper:
+  ```python
+  # BAD: raw shell command running only on local host
+  import subprocess
+  subprocess.run(["cp", src, dest])
+
+  # GOOD: high-level platform helper that works on any platform
+  self.host_platform.symlink_or_copy(src, dest)
+  ```
+- New platform methods should be implemented in the most abstract platform class
+  (`Platform`) rather than ad-hoc in platform-specific subclasses.
+
+## Binary Lookups
+
+- Never hardcode non-standard binary paths.
+- Prefer binaries provided with a chromium checkout.
+- Use `crossbench.path_finder.BasePathFinder` subclasses to implement robust
+  binary lookups across systems.
+
+```python
+# BAD: hardcoded non-standard binary path
+self.platform.sh("path/to/custom/binary", "--test=foo")
+
+# GOOD: abstract path finder
+binary = CustomBinaryFinder(self.platform).local_path
+self.platform.sh(binary, "--test=foo")
+```

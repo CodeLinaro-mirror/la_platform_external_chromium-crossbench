@@ -1,5 +1,5 @@
 ---
-name: Crossbench Python Implementation Workflow
+name: implementation-workflow
 description: Step-by-step workflow for implementing, typing, formatting, testing, and validating Python code in Crossbench.
 ---
 

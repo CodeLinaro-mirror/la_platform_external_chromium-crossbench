@@ -145,6 +145,11 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   results += CheckNoBannedBuiltins(input_api, output_api)
 
   # ---------------------------------------------------------------------------
+  # Skills:
+  # ---------------------------------------------------------------------------
+  results += input_api.canned_checks.CheckSkillFiles(input_api, output_api)
+
+  # ---------------------------------------------------------------------------
   # Unittest:
   # ---------------------------------------------------------------------------
   test_dir, file_pattern = TestFilePatternsToCheck(on_commit,
