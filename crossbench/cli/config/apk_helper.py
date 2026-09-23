@@ -8,6 +8,7 @@ from typing import Final
 
 CHROME_APK_HELPER_NAMES: Final = (
     "chrome_apk",
+    "chrome_bundle",
     "chrome_public_apk",
     "chrome_public_bundle",
     "content_shell_apk",

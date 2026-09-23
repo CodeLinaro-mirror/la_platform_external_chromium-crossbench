@@ -11,7 +11,8 @@ from unittest import mock
 from typing_extensions import override
 
 from crossbench.browsers.chrome.downloader import ChromeDownloader, \
-    ChromeDownloaderLinux, ChromeDownloaderMacOS, ChromeDownloaderWin
+    ChromeDownloaderAndroid, ChromeDownloaderLinux, ChromeDownloaderMacOS, \
+    ChromeDownloaderWin
 from tests import test_helper
 from tests.crossbench.browsers.downloader_helper import \
     AbstractDownloaderTestCase
@@ -174,6 +175,77 @@ class BasicChromeDownloaderTestCaseMacOS(AbstractChromeDownloaderTestCase):
     self.assertTrue(ChromeDownloaderMacOS.is_valid(path, self.platform))
     self.assertFalse(ChromeDownloaderLinux.is_valid(path, self.platform))
     self.assertFalse(ChromeDownloaderWin.is_valid(path, self.platform))
+
+
+class BasicChromeDownloaderTestCaseAndroid(AbstractChromeDownloaderTestCase):
+  __test__ = True
+
+  @override
+  def setUp(self) -> None:
+    super().setUp()
+    self.platform.is_linux = False
+    self.platform.is_macos = False
+    self.platform.is_win = False
+    self.platform.is_android = True
+    self.platform.is_arm64 = True
+    self.platform.adb = mock.MagicMock()
+    self.platform.adb.packages.return_value = []
+
+  def test_is_valid_archive(self) -> None:
+    path = pathlib.Path("download/archive.apks")
+    self.fs.create_file(path)
+    self.assertTrue(ChromeDownloader.is_valid(path, self.platform))
+    self.assertTrue(ChromeDownloaderAndroid.is_valid(path, self.platform))
+    self.assertFalse(ChromeDownloaderLinux.is_valid(path, self.platform))
+    self.assertFalse(ChromeDownloaderMacOS.is_valid(path, self.platform))
+    self.assertFalse(ChromeDownloaderWin.is_valid(path, self.platform))
+
+  def test_download_and_install_chrome_bundle(self) -> None:
+    expected_url = (
+        "gs://chrome-signed/android-B0urB0N/155.0.8056.0/high-arm_64/"
+        "ChromeDev.apks")
+    self.platform.host_platform.check_gcs_file_exists = mock.Mock(
+        side_effect=lambda url: url == expected_url)
+
+    def fake_download_gcs_file(url: str, dst: pathlib.Path) -> None:
+      self.assertEqual(url, expected_url)
+      self.fs.create_file(dst)
+
+    self.platform.host_platform.download_gcs_file = mock.Mock(
+        side_effect=fake_download_gcs_file)
+    self.platform.app_version = mock.Mock(return_value="155.0.8056.0")
+    app_path = ChromeDownloader.load("chrome-dev-155.0.8056.0", self.platform)
+    self.assertEqual(str(app_path), "com.chrome.dev")
+    self.platform.host_platform.download_gcs_file.assert_called_once()
+    self.platform.adb.uninstall.assert_called_once_with(
+        "com.chrome.dev", missing_ok=True)
+    self.platform.adb.install.assert_called_once()
+
+  def test_download_and_install_trichrome_bundle_legacy_milestone(self) -> None:
+    expected_apks_url = (
+        "gs://chrome-signed/android-B0urB0N/130.0.6723.103/high-arm_64/"
+        "TrichromeChromeGoogle6432Stable.apks")
+    expected_lib_url = (
+        "gs://chrome-signed/android-B0urB0N/130.0.6723.103/high-arm_64/"
+        "TrichromeLibraryGoogle6432Stable.apk")
+    self.platform.host_platform.check_gcs_file_exists = mock.Mock(
+        side_effect=lambda url: url == expected_apks_url)
+    downloaded_urls: list[str] = []
+
+    def fake_download_gcs_file(url: str, dst: pathlib.Path) -> None:
+      downloaded_urls.append(url)
+      self.fs.create_file(dst)
+
+    self.platform.host_platform.download_gcs_file = mock.Mock(
+        side_effect=fake_download_gcs_file)
+    self.platform.app_version = mock.Mock(return_value="130.0.6723.103")
+    app_path = ChromeDownloader.load(
+        "chrome-stable-130.0.6723.103", self.platform)
+    self.assertEqual(str(app_path), "com.android.chrome")
+    self.assertEqual(downloaded_urls, [expected_apks_url, expected_lib_url])
+    self.platform.adb.uninstall.assert_called_once_with(
+        "com.android.chrome", missing_ok=True)
+    self.assertEqual(self.platform.adb.install.call_count, 2)
 
 
 if __name__ == "__main__":

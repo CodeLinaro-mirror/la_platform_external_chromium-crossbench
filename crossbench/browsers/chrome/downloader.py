@@ -350,13 +350,16 @@ class ChromeDownloaderMacOS(ChromeDownloader):
 
 
 class ChromeDownloaderAndroid(ChromeDownloader):
-  """The android downloader for Chrome pulls .apks and the
-  corresponding .apk library and installs both on the attached device."""
+  """The android downloader for Chrome pulls .apks (and the corresponding
+  .apk library for Trichrome on milestones < 152) and installs them on the
+  attached device."""
   ARCHIVE_SUFFIX: ClassVar[str] = ".apks"
   LIBRARY_ARCHIVE_SUFFIX: ClassVar[str] = ".lib.apk"
   STORAGE_URL: ClassVar[str] = "gs://chrome-signed/android-B0urB0N/"
 
   MIN_HIGH_ARM_64_MILESTONE: Final[int] = 104
+  # Standalone chrome started being used in production in M152.
+  MIN_STANDALONE_CHROME_MILESTONE: Final[int] = 152
   ARM_32_BUILD: Final[str] = "arm"
   ARM_64_BUILD: Final[str] = "arm_64"
   ARM_64_HIGH_BUILD: Final[str] = "high-arm_64"
@@ -433,7 +436,7 @@ class ChromeDownloaderAndroid(ChromeDownloader):
     prefix: str = f"{folder_url}"
     urls: list[tuple[BrowserVersion, str]] = []
     # TODO: pass in correct sdk_level
-    package = self._get_chrome_package(100)
+    package = self._get_chrome_package(100, version.major)
     # TODO: respect version channel
     for channel_name, (_, channel) in self.CHANNEL_PACKAGE_LOOKUP.items():
       channel_version = ChromeVersion(version.parts, channel)
@@ -444,18 +447,20 @@ class ChromeDownloaderAndroid(ChromeDownloader):
       urls.append(version_url)
     return tuple(urls)
 
-  def _get_chrome_package(self, sdk_level: int) -> str:
-    del sdk_level
-    # TODO support older SDKs at some point
-    # if sdk_level < 19:
-    #   raise RuntimeError(
-    #       f"Clank can only be installed on >= 19, not {sdk_level}")
-    # if sdk_level < 21:
-    #   return "Chrome"
-    # if sdk_level < 24:
-    #   return "ChromeModern"
-    # if sdk_level < 29:
-    #   return "Monochrome"
+  def _get_chrome_package(self,
+                          sdk_level: int,
+                          milestone: int | None = None) -> str:
+    if sdk_level < 19:
+      raise RuntimeError(
+          f"Clank can only be installed on >= 19, not {sdk_level}")
+    if sdk_level < 21:
+      return "Chrome"
+    if sdk_level < 24:
+      return "ChromeModern"
+    if sdk_level < 29:
+      return "Monochrome"
+    if milestone is None or milestone >= self.MIN_STANDALONE_CHROME_MILESTONE:
+      return "Chrome"
     return "TrichromeChromeGoogle6432"
 
   @override
