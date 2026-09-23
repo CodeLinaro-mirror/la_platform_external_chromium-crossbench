@@ -14,15 +14,7 @@ from typing import Any, Final
 
 USE_PYTHON3 = True
 
-SOURCE_SKIP_RE: Final[tuple[str, ...]] = (r"^protoc/gen.*", r"^third_party/.*")
-
-
-def GlobalSkipChecks(input_api: Any, file_path: str) -> bool:
-  if input_api.fnmatch.fnmatch(file_path, "*protoc/gen/*"):
-    return True
-  if input_api.fnmatch.fnmatch(file_path, "*crossbench/third_party/*"):
-    return True
-  return False
+SOURCE_SKIP_RE: Final[tuple[str, ...]] = (r"^third_party/.*",)
 
 
 def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
@@ -178,6 +170,7 @@ def ModifiedFiles(
 ) -> list[str]:
   if on_commit:
     return []
+  from tools.presubmit.common import GlobalSkipChecks
   files = [file.AbsoluteLocalPath() for file in input_api.AffectedFiles()]
   files_to_check = []
   for file_path in files:
@@ -220,11 +213,13 @@ def TyperPaths(
     on_commit: bool,
     modified_py_files: list[str],
 ) -> list[str]:
+  from tools.presubmit.common import GlobalSkipChecks
   root_path = pathlib.Path(input_api.PresubmitLocalPath())
   mypy_files_to_check = {"PRESUBMIT.py"}
   crossbench_path = root_path / "crossbench"
   if on_commit:
     mypy_files_to_check.add(str(crossbench_path))
+    mypy_files_to_check.add(str(root_path / "tools"))
   else:
     mypy_files_to_check.update(modified_py_files)
   # TODO: enable mypy on all tests

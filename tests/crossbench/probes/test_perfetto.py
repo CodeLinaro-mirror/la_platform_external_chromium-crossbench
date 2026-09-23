@@ -25,7 +25,6 @@ from crossbench.probes.cb_perfetto.context.desktop import \
     DesktopPerfettoProbeContext
 from crossbench.probes.cb_perfetto.downloader import PerfettoToolDownloader
 from crossbench.probes.cb_perfetto.perfetto import TraceConfig
-from protoc import trace_config_pb2
 from tests import test_helper
 from tests.crossbench.base import CrossbenchConfigTestMixin, \
     CrossbenchFakeFsTestCase
@@ -34,6 +33,7 @@ from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
     ChromeOsSshMockPlatform, LinuxMockPlatform, MacOsMockPlatform, MockPopen, \
     MockPopenState, WinMockPlatform
 from tests.crossbench.runner.helper import MockRun
+from third_party.protoc import trace_config_pb2
 
 
 class TraceConfigTestCase(unittest.TestCase):

@@ -5,11 +5,12 @@ from __future__ import annotations
 
 import sys
 from contextlib import contextmanager
-from pathlib import Path
-from typing import Iterator
+from typing import Final, Iterator
 
-MODULE_DIR = Path(__file__).parent.resolve()
-GEN_DIR = MODULE_DIR / "gen"
+from crossbench import path as pth
+
+PROTOC_DIR: Final[pth.LocalPath] = pth.ROOT_DIR / "third_party" / "protoc"
+GEN_DIR: Final[pth.LocalPath] = PROTOC_DIR / "gen"
 
 
 @contextmanager

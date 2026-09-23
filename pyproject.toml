@@ -92,7 +92,6 @@ testpaths = [
 # The paths are relative to the project root.
 exclude = [
     "buildtools/*",
-    "protoc/gen/*",
     "third_party/*",
 ]
 target-version = "py311"
@@ -175,6 +174,9 @@ ignore = [
 ]
 "tools/presubmit/*" = [
     "N",        # Presubmit functions in depot_tools are CamelCase
+]
+"tools/protoc/compile.py" = [
+    "E402",     # Executable script modifies sys.path before importing crossbench
 ]
 "tests/*" = [
     "ANN",      # tests are allowed to skip type annotations

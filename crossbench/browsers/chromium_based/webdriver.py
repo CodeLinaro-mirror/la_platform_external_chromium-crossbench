@@ -31,7 +31,7 @@ from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper import wait
 from crossbench.helper.url_helper import get
-from protoc.gen.protos.perfetto.common.track_event_descriptor_pb2 import \
+from third_party.protoc.gen.protos.perfetto.common.track_event_descriptor_pb2 import \
     TrackEventDescriptor
 
 if TYPE_CHECKING:

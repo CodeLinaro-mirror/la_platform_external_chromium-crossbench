@@ -8,7 +8,7 @@ from typing import Any
 
 
 def GlobalSkipChecks(input_api: Any, file_path: str) -> bool:
-  if input_api.fnmatch.fnmatch(file_path, "*protoc/gen/*"):
+  if input_api.fnmatch.fnmatch(file_path, "third_party/*"):
     return True
   if input_api.fnmatch.fnmatch(file_path, "*crossbench/third_party/*"):
     return True

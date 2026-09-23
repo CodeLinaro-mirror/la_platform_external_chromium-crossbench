@@ -32,7 +32,7 @@ from crossbench.probes.cb_perfetto.start_tracing_sequence import \
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.trace_processor import profile_helper
-from protoc import trace_config_pb2
+from third_party.protoc import trace_config_pb2
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser

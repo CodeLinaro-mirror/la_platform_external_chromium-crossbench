@@ -10,11 +10,11 @@ from unittest import mock
 
 from crossbench.probes.perfetto_info import CategoryDescription, \
     PerfettoInfoProbe, PerfettoInfoProbeContext
-from protoc.gen.protos.perfetto.common.tracing_service_state_pb2 import \
-    TracingServiceState
-from protoc.gen.protos.perfetto.common.track_event_descriptor_pb2 import \
-    TrackEventDescriptor
 from tests import test_helper
+from third_party.protoc.gen.protos.perfetto.common.tracing_service_state_pb2 import \
+    TracingServiceState
+from third_party.protoc.gen.protos.perfetto.common.track_event_descriptor_pb2 import \
+    TrackEventDescriptor
 
 
 class TestPerfettoInfoProbe(unittest.TestCase):

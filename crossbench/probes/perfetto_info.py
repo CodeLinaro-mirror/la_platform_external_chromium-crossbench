@@ -16,7 +16,7 @@ from typing_extensions import Self, override
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.probes.probe import Probe, ProbeContext
 from crossbench.probes.result_location import ResultLocation
-from protoc.gen.protos.perfetto.common.tracing_service_state_pb2 import \
+from third_party.protoc.gen.protos.perfetto.common.tracing_service_state_pb2 import \
     TracingServiceState
 
 if TYPE_CHECKING:

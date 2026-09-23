@@ -37,8 +37,8 @@ from crossbench.plt.evemu_platform_mixin import EvemuPlatformMixin
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import PosixVersion, RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
-from protoc import activitymanagerservice_pb2, battery_pb2, enums_pb2, \
-    windowmanagerservice_pb2
+from third_party.protoc import activitymanagerservice_pb2, battery_pb2, \
+    enums_pb2, windowmanagerservice_pb2
 
 if TYPE_CHECKING:
   from crossbench.action_runner.config import VirtualDeviceType
