@@ -92,6 +92,14 @@ class WebviewEmbedderProbeContext(JsonResultProbeContext[WebviewEmbedderProbe]):
     return cast("AndroidAdbPlatform", browser_platform)
 
   @override
+  def stop_story_run(self) -> None:
+    self._json_data = self.extract_json(self.run)
+
+  @override
+  def stop(self) -> None:
+    pass
+
+  @override
   def to_json(self, actions: Actions) -> Json:
     driver = self.browser.start_driver(self.session)
     try:
