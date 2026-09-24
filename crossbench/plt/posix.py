@@ -562,8 +562,9 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
             stdin: ProcessIo = None,
             env: Mapping[str, str] | None = None,
             cwd: pth.AnyPath | None = None,
+            encoding: str | None = None,
             quiet: bool = False) -> subprocess.Popen:
-    del shell
+    del shell, encoding
     assert not (self.is_android and env), "ADB does not support env vars"
 
     with self.NamedTemporaryFile("popen_pid_") as temp_pid_file:

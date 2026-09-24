@@ -1071,23 +1071,25 @@ class Platform(abc.ABC):
             stdin: ProcessIo = None,
             env: Mapping[str, str] | None = None,
             cwd: pth.AnyPath | None = None,
+            encoding: str | None = None,
             quiet: bool = False) -> subprocess.Popen:
-    """ Platform-dependent wrapper around subprocess.Popen.
-      See subprocess.run for detailed argument help. """
+    """Platform-dependent wrapper around subprocess.Popen.
+    See subprocess.run for detailed argument help."""
     self.assert_is_local()
     self.validate_shell_args(args, shell)
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
       logging.debug("CWD: %s", pth.LocalPath.cwd())
     return subprocess.Popen(
-        args=args,
+        args,
         bufsize=bufsize,
         shell=shell,
         stdin=stdin,
         stderr=stderr,
         stdout=stdout,
         env=env,
-        cwd=cwd)
+        cwd=cwd,
+        encoding=encoding)
 
   def sh(self,
          *args: CmdArg,

@@ -12,6 +12,7 @@ import pathlib
 import signal
 import socket
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -965,6 +966,22 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
       self.assertTrue(self.platform.host_platform.process_info(popen.pid))
     finally:
       popen.kill()
+
+  def test_popen_encoding(self):
+    if self.platform.is_remote:
+      self.skipTest("Missing remote platform popen")
+      return
+    proc = self.platform.popen(
+        sys.executable,
+        "-c",
+        "print('hello from popen')",
+        stdout=subprocess.PIPE,
+        encoding="utf-8")
+    try:
+      assert proc.stdout
+      self.assertEqual(proc.stdout.read().strip(), "hello from popen")
+    finally:
+      self.platform.terminate(proc)
 
   def test_display_details(self):
     displays = self.platform.display_details()

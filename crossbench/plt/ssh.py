@@ -121,6 +121,7 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
             stdin: ProcessIo = None,
             env: Mapping[str, str] | None = None,
             cwd: pth.AnyPath | None = None,
+            encoding: str | None = None,
             quiet: bool = False) -> subprocess.Popen:
     ssh_cmd: ListCmdArgs = self.build_ssh_cmd(
         *args, shell=shell, env=env, cwd=cwd)
@@ -131,4 +132,5 @@ class SshPlatformMixin(RemotePlatformMixin, metaclass=abc.ABCMeta):
         stdout=stdout,
         stderr=stderr,
         stdin=stdin,
+        encoding=encoding,
         quiet=quiet)

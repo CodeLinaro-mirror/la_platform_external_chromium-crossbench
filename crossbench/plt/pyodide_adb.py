@@ -389,9 +389,10 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
       stdin: ProcessIo = None,
       env: Mapping[str, str] | None = None,
       cwd: pth.AnyPath | None = None,
+      encoding: str | None = None,
       quiet: bool = False,
   ) -> subprocess.Popen:
-    del shell, bufsize, stdin, quiet
+    del shell, bufsize, stdin, quiet, encoding
     assert not env, "ADB does not support env vars"
     self._check_interrupted()
 

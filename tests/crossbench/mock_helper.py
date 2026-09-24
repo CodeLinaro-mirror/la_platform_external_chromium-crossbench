@@ -435,8 +435,9 @@ class MockPlatformMixin:
             stdin: ProcessIo = None,
             env: Mapping[str, str] | None = None,
             cwd: pth.AnyPath | None = None,
+            encoding: str | None = None,
             quiet: bool = False) -> MockPopen:
-    del bufsize, stdout, stderr, stdin
+    del bufsize, stdout, stderr, stdin, encoding
     self.sh_stdout(*args, shell=shell, quiet=quiet, env=env, cwd=cwd)
 
     if not self.popens:
