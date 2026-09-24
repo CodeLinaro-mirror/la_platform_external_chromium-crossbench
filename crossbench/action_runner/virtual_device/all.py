@@ -6,11 +6,15 @@ from __future__ import annotations
 
 from crossbench.action_runner.virtual_device.keyboard import \
     KeyboardVirtualDeviceConfig
+from crossbench.action_runner.virtual_device.touchscreen import \
+    TouchscreenVirtualDeviceConfig
 from crossbench.action_runner.virtual_device.virtual_device_config import \
     VIRTUAL_DEVICES, VirtualDeviceConfig
 
-VIRTUAL_DEVICES_TUPLE: tuple[type[VirtualDeviceConfig],
-                             ...] = (KeyboardVirtualDeviceConfig,)
+VIRTUAL_DEVICES_TUPLE: tuple[type[VirtualDeviceConfig], ...] = (
+    KeyboardVirtualDeviceConfig,
+    TouchscreenVirtualDeviceConfig,
+)
 for device_cls in VIRTUAL_DEVICES_TUPLE:
   VIRTUAL_DEVICES[device_cls.TYPE] = device_cls
 

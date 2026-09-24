@@ -19,6 +19,8 @@ from crossbench.action_runner.config import ActionRunnerConfig, \
     ActionRunnerType
 from crossbench.action_runner.virtual_device.keyboard import \
     KeyboardVirtualDeviceConfig
+from crossbench.action_runner.virtual_device.touchscreen import \
+    TouchscreenVirtualDeviceConfig
 from crossbench.runner.run import Run
 from tests import test_helper
 
@@ -91,18 +93,31 @@ class ActionRunnerConfigTest(unittest.TestCase):
 
   def test_parse_virtual_devices(self) -> None:
     config_dict: dict[str, Any] = {
-        "type": "android",
-        "virtual_devices": [{
-            "type": "keyboard",
-            "name": "kb1",
-        }],
+        "type":
+            "android",
+        "virtual_devices": [
+            {
+                "type": "keyboard",
+                "name": "kb1",
+            },
+            {
+                "type": "touchscreen",
+                "name": "ts1",
+                "width": 1080,
+                "height": 2400,
+            },
+        ],
     }
     action_runner_config = ActionRunnerConfig.parse_dict(config_dict)
     self.assertEqual(action_runner_config.type, ActionRunnerType.ANDROID)
-    self.assertEqual(len(action_runner_config.virtual_devices), 1)
+    self.assertEqual(len(action_runner_config.virtual_devices), 2)
     self.assertEqual(
         action_runner_config.virtual_devices[0],
         KeyboardVirtualDeviceConfig(name="kb1"),
+    )
+    self.assertEqual(
+        action_runner_config.virtual_devices[1],
+        TouchscreenVirtualDeviceConfig(name="ts1", width=1080, height=2400),
     )
 
 

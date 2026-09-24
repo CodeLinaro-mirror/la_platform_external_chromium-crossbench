@@ -12,3 +12,4 @@ from crossbench.config import ConfigEnum
 @enum.unique
 class VirtualDeviceType(ConfigEnum):
   KEYBOARD = ("keyboard", "Virtual keyboard device")
+  TOUCHSCREEN = ("touchscreen", "Virtual touchscreen device")
