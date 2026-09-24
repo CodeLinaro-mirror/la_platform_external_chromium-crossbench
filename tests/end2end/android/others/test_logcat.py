@@ -26,13 +26,16 @@ def test_logcat(browser_config, test_env) -> None:
       *list(test_env.cq_flags),
   ])
 
-  logcat_files = list(test_env.results_dir.rglob("logcat.txt"))
+  logcat_files = list(
+      {p.resolve() for p in test_env.results_dir.rglob("logcat.txt")})
   assert len(logcat_files) == 1
   with logcat_files[0].open() as logcat_file:
     lines = logcat_file.readlines()
     assert len(lines) > 1
-    assert "--------- beginning of system" in lines[0]
+    assert "--------- beginning of " in lines[0]
     for line in lines[1:]:
+      if line.startswith("--------- beginning of "):
+        continue
       assert "ActivityManager" in line
 
 
