@@ -41,7 +41,9 @@ from third_party.protoc import activitymanagerservice_pb2, battery_pb2, \
     enums_pb2, windowmanagerservice_pb2
 
 if TYPE_CHECKING:
-  from crossbench.action_runner.config import VirtualDeviceConfig, \
+  from crossbench.action_runner.virtual_device.virtual_device_config import \
+      VirtualDeviceConfig
+  from crossbench.action_runner.virtual_device.virtual_device_type import \
       VirtualDeviceType
   from crossbench.plt.base import Platform
   from crossbench.plt.display_info import DisplayInfo

@@ -5,13 +5,12 @@
 from __future__ import annotations
 
 import contextlib
-import dataclasses
 import datetime as dt
 import logging
 import sys
 import time
 from typing import TYPE_CHECKING, Any, Callable, Final, Iterable, Iterator, \
-    Self, Sequence, cast
+    Sequence, cast
 
 from crossbench import exception
 from crossbench.action_runner.action_runner_listener import \
@@ -23,7 +22,6 @@ from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.browsers.chromium.devtools import \
     DevToolsInBrowserClient as DevToolsClient
 from crossbench.cli.ui import ui
-from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.probes.screenshot import ScreenshotProbe, \
     ScreenshotProbeContext
 from crossbench.runner.probe_context_lookup_error import \
@@ -34,6 +32,8 @@ if TYPE_CHECKING:
   from crossbench.action_runner.action.base_probe import BaseProbeAction
   from crossbench.action_runner.screenshot_annotation import \
       ScreenshotAnnotation
+  from crossbench.action_runner.virtual_device.virtual_device_config import \
+      VirtualDeviceConfig
   from crossbench.benchmarks.loading.config.pages import ActionBlock
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.benchmarks.loading.page.combined import CombinedPage
@@ -43,28 +43,6 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
-
-
-class VirtualDeviceType(ConfigEnum):
-  KEYBOARD = ("keyboard", "Virtual keyboard device")
-
-
-@dataclasses.dataclass(frozen=True)
-class VirtualDeviceConfig(ConfigObject):
-  name: str
-  device_type: VirtualDeviceType
-
-  @classmethod
-  def parse_str(cls, value: str) -> Self:
-    del value
-    raise ValueError("VirtualDeviceConfig must be parsed from a dictionary")
-
-  @classmethod
-  def config_parser(cls) -> ConfigParser[Self]:
-    parser = super().config_parser()
-    parser.add_argument("name", type=str, required=True)
-    parser.add_argument("device_type", type=VirtualDeviceType, required=True)
-    return parser
 
 
 class ActionNotImplementedError(NotImplementedError):

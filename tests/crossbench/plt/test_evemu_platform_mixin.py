@@ -10,10 +10,12 @@ import unittest
 from typing import TYPE_CHECKING
 from unittest import mock
 
-from crossbench.action_runner.config import VirtualDeviceConfig, \
-    VirtualDeviceType
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
     WaitEvent
+from crossbench.action_runner.virtual_device.keyboard import \
+    KeyboardVirtualDeviceConfig
+from crossbench.action_runner.virtual_device.virtual_device_config import \
+    VirtualDeviceConfig
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.plt.evemu_platform_mixin import _INPUT_DRAIN_BUFFER, \
     _INPUT_LEAD_BUFFER, EvemuPlatformMixin
@@ -21,6 +23,8 @@ from tests import test_helper
 from tests.crossbench.mock_helper import LinuxMockPlatform
 
 if TYPE_CHECKING:
+  from crossbench.action_runner.virtual_device.virtual_device_type import \
+      VirtualDeviceType
   from crossbench.plt.types import TupleCmdArgs
 
 
@@ -53,14 +57,13 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
     super().setUp()
     self.platform = MockEvemuPlatform()
     with mock.patch("time.monotonic", return_value=100.0):
-      self.platform.setup_virtual_devices((VirtualDeviceConfig(
-          name="test_kb", device_type=VirtualDeviceType.KEYBOARD),))
+      self.platform.setup_virtual_devices(
+          (KeyboardVirtualDeviceConfig(name="test_kb"),))
     self.platform.sleep_calls.clear()
 
   def test_setup_virtual_devices(self) -> None:
     platform = MockEvemuPlatform()
-    platform.setup_virtual_devices((VirtualDeviceConfig(
-        name="kb1", device_type=VirtualDeviceType.KEYBOARD),))
+    platform.setup_virtual_devices((KeyboardVirtualDeviceConfig(name="kb1"),))
     self.assertEqual(len(platform.popen_calls), 1)
     args, kwargs = platform.popen_calls[0]
     self.assertEqual(args, ("mock-evemu", "-"))
@@ -90,8 +93,7 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
     platform = MockEvemuPlatform()
     self.assertIsNone(platform.get_default_device(InputSource.KEYBOARD))
     self.assertIsNone(platform.get_default_device(InputSource.TOUCH))
-    platform.setup_virtual_devices((VirtualDeviceConfig(
-        name="kb1", device_type=VirtualDeviceType.KEYBOARD),))
+    platform.setup_virtual_devices((KeyboardVirtualDeviceConfig(name="kb1"),))
     self.assertEqual(platform.get_default_device(InputSource.KEYBOARD), "kb1")
     self.assertIsNone(platform.get_default_device(InputSource.TOUCH))
 

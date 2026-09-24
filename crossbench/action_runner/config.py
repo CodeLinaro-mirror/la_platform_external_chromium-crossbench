@@ -9,22 +9,30 @@ from typing import TYPE_CHECKING, Final, Self
 
 from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
-from crossbench.action_runner.base import ActionRunner, VirtualDeviceConfig, \
-    VirtualDeviceType
+from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.chromeos_input_action_runner import \
     ChromeOSInputActionRunner
+from crossbench.action_runner.virtual_device.all import VIRTUAL_DEVICES_TUPLE
+from crossbench.action_runner.virtual_device.keyboard import \
+    KeyboardVirtualDeviceConfig
+from crossbench.action_runner.virtual_device.virtual_device_config import \
+    VIRTUAL_DEVICES, VirtualDeviceConfig
+from crossbench.action_runner.virtual_device.virtual_device_type import \
+    VirtualDeviceType
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 
 __all__ = [
     "ActionRunnerConfig",
     "ActionRunnerType",
+    "VIRTUAL_DEVICES",
+    "VIRTUAL_DEVICES_TUPLE",
     "VirtualDeviceConfig",
     "VirtualDeviceType",
 ]
 
-_DEFAULT_VIRTUAL_DEVICES: Final[tuple[VirtualDeviceConfig, ...]] = (
-    VirtualDeviceConfig(
-        name="default_keyboard", device_type=VirtualDeviceType.KEYBOARD),)
+_DEFAULT_VIRTUAL_DEVICES: Final[tuple[VirtualDeviceConfig,
+                                      ...]] = (KeyboardVirtualDeviceConfig(
+                                          name="default_keyboard"),)
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform

@@ -16,9 +16,13 @@ from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.action_runner.config import VirtualDeviceConfig, \
-    VirtualDeviceType
 from crossbench.action_runner.display_rectangle import DisplayRectangle
+from crossbench.action_runner.virtual_device.keyboard import \
+    KeyboardVirtualDeviceConfig
+from crossbench.action_runner.virtual_device.virtual_device_config import \
+    VirtualDeviceConfig
+from crossbench.action_runner.virtual_device.virtual_device_type import \
+    VirtualDeviceType
 from crossbench.benchmarks.loading.point import Point
 from crossbench.helper.version import VersionParseError
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, \
@@ -141,12 +145,17 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.host_platform.expect_sh(
         pathlib.Path("adb"), "devices", "-l", result=devices)
 
-  def expect_sh(self, *args, result: ShResultType = ""):
-    self.expect_adb("shell", *args, result=result)
+  def expect_sh(self, *args, result: ShResultType = "", returncode: int = 0):
+    self.expect_adb("shell", *args, result=result, returncode=returncode)
 
-  def expect_adb(self, *args, result: ShResultType = ""):
+  def expect_adb(self, *args, result: ShResultType = "", returncode: int = 0):
     self.host_platform.expect_sh(
-        pathlib.Path("adb"), "-s", self.DEVICE_ID, *args, result=result)
+        pathlib.Path("adb"),
+        "-s",
+        self.DEVICE_ID,
+        *args,
+        result=result,
+        returncode=returncode)
 
   def test_is_android(self):
     self.assertTrue(self.platform.is_android)
@@ -322,8 +331,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         return_value=str(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION)):
       with mock.patch.object(
           self.platform, "popen", return_value=mock_proc) as mock_popen:
-        self.platform.setup_virtual_devices((VirtualDeviceConfig(
-            name="kb1", device_type=VirtualDeviceType.KEYBOARD),))
+        self.platform.setup_virtual_devices(
+            (KeyboardVirtualDeviceConfig(name="kb1"),))
         mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
         self.assertIn("kb1", self.platform._virtual_devices)
         self.assertIs(self.platform._virtual_devices["kb1"].proc, mock_proc)
@@ -337,8 +346,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         return_value=str(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION - 1)):
       with self.assertLogs(level="WARNING") as cm:
         with mock.patch.object(self.platform, "popen") as mock_popen:
-          self.platform.setup_virtual_devices((VirtualDeviceConfig(
-              name="kb1", device_type=VirtualDeviceType.KEYBOARD),))
+          self.platform.setup_virtual_devices(
+              (KeyboardVirtualDeviceConfig(name="kb1"),))
           mock_popen.assert_not_called()
           self.assertNotIn("kb1", self.platform._virtual_devices)
           self.assertIn("uinput injection is only supported on Android SDK",

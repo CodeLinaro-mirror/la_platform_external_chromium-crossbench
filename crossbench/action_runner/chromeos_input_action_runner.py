@@ -24,7 +24,8 @@ from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
-  from crossbench.action_runner.base import VirtualDeviceConfig
+  from crossbench.action_runner.virtual_device.virtual_device_config import \
+      VirtualDeviceConfig
   from crossbench.runner.actions import Actions
   from crossbench.runner.run import Run
 

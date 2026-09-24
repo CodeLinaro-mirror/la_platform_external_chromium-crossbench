@@ -6,17 +6,19 @@ from __future__ import annotations
 
 import argparse
 import unittest
+from typing import Any
 from unittest import mock
 
 from crossbench import plt
 from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
-from crossbench.action_runner.base import ActionRunner, VirtualDeviceConfig, \
-    VirtualDeviceType
+from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.chromeos_input_action_runner import \
     ChromeOSInputActionRunner
 from crossbench.action_runner.config import ActionRunnerConfig, \
     ActionRunnerType
+from crossbench.action_runner.virtual_device.keyboard import \
+    KeyboardVirtualDeviceConfig
 from crossbench.runner.run import Run
 from tests import test_helper
 
@@ -79,13 +81,29 @@ class ActionRunnerConfigTest(unittest.TestCase):
         action_runner.instantiate(plt.PLATFORM, self.mock_run),
         ChromeOSInputActionRunner)
 
-  def test_default_virtual_devices(self):
+  def test_default_virtual_devices(self) -> None:
     action_runner_config = ActionRunnerConfig()
     self.assertEqual(len(action_runner_config.virtual_devices), 1)
     self.assertEqual(
         action_runner_config.virtual_devices[0],
-        VirtualDeviceConfig(
-            name="default_keyboard", device_type=VirtualDeviceType.KEYBOARD))
+        KeyboardVirtualDeviceConfig(name="default_keyboard"),
+    )
+
+  def test_parse_virtual_devices(self) -> None:
+    config_dict: dict[str, Any] = {
+        "type": "android",
+        "virtual_devices": [{
+            "type": "keyboard",
+            "name": "kb1",
+        }],
+    }
+    action_runner_config = ActionRunnerConfig.parse_dict(config_dict)
+    self.assertEqual(action_runner_config.type, ActionRunnerType.ANDROID)
+    self.assertEqual(len(action_runner_config.virtual_devices), 1)
+    self.assertEqual(
+        action_runner_config.virtual_devices[0],
+        KeyboardVirtualDeviceConfig(name="kb1"),
+    )
 
 
 if __name__ == "__main__":
