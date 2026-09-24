@@ -108,7 +108,7 @@ class VideoAccelerationProbeContext(
               "flatten": True,
           },
       })
-      session_id = response.get("params", {}).get("sessionId")
+      session_id = response.get("result", {}).get("sessionId")
       if not session_id:
         raise ValueError(f"Could not find 'sessionId' in response: {response}")
 
