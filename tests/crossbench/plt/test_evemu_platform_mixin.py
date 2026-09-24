@@ -52,8 +52,10 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
   def setUp(self) -> None:
     super().setUp()
     self.platform = MockEvemuPlatform()
-    self.platform.setup_virtual_devices((VirtualDeviceConfig(
-        name="test_kb", device_type=VirtualDeviceType.KEYBOARD),))
+    with mock.patch("time.monotonic", return_value=100.0):
+      self.platform.setup_virtual_devices((VirtualDeviceConfig(
+          name="test_kb", device_type=VirtualDeviceType.KEYBOARD),))
+    self.platform.sleep_calls.clear()
 
   def test_setup_virtual_devices(self) -> None:
     platform = MockEvemuPlatform()
@@ -67,6 +69,13 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
     self.assertIs(platform._virtual_devices["kb1"].proc, platform.mock_proc)
     platform.mock_proc.stdin.write.assert_called_once()
     platform.mock_proc.stdin.flush.assert_called_once()
+
+  def test_teardown_virtual_devices(self) -> None:
+    self.assertIn("test_kb", self.platform._virtual_devices)
+    self.platform.teardown_virtual_devices()
+    self.assertEqual(self.platform._virtual_devices, {})
+    self.platform.mock_proc.stdin.close.assert_called_once()
+    self.platform.mock_proc.wait.assert_called_once_with(timeout=2)
 
   def test_setup_virtual_devices_unsupported(self) -> None:
     platform = MockEvemuPlatform()
@@ -98,15 +107,19 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
                                 "Virtual device 'unknown' was not initialized"):
       self.platform._execute_evemu_script("unknown", "E: ...")
 
-  def test_single_key(self) -> None:
+  @mock.patch("time.monotonic", return_value=100.5)
+  def test_single_key(self, mock_monotonic) -> None:
+    del mock_monotonic
     self.platform.inject_input_events("test_kb", [
         KeyEvent("KeyA", is_down=True),
     ])
     self.platform.mock_proc.stdin.write.assert_called_with(
-        b"E: 0.000000 0001 001e 0001\nE: 0.000000 0000 0000 0000\n")
+        b"E: 0.200000 0001 001e 0001\nE: 0.200000 0000 0000 0000\n")
     self.platform.mock_proc.stdin.flush.assert_called()
 
-  def test_key_with_wait(self) -> None:
+  @mock.patch("time.monotonic", return_value=100.5)
+  def test_key_with_wait(self, mock_monotonic) -> None:
+    del mock_monotonic
     self.platform.inject_input_events(
         "test_kb",
         [
@@ -115,73 +128,77 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
             KeyEvent("KeyA", is_down=False),
         ])
     self.platform.mock_proc.stdin.write.assert_called_with(
-        b"E: 0.000000 0001 001e 0001\n"
-        b"E: 0.000000 0000 0000 0000\n"
-        b"E: 1.500000 0001 001e 0000\n"
-        b"E: 1.500000 0000 0000 0000\n")
+        b"E: 0.200000 0001 001e 0001\n"
+        b"E: 0.200000 0000 0000 0000\n"
+        b"E: 1.700000 0001 001e 0000\n"
+        b"E: 1.700000 0000 0000 0000\n")
 
   @mock.patch("time.monotonic")
   def test_consecutive_injections_monotonic_timestamps(self,
                                                        mock_monotonic) -> None:
-    mock_monotonic.return_value = 100.0
+    mock_monotonic.return_value = 100.5
     self.platform.inject_input_events("test_kb", [
         KeyEvent("KeyA", is_down=True),
         WaitEvent(dt.timedelta(milliseconds=500)),
         KeyEvent("KeyA", is_down=False),
     ])
     self.platform.mock_proc.stdin.write.assert_called_with(
-        b"E: 0.000000 0001 001e 0001\n"
-        b"E: 0.000000 0000 0000 0000\n"
-        b"E: 0.500000 0001 001e 0000\n"
-        b"E: 0.500000 0000 0000 0000\n")
-    self.assertEqual(self.platform.sleep_calls,
-                     [dt.timedelta(milliseconds=500) + _INPUT_DRAIN_BUFFER])
+        b"E: 0.200000 0001 001e 0001\n"
+        b"E: 0.200000 0000 0000 0000\n"
+        b"E: 0.700000 0001 001e 0000\n"
+        b"E: 0.700000 0000 0000 0000\n")
+    self.assertEqual(self.platform.sleep_calls, [
+        dt.timedelta(milliseconds=500) + _INPUT_LEAD_BUFFER +
+        _INPUT_DRAIN_BUFFER,
+    ])
 
-    mock_monotonic.return_value = 100.5
+    mock_monotonic.return_value = 101.0
     self.platform.inject_input_events("test_kb", [
         KeyEvent("KeyB", is_down=True),
         WaitEvent(dt.timedelta(milliseconds=200)),
         KeyEvent("KeyB", is_down=False),
     ])
     self.platform.mock_proc.stdin.write.assert_called_with(
-        b"E: 0.550000 0001 0030 0001\n"
-        b"E: 0.550000 0000 0000 0000\n"
-        b"E: 0.750000 0001 0030 0000\n"
-        b"E: 0.750000 0000 0000 0000\n")
+        b"E: 0.700000 0001 0030 0001\n"
+        b"E: 0.700000 0000 0000 0000\n"
+        b"E: 0.900000 0001 0030 0000\n"
+        b"E: 0.900000 0000 0000 0000\n")
     self.assertEqual(self.platform.sleep_calls, [
-        dt.timedelta(milliseconds=500) + _INPUT_DRAIN_BUFFER,
+        dt.timedelta(milliseconds=500) + _INPUT_LEAD_BUFFER +
+        _INPUT_DRAIN_BUFFER,
         (dt.timedelta(milliseconds=200) + _INPUT_LEAD_BUFFER +
          _INPUT_DRAIN_BUFFER),
     ])
 
   @mock.patch("time.monotonic")
   def test_consecutive_injections_with_delay(self, mock_monotonic) -> None:
-    mock_monotonic.return_value = 100.0
+    mock_monotonic.return_value = 100.5
     self.platform.inject_input_events("test_kb", [
         KeyEvent("KeyA", is_down=True),
         WaitEvent(dt.timedelta(milliseconds=500)),
         KeyEvent("KeyA", is_down=False),
     ])
     self.platform.mock_proc.stdin.write.assert_called_with(
-        b"E: 0.000000 0001 001e 0001\n"
-        b"E: 0.000000 0000 0000 0000\n"
-        b"E: 0.500000 0001 001e 0000\n"
-        b"E: 0.500000 0000 0000 0000\n")
+        b"E: 0.200000 0001 001e 0001\n"
+        b"E: 0.200000 0000 0000 0000\n"
+        b"E: 0.700000 0001 001e 0000\n"
+        b"E: 0.700000 0000 0000 0000\n")
 
     # Simulate 5 seconds elapsed between injections
-    mock_monotonic.return_value = 105.0
+    mock_monotonic.return_value = 105.5
     self.platform.inject_input_events("test_kb", [
         KeyEvent("KeyB", is_down=True),
         WaitEvent(dt.timedelta(milliseconds=200)),
         KeyEvent("KeyB", is_down=False),
     ])
     self.platform.mock_proc.stdin.write.assert_called_with(
-        b"E: 5.050000 0001 0030 0001\n"
-        b"E: 5.050000 0000 0000 0000\n"
-        b"E: 5.250000 0001 0030 0000\n"
-        b"E: 5.250000 0000 0000 0000\n")
+        b"E: 5.200000 0001 0030 0001\n"
+        b"E: 5.200000 0000 0000 0000\n"
+        b"E: 5.400000 0001 0030 0000\n"
+        b"E: 5.400000 0000 0000 0000\n")
     self.assertEqual(self.platform.sleep_calls, [
-        dt.timedelta(milliseconds=500) + _INPUT_DRAIN_BUFFER,
+        dt.timedelta(milliseconds=500) + _INPUT_LEAD_BUFFER +
+        _INPUT_DRAIN_BUFFER,
         (dt.timedelta(milliseconds=200) + _INPUT_LEAD_BUFFER +
          _INPUT_DRAIN_BUFFER),
     ])

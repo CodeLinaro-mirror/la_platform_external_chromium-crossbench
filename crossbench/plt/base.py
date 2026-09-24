@@ -140,6 +140,9 @@ class Platform(abc.ABC):
   def setup_virtual_devices(self, virtual_devices: tuple) -> None:
     del virtual_devices
 
+  def teardown_virtual_devices(self) -> None:
+    pass
+
   def get_default_device(self, input_source: InputSource) -> str | None:
     del input_source
     return None

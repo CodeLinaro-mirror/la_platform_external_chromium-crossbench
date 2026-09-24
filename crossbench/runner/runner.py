@@ -573,6 +573,8 @@ class Runner:
       finally:
         with self._exceptions.capture("Benchmark teardown"):
           self._benchmark.teardown(self)
+        for platform in self.platforms:
+          platform.teardown_virtual_devices()
 
     if self._exceptions.throw:
       # Ensure that we bail out on the first exception.

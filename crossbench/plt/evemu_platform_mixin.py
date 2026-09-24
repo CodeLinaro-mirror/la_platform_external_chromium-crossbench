@@ -117,18 +117,25 @@ B: 04 10 00 00 00 00 00 00 00
 B: 05 00 00 00 00 00 00 00 00
 B: 11 00 00 00 00 00 00 00 00
 B: 12 00 00 00 00 00 00 00 00
+E: 0.000000 0000 0000 0000
 """
 
+# Delay added by Android's EvemuParser (REGISTRATION_DELAY_NANOS = 500ms) after
+# registering a virtual device before the first E: event is injected.
+_DEVICE_REGISTRATION_DELAY: Final[dt.timedelta] = dt.timedelta(milliseconds=500)
+# Additional time for the OS input pipeline and WindowManager configuration
+# changes to settle after the virtual keyboard is hot-plugged during setup.
+_DEVICE_SETTLE_DELAY: Final[dt.timedelta] = dt.timedelta(milliseconds=500)
 
 # Buffer added to timestamps on consecutive injections to ensure events arrive
 # on the device ahead of their target playback time, preventing uinput/evemu
 # from discarding inter-event delays in "catch-up" mode due to transport latency
 # or clock drift.
-_INPUT_LEAD_BUFFER: Final[dt.timedelta] = dt.timedelta(milliseconds=50)
+_INPUT_LEAD_BUFFER: Final[dt.timedelta] = dt.timedelta(milliseconds=200)
 # Buffer added to the sleep duration after injection to allow the virtual
 # device process and OS input pipeline to fully drain and dispatch queued
 # events before Crossbench proceeds.
-_INPUT_DRAIN_BUFFER: Final[dt.timedelta] = dt.timedelta(milliseconds=50)
+_INPUT_DRAIN_BUFFER: Final[dt.timedelta] = dt.timedelta(milliseconds=300)
 
 INPUT_SOURCE_TO_VIRTUAL_DEVICE_TYPE: Final[immutabledict[
     InputSource, VirtualDeviceType]] = immutabledict({
@@ -168,6 +175,7 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
                             device_type: VirtualDeviceType) -> TupleCmdArgs:
     pass
 
+  @override
   def setup_virtual_devices(
       self, virtual_devices: tuple[VirtualDeviceConfig, ...]) -> None:
     for device_config in virtual_devices:
@@ -177,6 +185,18 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
         raise ValueError(
             f"Unsupported virtual device type: {device_config.device_type}")
 
+  @override
+  def teardown_virtual_devices(self) -> None:
+    for state in self._virtual_devices.values():
+      if state.proc.poll() is None:
+        if state.proc.stdin:
+          state.proc.stdin.close()
+        try:
+          state.proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+          state.proc.terminate()
+    self._virtual_devices.clear()
+
   def _init_virtual_keyboard(self, device_name: str) -> None:
     state = self._virtual_devices.get(device_name)
     if state is None or state.proc.poll() is not None:
@@ -185,8 +205,11 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
       assert proc.stdin is not None
       proc.stdin.write(_EVEMU_KEYBOARD_HEADER)
       proc.stdin.flush()
+      write_time = dt.timedelta(seconds=time.monotonic())
+      start_time = write_time + _DEVICE_REGISTRATION_DELAY
+      self.sleep(_DEVICE_REGISTRATION_DELAY + _DEVICE_SETTLE_DELAY)
       self._virtual_devices[device_name] = VirtualDeviceState(
-          proc, device_type=VirtualDeviceType.KEYBOARD)
+          proc, device_type=VirtualDeviceType.KEYBOARD, start_time=start_time)
 
   def _execute_evemu_script(self, device_name: str, script: str) -> None:
     state = self._virtual_devices.get(device_name)
@@ -215,7 +238,7 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
       start_time = dt.timedelta()
       lead_buffer = dt.timedelta()
     else:
-      # Pad consecutive injections with a lead buffer so timestamps are in the
+      # Pad injections with a lead buffer so timestamps are in the
       # future relative to the device playback clock, preventing catch-up mode.
       lead_buffer = _INPUT_LEAD_BUFFER
       start_time = (now - state.start_time) + lead_buffer

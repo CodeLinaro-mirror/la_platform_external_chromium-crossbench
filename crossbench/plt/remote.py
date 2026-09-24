@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Final, Mapping
 from typing_extensions import override
 
 if TYPE_CHECKING:
+  import datetime as dt
+
   from crossbench.path import AnyPath, AnyPathLike, LocalPath
   from crossbench.plt.base import Platform
   from crossbench.plt.signals import Signals
@@ -32,6 +34,9 @@ class RemotePlatformMixin:
 
   def host_path(self, path: AnyPathLike) -> LocalPath:
     return self._host_platform.local_path(path)
+
+  def sleep(self, seconds: float | dt.timedelta) -> None:
+    self._host_platform.sleep(seconds)
 
   def build_shell_cmd(self,
                       *args: CmdArg,
