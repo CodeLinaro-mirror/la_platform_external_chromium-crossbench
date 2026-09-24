@@ -11,7 +11,8 @@ from unittest import mock
 from crossbench import plt
 from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
-from crossbench.action_runner.base import ActionRunner
+from crossbench.action_runner.base import ActionRunner, VirtualDeviceConfig, \
+    VirtualDeviceType
 from crossbench.action_runner.chromeos_input_action_runner import \
     ChromeOSInputActionRunner
 from crossbench.action_runner.config import ActionRunnerConfig, \
@@ -77,6 +78,14 @@ class ActionRunnerConfigTest(unittest.TestCase):
     self.assertIsInstance(
         action_runner.instantiate(plt.PLATFORM, self.mock_run),
         ChromeOSInputActionRunner)
+
+  def test_default_virtual_devices(self):
+    action_runner_config = ActionRunnerConfig()
+    self.assertEqual(len(action_runner_config.virtual_devices), 1)
+    self.assertEqual(
+        action_runner_config.virtual_devices[0],
+        VirtualDeviceConfig(
+            name="default_keyboard", device_type=VirtualDeviceType.KEYBOARD))
 
 
 if __name__ == "__main__":

@@ -161,14 +161,13 @@ class ActionRunner:
                run: Run,
                virtual_devices: tuple[VirtualDeviceConfig, ...] = (),
                step_by_step_mode: bool = False) -> None:
-    self._virtual_devices = virtual_devices
     self._run = run
     self._listener = ActionRunnerListener()
     # TODO: Don't share state across runs
     self._info_stack: exception.TInfoStack | None = None
     self._step_by_step_mode = step_by_step_mode
     self._failure_screenshot_annotations: list[ScreenshotAnnotation] = []
-    self.browser_platform.setup_virtual_devices(self._virtual_devices)
+    self.browser_platform.setup_virtual_devices(virtual_devices)
 
   @property
   def run(self) -> Run:

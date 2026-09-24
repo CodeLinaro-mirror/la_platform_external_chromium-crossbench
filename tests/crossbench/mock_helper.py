@@ -15,6 +15,7 @@ import shlex
 import subprocess
 from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, \
     MutableMapping, Sequence, TypeAlias
+from unittest import mock
 
 import psutil
 from typing_extensions import override
@@ -26,6 +27,7 @@ from crossbench.cli.cli import CrossBenchCLI
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.base import MachineArch, Platform, SubprocessError
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
+from crossbench.plt.evemu_platform_mixin import VirtualDeviceState
 from crossbench.plt.ios import IOSPlatform
 from crossbench.plt.linux import LinuxPlatform, RemoteLinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
@@ -598,6 +600,15 @@ class WinMockPlatform(WinMockPlatformMixin, WinPlatform):
 
 
 class MockAdb(Adb):
+  mock_sdk_version: int = AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION
+
+  @functools.cached_property
+  @override
+  def sdk_version(self) -> int:
+    try:
+      return super().sdk_version
+    except Exception:
+      return self.mock_sdk_version
 
   @override
   def start_server(self) -> None:
@@ -613,7 +624,14 @@ class MockAdb(Adb):
 
 
 class AndroidAdbMockPlatform(MockPlatformMixin, AndroidAdbPlatform):
-  pass
+
+  def _init_virtual_keyboard(self, device_name: str) -> None:
+    state = self._virtual_devices.get(device_name)
+    if state is None or state.proc.poll() is not None:
+      mock_proc = mock.MagicMock(spec=subprocess.Popen)
+      mock_proc.poll.return_value = None
+      mock_proc.stdin = mock.MagicMock()
+      self._virtual_devices[device_name] = VirtualDeviceState(mock_proc)
 
 
 class GenericMockPlatform(MockPlatformMixin, Platform):

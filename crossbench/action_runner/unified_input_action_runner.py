@@ -11,6 +11,7 @@ from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
     WaitEvent
 from crossbench.action_runner.keyboard_layout import US_KEYBOARD_LAYOUT
+from crossbench.benchmarks.loading.input_source import InputSource
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
@@ -99,7 +100,9 @@ class UnifiedInputActionRunner(ActionRunner):
     if not events_with_weights:
       return
 
-    device_name = action.source_device or ""
+    device_name = (
+        action.source_device or
+        self.browser_platform.get_default_device(InputSource.KEYBOARD) or "")
 
     if not action.duration:
       input_events = [e for e in events_with_weights if isinstance(e, KeyEvent)]

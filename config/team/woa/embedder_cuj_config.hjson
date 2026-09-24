@@ -13,7 +13,7 @@
       }
       {
         "action": "text_input"
-        "keyevent": "KEYCODE_ENTER"
+        "keyevent": "Enter"
         "source": "keyboard"
       }
       {

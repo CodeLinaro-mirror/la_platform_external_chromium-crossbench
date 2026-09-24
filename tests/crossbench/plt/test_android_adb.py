@@ -307,28 +307,55 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         self.platform._get_evemu_device_cmd(VirtualDeviceType.KEYBOARD),
         ("uinput", "-"))
 
+  def test_sdk_version(self):
+    with mock.patch.object(self.adb, "getprop", return_value="37"):
+      self.assertEqual(self.adb.sdk_version, 37)
+
   def test_setup_virtual_devices(self):
     mock_proc = mock.MagicMock()
     mock_proc.poll.return_value = None
     mock_proc.stdin = mock.MagicMock()
 
     with mock.patch.object(
-        self.platform, "popen", return_value=mock_proc) as mock_popen:
-      self.platform.setup_virtual_devices((VirtualDeviceConfig(
-          name="kb1", device_type=VirtualDeviceType.KEYBOARD),))
-      mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
-      self.assertIn("kb1", self.platform._virtual_devices)
-      self.assertIs(self.platform._virtual_devices["kb1"].proc, mock_proc)
-      mock_proc.stdin.write.assert_called_once()
-      mock_proc.stdin.flush.assert_called_once()
+        self.adb,
+        "getprop",
+        return_value=str(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION)):
+      with mock.patch.object(
+          self.platform, "popen", return_value=mock_proc) as mock_popen:
+        self.platform.setup_virtual_devices((VirtualDeviceConfig(
+            name="kb1", device_type=VirtualDeviceType.KEYBOARD),))
+        mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
+        self.assertIn("kb1", self.platform._virtual_devices)
+        self.assertIs(self.platform._virtual_devices["kb1"].proc, mock_proc)
+        mock_proc.stdin.write.assert_called_once()
+        mock_proc.stdin.flush.assert_called_once()
+
+  def test_setup_virtual_devices_unsupported_sdk(self):
+    with mock.patch.object(
+        self.adb,
+        "getprop",
+        return_value=str(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION - 1)):
+      with self.assertLogs(level="WARNING") as cm:
+        with mock.patch.object(self.platform, "popen") as mock_popen:
+          self.platform.setup_virtual_devices((VirtualDeviceConfig(
+              name="kb1", device_type=VirtualDeviceType.KEYBOARD),))
+          mock_popen.assert_not_called()
+          self.assertNotIn("kb1", self.platform._virtual_devices)
+          self.assertIn("uinput injection is only supported on Android SDK",
+                        cm.output[0])
 
   def test_setup_virtual_devices_unsupported(self):
     unsupported_config = mock.MagicMock(spec=VirtualDeviceConfig)
     unsupported_config.device_type = "unsupported_device_type"
     unsupported_config.name = "touch1"
 
-    with self.assertRaisesRegex(ValueError, "Unsupported virtual device type"):
-      self.platform.setup_virtual_devices((unsupported_config,))
+    with mock.patch.object(
+        self.adb,
+        "getprop",
+        return_value=str(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION)):
+      with self.assertRaisesRegex(ValueError,
+                                  "Unsupported virtual device type"):
+        self.platform.setup_virtual_devices((unsupported_config,))
 
   def test_execute_evemu_script(self):
     mock_proc = mock.MagicMock()
@@ -336,15 +363,34 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     mock_proc.stdin = mock.MagicMock()
     self.platform._virtual_devices["kb1"] = VirtualDeviceState(mock_proc)
 
-    self.platform._execute_evemu_script("kb1", "E: 0.000000 0001 001e 0001\n")
-    mock_proc.stdin.write.assert_called_once_with(
-        b"E: 0.000000 0001 001e 0001\n")
-    mock_proc.stdin.flush.assert_called_once()
+    with mock.patch.object(
+        self.adb,
+        "getprop",
+        return_value=str(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION)):
+      self.platform._execute_evemu_script("kb1", "E: 0.000000 0001 001e 0001\n")
+      mock_proc.stdin.write.assert_called_once_with(
+          b"E: 0.000000 0001 001e 0001\n")
+      mock_proc.stdin.flush.assert_called_once()
 
   def test_execute_evemu_script_uninitialized(self):
-    with self.assertRaisesRegex(RuntimeError,
-                                "Virtual device 'unknown' was not initialized"):
-      self.platform._execute_evemu_script("unknown", "E: ...")
+    with mock.patch.object(
+        self.adb,
+        "getprop",
+        return_value=str(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION)):
+      with self.assertRaisesRegex(
+          RuntimeError, "Virtual device 'unknown' was not initialized"):
+        self.platform._execute_evemu_script("unknown", "E: ...")
+
+  def test_execute_evemu_script_unsupported_sdk(self):
+    with mock.patch.object(
+        self.adb,
+        "getprop",
+        return_value=str(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION - 1)):
+      with self.assertRaisesRegex(
+          NotImplementedError,
+          f"Virtual device uinput injection is only supported on Android SDK "
+          f"{AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION}+"):
+        self.platform._execute_evemu_script("kb1", "E: ...")
 
   def test_has_root(self):
     self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")

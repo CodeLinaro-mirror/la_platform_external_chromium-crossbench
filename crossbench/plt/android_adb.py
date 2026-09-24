@@ -41,7 +41,8 @@ from third_party.protoc import activitymanagerservice_pb2, battery_pb2, \
     enums_pb2, windowmanagerservice_pb2
 
 if TYPE_CHECKING:
-  from crossbench.action_runner.config import VirtualDeviceType
+  from crossbench.action_runner.config import VirtualDeviceConfig, \
+      VirtualDeviceType
   from crossbench.plt.base import Platform
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo, TupleCmdArgs
@@ -249,6 +250,10 @@ class Adb:
   @property
   def adb_bin(self) -> pth.AnyPath:
     return self._adb_bin
+
+  @functools.cached_property
+  def sdk_version(self) -> int:
+    return int(self.getprop("ro.build.version.sdk"))
 
   @functools.cached_property
   def build_version(self) -> int:
@@ -808,6 +813,29 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
 
   def _create_port_manager(self) -> PortManager:
     return AndroidAdbPortManager(self, self._adb)
+
+  MIN_UINPUT_SDK_VERSION: Final[int] = 37
+
+  @override
+  def setup_virtual_devices(
+      self, virtual_devices: tuple[VirtualDeviceConfig, ...]) -> None:
+    if not virtual_devices:
+      return
+    if self.adb.sdk_version < self.MIN_UINPUT_SDK_VERSION:
+      logging.warning(
+          "Virtual device uinput injection is only supported on Android SDK "
+          "%d+ (got SDK %d). Inputs may not work as expected.",
+          self.MIN_UINPUT_SDK_VERSION, self.adb.sdk_version)
+      return
+    super().setup_virtual_devices(virtual_devices)
+
+  @override
+  def _execute_evemu_script(self, device_name: str, script: str) -> None:
+    if self.adb.sdk_version < self.MIN_UINPUT_SDK_VERSION:
+      raise NotImplementedError(
+          f"Virtual device uinput injection is only supported on Android SDK "
+          f"{self.MIN_UINPUT_SDK_VERSION}+ (got SDK {self.adb.sdk_version})")
+    super()._execute_evemu_script(device_name, script)
 
   @override
   def _create_default_tmp_dir(self) -> pth.AnyPath:

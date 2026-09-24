@@ -9,13 +9,14 @@ import logging
 import re
 from typing import TYPE_CHECKING, Final, cast
 
-from crossbench.action_runner.base import ActionRunner, \
-    InputSourceNotImplementedError
+from crossbench.action_runner.base import InputSourceNotImplementedError
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
 from crossbench.action_runner.screenshot_annotation import \
     ScreenshotPointAnnotation, ScreenshotRectAnnotation
+from crossbench.action_runner.unified_input_action_runner import \
+    UnifiedInputActionRunner
 from crossbench.benchmarks.loading.point import Point
 
 if TYPE_CHECKING:
@@ -86,7 +87,7 @@ class ViewportInfo:
     return distance * self.actual_pixel_ratio
 
 
-class AndroidInputActionRunner(ActionRunner):
+class AndroidInputActionRunner(UnifiedInputActionRunner):
   """Custom ActionRunner for Android."""
 
   _BOUNDS_RE: Final[re.Pattern] = re.compile(
@@ -171,11 +172,6 @@ return [
       self._swipe_impl(action.start_x, action.start_y, action.end_x,
                        action.end_y, action.duration)
 
-  def text_input_keyboard(self, action: i_action.TextInputAction) -> None:
-    if action.text:
-      self._rate_limit_keystrokes(action, self._type_characters)
-    elif keyevent := action.keyevent:
-      self._send_keyevent(keyevent)
 
   def _click_impl(self, action: i_action.ClickAction, use_mouse: bool) -> None:
     if action.duration > dt.timedelta():
@@ -299,16 +295,6 @@ return [
 
     return self.browser_platform.get_window_rect(browser_main_window_name)
 
-  def _type_characters(self, _: Actions, characters: str) -> None:
-    # TODO(kalutes) handle special characters and other whitespaces like '\t'
-
-    # The 'input text' command cannot handle spaces directly. Replace space
-    # characters with the encoding '%s'.
-    characters = characters.replace(" ", "%s")
-    self.browser_platform.sh("input", "keyboard", "text", characters)
-
-  def _send_keyevent(self, keyevent: str) -> None:
-    self.browser_platform.sh("input", "keyevent", keyevent)
 
   def _click_ui_selector(self, ui_selector: UiSelectorConfig,
                          timeout: dt.timedelta) -> None:

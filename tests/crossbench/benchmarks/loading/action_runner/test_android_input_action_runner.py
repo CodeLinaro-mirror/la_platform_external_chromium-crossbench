@@ -27,6 +27,7 @@ from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.settings import Settings
 from crossbench.flags.base import Flags
+from crossbench.plt.evemu_platform_mixin import VirtualDeviceState
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import \
@@ -134,6 +135,11 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
                 "1.1.1.1 device product:mock model:mock"))
     self.platform = AndroidAdbMockPlatform(
         self.host_platform, adb=MockAdb(self.host_platform))
+    self.uinput_proc = mock.MagicMock()
+    self.uinput_proc.poll.return_value = None
+    self.uinput_proc.stdin = mock.MagicMock()
+    self.platform._virtual_devices["default_keyboard"] = VirtualDeviceState(
+        self.uinput_proc)
     self.browser = MockChromeAndroidStable(
         "mock browser", settings=Settings(platform=self.platform))
     self.runner = MockRunner()
@@ -198,21 +204,39 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.run_action(swipe_action)
 
   def test_text_input_zero_duration(self):
-    self.platform.expect_sh("input", "keyboard", "text", "Some%ssample%stext")
-    text_input_action = TextInputAction.create(
-        InputSource.KEYBOARD, text="Some sample text", duration=dt.timedelta())
-    self.assertFalse(self.runner.mock_waits)
-    self.run_action(text_input_action)
-    self.assertFalse(self.runner.mock_waits)
+    with mock.patch.object(self.platform, "inject_input_events") as mock_inject:
+      text_input_action = TextInputAction.create(
+          InputSource.KEYBOARD,
+          text="Some sample text",
+          duration=dt.timedelta())
+      self.run_action(text_input_action)
+      mock_inject.assert_called_once()
+      device_name, events = mock_inject.call_args[0]
+      self.assertEqual(device_name, "default_keyboard")
+      self.assertTrue(events)
 
   def test_text_input_non_zero_duration(self):
-    text_input_action = TextInputAction.create(
-        InputSource.KEYBOARD, text="aaa", duration=dt.timedelta(seconds=1))
-    for _ in range(3):
-      self.platform.expect_sh("input", "keyboard", "text", "a")
-    self.assertFalse(self.runner.mock_waits)
-    self.run_action(text_input_action)
-    self.assertTrue(self.runner.mock_waits)
+    with mock.patch.object(self.platform, "inject_input_events") as mock_inject:
+      text_input_action = TextInputAction.create(
+          InputSource.KEYBOARD, text="aaa", duration=dt.timedelta(seconds=1))
+      self.run_action(text_input_action)
+      mock_inject.assert_called_once()
+      device_name, events = mock_inject.call_args[0]
+      self.assertEqual(device_name, "default_keyboard")
+      self.assertTrue(events)
+
+  def test_text_input_custom_source_device(self):
+    with mock.patch.object(self.platform, "inject_input_events") as mock_inject:
+      text_input_action = TextInputAction.create(
+          InputSource.KEYBOARD,
+          text="Some sample text",
+          duration=dt.timedelta(),
+          source_device="custom_kb")
+      self.run_action(text_input_action)
+      mock_inject.assert_called_once()
+      device_name, events = mock_inject.call_args[0]
+      self.assertEqual(device_name, "custom_kb")
+      self.assertTrue(events)
 
   def test_click_touch_coordinates(self):
     click_action = ClickAction.create(

@@ -12,10 +12,12 @@ import time
 from typing import TYPE_CHECKING, Final, Iterable
 
 from immutabledict import immutabledict
+from typing_extensions import override
 
 from crossbench.action_runner.config import VirtualDeviceType
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
     WaitEvent
+from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.plt.base import Platform
 
 if TYPE_CHECKING:
@@ -128,10 +130,16 @@ _INPUT_LEAD_BUFFER: Final[dt.timedelta] = dt.timedelta(milliseconds=50)
 # events before Crossbench proceeds.
 _INPUT_DRAIN_BUFFER: Final[dt.timedelta] = dt.timedelta(milliseconds=50)
 
+INPUT_SOURCE_TO_VIRTUAL_DEVICE_TYPE: Final[immutabledict[
+    InputSource, VirtualDeviceType]] = immutabledict({
+        InputSource.KEYBOARD: VirtualDeviceType.KEYBOARD,
+    })
+
 
 @dataclasses.dataclass
 class VirtualDeviceState:
   proc: subprocess.Popen
+  device_type: VirtualDeviceType = VirtualDeviceType.KEYBOARD
   start_time: dt.timedelta | None = None
 
 
@@ -144,6 +152,16 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
     self._virtual_devices: dict[str, VirtualDeviceState] = {}
+
+  @override
+  def get_default_device(self, input_source: InputSource) -> str | None:
+    target_type = INPUT_SOURCE_TO_VIRTUAL_DEVICE_TYPE.get(input_source)
+    if not target_type:
+      return None
+    for name, state in self._virtual_devices.items():
+      if state.device_type == target_type:
+        return name
+    return None
 
   @abc.abstractmethod
   def _get_evemu_device_cmd(self,
@@ -167,7 +185,8 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
       assert proc.stdin is not None
       proc.stdin.write(_EVEMU_KEYBOARD_HEADER)
       proc.stdin.flush()
-      self._virtual_devices[device_name] = VirtualDeviceState(proc)
+      self._virtual_devices[device_name] = VirtualDeviceState(
+          proc, device_type=VirtualDeviceType.KEYBOARD)
 
   def _execute_evemu_script(self, device_name: str, script: str) -> None:
     state = self._virtual_devices.get(device_name)

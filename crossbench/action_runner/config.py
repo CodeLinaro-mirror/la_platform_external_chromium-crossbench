@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Final, Self
 
 from crossbench.action_runner.android_input_action_runner import \
     AndroidInputActionRunner
@@ -21,6 +21,10 @@ __all__ = [
     "VirtualDeviceConfig",
     "VirtualDeviceType",
 ]
+
+_DEFAULT_VIRTUAL_DEVICES: Final[tuple[VirtualDeviceConfig, ...]] = (
+    VirtualDeviceConfig(
+        name="default_keyboard", device_type=VirtualDeviceType.KEYBOARD),)
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
@@ -39,7 +43,7 @@ class ActionRunnerType(ConfigEnum):
 @dataclasses.dataclass(frozen=True)
 class ActionRunnerConfig(ConfigObject):
   type: ActionRunnerType = ActionRunnerType.AUTO
-  virtual_devices: tuple[VirtualDeviceConfig, ...] = ()
+  virtual_devices: tuple[VirtualDeviceConfig, ...] = _DEFAULT_VIRTUAL_DEVICES
 
   @classmethod
   def parse_str(cls, value: str) -> Self:
@@ -52,7 +56,10 @@ class ActionRunnerConfig(ConfigObject):
     parser.add_argument(
         "type", type=ActionRunnerType, default=ActionRunnerType.AUTO)
     parser.add_argument(
-        "virtual_devices", type=VirtualDeviceConfig, is_list=True, default=())
+        "virtual_devices",
+        type=VirtualDeviceConfig,
+        is_list=True,
+        default=_DEFAULT_VIRTUAL_DEVICES)
     return parser
 
   def instantiate(self,

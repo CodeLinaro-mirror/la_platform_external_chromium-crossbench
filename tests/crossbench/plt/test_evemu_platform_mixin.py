@@ -14,6 +14,7 @@ from crossbench.action_runner.config import VirtualDeviceConfig, \
     VirtualDeviceType
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
     WaitEvent
+from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.plt.evemu_platform_mixin import _INPUT_DRAIN_BUFFER, \
     _INPUT_LEAD_BUFFER, EvemuPlatformMixin
 from tests import test_helper
@@ -75,6 +76,15 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
 
     with self.assertRaisesRegex(ValueError, "Unsupported virtual device type"):
       platform.setup_virtual_devices((unsupported_config,))
+
+  def test_get_default_device(self) -> None:
+    platform = MockEvemuPlatform()
+    self.assertIsNone(platform.get_default_device(InputSource.KEYBOARD))
+    self.assertIsNone(platform.get_default_device(InputSource.TOUCH))
+    platform.setup_virtual_devices((VirtualDeviceConfig(
+        name="kb1", device_type=VirtualDeviceType.KEYBOARD),))
+    self.assertEqual(platform.get_default_device(InputSource.KEYBOARD), "kb1")
+    self.assertIsNone(platform.get_default_device(InputSource.TOUCH))
 
   def test_execute_evemu_script(self) -> None:
     self.platform._execute_evemu_script("test_kb",

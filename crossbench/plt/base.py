@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 
   from crossbench.action_runner.display_rectangle import DisplayRectangle
   from crossbench.action_runner.input_events import InputEvent
+  from crossbench.benchmarks.loading.input_source import InputSource
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
@@ -138,6 +139,10 @@ class Platform(abc.ABC):
 
   def setup_virtual_devices(self, virtual_devices: tuple) -> None:
     del virtual_devices
+
+  def get_default_device(self, input_source: InputSource) -> str | None:
+    del input_source
+    return None
 
   def assert_is_local(self) -> None:
     if self.is_local:
