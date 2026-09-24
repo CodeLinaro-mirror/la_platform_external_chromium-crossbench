@@ -16,8 +16,8 @@ from crossbench.browsers.firefox.version import FirefoxVersion
 from crossbench.helper import url_helper
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.version import BrowserVersion
-  from crossbench.path import AnyPathLike, LocalPath
   from crossbench.plt.base import Platform
 
 _PLATFORM_NAME_LOOKUP: Final[dict[tuple[str, str], str]] = {
@@ -58,7 +58,7 @@ class FirefoxDownloader(Downloader):
     return FirefoxVersion.is_valid_unique(path_or_identifier)
 
   @classmethod
-  def _is_valid(cls, path_or_identifier: AnyPathLike,
+  def _is_valid(cls, path_or_identifier: pth.AnyPathLike,
                 browser_platform: Platform) -> bool:
     if cls.is_valid_version(str(path_or_identifier)):
       return True
@@ -67,7 +67,7 @@ class FirefoxDownloader(Downloader):
             path.name.endswith(cls.ARCHIVE_SUFFIX))
 
   def __init__(self,
-               version_identifier: str | LocalPath,
+               version_identifier: str | pth.LocalPath,
                browser_type: str,
                platform_name: str,
                browser_platform: Platform,
@@ -103,7 +103,7 @@ class FirefoxDownloader(Downloader):
     return next(iter(self._archive_urls(folder_url, self.requested_version)))
 
   @override
-  def _download_archive(self, archive_url: str, tmp_dir: LocalPath) -> None:
+  def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
     self._browser_platform.download_to(
         archive_url, tmp_dir / f"archive.{self.ARCHIVE_SUFFIX}")
     archive_candidates = list(tmp_dir.glob("*"))
@@ -117,7 +117,7 @@ class FirefoxDownloader(Downloader):
 
   @abc.abstractmethod
   @override
-  def _install_archive(self, archive_path: LocalPath) -> None:
+  def _install_archive(self, archive_path: pth.LocalPath) -> None:
     pass
 
 
@@ -126,12 +126,12 @@ class FirefoxDownloaderLinux(FirefoxDownloader):
 
   @classmethod
   @override
-  def is_valid(cls, path_or_identifier: AnyPathLike,
+  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
   @override
-  def _installed_app_path(self) -> LocalPath:
+  def _installed_app_path(self) -> pth.LocalPath:
     # TODO: support local vs remote
     return self._extracted_path() / "firefox-bin"
 
@@ -142,7 +142,7 @@ class FirefoxDownloaderLinux(FirefoxDownloader):
     return ((version, f"{folder_url}/firefox-{version.parts_str}.tar.bz2"),)
 
   @override
-  def _install_archive(self, archive_path: LocalPath) -> None:
+  def _install_archive(self, archive_path: pth.LocalPath) -> None:
     raise NotImplementedError("Missing linux support")
 
 
@@ -152,7 +152,7 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
 
   @classmethod
   @override
-  def is_valid(cls, path_or_identifier: AnyPathLike,
+  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
@@ -166,7 +166,7 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
           f"but requested {major_version}.")
 
   @override
-  def _download_archive(self, archive_url: str, tmp_dir: LocalPath) -> None:
+  def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
     assert self._browser_platform.is_macos
     if self._browser_platform.is_arm64 and (self.requested_version
                                             < self.MIN_MAC_ARM64_MILESTONE):
@@ -184,16 +184,16 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
     return ((version, f"{folder_url}/{archive_name}"),)
 
   @override
-  def _extracted_path(self) -> LocalPath:
+  def _extracted_path(self) -> pth.LocalPath:
     # TODO: support local vs remote
     return self._installed_app_path()
 
   @override
-  def _installed_app_path(self) -> LocalPath:
+  def _installed_app_path(self) -> pth.LocalPath:
     return self._out_dir / f"Firefox {self.requested_version}.app"
 
   @override
-  def _install_archive(self, archive_path: LocalPath) -> None:
+  def _install_archive(self, archive_path: pth.LocalPath) -> None:
     extracted_path = self._extracted_path()
     DMGArchiveHelper.extract(self.host_platform, archive_path, extracted_path)
     assert extracted_path.exists(), (
@@ -204,10 +204,10 @@ class FirefoxDownloaderWin(FirefoxDownloader):
 
   @classmethod
   @override
-  def is_valid(cls, path_or_identifier: AnyPathLike,
+  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return False
 
   @override
-  def _install_archive(self, archive_path: LocalPath) -> None:
+  def _install_archive(self, archive_path: pth.LocalPath) -> None:
     raise NotImplementedError("Missing windows support")

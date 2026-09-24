@@ -18,7 +18,6 @@ from crossbench.env.runner_env import RunnerEnv
 from crossbench.exception import Annotator
 from crossbench.helper.durations import Durations
 from crossbench.helper.wait import WaitRange
-from crossbench.path import AnyPath, safe_filename
 from crossbench.probes.probe import Probe
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
@@ -81,8 +80,9 @@ class MockRun(ResultOrigin):
 
     self.story_secrets = Secrets()
     self._out_dir = (
-        browser_session.root_dir / safe_filename(self._browser.unique_name) /
-        "stories" / name / f"repetition={self.repetition}" / self.temperature)
+        browser_session.root_dir /
+        pth.safe_filename(self._browser.unique_name) / "stories" / name /
+        f"repetition={self.repetition}" / self.temperature)
     self.group_dir = self._out_dir.parent
     self.did_setup = False
     self.did_run = False
@@ -198,9 +198,9 @@ class MockRun(ResultOrigin):
     del probe_cls
     return self.probe_context
 
-  def get_default_probe_result_path(self, probe: Probe) -> AnyPath:
+  def get_default_probe_result_path(self, probe: Probe) -> pth.AnyPath:
     del probe
-    return AnyPath("/")
+    return pth.AnyPath("/")
 
   def get_local_probe_result_path(self, probe: Probe) -> pth.LocalPath:
     del probe

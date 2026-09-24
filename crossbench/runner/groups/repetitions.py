@@ -13,8 +13,8 @@ from crossbench.runner.groups.base import RunGroup
 
 if TYPE_CHECKING:
   from crossbench import exception
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
-  from crossbench.path import LocalPath
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.cache_temperatures import \
@@ -146,7 +146,7 @@ class CacheTemperatureRepetitionsRunGroup(RunGroup):
 
   @property
   @override
-  def path(self) -> LocalPath:
+  def path(self) -> pth.LocalPath:
     return self._repetitions_group.path
 
   @property

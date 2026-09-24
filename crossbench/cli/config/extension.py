@@ -18,7 +18,7 @@ from crossbench.helper import url_helper
 from crossbench.parse import PathParser
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath
+  from crossbench import path as pth
   from crossbench.plt.base import Platform
 
 EXTENSION_ID_PATTERN: re.Pattern = re.compile(r"^[a-p]{32}$")
@@ -27,13 +27,13 @@ EXTENSION_ID_PATTERN: re.Pattern = re.compile(r"^[a-p]{32}$")
 @dataclasses.dataclass(frozen=True)
 class ExtensionConfig(ConfigObject):
   VALID_EXTENSIONS = (".crx",)
-  crx: LocalPath | None = None
+  crx: pth.LocalPath | None = None
   id: str | None = None
-  unpacked: LocalPath | None = None
+  unpacked: pth.LocalPath | None = None
 
   @classmethod
   @override
-  def maybe_valid_path(cls, path: LocalPath) -> LocalPath | None:
+  def maybe_valid_path(cls, path: pth.LocalPath) -> pth.LocalPath | None:
     if super().maybe_valid_path(path):
       return path
     manifest_path = path / "manifest.json"
@@ -43,7 +43,7 @@ class ExtensionConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_path(cls, path: LocalPath, **kwargs) -> Self:
+  def parse_path(cls, path: pth.LocalPath, **kwargs) -> Self:
     if "," in str(path):
       raise argparse.ArgumentTypeError("Extension paths must not contain ','")
     if path.is_file():
@@ -74,8 +74,8 @@ class ExtensionConfig(ConfigObject):
     if set_count != 1:
       raise ValueError("Only 1 of crx, id, unpacked should be set")
 
-  def get_unpacked(self, version_str: str, tmp_dir: LocalPath,
-                   host_platform: Platform) -> LocalPath:
+  def get_unpacked(self, version_str: str, tmp_dir: pth.LocalPath,
+                   host_platform: Platform) -> pth.LocalPath:
     if self.unpacked:
       return self.unpacked
     if self.crx:

@@ -15,7 +15,7 @@ from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench import exception
-  from crossbench.path import AnyPath
+  from crossbench import path as pth
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -46,7 +46,7 @@ class DumpHeapProbeContext(ProbeContext[DumpHeapProbe]):
 
   def __init__(self, probe: DumpHeapProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._results: list[AnyPath] = []
+    self._results: list[pth.AnyPath] = []
 
   def start(self) -> None:
     pass

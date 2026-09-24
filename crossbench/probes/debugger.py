@@ -17,9 +17,9 @@ from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.path import LocalPath
 
 _DEBUGGER_LOOKUP: Final[dict[str, str]] = {
     "macos": "lldb",
@@ -75,7 +75,7 @@ class DebuggerProbe(Probe):
 
   def __init__(
       self,
-      debugger: LocalPath,
+      debugger: pth.LocalPath,
       auto_run: bool = True,
       spare_renderer_process: bool = False,
       geometry: str = DEFAULT_GEOMETRY,

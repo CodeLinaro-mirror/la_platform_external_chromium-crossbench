@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence
 from crossbench.probes import helper
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath
+  from crossbench import path as pth
   from crossbench.types import Json, JsonDict
 
 
@@ -172,7 +172,7 @@ class MetricsMerger:
 
   @classmethod
   def merge_json_list(cls,
-                      files: Iterable[LocalPath],
+                      files: Iterable[pth.LocalPath],
                       key_fn: helper.KeyFnType | None = None,
                       merge_duplicate_paths: bool = False) -> MetricsMerger:
     merger = cls(key_fn=key_fn)
@@ -201,7 +201,7 @@ class MetricsMerger:
     return self._data
 
   def merge_json_file(self,
-                      file: LocalPath,
+                      file: pth.LocalPath,
                       prefix_path: tuple[str, ...] = (),
                       merge_duplicate_paths: bool = False) -> None:
     with file.open(encoding="utf-8") as f:

@@ -33,9 +33,9 @@ if TYPE_CHECKING:
   from selenium.webdriver.common.timeouts import Timeouts
   from selenium.webdriver.remote.remote_connection import RemoteConnection
 
+  from crossbench import path as pth
   from crossbench.browsers.settings import Settings
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.path import AnyPath, LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -110,22 +110,22 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   def __init__(self,
                label: str,
-               path: AnyPath | None = None,
+               path: pth.AnyPath | None = None,
                settings: Settings | None = None) -> None:
     super().__init__(label, path, settings)
-    self._driver_path: AnyPath | None = self._settings.driver_path
-    self._driver_log_file: LocalPath | None = None
+    self._driver_path: pth.AnyPath | None = self._settings.driver_path
+    self._driver_log_file: pth.LocalPath | None = None
     self._driver_pid: int = 0
     self._pid: int = 0
-    self.log_file: LocalPath | None = None
+    self.log_file: pth.LocalPath | None = None
 
   @property
-  def driver_path(self) -> AnyPath:
+  def driver_path(self) -> pth.AnyPath:
     assert self._driver_path, "{self} missing driver path"
     return self._driver_path
 
   @property
-  def driver_path_raw(self) -> AnyPath | None:
+  def driver_path_raw(self) -> pth.AnyPath | None:
     return self._driver_path
 
   @classmethod
@@ -134,7 +134,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     return BrowserAttributes.WEBDRIVER
 
   @property
-  def driver_log_file(self) -> LocalPath | None:
+  def driver_log_file(self) -> pth.LocalPath | None:
     return self._driver_log_file
 
   @override
@@ -146,7 +146,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
         f"Webdriver path '{self._driver_path}' does not exist")
 
   @abc.abstractmethod
-  def _find_driver(self) -> AnyPath:
+  def _find_driver(self) -> pth.AnyPath:
     pass
 
   @abc.abstractmethod
@@ -202,7 +202,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       timeouts.page_load = timing.timeout_timedelta(page_load).total_seconds()
     self._private_driver.timeouts = timeouts
 
-  def _setup_driver_log_file(self) -> LocalPath:
+  def _setup_driver_log_file(self) -> pth.LocalPath:
     log_file = self.log_file
     assert log_file, "Missing browser log file"
     self._driver_log_file = log_file.with_suffix(".driver.log")
@@ -238,7 +238,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
   @abc.abstractmethod
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: AnyPath) -> webdriver.Remote:
+                    driver_path: pth.AnyPath) -> webdriver.Remote:
     pass
 
   @override
@@ -308,7 +308,7 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
                             self) from e
 
   @override
-  def screenshot(self, path: LocalPath) -> None:
+  def screenshot(self, path: pth.LocalPath) -> None:
     if not self._private_driver.get_screenshot_as_file(path.as_posix()):
       raise DriverException(
           f"Browser failed to get_screenshot_as_file to file '{path}'", self)
@@ -437,12 +437,12 @@ class RemoteWebDriver(WebDriverBrowser, Browser):
     pass
 
   @override
-  def _find_driver(self) -> LocalPath:
+  def _find_driver(self) -> pth.LocalPath:
     raise NotImplementedError
 
   @override
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: AnyPath) -> webdriver.Remote:
+                    driver_path: pth.AnyPath) -> webdriver.Remote:
     raise NotImplementedError
 
   @override

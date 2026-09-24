@@ -15,8 +15,8 @@ from crossbench.browsers.downloader import Downloader
 from crossbench.browsers.webkit.version import WebKitVersion
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.version import BrowserVersion
-  from crossbench.path import AnyPathLike, LocalPath
   from crossbench.plt.base import Platform
 
 _MACOS_NAME_LOOKUP: Final[Mapping[int, str]] = {
@@ -46,7 +46,7 @@ class WebKitDownloader(Downloader):
     return WebKitVersion.is_valid_unique(path_or_identifier)
 
   @classmethod
-  def _is_valid(cls, path_or_identifier: AnyPathLike,
+  def _is_valid(cls, path_or_identifier: pth.AnyPathLike,
                 browser_platform: Platform) -> bool:
     if cls.is_valid_version(str(path_or_identifier)):
       return True
@@ -55,7 +55,7 @@ class WebKitDownloader(Downloader):
             path.name.endswith(cls.ARCHIVE_SUFFIX))
 
   def __init__(self,
-               version_identifier: str | LocalPath,
+               version_identifier: str | pth.LocalPath,
                browser_type: str,
                platform_name: str,
                browser_platform: Platform,
@@ -86,7 +86,7 @@ class WebKitDownloaderMacOS(WebKitDownloader):
 
   @classmethod
   @override
-  def is_valid(cls, path_or_identifier: AnyPathLike,
+  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
                browser_platform: Platform) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
@@ -105,7 +105,7 @@ class WebKitDownloaderMacOS(WebKitDownloader):
     return next(iter(self._archive_urls(folder_url, self.requested_version)))
 
   @override
-  def _download_archive(self, archive_url: str, tmp_dir: LocalPath) -> None:
+  def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
     self.host_platform.download_to(archive_url,
                                    tmp_dir / f"archive{self.ARCHIVE_SUFFIX}")
     archive_candidates = list(tmp_dir.glob("*"))
@@ -125,11 +125,11 @@ class WebKitDownloaderMacOS(WebKitDownloader):
     return ((version, f"{folder_url}{archive_name}"),)
 
   @override
-  def _installed_app_path(self) -> LocalPath:
+  def _installed_app_path(self) -> pth.LocalPath:
     return self._extracted_path() / "Release" / "MiniBrowser.app"
 
   @override
-  def _install_archive(self, archive_path: LocalPath) -> None:
+  def _install_archive(self, archive_path: pth.LocalPath) -> None:
     extracted_path = self._extracted_path()
     with zipfile.ZipFile(archive_path, "r") as zip_file:
       zip_file.extractall(extracted_path)

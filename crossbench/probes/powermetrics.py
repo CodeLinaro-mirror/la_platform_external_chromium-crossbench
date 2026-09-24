@@ -19,9 +19,9 @@ from crossbench.probes.result_location import ResultLocation
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -104,7 +104,8 @@ class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):
   def __init__(self, probe: PowerMetricsProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._power_metrics_process: subprocess.Popen | None = None
-    self._output_plist_file: AnyPath = self.result_path.with_suffix(".plist")
+    self._output_plist_file: pth.AnyPath = self.result_path.with_suffix(
+        ".plist")
 
   def start(self) -> None:
     self._power_metrics_process = self.browser_platform.popen(

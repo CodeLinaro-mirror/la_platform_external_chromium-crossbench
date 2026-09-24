@@ -20,8 +20,8 @@ from crossbench.probes.metric import Metric, MetricsMerger
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.benchmarks.base import VersionParts
-  from crossbench.path import LocalPath
   from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -69,7 +69,7 @@ class WebAIProbe(BenchmarkProbeMixin, JsonResultProbe, metaclass=abc.ABCMeta):
                   single_result: bool) -> None:
     if self not in result_dict:
       return
-    results_json: LocalPath = result_dict[self].json
+    results_json: pth.LocalPath = result_dict[self].json
     logging.info("-" * 80)
     logging.critical("WebAI results:")
     if not single_result:

@@ -27,7 +27,6 @@ from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
   from crossbench import path as pth
-  from crossbench.path import LocalPath
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -112,7 +111,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     return LocalProbeResult(json=(merged_json_path,))
 
   def merge_browsers_csv_list(self, group: BrowsersRunGroup) -> ProbeResult:
-    csv_file_list: list[LocalPath] = []
+    csv_file_list: list[pth.LocalPath] = []
     for story_group in group.story_groups:
       csv_file_list.append(story_group.results[self].csv)
     merged_table = helper.merge_csv(csv_file_list, row_header_len=-1)
@@ -148,7 +147,7 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
                                        csv_formatter, value_fn)
 
   def write_group_csv_result(self, group: RunGroup, merged_data: MetricsMerger,
-                             merged_json_path: LocalPath,
+                             merged_json_path: pth.LocalPath,
                              csv_formatter: type[CSVFormatter],
                              value_fn: Callable[[Any], Any]) -> ProbeResult:
     merged_csv_path = merged_json_path.with_suffix(".csv")
@@ -199,7 +198,7 @@ class XLSXWriter:
     instance = cls(table, path)
     instance.write_xlsx()
 
-  def __init__(self, table: list[list[str]], path: pth.LocalPath):
+  def __init__(self, table: list[list[str]], path: pth.LocalPath) -> None:
     self._table: list[list[str]] = table
     self._nof_header_cols: int = self._detect_header_cols()
     self._nof_header_rows: int = self._detect_header_rows()

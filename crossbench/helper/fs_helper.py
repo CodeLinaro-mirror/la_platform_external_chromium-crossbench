@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Final, Iterable, TypeVar
 from crossbench import plt
 
 if TYPE_CHECKING:
-  from crossbench.path import AnyPath
-  PathT = TypeVar("PathT", bound=AnyPath)
+  from crossbench import path as pth
+  PathT = TypeVar("PathT", bound=pth.AnyPath)
 
 
 def sort_by_file_size(files: Iterable[PathT],
@@ -22,7 +22,7 @@ def sort_by_file_size(files: Iterable[PathT],
 SIZE_UNITS: Final[tuple[str, ...]] = ("B", "KiB", "MiB", "GiB", "TiB")
 
 
-def get_file_size(file: AnyPath,
+def get_file_size(file: pth.AnyPath,
                   digits: int = 2,
                   platform: plt.Platform | None = None) -> str:
   real_platform = platform or plt.PLATFORM

@@ -17,9 +17,9 @@ from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
   from crossbench import exception
+  from crossbench import path as pth
   from crossbench.browsers.browser import Viewport
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.path import AnyPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -61,10 +61,10 @@ class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
 
   def __init__(self, probe: ScreenshotProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._results: list[AnyPath] = []
+    self._results: list[pth.AnyPath] = []
 
   @override
-  def get_default_result_path(self) -> AnyPath:
+  def get_default_result_path(self) -> pth.AnyPath:
     screenshot_dir = super().get_default_result_path()
     self.browser_platform.mkdir(screenshot_dir)
     return screenshot_dir

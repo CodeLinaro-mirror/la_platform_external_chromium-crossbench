@@ -22,15 +22,15 @@ if TYPE_CHECKING:
   import datetime as dt
   import subprocess
 
+  from crossbench import path as pth
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.path import AnyPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 class AppleScript:
 
   @classmethod
-  def with_args(cls, app_path: AnyPath, apple_script: str,
+  def with_args(cls, app_path: pth.AnyPath, apple_script: str,
                 **kwargs) -> tuple[str, list[str]]:
     variables: list[str] = []
     replacements: dict[str, str] = {}

@@ -12,7 +12,7 @@ from typing_extensions import override
 if TYPE_CHECKING:
   import datetime as dt
 
-  from crossbench.path import AnyPath, AnyPathLike, LocalPath
+  from crossbench import path as pth
   from crossbench.plt.base import Platform
   from crossbench.plt.signals import Signals
   from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo
@@ -32,7 +32,7 @@ class RemotePlatformMixin:
   def host_platform(self) -> Platform:
     return self._host_platform
 
-  def host_path(self, path: AnyPathLike) -> LocalPath:
+  def host_path(self, path: pth.AnyPathLike) -> pth.LocalPath:
     return self._host_platform.local_path(path)
 
   def sleep(self, seconds: float | dt.timedelta) -> None:
@@ -42,7 +42,7 @@ class RemotePlatformMixin:
                       *args: CmdArg,
                       shell: bool = False,
                       env: Mapping[str, str] | None = None,
-                      cwd: AnyPath | None = None) -> ListCmdArgs:
+                      cwd: pth.AnyPath | None = None) -> ListCmdArgs:
     raise NotImplementedError
 
 

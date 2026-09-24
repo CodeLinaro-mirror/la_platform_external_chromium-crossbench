@@ -8,12 +8,12 @@ import difflib
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Protocol, TypeVar
 
 if TYPE_CHECKING:
-  from crossbench.path import AnyPath
+  from crossbench import path as pth
 
   InputT = TypeVar("InputT")
   KeyT = TypeVar("KeyT")
   ValueT = TypeVar("ValueT")
-  PathT = TypeVar("PathT", bound=AnyPath)
+  PathT = TypeVar("PathT", bound=pth.AnyPath)
 
   class GroupTProtocol(Protocol):
 

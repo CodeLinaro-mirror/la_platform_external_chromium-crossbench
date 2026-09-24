@@ -30,12 +30,12 @@ from crossbench.stories.story import Story
 if TYPE_CHECKING:
   import argparse
 
+  from crossbench import path as pth
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.device_config import DeviceConfig
   from crossbench.flags.base import Flags
-  from crossbench.path import LocalPath
   from crossbench.plt.base import Platform
   from crossbench.plt.types import ListCmdArgs
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -437,7 +437,7 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
       self,
       host_platform: Platform,
       network: WprReplayNetwork,
-      httparchive_path: LocalPath,
+      httparchive_path: pth.LocalPath,
   ) -> None:
     args: ListCmdArgs = [
         httparchive_path,

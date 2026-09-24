@@ -24,9 +24,9 @@ from crossbench.stories.press_benchmark import PressBenchmarkStory
 if TYPE_CHECKING:
   import argparse
 
+  from crossbench import path as pth
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.cli.parser import CBArgumentParser
-  from crossbench.path import LocalPath
   from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -67,7 +67,7 @@ class JetStreamProbe(
                   single_result: bool) -> None:
     if self not in result_dict:
       return
-    results_json: LocalPath = result_dict[self].json
+    results_json: pth.LocalPath = result_dict[self].json
     logging.info("-" * 80)
     logging.critical("JetStream results:")
     if not single_result:

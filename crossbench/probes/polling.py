@@ -19,9 +19,9 @@ from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench import plt
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.path import LocalPath
   from crossbench.plt.types import CmdArg, TupleCmdArgs
   from crossbench.runner.run import Run
 
@@ -126,11 +126,11 @@ class PollingProbeContext(ProbeContext[PollingProbe]):
 class CMDPoller(threading.Thread):
 
   def __init__(self, platform: plt.Platform, cmd: Iterable[CmdArg],
-               interval: dt.timedelta, path: LocalPath) -> None:
+               interval: dt.timedelta, path: pth.LocalPath) -> None:
     super().__init__()
     self._platform = platform
     self._cmd: TupleCmdArgs = tuple(cmd)
-    self._path: LocalPath = path
+    self._path: pth.LocalPath = path
     if interval < dt.timedelta(seconds=0.1):
       raise ValueError("Poller interval should be >= 0.1s for accuracy, "
                        f"but got {interval}s")

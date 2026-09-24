@@ -14,7 +14,7 @@ from crossbench.plt.ssh import SshPlatformMixin
 from crossbench.plt.ssh_port_manager import SshPortManager
 
 if TYPE_CHECKING:
-  from crossbench.path import AnyPath, LocalPath
+  from crossbench import path as pth
   from crossbench.plt.arch import MachineArch
   from crossbench.plt.base import Platform
   from crossbench.plt.port_manager import PortManager
@@ -42,7 +42,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
                     *args: CmdArg,
                     shell: bool = False,
                     env: Mapping[str, str] | None = None,
-                    cwd: AnyPath | None = None) -> ListCmdArgs:
+                    cwd: pth.AnyPath | None = None) -> ListCmdArgs:
     if env:
       # TODO: support env with "export FOO=bar;" prefixes
       raise ValueError(f"{self} platform only supports an empty env for now.")
@@ -70,7 +70,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
       *args: CmdArg,
       shell: bool = False,
       env: Mapping[str, str] | None = None,
-      cwd: AnyPath | None = None,
+      cwd: pth.AnyPath | None = None,
   ) -> ListCmdArgs:
     return self.build_ssh_cmd(*args, shell=shell, env=env, cwd=cwd)
 
@@ -88,7 +88,7 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
       res.append({"pid": int(pid), "name": name})
     return res
 
-  def push(self, from_path: LocalPath, to_path: AnyPath) -> AnyPath:
+  def push(self, from_path: pth.LocalPath, to_path: pth.AnyPath) -> pth.AnyPath:
     self.mkdir(to_path.parent, parents=True, exist_ok=True)
 
     scp_cmd: ListCmdArgs = ["scp", "-P", f"{self._ssh_port}"]
@@ -98,7 +98,8 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     self._host_platform.sh_stdout(*scp_cmd)
     return to_path
 
-  def pull(self, from_path: AnyPath, to_path: LocalPath) -> LocalPath:
+  def pull(self, from_path: pth.AnyPath,
+           to_path: pth.LocalPath) -> pth.LocalPath:
     self._host_platform.mkdir(to_path.parent, parents=True, exist_ok=True)
 
     scp_cmd: CmdArgs = [

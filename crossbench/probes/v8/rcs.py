@@ -16,8 +16,8 @@ from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
-  from crossbench.path import LocalPath
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import \
       CacheTemperatureRepetitionsRunGroup, RepetitionsRunGroup
@@ -48,7 +48,7 @@ class V8RCSProbe(ChromiumProbe):
 
   def concat_group_files(self, group: RepetitionsRunGroup
                          | CacheTemperatureRepetitionsRunGroup,
-                         file_name: str) -> LocalPath:
+                         file_name: str) -> pth.LocalPath:
     result_dir = group.get_local_probe_result_dir(self)
     result_files = (run.results[self].file for run in group.runs)
     result_file = self.host_platform.concat_files(

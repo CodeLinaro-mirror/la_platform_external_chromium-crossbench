@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from crossbench.browsers.chromium.version import ChromiumVersion
 
 if TYPE_CHECKING:
-  from crossbench.path import AnyPath
+  from crossbench import path as pth
   from crossbench.plt.base import Platform
 
 
@@ -20,11 +20,11 @@ class ChromiumBaseMixin:
     return ChromiumVersion
 
   @classmethod
-  def default_path(cls, platform: Platform) -> AnyPath:
+  def default_path(cls, platform: Platform) -> pth.AnyPath:
     return cls.canary_path(platform)
 
   @classmethod
-  def canary_path(cls, platform: Platform) -> AnyPath:
+  def canary_path(cls, platform: Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Chromium",
         macos=["Chromium.app"],

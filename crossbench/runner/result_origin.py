@@ -16,12 +16,12 @@ from crossbench.probes.result_location import ResultLocation
 from crossbench.runner.probe_result_origin import ProbeResultOrigin
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench import plt
   from crossbench.browsers.browser import Browser
   from crossbench.exception import Annotator, ExceptionAnnotationScope, \
       TExceptionTypes
   from crossbench.helper.durations import Durations
-  from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.probe import Probe
   from crossbench.runner.runner import Runner
 
@@ -41,12 +41,12 @@ class ResultOrigin(DecoratorTargetProtocol, ProbeResultOrigin, abc.ABC):
 
   @property
   @abc.abstractmethod
-  def browser_tmp_dir(self) -> AnyPath:
+  def browser_tmp_dir(self) -> pth.AnyPath:
     pass
 
   @property
   @abc.abstractmethod
-  def out_dir(self) -> LocalPath:
+  def out_dir(self) -> pth.LocalPath:
     pass
 
   @property
@@ -100,7 +100,7 @@ class ResultOrigin(DecoratorTargetProtocol, ProbeResultOrigin, abc.ABC):
   ) -> ExceptionAnnotationScope:
     return self.exceptions.capture(*stack_entries, exceptions=exceptions)
 
-  def get_default_probe_result_path(self, probe: Probe) -> AnyPath:
+  def get_default_probe_result_path(self, probe: Probe) -> pth.AnyPath:
     """Return a local or remote/browser-based result path depending on the
     Probe default RESULT_LOCATION."""
     if probe.RESULT_LOCATION == ResultLocation.BROWSER:
@@ -111,10 +111,10 @@ class ResultOrigin(DecoratorTargetProtocol, ProbeResultOrigin, abc.ABC):
                      f"for probe {probe}")
 
   @abc.abstractmethod
-  def get_local_probe_result_path(self, probe: Probe) -> LocalPath:
+  def get_local_probe_result_path(self, probe: Probe) -> pth.LocalPath:
     pass
 
-  def get_browser_probe_result_path(self, probe: Probe) -> AnyPath:
+  def get_browser_probe_result_path(self, probe: Probe) -> pth.AnyPath:
     local_path = self.get_local_probe_result_path(probe)
     if self.is_local:
       return local_path

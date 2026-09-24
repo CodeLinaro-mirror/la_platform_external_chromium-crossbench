@@ -21,9 +21,9 @@ from crossbench.network.base import Network
 from crossbench.parse import ObjectParser
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench import plt
   from crossbench.network.traffic_shaping.base import TrafficShaper
-  from crossbench.path import LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   LocalFileNetworkT = TypeVar("LocalFileNetworkT", bound="LocalFileNetwork")
 
@@ -51,7 +51,7 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
   @classmethod
   def bind(
       cls,
-      server_dir: LocalPath,
+      server_dir: pth.LocalPath,
       extra_headers: Mapping[str, str],
   ) -> type[http.server.SimpleHTTPRequestHandler]:
     # Use a temporary class to bind arguments.
@@ -88,12 +88,12 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
 class LocalFileNetwork(Network):
 
   def __init__(self,
-               path: LocalPath,
+               path: pth.LocalPath,
                url: str | None,
                traffic_shaper: TrafficShaper | None = None,
                browser_platform: plt.Platform | None = None) -> None:
     super().__init__(traffic_shaper, browser_platform)
-    self._path: Final[LocalPath] = path
+    self._path: Final[pth.LocalPath] = path
     (host, port) = self._parse_url(url)
     self._host: Final[str] = host
     self._port: int = port
@@ -109,7 +109,7 @@ class LocalFileNetwork(Network):
     return True
 
   @property
-  def path(self) -> LocalPath:
+  def path(self) -> pth.LocalPath:
     return self._path
 
   def _parse_url(self, url: str | None) -> tuple[str, int]:
@@ -132,7 +132,7 @@ class LocalFileNetwork(Network):
     return _DEFAULT_HEADERS
 
   def _read_headers_file(self,
-                         header_file: LocalPath) -> immutabledict[str, str]:
+                         header_file: pth.LocalPath) -> immutabledict[str, str]:
     # Reuse python's email message library to parse headers
     message = email.parser.BytesParser().parsebytes(header_file.read_bytes())
     return immutabledict(message)

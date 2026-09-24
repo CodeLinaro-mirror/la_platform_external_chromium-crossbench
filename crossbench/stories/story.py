@@ -9,8 +9,8 @@ import datetime as dt
 import logging
 from typing import TYPE_CHECKING, Final, Iterable
 
+from crossbench import path as pth
 from crossbench.cli.config.secrets import Secrets
-from crossbench.path import safe_filename
 
 if TYPE_CHECKING:
   from crossbench.runner.run import Run
@@ -57,7 +57,7 @@ class Story(abc.ABC):
       tags: Iterable[str] = (),
   ) -> None:
     self.verify_story_name(name)
-    self._name: str = safe_filename(name)
+    self._name: str = pth.safe_filename(name)
     self._duration: Final[dt.timedelta] = duration
     self._secrets: Final[Secrets] = secrets or Secrets()
     self._tags: frozenset[str] = frozenset(tags)

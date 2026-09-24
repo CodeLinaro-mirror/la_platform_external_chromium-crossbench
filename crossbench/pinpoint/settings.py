@@ -10,8 +10,8 @@ from typing import Any
 
 import platformdirs
 
+from crossbench import path as pth
 from crossbench.config import ConfigObject, ConfigParser
-from crossbench.path import LocalPath
 from crossbench.pinpoint.helper import annotate
 
 
@@ -67,8 +67,8 @@ class Settings:
     self._dirty = False
 
   @classmethod
-  def path(cls) -> LocalPath:
-    config_dir = LocalPath(platformdirs.user_config_dir("pinpointcli"))
+  def path(cls) -> pth.LocalPath:
+    config_dir = pth.LocalPath(platformdirs.user_config_dir("pinpointcli"))
     return config_dir / "settings.json"
 
 

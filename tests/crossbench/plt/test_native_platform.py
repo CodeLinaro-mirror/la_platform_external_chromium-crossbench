@@ -22,7 +22,6 @@ from typing_extensions import override
 
 import crossbench.path as pth
 from crossbench import __version__, plt
-from crossbench.path import LocalPath
 from crossbench.plt.base import DEFAULT_CACHE_DIR, SubprocessError
 from crossbench.plt.posix import PosixPlatform
 from tests import test_helper
@@ -490,7 +489,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     if self.platform.is_remote:
       return
     with self.platform.TemporaryDirectory() as tmp_dir:
-      tmp_file = LocalPath(tmp_dir) / "test.txt"
+      tmp_file = pth.LocalPath(tmp_dir) / "test.txt"
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.write_text(tmp_file, "")
       mode = 0o400

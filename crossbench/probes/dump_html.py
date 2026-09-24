@@ -13,7 +13,7 @@ from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 
 if TYPE_CHECKING:
   from crossbench import exception
-  from crossbench.path import AnyPath, LocalPath
+  from crossbench import path as pth
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -43,10 +43,10 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
 
   def __init__(self, probe: DumpHtmlProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._results: list[LocalPath] = []
+    self._results: list[pth.LocalPath] = []
 
   @override
-  def get_default_result_path(self) -> AnyPath:
+  def get_default_result_path(self) -> pth.AnyPath:
     dump_dir = super().get_default_result_path()
     self.host_platform.mkdir(dump_dir)
     return dump_dir

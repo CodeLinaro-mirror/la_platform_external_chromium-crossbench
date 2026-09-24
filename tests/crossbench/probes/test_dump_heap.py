@@ -8,7 +8,7 @@ import argparse
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from crossbench.path import AnyPath
+from crossbench import path as pth
 from crossbench.probes.dump_heap import DumpHeapProbe, DumpHeapProbeContext
 from crossbench.runner.run import Run
 from tests import test_helper
@@ -22,7 +22,7 @@ class DumpHeapProbeTestCase(GenericProbeTestCase):
     mock_datetime.now.return_value = datetime(year=1984, month=6, day=14)
 
     mock_run = MagicMock(spec=Run)
-    dump_path = AnyPath("/path/to/dump.trace.pb")
+    dump_path = pth.AnyPath("/path/to/dump.trace.pb")
     mock_run.browser.dump_java_heap.return_value = dump_path
 
     probe = DumpHeapProbe.config_parser().parse({})
@@ -39,7 +39,7 @@ class DumpHeapProbeTestCase(GenericProbeTestCase):
 
   def test_invoke_all_args(self):
     mock_run = MagicMock(spec=Run)
-    dump_path = AnyPath("/path/to/dump.trace.pb")
+    dump_path = pth.AnyPath("/path/to/dump.trace.pb")
     mock_run.browser.platform.dump_java_heap.return_value = dump_path
 
     probe = DumpHeapProbe.config_parser().parse({})

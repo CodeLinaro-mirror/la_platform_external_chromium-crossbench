@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING
 from crossbench.browsers.edge.version import EdgeVersion
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench import plt
   from crossbench.browsers.chromium.version import ChromiumVersion
-  from crossbench.path import AnyPath
 
 
 class EdgeBaseMixin:
@@ -21,11 +21,11 @@ class EdgeBaseMixin:
     return EdgeVersion
 
   @classmethod
-  def default_path(cls, platform: plt.Platform) -> AnyPath:
+  def default_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return cls.stable_path(platform)
 
   @classmethod
-  def stable_path(cls, platform: plt.Platform) -> AnyPath:
+  def stable_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Edge Stable",
         macos=["Microsoft Edge.app"],
@@ -33,7 +33,7 @@ class EdgeBaseMixin:
         win=["Microsoft/Edge/Application/msedge.exe"])
 
   @classmethod
-  def beta_path(cls, platform: plt.Platform) -> AnyPath:
+  def beta_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Edge Beta",
         macos=["Microsoft Edge Beta.app"],
@@ -41,7 +41,7 @@ class EdgeBaseMixin:
         win=["Microsoft/Edge Beta/Application/msedge.exe"])
 
   @classmethod
-  def dev_path(cls, platform: plt.Platform) -> AnyPath:
+  def dev_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Edge Dev",
         macos=["Microsoft Edge Dev.app"],
@@ -49,7 +49,7 @@ class EdgeBaseMixin:
         win=["Microsoft/Edge Dev/Application/msedge.exe"])
 
   @classmethod
-  def canary_path(cls, platform: plt.Platform) -> AnyPath:
+  def canary_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Edge Canary",
         macos=["Microsoft Edge Canary.app"],

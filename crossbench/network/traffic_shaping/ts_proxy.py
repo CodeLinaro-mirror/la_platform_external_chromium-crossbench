@@ -30,10 +30,10 @@ from crossbench.parse import NumberParser, PathParser
 if TYPE_CHECKING:
   from types import TracebackType
 
+  from crossbench import path as pth
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.browser import Browser
   from crossbench.network.base import Network
-  from crossbench.path import AnyPath, LocalPath
   from crossbench.plt.base import Platform
   from crossbench.plt.types import ListCmdArgs
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -73,7 +73,7 @@ class TsProxyServer:
 
   def __init__(self,
                platform: Platform,
-               ts_proxy_path: LocalPath,
+               ts_proxy_path: pth.LocalPath,
                host: str | None = None,
                socks_proxy_port: int | None = None,
                http_port: int | None = None,
@@ -85,7 +85,7 @@ class TsProxyServer:
                verbose: bool = True) -> None:
     self._platform: Final[Platform] = platform
     self._proc: TsProxyProcess | None = None
-    self._ts_proxy_path: Final[LocalPath] = PathParser.existing_file_path(
+    self._ts_proxy_path: Final[pth.LocalPath] = PathParser.existing_file_path(
         ts_proxy_path)
     self._socks_proxy_port = socks_proxy_port
     self._host = host
@@ -132,7 +132,7 @@ class TsProxyServer:
     return self._proc.socks_proxy_port
 
   @property
-  def ts_proxy_path(self) -> LocalPath:
+  def ts_proxy_path(self) -> pth.LocalPath:
     return self._ts_proxy_path
 
   @property
@@ -183,7 +183,7 @@ class TsProxyProcess:
 
   def __init__(self,
                platform: Platform,
-               ts_proxy_path: LocalPath,
+               ts_proxy_path: pth.LocalPath,
                host: str | None = None,
                socks_proxy_port: int | None = None,
                http_port: int | None = None,
@@ -375,7 +375,7 @@ class TsProxyTrafficShaper(TrafficShaper):
 
   def __init__(self,
                browser_platform: Platform,
-               ts_proxy_path: AnyPath | None = None,
+               ts_proxy_path: pth.AnyPath | None = None,
                rtt_ms: int | None = None,
                in_kbps: int | None = None,
                out_kbps: int | None = None,

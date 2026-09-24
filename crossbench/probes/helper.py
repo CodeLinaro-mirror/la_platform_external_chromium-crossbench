@@ -8,7 +8,7 @@ import csv
 from typing import TYPE_CHECKING, Any, Callable, Final, Mapping, Sequence
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath
+  from crossbench import path as pth
 
 INTERNAL_NAME_PREFIX: Final[str] = "cb."
 
@@ -92,7 +92,7 @@ def _ljust_row(sequence: list, n: int, fill_value: Any = None) -> list:
   return sequence + ([fill_value] * (n - len(sequence)))
 
 
-def merge_csv(csv_list: Sequence[LocalPath],
+def merge_csv(csv_list: Sequence[pth.LocalPath],
               headers: list[str] | None = None,
               row_header_len: int = 1,
               delimiter: str = "\t") -> list[list[Any]]:
@@ -150,7 +150,7 @@ def merge_csv(csv_list: Sequence[LocalPath],
 
 def _merge_csv_prepare_row_headers(table: list[list[Any]],
                                    known_row_headers: set[tuple[str, ...]],
-                                   csv_file: LocalPath, row_header_len: int,
+                                   csv_file: pth.LocalPath, row_header_len: int,
                                    delimiter: str) -> int:
   with csv_file.open(encoding="utf-8") as first_file:
     for csv_row in csv.reader(first_file, delimiter=delimiter):

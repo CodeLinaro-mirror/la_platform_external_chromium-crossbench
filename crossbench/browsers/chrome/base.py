@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING
 from crossbench.browsers.chrome.version import ChromeVersion
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench import plt
   from crossbench.browsers.chromium.version import ChromiumVersion
-  from crossbench.path import AnyPath
 
 
 class ChromeBaseMixin:
@@ -21,11 +21,11 @@ class ChromeBaseMixin:
     return ChromeVersion
 
   @classmethod
-  def default_path(cls, platform: plt.Platform) -> AnyPath:
+  def default_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return cls.stable_path(platform)
 
   @classmethod
-  def stable_path(cls, platform: plt.Platform) -> AnyPath:
+  def stable_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Chrome Stable",
         macos=["Google Chrome.app"],
@@ -33,7 +33,7 @@ class ChromeBaseMixin:
         win=["Google/Chrome/Application/chrome.exe"])
 
   @classmethod
-  def beta_path(cls, platform: plt.Platform) -> AnyPath:
+  def beta_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Chrome Beta",
         macos=["Google Chrome Beta.app"],
@@ -41,7 +41,7 @@ class ChromeBaseMixin:
         win=["Google/Chrome Beta/Application/chrome.exe"])
 
   @classmethod
-  def dev_path(cls, platform: plt.Platform) -> AnyPath:
+  def dev_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Chrome Dev",
         macos=["Google Chrome Dev.app"],
@@ -49,7 +49,7 @@ class ChromeBaseMixin:
         win=["Google/Chrome Dev/Application/chrome.exe"])
 
   @classmethod
-  def canary_path(cls, platform: plt.Platform) -> AnyPath:
+  def canary_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Chrome Canary",
         macos=["Google Chrome Canary.app"],

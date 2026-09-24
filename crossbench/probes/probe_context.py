@@ -17,9 +17,10 @@ from crossbench.probes.results import BrowserProbeResult, EmptyProbeResult, \
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
 
-  from crossbench import exception, plt
+  from crossbench import exception
+  from crossbench import path as pth
+  from crossbench import plt
   from crossbench.browsers.browser import Browser
-  from crossbench.path import AnyPath, LocalPath
   from crossbench.probes.probe import Probe
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.result_origin import ResultOrigin
@@ -123,11 +124,11 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
 
   @property
   @abc.abstractmethod
-  def result_path(self) -> AnyPath:
+  def result_path(self) -> pth.AnyPath:
     pass
 
   @property
-  def local_result_path(self) -> LocalPath:
+  def local_result_path(self) -> pth.LocalPath:
     return self.host_platform.local_path(self.result_path)
 
   @property
@@ -142,9 +143,9 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
 
   def browser_result(self,
                      url: Iterable[str] | None = None,
-                     file: Iterable[AnyPath] | None = None,
-                     perfetto: Iterable[AnyPath] | None = None,
-                     **kwargs: Iterable[AnyPath]) -> BrowserProbeResult:
+                     file: Iterable[pth.AnyPath] | None = None,
+                     perfetto: Iterable[pth.AnyPath] | None = None,
+                     **kwargs: Iterable[pth.AnyPath]) -> BrowserProbeResult:
     """Helper to create BrowserProbeResult that might be stored on a remote
     browser/device and need to be copied over to the local machine."""
     return BrowserProbeResult(
@@ -152,9 +153,9 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
 
   def local_result(self,
                    url: Iterable[str] | None = None,
-                   file: Iterable[LocalPath] | None = None,
-                   perfetto: Iterable[LocalPath] | None = None,
-                   **kwargs: Iterable[LocalPath]) -> LocalProbeResult:
+                   file: Iterable[pth.LocalPath] | None = None,
+                   perfetto: Iterable[pth.LocalPath] | None = None,
+                   **kwargs: Iterable[pth.LocalPath]) -> LocalProbeResult:
     """Helper to create LocalProbeResult."""
     return LocalProbeResult(url=url, file=file, perfetto=perfetto, **kwargs)
 
@@ -204,9 +205,9 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
   def __init__(self, probe: ProbeT, run: Run) -> None:
     super().__init__(probe, run)
     self._run: Run = run
-    self._default_result_path: AnyPath = self.get_default_result_path()
+    self._default_result_path: pth.AnyPath = self.get_default_result_path()
 
-  def get_default_result_path(self) -> AnyPath:
+  def get_default_result_path(self) -> pth.AnyPath:
     return self._run.get_default_probe_result_path(self._probe)
 
   @property
@@ -225,7 +226,7 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
 
   @property
   @override
-  def result_path(self) -> AnyPath:
+  def result_path(self) -> pth.AnyPath:
     return self._default_result_path
 
   def setup_selenium_options(self, options: BaseOptions) -> None:
@@ -315,9 +316,9 @@ class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
   def __init__(self, probe: ProbeT, session: BrowserSessionRunGroup) -> None:
     super().__init__(probe, session)
     self._session: BrowserSessionRunGroup = session
-    self._default_result_path: AnyPath = self.get_default_result_path()
+    self._default_result_path: pth.AnyPath = self.get_default_result_path()
 
-  def get_default_result_path(self) -> AnyPath:
+  def get_default_result_path(self) -> pth.AnyPath:
     return self._session.get_default_probe_result_path(self._probe)
 
   @property
@@ -332,5 +333,5 @@ class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
 
   @property
   @override
-  def result_path(self) -> AnyPath:
+  def result_path(self) -> pth.AnyPath:
     return self._default_result_path

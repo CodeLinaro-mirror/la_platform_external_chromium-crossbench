@@ -39,7 +39,6 @@ from tests.crossbench.mock_helper import MockStory
 
 if TYPE_CHECKING:
   from crossbench.cli.parser import CBArgumentParser
-  from crossbench.path import AnyPath
 
 
 class FastCliTestCasePartB(BaseCliTestCase):
@@ -773,7 +772,7 @@ class FastCliTestCasePartB(BaseCliTestCase):
     searched_binaries = []
     original_search_binary = plt.PLATFORM.search_binary
 
-    def mock_search_binary(binary) -> AnyPath | None:
+    def mock_search_binary(binary) -> pth.AnyPath | None:
       searched_binaries.append(binary)
       if "gdb" in str(binary) or "lldb" in str(binary):
         return None

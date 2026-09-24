@@ -24,9 +24,9 @@ from crossbench.probes.result_location import ResultLocation
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.path import AnyPath
   from crossbench.plt.base import Platform
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
@@ -83,12 +83,12 @@ class PowerSamplerProbe(Probe):
     return parser
 
   def __init__(self,
-               bin_path: AnyPath | None = None,
+               bin_path: pth.AnyPath | None = None,
                sampling_interval: dt.timedelta = dt.timedelta(),
                samplers: Sequence[SamplerType] = SAMPLERS,
                wait_for_battery: bool = True) -> None:
     super().__init__()
-    self._bin_path: AnyPath | None = bin_path
+    self._bin_path: pth.AnyPath | None = bin_path
     if not self._bin_path:
       logging.debug("No default power_sampler binary provided.")
     self._sampling_interval = sampling_interval
@@ -108,7 +108,7 @@ class PowerSamplerProbe(Probe):
                                                       self.wait_for_battery))
 
   @property
-  def bin_path(self) -> AnyPath | None:
+  def bin_path(self) -> pth.AnyPath | None:
     return self._bin_path
 
   @property
@@ -133,14 +133,14 @@ class PowerSamplerProbe(Probe):
     # TODO() warn about open terminals
     self.find_power_sampler_bin(browser)
 
-  def find_power_sampler_bin(self, browser: Browser) -> AnyPath:
+  def find_power_sampler_bin(self, browser: Browser) -> pth.AnyPath:
     browser_platform = browser.platform
     maybe_path = self.bin_path
     if maybe_path and browser_platform.is_file(maybe_path):
       return maybe_path
     #  .../chrome/src/out/x64.Release/App.path
     # Don't use parents[] access to stop at the root.
-    maybe_build_dir: AnyPath = browser.app_path.parent
+    maybe_build_dir: pth.AnyPath = browser.app_path.parent
     finder = ChromiumBuildBinaryFinder(browser_platform, "power_sampler",
                                        (maybe_build_dir,))
     if maybe_path := finder.path:
@@ -151,7 +151,7 @@ class PowerSamplerProbe(Probe):
 
   def missing_power_sampler_error(
       self, browser_platform: Platform,
-      maybe_build_dir: AnyPath) -> ProbeValidationError:
+      maybe_build_dir: pth.AnyPath) -> ProbeValidationError:
     is_build_dir = browser_platform.is_file(maybe_build_dir / "args.gn")
     if not is_build_dir:
       maybe_build_dir = browser_platform.path(
@@ -172,12 +172,13 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
 
   def __init__(self, probe: PowerSamplerProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._bin_path: AnyPath = probe.find_power_sampler_bin(self.browser)
+    self._bin_path: pth.AnyPath = probe.find_power_sampler_bin(self.browser)
     self._active_user_process: subprocess.Popen | None = None
     self._power_process: subprocess.Popen | None = None
     self._power_battery_process: subprocess.Popen | None = None
-    self._power_output: AnyPath = self.result_path.with_suffix(".power.json")
-    self._power_battery_output: AnyPath = self.result_path.with_suffix(
+    self._power_output: pth.AnyPath = self.result_path.with_suffix(
+        ".power.json")
+    self._power_battery_output: pth.AnyPath = self.result_path.with_suffix(
         ".power_battery.json")
 
   def setup(self) -> None:

@@ -20,8 +20,8 @@ from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
     ProbeResult, ProbeResultDict
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
-  from crossbench.path import LocalPath
   from crossbench.plt.port_manager import PortScope
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -70,9 +70,9 @@ class WebPageReplayProbe(Probe):
   def __init__(self,
                http_port: int = 0,
                https_port: int = 0,
-               inject_scripts: Iterable[LocalPath] | None = None,
-               key_file: LocalPath | None = None,
-               cert_file: LocalPath | None = None,
+               inject_scripts: Iterable[pth.LocalPath] | None = None,
+               key_file: pth.LocalPath | None = None,
+               cert_file: pth.LocalPath | None = None,
                use_test_root_certificate: bool = False,
                record_setup: bool = True) -> None:
     super().__init__()
@@ -138,7 +138,7 @@ class WebPageReplayProbe(Probe):
     results = [subgroup.results[self].file for subgroup in group.story_groups]
     return self.merge_group(results, group)
 
-  def merge_group(self, results: list[LocalPath],
+  def merge_group(self, results: list[pth.LocalPath],
                   group: RunGroup) -> ProbeResult:
     result_file = group.get_local_probe_result_path(self)
     if not results:
@@ -150,8 +150,8 @@ class WebPageReplayProbe(Probe):
       self.httparchive_merge(repetition_file, result_file)
     return LocalProbeResult(file=[result_file])
 
-  def httparchive_merge(self, input_archive: LocalPath,
-                        output_archive: LocalPath) -> None:
+  def httparchive_merge(self, input_archive: pth.LocalPath,
+                        output_archive: pth.LocalPath) -> None:
     self.host_platform.sh(
         WprGoFinder(self.host_platform).httparchive(),
         "merge",
@@ -171,7 +171,7 @@ class WebPageReplayProbe(Probe):
   def _log_results(self, result_dict: ProbeResultDict) -> None:
     if self not in result_dict:
       return
-    wpr_archive: LocalPath = result_dict[self].file
+    wpr_archive: pth.LocalPath = result_dict[self].file
     logging.info("-" * 80)
     logging.critical("WPR archive:")
     logging.critical("  %s [%s]", wpr_archive,
@@ -182,7 +182,7 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
 
   def __init__(self, probe: WebPageReplayProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._wprgo_log: LocalPath = self.local_result_path.with_name(
+    self._wprgo_log: pth.LocalPath = self.local_result_path.with_name(
         "wpr_record.log")
     self._host: str = "127.0.0.1"
     kwargs = dict(self.probe.recorder_kwargs)

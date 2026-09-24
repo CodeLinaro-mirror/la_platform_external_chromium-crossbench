@@ -22,7 +22,6 @@ if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
-  from crossbench.path import AnyPath
   from crossbench.probes.probe import Probe
 
 from tests.crossbench.runner.mocks import MockBrowser, MockNetwork, \
@@ -65,8 +64,10 @@ class CrossbenchMagicMockMixin:
     session.root_dir = pth.LocalPath("/path/to/root")
     return session
 
-  def mock_run(self,
-               result_path: str | AnyPath = "/results/logcat.txt") -> MockRun:
+  def mock_run(
+      self,
+      result_path: str | pth.AnyPath = "/results/logcat.txt",
+  ) -> MockRun:
     local_path = pth.LocalPath(result_path)
     local_path.parent.mkdir(parents=True, exist_ok=True)
     run = MockRun(mock.MagicMock(), self.magic_mock_session)

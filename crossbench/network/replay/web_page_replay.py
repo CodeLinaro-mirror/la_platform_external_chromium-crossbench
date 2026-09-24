@@ -17,11 +17,11 @@ from typing import TYPE_CHECKING, ClassVar, Final, Iterable, TextIO
 
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.helper import url_helper
 from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.parse import NumberParser, PathParser
-from crossbench.path import AnyPath, LocalPath
 from crossbench.plt import PLATFORM, Platform
 
 if TYPE_CHECKING:
@@ -41,22 +41,22 @@ class WprBase(abc.ABC):
   NAME: ClassVar[str] = ""
 
   def __init__(self,
-               archive_path: AnyPath,
-               bin_path: AnyPath,
+               archive_path: pth.AnyPath,
+               bin_path: pth.AnyPath,
                http_port: int = 0,
                https_port: int = 0,
                host: str = "127.0.0.1",
-               inject_scripts: Iterable[AnyPath] | None = None,
-               key_file: AnyPath | None = None,
-               cert_file: AnyPath | None = None,
-               log_path: LocalPath | None = None,
+               inject_scripts: Iterable[pth.AnyPath] | None = None,
+               key_file: pth.AnyPath | None = None,
+               cert_file: pth.AnyPath | None = None,
+               log_path: pth.LocalPath | None = None,
                run_as_root: bool = False,
                platform: Platform = PLATFORM) -> None:
     self._platform: Final[Platform] = platform
     self._process: subprocess.Popen | None = None
-    self._log_path: LocalPath | None = self._validate_log_path(log_path)
+    self._log_path: pth.LocalPath | None = self._validate_log_path(log_path)
     self._log_file: TextIO | None = None
-    self._bin_path: Final[AnyPath] = bin_path
+    self._bin_path: Final[pth.AnyPath] = bin_path
     self._run_as_root: bool = run_as_root
 
     self._num_parsed_ports: int = 0
@@ -66,27 +66,29 @@ class WprBase(abc.ABC):
     # Pre-existing issue: for non-local platforms, the empty LocalPath() happens
     # to not be used by any other method below. Could probably be improved by
     # moving to a helper wpr_root() function that asserts this fact.
-    wpr_root: LocalPath = LocalPath()
+    wpr_root: pth.LocalPath = pth.LocalPath()
     if self._platform.is_local:
-      local_path: LocalPath | None = WprGoFinder(self._platform).local_path
+      local_path: pth.LocalPath | None = WprGoFinder(self._platform).local_path
       # The directory exists because `bin_path` does.
       assert local_path is not None
       wpr_root = local_path
 
-    self._archive_path: Final[AnyPath] = self._validate_archive_path(
+    self._archive_path: Final[pth.AnyPath] = self._validate_archive_path(
         archive_path)
     (self._device_http_port,
      self._device_https_port) = self._validate_ports(http_port, https_port)
 
     self._host: str = self._validate_host(host)
-    self._key_file: Final[AnyPath] = self._validate_key_file(wpr_root, key_file)
-    self._cert_file: Final[AnyPath] = self._validate_cert_file(
+    self._key_file: Final[pth.AnyPath] = self._validate_key_file(
+        wpr_root, key_file)
+    self._cert_file: Final[pth.AnyPath] = self._validate_cert_file(
         wpr_root, cert_file)
-    self._inject_scripts: Final[tuple[AnyPath,
+    self._inject_scripts: Final[tuple[pth.AnyPath,
                                       ...]] = self._validate_injected_scripts(
                                           wpr_root, inject_scripts)
 
-  def _validate_log_path(self, log_path: LocalPath | None) -> LocalPath | None:
+  def _validate_log_path(
+      self, log_path: pth.LocalPath | None) -> pth.LocalPath | None:
     if log_path:
       return PathParser.not_existing_path(log_path)
     return log_path
@@ -110,8 +112,8 @@ class WprBase(abc.ABC):
       assert host == "127.0.0.1", f"Unsupported local host: {host}"
     return host
 
-  def _validate_key_file(self, wpr_root: LocalPath,
-                         key_file: AnyPath | None) -> AnyPath:
+  def _validate_key_file(self, wpr_root: pth.LocalPath,
+                         key_file: pth.AnyPath | None) -> pth.AnyPath:
     if not key_file:
       key_file = wpr_root / "ecdsa_key.pem"
       if self._platform.is_remote:
@@ -121,8 +123,8 @@ class WprBase(abc.ABC):
       raise ValueError(f"Could not find ecdsa_key.pem file: {key_file}")
     return key_file
 
-  def _validate_cert_file(self, wpr_root: LocalPath,
-                          cert_file: AnyPath | None) -> AnyPath:
+  def _validate_cert_file(self, wpr_root: pth.LocalPath,
+                          cert_file: pth.AnyPath | None) -> pth.AnyPath:
     if not cert_file:
       cert_file = wpr_root / "ecdsa_cert.pem"
       if self._platform.is_remote:
@@ -133,8 +135,8 @@ class WprBase(abc.ABC):
     return cert_file
 
   def _validate_injected_scripts(
-      self, wpr_root: LocalPath,
-      inject_scripts: Iterable[AnyPath] | None) -> tuple[AnyPath, ...]:
+      self, wpr_root: pth.LocalPath,
+      inject_scripts: Iterable[pth.AnyPath] | None) -> tuple[pth.AnyPath, ...]:
     if inject_scripts is None:
       default_script = wpr_root / "deterministic.js"
       if self._platform.is_remote:
@@ -150,7 +152,7 @@ class WprBase(abc.ABC):
     return scripts
 
   @abc.abstractmethod
-  def _validate_archive_path(self, path: AnyPath) -> AnyPath:
+  def _validate_archive_path(self, path: pth.AnyPath) -> pth.AnyPath:
     pass
 
   @property
@@ -166,7 +168,7 @@ class WprBase(abc.ABC):
     return self._host
 
   @property
-  def cert_file(self) -> AnyPath:
+  def cert_file(self) -> pth.AnyPath:
     return self._cert_file
 
   @property
@@ -217,7 +219,7 @@ class WprBase(abc.ABC):
     self._num_parsed_ports = 0
     if self._log_path:
       self._log_file = self._log_path.open("w", encoding="utf-8")
-    work_dir: LocalPath = LocalPath.cwd()
+    work_dir: pth.LocalPath = pth.LocalPath.cwd()
     if self._platform.is_local:
       work_dir = self._platform.local_path(self._bin_path.parent)
     with change_cwd(work_dir):
@@ -346,7 +348,7 @@ class WprRecorder(WprBase):
   NAME: ClassVar[str] = "recorder"
 
   @property
-  def cert_file(self) -> LocalPath:
+  def cert_file(self) -> pth.LocalPath:
     return self._platform.local_path(self._cert_file)
 
   @property
@@ -355,7 +357,7 @@ class WprRecorder(WprBase):
     return ("record", *super().base_cmd_flags, str(self._archive_path))
 
   @override
-  def _validate_archive_path(self, path: AnyPath) -> LocalPath:
+  def _validate_archive_path(self, path: pth.AnyPath) -> pth.LocalPath:
     return PathParser.not_existing_path(path, "Wpr.go result archive")
 
   def clear(self) -> None:
@@ -367,17 +369,17 @@ class WprReplayServer(WprBase):
   NAME: ClassVar[str] = "replay"
 
   def __init__(self,
-               archive_path: AnyPath,
-               bin_path: AnyPath,
+               archive_path: pth.AnyPath,
+               bin_path: pth.AnyPath,
                http_port: int = 0,
                https_port: int = 0,
                host: str = "127.0.0.1",
-               inject_scripts: Iterable[AnyPath] | None = None,
-               key_file: AnyPath | None = None,
-               cert_file: AnyPath | None = None,
+               inject_scripts: Iterable[pth.AnyPath] | None = None,
+               key_file: pth.AnyPath | None = None,
+               cert_file: pth.AnyPath | None = None,
                no_archive_certificates: bool = False,
-               rules_file: AnyPath | None = None,
-               log_path: LocalPath | None = None,
+               rules_file: pth.AnyPath | None = None,
+               log_path: pth.LocalPath | None = None,
                fuzzy_url_matching: bool = True,
                serve_chronologically: bool = True,
                run_as_root: bool = False,
@@ -386,12 +388,12 @@ class WprReplayServer(WprBase):
                      inject_scripts, key_file, cert_file, log_path, run_as_root,
                      platform)
     self._no_archive_certificates = no_archive_certificates
-    self._rules_file: AnyPath | None = rules_file
+    self._rules_file: pth.AnyPath | None = rules_file
     self._fuzzy_url_matching: bool = fuzzy_url_matching
     self._serve_chronologically: bool = serve_chronologically
 
   @override
-  def _validate_archive_path(self, path: AnyPath) -> AnyPath:
+  def _validate_archive_path(self, path: pth.AnyPath) -> pth.AnyPath:
     assert self._platform.is_file(path)
     return path
 

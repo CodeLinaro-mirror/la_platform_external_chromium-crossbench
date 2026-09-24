@@ -15,16 +15,16 @@ from crossbench.browsers.viewport import Viewport
 from crossbench.browsers.webdriver import WebDriverBrowser
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench import plt
   from crossbench.flags.base import Flags
-  from crossbench.path import AnyPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
 class Firefox(Browser):
 
   @classmethod
-  def default_path(cls, platform: plt.Platform) -> AnyPath:
+  def default_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Firefox",
         macos=["Firefox.app"],
@@ -32,7 +32,7 @@ class Firefox(Browser):
         win=["Mozilla Firefox/firefox.exe"])
 
   @classmethod
-  def developer_edition_path(cls, platform: plt.Platform) -> AnyPath:
+  def developer_edition_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Firefox Developer Edition",
         macos=["Firefox Developer Edition.app"],
@@ -40,7 +40,7 @@ class Firefox(Browser):
         win=["Firefox Developer Edition/firefox.exe"])
 
   @classmethod
-  def nightly_path(cls, platform: plt.Platform) -> AnyPath:
+  def nightly_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
         "Firefox Nightly",
         macos=["Firefox Nightly.app"],
@@ -58,7 +58,7 @@ class Firefox(Browser):
     return BrowserAttributes.FIREFOX
 
   @override
-  def _setup_cache_dir(self) -> AnyPath | None:
+  def _setup_cache_dir(self) -> pth.AnyPath | None:
     if cache_dir := self.settings.cache_dir:
       return cache_dir
     return self.platform.mkdtemp(prefix="firefox")

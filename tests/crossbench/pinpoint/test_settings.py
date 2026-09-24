@@ -9,6 +9,7 @@ import pathlib
 from typing import Any
 from unittest import mock
 
+from crossbench import path as pth
 from crossbench.pinpoint.settings import Settings
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -23,8 +24,7 @@ class SettingsTestCase(CrossbenchFakeFsTestCase):
     self.enterContext(
         mock.patch(
             "platformdirs.user_config_dir", return_value=self.config_dir))
-    self.enterContext(
-        mock.patch("crossbench.pinpoint.settings.LocalPath", pathlib.Path))
+    self.enterContext(mock.patch.object(pth, "LocalPath", pathlib.Path))
 
   def tearDown(self):
     Settings._instance = None

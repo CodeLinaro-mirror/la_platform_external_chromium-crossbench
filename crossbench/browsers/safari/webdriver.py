@@ -15,16 +15,15 @@ from selenium.webdriver.safari.service import Service as SafariService
 from typing_extensions import override
 
 from crossbench import exception
+from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.safari.safari import Safari, find_safaridriver
 from crossbench.browsers.webdriver import DriverException, WebDriverBrowser
 from crossbench.cli.ui import ui
 from crossbench.helper.wait import WaitRange
-from crossbench.path import AnyPath, LocalPath
 from crossbench.plt.ios import IOSPlatform
 
 if TYPE_CHECKING:
-  from crossbench import path as pth
   from crossbench.browsers.settings import Settings
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
@@ -35,7 +34,7 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
   def __init__(self,
                label: str,
-               path: AnyPath,
+               path: pth.AnyPath,
                settings: Settings | None = None) -> None:
     super().__init__(label, path, settings)
     assert self.platform.is_apple, f"Unsupported platform: {self.platform}"
@@ -46,23 +45,23 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     return BrowserAttributes.SAFARI | BrowserAttributes.WEBDRIVER
 
   @override
-  def _find_driver(self) -> AnyPath:
+  def _find_driver(self) -> pth.AnyPath:
     # TODO: support remote platform
     assert self.host_platform.is_local, "Remote platform is not supported yet"
     return self.host_platform.local_path(
         find_safaridriver(self.path, self.platform))
 
   @override
-  def _setup_driver_log_file(self) -> LocalPath:
+  def _setup_driver_log_file(self) -> pth.LocalPath:
     raise NotImplementedError("Cannot use custom driver log path for Safari")
 
   @override
   def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: AnyPath) -> webdriver.Remote:
+                    driver_path: pth.AnyPath) -> webdriver.Remote:
     return self._start_safari_driver(session, driver_path)
 
   def _start_safari_driver(self, session: BrowserSessionRunGroup,
-                           driver_path: AnyPath) -> webdriver.Safari:
+                           driver_path: pth.AnyPath) -> webdriver.Safari:
     assert not self._is_running
     logging.info("STARTING BROWSER: browser: %s driver: %s", self.path,
                  driver_path)
@@ -78,21 +77,21 @@ class SafariWebDriver(WebDriverBrowser, Safari):
       self.host_platform.sleep(0.5)
 
     assert driver.session_id, "Could not start webdriver"
-    logs: AnyPath = (
+    logs: pth.AnyPath = (
         self.host_platform.home() / "Library/Logs/com.apple.WebDriver" /
         driver.session_id)
     all_logs = list(self.host_platform.glob(logs, "safaridriver*"))
     if all_logs:
       first_log_file = all_logs[0]
-      self._driver_log_file = LocalPath(first_log_file)
+      self._driver_log_file = pth.LocalPath(first_log_file)
       assert self.host_platform.is_file(first_log_file), (
           f"Invalid log file {first_log_file}")
     return driver
 
   # TODO(cbruni): implement iOS platform
   def _start_driver_with_retries(
-      self, driver_path: AnyPath, driver_kwargs: dict[str,
-                                                      Any]) -> webdriver.Safari:
+      self, driver_path: pth.AnyPath,
+      driver_kwargs: dict[str, Any]) -> webdriver.Safari:
     # safaridriver for iOS / technology preview seems to be brittle.
     # Let's give it several chances to start up.
     seen_exceptions: set[type[Exception]] = set()

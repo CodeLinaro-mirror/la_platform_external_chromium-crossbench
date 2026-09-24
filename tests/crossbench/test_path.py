@@ -6,26 +6,26 @@ from __future__ import annotations
 
 import unittest
 
-from crossbench.path import MAX_PART_LEN, safe_filename
+from crossbench import path as pth
 from tests import test_helper
 
 
 class PlatformHelperTestCase(unittest.TestCase):
 
   def test_safe_filename(self):
-    self.assertEqual(safe_filename("abc-ABC"), "abc-ABC")
-    self.assertEqual(safe_filename("abc_ABC.bak2.jpg"), "abc_ABC.bak2.jpg")
+    self.assertEqual(pth.safe_filename("abc-ABC"), "abc-ABC")
+    self.assertEqual(pth.safe_filename("abc_ABC.bak2.jpg"), "abc_ABC.bak2.jpg")
 
   def test_safe_filename_unsafe(self):
-    self.assertEqual(safe_filename("äbc_ÂBC"), "abc_ABC")
-    self.assertEqual(safe_filename("abc?*//\\ABC"), "abc_____ABC")
-    self.assertEqual(safe_filename("äbc_**_ÂBC"), "abc____ABC")
+    self.assertEqual(pth.safe_filename("äbc_ÂBC"), "abc_ABC")
+    self.assertEqual(pth.safe_filename("abc?*//\\ABC"), "abc_____ABC")
+    self.assertEqual(pth.safe_filename("äbc_**_ÂBC"), "abc____ABC")
 
   def test_safe_filename_len(self):
     test_str = "x" * 1024
     with self.assertRaises(ValueError):
-      safe_filename(test_str, strict_len=True)
-    self.assertEqual(len(safe_filename(test_str)), MAX_PART_LEN)
+      pth.safe_filename(test_str, strict_len=True)
+    self.assertEqual(len(pth.safe_filename(test_str)), pth.MAX_PART_LEN)
 
 
 if __name__ == "__main__":

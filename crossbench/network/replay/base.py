@@ -23,7 +23,6 @@ if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.network.traffic_shaping.base import TrafficShaper
-  from crossbench.path import LocalPath
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   ReplayNetworkT = TypeVar("ReplayNetworkT", bound="ReplayNetwork")
 
@@ -101,7 +100,7 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
       return f"{url_path.stem}_{safe_md5}{url_path.suffix}"
     raise RuntimeError(f"Could not find md5 hash in blob: {url}")
 
-  def _download_gcloud_archive(self, url: str) -> LocalPath:
+  def _download_gcloud_archive(self, url: str) -> pth.LocalPath:
     title: str = f"Downloading {url}"
     hint: str = (
         f"Failed to download {url} from Google Cloud Storage. Make sure the "
@@ -121,7 +120,7 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
         self.host_platform.download_gcs_file(url, local_path)
     return local_path
 
-  def ensure_archive(self, archive: pth.LocalPath | str) -> LocalPath:
+  def ensure_archive(self, archive: pth.LocalPath | str) -> pth.LocalPath:
     if isinstance(archive, str) and archive.startswith(GS_PREFIX):
       return self._download_gcloud_archive(url=archive)
     return PathParser.existing_file_path(archive).resolve()

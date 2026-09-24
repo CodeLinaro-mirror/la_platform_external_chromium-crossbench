@@ -168,11 +168,11 @@ describe('Pyodide Integration Test (Real WebAssembly)', () => {
        // Test Perfetto probe trace config serialization with real protobuf
        const perfettoTestScript = `
 import google.protobuf.text_format as proto_text_format
+from crossbench import path as pth
 from crossbench.probes.cb_perfetto.perfetto import TraceConfig
-from crossbench.path import LocalPath
 
 cfg = TraceConfig.parse_path(
-    LocalPath('/config/probe/perfetto/trace_config/default.txtpb')
+    pth.LocalPath('/config/probe/perfetto/trace_config/default.txtpb')
 )
 text = proto_text_format.MessageToString(cfg.trace_config)
 assert isinstance(text, str) and len(text) > 0, (

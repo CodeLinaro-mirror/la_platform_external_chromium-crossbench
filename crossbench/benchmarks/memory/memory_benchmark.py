@@ -38,7 +38,6 @@ if TYPE_CHECKING:
   from crossbench.action_runner.base import ActionRunner
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.flags.base import Flags
-  from crossbench.path import LocalPath
   from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -76,7 +75,7 @@ class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
 
     if self not in result_dict:
       return
-    results_json: LocalPath = result_dict[self].json
+    results_json: pth.LocalPath = result_dict[self].json
     logging.info("-" * 80)
     logging.critical("Memory results (num of alive tabs):")
     if not single_result:

@@ -21,9 +21,9 @@ from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.browser import Viewport
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.path import LocalPath
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
@@ -178,7 +178,7 @@ class VideoProbe(Probe):
     group_files = [video_file]
     logging.info("VIDEO merge page repetitions")
     browser = group.browser
-    video_file_inputs: list[str | LocalPath] = []
+    video_file_inputs: list[str | pth.LocalPath] = []
     for run in runs:
       video_file_inputs += ["-i", run.results[self].file_list[0]]
     draw_text = ("fontfile='/Library/Fonts/Arial.ttf':"
@@ -226,8 +226,8 @@ class VideoProbe(Probe):
               for story, repetitions_groups in grouped.items()))
 
   def _merge_stories_for_browser(
-      self, result_dir: LocalPath, story: Story,
-      repetitions_groups: list[RepetitionsRunGroup]) -> LocalPath:
+      self, result_dir: pth.LocalPath, story: Story,
+      repetitions_groups: list[RepetitionsRunGroup]) -> pth.LocalPath:
     story = repetitions_groups[0].story
     result_path = result_dir / f"{story.name}_combined.mp4"
 
@@ -375,7 +375,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     else:
       vfr_video_result.unlink()
 
-  def _create_time_strip(self, tmpdir: LocalPath) -> LocalPath:
+  def _create_time_strip(self, tmpdir: pth.LocalPath) -> pth.LocalPath:
     logging.info("TIMESTRIP")
     progress_dir = tmpdir / "progress"
     progress_dir.mkdir(parents=True, exist_ok=True)

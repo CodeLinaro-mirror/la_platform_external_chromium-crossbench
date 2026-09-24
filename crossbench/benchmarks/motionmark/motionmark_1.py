@@ -23,7 +23,7 @@ from crossbench.probes.metric import Metric, MetricsMerger
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath
+  from crossbench import path as pth
   from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -77,7 +77,7 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
                   single_result: bool) -> None:
     if self not in result_dict:
       return
-    results_json: LocalPath = result_dict[self].json
+    results_json: pth.LocalPath = result_dict[self].json
     logging.info("-" * 80)
     logging.critical("Motionmark results:")
     if not single_result:

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from typing_extensions import override
 
-from crossbench.path import AnyPath, LocalPath, safe_filename
+from crossbench import path as pth
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 
 if TYPE_CHECKING:
@@ -42,10 +42,10 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
 
   def __init__(self, probe: MeminfoProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._results: list[AnyPath] = []
+    self._results: list[pth.AnyPath] = []
 
   @override
-  def get_default_result_path(self) -> AnyPath:
+  def get_default_result_path(self) -> pth.AnyPath:
     dump_dir = super().get_default_result_path()
     self.host_platform.mkdir(dump_dir)
     return dump_dir
@@ -57,11 +57,11 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
     pass
 
   def _dump_file(self, title: str | None,
-                 info_stack: exception.TInfoStack) -> LocalPath:
+                 info_stack: exception.TInfoStack) -> pth.LocalPath:
     name = "_".join(info_stack)
     if title:
       name = f"{title}.{name}"
-    name = safe_filename(name).lower() + ".json"
+    name = pth.safe_filename(name).lower() + ".json"
     return self.local_result_path / name
 
   def _timeout_from_deadline(self, deadline: dt.datetime) -> dt.timedelta:

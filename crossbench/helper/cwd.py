@@ -9,11 +9,11 @@ import logging
 from typing import TYPE_CHECKING, Iterator
 
 if TYPE_CHECKING:
-  from crossbench.path import LocalPath
+  from crossbench import path as pth
 
 
 @contextlib.contextmanager
-def change_cwd(destination: LocalPath) -> Iterator[None]:
+def change_cwd(destination: pth.LocalPath) -> Iterator[None]:
   with contextlib.chdir(destination):
     logging.debug("CWD=%s", destination)
     yield

@@ -30,7 +30,6 @@ from crossbench.stories.press_benchmark import PressBenchmarkStory
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
-  from crossbench.path import LocalPath
   from crossbench.probes.results import ProbeResult, ProbeResultDict
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
@@ -75,7 +74,7 @@ class WebXPRT5Probe(
     if self not in result_dict:
       return
     assert not result_dict[self].is_empty, "Expected non-empty probe result"
-    results_json: LocalPath = result_dict[self].json
+    results_json: pth.LocalPath = result_dict[self].json
     logging.info("-" * 80)
     logging.critical("WebXPRT 5 results:")
     if not single_result:

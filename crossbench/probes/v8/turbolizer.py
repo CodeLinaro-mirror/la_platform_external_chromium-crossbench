@@ -16,8 +16,8 @@ from crossbench.probes.results import BrowserProbeResult, LocalProbeResult, \
     ProbeResult
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
-  from crossbench.path import AnyPath
 
 
 class V8TurbolizerProbe(ChromiumProbe):
@@ -43,7 +43,7 @@ class V8TurbolizerProbe(ChromiumProbe):
 class V8TurbolizerProbeContext(ProbeContext[V8TurbolizerProbe]):
 
   @property
-  def results_dir(self) -> AnyPath:
+  def results_dir(self) -> pth.AnyPath:
     # Put v8.turbolizer files into separate dirs in case we have
     # multiple isolates
     turbolizer_log_dir = super().result_path

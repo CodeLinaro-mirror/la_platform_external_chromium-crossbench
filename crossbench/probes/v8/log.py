@@ -29,15 +29,15 @@ from crossbench.probes.result_location import ResultLocation
 if TYPE_CHECKING:
   from typing import TypeAlias
 
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.path import AnyPath, LocalPath
   from crossbench.plt.base import Platform
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
-  LogTaskT: TypeAlias = tuple[Callable[..., AnyPath], tuple[Any, ...]]
+  LogTaskT: TypeAlias = tuple[Callable[..., pth.AnyPath], tuple[Any, ...]]
 
 _LOG_FLAG: Final = "--log"
 _PROF_FLAG: Final = "--prof"
@@ -153,8 +153,8 @@ class V8LogProbe(ChromiumProbe):
       js_flags: Iterable[str] | None = DEFAULT_LOG_FLAGS,
       prof_sampling_interval: dt.timedelta | None = None,
       # TODO: support remote platform
-      d8_binary: LocalPath | None = None,
-      v8_checkout: LocalPath | None = None) -> None:
+      d8_binary: pth.LocalPath | None = None,
+      v8_checkout: pth.LocalPath | None = None) -> None:
     super().__init__()
     self._profview: bool = profview
     self._logview: bool = logview
@@ -165,8 +165,8 @@ class V8LogProbe(ChromiumProbe):
       self._js_flags.set(cat.flag)
     self._prof_sampling_interval: dt.timedelta = (
         prof_sampling_interval or dt.timedelta())
-    self._d8_binary: LocalPath | None = d8_binary
-    self._v8_checkout: LocalPath | None = v8_checkout
+    self._d8_binary: pth.LocalPath | None = d8_binary
+    self._v8_checkout: pth.LocalPath | None = v8_checkout
     assert isinstance(log_all,
                       bool), (f"Expected bool value, got log_all={log_all}")
     assert isinstance(prof, bool), f"Expected bool value, got log_all={prof}"
@@ -256,7 +256,8 @@ class V8LogProbe(ChromiumProbe):
     browser.flags.set("--no-sandbox")
     browser.js_flags.update(self._js_flags)
 
-  def process_log_files(self, log_files: list[AnyPath]) -> list[AnyPath]:
+  def process_log_files(self,
+                        log_files: list[pth.AnyPath]) -> list[pth.AnyPath]:
     if not log_files:
       return []
     if not self._profview and not self._logview:
@@ -281,7 +282,7 @@ class V8LogProbe(ChromiumProbe):
     with (ui.spinner(title="PROBE v8.log: processing... "),
           concurrent.futures.ThreadPoolExecutor() as executor):
       futures = [executor.submit(func, *args) for func, args in tasks]
-      json_list: list[AnyPath] = []
+      json_list: list[pth.AnyPath] = []
       for f in concurrent.futures.as_completed(futures):
         path = f.result()
         if path:
@@ -291,7 +292,7 @@ class V8LogProbe(ChromiumProbe):
 
   def _profview_tasks(
       self,
-      log_files: list[AnyPath],
+      log_files: list[pth.AnyPath],
       platform: Platform,
       finder: V8ToolsFinder,
   ) -> list[LogTaskT]:
@@ -313,7 +314,7 @@ class V8LogProbe(ChromiumProbe):
 
   def _logviewer_tasks(
       self,
-      log_files: list[AnyPath],
+      log_files: list[pth.AnyPath],
       platform: Platform,
       finder: V8ToolsFinder,
   ) -> list[LogTaskT]:
@@ -375,7 +376,7 @@ class V8LogProbe(ChromiumProbe):
 class V8LogProbeContext(ProbeContext[V8LogProbe]):
 
   @override
-  def get_default_result_path(self) -> AnyPath:
+  def get_default_result_path(self) -> pth.AnyPath:
     log_dir = super().get_default_result_path()
     self.browser_platform.mkdir(log_dir)
     return log_dir / self.probe.result_path_name
@@ -394,29 +395,30 @@ class V8LogProbeContext(ProbeContext[V8LogProbe]):
     log_dir = self.result_path.parent
     log_files = fs_helper.sort_by_file_size(
         self.browser_platform.glob(log_dir, "*-v8.log"), self.browser_platform)
-    json_list: list[AnyPath] = self.probe.process_log_files(log_files)
+    json_list: list[pth.AnyPath] = self.probe.process_log_files(log_files)
     return self.browser_result(file=tuple(log_files), json=json_list)
 
 
-def _process_profview_json(platform: Platform, d8_binary: AnyPath,
-                           tick_processor: AnyPath,
-                           log_file: AnyPath) -> AnyPath:
+def _process_profview_json(platform: Platform, d8_binary: pth.AnyPath,
+                           tick_processor: pth.AnyPath,
+                           log_file: pth.AnyPath) -> pth.AnyPath:
   # The tick-processor scripts expect D8_PATH to point to the parent dir.
   result_json = log_file.with_suffix(".profview.json")
   return _run_v8_tool(platform, d8_binary, tick_processor, result_json,
                       ("--preprocess", log_file))
 
 
-def _process_logviewer_json(platform: Platform, d8_binary: AnyPath,
-                            logviewer_script: AnyPath, category: str,
-                            log_file: AnyPath) -> AnyPath:
+def _process_logviewer_json(platform: Platform, d8_binary: pth.AnyPath,
+                            logviewer_script: pth.AnyPath, category: str,
+                            log_file: pth.AnyPath) -> pth.AnyPath:
   output_json = log_file.with_suffix(f".logview.{category}.json")
   return _run_v8_tool(platform, d8_binary, logviewer_script, output_json,
                       (category, log_file, "--details"))
 
 
-def _run_v8_tool(platform: Platform, d8_binary: AnyPath, tool_script: AnyPath,
-                 output_file: AnyPath, args: tuple[Any, ...]) -> AnyPath:
+def _run_v8_tool(platform: Platform, d8_binary: pth.AnyPath,
+                 tool_script: pth.AnyPath, output_file: pth.AnyPath,
+                 args: tuple[Any, ...]) -> pth.AnyPath:
   env = os.environ.copy()
   env["D8_PATH"] = str(platform.local_path(d8_binary).resolve())
   with platform.local_path(output_file).open("w", encoding="utf-8") as f:

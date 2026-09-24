@@ -17,9 +17,9 @@ from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
-  from crossbench.path import LocalPath
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
@@ -40,7 +40,7 @@ class DTraceProbe(Probe):
         "script_path", required=True, type=PathParser.non_empty_file_path)
     return parser
 
-  def __init__(self, script_path: LocalPath) -> None:
+  def __init__(self, script_path: pth.LocalPath) -> None:
     super().__init__()
     self._script_path = script_path.resolve()
 
@@ -50,7 +50,7 @@ class DTraceProbe(Probe):
     return (*super().key, ("script_path", str(self.script_path)))
 
   @property
-  def script_path(self) -> LocalPath:
+  def script_path(self) -> pth.LocalPath:
     return self._script_path
 
   @override
@@ -95,10 +95,10 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
 
   def __init__(self, probe: DTraceProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._script_path: LocalPath = probe.script_path
-    self._output_path: LocalPath = (
+    self._script_path: pth.LocalPath = probe.script_path
+    self._output_path: pth.LocalPath = (
         self.local_result_path.with_suffix(".output.txt"))
-    self._log_path: LocalPath = self.local_result_path.with_suffix(".log")
+    self._log_path: pth.LocalPath = self.local_result_path.with_suffix(".log")
     self._dtrace_process: subprocess.Popen | None = None
     self._log_file: TextIO | None = None
     atexit.register(self.stop_dtrace_process)

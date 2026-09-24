@@ -18,10 +18,10 @@ from crossbench.network.replay.base import GS_PREFIX, ReplayNetwork
 from crossbench.network.replay.web_page_replay import WprReplayServer
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.browsers.browser import Browser
   from crossbench.network.base import TrafficShaper
-  from crossbench.path import AnyPath, LocalPath
   from crossbench.plt import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
@@ -34,13 +34,13 @@ assert GS_PREFIX
 class WprReplayNetwork(ReplayNetwork):
 
   def __init__(self,
-               archive: LocalPath | str,
+               archive: pth.LocalPath | str,
                traffic_shaper: TrafficShaper | None,
                browser_platform: Platform,
                persist_server: bool,
                inject_deterministic_script: bool,
                no_archive_certificates: bool,
-               response_transformations_file: LocalPath | None,
+               response_transformations_file: pth.LocalPath | None,
                cross_platform_mode: bool,
                host: str | None,
                http_port: int | None = None,
@@ -49,20 +49,20 @@ class WprReplayNetwork(ReplayNetwork):
     super().__init__(archive, traffic_shaper, browser_platform,
                      expected_md5_hash)
     self._server: WprReplayServer | None = None
-    self._tmp_dir: AnyPath | None = None
+    self._tmp_dir: pth.AnyPath | None = None
     self._persist_server: Final[bool] = persist_server
     self._inject_deterministic_script: Final[bool] = inject_deterministic_script
     self._no_archive_certificates: Final[bool] = no_archive_certificates
-    self._response_transformations_file: (LocalPath |
+    self._response_transformations_file: (pth.LocalPath |
                                           None) = response_transformations_file
     self._cross_platform_mode: Final[bool] = cross_platform_mode
-    self._wpr_go_bin: Final[LocalPath] = WprGoFinder(self.host_platform).wpr(
-        self._wpr_platform)
+    self._wpr_go_bin: Final[pth.LocalPath] = WprGoFinder(
+        self.host_platform).wpr(self._wpr_platform)
     self._host: Final[str | None] = host
     self._http_port: Final[int | None] = http_port
     self._https_port: Final[int | None] = https_port
 
-  def set_response_transformations_file(self, file: LocalPath) -> None:
+  def set_response_transformations_file(self, file: pth.LocalPath) -> None:
     assert not self._server
     self._response_transformations_file = file
 
@@ -100,7 +100,7 @@ class WprReplayNetwork(ReplayNetwork):
     return extra_flags
 
   @abc.abstractmethod
-  def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
+  def _create_server(self, log_dir: pth.LocalPath) -> WprReplayServer:
     pass
 
   @contextlib.contextmanager
@@ -197,7 +197,7 @@ class LocalWprReplayNetwork(WprReplayNetwork):
       # port cleanup happens automatically
 
   @override
-  def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
+  def _create_server(self, log_dir: pth.LocalPath) -> WprReplayServer:
     extra_kwargs: dict[str, Any] = {}
     if self._http_port is not None:
       extra_kwargs["http_port"] = self._http_port
@@ -226,13 +226,13 @@ class LocalWprReplayNetwork(WprReplayNetwork):
 class RemoteWprReplayNetwork(WprReplayNetwork):
 
   def __init__(self,
-               archive: LocalPath | str,
+               archive: pth.LocalPath | str,
                traffic_shaper: TrafficShaper | None,
                browser_platform: Platform,
                persist_server: bool,
                inject_deterministic_script: bool,
                no_archive_certificates: bool,
-               response_transformations_file: LocalPath | None,
+               response_transformations_file: pth.LocalPath | None,
                host: str | None,
                http_port: int | None = None,
                https_port: int | None = None,
@@ -277,28 +277,28 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
       finally:
         self._tmp_dir = None
 
-  def _push_file(self, path: LocalPath) -> AnyPath:
+  def _push_file(self, path: pth.LocalPath) -> pth.AnyPath:
     assert self._tmp_dir is not None
     remote_path = self._tmp_dir / path.name
     self.browser_platform.push(path, remote_path)
     return remote_path
 
   @override
-  def _create_server(self, log_dir: LocalPath) -> WprReplayServer:
+  def _create_server(self, log_dir: pth.LocalPath) -> WprReplayServer:
     assert not self._cross_platform_mode
 
     wpr_go_bin = self._push_file(self._wpr_go_bin)
     self.browser_platform.chmod(wpr_go_bin, 0o755)
-    archive: AnyPath = self._push_file(self._archive_path)
+    archive: pth.AnyPath = self._push_file(self._archive_path)
     wpr_root = WprGoFinder(self.host_platform).local_path
     # Already validated on construction.
     assert wpr_root is not None
-    key_file: AnyPath = self._push_file(wpr_root / "ecdsa_key.pem")
-    cert_file: AnyPath = self._push_file(wpr_root / "ecdsa_cert.pem")
-    inject_scripts: list[AnyPath] = []
+    key_file: pth.AnyPath = self._push_file(wpr_root / "ecdsa_key.pem")
+    cert_file: pth.AnyPath = self._push_file(wpr_root / "ecdsa_cert.pem")
+    inject_scripts: list[pth.AnyPath] = []
     if self._inject_deterministic_script:
       inject_scripts = [self._push_file(wpr_root / "deterministic.js")]
-    rules_file: AnyPath | None = None
+    rules_file: pth.AnyPath | None = None
     if file := self._response_transformations_file:
       rules_file = self._push_file(file)
     for script in self._get_injected_scripts():
@@ -321,7 +321,7 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
         rules_file=rules_file,
         **extra_kwargs)
 
-  def _get_injected_scripts(self) -> list[LocalPath]:
+  def _get_injected_scripts(self) -> list[pth.LocalPath]:
     if not self._response_transformations_file:
       return []
 
@@ -330,11 +330,12 @@ class RemoteWprReplayNetwork(WprReplayNetwork):
     assert isinstance(transformations, list)
     assert all(isinstance(t, dict) for t in transformations)
 
-    transformations_dir: LocalPath = self._response_transformations_file.parent
-    scripts: list[LocalPath] = []
+    transformations_dir: pth.LocalPath = (
+        self._response_transformations_file.parent)
+    scripts: list[pth.LocalPath] = []
     for transformation in transformations:
       if injected_script := transformation.get("InjectedScript"):
-        script: LocalPath = transformations_dir / injected_script
+        script: pth.LocalPath = transformations_dir / injected_script
         if not script.exists():
           raise ValueError(
               f"{self._response_transformations_file} attempts to inject "

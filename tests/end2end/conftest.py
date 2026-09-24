@@ -29,8 +29,8 @@ from crossbench.plt.bin import Binaries, BinaryNotFoundError
 from tests.test_helper import TestEnv
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.cli.config.browser import BrowserConfig
-  from crossbench.path import LocalPath
 
 WIN_APP_SUFFIX: Final = (".exe", ".bat")
 
@@ -73,7 +73,8 @@ def _get_app_path(request, option_key) -> pathlib.Path | None:
 
 @pytest.fixture(scope="session")
 def driver_path(request) -> pathlib.Path | None:
-  maybe_driver_path: LocalPath | None = _get_app_path(request, TEST_DRIVER_FLAG)
+  maybe_driver_path: pth.LocalPath | None = _get_app_path(
+      request, TEST_DRIVER_FLAG)
   if maybe_driver_path:
     logging.info("driver path: %s", maybe_driver_path)
     assert maybe_driver_path.exists()
