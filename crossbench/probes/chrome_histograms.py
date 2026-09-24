@@ -151,7 +151,7 @@ class ChromeHistogramsProbe(JsonResultProbe):
     parser.add_argument(
         "use_baseline",
         aliases=("baseline",),
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help="Dump histograms at start to use as baseline")
     return parser

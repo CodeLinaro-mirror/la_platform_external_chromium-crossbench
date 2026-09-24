@@ -96,22 +96,22 @@ class NetworkConfig(ConfigObject):
         help=("Path to a local directory for 'local' file server network, "
               "or path to a archive.wprgo for a 'wpr' replay network"))
     parser.add_argument("url", type=str)
-    parser.add_argument("persist_server", type=bool, default=False)
+    parser.add_argument("persist_server", type=ObjectParser.bool, default=False)
     parser.add_argument(
         "run_on_device",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help=("For 'wpr' network only: switch to enable running on-device "
               "to reduce delays caused by traffic forwarding over adb."))
     parser.add_argument(
         "skip_deterministic_script_injection",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help=("Don't inject the deterministic.js script into every response "
               "in WPR replay mode. See crbug.com/428945380"))
     parser.add_argument(
         "no_archive_certificates",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help=(
             "For 'wpr' network only. By default, WPR stores certificates in "
@@ -131,7 +131,7 @@ class NetworkConfig(ConfigObject):
               "WebPageReplay docs for more info on the expected file format."))
     parser.add_argument(
         "cross_platform_mode",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help=("A special mode when WPR doesn't use ADB port forwarding or any "
               "Chromium-specific flags to setup network. Instead WPR serves "

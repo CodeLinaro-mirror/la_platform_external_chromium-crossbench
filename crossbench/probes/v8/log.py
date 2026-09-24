@@ -92,7 +92,7 @@ class V8LogProbe(ChromiumProbe):
     parser = super().config_parser()
     parser.add_argument(
         "log_all",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help=("Enable all (and very slow) v8 logging "
               "(equivalent to v8's --log-all)."))
@@ -117,18 +117,18 @@ class V8LogProbe(ChromiumProbe):
         "d8_binary or standard installation locations.")
     parser.add_argument(
         "prof",
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help="Enable v8-profiling (equivalent to v8's --prof)")
     parser.add_argument(
         "profview",
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help=("Enable v8-profiling and generate profview.json files for "
               "http://v8.dev/tools/head/profview"))
     parser.add_argument(
         "logview",
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help="Enable v8-logviewer processing to extract details.")
     parser.add_default_argument(

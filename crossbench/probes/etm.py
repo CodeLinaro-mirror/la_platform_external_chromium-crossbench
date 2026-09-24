@@ -15,7 +15,7 @@ from typing_extensions import override
 
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.helper import wait
-from crossbench.parse import NumberParser
+from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.probe_error import ProbeIncompatibleBrowser, \
@@ -68,13 +68,13 @@ class EtmProbe(ChromiumProbe):
     )
     parser.add_argument(
         "record_timestamp",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help=("Generate timestamp packets in ETM stream."),
     )
     parser.add_argument(
         "record_cycles",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help=("Generate cycle count packets in ETM stream."),
     )

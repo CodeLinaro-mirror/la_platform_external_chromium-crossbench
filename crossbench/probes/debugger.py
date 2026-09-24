@@ -11,6 +11,7 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes
+from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeValidationError
@@ -49,12 +50,12 @@ class DebuggerProbe(Probe):
         "Currently only gdb and lldb are supported.")
     parser.add_argument(
         "auto_run",
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help="Automatically start the renderer process in the debugger.")
     parser.add_argument(
         "spare_renderer_process",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help=("Chrome-only: Enable/Disable spare renderer processes via \n"
               "--enable-/--disable-features=SpareRendererForSitePerProcess.\n"

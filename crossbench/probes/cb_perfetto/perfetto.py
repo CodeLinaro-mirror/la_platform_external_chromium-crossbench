@@ -234,7 +234,7 @@ class PerfettoProbe(Probe):
         help="Disabled categories, will be combined with the 'trace_config'.")
     parser.add_argument(
         "trace_browser_startup",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help="Start perfetto tracing before launching the browser.")
     parser.add_argument(
@@ -243,7 +243,7 @@ class PerfettoProbe(Probe):
         default=StartTracingSequence.PROBE_START)
     parser.add_argument(
         "config_via_stdin",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help="Pass perfetto tracing config via stdin.")
     return parser

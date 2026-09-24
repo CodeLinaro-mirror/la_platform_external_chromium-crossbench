@@ -12,6 +12,7 @@ import platformdirs
 
 from crossbench import path as pth
 from crossbench.config import ConfigObject, ConfigParser
+from crossbench.parse import ObjectParser
 from crossbench.pinpoint.helper import annotate
 
 
@@ -89,7 +90,7 @@ class _SettingsConfig(ConfigObject):
         help="Random user ID used to collect metrics.")
     parser.add_argument(
         "collect_metrics",
-        type=bool,
+        type=ObjectParser.bool,
         required=False,
         help=(
             "Boolean flag indicating whether user metrics should be collected."

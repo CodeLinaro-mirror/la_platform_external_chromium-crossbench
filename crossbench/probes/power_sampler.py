@@ -16,7 +16,7 @@ from typing_extensions import override
 
 from crossbench import plt
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
-from crossbench.parse import DurationParser
+from crossbench.parse import DurationParser, ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
     ProbeKeyT
 from crossbench.probes.probe_error import ProbeValidationError
@@ -76,7 +76,7 @@ class PowerSamplerProbe(Probe):
         "samplers", type=SamplerType, default=cls.SAMPLERS, is_list=True)
     parser.add_argument(
         "wait_for_battery",
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help="Wait for the first non-100% battery measurement before "
         "running the benchmark to ensure accurate readings.")

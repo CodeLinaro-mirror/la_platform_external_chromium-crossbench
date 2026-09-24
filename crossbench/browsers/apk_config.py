@@ -14,7 +14,7 @@ if TYPE_CHECKING:
   from crossbench import path as pth
 
 from crossbench.config import ConfigObject, ConfigParser
-from crossbench.parse import PathParser
+from crossbench.parse import ObjectParser, PathParser
 
 
 @dataclasses.dataclass(frozen=True)
@@ -54,13 +54,13 @@ class ApkConfig(ConfigObject):
         help="Path to an Android APK or .apks bundle.")
     parser.add_argument(
         "allow_downgrade",
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help="Allow APK downgrade during install.")
     parser.add_argument(
         "reinstall",
         aliases=("force",),
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help="Uninstall and reinstall before each run.")
     parser.add_argument(

@@ -15,6 +15,7 @@ from typing_extensions import override
 
 from crossbench.config import ConfigEnum
 from crossbench.helper import collection_helper
+from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.result_location import ResultLocation
@@ -63,12 +64,12 @@ class VideoProbe(Probe):
     parser.add_argument(
         "generate_timestrip",
         aliases=("timestrip",),
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help="Produce a timestrip png")
     parser.add_argument(
         "merge_runs",
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help="Merge videos from multiple runs")
     parser.add_argument(

@@ -41,8 +41,10 @@ class WaitForElementAction(Action):
         type=NumberParser.positive_int,
         required=False,
         default=1)
-    parser.add_argument("check_rect", type=bool, required=False, default=False)
-    parser.add_argument("or_more", type=bool, required=False, default=False)
+    parser.add_argument(
+        "check_rect", type=ObjectParser.bool, required=False, default=False)
+    parser.add_argument(
+        "or_more", type=ObjectParser.bool, required=False, default=False)
     return parser
 
   @override

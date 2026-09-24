@@ -68,7 +68,7 @@ class TraceProcessorProbe(Probe):
     parser = super().config_parser()
     parser.add_argument(
         "batch",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help="Run queries in batch mode when all the test runs are done. This "
         "can considerably reduce the run time at the expense of higher "

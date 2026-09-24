@@ -14,7 +14,7 @@ from typing_extensions import override
 from crossbench.helper import fs_helper
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
-from crossbench.parse import PathParser
+from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
     ProbeResult, ProbeResultDict
@@ -57,10 +57,13 @@ class WebPageReplayProbe(Probe):
         type=PathParser.existing_file_path,
         required=False)
     parser.add_argument(
-        "use_test_root_certificate", type=bool, default=False, required=False)
+        "use_test_root_certificate",
+        type=ObjectParser.bool,
+        default=False,
+        required=False)
     parser.add_argument(
         "record_setup",
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help="Also include the requests that are part of "
         "the setup / login steps, "

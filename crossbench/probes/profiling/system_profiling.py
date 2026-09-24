@@ -68,19 +68,19 @@ class ProfilingProbe(Probe):
     parser = super().config_parser()
     parser.add_argument(
         "js",
-        type=bool,
+        type=ObjectParser.bool,
         default=True,
         help=("Chrome-on-Linux-only: expose JS function names to the native "
               "profiler"))
     parser.add_argument(
         "browser_process",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help=("Chrome-on-Linux-only: also profile the browser process, "
               "(as opposed to only renderer processes)"))
     parser.add_argument(
         "spare_renderer_process",
-        type=bool,
+        type=ObjectParser.bool,
         default=False,
         help=("Chrome-only: Enable/Disable spare renderer processes via \n"
               "--enable-/--disable-features=SpareRendererForSitePerProcess.\n"
@@ -97,7 +97,7 @@ class ProfilingProbe(Probe):
         ))
     parser.add_argument(
         "pprof",
-        type=bool,
+        type=ObjectParser.bool,
         help="linux-only: process collected samples with pprof.")
     parser.add_argument(
         "cleanup",
