@@ -40,8 +40,8 @@ from crossbench.benchmarks.motionmark.motionmark_1_3_1 import \
     MotionMark131Benchmark
 from crossbench.benchmarks.motionmark.motionmark_1_3_2 import \
     MotionMark132Benchmark
-from crossbench.benchmarks.motionmark.motionmark_1_4 import \
-    MotionMark14Benchmark
+from crossbench.benchmarks.motionmark.motionmark_2_0 import \
+    MotionMark20Benchmark
 from crossbench.benchmarks.motionmark.motionmark_main import \
     MotionMarkMainBenchmark
 from crossbench.benchmarks.speedometer.speedometer_1_0 import \
@@ -87,7 +87,7 @@ ALL = (
     MotionMark13Benchmark,
     MotionMark131Benchmark,
     MotionMark132Benchmark,
-    MotionMark14Benchmark,
+    MotionMark20Benchmark,
     MotionMarkMainBenchmark,
     LoadingBenchmark,
     Speedometer10Benchmark,

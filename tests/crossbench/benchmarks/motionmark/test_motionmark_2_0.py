@@ -10,9 +10,9 @@ from unittest import mock
 
 from typing_extensions import override
 
-from crossbench.benchmarks.motionmark.motionmark_1_4 import \
-    MotionMark14Benchmark, MotionMark14Probe, MotionMark14ProbeContext, \
-    MotionMark14Story
+from crossbench.benchmarks.motionmark.motionmark_2_0 import \
+    MotionMark20Benchmark, MotionMark20Probe, MotionMark20ProbeContext, \
+    MotionMark20Story
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
@@ -20,7 +20,7 @@ from tests.crossbench.benchmarks.motionmark.helper import \
     MotionMark1BaseTestCase
 
 
-class MotionMark14TestCase(MotionMark1BaseTestCase):
+class MotionMark20TestCase(MotionMark1BaseTestCase):
 
   EXAMPLE_PROBE_DATA = [{
       "testsResults": {
@@ -63,22 +63,22 @@ class MotionMark14TestCase(MotionMark1BaseTestCase):
   @property
   @override
   def benchmark_cls(self):
-    return MotionMark14Benchmark
+    return MotionMark20Benchmark
 
   @property
   @override
   def story_cls(self):
-    return MotionMark14Story
+    return MotionMark20Story
 
   @property
   @override
   def probe_cls(self):
-    return MotionMark14Probe
+    return MotionMark20Probe
 
   @property
   @override
   def probe_context_cls(self):
-    return MotionMark14ProbeContext
+    return MotionMark20ProbeContext
 
   @override
   def _test_run(self, custom_url: str | None = None, throw: bool = False):
@@ -128,26 +128,15 @@ class MotionMark14TestCase(MotionMark1BaseTestCase):
             "": "",
         })
 
-  @override
-  def test_run_default(self):
+  def test_warning_experimental(self):
     stories = self.story_cls.from_names(["Stories"])
     benchmark = self.benchmark_cls(stories)
-    runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        throw=True,
-        in_memory_result_db=True)
-    with self.assertRaises(ValueError) as cm:
-      benchmark.validate_url(runner)
-    self.assertIn("is not officially hosted yet", str(cm.exception))
-
-  @override
-  def test_run_throw(self):
-    self._test_run(custom_url="http://test.example.com/motionmark", throw=True)
+    runner = mock.MagicMock(platforms=[self.platform])
+    runner.env.validate_url.return_value = True
+    with self.assertLogs(level="WARNING") as cm:
+      benchmark.setup(runner)
+    self.assertTrue(
+        any("not officially released yet" in log for log in cm.output))
 
 
 del MotionMark1BaseTestCase

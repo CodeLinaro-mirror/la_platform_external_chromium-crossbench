@@ -16,15 +16,15 @@ from crossbench.benchmarks.motionmark.motionmark_1_3_1 import \
     MotionMark131Benchmark
 from crossbench.benchmarks.motionmark.motionmark_1_3_2 import \
     MotionMark132Benchmark
-from crossbench.benchmarks.motionmark.motionmark_1_4 import \
-    MotionMark14Benchmark
+from crossbench.benchmarks.motionmark.motionmark_2_0 import \
+    MotionMark20Benchmark
 from crossbench.benchmarks.motionmark.motionmark_main import \
     MotionMarkMainBenchmark
 
 benchmark_classes = (MotionMark10Benchmark, MotionMark11Benchmark,
                      MotionMark12Benchmark, MotionMark13Benchmark,
                      MotionMark131Benchmark, MotionMark132Benchmark,
-                     MotionMark14Benchmark, MotionMarkMainBenchmark)
+                     MotionMark20Benchmark, MotionMarkMainBenchmark)
 
 _versions = set()
 for benchmark_cls in benchmark_classes:

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import itertools
+import logging
 from typing import TYPE_CHECKING, ClassVar
 
 from typing_extensions import override
@@ -21,16 +22,16 @@ if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
 
 
-class MotionMark14Probe(MotionMark1Probe):
+class MotionMark20Probe(MotionMark1Probe):
   __doc__ = MotionMark1Probe.__doc__
-  NAME: ClassVar = "motionmark_1.4"
+  NAME: ClassVar = "motionmark_2.0"
 
   @override
-  def get_context_cls(self) -> type[MotionMark14ProbeContext]:
-    return MotionMark14ProbeContext
+  def get_context_cls(self) -> type[MotionMark20ProbeContext]:
+    return MotionMark20ProbeContext
 
 
-class MotionMark14ProbeContext(MotionMark1ProbeContext):
+class MotionMark20ProbeContext(MotionMark1ProbeContext):
   JS: ClassVar[str] = """
     const runnerClient = window.benchmarkController?.runnerClient ||
         window.benchmarkRunnerClient;
@@ -39,8 +40,11 @@ class MotionMark14ProbeContext(MotionMark1ProbeContext):
   """
 
 
-class MotionMark14Story(MotionMark1Story):
-  NAME: ClassVar = "motionmark_1.4"
+class MotionMark20Story(MotionMark1Story):
+  NAME: ClassVar = "motionmark_2.0"
+  URL: ClassVar[str] = "https://browserben.ch/motionmark/v2.0-custom/MotionMark"
+  URL_OFFICIAL: ClassVar[
+      str] = "https://browserben.ch/motionmark/v2.0-custom/MotionMark"
   READY_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=12)
   DEVELOPER_READY_JS: ClassVar[str] = (
       "return !(document.querySelector('#frame-rate-detection span'));")
@@ -98,9 +102,6 @@ class MotionMark14Story(MotionMark1Story):
         for (const suiteElement of window.suitesManager._suitesElements()) {
           const suiteCheckbox =
               window.suitesManager._checkboxElement(suiteElement);
-          if (suiteCheckbox.suite.name === "Tentative 1.4 suite") {
-            continue;
-          }
           for (const testElement of suiteCheckbox.testsElements) {
             const testCheckbox =
                 window.suitesManager._checkboxElement(testElement);
@@ -137,23 +138,22 @@ class MotionMark14Story(MotionMark1Story):
           delay=self.substory_duration / 4)
 
 
-class MotionMark14Benchmark(MotionMark1Benchmark):
+class MotionMark20Benchmark(MotionMark1Benchmark):
   """
-  Benchmark runner for MotionMark 1.4.
+  Benchmark runner for MotionMark 2.0.
   """
 
-  NAME: ClassVar = "motionmark_1.4"
-  DEFAULT_STORY_CLS: ClassVar = MotionMark14Story
-  PROBES: ClassVar = (MotionMark14Probe,)
+  NAME: ClassVar = "motionmark_2.0"
+  DEFAULT_STORY_CLS: ClassVar = MotionMark20Story
+  PROBES: ClassVar = (MotionMark20Probe,)
 
   @classmethod
   @override
   def version(cls) -> VersionParts:
-    return (1, 4)
+    return (2, 0)
 
   @override
-  def validate_url(self, runner: Runner) -> None:
-    if not self.custom_url:
-      raise ValueError(f"{self.NAME} is not officially hosted yet. "
-                       f"Please use a local server (--local or --url).")
-    super().validate_url(runner)
+  def setup(self, runner: Runner) -> None:
+    super().setup(runner)
+    logging.warning("%s is experimental and not officially released yet.",
+                    self.NAME)
