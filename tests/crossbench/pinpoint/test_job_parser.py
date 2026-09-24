@@ -43,7 +43,15 @@ class JobParserTest(unittest.TestCase):
     self.assertEqual(parse_job_ids(["123abc, 456def"]), ["123abc", "456def"])
     self.assertEqual(
         parse_job_ids(["go/j_/123abc", "456def,789abc"]),
-        ["123abc", "456def", "789abc"])
+        ["123abc", "456def", "789abc"],
+    )
+
+  def test_parse_job_ids_deduplication(self):
+    self.assertEqual(
+        parse_job_ids(["123abc", "123abc", "456def"]),
+        ["123abc", "456def"],
+    )
+    self.assertEqual(parse_job_ids(["123ABC, 123abc"]), ["123abc"])
 
   def test_parse_job_ids_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError):

@@ -11,7 +11,7 @@ from unittest import mock
 from crossbench.pinpoint import http_requests
 from crossbench.pinpoint.api import USERINFO_API_URL
 from crossbench.pinpoint.list_format import ListFormatEnum
-from crossbench.pinpoint.list_jobs import list_jobs
+from crossbench.pinpoint.list_jobs import list_jobs, truncate
 from crossbench.pinpoint.user import UserEnum
 from tests import test_helper
 from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
@@ -195,6 +195,14 @@ class ListJobsTest(MockHttpRequestsMixin):
                      output)
     self.assertIn("try", output)
     self.assertIn("⌛", output)  # Queued status emoji
+
+  def test_truncate_small_max_length(self):
+    self.assertEqual(truncate("hello", 1), "h")
+    self.assertEqual(truncate("hello", 2), "he")
+    self.assertEqual(truncate("hello", 3), "hel")
+    self.assertEqual(truncate("hello", 4), "h...")
+    self.assertEqual(truncate("hello", 5), "hello")
+    self.assertEqual(truncate("hello", 10), "hello")
 
   def test_list_jobs_server_error(self):
     self.mock_get.return_value.raise_for_status.side_effect = (

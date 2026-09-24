@@ -137,7 +137,7 @@ class PinpointListSubcommand(PinpointBaseSubcommand):
         "--details",
         dest="extra_columns",
         action="store_const",
-        const=(column.name for column in EXTRA_COLUMNS),
+        const=[column.name for column in EXTRA_COLUMNS],
         help="Shortcut to include all extra columns in the output")
     return list_parser
 
@@ -163,7 +163,7 @@ class PinpointJobSubcommand(PinpointBaseSubcommand):
         "job_pos",
         nargs="?",
         type=parse_job_id,
-        help="The ID of the job as a positinal argument. Can be a full URL, a "
+        help="The ID of the job as a positional argument. Can be a full URL, a "
         "part of a URL with a job ID, or just the ID.")
     group.add_argument(
         "--job",
@@ -202,7 +202,7 @@ class PinpointConfigSubcommand(PinpointJobSubcommand):
     config_parser.add_argument(
         "--full",
         action="store_true",
-        help="Display the full job configuration including all attemps. "
+        help="Display the full job configuration including all attempts. "
         "Works only if the `--raw` flag is set.")
     return config_parser
 
@@ -245,6 +245,7 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         help="How many times to repeat the experiment.")
     start_parser.add_argument(
         "--bug",
+        "--bug-id",
         type=NumberParser.positive_int,
         help="The bug ID to associate with the job.")
     start_parser.add_argument(
@@ -265,6 +266,7 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         "Overrides '--commit' for the experiment build.")
     start_parser.add_argument(
         "--base-patch",
+        "--base-patch-url",
         help="Gerrit patch to apply to the base commit. Supported formats: "
         "'12345' (optional patchset: '12345/6'), 'c/12345', "
         "'crrev/c/12345', 'crrev/12345', 'crrev.com/c/12345', "
@@ -274,6 +276,8 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
     start_parser.add_argument(
         "--exp-patch",
         "--patch",
+        "--exp-patch-url",
+        "--patch-url",
         help="Gerrit patch to apply to the experiment commit. Supported "
         "formats: '12345' (optional patchset: '12345/6'), 'c/12345', "
         "'crrev/c/12345', 'crrev/12345', 'crrev.com/c/12345', "
@@ -341,6 +345,7 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
         "experiment commit.\nExample: --exp-disable-features=FeatureA,FeatureB")
     start_parser.add_argument(
         "--enable-blink-features",
+        "--blink-features",
         help="Blink features to enable for both base and experiment commits. "
         "Can be overridden by --base-blink-features or --exp-blink-features.\n"
         "Example: --enable-blink-features=Feature1,Feature2")
@@ -487,6 +492,7 @@ class PinpointBisectSubcommand(PinpointBaseSubcommand):
         help="How many times to repeat the experiment.")
     parser.add_argument(
         "--bug",
+        "--bug-id",
         type=NumberParser.positive_int,
         help="The bug ID to associate with the job.")
     parser.add_argument(
@@ -518,6 +524,7 @@ class PinpointBisectSubcommand(PinpointBaseSubcommand):
         "Example: --disable-features=Feature1,Feature2")
     parser.add_argument(
         "--enable-blink-features",
+        "--blink-features",
         help="Blink features to enable.\n"
         "Example: --enable-blink-features=Feature1,Feature2")
     parser.add_argument(
@@ -739,7 +746,7 @@ class PinpointResultsSubcommand(PinpointJobSubcommand):
         "-o",
         type=pth.LocalPath,
         help=("Results will be stored in this directory. "
-              "Uses to the crossbench results directory by default."))
+              "Defaults to the crossbench results directory by default."))
     results_parser.add_argument(
         "--force",
         "-f",

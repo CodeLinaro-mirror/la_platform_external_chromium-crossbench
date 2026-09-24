@@ -58,6 +58,8 @@ def _convert_json_to_builds(builds_json: dict[str, Any]) -> list[Build]:
       continue
 
     end_time = build.get("endTime")
+    if not end_time:
+      continue
     try:
       datetime_obj = datetime.datetime.fromisoformat(
           end_time.replace("Z", "+00:00"))

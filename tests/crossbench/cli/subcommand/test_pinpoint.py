@@ -649,6 +649,254 @@ class PinpointSubcommandTest(unittest.TestCase):
       self.assertIn("https://issues.chromium.org/issues/new?component=1456889",
                     mock_stdout.getvalue())
 
+  @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointTryJobConfig.parse_and_override")
+  def test_pinpoint_start_job_bug_id_alias(
+      self,
+      mock_parse_and_override,
+      _mock_start_job,
+  ):
+    test_config = PinpointTryJobConfig(
+        benchmark="speedometer3",
+        bot="linux-r350-perf",
+    )
+    mock_parse_and_override.return_value = test_config
+
+    self.cli.run([
+        "pinpoint",
+        "start",
+        "--benchmark=speedometer3",
+        "--bug-id=12345",
+    ])
+    self.assertEqual(mock_parse_and_override.call_args.kwargs["bug"], 12345)
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointTryJobConfig.parse_and_override")
+  def test_pinpoint_start_job_patch_url_aliases(
+      self,
+      mock_parse_and_override,
+      _mock_start_job,
+  ):
+    test_config = PinpointTryJobConfig(
+        benchmark="speedometer3",
+        bot="linux-r350-perf",
+    )
+    mock_parse_and_override.return_value = test_config
+
+    self.cli.run([
+        "pinpoint",
+        "start",
+        "--benchmark=speedometer3",
+        "--base-patch-url=https://crrev.com/c/100",
+        "--exp-patch-url=https://crrev.com/c/200",
+    ])
+    self.assertEqual(
+        mock_parse_and_override.call_args.kwargs["base_patch"],
+        "https://crrev.com/c/100",
+    )
+    self.assertEqual(
+        mock_parse_and_override.call_args.kwargs["exp_patch"],
+        "https://crrev.com/c/200",
+    )
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointTryJobConfig.parse_and_override")
+  def test_pinpoint_start_job_blink_features_alias(
+      self,
+      mock_parse_and_override,
+      _mock_start_job,
+  ):
+    test_config = PinpointTryJobConfig(
+        benchmark="speedometer3",
+        bot="linux-r350-perf",
+    )
+    mock_parse_and_override.return_value = test_config
+
+    self.cli.run([
+        "pinpoint",
+        "start",
+        "--benchmark=speedometer3",
+        "--blink-features=BlinkFeature1",
+    ])
+    self.assertEqual(
+        mock_parse_and_override.call_args.kwargs["base_enable_blink_features"],
+        "BlinkFeature1",
+    )
+    self.assertEqual(
+        mock_parse_and_override.call_args.kwargs["exp_enable_blink_features"],
+        "BlinkFeature1",
+    )
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.bisect_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointBisectJobConfig.parse_and_override")
+  def test_pinpoint_bisect_job_bug_id_alias(
+      self,
+      mock_parse_and_override,
+      _mock_bisect_job,
+  ):
+    test_config = PinpointBisectJobConfig(
+        benchmark="speedometer3",
+        bot="linux-r350-perf",
+        chart="my_chart",
+    )
+    mock_parse_and_override.return_value = test_config
+
+    self.cli.run([
+        "pinpoint",
+        "bisect",
+        "--benchmark=speedometer3",
+        "--chart=my_chart",
+        "--bug-id=12345",
+    ])
+    self.assertEqual(mock_parse_and_override.call_args.kwargs["bug"], 12345)
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.bisect_job")
+  @mock.patch(
+      "crossbench.pinpoint.config.PinpointBisectJobConfig.parse_and_override")
+  def test_pinpoint_bisect_job_blink_features_alias(
+      self,
+      mock_parse_and_override,
+      _mock_bisect_job,
+  ):
+    test_config = PinpointBisectJobConfig(
+        benchmark="speedometer3",
+        bot="linux-r350-perf",
+        chart="my_chart",
+    )
+    mock_parse_and_override.return_value = test_config
+
+    self.cli.run([
+        "pinpoint",
+        "bisect",
+        "--benchmark=speedometer3",
+        "--chart=my_chart",
+        "--blink-features=BlinkFeature1",
+    ])
+    self.assertEqual(
+        mock_parse_and_override.call_args.kwargs["enable_blink_features"],
+        "BlinkFeature1",
+    )
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.print_job_config")
+  def test_pinpoint_config_job_flag(self, mock_print_job_config):
+    self.cli.run(["pinpoint", "config", "--job", "123abc"])
+    mock_print_job_config.assert_called_once_with(
+        job_id="123abc",
+        raw=False,
+        full=False,
+    )
+
+  def test_pinpoint_config_missing_job(self):
+    with self.assertRaises(SystemExit) as cm:
+      self.cli.run(["pinpoint", "config"])
+    self.assertEqual(cm.exception.code, 2)
+
+  def test_pinpoint_config_positional_and_job_flag(self):
+    with self.assertRaises(SystemExit) as cm:
+      self.cli.run(["pinpoint", "config", "123abc", "--job", "456def"])
+    self.assertEqual(cm.exception.code, 2)
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.download_results")
+  def test_pinpoint_results_job_flag(self, mock_download_results):
+    self.cli.run(["pinpoint", "results", "--job", "123abc"])
+    mock_download_results.assert_called_once_with(
+        job_id="123abc",
+        out_dir=None,
+        force=False,
+    )
+
+  def test_pinpoint_results_missing_job(self):
+    with self.assertRaises(SystemExit) as cm:
+      self.cli.run(["pinpoint", "results"])
+    self.assertEqual(cm.exception.code, 2)
+
+  def test_pinpoint_results_positional_and_job_flag(self):
+    with self.assertRaises(SystemExit) as cm:
+      self.cli.run(["pinpoint", "results", "123abc", "--job", "456def"])
+    self.assertEqual(cm.exception.code, 2)
+
+  def test_pinpoint_cancel_invalid_job_id(self):
+    with self.assertRaises(SystemExit) as cm:
+      self.cli.run(["pinpoint", "cancel", "invalid_job_id"])
+    self.assertEqual(cm.exception.code, 2)
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.cancel_jobs")
+  def test_pinpoint_cancel_duplicate_jobs(self, mock_cancel_jobs):
+    self.cli.run(["pinpoint", "cancel", "123abc", "123abc"])
+    mock_cancel_jobs.assert_called_once_with(
+        job_ids=["123abc"],
+        reason="Cancelled via Pinpoint CLI.",
+    )
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.fetch_bots")
+  def test_pinpoint_bots_unfiltered(self, mock_fetch_bots):
+    mock_fetch_bots.return_value = ["linux-r350-perf", "win-11-perf"]
+    self.cli.run(["pinpoint", "bots"])
+    self.mock_print.assert_called_once_with("linux-r350-perf\nwin-11-perf")
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.fetch_benchmarks")
+  def test_pinpoint_benchmarks_unfiltered(self, mock_fetch_benchmarks):
+    mock_fetch_benchmarks.return_value = ["speedometer3", "jetstream2"]
+    self.cli.run(["pinpoint", "benchmarks"])
+    self.mock_print.assert_called_once_with("speedometer3\njetstream2")
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.fetch_stories")
+  def test_pinpoint_stories_unfiltered(self, mock_fetch_stories):
+    mock_fetch_stories.return_value = ["story1", "story2"]
+    self.cli.run(["pinpoint", "stories", "speedometer3"])
+    mock_fetch_stories.assert_called_once_with("speedometer3")
+    self.mock_print.assert_called_once_with("story1\nstory2")
+
+  def test_pinpoint_stories_missing_benchmark(self):
+    with self.assertRaises(SystemExit) as cm:
+      self.cli.run(["pinpoint", "stories"])
+    self.assertEqual(cm.exception.code, 2)
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.list_jobs")
+  def test_pinpoint_list_details_flag(self, mock_list_job):
+    self.cli.run(["pinpoint", "list", "--details"])
+    mock_list_job.assert_called_once()
+    extra_columns = mock_list_job.call_args.kwargs["extra_columns"]
+    self.assertIsInstance(extra_columns, list)
+    self.assertIn("bug", extra_columns)
+    self.assertIn("story", extra_columns)
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.list_jobs")
+  def test_pinpoint_list_details_and_extra_columns(self, mock_list_job):
+    self.cli.run(["pinpoint", "list", "--details", "-c", "bug"])
+    mock_list_job.assert_called_once()
+    extra_columns = mock_list_job.call_args.kwargs["extra_columns"]
+    self.assertIsInstance(extra_columns, list)
+    self.assertIn("bug", extra_columns)
+    self.assertIn("story", extra_columns)
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.list_jobs")
+  def test_pinpoint_list_extra_columns_and_details(self, mock_list_job):
+    self.cli.run(["pinpoint", "list", "-c", "bug", "--details"])
+    mock_list_job.assert_called_once()
+    extra_columns = mock_list_job.call_args.kwargs["extra_columns"]
+    self.assertIsInstance(extra_columns, list)
+    self.assertIn("bug", extra_columns)
+    self.assertIn("story", extra_columns)
+
+  @mock.patch("crossbench.cli.subcommand.pinpoint.list_jobs")
+  def test_pinpoint_list_default_and_extending_columns(self, mock_list_job):
+    self.cli.run(["pinpoint", "list"])
+    mock_list_job.assert_called_once()
+    extra_columns = mock_list_job.call_args.kwargs["extra_columns"]
+    self.assertIsNone(extra_columns)
+
+    mock_list_job.reset_mock()
+    self.cli.run(["pinpoint", "list", "-c", "bug"])
+    mock_list_job.assert_called_once()
+    extra_columns = mock_list_job.call_args.kwargs["extra_columns"]
+    self.assertEqual(extra_columns, ["bug"])
+
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

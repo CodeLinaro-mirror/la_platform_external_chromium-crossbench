@@ -23,7 +23,9 @@ def parse_job_ids(values: Sequence[str]) -> list[str]:
     for part in item.split(","):
       part = part.strip()
       if part:
-        job_ids.append(parse_job_id(part))
+        parsed_id = parse_job_id(part)
+        if parsed_id not in job_ids:
+          job_ids.append(parsed_id)
   if not job_ids:
     raise argparse.ArgumentTypeError("No valid job IDs provided.")
   return job_ids

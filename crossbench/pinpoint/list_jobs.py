@@ -225,8 +225,8 @@ def _display_jobs(jobs: list[dict[str, Any]], output_format: ListFormatEnum,
 
 
 def _display_jobs_as_table(headers: list[str], rows: list,
-                           truncate: int | None) -> None:
-  table_data = [[_truncate(cell, truncate) for cell in row] for row in rows]
+                           max_length: int | None) -> None:
+  table_data = [[truncate(cell, max_length) for cell in row] for row in rows]
   url_index = headers.index("Job URL")
   type_index = headers.index("Type")
   time_index = headers.index("Start Time")
@@ -273,8 +273,10 @@ def _format_status(status: str) -> str:
   return STATUS_EMOJI_LOOKUP.get(lookup_str, status)
 
 
-def _truncate(text: str, max_length: int | None = None) -> str:
+def truncate(text: str, max_length: int | None = None) -> str:
   text = str(text)
   if max_length and len(text) > max_length:
+    if max_length <= 3:
+      return text[:max_length]
     return text[:max_length - 3] + "..."
   return text

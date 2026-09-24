@@ -68,6 +68,60 @@ class ListBuildsTest(MockHttpRequestsMixin):
     with self.assertRaises(MultiException):
       list_builds("test-bot", 1)
 
+  def test_fetch_builds_handles_missing_or_invalid_end_time(self):
+    mock_response = mock.Mock()
+    mock_response.json.return_value = {
+        "builds": [
+            {
+                "input": {
+                    "gitilesCommit": {
+                        "id": "c1",
+                    },
+                },
+                "number": 1,
+                "status": "SUCCESS",
+            },
+            {
+                "input": {
+                    "gitilesCommit": {
+                        "id": "c2",
+                    },
+                },
+                "endTime": None,
+                "number": 2,
+                "status": "SUCCESS",
+            },
+            {
+                "input": {
+                    "gitilesCommit": {
+                        "id": "c3",
+                    },
+                },
+                "endTime": "invalid_date",
+                "number": 3,
+                "status": "SUCCESS",
+            },
+            {
+                "input": {
+                    "gitilesCommit": {
+                        "id": "c4",
+                    },
+                },
+                "endTime": "2025-11-14T00:00:00Z",
+                "number": 4,
+                "status": "SUCCESS",
+            },
+        ],
+    }
+    mock_response.raise_for_status.return_value = None
+    self.mock_get.side_effect = None
+    self.mock_get.return_value = mock_response
+
+    builds = fetch_builds("test-bot")
+    self.assertEqual(len(builds), 1)
+    self.assertEqual(builds[0].commit, "c4")
+    self.assertEqual(builds[0].number, 4)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
