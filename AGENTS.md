@@ -69,6 +69,11 @@ If running `./cb.py` fails, try the following:
   3. ruff: Always do `vpython3 -m ruff check` after completing a change to
      validate all results.
   4. Run `git cl format --js`.
+- Be judicious after minor iterations. Scale validation to what changed:
+  for comment- or docstring-only edits, ruff alone is usually enough (it
+  checks line length); for small, local code edits, run only the affected
+  test file and mypy on the modified file. Skip steps that cannot be
+  affected by the change.
 
 # Running Performance Investigations
 - **Environment Validation**: When running `cb.py` automatically, it might
