@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   import datetime as dt
 
+  from crossbench.benchmarks.loading.point import Point
+
 
 @dataclasses.dataclass(frozen=True)
 class InputEvent:
@@ -27,3 +29,12 @@ class KeyEvent(InputEvent):
   # specification (e.g. "KeyA", "Space", "ShiftLeft").
   key_code: str
   is_down: bool
+
+
+@dataclasses.dataclass(frozen=True)
+class TouchEvent(InputEvent):
+  position: Point
+  is_down: bool
+  # The 'slot' of a touch event is the tracking channel of this
+  # touch event during a multi-touch interaction.
+  slot: int = 0

@@ -34,7 +34,6 @@ class VirtualDeviceConfigTestCase(unittest.TestCase):
     device_2 = VirtualDeviceConfig.parse_dict(device.to_json())
     self.assertEqual(device, device_2)
 
-
   def test_all_virtual_devices(self) -> None:
     self.assertTrue(VIRTUAL_DEVICES_TUPLE)
     self.assertEqual(len(VIRTUAL_DEVICES_TUPLE), len(VirtualDeviceType))
