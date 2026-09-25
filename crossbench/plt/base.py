@@ -1155,7 +1155,13 @@ class Platform(abc.ABC):
     try:
       urllib.request.urlretrieve(url, path)  # noqa: S310
     except (urllib.error.HTTPError, urllib.error.URLError) as e:
+      self.rm(path, missing_ok=True)
       raise OSError(f"Could not load {url}") from e
+    except BaseException:
+      # Caches treat the existence of a file as proof that it is complete,
+      # so never leave a partially downloaded file behind.
+      self.rm(path, missing_ok=True)
+      raise
     assert self.exists(path), (
         f"Downloading {url} failed. Downloaded file {path} doesn't exist.")
     return path
@@ -1163,7 +1169,13 @@ class Platform(abc.ABC):
   def download_gcs_file(self, gcs_url: str, local_path: pth.LocalPath) -> None:
     blob: gcloud_blob.Blob = self.prepare_gcs_request(gcs_url)
     local_path.parent.mkdir(parents=True, exist_ok=True)
-    blob.download_to_filename(str(local_path))
+    try:
+      blob.download_to_filename(str(local_path))
+    except BaseException:
+      # Caches treat the existence of a file as proof that it is complete,
+      # so never leave a partially downloaded file behind.
+      local_path.unlink(missing_ok=True)
+      raise
 
   def get_gcs_blob(self, gcs_url: str) -> gcloud_blob.Blob:
     parsed = ObjectParser.url(gcs_url, schemes=("gs",))
