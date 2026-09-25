@@ -455,7 +455,8 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
         bot=arguments["configuration"],
         story=value_or_none(arguments.get("story")),
         story_tags=value_or_none(arguments.get("story_tags")),
-        repeat=int(arguments["initial_attempt_count"]),
+        repeat=NumberParser.positive_int(arguments["initial_attempt_count"],
+                                         "repeat"),
         bug=value_or_none(arguments.get("bug_id")),
         base=VariantConfig(
             commit=arguments.get("base_git_hash"),
@@ -702,7 +703,8 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
         chart=arguments["chart"],
         story=value_or_none(arguments.get("story")),
         story_tags=value_or_none(arguments.get("story_tags")),
-        repeat=int(arguments["initial_attempt_count"]),
+        repeat=NumberParser.positive_int(arguments["initial_attempt_count"],
+                                         "repeat"),
         bug=value_or_none(arguments.get("bug_id")),
         start=BisectStartVariantConfig(
             commit=arguments.get("start_git_hash"),

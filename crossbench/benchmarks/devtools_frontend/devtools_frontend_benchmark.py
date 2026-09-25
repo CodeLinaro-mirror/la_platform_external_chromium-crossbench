@@ -172,14 +172,14 @@ class DevToolsFrontendBenchmark(Benchmark):
     super().add_cli_arguments(parser)
     parser.add_argument(
         "--sites",
-        type=str,
-        default=",".join(cls.STORY_URLS.keys()),
+        type=ObjectParser.str_tuple,
+        default=tuple(cls.STORY_URLS.keys()),
         help="The sites to test.",
     )
     parser.add_argument(
         "--panels",
-        type=str,
-        default=",".join(cls.PANEL_NAMES),
+        type=ObjectParser.str_tuple,
+        default=tuple(cls.PANEL_NAMES),
         help="The panels to test.",
     )
     return parser
@@ -188,12 +188,12 @@ class DevToolsFrontendBenchmark(Benchmark):
   @override
   def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
     kwargs = super().kwargs_from_cli(args)
-    arg_sites = ObjectParser.str_list(args.sites, "sites")
-    sites = [site for site in arg_sites if site in cls.STORY_URLS
-            ] or cls.STORY_URLS.keys()
-    arg_panels = ObjectParser.str_list(args.panels, "panels")
+    arg_sites = ObjectParser.str_tuple(args.sites, "sites")
+    sites = [site for site in arg_sites if site in cls.STORY_URLS] or tuple(
+        cls.STORY_URLS.keys())
+    arg_panels = ObjectParser.str_tuple(args.panels, "panels")
     panels = [panel for panel in arg_panels if panel in cls.PANEL_NAMES
-             ] or cls.PANEL_NAMES
+             ] or tuple(cls.PANEL_NAMES)
     if args.sites and len(arg_sites) != len(sites):
       logging.warning("Some specified sites are invalid. Using valid sites: %s",
                       sites)

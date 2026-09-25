@@ -171,7 +171,8 @@ class EnvConfig(ConfigObject):
         "screen_allow_autobrightness",
         type=ObjectParser.bool,
         default=cls.IGNORE)
-    parser.add_argument("screen_brightness_percent", type=int)
+    parser.add_argument(
+        "screen_brightness_percent", type=NumberParser.int_range(0, 100))
     parser.add_argument(
         "screen_refresh_rate",
         type=NumberParser.int_range(30, 240),

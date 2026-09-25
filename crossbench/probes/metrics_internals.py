@@ -12,6 +12,7 @@ from typing_extensions import override
 
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.browsers.attributes import BrowserAttributes
+from crossbench.parse import NumberParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 
 if TYPE_CHECKING:
@@ -41,7 +42,7 @@ class ChromeMetricsInternalsProbe(JsonResultProbe):
         "event_name", type=str, help="Event filter for structured metrics.")
     parser.add_argument(
         "event_index",
-        type=int,
+        type=NumberParser.any_int,
         default=-1,
         help=("Index of the event to collect. Default is -1, "
               "which collects the last event."))

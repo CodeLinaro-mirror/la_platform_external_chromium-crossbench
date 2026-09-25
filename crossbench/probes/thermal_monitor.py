@@ -9,12 +9,13 @@ import json
 import logging
 import re
 from enum import IntEnum
-from typing import TYPE_CHECKING, ClassVar, Iterable
+from typing import TYPE_CHECKING, Any, ClassVar, Iterable
 
 from typing_extensions import override
 
 from crossbench.cli.ui import ui
 from crossbench.helper.wait import WaitRange
+from crossbench.parse import ObjectParser
 from crossbench.probes.internal.base import InternalJsonResultProbe, \
     InternalJsonResultProbeContext
 from crossbench.probes.probe import ProbeIncompatibleBrowser
@@ -50,17 +51,22 @@ class ThermalStatus(IntEnum):
   SHUTDOWN = 6
 
   @classmethod
-  def parse(cls, value: str) -> ThermalStatus:
+  def _missing_(cls, value: object) -> ThermalStatus | None:
+    if not isinstance(value, str):
+      return None
     try:
-      return ThermalStatus(int(value))
+      return cls(int(value))
     except ValueError:
       pass
-
-    for member in ThermalStatus:
-      if value.upper().endswith(member.name):
+    value_upper = value.upper()
+    for member in cls:
+      if value_upper.endswith(member.name):
         return member
+    return None
 
-    raise ValueError(f"Invalid ThermalStatus: {value!r}")
+  @classmethod
+  def parse(cls, value: Any) -> ThermalStatus:
+    return ObjectParser.enum("ThermalStatus", cls, value, cls)
 
 
 class ThermalMonitorProbe(InternalJsonResultProbe):

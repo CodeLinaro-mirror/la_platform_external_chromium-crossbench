@@ -21,7 +21,8 @@ from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.wpr import WprReplayNetwork
-from crossbench.parse import DurationParser, ObjectParser, PathParser
+from crossbench.parse import DurationParser, NumberParser, ObjectParser, \
+    PathParser
 from crossbench.probes.bits import BitsProbe
 from crossbench.probes.junction_temperature import \
     JunctionTemperatureProbe as JtProbe
@@ -503,7 +504,7 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     )
     parser.add_argument(
         "--bits-port",
-        type=int,
+        type=NumberParser.port_number,
         default=None,
         help="Port for the BITS tool to use.",
     )

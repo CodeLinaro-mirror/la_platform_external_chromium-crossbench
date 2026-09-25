@@ -56,8 +56,7 @@ def _parse_no_probe(value: str) -> tuple[str, ...]:
   if not value:
     raise argparse.ArgumentTypeError("Empty no-probe value")
   names = []
-  for name in value.split(","):
-    name = name.strip()
+  for name in ObjectParser.str_tuple(value, "no-probe"):
     if not name:
       raise argparse.ArgumentTypeError(f"Empty probe name in {value!r}")
     if name not in PROBE_LOOKUP:
@@ -328,7 +327,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         "--browser-cache-dir",
         "--browser-cache",
         "--user-data-dir",
-        type=pth.AnyPath,
+        type=PathParser.any_path,
         help="Set an explicit browser cache dir")
 
     browser_group.add_argument(

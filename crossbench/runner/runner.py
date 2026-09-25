@@ -21,7 +21,7 @@ from crossbench.device_config import RequiredDeviceConfigMode, \
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import collection_helper
 from crossbench.helper.wait import WaitRange
-from crossbench.parse import NumberParser, ObjectParser
+from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.probes import all as all_probes
 from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
@@ -187,7 +187,7 @@ class Runner:
         "--out-dir",
         "--output-directory",
         "-o",
-        type=pth.LocalPath,
+        type=PathParser.path,
         help=("Results will be stored in this directory. "
               "Defaults to results/${DATE}_${LABEL}"))
     out_dir_xor_group.add_argument(
@@ -199,7 +199,7 @@ class Runner:
               "Defaults to the benchmark name"))
     out_dir_group.add_argument(
         "--cache-dir",
-        type=pth.LocalPath,
+        type=PathParser.path,
         default=None,
         help=("Used for caching browser binaries and archives. "
               "Defaults to binary_cache"))

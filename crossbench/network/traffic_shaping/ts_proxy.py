@@ -58,7 +58,7 @@ _PORT_RE: re.Pattern[str] = re.compile(r"Started Socks5 proxy server on "
 
 def parse_ts_socks_proxy_port(output_line: str) -> int | None:
   if match := _PORT_RE.match(output_line):
-    return int(match.group("port"))
+    return NumberParser.port_number(match.group("port"))
   return None
 
 

@@ -14,7 +14,7 @@ from typing_extensions import override
 from crossbench.helper import fs_helper
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
-from crossbench.parse import ObjectParser, PathParser
+from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
     ProbeResult, ProbeResultDict
@@ -45,8 +45,16 @@ class WebPageReplayProbe(Probe):
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
-    parser.add_argument("http_port", type=int, default=8080, required=False)
-    parser.add_argument("https_port", type=int, default=8081, required=False)
+    parser.add_argument(
+        "http_port",
+        type=NumberParser.port_number,
+        default=8080,
+        required=False)
+    parser.add_argument(
+        "https_port",
+        type=NumberParser.port_number,
+        default=8081,
+        required=False)
     parser.add_argument(
         "key_file", type=PathParser.existing_file_path, required=False)
     parser.add_argument(

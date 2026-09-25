@@ -291,7 +291,7 @@ class WprBase(abc.ABC):
     line = line.strip()
     if match := _WPR_PORT_RE.match(line):
       protocol = match["protocol"].lower()
-      port = int(match["port"])
+      port = NumberParser.port_number(match["port"])
       if protocol == "http":
         self._device_http_port = port
         self._num_parsed_ports += 1

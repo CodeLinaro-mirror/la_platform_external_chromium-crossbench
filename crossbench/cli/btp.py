@@ -71,7 +71,7 @@ class BTPUtil:
         help="Path to the trace_processor probe config.")
     self.parser.add_argument(
         "--output-dir",
-        type=pth.LocalPath,
+        type=PathParser.path,
         default=ROOT_DIR,
         help="Path to the directory where output files will be placed.")
     self.parser.add_argument(

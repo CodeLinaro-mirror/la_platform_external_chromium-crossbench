@@ -8,6 +8,8 @@ import enum
 from argparse import ArgumentTypeError
 from typing import Any, ClassVar
 
+from crossbench.parse import NumberParser
+
 
 @enum.unique
 class ViewportMode(enum.StrEnum):
@@ -47,17 +49,21 @@ class Viewport:
     if value == ViewportMode.HEADLESS:
       return cls.HEADLESS
     size, _, position = value.partition(",")
-    width, _, height = size.partition("x")
-    if not height:
+    width_str, _, height_str = size.partition("x")
+    if not height_str:
       raise ArgumentTypeError(f"Missing viewport height in input: {value}")
-    x = str(cls.DEFAULT.x)
-    y = str(cls.DEFAULT.y)
+    x: int = cls.DEFAULT.x
+    y: int = cls.DEFAULT.y
     if position:
-      x, _, y = position.partition("x")
-      if not y:
+      x_str, _, y_str = position.partition("x")
+      if not y_str:
         raise ArgumentTypeError(
             f"Missing viewport y position in input: {value}")
-    return Viewport(int(width), int(height), int(x), int(y))
+      x = NumberParser.positive_zero_int(x_str, "viewport x")
+      y = NumberParser.positive_zero_int(y_str, "viewport y")
+    width: int = NumberParser.positive_int(width_str, "viewport width")
+    height: int = NumberParser.positive_int(height_str, "viewport height")
+    return Viewport(width, height, x, y)
 
   def __init__(self,
                width: int = 1500,

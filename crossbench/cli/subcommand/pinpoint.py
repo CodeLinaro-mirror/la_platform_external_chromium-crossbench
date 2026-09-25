@@ -11,10 +11,9 @@ from typing import TYPE_CHECKING, Final, final
 
 from typing_extensions import override
 
-from crossbench import path as pth
 from crossbench.cli.parser import CBArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
-from crossbench.parse import NumberParser
+from crossbench.parse import NumberParser, PathParser
 from crossbench.pinpoint.benchmarks import pinpoint_benchmark_name
 from crossbench.pinpoint.cancel_job import cancel_jobs
 from crossbench.pinpoint.config import PinpointBisectJobConfig, \
@@ -744,7 +743,7 @@ class PinpointResultsSubcommand(PinpointJobSubcommand):
         "--output-directory",
         "--out-dir",
         "-o",
-        type=pth.LocalPath,
+        type=PathParser.path,
         help=("Results will be stored in this directory. "
               "Defaults to the crossbench results directory by default."))
     results_parser.add_argument(

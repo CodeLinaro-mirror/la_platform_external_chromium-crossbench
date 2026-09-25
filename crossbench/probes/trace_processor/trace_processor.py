@@ -110,7 +110,7 @@ class TraceProcessorProbe(Probe):
         "locally compiled browsers.")
     parser.add_argument(
         "module_paths",
-        type=pth.LocalPath,
+        type=PathParser.path,
         is_list=True,
         default=(),
         help="Additional paths to include as trace processor modules.")
