@@ -55,8 +55,10 @@ If running `./cb.py` fails, try the following:
   (1) tests, (2) mypy, (3) ruff, (4) git-cl-format-js.
   However, it is extremely important to run such validations at the right time
   only, because the user's time is valuable. Unless there is good reason to do
-  otherwise, you should run these steps in order, and only proceed to the next
-  of these once the previous one passes without errors.
+  otherwise, these steps should run in the order below, with each step only
+  running once the previous one passes without errors. Enforce this ordering
+  within a single chained command (see "Batch the validations" below) rather
+  than by issuing a separate tool call per step.
   1. Tests: Run tests with `vpython3 -m pytest tests/crossbench -x -n 7`.
      Working on CLs is an iterative process. Only run the relevant subset of
      tests during most iterations (e.g. only relevant files), and only run the
@@ -74,6 +76,20 @@ If running `./cb.py` fails, try the following:
   checks line length); for small, local code edits, run only the affected
   test file and mypy on the modified file. Skip steps that cannot be
   affected by the change.
+- Batch the validations into a single command. Decide up front which of the
+  steps above apply to the current change, then run them all in one shell
+  invocation instead of one tool call per step. Chain them with `&&` to
+  preserve the ordering and stop-on-first-failure behaviour described above,
+  e.g.:
+  `vpython3 -m pytest tests/crossbench/test_foo.py -x -n 7 && vpython3 -m mypy
+  crossbench/foo.py && vpython3 -m ruff check && git cl format --js`.
+  If the checks are cheap and independent (e.g. mypy and ruff), you may chain
+  them with `;` instead, so that all failures are reported at once.
+  Rationale: every separate tool call adds a full round trip in which the
+  user waits for the LLM to read the result and decide on the next command.
+  Running all steps together removes that queueing latency, and lets you see
+  all the results at once, so you can fix every reported issue in a single
+  pass instead of discovering them one at a time.
 
 # Running Performance Investigations
 - **Environment Validation**: When running `cb.py` automatically, it might
