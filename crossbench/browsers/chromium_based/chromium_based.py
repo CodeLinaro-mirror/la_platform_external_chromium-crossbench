@@ -42,6 +42,7 @@ class ChromiumBased(Browser):
       "--disable-search-engine-choice-screen",
       # We do not need cashpad metrics
       "--disable-crashpad-metrics",
+      "--disable-translate-trigger",
   )
   FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS: tuple[str, ...] = (
       "--disable-background-timer-throttling",
