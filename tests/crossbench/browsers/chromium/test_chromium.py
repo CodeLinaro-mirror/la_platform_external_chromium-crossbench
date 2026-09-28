@@ -18,6 +18,7 @@ from crossbench.browsers.chromium.webdriver import ChromiumWebDriver, \
 from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
 from crossbench.browsers.settings import Settings
+from crossbench.browsers.viewport import Viewport
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -401,7 +402,11 @@ class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
     platform.is_file = mock.MagicMock(return_value=True)
     return platform
 
-  def test_android_driver_lookup(self):
+  def _create_android_browser(
+      self,
+      version: str,
+      viewport: Viewport = Viewport.DEFAULT,
+  ) -> MockLocalChromiumWebDriverAndroid:
     out_dir = pth.AnyPath("/home/user/chromium/src/out/Android")
     chrome_public_apk_path = out_dir / "bin/chrome_public_apk"
     driver_path = out_dir / "clang_x64/chromedriver"
@@ -410,16 +415,63 @@ class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
     self.fs.create_file(driver_path, st_size=1000)
     self.fs.create_file(out_dir / "args.gn")
 
-    output = "Package name: org.chromium.chrome\nversionName: 120.0.0.0"
+    output = f"Package name: org.chromium.chrome\nversionName: {version}"
     self.platform.host_platform.sh_stdout = mock.MagicMock(return_value=output)
 
     browser = MockLocalChromiumWebDriverAndroid(
         "test-label",
         path=chrome_public_apk_path,
-        settings=Settings(platform=self.platform))
-    browser.validate_binary()
+        settings=Settings(
+            platform=self.platform, browser_version=version, viewport=viewport))
+    browser._private_driver = mock.MagicMock()
+    return browser
 
+  def test_android_driver_lookup(self):
+    browser = self._create_android_browser("120.0.0.0")
+    browser.validate_binary()
+    driver_path = pth.AnyPath(
+        "/home/user/chromium/src/out/Android/clang_x64/chromedriver")
     self.assertEqual(str(browser.driver_path), str(driver_path))
+
+  def test_setup_window_maximized_legacy_uiautomator(self):
+    browser = self._create_android_browser(
+        "153.0.7993.0", viewport=Viewport.MAXIMIZED)
+    with mock.patch.object(self.platform,
+                           "uiautomator_device") as mock_uiautomator:
+      browser._setup_window()
+      mock_uiautomator.assert_called_once_with(root_device=False)
+    browser._private_driver.maximize_window.assert_not_called()
+
+  def test_setup_window_maximized_webdriver(self):
+    browser = self._create_android_browser(
+        "153.0.7994.0", viewport=Viewport.MAXIMIZED)
+    with mock.patch.object(self.platform,
+                           "uiautomator_device") as mock_uiautomator:
+      browser._setup_window()
+      mock_uiautomator.assert_not_called()
+    browser._private_driver.maximize_window.assert_called_once_with()
+
+  def test_setup_window_explicit_bounds_unsupported_version(self):
+    browser = self._create_android_browser(
+        "153.0.7993.0", viewport=Viewport(800, 600, 20, 30))
+    browser._setup_window()
+    browser._private_driver.set_window_position.assert_not_called()
+    browser._private_driver.set_window_size.assert_not_called()
+
+  def test_setup_window_explicit_bounds_supported_version(self):
+    browser = self._create_android_browser(
+        "153.0.7994.0", viewport=Viewport(800, 600, 20, 30))
+    browser._setup_window()
+    browser._private_driver.set_window_position.assert_called_once_with(20, 30)
+    browser._private_driver.set_window_size.assert_called_once_with(800, 600)
+
+  def test_setup_window_default_viewport_skipped(self):
+    browser = self._create_android_browser(
+        "153.0.7994.0", viewport=Viewport.DEFAULT)
+    browser._setup_window()
+    browser._private_driver.maximize_window.assert_not_called()
+    browser._private_driver.set_window_position.assert_not_called()
+    browser._private_driver.set_window_size.assert_not_called()
 
 
 if __name__ == "__main__":

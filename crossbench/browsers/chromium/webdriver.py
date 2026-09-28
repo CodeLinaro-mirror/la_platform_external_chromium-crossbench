@@ -20,6 +20,7 @@ from crossbench import exception
 from crossbench import hjson as cb_hjson
 from crossbench import path as pth
 from crossbench.browsers.chromium.base import ChromiumBaseMixin
+from crossbench.browsers.chromium.version import ChromiumVersion
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
 from crossbench.cli.config.apk_helper import CHROME_APK_HELPER_NAMES
 from crossbench.cli.config.secrets import GoogleUsernamePassword
@@ -102,6 +103,8 @@ def install_apk(platform: AndroidAdbPlatform, apk_config: ApkConfig | None,
 
 
 class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
+  MIN_SET_WINDOW_RECT_VERSION: Final[ChromiumVersion] = ChromiumVersion(
+      (153, 0, 7994, 0))
 
   def __init__(self,
                label: str,
@@ -290,16 +293,33 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     except SubprocessError as e:
       logging.warning("Error setting app permissions: %s", e)
 
+  def _supports_set_window_rect(self) -> bool:
+    # Chromedriver still hardcodes the 'setWindowRect' capability to false for
+    # Android devices (crbug.com/534416988), so check the browser version is at
+    # or above the version that landed crrev.com/c/8084624.
+    return self.version >= self.MIN_SET_WINDOW_RECT_VERSION
+
   @override
   def _setup_window(self) -> None:
     if self.viewport.is_maximized:
       self.maximize_window()
+    elif (not self.viewport.is_default and self.viewport.has_size and
+          self._supports_set_window_rect()):
+      self._private_driver.set_window_position(self.viewport.x, self.viewport.y)
+      self._private_driver.set_window_size(self.viewport.width,
+                                           self.viewport.height)
     else:
       logging.debug("%s: Skipping viewport settings %s on %s",
                     type(self).__name__, self.viewport, self)
 
   @override
   def maximize_window(self) -> None:
+    if self._supports_set_window_rect():
+      super().maximize_window()
+      return
+    self._maximize_window_uiautomator()
+
+  def _maximize_window_uiautomator(self) -> None:
     try:
       with self.platform.uiautomator_device(root_device=False) as device:
         # TODO(b/417165220): Update to standard Android OS window management
