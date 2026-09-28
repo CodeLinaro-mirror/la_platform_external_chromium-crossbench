@@ -1029,6 +1029,28 @@ class WebPowerProbeRealFsTestCase(unittest.TestCase):
     self._test_real_mapping_dir(
         QUERIES_DIR / "web_power", require_mappings=True)
 
+  def test_public_mapping_resolves_pixel_models(self) -> None:
+    """Verify public mapping resolves Pixel 9, 9a, 10a, and 10 models."""
+    mapping = WebPowerProbe._load_mapping(QUERIES_DIR / "web_power")
+    query = DeviceSpecificTraceProcessorQuery.create(
+        name=WebPowerProbe.QUERY_NAME, device_override=mapping)
+    tensor_g4_sql = (QUERIES_DIR / "web_power" /
+                     "power_rails_tensor_g4.sql").read_text()
+    tensor_g5_sql = (QUERIES_DIR / "web_power" /
+                     "power_rails_tensor_g5.sql").read_text()
+
+    for model in ("Pixel 9", "Pixel 9 Pro", "Pixel 9a", "Pixel 10a"):
+      resolved = query.resolve_for_device_model(model)
+
+      assert resolved is not None
+      self.assertEqual(resolved.sql, tensor_g4_sql)
+
+    for model in ("Pixel 10", "Pixel 10 Pro XL"):
+      resolved = query.resolve_for_device_model(model)
+
+      assert resolved is not None
+      self.assertEqual(resolved.sql, tensor_g5_sql)
+
   @unittest.skipIf(not WebPowerProbe.INTERNAL_QUERIES_DIR.is_dir(),
                    "Internal queries directory does not exist.")
   def test_load_mapping_internal_repo_valid(self):

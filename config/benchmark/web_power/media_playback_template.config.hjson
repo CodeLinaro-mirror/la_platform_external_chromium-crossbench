@@ -102,7 +102,7 @@
     }
     "trace_processor": {
       "queries": [
-        "web_power/power_rails_p10.sql"
+        "web_power/power_rails_tensor_g5.sql"
       ]
     }
   }

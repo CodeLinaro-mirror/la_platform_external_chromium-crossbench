@@ -1,4 +1,4 @@
 {
-  "Pixel 9\\b.*": "web_power/power_rails_p9"
-  "Pixel 10\\b.*": "web_power/power_rails_p10"
+  "Pixel (?:9|9a|10a)\\b.*": "web_power/power_rails_tensor_g4"
+  "Pixel 10\\b.*": "web_power/power_rails_tensor_g5"
 }
