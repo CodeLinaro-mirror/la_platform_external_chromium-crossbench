@@ -41,7 +41,9 @@ _EXPECTED_COLUMNS: Final[tuple[str, ...]] = (
 # TODO(cambr): Import from web_power.base to avoid stale refs.
 _CANONICAL_SITES: Final[tuple[str, ...]] = ("ajnews", "cnn", "msn")
 _SITE_SCENARIOS: Final[tuple[str, ...]] = ("idle", "scroll", "page-load")
-_DEFAULT_ITERATIONS: Final[int] = WebPowerBenchmarkBase.DEFAULT_REPETITIONS
+# Repetitions come from --fast to keep CQ runtime short.
+_DEFAULT_ITERATIONS: Final[int] = (
+    WebPowerBenchmarkBase.fast_mode_default_overrides()["repetitions"])
 
 
 def _run_web_power(
@@ -55,7 +57,6 @@ def _run_web_power(
       f"--browser={browser_config}",
       f"--out-dir={test_env.results_dir}",
       "--fast",
-      f"--repetitions={_DEFAULT_ITERATIONS}",
       "--required-device-config-mode=warn",
       *extra_args,
       *test_env.cq_flags,
