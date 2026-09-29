@@ -11,12 +11,15 @@ from typing import TYPE_CHECKING
 from unittest import mock
 
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
-    WaitEvent
+    TouchEvent, WaitEvent
 from crossbench.action_runner.virtual_device.keyboard import \
     KeyboardVirtualDeviceConfig
+from crossbench.action_runner.virtual_device.touchscreen import \
+    TouchscreenVirtualDeviceConfig
 from crossbench.action_runner.virtual_device.virtual_device_config import \
     VirtualDeviceConfig
 from crossbench.benchmarks.loading.input_source import InputSource
+from crossbench.benchmarks.loading.point import Point
 from crossbench.plt.evemu_platform_mixin import _INPUT_DRAIN_BUFFER, \
     _INPUT_LEAD_BUFFER, EvemuPlatformMixin
 from tests import test_helper
@@ -38,6 +41,9 @@ class MockEvemuPlatform(EvemuPlatformMixin, LinuxMockPlatform):
     self.popen_calls: list[tuple] = []
     self.sleep_calls: list[float | dt.timedelta] = []
 
+  def display_resolution(self) -> tuple[int, int]:
+    return (1080, 1920)
+
   def _get_evemu_device_cmd(self,
                             device_type: VirtualDeviceType) -> TupleCmdArgs:
     del device_type
@@ -57,8 +63,11 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
     super().setUp()
     self.platform = MockEvemuPlatform()
     with mock.patch("time.monotonic", return_value=100.0):
-      self.platform.setup_virtual_devices(
-          (KeyboardVirtualDeviceConfig(name="test_kb"),))
+      self.platform.setup_virtual_devices((
+          KeyboardVirtualDeviceConfig(name="test_kb"),
+          TouchscreenVirtualDeviceConfig(
+              name="test_touch", width=1080, height=2400),
+      ))
     self.platform.sleep_calls.clear()
 
   def test_setup_virtual_devices(self) -> None:
@@ -75,10 +84,44 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
 
   def test_teardown_virtual_devices(self) -> None:
     self.assertIn("test_kb", self.platform._virtual_devices)
+    self.assertIn("test_touch", self.platform._virtual_devices)
     self.platform.teardown_virtual_devices()
     self.assertEqual(self.platform._virtual_devices, {})
-    self.platform.mock_proc.stdin.close.assert_called_once()
-    self.platform.mock_proc.wait.assert_called_once_with(timeout=2)
+    self.assertEqual(self.platform.mock_proc.stdin.close.call_count, 2)
+    self.platform.mock_proc.wait.assert_has_calls(
+        [mock.call(timeout=2), mock.call(timeout=2)])
+
+  def test_setup_virtual_devices_touchscreen(self) -> None:
+    platform = MockEvemuPlatform()
+    platform.setup_virtual_devices(
+        (TouchscreenVirtualDeviceConfig(name="touch1", width=1080,
+                                        height=2400),))
+    self.assertEqual(len(platform.popen_calls), 1)
+    args, kwargs = platform.popen_calls[0]
+    self.assertEqual(args, ("mock-evemu", "-"))
+    self.assertEqual(kwargs, {"stdin": subprocess.PIPE})
+    self.assertIn("touch1", platform._virtual_devices)
+    self.assertIs(platform._virtual_devices["touch1"].proc, platform.mock_proc)
+    written_header = platform.mock_proc.stdin.write.call_args[0][0].decode(
+        "utf-8")
+    self.assertIn("N: touch1", written_header)
+    self.assertIn("A: 35 0 1080 0 0 12", written_header)
+    self.assertIn("A: 36 0 2400 0 0 12", written_header)
+    platform.mock_proc.stdin.flush.assert_called_once()
+
+  def test_setup_virtual_devices_touchscreen_fallback_resolution(self) -> None:
+    platform = MockEvemuPlatform()
+    with mock.patch.object(
+        platform, "display_resolution", return_value=(1440, 3120)) as mock_res:
+      platform.setup_virtual_devices(
+          (TouchscreenVirtualDeviceConfig(name="touch1"),))
+      mock_res.assert_called_once()
+      self.assertIn("touch1", platform._virtual_devices)
+      written_header = platform.mock_proc.stdin.write.call_args[0][0].decode(
+          "utf-8")
+      self.assertIn("N: touch1", written_header)
+      self.assertIn("A: 35 0 1440 0 0 12", written_header)
+      self.assertIn("A: 36 0 3120 0 0 12", written_header)
 
   def test_setup_virtual_devices_unsupported(self) -> None:
     platform = MockEvemuPlatform()
@@ -93,9 +136,12 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
     platform = MockEvemuPlatform()
     self.assertIsNone(platform.get_default_device(InputSource.KEYBOARD))
     self.assertIsNone(platform.get_default_device(InputSource.TOUCH))
-    platform.setup_virtual_devices((KeyboardVirtualDeviceConfig(name="kb1"),))
+    platform.setup_virtual_devices((
+        KeyboardVirtualDeviceConfig(name="kb1"),
+        TouchscreenVirtualDeviceConfig(name="touch1", width=1080, height=2400),
+    ))
     self.assertEqual(platform.get_default_device(InputSource.KEYBOARD), "kb1")
-    self.assertIsNone(platform.get_default_device(InputSource.TOUCH))
+    self.assertEqual(platform.get_default_device(InputSource.TOUCH), "touch1")
 
   def test_execute_evemu_script(self) -> None:
     self.platform._execute_evemu_script("test_kb",
@@ -204,6 +250,59 @@ class EvemuPlatformMixinTestCase(unittest.TestCase):
         (dt.timedelta(milliseconds=200) + _INPUT_LEAD_BUFFER +
          _INPUT_DRAIN_BUFFER),
     ])
+
+  @mock.patch("time.monotonic", return_value=100.5)
+  def test_touch_down_and_up(self, mock_monotonic) -> None:
+    del mock_monotonic
+    self.platform.inject_input_events("test_touch", [
+        TouchEvent(Point(100, 200), is_down=True),
+        TouchEvent(Point(100, 200), is_down=False),
+    ])
+    self.platform.mock_proc.stdin.write.assert_called_with(
+        b"E: 0.200000 0003 002f 0000\n"
+        b"E: 0.200000 0003 0039 0000\n"
+        b"E: 0.200000 0003 0035 0100\n"
+        b"E: 0.200000 0003 0036 0200\n"
+        b"E: 0.200000 0003 003a 0050\n"
+        b"E: 0.200000 0003 0030 0005\n"
+        b"E: 0.200000 0003 0031 0005\n"
+        b"E: 0.200000 0001 014a 0001\n"
+        b"E: 0.200000 0003 0000 0100\n"
+        b"E: 0.200000 0003 0001 0200\n"
+        b"E: 0.200000 0003 0018 0050\n"
+        b"E: 0.200000 0000 0000 0000\n"
+        b"E: 0.200000 0003 002f 0000\n"
+        b"E: 0.200000 0003 0039 -001\n"
+        b"E: 0.200000 0001 014a 0000\n"
+        b"E: 0.200000 0000 0000 0000\n")
+    self.platform.mock_proc.stdin.flush.assert_called()
+
+  @mock.patch("time.monotonic", return_value=100.5)
+  def test_touch_with_wait(self, mock_monotonic) -> None:
+    del mock_monotonic
+    self.platform.inject_input_events("test_touch", [
+        TouchEvent(Point(10, 20), is_down=True, slot=1),
+        WaitEvent(dt.timedelta(milliseconds=500)),
+        TouchEvent(Point(10, 20), is_down=False, slot=1),
+    ])
+    self.platform.mock_proc.stdin.write.assert_called_with(
+        b"E: 0.200000 0003 002f 0001\n"
+        b"E: 0.200000 0003 0039 0001\n"
+        b"E: 0.200000 0003 0035 0010\n"
+        b"E: 0.200000 0003 0036 0020\n"
+        b"E: 0.200000 0003 003a 0050\n"
+        b"E: 0.200000 0003 0030 0005\n"
+        b"E: 0.200000 0003 0031 0005\n"
+        b"E: 0.200000 0001 014a 0001\n"
+        b"E: 0.200000 0003 0000 0010\n"
+        b"E: 0.200000 0003 0001 0020\n"
+        b"E: 0.200000 0003 0018 0050\n"
+        b"E: 0.200000 0000 0000 0000\n"
+        b"E: 0.700000 0003 002f 0001\n"
+        b"E: 0.700000 0003 0039 -001\n"
+        b"E: 0.700000 0001 014a 0000\n"
+        b"E: 0.700000 0000 0000 0000\n")
+    self.platform.mock_proc.stdin.flush.assert_called()
 
   def test_unsupported_key(self) -> None:
     with self.assertRaises(ValueError):
