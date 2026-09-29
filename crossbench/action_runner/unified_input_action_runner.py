@@ -5,24 +5,58 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Final
+import functools
+from typing import TYPE_CHECKING, Final, NamedTuple
 
+import crossbench.path as pth
 from crossbench.action_runner.base import ActionRunner
+from crossbench.action_runner.display_rectangle import DisplayRectangle
+from crossbench.action_runner.element_not_found_error import \
+    ElementNotFoundError
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
-    WaitEvent
+    TouchEvent, WaitEvent
 from crossbench.action_runner.keyboard_layout import US_KEYBOARD_LAYOUT
+from crossbench.action_runner.screenshot_annotation import \
+    ScreenshotPointAnnotation, ScreenshotRectAnnotation
+from crossbench.action_runner.viewport_info import ViewportInfo
 from crossbench.benchmarks.loading.input_source import InputSource
+from crossbench.benchmarks.loading.point import Point
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
+  from crossbench.action_runner.action.base_input_source import \
+      InputSourceAction
+  from crossbench.action_runner.action.position import SelectorConfig
+  from crossbench.runner.actions import Actions
+
+SCRIPTS_DIR: Final[pth.LocalPath] = (
+    pth.ROOT_DIR / "crossbench" / "action_runner" / "scripts")
+
+
+class WindowPositions(NamedTuple):
+  found_element: bool
+  pixel_ratio: float
+  outer_width: int
+  outer_height: int
+  inner_width: float
+  inner_height: float
+  screen_width: int
+  screen_height: int
+  avail_width: int
+  avail_height: int
+  screen_x: int
+  screen_y: int
+  element_left: int
+  element_top: int
+  element_width: int
+  element_height: int
 
 
 class UnifiedInputActionRunner(ActionRunner):
+  """ActionRunner implementation that translates abstract actions
+  into sequences of InputEvent objects, and injects them via the
+  platform level.
   """
-    ActionRunner implementation that translates abstract actions
-    into sequences of InputEvent objects, and injects them via the
-    platform level.
-    """
 
   # Relative timing weights used to distribute `action.duration` across the
   # various phases of keyboard input. Each character receives a total weight of
@@ -44,9 +78,112 @@ class UnifiedInputActionRunner(ActionRunner):
   SHIFT_POST_DWELL_WEIGHT: Final[int] = 1
   SHIFT_GAP_WEIGHT: Final[int] = 5
 
+  DEFAULT_CLICK_DURATION: Final[dt.timedelta] = dt.timedelta(milliseconds=50)
+
+  @functools.cached_property
+  def _get_window_positions_script(self) -> str:
+    return (SCRIPTS_DIR / "get_window_positions.js").read_text()
+
+  def action_device_name(self, action: InputSourceAction,
+                         input_source: InputSource) -> str:
+    return (action.source_device or
+            self.browser_platform.get_default_device(input_source) or "")
+
   def click_touch(self, action: i_action.ClickAction) -> None:
-    # TODO(b/553272919): implement
-    del action
+    with self.actions("ClickAction", measure=False) as actions:
+      click_location = self._get_click_location(actions, action)
+      if not click_location:
+        return
+
+      duration = action.duration or self.DEFAULT_CLICK_DURATION
+      events: tuple[InputEvent, ...] = (
+          TouchEvent(position=click_location, is_down=True),
+          WaitEvent(duration=duration),
+          TouchEvent(position=click_location, is_down=False),
+      )
+
+      device_name = self.action_device_name(action, InputSource.TOUCH)
+      self.browser_platform.inject_input_events(device_name, events)
+
+      if action.verify:
+        self.wait_for_element_impl(
+            actions,
+            selector=action.verify,
+            timeout=action.timeout,
+            check_element_rect=True)
+
+  def _get_click_location(self, actions: Actions,
+                          action: i_action.ClickAction) -> Point | None:
+    if selector_config := action.position.selector:
+      return self._get_selector_click_location(actions, action, selector_config)
+
+    if coordinates_config := action.position.coordinates:
+      click_location = coordinates_config.point()
+      self.add_failure_screenshot_annotation(
+          ScreenshotPointAnnotation(label="click", point=click_location))
+      return click_location
+
+    raise RuntimeError("Missing coordinates")
+
+  def _get_selector_click_location(
+      self, actions: Actions, action: i_action.ClickAction,
+      selector_config: SelectorConfig) -> Point | None:
+    if selector_config.wait:
+      self.wait_for_element_impl(
+          actions,
+          selector=selector_config.selector,
+          timeout=action.timeout,
+          scroll_into_view=selector_config.scroll_into_view,
+          check_element_rect=True,
+          required=selector_config.required)
+
+    viewport_info = self._get_viewport_info(actions, selector_config.selector,
+                                            selector_config.scroll_into_view)
+    element_rect = viewport_info.element_rect
+    if not element_rect:
+      if selector_config.required:
+        raise ElementNotFoundError(selector_config.selector)
+      return None
+    self.add_failure_screenshot_annotation(
+        ScreenshotRectAnnotation(
+            label=selector_config.selector, rect=element_rect))
+    click_location = element_rect.middle
+    self.add_failure_screenshot_annotation(
+        ScreenshotPointAnnotation(label="click", point=click_location))
+    return click_location
+
+  def _get_viewport_info(self,
+                         actions: Actions,
+                         selector: str | None,
+                         scroll_into_view: bool = False) -> ViewportInfo:
+    script = ""
+    if selector:
+      selector, script = self.get_selector_script(selector)
+
+    script += self._get_window_positions_script
+
+    pos = WindowPositions(
+        *actions.js(script, arguments=[selector, scroll_into_view]))
+
+    element_rect: DisplayRectangle | None = None
+    if pos.found_element:
+      element_rect = DisplayRectangle(
+          Point(pos.element_left, pos.element_top), pos.element_width,
+          pos.element_height)
+
+    return ViewportInfo(
+        device_pixel_ratio=pos.pixel_ratio,
+        window_outer_width=pos.outer_width,
+        window_outer_height=pos.outer_height,
+        window_inner_width=pos.inner_width,
+        window_inner_height=pos.inner_height,
+        screen_width=pos.screen_width,
+        screen_height=pos.screen_height,
+        screen_avail_width=pos.avail_width,
+        screen_avail_height=pos.avail_height,
+        window_offset_x=pos.screen_x,
+        window_offset_y=pos.screen_y,
+        element_rect=element_rect)
 
   def click_mouse(self, action: i_action.ClickAction) -> None:
     # TODO(b/553272919): implement
@@ -100,9 +237,7 @@ class UnifiedInputActionRunner(ActionRunner):
     if not events_with_weights:
       return
 
-    device_name = (
-        action.source_device or
-        self.browser_platform.get_default_device(InputSource.KEYBOARD) or "")
+    device_name = self.action_device_name(action, InputSource.KEYBOARD)
 
     if not action.duration:
       input_events = [e for e in events_with_weights if isinstance(e, KeyEvent)]

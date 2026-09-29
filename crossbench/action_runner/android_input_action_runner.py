@@ -111,7 +111,7 @@ return [
   def scroll_touch(self, action: i_action.ScrollAction) -> None:
     with self.actions("ScrollAction", measure=False) as actions:
 
-      viewport_info = self._get_viewport_info(actions, action.selector)
+      viewport_info = self._get_android_viewport_info(actions, action.selector)
 
       # The scroll distance is specified in terms of css pixels so adjust to the
       # native pixel density.
@@ -198,7 +198,7 @@ return [
               check_element_rect=True,
               required=selector_config.required)
 
-        viewport_info = self._get_viewport_info(
+        viewport_info = self._get_android_viewport_info(
             actions, selector_config.selector, selector_config.scroll_into_view)
 
         rect = viewport_info.element_rect()
@@ -243,10 +243,11 @@ return [
     self.browser_platform.sh("input", "swipe", str(start_x), str(start_y),
                              str(end_x), str(end_y), str(duration_millis))
 
-  def _get_viewport_info(self,
-                         actions: Actions,
-                         selector: str | None = None,
-                         scroll_into_view: bool = False) -> ViewportInfo:
+  def _get_android_viewport_info(
+      self,
+      actions: Actions,
+      selector: str | None = None,
+      scroll_into_view: bool = False) -> ViewportInfo:
 
     script = ""
 

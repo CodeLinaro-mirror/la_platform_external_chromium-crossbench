@@ -6,21 +6,27 @@ from __future__ import annotations
 
 import datetime as dt
 import pathlib
+import unittest
 from unittest import mock
 
+from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.text_input import TextInputAction
+from crossbench.action_runner.element_not_found_error import \
+    ElementNotFoundError
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
-    WaitEvent
-from crossbench.action_runner.unified_input_action_runner import \
+    TouchEvent, WaitEvent
+from crossbench.action_runner.unified_input_action_runner import SCRIPTS_DIR, \
     UnifiedInputActionRunner
 from crossbench.benchmarks.loading.input_source import InputSource
+from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.settings import Settings
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import \
     ActionRunnerTestCase
-from tests.crossbench.mock_browser import MockChromeStable
+from tests.crossbench.mock_browser import JsInvocation, MockChromeStable
 from tests.crossbench.mock_helper import LinuxMockPlatform
 from tests.crossbench.runner.helper import MockRun, MockRunner
 
@@ -28,10 +34,32 @@ from tests.crossbench.runner.helper import MockRun, MockRunner
 class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
   __test__ = True
 
+  _NO_ELEMENT_JS_RESULT: JsInvocation = JsInvocation(result=[
+      False,  # Found element
+      1,  # pixel ratio
+      1920,  # window outer width
+      1080,  # window outer height
+      1920,  # window inner width
+      1080,  # window inner height
+      1920,  # screen width
+      1080,  # screen height
+      1920,  # screen avail width
+      1080,  # screen avail height
+      0,  # screenX
+      0,  # screenY
+      0,  # element left
+      0,  # element top
+      0,  # element width
+      0,  # element height
+  ])
+
   def setUp(self) -> None:
     super().setUp()
     self.platform = LinuxMockPlatform()
     self.fs.create_file("/usr/bin/google-chrome", contents="chrome_mock")
+    self.fs.create_file(
+        SCRIPTS_DIR / "get_window_positions.js",
+        contents="get_window_positions")
     self.browser = MockChromeStable(
         "mock browser", settings=Settings(platform=self.platform))
     self.runner = MockRunner()
@@ -57,9 +85,9 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
     actual_device_name = self.inject_events_mock.call_args[0][0]
     actual_events = self.inject_events_mock.call_args[0][1]
     self.assertEqual(actual_device_name, expected_device_name)
-    self.assertListEqual(actual_events, expected_events)
+    self.assertSequenceEqual(actual_events, expected_events)
 
-  def test_text_input_text_zero_duration(self):
+  def test_text_input_text_zero_duration(self) -> None:
     text_input_action = TextInputAction.create(
         InputSource.KEYBOARD, text="a", duration=dt.timedelta())
     self.run_action(text_input_action)
@@ -68,7 +96,7 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
         [KeyEvent("KeyA", is_down=True),
          KeyEvent("KeyA", is_down=False)])
 
-  def test_text_input_text_shift_modifier(self):
+  def test_text_input_text_shift_modifier(self) -> None:
     text_input_action = TextInputAction.create(
         InputSource.KEYBOARD, text="A", duration=dt.timedelta())
     self.run_action(text_input_action)
@@ -80,7 +108,7 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
         KeyEvent("ShiftLeft", is_down=False),
     ])
 
-  def test_text_input_text_with_duration(self):
+  def test_text_input_text_with_duration(self) -> None:
     # 2 seconds total for an action of length 4 ("abcd").
     # Each char has weight 10 (4 hold, 6 gap) -> 200ms hold, 300ms gap.
     text_input_action = TextInputAction.create(
@@ -106,7 +134,7 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
         WaitEvent(duration=dt.timedelta(milliseconds=300)),
     ])
 
-  def test_text_input_text_shift_with_duration(self):
+  def test_text_input_text_shift_with_duration(self) -> None:
     text_input_action = TextInputAction.create(
         InputSource.KEYBOARD, text="A", duration=dt.timedelta(milliseconds=100))
     self.run_action(text_input_action)
@@ -122,7 +150,7 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
         WaitEvent(duration=dt.timedelta(milliseconds=50)),
     ])
 
-  def test_text_input_keyevent_zero_duration(self):
+  def test_text_input_keyevent_zero_duration(self) -> None:
     text_input_action = TextInputAction.create(
         InputSource.KEYBOARD, keyevent="Enter", duration=dt.timedelta())
     self.run_action(text_input_action)
@@ -131,7 +159,7 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
         [KeyEvent("Enter", is_down=True),
          KeyEvent("Enter", is_down=False)])
 
-  def test_text_input_keyevent_with_duration(self):
+  def test_text_input_keyevent_with_duration(self) -> None:
     text_input_action = TextInputAction.create(
         InputSource.KEYBOARD,
         keyevent="Enter",
@@ -145,7 +173,7 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
         WaitEvent(duration=dt.timedelta(milliseconds=600)),
     ])
 
-  def test_text_input_with_source_device(self):
+  def test_text_input_with_source_device(self) -> None:
     text_input_action = TextInputAction.create(
         InputSource.KEYBOARD,
         duration=dt.timedelta(),
@@ -157,6 +185,153 @@ class UnifiedInputActionRunnerTestCase(ActionRunnerTestCase):
         [KeyEvent("KeyA", is_down=True),
          KeyEvent("KeyA", is_down=False)],
         expected_device_name="my_custom_keyboard")
+
+  def test_click_touch_coordinates_default_duration(self) -> None:
+    click_action = ClickAction(
+        InputSource.TOUCH, position=PositionConfig.from_coordinates(x=50, y=60))
+    self.run_action(click_action)
+
+    self.assert_input_events_injected([
+        TouchEvent(Point(50, 60), is_down=True),
+        WaitEvent(duration=UnifiedInputActionRunner.DEFAULT_CLICK_DURATION),
+        TouchEvent(Point(50, 60), is_down=False),
+    ])
+
+  def test_click_touch_coordinates_with_duration(self) -> None:
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_coordinates(x=50, y=60),
+        duration=dt.timedelta(milliseconds=150))
+    self.run_action(click_action)
+
+    self.assert_input_events_injected([
+        TouchEvent(Point(50, 60), is_down=True),
+        WaitEvent(duration=dt.timedelta(milliseconds=150)),
+        TouchEvent(Point(50, 60), is_down=False),
+    ])
+
+  def test_click_touch_coordinates_with_source_device(self) -> None:
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_coordinates(x=50, y=60),
+        source_device="my_touch_device")
+    self.run_action(click_action)
+
+    self.assert_input_events_injected([
+        TouchEvent(Point(50, 60), is_down=True),
+        WaitEvent(duration=UnifiedInputActionRunner.DEFAULT_CLICK_DURATION),
+        TouchEvent(Point(50, 60), is_down=False),
+    ],
+                                      expected_device_name="my_touch_device")
+
+  def test_click_touch_selector_success(self) -> None:
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(
+            selector="div#submit", required=True))
+    self.browser.expect_js(
+        expected_js=JsInvocation(result=[
+            True,  # Found element
+            1,  # pixel ratio
+            1920,  # window outer width
+            1080,  # window outer height
+            1920,  # window inner width
+            1080,  # window inner height
+            1920,  # screen width
+            1080,  # screen height
+            1920,  # screen avail width
+            1080,  # screen avail height
+            0,  # screenX
+            0,  # screenY
+            100,  # element left
+            200,  # element top
+            50,  # element width
+            40,  # element height
+        ]))
+    self.run_action(click_action)
+
+    self.assert_input_events_injected([
+        TouchEvent(Point(125, 220), is_down=True),
+        WaitEvent(duration=UnifiedInputActionRunner.DEFAULT_CLICK_DURATION),
+        TouchEvent(Point(125, 220), is_down=False),
+    ])
+
+  def test_click_touch_selector_with_wait(self) -> None:
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(
+            selector="div#submit", required=True, wait=True))
+    self.browser.expect_js(expected_js=JsInvocation(result=1))
+    self.browser.expect_js(
+        expected_js=JsInvocation(result=[
+            True,  # Found element
+            1,  # pixel ratio
+            1920,  # window outer width
+            1080,  # window outer height
+            1920,  # window inner width
+            1080,  # window inner height
+            1920,  # screen width
+            1080,  # screen height
+            1920,  # screen avail width
+            1080,  # screen avail height
+            0,  # screenX
+            0,  # screenY
+            100,  # element left
+            200,  # element top
+            50,  # element width
+            40,  # element height
+        ]))
+    self.run_action(click_action)
+
+    self.assert_input_events_injected([
+        TouchEvent(Point(125, 220), is_down=True),
+        WaitEvent(duration=UnifiedInputActionRunner.DEFAULT_CLICK_DURATION),
+        TouchEvent(Point(125, 220), is_down=False),
+    ])
+
+  def test_click_touch_selector_non_existent_required_raises(self) -> None:
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(
+            selector="div#missing", required=True))
+    self.browser.expect_js(expected_js=self._NO_ELEMENT_JS_RESULT)
+
+    with self.assertRaisesRegex(ElementNotFoundError, "div#missing"):
+      self.run_action(click_action)
+
+    self.inject_events_mock.assert_not_called()
+
+  def test_click_touch_selector_non_required_success(self) -> None:
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(
+            selector="div#missing", required=False))
+    self.browser.expect_js(expected_js=self._NO_ELEMENT_JS_RESULT)
+    self.run_action(click_action)
+
+    self.inject_events_mock.assert_not_called()
+
+  def test_click_touch_with_verify(self) -> None:
+    click_action = ClickAction(
+        InputSource.TOUCH,
+        position=PositionConfig.from_coordinates(x=10, y=20),
+        verify="#success")
+    self.browser.expect_js(expected_js=JsInvocation(result=1))
+    self.run_action(click_action)
+
+    self.assert_input_events_injected([
+        TouchEvent(Point(10, 20), is_down=True),
+        WaitEvent(duration=UnifiedInputActionRunner.DEFAULT_CLICK_DURATION),
+        TouchEvent(Point(10, 20), is_down=False),
+    ])
+
+
+class ScriptsDirTestCase(unittest.TestCase):
+
+  def test_scripts_dir_exists(self) -> None:
+    self.assertTrue(SCRIPTS_DIR.is_dir())
+    self.assertTrue(any(SCRIPTS_DIR.iterdir()))
+    self.assertTrue((SCRIPTS_DIR / "get_window_positions.js").is_file())
 
 
 if __name__ == "__main__":
