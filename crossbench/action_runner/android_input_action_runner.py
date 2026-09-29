@@ -159,7 +159,21 @@ return [
         remaining_distance -= current_distance
 
   def click_touch(self, action: i_action.ClickAction) -> None:
-    self._click_impl(action, False)
+    if ui_selector := action.position.ui_selector:
+      self._click_touch_selector(action, ui_selector)
+      return
+    super().click_touch(action)
+
+  def _click_touch_selector(self, action: i_action.ClickAction,
+                            ui_selector: UiSelectorConfig) -> None:
+    with self.actions("ClickAction", measure=False) as actions:
+      self._click_ui_selector(ui_selector, action.timeout)
+      if action.verify:
+        self.wait_for_element_impl(
+            actions,
+            selector=action.verify,
+            timeout=action.timeout,
+            check_element_rect=True)
 
   def click_mouse(self, action: i_action.ClickAction) -> None:
     self._click_impl(action, True)

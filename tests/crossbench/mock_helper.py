@@ -22,6 +22,8 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt
+from crossbench.action_runner.virtual_device.virtual_device_type import \
+    VirtualDeviceType
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
@@ -40,6 +42,8 @@ from crossbench.stories.story import Story
 if TYPE_CHECKING:
   import datetime as dt
 
+  from crossbench.action_runner.virtual_device.touchscreen import \
+      TouchscreenVirtualDeviceConfig
   from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo, TupleCmdArgs
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
@@ -626,13 +630,25 @@ class MockAdb(Adb):
 
 class AndroidAdbMockPlatform(MockPlatformMixin, AndroidAdbPlatform):
 
+  def _init_mock_virtual_device(self, device_name: str,
+                                device_type: VirtualDeviceType) -> None:
+    if self._is_device_running(device_name):
+      return
+    mock_proc = mock.MagicMock(spec=subprocess.Popen)
+    mock_proc.poll.return_value = None
+    mock_proc.stdin = mock.MagicMock()
+    self._virtual_devices[device_name] = VirtualDeviceState(
+        mock_proc, device_type=device_type)
+
+  @override
   def _init_virtual_keyboard(self, device_name: str) -> None:
-    state = self._virtual_devices.get(device_name)
-    if state is None or state.proc.poll() is not None:
-      mock_proc = mock.MagicMock(spec=subprocess.Popen)
-      mock_proc.poll.return_value = None
-      mock_proc.stdin = mock.MagicMock()
-      self._virtual_devices[device_name] = VirtualDeviceState(mock_proc)
+    self._init_mock_virtual_device(device_name, VirtualDeviceType.KEYBOARD)
+
+  @override
+  def _init_virtual_touchscreen(
+      self, device_config: TouchscreenVirtualDeviceConfig) -> None:
+    self._init_mock_virtual_device(device_config.name,
+                                   VirtualDeviceType.TOUCHSCREEN)
 
 
 class GenericMockPlatform(MockPlatformMixin, Platform):

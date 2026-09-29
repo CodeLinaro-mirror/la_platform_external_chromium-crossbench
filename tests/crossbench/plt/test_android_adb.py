@@ -5,12 +5,16 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import io
 import pathlib
 import struct
 import zipfile
-from typing import Final
+from typing import TYPE_CHECKING, Final
 from unittest import mock
+
+if TYPE_CHECKING:
+  from collections.abc import Iterator
 
 from pyfakefs.fake_filesystem import OSType
 from typing_extensions import override
@@ -19,6 +23,8 @@ from crossbench import path as pth
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.virtual_device.keyboard import \
     KeyboardVirtualDeviceConfig
+from crossbench.action_runner.virtual_device.touchscreen import \
+    TouchscreenVirtualDeviceConfig
 from crossbench.action_runner.virtual_device.virtual_device_config import \
     VirtualDeviceConfig
 from crossbench.action_runner.virtual_device.virtual_device_type import \
@@ -320,38 +326,68 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with mock.patch.object(self.adb, "getprop", return_value="37"):
       self.assertEqual(self.adb.sdk_version, 37)
 
-  def test_setup_virtual_devices(self):
+  @contextlib.contextmanager
+  def _patch_uinput_setup(
+      self,
+      sdk_version: int = AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION,
+  ) -> Iterator[tuple[mock.MagicMock, mock.MagicMock]]:
     mock_proc = mock.MagicMock()
     mock_proc.poll.return_value = None
     mock_proc.stdin = mock.MagicMock()
-
-    with mock.patch.object(
-        self.adb,
-        "getprop",
-        return_value=str(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION)):
+    with mock.patch.object(self.adb, "getprop", return_value=str(sdk_version)):
       with mock.patch.object(
           self.platform, "popen", return_value=mock_proc) as mock_popen:
-        self.platform.setup_virtual_devices(
-            (KeyboardVirtualDeviceConfig(name="kb1"),))
-        mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
-        self.assertIn("kb1", self.platform._virtual_devices)
-        self.assertIs(self.platform._virtual_devices["kb1"].proc, mock_proc)
-        mock_proc.stdin.write.assert_called_once()
-        mock_proc.stdin.flush.assert_called_once()
+        yield mock_popen, mock_proc
+
+  def test_setup_virtual_devices(self):
+    with self._patch_uinput_setup() as (mock_popen, mock_proc):
+      self.platform.setup_virtual_devices(
+          (KeyboardVirtualDeviceConfig(name="kb1"),))
+      mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
+      self.assertIn("kb1", self.platform._virtual_devices)
+      self.assertIs(self.platform._virtual_devices["kb1"].proc, mock_proc)
+      mock_proc.stdin.write.assert_called_once()
+      mock_proc.stdin.flush.assert_called_once()
 
   def test_setup_virtual_devices_unsupported_sdk(self):
-    with mock.patch.object(
-        self.adb,
-        "getprop",
-        return_value=str(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION - 1)):
+    sdk_version = AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION - 1
+    with self._patch_uinput_setup(sdk_version=sdk_version) as (mock_popen, _):
       with self.assertLogs(level="WARNING") as cm:
-        with mock.patch.object(self.platform, "popen") as mock_popen:
-          self.platform.setup_virtual_devices(
-              (KeyboardVirtualDeviceConfig(name="kb1"),))
-          mock_popen.assert_not_called()
-          self.assertNotIn("kb1", self.platform._virtual_devices)
-          self.assertIn("uinput injection is only supported on Android SDK",
-                        cm.output[0])
+        self.platform.setup_virtual_devices(
+            (KeyboardVirtualDeviceConfig(name="kb1"),))
+        mock_popen.assert_not_called()
+        self.assertNotIn("kb1", self.platform._virtual_devices)
+        self.assertIn("uinput injection is only supported on Android SDK",
+                      cm.output[0])
+
+  def test_setup_virtual_devices_touchscreen(self) -> None:
+    with self._patch_uinput_setup() as (mock_popen, mock_proc):
+      self.platform.setup_virtual_devices((TouchscreenVirtualDeviceConfig(
+          name="touch1", width=1080, height=2400),))
+      mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
+      self.assertIn("touch1", self.platform._virtual_devices)
+      self.assertIs(self.platform._virtual_devices["touch1"].proc, mock_proc)
+      mock_proc.stdin.write.assert_called_once()
+      written_header = mock_proc.stdin.write.call_args[0][0].decode("utf-8")
+      self.assertIn("N: touch1", written_header)
+      self.assertIn("A: 35 0 1080 0 0 12", written_header)
+      self.assertIn("A: 36 0 2400 0 0 12", written_header)
+      mock_proc.stdin.flush.assert_called_once()
+
+  def test_setup_virtual_devices_touchscreen_fallback_resolution(self) -> None:
+    with self._patch_uinput_setup() as (mock_popen, mock_proc):
+      with mock.patch.object(
+          self.platform, "display_resolution",
+          return_value=(1440, 3120)) as mock_res:
+        self.platform.setup_virtual_devices(
+            (TouchscreenVirtualDeviceConfig(name="touch1"),))
+        mock_res.assert_called_once()
+        mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
+        self.assertIn("touch1", self.platform._virtual_devices)
+        written_header = mock_proc.stdin.write.call_args[0][0].decode("utf-8")
+        self.assertIn("N: touch1", written_header)
+        self.assertIn("A: 35 0 1440 0 0 12", written_header)
+        self.assertIn("A: 36 0 3120 0 0 12", written_header)
 
   def test_setup_virtual_devices_unsupported(self):
     unsupported_config = mock.MagicMock(spec=VirtualDeviceConfig)

@@ -15,6 +15,8 @@ from crossbench.action_runner.chromeos_input_action_runner import \
 from crossbench.action_runner.virtual_device.all import VIRTUAL_DEVICES_TUPLE
 from crossbench.action_runner.virtual_device.keyboard import \
     KeyboardVirtualDeviceConfig
+from crossbench.action_runner.virtual_device.touchscreen import \
+    TouchscreenVirtualDeviceConfig
 from crossbench.action_runner.virtual_device.virtual_device_config import \
     VIRTUAL_DEVICES, VirtualDeviceConfig
 from crossbench.action_runner.virtual_device.virtual_device_type import \
@@ -24,15 +26,17 @@ from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 __all__ = [
     "ActionRunnerConfig",
     "ActionRunnerType",
+    "DEFAULT_VIRTUAL_DEVICES",
     "VIRTUAL_DEVICES",
     "VIRTUAL_DEVICES_TUPLE",
     "VirtualDeviceConfig",
     "VirtualDeviceType",
 ]
 
-_DEFAULT_VIRTUAL_DEVICES: Final[tuple[VirtualDeviceConfig,
-                                      ...]] = (KeyboardVirtualDeviceConfig(
-                                          name="default_keyboard"),)
+DEFAULT_VIRTUAL_DEVICES: Final[tuple[VirtualDeviceConfig, ...]] = (
+    KeyboardVirtualDeviceConfig(name="default_keyboard"),
+    TouchscreenVirtualDeviceConfig(name="default_touchscreen"),
+)
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
@@ -51,7 +55,7 @@ class ActionRunnerType(ConfigEnum):
 @dataclasses.dataclass(frozen=True)
 class ActionRunnerConfig(ConfigObject):
   type: ActionRunnerType = ActionRunnerType.AUTO
-  virtual_devices: tuple[VirtualDeviceConfig, ...] = _DEFAULT_VIRTUAL_DEVICES
+  virtual_devices: tuple[VirtualDeviceConfig, ...] = DEFAULT_VIRTUAL_DEVICES
 
   @classmethod
   def parse_str(cls, value: str) -> Self:
@@ -67,7 +71,7 @@ class ActionRunnerConfig(ConfigObject):
         "virtual_devices",
         type=VirtualDeviceConfig,
         is_list=True,
-        default=_DEFAULT_VIRTUAL_DEVICES)
+        default=DEFAULT_VIRTUAL_DEVICES)
     return parser
 
   def instantiate(self,

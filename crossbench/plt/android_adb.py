@@ -1365,6 +1365,8 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
 
     return (width, height)
 
+  # TODO(b/553272919): Remove once Android cutover to UnifiedInputActionRunner
+  # is finished.
   @override
   def get_window_rect(self, window_name: str) -> DisplayRectangle:
     assert window_name, "window_name is required"

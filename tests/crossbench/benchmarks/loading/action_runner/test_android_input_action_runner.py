@@ -23,6 +23,11 @@ from crossbench.action_runner.base import InputSourceNotImplementedError
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
+from crossbench.action_runner.input_events import TouchEvent, WaitEvent
+from crossbench.action_runner.unified_input_action_runner import SCRIPTS_DIR, \
+    WindowPositions
+from crossbench.action_runner.virtual_device.virtual_device_type import \
+    VirtualDeviceType
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.settings import Settings
@@ -122,6 +127,24 @@ class ViewportInfoTestCase(unittest.TestCase):
 class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
   __test__ = True
 
+  _NO_ELEMENT_WINDOW_POSITIONS = WindowPositions(
+      found_element=False,
+      pixel_ratio=1,
+      outer_width=1080,
+      outer_height=2400,
+      inner_width=1080,
+      inner_height=2400,
+      screen_width=1080,
+      screen_height=2400,
+      avail_width=1080,
+      avail_height=2400,
+      screen_x=0,
+      screen_y=0,
+      element_left=0,
+      element_top=0,
+      element_width=0,
+      element_height=0)
+
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -139,7 +162,10 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
     self.uinput_proc.poll.return_value = None
     self.uinput_proc.stdin = mock.MagicMock()
     self.platform._virtual_devices["default_keyboard"] = VirtualDeviceState(
-        self.uinput_proc)
+        self.uinput_proc, device_type=VirtualDeviceType.KEYBOARD)
+    self.platform._virtual_devices["default_touchscreen"] = VirtualDeviceState(
+        self.uinput_proc, device_type=VirtualDeviceType.TOUCHSCREEN)
+    self.fs.add_real_directory(SCRIPTS_DIR, lazy_read=True)
     self.browser = MockChromeAndroidStable(
         "mock browser", settings=Settings(platform=self.platform))
     self.runner = MockRunner()
@@ -238,16 +264,23 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
       self.assertEqual(device_name, "custom_kb")
       self.assertTrue(events)
 
-  def test_click_touch_coordinates(self):
+  def test_click_touch_coordinates(self) -> None:
     click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_coordinates(x=100, y=200))
 
-    self.platform.expect_sh("input", "tap", "100", "200")
+    with mock.patch.object(self.platform, "inject_input_events") as mock_inject:
+      self.run_action(click_action)
+      mock_inject.assert_called_once()
+      device_name, events = mock_inject.call_args[0]
+      self.assertEqual(device_name, "default_touchscreen")
+      self.assertSequenceEqual(events, [
+          TouchEvent(Point(100, 200), is_down=True),
+          WaitEvent(dt.timedelta(milliseconds=50)),
+          TouchEvent(Point(100, 200), is_down=False),
+      ])
 
-    self.run_action(click_action)
-
-  def test_click_mouse_coordinates(self):
+  def test_click_mouse_coordinates(self) -> None:
     click_action = ClickAction.create(
         InputSource.MOUSE,
         position=PositionConfig.from_coordinates(x=100, y=200))
@@ -256,7 +289,7 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
 
     self.run_action(click_action)
 
-  def test_click_mouse_non_zero_duration_fails(self):
+  def test_click_mouse_non_zero_duration_fails(self) -> None:
     click_action = ClickAction.create(
         InputSource.MOUSE,
         duration=dt.timedelta(seconds=1),
@@ -266,24 +299,53 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
       self.run_action(click_action)
     self.assertIn("Non-zero", str(cm.exception))
 
-  def test_click_touch_non_zero_duration_fails(self):
+  def test_click_touch_non_zero_duration(self) -> None:
     click_action = ClickAction.create(
         InputSource.TOUCH,
         duration=dt.timedelta(seconds=1),
-        position=PositionConfig.from_coordinates(x=0, y=0))
+        position=PositionConfig.from_coordinates(x=100, y=200))
 
-    with self.assertRaises(InputSourceNotImplementedError) as cm:
+    with mock.patch.object(self.platform, "inject_input_events") as mock_inject:
       self.run_action(click_action)
-    self.assertIn("Non-zero", str(cm.exception))
+      mock_inject.assert_called_once()
+      device_name, events = mock_inject.call_args[0]
+      self.assertEqual(device_name, "default_touchscreen")
+      self.assertSequenceEqual(events, [
+          TouchEvent(Point(100, 200), is_down=True),
+          WaitEvent(dt.timedelta(seconds=1)),
+          TouchEvent(Point(100, 200), is_down=False),
+      ])
+
+  def test_click_touch_custom_source_device(self) -> None:
+    click_action = ClickAction.create(
+        InputSource.TOUCH,
+        position=PositionConfig.from_coordinates(x=100, y=200),
+        source_device="custom_touch")
+
+    with mock.patch.object(self.platform, "inject_input_events") as mock_inject:
+      self.run_action(click_action)
+      mock_inject.assert_called_once()
+      device_name, events = mock_inject.call_args[0]
+      self.assertEqual(device_name, "custom_touch")
+      self.assertSequenceEqual(events, [
+          TouchEvent(Point(100, 200), is_down=True),
+          WaitEvent(dt.timedelta(milliseconds=50)),
+          TouchEvent(Point(100, 200), is_down=False),
+      ])
 
   def test_click_selector_passes_selector_string(self):
     click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(selector="div[]", required=False))
 
-    self.expect_action_setup(found_element=False, js_args=["div[]", False])
+    self.browser.expect_js(
+        expected_js=JsInvocation(
+            result=self._NO_ELEMENT_WINDOW_POSITIONS,
+            arguments=["div[]", False]))
 
-    self.run_action(click_action)
+    with mock.patch.object(self.platform, "inject_input_events") as mock_inject:
+      self.run_action(click_action)
+      mock_inject.assert_not_called()
 
   def test_click_selector_scroll_into_view_passes_scroll_true(self):
     click_action = ClickAction.create(
@@ -291,29 +353,58 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
         position=PositionConfig.from_selector(
             selector="div[]", required=False, scroll_into_view=True))
 
-    self.expect_action_setup(found_element=False, js_args=["div[]", True])
+    self.browser.expect_js(
+        expected_js=JsInvocation(
+            result=self._NO_ELEMENT_WINDOW_POSITIONS,
+            arguments=[
+                "div[]",
+                True,
+            ]))
 
-    self.run_action(click_action)
+    with mock.patch.object(self.platform, "inject_input_events") as mock_inject:
+      self.run_action(click_action)
+      mock_inject.assert_not_called()
 
   def test_click_selector_non_existant_element_raises(self):
     click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(selector="div[]", required=True))
 
-    self.expect_action_setup(found_element=False)
+    self.browser.expect_js(
+        expected_js=JsInvocation(
+            result=self._NO_ELEMENT_WINDOW_POSITIONS,
+            arguments=["div[]", False]))
 
     with self.assertRaises(ElementNotFoundError) as cm:
       self.run_action(click_action)
-    self.assertIn("matching DOM", str(cm.exception))
+    self.assertIn("div[]", str(cm.exception))
 
   def test_click_touch_selector_non_required_element_success(self):
     click_action = ClickAction.create(
         InputSource.TOUCH,
         position=PositionConfig.from_selector(selector="div[]", required=False))
 
-    self.expect_action_setup(found_element=False)
+    self.browser.expect_js(
+        expected_js=JsInvocation(
+            result=self._NO_ELEMENT_WINDOW_POSITIONS,
+            arguments=["div[]", False]))
 
-    self.run_action(click_action)
+    with mock.patch.object(self.platform, "inject_input_events") as mock_inject:
+      self.run_action(click_action)
+      mock_inject.assert_not_called()
+
+  def test_click_touch_selector_invalid_js_result_raises(self) -> None:
+    click_action = ClickAction.create(
+        InputSource.TOUCH,
+        position=PositionConfig.from_selector(selector="div[]", required=True))
+
+    for invalid_result in ([False, 1], [*self._NO_ELEMENT_WINDOW_POSITIONS, 0]):
+      with self.subTest(result=invalid_result):
+        self.browser.expect_js(
+            expected_js=JsInvocation(
+                result=invalid_result, arguments=["div[]", False]))
+        with self.assertRaises(TypeError):
+          self.run_action(click_action)
 
   def test_click_mouse_selector_non_required_element_success(self):
     click_action = ClickAction.create(
@@ -329,14 +420,37 @@ class AndroidInputActionRunnerTestCase(ActionRunnerTestCase):
         InputSource.TOUCH,
         position=PositionConfig.from_selector(selector="div[]", required=True))
 
-    self.expect_action_setup(
-        found_element=True,
-        app_bounds=DisplayRectangle(Point(0, 0), 100, 100),
-        element_bounds=DisplayRectangle(Point(20, 40), 10, 10))
+    self.browser.expect_js(
+        expected_js=JsInvocation(
+            result=WindowPositions(
+                found_element=True,
+                pixel_ratio=1,
+                outer_width=1920,
+                outer_height=1080,
+                inner_width=1920,
+                inner_height=1080,
+                screen_width=1920,
+                screen_height=1080,
+                avail_width=1920,
+                avail_height=1080,
+                screen_x=0,
+                screen_y=0,
+                element_left=20,
+                element_top=40,
+                element_width=10,
+                element_height=10),
+            arguments=["div[]", False]))
 
-    self.platform.expect_sh("input", "tap", "25", "45")
-
-    self.run_action(click_action)
+    with mock.patch.object(self.platform, "inject_input_events") as mock_inject:
+      self.run_action(click_action)
+      mock_inject.assert_called_once()
+      device_name, events = mock_inject.call_args[0]
+      self.assertEqual(device_name, "default_touchscreen")
+      self.assertSequenceEqual(events, [
+          TouchEvent(Point(25, 45), is_down=True),
+          WaitEvent(dt.timedelta(milliseconds=50)),
+          TouchEvent(Point(25, 45), is_down=False),
+      ])
 
   def test_click_mouse_selector_success(self):
     click_action = ClickAction.create(

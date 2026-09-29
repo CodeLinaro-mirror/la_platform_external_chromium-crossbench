@@ -15,8 +15,8 @@ from crossbench.action_runner.android_input_action_runner import \
 from crossbench.action_runner.base import ActionRunner
 from crossbench.action_runner.chromeos_input_action_runner import \
     ChromeOSInputActionRunner
-from crossbench.action_runner.config import ActionRunnerConfig, \
-    ActionRunnerType
+from crossbench.action_runner.config import DEFAULT_VIRTUAL_DEVICES, \
+    ActionRunnerConfig, ActionRunnerType
 from crossbench.action_runner.virtual_device.keyboard import \
     KeyboardVirtualDeviceConfig
 from crossbench.action_runner.virtual_device.touchscreen import \
@@ -85,11 +85,21 @@ class ActionRunnerConfigTest(unittest.TestCase):
 
   def test_default_virtual_devices(self) -> None:
     action_runner_config = ActionRunnerConfig()
-    self.assertEqual(len(action_runner_config.virtual_devices), 1)
+    self.assertEqual(action_runner_config.virtual_devices,
+                     DEFAULT_VIRTUAL_DEVICES)
+    self.assertEqual(len(action_runner_config.virtual_devices), 2)
     self.assertEqual(
         action_runner_config.virtual_devices[0],
         KeyboardVirtualDeviceConfig(name="default_keyboard"),
     )
+    self.assertEqual(
+        action_runner_config.virtual_devices[1],
+        TouchscreenVirtualDeviceConfig(name="default_touchscreen"),
+    )
+
+  def test_default_virtual_devices_unique_names(self) -> None:
+    names = [device.name for device in DEFAULT_VIRTUAL_DEVICES]
+    self.assertEqual(len(names), len(set(names)))
 
   def test_parse_virtual_devices(self) -> None:
     config_dict: dict[str, Any] = {

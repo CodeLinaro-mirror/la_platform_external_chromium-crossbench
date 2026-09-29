@@ -1267,6 +1267,8 @@ class Platform(abc.ABC):
         "'display_resolution' is only available on Android and ChromeOS for "
         "now")
 
+  # TODO(b/553272919): Remove once Android cutover to UnifiedInputActionRunner
+  # is finished.
   def get_window_rect(self, window_name: str) -> DisplayRectangle:
     raise NotImplementedError(
         "'get_window_rect' is only available on Android for now")
