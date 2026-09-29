@@ -13,6 +13,7 @@ import colorama
 from crossbench import plt
 from crossbench.cli.config.env import EnvConfig, ValidationMode
 from crossbench.cli.ui import ui
+from crossbench.plt.bin import Binary
 
 if TYPE_CHECKING:
   from crossbench.plt.base import CmdArg, Platform
@@ -77,14 +78,19 @@ class BaseEnv(abc.ABC):
     raise ValidationError(message)
 
   def check_installed(self,
-                      binaries: Iterable[str],
+                      binaries: Iterable[str | Binary],
                       message: str = "Missing binaries: {}",
                       platform: Platform | None = None) -> None:
-    assert not isinstance(binaries, str), "Expected iterable of strings."
+    assert not isinstance(binaries,
+                          (str, Binary)), ("Expected iterable of binaries.")
     target_platform = platform or self._platform
-    missing_binaries = [
-        binary for binary in binaries if not target_platform.which(binary)
-    ]
+    missing_binaries: list[str] = []
+    for binary in binaries:
+      if isinstance(binary, Binary):
+        if not binary.exists(target_platform):
+          missing_binaries.append(binary.name)
+      elif not target_platform.which(binary):
+        missing_binaries.append(str(binary))
     if missing_binaries:
       self.handle_validation_warning(message.format(missing_binaries))
 

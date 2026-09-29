@@ -15,9 +15,9 @@ import crossbench.path as pth
 from crossbench import plt
 from crossbench.plt import PLATFORM
 from crossbench.plt.bin import AndroidBinary, AndroidBuildToolPath, Binaries, \
-    Binary, BinaryNotFoundError, ChromeOSBinary, ChromePath, EnvVarPath, \
-    LinuxBinary, MacOsBinary, PosixBinary, SystemPath, WinBinary, \
-    _find_chromium_checkout
+    Binary, BinaryNotFoundError, BinaryPath, ChromeBuildPath, ChromeOSBinary, \
+    ChromePath, EnvVarPath, LinuxBinary, MacOsBinary, PerfettoChromePath, \
+    PosixBinary, SystemPath, WinBinary, _find_chromium_checkout
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
@@ -98,6 +98,15 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     binary = Binary("test", default=("foo/bar/test1", "foo/bar/test2"))
     self.assertEqual(binary.name, "test")
 
+  def test_binary_exists(self) -> None:
+    platform = LinuxMockPlatform()
+    binary = Binary("custom_tool", default="/bin/custom_tool")
+    self.assertFalse(binary.exists(platform))
+    self.fs.create_file("/bin/custom_tool")
+    self.assertTrue(binary.exists(platform))
+    self.fs.remove("/bin/custom_tool")
+    self.assertFalse(binary.exists(platform))
+
   def test_unknown_binary(self):
     binary = Binary("crossbench_mock_binary", default="crossbench_mock_binary")
     for platform in self.all_platforms():
@@ -134,14 +143,17 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     self.assertSequenceEqual(
         [path_entry.binary for path_entry in binary.platform_path(platform)],
         [result])
+    self.assertFalse(binary.exists(platform))
     with self.assertRaises(BinaryNotFoundError):
       binary.resolve(platform)
     with self.assertRaises(BinaryNotFoundError):
       binary.resolve_cached(platform)
     self.fs.create_file(result, st_size=100)
+    self.assertTrue(binary.exists(platform))
     self.assertEqual(pth.AnyPath(binary.resolve(platform)), result)
     self.assertEqual(pth.AnyPath(binary.resolve_cached(platform)), result)
     self.fs.remove(result)
+    self.assertFalse(binary.exists(platform))
     self.assertEqual(pth.AnyPath(binary.resolve_cached(platform)), result)
     with self.assertRaises(BinaryNotFoundError):
       binary.resolve(platform)
@@ -366,8 +378,76 @@ class BinariesTestCase(CrossbenchFakeFsTestCase):
 
     self.assertEqual(Binaries.ADB.resolve(linux_plt), adb_path)
 
+  def test_llvm_symbolizer_paths(self) -> None:
+    linux_plt = LinuxMockPlatform()
+    chrome_src = linux_plt.local_path("/fake/chrome/src")
+    self.setup_chromium_checkout(chrome_src)
+    linux_plt.environ["CHROMIUM_SRC"] = str(chrome_src)
+    _find_chromium_checkout.cache_clear()
+
+    llvm_path = (
+        chrome_src /
+        "third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer")
+    self.fs.create_file(llvm_path, st_size=100)
+
+    self.assertEqual(Binaries.LLVM_SYMBOLIZER.resolve(linux_plt), llvm_path)
+
+    win_plt = WinMockPlatform()
+    win_paths = Binaries.LLVM_SYMBOLIZER.platform_path(win_plt)
+    self.assertIsInstance(win_paths[0], ChromePath)
+    self.assertEqual(
+        win_paths[0].relative_path,
+        pth.AnyPath(
+            "third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer.exe"))
+    self.assertIsInstance(win_paths[1], SystemPath)
+    self.assertEqual(win_paths[1].binary, pth.AnyPath("llvm-symbolizer.exe"))
+
+  def test_traceconv_paths(self) -> None:
+    linux_plt = LinuxMockPlatform()
+    chrome_src = linux_plt.local_path("/fake/chrome/src")
+    self.setup_chromium_checkout(chrome_src)
+    linux_plt.environ["CHROMIUM_SRC"] = str(chrome_src)
+    _find_chromium_checkout.cache_clear()
+
+    traceconv_path = chrome_src / "third_party/perfetto/tools/traceconv"
+    self.fs.create_file(traceconv_path, st_size=100)
+
+    self.assertEqual(Binaries.TRACECONV.resolve(linux_plt), traceconv_path)
+
+  def test_trace_processor_shell_paths(self) -> None:
+    linux_plt = LinuxMockPlatform()
+    chrome_src = linux_plt.local_path("/fake/chrome/src")
+    self.setup_chromium_checkout(chrome_src)
+    linux_plt.environ["CHROMIUM_SRC"] = str(chrome_src)
+    _find_chromium_checkout.cache_clear()
+
+    # 1. Resolves in out/Default via ChromeBuildPath
+    tp_build_path = chrome_src / "out/Default/trace_processor_shell"
+    self.fs.create_file(tp_build_path, st_size=100)
+    self.assertEqual(
+        Binaries.TRACE_PROCESSOR_SHELL.resolve(linux_plt), tp_build_path)
+
+    # 2. Falls back to tools/trace_processor via PerfettoChromePath
+    linux_plt.rm(tp_build_path)
+    tp_tools_path = chrome_src / "third_party/perfetto/tools/trace_processor"
+    self.fs.create_file(tp_tools_path, st_size=100)
+    self.assertEqual(
+        Binaries.TRACE_PROCESSOR_SHELL.resolve(linux_plt), tp_tools_path)
+
 
 class BinaryPathTestCase(CrossbenchFakeFsTestCase):
+
+  def test_base_binary_path_defaults(self) -> None:
+
+    class CustomBinaryPath(BinaryPath):
+
+      def resolve(self, platform: plt.Platform) -> pth.AnyPath | None:
+        return None
+
+    custom = CustomBinaryPath()
+    self.assertIsNone(custom.path)
+    self.assertIs(custom.for_windows(), custom)
+    custom.validate_win()
 
   def test_system_path(self):
     linux_plt = LinuxMockPlatform()
@@ -498,6 +578,93 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
     chrome_path_upper_bat = ChromePath("third_party/hello/adb.BAT")
     self.assertIs(chrome_path_upper_bat.for_windows(), chrome_path_upper_bat)
 
+  def test_chrome_build_path_validation(self) -> None:
+    with self.assertRaises(ValueError):
+      ChromeBuildPath("foo/bar")
+    with self.assertRaisesRegex(ValueError, ".exe"):
+      ChromeBuildPath("trace_processor_shell").validate_win()
+    ChromeBuildPath("trace_processor_shell.exe").validate_win()
+    ChromeBuildPath("trace_processor_shell.bat").validate_win()
+
+  def test_chrome_build_path_for_windows(self) -> None:
+    build_path = ChromeBuildPath("trace_processor_shell")
+    win_path = build_path.for_windows()
+    self.assertIsInstance(win_path, ChromeBuildPath)
+    assert isinstance(win_path, ChromeBuildPath)
+    self.assertEqual(win_path.binary, pth.AnyPath("trace_processor_shell.exe"))
+    build_path_exe = ChromeBuildPath("trace_processor_shell.exe")
+    self.assertIs(build_path_exe.for_windows(), build_path_exe)
+
+  def test_chrome_build_path_env_var(self) -> None:
+    linux_plt = LinuxMockPlatform()
+    build_path = ChromeBuildPath("trace_processor_shell")
+
+    chrome_src = linux_plt.local_path("/fake/chrome/src")
+    self.setup_chromium_checkout(chrome_src)
+    linux_plt.environ["CHROMIUM_SRC"] = str(chrome_src)
+
+    # No out directory
+    self.assertIsNone(build_path.resolve(linux_plt))
+
+    out_dir = chrome_src / "out"
+    self.fs.create_dir(out_dir)
+
+    # Empty out directory
+    self.assertIsNone(build_path.resolve(linux_plt))
+
+    release_dir = out_dir / "Release"
+    self.fs.create_dir(release_dir)
+    target_bin = release_dir / "trace_processor_shell"
+    self.fs.create_file(target_bin)
+
+    self.assertEqual(build_path.resolve(linux_plt), target_bin)
+
+    # Test glob fallback for non-standard build directory name
+    self.fs.remove(target_bin)
+    self.assertIsNone(build_path.resolve(linux_plt))
+    custom_dir = out_dir / "custom_arm64"
+    self.fs.create_dir(custom_dir)
+    custom_bin = custom_dir / "trace_processor_shell"
+    self.fs.create_file(custom_bin)
+    self.assertEqual(build_path.resolve(linux_plt), custom_bin)
+
+  def test_perfetto_chrome_path_validation(self) -> None:
+    with self.assertRaises(ValueError):
+      PerfettoChromePath("foo/bar")
+    with self.assertRaisesRegex(ValueError, ".exe"):
+      PerfettoChromePath("trace_processor").validate_win()
+    PerfettoChromePath("trace_processor.exe").validate_win()
+    PerfettoChromePath("trace_processor.bat").validate_win()
+
+  def test_perfetto_chrome_path_for_windows(self) -> None:
+    perfetto_path = PerfettoChromePath("trace_processor")
+    win_path = perfetto_path.for_windows()
+    self.assertIsInstance(win_path, PerfettoChromePath)
+    assert isinstance(win_path, PerfettoChromePath)
+    self.assertEqual(
+        win_path.relative_path,
+        pth.AnyPath("third_party/perfetto/tools/trace_processor.exe"))
+    self.assertEqual(win_path.binary, pth.AnyPath("trace_processor.exe"))
+    perfetto_path_exe = PerfettoChromePath("trace_processor.exe")
+    self.assertIs(perfetto_path_exe.for_windows(), perfetto_path_exe)
+
+  def test_perfetto_chrome_path(self) -> None:
+    linux_plt = LinuxMockPlatform()
+    perfetto_path = PerfettoChromePath("trace_processor")
+
+    chrome_src = linux_plt.local_path("/fake/chrome/src")
+    self.setup_chromium_checkout(chrome_src)
+    linux_plt.environ["CHROMIUM_SRC"] = str(chrome_src)
+    _find_chromium_checkout.cache_clear()
+
+    # No perfetto tools binary
+    self.assertIsNone(perfetto_path.resolve(linux_plt))
+
+    target_bin = chrome_src / "third_party/perfetto/tools/trace_processor"
+    self.fs.create_file(target_bin)
+
+    self.assertEqual(perfetto_path.resolve(linux_plt), target_bin)
+
   def test_android_build_tool_path(self):
     linux_plt = LinuxMockPlatform()
 
@@ -580,7 +747,8 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
       if prop_name.startswith("__"):
         continue
       self.assertIsInstance(binary_instance, Binary, prop_name)
-      self.assertEqual(prop_name.lower(), binary_instance.name)
+      self.assertEqual(prop_name.lower(),
+                       binary_instance.name.replace("-", "_"))
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ from crossbench.browsers.settings import Settings
 from crossbench.env.base import ValidationError
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import url_helper
+from crossbench.plt.bin import Binaries
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_browser import MockSafari, \
@@ -321,6 +322,23 @@ class HostEnvironmentTestCase(CrossbenchFakeFsTestCase):
       self.assertIn("custom_binary_a", str(cm.exception))
       self.assertNotIn("custom_binary_b", str(cm.exception))
       mock_which.assert_called()
+
+  def test_check_installed_binary(self):
+    env = self.create_env()
+    with mock.patch.object(Binaries.PPROF, "exists", return_value=False):
+      with self.assertRaises(ValidationError) as cm:
+        env.check_installed([Binaries.PPROF])
+      self.assertIn(Binaries.PPROF.name, str(cm.exception))
+
+    with mock.patch.object(Binaries.PPROF, "exists", return_value=True):
+      env.check_installed([Binaries.PPROF])
+
+  def test_check_installed_invalid_type(self):
+    env = self.create_env()
+    with self.assertRaises(AssertionError):
+      env.check_installed("binary")  # type: ignore[arg-type]
+    with self.assertRaises(AssertionError):
+      env.check_installed(Binaries.PPROF)  # type: ignore[arg-type]
 
   def _setup_git_repo(self) -> pathlib.Path:
     crossbench_dir = pathlib.Path(__file__).parents[2]

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import functools
-from typing import TYPE_CHECKING, ClassVar, Final, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Self, TypeAlias, cast
 
 from typing_extensions import override
 
@@ -27,16 +27,28 @@ def validate_win_binary(binary_name: str) -> None:
 class BinaryPath(abc.ABC):
   """Abstract base class to look up different kinds of binaries."""
 
+  @property
+  def path(self) -> pth.AnyPath | None:
+    """Return the candidate path."""
+    return None
+
   @abc.abstractmethod
   def resolve(self, platform: Platform) -> pth.AnyPath | None:
     """Main entry point to resolve a binary."""
 
   def validate_win(self) -> None:
     """Specialized windows validation (e.g. check for .exe suffix)"""
+    if path := self.path:
+      validate_win_binary(path.name)
 
-  def for_windows(self) -> BinaryPath:
+  def for_windows(self) -> Self:
     """Return a windows compatible version of this lookup."""
-    return self
+    if not (path := self.path):
+      return self
+    if path.suffix.lower() in (".exe", ".bat"):
+      return self
+    cls: Any = type(self)
+    return cast(Self, cls(f"{path}.exe"))
 
 
 class SystemPath(BinaryPath):
@@ -47,14 +59,12 @@ class SystemPath(BinaryPath):
       raise ValueError("SystemPath requires a non-empty string for binary name")
     self.binary: Final[pth.AnyPath] = pth.AnyPath(binary)
 
-  def for_windows(self) -> BinaryPath:
-    if self.binary.suffix.lower() not in (".exe", ".bat"):
-      return SystemPath(f"{self.binary}.exe")
-    return self
+  @property
+  @override
+  def path(self) -> pth.AnyPath:
+    return self.binary
 
-  def validate_win(self) -> None:
-    validate_win_binary(self.binary.name)
-
+  @override
   def resolve(self, platform: Platform) -> pth.AnyPath | None:
     return platform.search_binary(self.binary)
 
@@ -85,18 +95,74 @@ class ChromePath(BinaryPath):
     assert self.relative_path.parts, (
         "ChromiumLookup requires a non-empty relative_path")
 
-  def for_windows(self) -> BinaryPath:
-    if self.relative_path.suffix.lower() not in (".exe", ".bat"):
-      return ChromePath(f"{self.relative_path}.exe")
-    return self
+  @property
+  @override
+  def path(self) -> pth.AnyPath:
+    return self.relative_path
 
-  def validate_win(self) -> None:
-    validate_win_binary(self.relative_path.name)
-
+  @override
   def resolve(self, platform: Platform) -> pth.AnyPath | None:
     if maybe_chrome := _find_chromium_checkout(platform):
       candidate = maybe_chrome / self.relative_path
       if platform.exists(candidate):
+        return candidate
+    return None
+
+
+class PerfettoChromePath(ChromePath):
+  """Lookup a Perfetto binary in Chrome's third_party/perfetto/tools."""
+
+  PERFETTO_TOOLS_PATH: ClassVar[pth.AnyPath] = pth.AnyPath(
+      "third_party/perfetto/tools")
+
+  def __init__(self, binary: pth.AnyPathLike):
+    self.binary: Final[pth.AnyPath] = pth.AnyPath(binary)
+    if len(self.binary.parts) != 1:
+      raise ValueError(f"binary '{binary}' must not contain path separators")
+    super().__init__(self.PERFETTO_TOOLS_PATH / self.binary)
+
+  @property
+  @override
+  def path(self) -> pth.AnyPath:
+    return self.binary
+
+
+class ChromeBuildPath(BinaryPath):
+  """Lookup a binary in Chrome build directories."""
+
+  BUILD_DIR_NAMES: Final[tuple[str, ...]] = (
+      "Default",
+      "Release",
+      "release",
+      "rel",
+      "Optdebug",
+      "optdebug",
+      "opt",
+  )
+
+  def __init__(self, binary: pth.AnyPathLike):
+    self.binary: Final[pth.AnyPath] = pth.AnyPath(binary)
+    if len(self.binary.parts) != 1:
+      raise ValueError(f"binary '{binary}' must not contain path separators")
+
+  @property
+  @override
+  def path(self) -> pth.AnyPath:
+    return self.binary
+
+  @override
+  def resolve(self, platform: Platform) -> pth.AnyPath | None:
+    if not (maybe_chrome := _find_chromium_checkout(platform)):
+      return None
+    candidate_out = maybe_chrome / "out"
+    if not platform.is_dir(candidate_out):
+      return None
+    for build in self.BUILD_DIR_NAMES:
+      candidate = candidate_out / build / self.binary
+      if platform.is_file(candidate):
+        return candidate
+    for candidate in sorted(platform.glob(candidate_out, f"*/{self.binary}")):
+      if platform.is_file(candidate):
         return candidate
     return None
 
@@ -121,14 +187,16 @@ class AndroidBuildToolPath(BinaryPath):
         pth.AnyPath(fallback_sdk_path) if fallback_sdk_path else None)
     self.tool_name: Final[str] = str(tool_name)
 
-  def for_windows(self) -> BinaryPath:
-    if not self.tool_name.lower().endswith((".exe", ".bat")):
-      return AndroidBuildToolPath(self.tool_name + ".exe",
-                                  self.fallback_sdk_path)
-    return self
+  @property
+  @override
+  def path(self) -> pth.AnyPath:
+    return pth.AnyPath(self.tool_name)
 
-  def validate_win(self) -> None:
-    validate_win_binary(self.tool_name)
+  @override
+  def for_windows(self) -> Self:
+    if self.path.suffix.lower() in (".exe", ".bat"):
+      return self
+    return type(self)(f"{self.tool_name}.exe", self.fallback_sdk_path)
 
   def _sort_key(self, path: pth.AnyPath) -> tuple[int, ...]:
     try:
@@ -257,6 +325,9 @@ class Binary:
       if result := element.resolve(platform):
         return result
     return None
+
+  def exists(self, platform: Platform) -> bool:
+    return self.search(platform) is not None
 
   @functools.cache
   def resolve_cached(self, platform: Platform) -> pth.AnyPath:
@@ -391,6 +462,7 @@ class Binaries:
       ))
   CPIO: ClassVar = LinuxBinary("cpio")
   FFMPEG: ClassVar = Binary("ffmpeg", posix="ffmpeg")
+  GCERT: ClassVar = Binary("gcert", posix="gcert")
   GCERTSTATUS: ClassVar = Binary("gcertstatus", posix="gcertstatus")
   LSCPU: ClassVar = LinuxBinary("lscpu")
   MONTAGE: ClassVar = Binary("montage", posix="montage")
@@ -405,6 +477,37 @@ class Binaries:
       "chromedriver",
       chromeos="/usr/local/chromedriver/chromedriver",
       linux="chromedriver")
+  LLVM_SYMBOLIZER: ClassVar = Binary(
+      "llvm-symbolizer",
+      default=(
+          ChromePath(
+              "third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer"),
+          "llvm-symbolizer",
+      ))
+  TRACECONV: ClassVar = Binary(
+      "traceconv", default=(
+          PerfettoChromePath("traceconv"),
+          "traceconv",
+      ))
+  TRACEBOX: ClassVar = Binary(
+      "tracebox", default=(
+          PerfettoChromePath("tracebox"),
+          "tracebox",
+      ))
+  TRACE_PROCESSOR: ClassVar = Binary(
+      "trace_processor",
+      default=(
+          PerfettoChromePath("trace_processor"),
+          "trace_processor",
+      ))
+  TRACE_PROCESSOR_SHELL: ClassVar = Binary(
+      "trace_processor_shell",
+      default=(
+          ChromeBuildPath("trace_processor_shell"),
+          PerfettoChromePath("trace_processor"),
+          "trace_processor_shell",
+          "trace_processor",
+      ))
 
 
 class Browsers:
