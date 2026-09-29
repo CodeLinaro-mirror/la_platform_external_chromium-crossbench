@@ -364,6 +364,24 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
       raise RuntimeError(f"CDP command '{method}' failed: {res['error']}")
     return {"id": 1, "result": res}
 
+  def _check_path(self, flag: str, path: pth.AnyPathLike) -> bool:
+    quoted_path = shlex.quote(str(self.path(path)))
+    out = self.sh_stdout(  # noqa: S604
+        f"[ {flag} {quoted_path} ] && echo 1", shell=True)
+    return out.strip() == "1"
+
+  @override
+  def exists(self, path: pth.AnyPathLike) -> bool:
+    return self._check_path("-e", path)
+
+  @override
+  def is_file(self, path: pth.AnyPathLike) -> bool:
+    return self._check_path("-f", path)
+
+  @override
+  def is_dir(self, path: pth.AnyPathLike) -> bool:
+    return self._check_path("-d", path)
+
   @override
   def write_text(
       self,

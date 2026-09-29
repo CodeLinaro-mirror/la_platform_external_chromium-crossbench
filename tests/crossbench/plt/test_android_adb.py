@@ -154,6 +154,17 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   def expect_sh(self, *args, result: ShResultType = "", returncode: int = 0):
     self.expect_adb("shell", *args, result=result, returncode=returncode)
 
+  def expect_path_check(
+      self,
+      flag: str,
+      path: pth.AnyPathLike,
+      exists: bool = True,
+  ) -> None:
+    self.expect_sh(
+        f"'[' {flag} {self.platform.path(path)} ']'",
+        returncode=0 if exists else 1,
+    )
+
   def expect_adb(self, *args, result: ShResultType = "", returncode: int = 0):
     self.host_platform.expect_sh(
         pathlib.Path("adb"),
@@ -747,7 +758,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_search_binary(self):
     ls_path = self.platform.path("/system/bin/ls")
     self.expect_sh("which ls", result=str(ls_path))
-    self.expect_sh(f"'[' -e {ls_path} ']'", result="")
+    self.expect_path_check("-e", ls_path)
     path = self.platform.search_binary("ls")
     self.assertEqual(str(path), str(ls_path))
 
@@ -757,7 +768,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     override_path = self.platform.path("/root/sbin/ls")
     # override_binary checks if the result binary exists.
     self.expect_sh(f"which {override_path}", result=str(override_path))
-    self.expect_sh(f"'[' -e {override_path} ']'", result="")
+    self.expect_path_check("-e", override_path)
     with self.platform.override_binary(ls_path, override_path):
       path = self.platform.search_binary("ls")
       self.assertEqual(path, override_path)
@@ -805,7 +816,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertEqual(brightness, 16)
 
   def test_iterdir(self):
-    self.expect_sh("'[' -d parent_dir/child_dir ']'")
+    self.expect_path_check("-d", "parent_dir/child_dir")
     self.expect_sh("ls -1 parent_dir/child_dir", result="file1\nfile2\n")
 
     self.assertSetEqual(
@@ -1117,8 +1128,26 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("pkill com.example.app")
     self.platform.killall("com.example.app")
 
+  def test_exists(self):
+    self.expect_path_check("-e", "/data/local/tmp/file", exists=True)
+    self.assertTrue(self.platform.exists("/data/local/tmp/file"))
+    self.expect_path_check("-e", "/data/local/tmp/missing", exists=False)
+    self.assertFalse(self.platform.exists("/data/local/tmp/missing"))
+
+  def test_is_file(self):
+    self.expect_path_check("-f", "/data/local/tmp/file", exists=True)
+    self.assertTrue(self.platform.is_file("/data/local/tmp/file"))
+    self.expect_path_check("-f", "/data/local/tmp/missing", exists=False)
+    self.assertFalse(self.platform.is_file("/data/local/tmp/missing"))
+
+  def test_is_dir(self):
+    self.expect_path_check("-d", "/data/local/tmp/dir", exists=True)
+    self.assertTrue(self.platform.is_dir("/data/local/tmp/dir"))
+    self.expect_path_check("-d", "/data/local/tmp/missing", exists=False)
+    self.assertFalse(self.platform.is_dir("/data/local/tmp/missing"))
+
   def test_gpu_vram_used_adreno(self):
-    self.expect_sh("'[' -e /sys/class/kgsl/kgsl-3d0/page_alloc ']'", result="")
+    self.expect_path_check("-e", "/sys/class/kgsl/kgsl-3d0/page_alloc")
     self.expect_sh(
         "cat /sys/class/kgsl/kgsl-3d0/page_alloc",
         result=str(1024 * 1024 * 512),
@@ -1127,9 +1156,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertEqual(vram, {"adreno_gpu": 512.0})
 
   def test_gpu_vram_used_none(self):
-    self.expect_sh(
-        "'[' -e /sys/class/kgsl/kgsl-3d0/page_alloc ']'",
-        result=ShResult(returncode=1))
+    self.expect_path_check(
+        "-e", "/sys/class/kgsl/kgsl-3d0/page_alloc", exists=False)
     vram = self.platform.gpu_vram_used()
     self.assertEqual(vram, {})
 

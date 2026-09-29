@@ -76,6 +76,9 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   def test_is_chromeos(self):
     self.assertFalse(self.platform.is_chromeos)
 
+  def test_is_pyodide(self):
+    self.assertFalse(self.platform.is_pyodide)
+
   def test_port_forward_invalid(self):
     with self.platform.ports.nested() as ports:
       with self.assertRaisesRegex(argparse.ArgumentTypeError, "local_port"):

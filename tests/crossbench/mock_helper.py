@@ -36,6 +36,7 @@ from crossbench.plt.linux_ssh import LinuxSshPlatform
 from crossbench.plt.macos import MacOSPlatform
 from crossbench.plt.port_manager import LocalPortManager, PortManager
 from crossbench.plt.process_meminfo import ProcessMeminfo
+from crossbench.plt.pyodide import PyodidePlatform
 from crossbench.plt.win import WinPlatform
 from crossbench.stories.story import Story
 
@@ -577,6 +578,10 @@ class WinMockPlatformMixin(MockPlatformMixin):
 
 
 class LinuxMockPlatform(PosixMockPlatformMixin, LinuxPlatform):
+  pass
+
+
+class PyodideMockPlatform(LinuxMockPlatform, PyodidePlatform):
   pass
 
 
