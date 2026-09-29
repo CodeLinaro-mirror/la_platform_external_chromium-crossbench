@@ -100,8 +100,8 @@ if(found_element && arguments[1]) element.scrollIntoView({ block: 'nearest' });
 rect = found_element ? element.getBoundingClientRect() : new DOMRect();
 return [
   found_element,
-  window.innerHeight,
-  window.innerWidth,
+  window.visualViewport.height,
+  window.visualViewport.width,
   rect.left,
   rect.top,
   rect.width,
