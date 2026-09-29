@@ -4,6 +4,15 @@
 
 if (window.location.href ===
     'https://www.amazon.co.uk/NIVEA-Suncream-Spray-Protect-Moisture/dp/B001B0OJXM') {
+  // Ensure Amazon's NavSharedAssets detects touch support
+  // (`"ontouchstart" in window`) on non-touch desktop platforms so
+  // HamburgerMenuAJAXCall immediately fetches `/nav/ajax/hMenuDesktopFirstLayer`
+  // on load (matching Android tablet behavior) instead of waiting for mouse
+  // proximity.
+  if (!('ontouchstart' in window)) {
+    window.ontouchstart = null;
+  }
+
   const button_selector = 'a[id=nav-hamburger-menu]';
   const menu_selector = '.hmenu';
   const buy_id = 'buy-now-button';
@@ -21,6 +30,8 @@ if (window.location.href ===
     });
   }
 
+  let complete = false;
+
   const button_observer = new MutationObserver(mutations => {
     const button = document.querySelector(button_selector);
     const menu = document.querySelector(menu_selector);
@@ -33,6 +44,7 @@ if (window.location.href ===
     const attribute_observer = new MutationObserver(() => {
       if (menu.classList.contains('hmenu-visible')) {
         attribute_observer.disconnect();
+        complete = true;
         performance.mark('LoadLine2/amazon_product/interactive');
         onFrameRendered(() => {
           performance.mark('LoadLine2/amazon_product/interactive_raf');
@@ -40,7 +52,15 @@ if (window.location.href ===
       }
     });
     attribute_observer.observe(menu, {attributes: true});
-    button.click();
+
+    const click = function() {
+      if (complete) {
+        return;
+      }
+      button.click();
+      setTimeout(click, 10);
+    };
+    click();
   });
 
   const buy_observer = new MutationObserver(mutations => {

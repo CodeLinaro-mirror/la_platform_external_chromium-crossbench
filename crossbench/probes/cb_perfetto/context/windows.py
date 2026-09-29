@@ -34,7 +34,7 @@ class WindowsPerfettoProbeContext(PerfettoProbeContext):
   @override
   def setup(self) -> None:
     self._setup_push_perfetto_config()
-    flags = self.browser.flags
+    flags = self.session.extra_flags
     flags.set("--trace-perfetto-config-file",
               str(self.get_browser_config_path()))
     flags.set("--trace-startup-file", str(self.result_path))

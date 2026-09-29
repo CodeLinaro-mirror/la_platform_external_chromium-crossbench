@@ -7,6 +7,7 @@ from __future__ import annotations
 import collections
 import json
 import logging
+import os
 from enum import StrEnum, unique
 from typing import TYPE_CHECKING, ClassVar, Final, Hashable, Iterable, Self
 
@@ -293,7 +294,7 @@ class TraceProcessorProbe(Probe):
 
     for module_path in self.module_paths:
       extra_flags.append("--add-sql-package")
-      extra_flags.append(str(module_path))
+      extra_flags.append(module_path.as_posix())
 
     return TraceProcessorConfig(
         bin_path=self.trace_processor_bin,
@@ -325,7 +326,7 @@ class TraceProcessorProbe(Probe):
     Runs all metrics and queries on an empty trace. This will ensure that they
     are correctly defined in trace processor.
     """
-    with TraceProcessor(trace="/dev/null", config=self.tp_config) as tp:
+    with TraceProcessor(trace=os.devnull, config=self.tp_config) as tp:
       for metric in self.metrics:
         with exceptions.capture(f"metric: {metric!r}"):
           tp.metric([metric])

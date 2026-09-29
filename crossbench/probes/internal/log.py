@@ -40,7 +40,7 @@ class LogProbeContext(ProbeContext[LogProbe]):
     log_formatter = logging.Formatter(
         "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] "
         "[%(name)s]  %(message)s")
-    self._log_handler = logging.FileHandler(self.result_path)
+    self._log_handler = logging.FileHandler(self.result_path, encoding="utf-8")
     self._log_handler.setFormatter(log_formatter)
     self._log_handler.setLevel(logging.DEBUG)
     logging.getLogger().addHandler(self._log_handler)

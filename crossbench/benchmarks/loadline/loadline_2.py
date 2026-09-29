@@ -13,7 +13,11 @@ from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
+from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.position import PositionConfig
+from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.page.combined import CombinedPage
+from crossbench.benchmarks.loading.page.interactive import InteractivePage
 from crossbench.benchmarks.loadline.loadline import LoadLineBenchmark, \
     LoadLineProbe
 from crossbench.flags.chrome import ChromeFlags
@@ -22,18 +26,20 @@ from crossbench.probes.probe_context import ProbeContext
 if TYPE_CHECKING:
   import argparse
 
+  from crossbench.action_runner.base import ActionRunner
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.flags.base import Flags
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.groups.browsers import BrowsersRunGroup
+  from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
   from crossbench.stories.story import Story
 
 # We should increase the minor version number every time there are any changes
 # that might affect the benchmark score.
-VERSION_STRING: Final[str] = "2.4.0"
+VERSION_STRING: Final[str] = "2.5.0"
 
 
 def _metric_stats(df: pd.DataFrame) -> dict[str, dict[str, Any]]:
@@ -174,6 +180,31 @@ class LoadLine2ProbeContext(ProbeContext[LoadLine2Probe]):
     return self.empty_result()
 
 
+class LoadLine2CombinedPage(CombinedPage):
+
+  @override
+  def run_with(self, run: Run, action_runner: ActionRunner,
+               multiple_tabs: bool) -> None:
+    del multiple_tabs
+    for page in self._pages:
+      if not isinstance(page, InteractivePage):
+        page.run_with(run, action_runner, False)
+        continue
+      for block in page.blocks:
+        if block.label == "load" and run.browser_platform.is_android:
+          # Trigger a scheduling boost on devices that boost performance on
+          # user input.
+          action = ClickAction(
+              source=InputSource.TOUCH,
+              position=PositionConfig.from_coordinates(0, 0))
+          action_runner.click_touch(action)
+        action_runner.run_blocks(run, page, (block,))
+
+  @override
+  def run_once(self, run: Run) -> None:
+    self.run_with(run, run.action_runner, self.tabs.multiple_tabs)
+
+
 class LoadLine2Benchmark(LoadLineBenchmark):
   PROBES: ClassVar = (LoadLine2Probe,)
   DEFAULT_REPETITIONS: ClassVar = 50
@@ -218,7 +249,7 @@ class LoadLine2Benchmark(LoadLineBenchmark):
   @override
   def stories_from_cli_args(cls, args: argparse.Namespace) -> tuple[Page, ...]:
     pages = super().stories_from_cli_args(args)
-    return (CombinedPage(pages, playback=args.playback),)
+    return (LoadLine2CombinedPage(pages, playback=args.playback),)
 
   @classmethod
   @override
