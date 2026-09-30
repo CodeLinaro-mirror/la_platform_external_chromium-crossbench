@@ -8,7 +8,7 @@ import abc
 import dataclasses
 import enum
 import logging
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from typing import TypeAlias
 
 from typing_extensions import override
@@ -17,7 +17,8 @@ from crossbench import hjson as cb_hjson
 from crossbench import path as pth
 from crossbench.config import ConfigEnum
 
-DeviceConfigValue: TypeAlias = str | Mapping[str, "DeviceConfigValue"]
+DeviceConfigValue: TypeAlias = (
+    str | Sequence["DeviceConfigValue"] | Mapping[str, "DeviceConfigValue"])
 DeviceConfigMap: TypeAlias = Mapping[str, DeviceConfigValue]
 DeviceConfigFile: TypeAlias = pth.LocalPath
 DeviceConfig: TypeAlias = DeviceConfigMap | DeviceConfigFile
@@ -123,9 +124,10 @@ def _parse_platform_requirements(
   """Parses one platform's requirement section.
 
   Intermediate nodes must be nested mappings, with an empty mapping denoting
-  a section that imposes no requirements. Leaf nodes must be strings giving
-  the exact expected value, or "null" if the setting is expected to be
-  absent.
+  a section that imposes no requirements. Leaf nodes specify expectations and
+  can be one of:
+  - Exact string: "expected_val" (or "null" for an absent setting).
+  - Disjunction list: [item1, item2, ...] matching if any item matches.
 
   Raises:
     DeviceConfigError: If any requirement is malformed.
@@ -221,6 +223,9 @@ class _Predicate(abc.ABC):
     match value:
       case str():
         return _ValuePredicate.parse_str(value)
+      # Strings and bytes are sequences, but are not requirement lists.
+      case Sequence() if not isinstance(value, (str, bytes)):
+        return _AnyOfPredicate.parse_sequence(value)
       case _:
         raise ValueError(f"Invalid config: {value!r}.")
 
@@ -251,3 +256,25 @@ class _ValuePredicate(_Predicate):
   @override
   def expected_str(self) -> str:
     return repr(self.expected)
+
+
+@dataclasses.dataclass(frozen=True)
+class _AnyOfPredicate(_Predicate):
+  """Matches if any of the sub-predicates match."""
+  predicates: tuple[_Predicate, ...]
+
+  @classmethod
+  def parse_sequence(cls,
+                     sequence: Sequence[DeviceConfigValue]) -> _AnyOfPredicate:
+    if not sequence:
+      raise ValueError(f"Invalid empty requirement list: {sequence!r}.")
+    return cls(tuple(_Predicate.parse(item) for item in sequence))
+
+  @override
+  def matches(self, actual: DeviceConfigValue | None) -> bool:
+    return any(p.matches(actual) for p in self.predicates)
+
+  @override
+  def expected_str(self) -> str:
+    options = ", ".join(p.expected_str() for p in self.predicates)
+    return f"any of ({options})"

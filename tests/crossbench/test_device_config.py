@@ -637,6 +637,67 @@ class DeviceConfigTestCase(unittest.TestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       RequiredDeviceConfigMode.parse("unknown")
 
+  def test_any_of_predicate_matches_absent_value(self):
+    """Verify a list requirement matches an absent value via 'null'."""
+    check_config({"key": ["null", "1.0"]}, {}, RequiredDeviceConfigMode.THROW)
+
+  def test_any_of_predicate_matches_first_alternative(self):
+    """Verify a list requirement matches its first alternative."""
+    check_config({"key": ["null", "1.0"]}, {"key": "null"},
+                 RequiredDeviceConfigMode.THROW)
+
+  def test_any_of_predicate_matches_later_alternative(self):
+    """Verify a list requirement matches an alternative after the first."""
+    check_config({"key": ["null", "1.0"]}, {"key": "1.0"},
+                 RequiredDeviceConfigMode.THROW)
+
+  def test_any_of_predicate_matches_single_alternative(self):
+    """Verify a single-item list requirement behaves like a bare value."""
+    check_config({"key": ["1.0"]}, {"key": "1.0"},
+                 RequiredDeviceConfigMode.THROW)
+
+  def test_any_of_predicate_rejects_single_alternative_mismatch(self):
+    """Verify a single-item list requirement still reports a discrepancy."""
+    self.assert_check_raises({"key": ["1.0"]}, {"key": "2.0"},
+                             "key: got '2.0', expected any of ('1.0').")
+
+  def test_any_of_predicate_matches_nested_list(self):
+    """Verify a nested requirement list means the same as a flat one."""
+    required = {"key": ["zero", ["one", "two"]]}
+    for actual in ("zero", "one", "two"):
+      with self.subTest(actual=actual):
+        check_config(required, {"key": actual}, RequiredDeviceConfigMode.THROW)
+
+  def test_any_of_predicate_rejects_nested_list_mismatch(self):
+    """Verify a nested requirement list is described in the discrepancy."""
+    required = {"key": ["zero", ["one", "two"]]}
+    self.assert_check_raises(
+        required, {"key": "three"},
+        "key: got 'three', expected any of ('zero', any of ('one', 'two')).")
+
+  def test_any_of_predicate_rejects_other_values(self):
+    """Verify a list requirement rejects a value matching no alternative."""
+    self.assert_check_raises({"key": ["null", "1.0"]}, {"key": "0.5"},
+                             "key: got '0.5', expected any of ('null', '1.0').")
+
+  def test_any_of_predicate_rejects_absent_value(self):
+    """Verify a list requirement without 'null' rejects an absent value."""
+    self.assert_check_raises(
+        {"key": ["1.0", "2.0"]}, {},
+        "key: value was absent, expected any of ('1.0', '2.0').")
+
+  def test_any_of_predicate_rejects_mapping_item(self):
+    """Verify error on a mapping within a requirement list."""
+    # Mappings denote subsections, so they are not valid list items.
+    required = {"key": ["valid", {"nested": "value"}]}
+    self.assert_parse_raises(required,
+                             "key: Invalid config: {'nested': 'value'}.")
+
+  def test_any_of_predicate_rejects_empty_list(self):
+    """Verify error on empty requirement list."""
+    self.assert_parse_raises({"key": []},
+                             "key: Invalid empty requirement list: [].")
+
   def test_empty_mapping_is_empty_section(self):
     """Verify an empty requirement mapping imposes no requirements."""
     required = {"settings": {"system": {"key": {}}}}
