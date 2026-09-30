@@ -8,7 +8,7 @@ import argparse
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Any, Final, Iterable, Mapping
+from typing import TYPE_CHECKING, Any, Final, Iterable
 
 from crossbench import exception
 from crossbench import path as pth
@@ -17,7 +17,7 @@ from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.cli.ui import ui
 from crossbench.device_config import RequiredDeviceConfigMode, \
-    check_device_config, parse_device_config
+    check_device_config, parse_required_device_config
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import collection_helper
 from crossbench.helper.wait import WaitRange
@@ -630,13 +630,12 @@ class Runner:
   def _validate_device_config(self) -> None:
     if not (raw_config := self.benchmark.REQUIRED_DEVICE_CONFIG):
       return
-    req_config = parse_device_config(raw_config)
+    req_config = parse_required_device_config(raw_config)
     for platform in self.platforms:
-      if not (req_platform_config := req_config.get(platform.name)):
+      if not (requirements := req_config.get(platform.name)):
         continue
-      assert isinstance(req_platform_config, Mapping)
       actual_config = platform.device_config().get(platform.name, {})
-      check_device_config(req_platform_config, actual_config,
+      check_device_config(requirements, actual_config,
                           self._required_device_config_mode)
 
   def _setup_runs(self) -> None:

@@ -8,24 +8,25 @@ import dataclasses
 import enum
 import logging
 from collections.abc import Iterator, Mapping
-from typing import TypeAlias, Union
+from typing import TypeAlias
 
 from crossbench import hjson as cb_hjson
 from crossbench import path as pth
 from crossbench.config import ConfigEnum
 
-DeviceConfigMap: TypeAlias = Mapping[str, Union[str, "DeviceConfigMap"]]
+DeviceConfigValue: TypeAlias = str | Mapping[str, "DeviceConfigValue"]
+DeviceConfigMap: TypeAlias = Mapping[str, DeviceConfigValue]
 DeviceConfigFile: TypeAlias = pth.LocalPath
 DeviceConfig: TypeAlias = DeviceConfigMap | DeviceConfigFile
-_DeviceConfigKeyPath: TypeAlias = tuple[str, ...]
+DeviceConfigKeyPath: TypeAlias = tuple[str, ...]
 
 
 @dataclasses.dataclass(frozen=True)
-class _DeviceConfigDiscrepancy:
+class DeviceConfigDiscrepancy:
   """Represents a device configuration discrepancy."""
-  key_path: _DeviceConfigKeyPath
+  key_path: DeviceConfigKeyPath
   expected: str
-  actual: DeviceConfigMap | str | None
+  actual: DeviceConfigValue | None
 
   def __str__(self) -> str:
     path_str = ".".join(self.key_path)
@@ -36,6 +37,31 @@ class _DeviceConfigDiscrepancy:
     return f"{path_str}: expected {self.expected!r}, {issue}."
 
 
+@dataclasses.dataclass(frozen=True)
+class DeviceConfigRequirement:
+  """An expected value bound to a specific key in the configuration tree."""
+  key_path: DeviceConfigKeyPath
+  expected: str
+
+  # TODO: support a 'target' value to write to the device when the
+  # requirement is not met, for a future RequiredDeviceConfigMode.SET.
+
+  def check(
+      self,
+      actual: DeviceConfigValue | None,
+  ) -> DeviceConfigDiscrepancy | None:
+    """Returns a discrepancy if the actual value fails the requirement."""
+    if actual == self.expected:
+      return None
+    if actual is None and self.expected == "null":
+      return None
+    return DeviceConfigDiscrepancy(self.key_path, self.expected, actual)
+
+
+# The immutable, parsed requirements of a single platform.
+DeviceConfigRequirements: TypeAlias = tuple[DeviceConfigRequirement, ...]
+
+
 @enum.unique
 class RequiredDeviceConfigMode(ConfigEnum):
   THROW = ("throw", "Raise an error and abort on discrepancies.")
@@ -43,11 +69,20 @@ class RequiredDeviceConfigMode(ConfigEnum):
 
 
 class DeviceConfigError(ValueError):
-  """Raised when a device configuration discrepancy is encountered."""
+  """Raised on a malformed device configuration, or on a discrepancy."""
 
 
-def parse_device_config(config: DeviceConfig) -> DeviceConfigMap:
-  """Loads a device config dictionary from a file or mapping."""
+def parse_required_device_config(
+    config: DeviceConfig) -> Mapping[str, DeviceConfigRequirements]:
+  """Loads and validates device config requirements from a file or mapping.
+
+  Top-level keys name platforms and are lower-cased; their values are the
+  requirement sections. Nested keys are passed through verbatim, as device
+  settings are case-sensitive.
+
+  Raises:
+    DeviceConfigError: If the config or any of its requirements is malformed.
+  """
   data: DeviceConfigMap
   match config:
     case Mapping():
@@ -59,22 +94,43 @@ def parse_device_config(config: DeviceConfig) -> DeviceConfigMap:
       raise DeviceConfigError(f"Invalid config type: {type(config)}")
   if not isinstance(data, Mapping):
     raise DeviceConfigError(f"Invalid config type: {type(data)}")
-  return {key.lower(): val for key, val in data.items()}
+  required: dict[str, DeviceConfigRequirements] = {}
+  for platform, section in data.items():
+    if not isinstance(section, Mapping):
+      msg = f"{platform}: Invalid platform section: {section!r}."
+      raise DeviceConfigError(msg)
+    try:
+      required[platform.lower()] = _parse_platform_requirements(section)
+    except DeviceConfigError as e:
+      raise DeviceConfigError(f"{platform}: {e}") from e
+  return required
+
+
+def _parse_platform_requirements(
+    config: DeviceConfigMap) -> DeviceConfigRequirements:
+  """Parses one platform's requirement section.
+
+  Intermediate nodes must be nested mappings, with an empty mapping denoting
+  a section that imposes no requirements. Leaf nodes must be strings giving
+  the exact expected value, or "null" if the setting is expected to be
+  absent.
+
+  Raises:
+    DeviceConfigError: If any requirement is malformed.
+  """
+  return tuple(_iter_device_config(config))
 
 
 def check_device_config(
-    required: DeviceConfigMap,
+    required: DeviceConfigRequirements,
     actual: DeviceConfigMap,
     mode: RequiredDeviceConfigMode,
 ) -> None:
-  """Compares device configs and logs or raises on discrepancies.
+  """Compares a device config against requirements, logging or raising.
 
   Args:
     required:
-      The required configuration dictionary specifying expected values.
-      Intermediate nodes must be nested mappings. Leaf nodes must be strings
-      representing the expected value, or "null" if the setting is expected
-      to be absent or null. Any non-string leaf value raises a ValueError.
+      The parsed requirements for the platform under test.
     actual:
       The actual hierarchical device configuration dictionary.
     mode:
@@ -88,31 +144,33 @@ def check_device_config(
   match mode:
     case RequiredDeviceConfigMode.WARN:
       logging.critical("%s", msg)
-    case RequiredDeviceConfigMode.THROW | _:
+    case RequiredDeviceConfigMode.THROW:
       msg = f"{msg}\nUse --required-device-config-mode=warn to bypass."
+      raise DeviceConfigError(msg)
+    case _:
+      msg = f"Unhandled device config mode: {mode!r}.\n{msg}"
       raise DeviceConfigError(msg)
 
 
 def _compare_device_config(
-    required: DeviceConfigMap,
+    required: DeviceConfigRequirements,
     actual: DeviceConfigMap,
-) -> list[_DeviceConfigDiscrepancy]:
+) -> list[DeviceConfigDiscrepancy]:
   """Compares actual config against requirements and returns discrepancies."""
-  discrepancies: list[_DeviceConfigDiscrepancy] = []
-  for key_path, expected_value in _iter_device_config(required):
-    actual_value = _get_device_config_value(actual, key_path)
-    if discrepancy := _check_device_config_value(key_path, expected_value,
-                                                 actual_value):
+  discrepancies: list[DeviceConfigDiscrepancy] = []
+  for requirement in required:
+    actual_value = _get_device_config_value(actual, requirement.key_path)
+    if discrepancy := requirement.check(actual_value):
       discrepancies.append(discrepancy)
   return discrepancies
 
 
 def _get_device_config_value(
     config: DeviceConfigMap,
-    key_path: _DeviceConfigKeyPath,
-) -> DeviceConfigMap | str | None:
+    key_path: DeviceConfigKeyPath,
+) -> DeviceConfigValue | None:
   """Retrieves the value at key_path, or None if absent or unreachable."""
-  current: DeviceConfigMap | str | None = config
+  current: DeviceConfigValue | None = config
   for key in key_path:
     if not isinstance(current, Mapping):
       return None
@@ -120,24 +178,11 @@ def _get_device_config_value(
   return current
 
 
-def _check_device_config_value(
-    key_path: _DeviceConfigKeyPath,
-    expected_value: str,
-    actual_value: DeviceConfigMap | str | None,
-) -> _DeviceConfigDiscrepancy | None:
-  """Checks an expected setting and returns a discrepancy if mismatched."""
-  if actual_value == expected_value:
-    return None
-  if actual_value is None and expected_value == "null":
-    return None
-  return _DeviceConfigDiscrepancy(key_path, expected_value, actual_value)
-
-
 def _iter_device_config(
     config: DeviceConfigMap,
-    prefix: _DeviceConfigKeyPath = (),
-) -> Iterator[tuple[_DeviceConfigKeyPath, str]]:
-  """Yields (key_path, expected_value) pairs from a hierarchical config.
+    prefix: DeviceConfigKeyPath = (),
+) -> Iterator[DeviceConfigRequirement]:
+  """Yields the leaf requirements of a hierarchical config.
 
   Leaf keys may contain delimiters (such as 'namespace/key' for Android
   device_config or 'ro.build.version' for getprop) and are treated as atomic
@@ -149,7 +194,8 @@ def _iter_device_config(
       case Mapping():
         yield from _iter_device_config(value, key_path)
       case str():
-        yield key_path, value
+        yield DeviceConfigRequirement(key_path, value)
       case _:
         formatted_key_path = ".".join(key_path)
-        raise ValueError(f"Invalid config at {formatted_key_path}: {value!r}.")
+        raise DeviceConfigError(
+            f"{formatted_key_path}: Invalid config: {value!r}.")

@@ -26,8 +26,7 @@ from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CBArgumentParser
-from crossbench.device_config import RequiredDeviceConfigMode, \
-    check_device_config, parse_device_config
+from crossbench.device_config import parse_required_device_config
 from crossbench.env.runner_env import ValidationMode
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.parse import ObjectParser
@@ -209,9 +208,9 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     self.assertIsInstance(config_path, pth.AnyPath)
     assert isinstance(config_path, pth.AnyPath)
     self.fs.add_real_file(config_path)
-    config = parse_device_config(config_path)
-    self.assertTrue(config)
-    check_device_config(config, config, RequiredDeviceConfigMode.THROW)
+    # Parsing validates every requirement in the shipped config.
+    config = parse_required_device_config(config_path)
+    self.assertTrue(config["android"])
 
   def test_kwargs_from_cli_site(self) -> None:
     args = self.parse_args("--site", "cnn")
