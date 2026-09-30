@@ -139,10 +139,10 @@ def CheckChange(input_api: Any, output_api: Any, on_commit: bool) -> Any:
   results += FormatHjsonFiles(input_api, output_api, modified_hjson_files)
 
   # ---------------------------------------------------------------------------
-  # Banned builtins (getattr, setattr, hasattr):
+  # AST Checks (Banned builtins, Constants marked Final):
   # ---------------------------------------------------------------------------
-  from tools.presubmit.banned_builtins import CheckNoBannedBuiltins
-  results += CheckNoBannedBuiltins(input_api, output_api)
+  from tools.presubmit.ast_checks import CheckAst
+  results += CheckAst(input_api, output_api)
 
   # ---------------------------------------------------------------------------
   # Skills:

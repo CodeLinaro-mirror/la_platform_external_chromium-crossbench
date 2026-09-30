@@ -6,10 +6,9 @@ from __future__ import annotations
 
 import ast
 import pathlib
-import re
 from typing import Any, Final, NamedTuple
 
-from tools.presubmit.common import GlobalSkipChecks
+from tools.presubmit.common import GetBypassReason, GlobalSkipChecks
 
 BANNED_BUILTIN_FUNCTIONS: Final[frozenset[str]] = frozenset(
     {"getattr", "setattr", "hasattr"})
@@ -41,17 +40,6 @@ class BannedBuiltinVisitor(ast.NodeVisitor):
     if func_name in BANNED_BUILTIN_FUNCTIONS:
       self.violations.append((node.lineno, node.col_offset + 1, func_name))
     self.generic_visit(node)
-
-
-def _GetBypassReason(description: str, key: str) -> str | None:
-  if not description:
-    return None
-  pattern = rf"^\s*{re.escape(key)}\s*=\s*(.+)$"
-  for match in re.finditer(pattern, description, re.MULTILINE | re.IGNORECASE):
-    reason = match.group(1).strip()
-    if reason and reason.lower() not in ("todo", "tbd", "none", "fixme", "xxx"):
-      return reason
-  return None
 
 
 def CheckNoBannedBuiltins(input_api: Any, output_api: Any) -> list[Any]:
@@ -112,7 +100,7 @@ def CheckNoBannedBuiltins(input_api: Any, output_api: Any) -> list[Any]:
 
   for func_name in sorted(detected_functions):
     bypass_key = f"ALLOW_{func_name.upper()}"
-    reason = _GetBypassReason(description, bypass_key)
+    reason = GetBypassReason(description, bypass_key)
     if reason:
       valid_bypasses.append((bypass_key, reason))
     else:
