@@ -31,10 +31,10 @@ class DeviceConfigDiscrepancy:
   def __str__(self) -> str:
     path_str = ".".join(self.key_path)
     if self.actual is None:
-      issue = "but value was absent"
+      issue = "value was absent"
     else:
       issue = f"got {self.actual!r}"
-    return f"{path_str}: expected {self.expected!r}, {issue}."
+    return f"{path_str}: {issue}, expected {self.expected!r}."
 
 
 @dataclasses.dataclass(frozen=True)

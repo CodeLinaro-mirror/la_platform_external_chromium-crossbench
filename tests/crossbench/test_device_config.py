@@ -212,7 +212,7 @@ class DeviceConfigTestCase(unittest.TestCase):
         self._REQUIRED_IMMERSIVE_CONFIRMED,
         actual,
         "settings.secure.immersive_mode_confirmations: "
-        "expected 'confirmed', got 'null'",
+        "got 'null', expected 'confirmed'.",
     )
 
   def test_absent_setting_normalized_to_null(self):
@@ -241,7 +241,7 @@ class DeviceConfigTestCase(unittest.TestCase):
             "secure": {},
         }},
         "settings.secure.immersive_mode_confirmations: "
-        "expected 'confirmed', but value was absent",
+        "value was absent, expected 'confirmed'.",
     )
 
   def test_mapping_in_actual_when_null_required(self):
@@ -262,7 +262,7 @@ class DeviceConfigTestCase(unittest.TestCase):
     self.assert_check_raises(
         required,
         actual,
-        "settings.secure: expected 'null', got {'some_setting': '1'}",
+        "settings.secure: got {'some_setting': '1'}, expected 'null'.",
     )
 
   def test_missing_section_when_child_requires_null(self):
@@ -287,7 +287,7 @@ class DeviceConfigTestCase(unittest.TestCase):
         self._REQUIRED_IMMERSIVE_CONFIRMED,
         {"settings": {}},
         "settings.secure.immersive_mode_confirmations: "
-        "expected 'confirmed', but value was absent",
+        "value was absent, expected 'confirmed'.",
     )
 
   def test_top_level_section_missing(self):
@@ -296,7 +296,7 @@ class DeviceConfigTestCase(unittest.TestCase):
         self._REQUIRED_IMMERSIVE_CONFIRMED,
         {},
         "settings.secure.immersive_mode_confirmations: "
-        "expected 'confirmed', but value was absent",
+        "value was absent, expected 'confirmed'.",
     )
 
   def test_primitive_in_actual_when_section_required(self):
@@ -310,7 +310,7 @@ class DeviceConfigTestCase(unittest.TestCase):
         self._REQUIRED_IMMERSIVE_CONFIRMED,
         actual,
         "settings.secure.immersive_mode_confirmations: "
-        "expected 'confirmed', but value was absent",
+        "value was absent, expected 'confirmed'.",
     )
 
   def test_non_string_primitive_in_actual_when_string_required(self):
@@ -332,7 +332,7 @@ class DeviceConfigTestCase(unittest.TestCase):
     self.assert_check_raises(
         required,
         actual,
-        "settings.secure.flag: expected '123', got 123",
+        "settings.secure.flag: got 123, expected '123'.",
     )
 
   def test_empty_required_config(self):
@@ -378,7 +378,7 @@ class DeviceConfigTestCase(unittest.TestCase):
           mode=RequiredDeviceConfigMode.WARN)
     self.assertTrue(
         any("settings.secure.immersive_mode_confirmations: "
-            "expected 'confirmed', got 'null'." in log for log in cm.output))
+            "got 'null', expected 'confirmed'." in log for log in cm.output))
 
   def test_check_device_config_warn_mode_multiple_discrepancies(self):
     """Verify that all discrepancies are logged in WARN mode."""
@@ -402,10 +402,10 @@ class DeviceConfigTestCase(unittest.TestCase):
     logs = "\n".join(cm.output)
     self.assertIn(
         "settings.secure.immersive_mode_confirmations: "
-        "expected 'confirmed', got 'null'.", logs)
+        "got 'null', expected 'confirmed'.", logs)
     self.assertIn(
         "settings.secure.another_key: "
-        "expected 'val', but value was absent.", logs)
+        "value was absent, expected 'val'.", logs)
 
   def test_check_device_config_warn_mode_no_discrepancies(self):
     """Verify that no warnings are logged when configs match in WARN mode."""
@@ -443,13 +443,13 @@ class DeviceConfigTestCase(unittest.TestCase):
     error_msg = str(cm.exception)
     self.assertIn(
         "settings.secure.immersive_mode_confirmations: "
-        "expected 'confirmed', got 'null'", error_msg)
+        "got 'null', expected 'confirmed'.", error_msg)
     self.assertIn(
         "device_config.accessibility/font_scale: "
-        "expected '1.0', got '2.0'", error_msg)
+        "got '2.0', expected '1.0'.", error_msg)
     self.assertIn(
         "device_config.runtime_native/flag_one: "
-        "expected '42', but value was absent", error_msg)
+        "value was absent, expected '42'.", error_msg)
     self.assertIn("Use --required-device-config-mode=warn to bypass.",
                   error_msg)
 
@@ -475,8 +475,8 @@ class DeviceConfigTestCase(unittest.TestCase):
       check_config(required, actual, RequiredDeviceConfigMode.THROW)
     error_msg = str(cm.exception)
     self.assertIn(
-        "settings.secure.key_mismatching: expected 'expected_val', "
-        "got 'actual_val'", error_msg)
+        "settings.secure.key_mismatching: got 'actual_val', "
+        "expected 'expected_val'.", error_msg)
     self.assertNotIn("key_matching", error_msg)
 
   def test_check_device_config_invalid_mode(self):
