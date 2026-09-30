@@ -5,10 +5,11 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Any, Final, Iterable
+from typing import TYPE_CHECKING, Any, Final, Iterable, Iterator
 
 from crossbench import exception
 from crossbench import path as pth
@@ -16,8 +17,9 @@ from crossbench import plt
 from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.cli.ui import ui
-from crossbench.device_config import RequiredDeviceConfigMode, \
-    check_device_config, parse_required_device_config
+from crossbench.device_config import DeviceConfigError, DeviceConfigSetter, \
+    RequiredDeviceConfigMode, check_device_config, \
+    parse_required_device_config
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import collection_helper
 from crossbench.helper.wait import WaitRange
@@ -264,6 +266,7 @@ class Runner:
     self.out_dir = out_dir.absolute()
     self._disabled_probes: frozenset[str] = frozenset(disabled_probes)
     self._required_device_config_mode = required_device_config_mode
+    self._device_config_setters: list[DeviceConfigSetter] = []
     assert not self.out_dir.exists(), f"out_dir={self.out_dir} exists already"
     self.out_dir.mkdir(parents=True)
     self._state = RunnerStateMachine(self)
@@ -562,9 +565,12 @@ class Runner:
     if is_dry_run:
       self._repetitions = 1
       self._warmup_repetitions = 0
+      if self._required_device_config_mode is RequiredDeviceConfigMode.SET:
+        # A dry run writes nothing, so it only reports what SET would change.
+        self._required_device_config_mode = RequiredDeviceConfigMode.WARN
     self._state.expect(RunnerState.INITIAL)
     logging.info("🏗️  STATUS FILE: %s", self.status.path)
-    with self._platform.wakelock():
+    with self._platform.wakelock(), self._restoring_device_config():
       with self._exceptions.annotate("Preparing"):
         self._setup()
       try:
@@ -598,8 +604,8 @@ class Runner:
     assert self.browsers, "No browsers provided: self.browsers is empty"
     assert self.stories, "No stories provided: self.stories is empty"
     self._setup_validate_browsers()
-    with self._exceptions.annotate("Validating Device Configuration"):
-      self._validate_device_config()
+    with self._exceptions.annotate("Preparing Device Configuration"):
+      self._setup_device_config()
     with self._exceptions.annotate("Preparing Runs"):
       self._setup_runs()
     with self._exceptions.annotate("Preparing Probes"):
@@ -627,16 +633,38 @@ class Runner:
           f"Browser {browser} probe {probe} not in Runner.probes. "
           "Use Runner.attach_probe()")
 
-  def _validate_device_config(self) -> None:
+  def _setup_device_config(self) -> None:
     if not (raw_config := self.benchmark.REQUIRED_DEVICE_CONFIG):
       return
     req_config = parse_required_device_config(raw_config)
     for platform in self.platforms:
       if not (requirements := req_config.get(platform.name)):
         continue
-      actual_config = platform.device_config().get(platform.name, {})
-      check_device_config(requirements, actual_config,
-                          self._required_device_config_mode)
+      if self._required_device_config_mode is RequiredDeviceConfigMode.SET:
+        setter = DeviceConfigSetter(platform, requirements)
+        self._device_config_setters.append(setter)
+        setter.apply()
+      else:
+        actual_config = platform.device_config().get(platform.name, {})
+        check_device_config(requirements, actual_config,
+                            self._required_device_config_mode)
+
+  @contextlib.contextmanager
+  def _restoring_device_config(self) -> Iterator[None]:
+    """Restores all device config set within the block, however it ends."""
+    try:
+      yield
+    finally:
+      failures: list[str] = []
+      for setter in self._device_config_setters:
+        failures.extend(setter.restore())
+
+    # Only reached if the run succeeded. If it failed, its error is raised
+    # instead, and restore failures are just logged.
+    with self._exceptions.capture("Restoring device config"):
+      if failures:
+        issues = "\n".join(f"  - {failure}" for failure in failures)
+        raise DeviceConfigError(f"Failed to restore device config:\n{issues}")
 
   def _setup_runs(self) -> None:
     self._all_runs = list(self._get_runs())

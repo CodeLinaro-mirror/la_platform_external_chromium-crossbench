@@ -1054,6 +1054,152 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
           mode=RequiredDeviceConfigMode.THROW)
 
 
+class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
+
+  @override
+  def setUp(self) -> None:
+    super().setUp()
+    # Writing any of these values raises.
+    self.failing_values: set[str] = set()
+    real_set = self.platform.set_device_config_value
+
+    def set_or_raise(key_path: tuple[str, ...], val: str | None) -> None:
+      if val in self.failing_values:
+        raise RuntimeError(f"Cannot write {val!r}.")
+      real_set(key_path, val)
+
+    patcher = mock.patch.object(
+        self.platform, "set_device_config_value", side_effect=set_or_raise)
+    patcher.start()
+    self.addCleanup(patcher.stop)
+
+  def _runner(self,
+              value: str | None,
+              mode: RequiredDeviceConfigMode = RequiredDeviceConfigMode.SET,
+              throw: bool = True) -> Runner:
+    """Returns a runner requiring test_key to be test_val.
+
+    The platform's test_key starts as value, or absent if None.
+    """
+    runner = self.default_runner(throw=throw)
+    runner._required_device_config_mode = mode
+    runner.benchmark.REQUIRED_DEVICE_CONFIG = {
+        self.platform.name: {
+            "settings": {
+                "secure": {
+                    "test_key": "test_val",
+                },
+            },
+        },
+    }
+    secure = {} if value is None else {"test_key": value}
+    self.platform.device_config_data = {"settings": {"secure": secure}}
+    return runner
+
+  def _run_failing(self, runner: Runner, target: Any, attribute: str) -> None:
+    """Runs, with target.attribute raising a ValueError."""
+    with mock.patch.object(
+        target, attribute, side_effect=ValueError("Failed.")):
+      with self.assertRaisesRegex(ValueError, "Failed."):
+        runner.run()
+
+  @property
+  def value(self) -> str | None:
+    return self.platform.device_config_data["settings"]["secure"].get(
+        "test_key")
+
+  @property
+  def writes(self) -> list[str | None]:
+    """The values successfully written, in order."""
+    return [value for _, value in self.platform.device_config_writes]
+
+  def test_run_sets_and_restores_device_config(self):
+    runner = self._runner("wrong_val")
+    values_during_run: list[str | None] = []
+    run = runner._run
+
+    def recording_run(is_dry_run: bool) -> None:
+      values_during_run.append(self.value)
+      run(is_dry_run)
+
+    with mock.patch.object(runner, "_run", side_effect=recording_run):
+      runner.run()
+    self.assertEqual(values_during_run, ["test_val"])
+    self.assertEqual(self.value, "wrong_val")
+
+  def test_setup_skips_matching_device_config(self):
+    runner = self._runner("test_val")
+    runner._setup()
+    self.assertEqual(self.writes, [])
+
+  def test_run_restores_device_config_on_later_setup_failure(self):
+    runner = self._runner("wrong_val")
+    self._run_failing(runner, runner, "_setup_probes")
+    self.assertEqual(self.writes, ["test_val", "wrong_val"])
+
+  def test_run_restores_device_config_on_run_failure(self):
+    runner = self._runner(None)
+    self._run_failing(runner, runner, "_run")
+    self.assertEqual(self.writes, ["test_val", None])
+
+  def test_run_restores_device_config_on_teardown_failure(self):
+    runner = self._runner("wrong_val")
+    self._run_failing(runner, runner.benchmark, "teardown")
+    self.assertEqual(self.writes, ["test_val", "wrong_val"])
+
+  def test_setup_raises_when_set_fails(self):
+    runner = self._runner("wrong_val")
+    self.failing_values.add("test_val")
+    with self.assertRaisesRegex(RuntimeError, "Cannot write 'test_val'."):
+      runner._setup()
+    self.assertEqual(self.writes, [])
+    self.assertEqual(self.value, "wrong_val")
+
+  def test_dry_run_warns_instead_of_setting(self):
+    runner = self._runner("wrong_val")
+    with self.assertLogs(level="CRITICAL") as logs:
+      runner.run(is_dry_run=True)
+    self.assertIn("Device config discrepancies", "\n".join(logs.output))
+    self.assertEqual(self.writes, [])
+
+  def test_dry_run_keeps_throw_mode(self):
+    runner = self._runner("wrong_val", mode=RequiredDeviceConfigMode.THROW)
+    with self.assertRaises(DeviceConfigError):
+      runner.run(is_dry_run=True)
+    self.assertEqual(self.writes, [])
+
+  def test_failed_restore_does_not_mask_run_failure(self):
+    """Verify a failed run's error is raised, not a restore failure."""
+    runner = self._runner("wrong_val")
+    self.failing_values.add("wrong_val")
+    with self.assertLogs(level=logging.ERROR) as logs:
+      self._run_failing(runner, runner, "_run")
+    self.assertIn("Failed to restore device config", "\n".join(logs.output))
+    self.assertEqual(runner._exceptions.matching(DeviceConfigError), [])
+    self.assertEqual(self.value, "test_val")
+
+  def test_run_reports_failed_device_config_restore(self):
+    """Verify a restore failure after a successful run fails the run.
+
+    Restoring is broken only once the run is done, so that only the restore
+    fails. throw=False collects the error, rather than raising it.
+    """
+    runner = self._runner("wrong_val", throw=False)
+    run = runner._run
+
+    def run_then_break_restore(is_dry_run: bool) -> None:
+      run(is_dry_run)
+      self.failing_values.add("wrong_val")
+
+    with mock.patch.object(runner, "_run", side_effect=run_then_break_restore):
+      with self.assertRaises(MultiException):
+        runner.run()
+    errors = runner._exceptions.matching(DeviceConfigError)
+    self.assertEqual(len(errors), 1)
+    self.assertIn("Failed to restore device config", str(errors[0]))
+    self.assertEqual(self.value, "test_val")
+
+
 del BaseRunnerTestCase
 
 if __name__ == "__main__":

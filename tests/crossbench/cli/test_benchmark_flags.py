@@ -1100,7 +1100,7 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
   def test_required_device_config_mode_modes(self) -> None:
     for mode in RequiredDeviceConfigMode:
       cli, runner = self._run_loading(
-          f"--required-device-config-mode={mode.value}")
+          f"--required-device-config-mode={mode.value}", is_dry_run=False)
       self.assertEqual(cli.args.required_device_config_mode, mode)
       self.assertEqual(runner._required_device_config_mode, mode)
 

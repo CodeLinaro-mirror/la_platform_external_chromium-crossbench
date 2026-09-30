@@ -454,6 +454,8 @@ class DeviceConfigTestCase(unittest.TestCase):
         "value was absent, expected '42'.", error_msg)
     self.assertIn("Use --required-device-config-mode=warn to bypass.",
                   error_msg)
+    self.assertIn("Use --required-device-config-mode=set to set the values",
+                  error_msg)
 
   def test_partial_match_same_section(self):
     """Verify that only mismatched keys in a section are reported as errors."""
@@ -1384,6 +1386,7 @@ class DeviceConfigSetterTestCase(unittest.TestCase):
     self.assertIn(
         "  - device_config.accessibility/font_scale: got '2.0', "
         "expected '1.0'.", message)
+    self.assertNotIn("--required-device-config-mode", message)
     setter.restore()
     self.assert_unchanged()
 

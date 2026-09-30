@@ -101,6 +101,8 @@ DeviceConfigRequirements: TypeAlias = tuple[DeviceConfigRequirement, ...]
 class RequiredDeviceConfigMode(ConfigEnum):
   THROW = ("throw", "Raise an error and abort on discrepancies.")
   WARN = ("warn", "Log discrepancies as critical warnings and continue.")
+  SET = ("set", "Set failing values to their targets for the run, "
+         "then restore the original values.")
 
 
 class DeviceConfigError(ValueError):
@@ -182,20 +184,22 @@ def check_device_config(
     actual:
       The actual hierarchical device configuration dictionary.
     mode:
-      The action to take on discrepancies (throw or warn).
+      The action to take on discrepancies (throw or warn). Callers handle
+      SET themselves.
   """
   assert not _has_reserved_keys(actual), "Unexpected $ in device config."
 
   if not (discrepancies := _compare_device_config(required, actual)):
     return
 
-  items = "\n".join(f"  - {discrepancy}" for discrepancy in discrepancies)
-  msg = f"Device config discrepancies:\n{items}"
+  msg = _format_discrepancies(discrepancies)
   match mode:
     case RequiredDeviceConfigMode.WARN:
       logging.critical("%s", msg)
     case RequiredDeviceConfigMode.THROW:
-      msg = f"{msg}\nUse --required-device-config-mode=warn to bypass."
+      msg = (f"{msg}\nUse --required-device-config-mode=warn to bypass.\n"
+             "Use --required-device-config-mode=set to set the values "
+             "for the run.")
       raise DeviceConfigError(msg)
     case _:
       msg = f"Unhandled device config mode: {mode!r}.\n{msg}"
@@ -213,6 +217,11 @@ def _has_reserved_keys(config: DeviceConfigMap) -> bool:
       key.startswith(_OPERATOR_PREFIX) or
       (isinstance(value, Mapping) and _has_reserved_keys(value))
       for key, value in config.items())
+
+
+def _format_discrepancies(discrepancies: list[DeviceConfigDiscrepancy]) -> str:
+  items = "\n".join(f"  - {discrepancy}" for discrepancy in discrepancies)
+  return f"Device config discrepancies:\n{items}"
 
 
 def _compare_device_config(
@@ -269,8 +278,10 @@ class DeviceConfigSetter:
     actual = self._read_device_config()
     for requirement in self._requirements:
       self._apply_requirement(requirement, actual)
-    check_device_config(self._requirements, self._read_device_config(),
-                        RequiredDeviceConfigMode.THROW)
+    # Not check_device_config(), whose error suggests using SET mode.
+    if discrepancies := _compare_device_config(self._requirements,
+                                               self._read_device_config()):
+      raise DeviceConfigError(_format_discrepancies(discrepancies))
 
   def _apply_requirement(self, requirement: DeviceConfigRequirement,
                          actual: DeviceConfigMap) -> None:
