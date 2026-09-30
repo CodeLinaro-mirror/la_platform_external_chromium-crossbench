@@ -15,8 +15,8 @@ from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.helper.version import VersionParseError
-from crossbench.plt.linux import SCRIPTS_DIR, LinuxPlatform, \
-    parse_display_xrandr
+from crossbench.plt.linux import PERF_EVENT_PARANOID_PATH, SCRIPTS_DIR, \
+    LinuxPlatform, parse_display_xrandr
 from crossbench.plt.posix import PosixVersion
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
@@ -168,6 +168,14 @@ Swap:                400 kB
     self.assertTrue(self.fs.exists(gz_file))
     with gzip.open(gz_file, "rt", encoding="utf-8") as f:
       self.assertEqual(f.read(), "hello python gzip")
+
+  def test_perf_event_paranoid(self) -> None:
+    self.assertIsNone(self.platform.perf_event_paranoid())
+
+    for expected in (2, -1, 4):
+      self.platform.rm(PERF_EVENT_PARANOID_PATH, missing_ok=True)
+      self.fs.create_file(PERF_EVENT_PARANOID_PATH, contents=f"{expected}\n")
+      self.assertEqual(self.platform.perf_event_paranoid(), expected)
 
 
 class LocalLinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,

@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from unittest import mock
 
 import pytest
@@ -15,12 +15,15 @@ import pytest
 import crossbench.browsers.all as all_browsers
 from crossbench import plt
 from crossbench.cli.cli import CrossBenchCLI
+from crossbench.probes.profiling.system_profiling import \
+    MAX_PERF_EVENT_PARANOID
 from tests import test_helper
 from tests.end2end.conftest import mock_patch_chrome_stable
 
 if TYPE_CHECKING:
   import pathlib
 
+  from crossbench import path as pth
   from tests.test_helper import TestEnv
 
 
@@ -64,6 +67,10 @@ def _get_browser_dirs(results_dir: pathlib.Path) -> list[pathlib.Path]:
 
 def _get_v8_log_files(results_dir: pathlib.Path) -> list[pathlib.Path]:
   return list(results_dir.glob("**/*-v8.log"))
+
+
+def _get_perf_data_files(results_dir: pth.LocalPath) -> list[pth.LocalPath]:
+  return list(results_dir.glob("**/*.perf.data"))
 
 
 @pytest.mark.xdist_group("end2end-benchmark")
@@ -181,6 +188,46 @@ def test_speedometer_2_1_chrome_safari(test_env: TestEnv, driver_path,
   assert len(browser_dirs) == 2
   v8_log_files = _get_v8_log_files(test_env.results_dir)
   assert not v8_log_files
+
+
+def _can_run_linux_perf() -> bool:
+  if not plt.PLATFORM.is_linux:
+    return False
+  linux_platform = cast(plt.LinuxPlatform, plt.PLATFORM)
+  if (paranoid := linux_platform.perf_event_paranoid()) is None:
+    return True
+  return paranoid <= MAX_PERF_EVENT_PARANOID
+
+
+@pytest.mark.skipif(
+    not _can_run_linux_perf(),
+    reason="Linux perf profiling is not available on this platform")
+@pytest.mark.xdist_group("end2end-benchmark")
+def test_linux_profiling_probe(test_env: TestEnv,
+                               test_chrome_name: str) -> None:
+  probe_config = json.dumps({
+      "js": False,
+      "pprof": False,
+      "cleanup": True,
+      "frequency": 100,
+      "call_graph_mode": "no_call_graph",
+      "target": "renderer_process_only",
+  })
+  _run_cli(
+      "sp3",
+      f"--browser={test_chrome_name}",
+      "--fast",
+      "--iterations=1",
+      "--stories=TodoMVC-JavaScript-ES5",
+      f"--probe=profiling:{probe_config}",
+      test_env=test_env,
+      auto_headless=True)
+
+  browser_dirs = _get_browser_dirs(test_env.results_dir)
+  assert len(browser_dirs) == 1
+  perf_files = _get_perf_data_files(test_env.results_dir)
+  assert perf_files
+  assert any(plt.PLATFORM.file_size(perf_file) > 0 for perf_file in perf_files)
 
 
 @pytest.mark.xdist_group("end2end-benchmark")

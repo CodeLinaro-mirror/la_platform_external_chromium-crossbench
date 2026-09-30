@@ -47,7 +47,9 @@ if TYPE_CHECKING:
   from crossbench.action_runner.virtual_device.touchscreen import \
       TouchscreenVirtualDeviceConfig
   from crossbench.device_config import DeviceConfigKeyPath
-  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo, TupleCmdArgs
+  from crossbench.plt.signals import Signals
+  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo, \
+      ProcessLike, TupleCmdArgs
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
@@ -473,6 +475,15 @@ class MockPlatformMixin:
     mock_popen = self.popens.pop(0)
     mock_popen.start()
     return mock_popen
+
+  def terminate_gracefully(self,
+                           process: ProcessLike | MockPopen,
+                           timeout: int = 1,
+                           signal: Signals | None = None) -> None:
+    if isinstance(process, MockPopen):
+      process.terminate()
+      return
+    super().terminate_gracefully(process, timeout, signal)
 
   def mkdir(self,
             path: pth.AnyPathLike,

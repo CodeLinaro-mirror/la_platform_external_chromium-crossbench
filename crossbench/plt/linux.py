@@ -28,6 +28,8 @@ if TYPE_CHECKING:
   from crossbench.plt.types import TupleCmdArgs
 
 SCRIPTS_DIR: Final = pth.LocalPath(__file__).parent / "remote_scripts"
+PERF_EVENT_PARANOID_PATH: Final = pth.AnyPosixPath(
+    "/proc/sys/kernel/perf_event_paranoid")
 
 
 @dataclasses.dataclass
@@ -306,6 +308,13 @@ class LinuxPlatform(PosixPlatform):
   def set_clipboard(self, text: str) -> None:
     assert self._clipboard_bin
     self.sh(*self._clipboard_bin, input=text.encode("utf-8"), check=True)
+
+  def perf_event_paranoid(self) -> int | None:
+    if not self.is_file(PERF_EVENT_PARANOID_PATH):
+      return None
+    return NumberParser.any_int(
+        self.cat(PERF_EVENT_PARANOID_PATH).strip(),
+        "kernel.perf_event_paranoid")
 
 
 class RemoteLinuxPlatform(RemotePlatformMixin, LinuxPlatform):

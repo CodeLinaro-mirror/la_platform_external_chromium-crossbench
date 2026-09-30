@@ -17,8 +17,9 @@ from crossbench import plt
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.helper import fs_helper
 from crossbench.parse import NumberParser, ObjectParser
-from crossbench.probes.probe import Probe, ProbeConfigParser, \
-    ProbeIncompatibleBrowser, ProbeKeyT
+from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
+from crossbench.probes.probe_error import ProbeIncompatibleBrowser, \
+    ProbeValidationError
 from crossbench.probes.profiling.context.android import AndroidProfilingContext
 from crossbench.probes.profiling.context.linux import LinuxProfilingContext
 from crossbench.probes.profiling.context.macos import MacOSProfilingContext
@@ -38,6 +39,7 @@ if TYPE_CHECKING:
 V8_INTERPRETED_FRAMES_FLAG: Final = "--interpreted-frames-native-stack"
 RENDERER_CMD_PATH: Final = pth.LocalPath(
     __file__).parent / "linux-perf-chrome-renderer-cmd.sh"
+MAX_PERF_EVENT_PARANOID: Final[int] = 2
 
 
 def perf_frequency(value: Any) -> str | int:
@@ -97,7 +99,7 @@ class ProfilingProbe(Probe):
         ))
     parser.add_argument(
         "pprof",
-        type=ObjectParser.bool,
+        type=ObjectParser.optional_bool,
         help="linux-only: process collected samples with pprof.")
     parser.add_argument(
         "cleanup",
@@ -167,7 +169,7 @@ class ProfilingProbe(Probe):
               "documentation for more details."))
     parser.add_argument(
         "events",
-        type=str,
+        type=ObjectParser.non_empty_str,
         is_list=True,
         default=(),
         help=("Android/Linux-only-only: Events to record. "
@@ -175,7 +177,7 @@ class ProfilingProbe(Probe):
               "documentation for more details."))
     parser.add_argument(
         "grouped_events",
-        type=str,
+        type=ObjectParser.non_empty_str,
         is_list=True,
         default=(),
         help=("Android-only: Events to record as a single group. "
@@ -185,7 +187,7 @@ class ProfilingProbe(Probe):
               "for more details."))
     parser.add_argument(
         "add_counters",
-        type=str,
+        type=ObjectParser.non_empty_str,
         is_list=True,
         default=(),
         help=("Android-only: Add additional event counts in samples. NOTE: If "
@@ -393,6 +395,16 @@ class ProfilingProbe(Probe):
     if self.run_pprof(browser):
       env.check_installed(binaries=["pprof"], platform=browser.platform)
     assert browser.platform.which("perf"), "Please install linux-perf"
+    self._validate_linux_perf_paranoid(browser)
+
+  def _validate_linux_perf_paranoid(self, browser: Browser) -> None:
+    linux_platform = cast(plt.LinuxPlatform, browser.platform)
+    if (paranoid := linux_platform.perf_event_paranoid()) is None:
+      return
+    if paranoid > MAX_PERF_EVENT_PARANOID:
+      raise ProbeValidationError(
+          self, f"Cannot run perf with kernel.perf_event_paranoid={paranoid} "
+          f"(requires <= {MAX_PERF_EVENT_PARANOID}).")
 
   def _validate_macos(self, env: RunnerEnv, browser: Browser) -> None:
     assert browser.platform.which(

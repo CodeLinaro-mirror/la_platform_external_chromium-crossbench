@@ -10,9 +10,13 @@ from unittest import mock
 
 from typing_extensions import override
 
+from crossbench import path as pth
+from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.browsers.chromium.version import ChromiumVersion
 from crossbench.browsers.settings import Settings
+from crossbench.plt.linux import PERF_EVENT_PARANOID_PATH
 from crossbench.probes import all as all_probes
+from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.profiling.context.android import \
     generate_simpleperf_command_line
 from crossbench.probes.profiling.context.linux import LinuxProfilingContext
@@ -21,7 +25,8 @@ from crossbench.probes.profiling.system_profiling import RENDERER_CMD_PATH, \
 from tests import test_helper
 from tests.crossbench.mock_browser import MockChromeStable, MockFirefox, \
     MockSafari
-from tests.crossbench.mock_helper import LinuxMockPlatform, MacOsMockPlatform
+from tests.crossbench.mock_helper import LinuxMockPlatform, \
+    MacOsMockPlatform, MockPopen, MockPopenState
 from tests.crossbench.probes.helper import GenericProbeTestCase
 
 
@@ -384,6 +389,24 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     probe.validate_browser(mock_env, mock_browser)
     self.assertTrue(probe.run_pprof(mock_browser))
 
+  def test_validate_linux_perf_paranoid(self) -> None:
+    probe = ProfilingProbe(pprof=False)
+    mock_browser = mock.Mock()
+    mock_browser.attributes().is_chromium_based = False
+    mock_browser.platform = LinuxMockPlatform(fake_fs=self.fs)
+    mock_browser.platform.install_mock_binary("perf", "/usr/bin/perf")
+    mock_browser.host_platform = mock_browser.platform
+    mock_env = mock.Mock()
+
+    self.fs.create_file(PERF_EVENT_PARANOID_PATH, contents="2\n")
+    probe.validate_browser(mock_env, mock_browser)
+
+    mock_browser.platform.rm(PERF_EVENT_PARANOID_PATH)
+    self.fs.create_file(PERF_EVENT_PARANOID_PATH, contents="4\n")
+    with self.assertRaisesRegex(ProbeValidationError,
+                                "kernel.perf_event_paranoid=4"):
+      probe.validate_browser(mock_env, mock_browser)
+
   def test_resolve_target_mode(self):
     probe = ProfilingProbe()
     self.assertEqual(probe.target, TargetMode.AUTO)
@@ -516,23 +539,28 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 class LinuxProfilingContextTestCase(GenericProbeTestCase):
 
   @override
-  def setUp(self):
+  def setup_platform(self) -> LinuxMockPlatform:
+    return LinuxMockPlatform()
+
+  @override
+  def setUp(self) -> None:
     super().setUp()
+    self.platform.fake_fs = self.fs
+    self.fs.add_real_file(RENDERER_CMD_PATH)
     self.probe = ProfilingProbe(pprof=None)
-    self.platform = LinuxMockPlatform(fake_fs=self.fs)
     self.run = mock.Mock()
+    self.run.is_remote = False
     self.run.browser = mock.Mock()
     self.run.browser.platform = self.platform
+    self.run.browser_platform = self.platform
     self.run.browser.version = ChromiumVersion((120, 0, 0, 0))
-    self.run.result_path = pathlib.Path("/tmp/test_result")
+    self.run.result_path = pth.LocalPath("/tmp/test_result")
     self.run.session = mock.Mock()
     self.run.session.extra_js_flags = {}
     self.run.get_default_probe_result_path = mock.Mock(
-        return_value=pathlib.Path("/tmp/test_result"))
-    self.platform.absolute = mock.Mock(
-        return_value=pathlib.Path("/tmp/test_result"))
+        return_value=pth.LocalPath("/tmp/test_result"))
 
-  def test_auto_infer_pprof_true(self):
+  def test_auto_infer_pprof_true(self) -> None:
     self.platform.install_mock_binary("pprof", "/usr/bin/pprof")
     self.platform.install_mock_binary("gcert", "/usr/bin/gcert")
     context = LinuxProfilingContext(self.probe, self.run)
@@ -540,26 +568,114 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
     context.setup()
     self.assertTrue(context.run_pprof)
 
-  def test_auto_infer_pprof_false_missing_pprof(self):
+  def test_auto_infer_pprof_false_missing_pprof(self) -> None:
     self.platform.install_mock_binary("gcert", "/usr/bin/gcert")
     context = LinuxProfilingContext(self.probe, self.run)
     context.setup_v8_log_path = mock.Mock()
     context.setup()
     self.assertFalse(context.run_pprof)
 
-  def test_auto_infer_pprof_false_missing_gcert(self):
+  def test_auto_infer_pprof_false_missing_gcert(self) -> None:
     self.platform.install_mock_binary("pprof", "/usr/bin/pprof")
     context = LinuxProfilingContext(self.probe, self.run)
     context.setup_v8_log_path = mock.Mock()
     context.setup()
     self.assertFalse(context.run_pprof)
 
-  def test_explicit_pprof_true(self):
+  def test_explicit_pprof_true(self) -> None:
     self.probe = ProfilingProbe(pprof=True)
     context = LinuxProfilingContext(self.probe, self.run)
     context.setup_v8_log_path = mock.Mock()
     context.setup()
     self.assertTrue(context.run_pprof)
+
+  def _mock_stop(self, context: LinuxProfilingContext) -> None:
+    other_perf = context.result_path / "chrome_renderer_111_1.perf.data"
+    renderer_perf = context.result_path / "chrome_renderer_111_2.perf.data"
+    self.fs.create_file(other_perf, contents="x" * 200)
+    self.fs.create_file(renderer_perf, contents="x" * 100)
+    self.fs.create_file(context.run.out_dir / "jit-1234.dump", contents="jit")
+    debug_dir = context.result_path / "debug"
+    self.platform.expect_sh(
+        f"perf --buildid-dir {debug_dir} script -i {other_perf} -F pid"
+        " | head -n1",
+        result="9999\n")
+    self.platform.expect_sh(
+        f"perf --buildid-dir {debug_dir} script -i {renderer_perf} -F pid"
+        " | head -n1",
+        result="1234\n")
+
+  def test_run_renderer_process_only(self) -> None:
+    self.platform.install_mock_binary("perf", "/usr/bin/perf")
+    self.fs.create_file(PERF_EVENT_PARANOID_PATH, contents="2\n")
+    probe = ProfilingProbe.parse_dict({
+        "js": False,
+        "pprof": False,
+        "cleanup": True,
+        "frequency": 100,
+        "call_graph_mode": "no_call_graph",
+        "target": "renderer_process_only",
+    })
+    for browser in self.browsers:
+      browser._version = ChromiumVersion((125, 0, 0, 0))
+      browser.get_renderer_pid = mock.Mock(return_value=1234)
+      browser.get_renderer_main_tid = mock.Mock(return_value=5678)
+
+    stories = [LivePage("google", "https://google.com")]
+    runner = self.create_runner(
+        stories, js_side_effects=[], repetitions=1, throw=True)
+    runner.attach_probe(probe)
+
+    for browser in self.browsers:
+      self.assertIn("--no-sandbox", browser.flags)
+      self.assertIn("--enable-benchmarking-api", browser.flags)
+      self.assertIn("SpareRendererForSitePerProcess", browser.features.disabled)
+      cmd_prefix = browser.flags["--renderer-cmd-prefix"]
+      self.assertIn("--perf-freq=100", cmd_prefix)
+      self.assertIn("--perf-call-graph=no_call_graph", cmd_prefix)
+
+    with mock.patch.object(
+        LinuxProfilingContext,
+        "stop",
+        autospec=True,
+        side_effect=self._mock_stop):
+      runner.run()
+
+    self.assertTrue(runner.is_success)
+    for run in runner.runs:
+      expected_perf = run.out_dir / "profiling/chrome_renderer_111_2.perf.data"
+      self.assertSequenceEqual(run.results[probe].file_list, [expected_perf])
+      self.assertFalse((run.out_dir / "jit-1234.dump").exists())
+      self.assertTrue((run.out_dir / "profiling/jitdump").is_dir())
+      self.assertTrue((run.out_dir / "profiling/debug").is_dir())
+
+  def test_browser_process_profiling(self) -> None:
+    probe = ProfilingProbe(
+        js=False, pprof=False, browser_process=True, frequency=100)
+    self.run.browser.pid = 4321
+    self.run.out_dir = pth.LocalPath("/tmp")
+    self.run.probes = ()
+    perf_proc = MockPopen()
+    self.platform.popens.append(perf_proc)
+
+    context = LinuxProfilingContext(probe, self.run)
+    perf_file = context.result_path / "browser.perf.data"
+    context.setup()
+    self.assertEqual(perf_proc.state, MockPopenState.UNUSED)
+
+    self.platform.expect_sh("perf", "record", "--call-graph=fp", "--freq=100",
+                            "--clockid=mono", f"--output={perf_file}",
+                            "--pid=4321")
+    context.start()
+    self.assertEqual(perf_proc.state, MockPopenState.RUNNING)
+
+    self.fs.create_file(perf_file, contents="perf_data")
+
+    context.stop()
+    self.assertEqual(perf_proc.state, MockPopenState.TERMINATED)
+
+    result = context.teardown()
+    self.assertSequenceEqual(result.file_list, [perf_file])
 
 
 class EnumTestCase(unittest.TestCase):
