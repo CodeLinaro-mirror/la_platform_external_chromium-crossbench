@@ -9,14 +9,15 @@ import dataclasses
 import enum
 import logging
 import re
-from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, ClassVar, Final, TypeAlias
+from collections.abc import Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, TypeAlias
 
 from immutabledict import immutabledict
 from typing_extensions import Self, override
 
 from crossbench import path as pth
 from crossbench.config import ConfigEnum, ConfigError, ConfigObject
+from crossbench.helper.class_helper import get_all_subclasses
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
@@ -417,19 +418,7 @@ class _ValuePredicate(_Predicate):
 class _MappingPredicate(_Predicate):
   """Predicate parsable from a mapping of operator keys it declares."""
 
-  # Populated by subclasses.
-  registry: ClassVar[dict[frozenset[str], type[_MappingPredicate]]] = {}
-
-  def __init_subclass__(cls, keys: Iterable[str], **kwargs: Any) -> None:
-    super().__init_subclass__(**kwargs)
-    config_keys = frozenset(keys)
-    assert all(key.startswith(_OPERATOR_PREFIX) for key in config_keys)
-    assert _TARGET_KEY not in config_keys, "$target accompanies any form."
-    # No operator key may be registered by more than one subclass. This
-    # guarantees parse_mapping() matches at most one subclass, regardless of
-    # the registry's iteration order.
-    assert not any(config_keys & k for k in _MappingPredicate.registry)
-    _MappingPredicate.registry[config_keys] = cls
+  KEYS: ClassVar[tuple[str, ...]]
 
   @staticmethod
   def parse_mapping(mapping: DeviceConfigMap) -> _PredicateAndTarget:
@@ -449,8 +438,8 @@ class _MappingPredicate(_Predicate):
   def _parse_operators(operators: DeviceConfigMap) -> _Predicate:
     keys = list(operators.keys())
     present = frozenset(keys)
-    for config_keys, predicate in _MappingPredicate.registry.items():
-      if present <= config_keys:
+    for predicate in _MAPPING_PREDICATES:
+      if present.issubset(predicate.KEYS):
         return predicate.from_mapping(operators)
     raise ValueError(f"Invalid config: unknown or conflicting keys {keys!r}.")
 
@@ -461,8 +450,10 @@ class _MappingPredicate(_Predicate):
 
 
 @dataclasses.dataclass(frozen=True)
-class _RegexPredicate(_MappingPredicate, keys={"$regex"}):
+class _RegexPredicate(_MappingPredicate):
   """Matches if the actual value matches a regular expression pattern."""
+  KEYS = ("$regex",)
+
   pattern: re.Pattern[str]
 
   @classmethod
@@ -487,8 +478,10 @@ class _RegexPredicate(_MappingPredicate, keys={"$regex"}):
 
 
 @dataclasses.dataclass(frozen=True)
-class _NumericRangePredicate(_MappingPredicate, keys={"$min", "$max"}):
+class _NumericRangePredicate(_MappingPredicate):
   """Matches if the actual value is a number within [min, max]."""
+  KEYS = ("$min", "$max")
+
   min: float | None = None
   max: float | None = None
 
@@ -553,3 +546,17 @@ class _AnyOfPredicate(_Predicate):
   def expected_str(self) -> str:
     options = ", ".join(p.expected_str() for p in self.predicates)
     return f"any of ({options})"
+
+
+_MAPPING_PREDICATES: tuple[type[_MappingPredicate], ...] = (
+    _RegexPredicate,
+    _NumericRangePredicate,
+)
+assert set(_MAPPING_PREDICATES) == get_all_subclasses(_MappingPredicate), (
+    "Every mapping predicate must be listed.")
+_MAPPING_KEYS = [key for p in _MAPPING_PREDICATES for key in p.KEYS]
+assert all(key.startswith(_OPERATOR_PREFIX) for key in _MAPPING_KEYS)
+assert _TARGET_KEY not in _MAPPING_KEYS, "$target accompanies any form."
+# Disjoint keys guarantee that at most one predicate matches, regardless of
+# the order of _MAPPING_PREDICATES.
+assert len(_MAPPING_KEYS) == len(set(_MAPPING_KEYS)), "Overlapping keys."
