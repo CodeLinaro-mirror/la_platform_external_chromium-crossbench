@@ -634,7 +634,7 @@ class Runner:
           "Use Runner.attach_probe()")
 
   def _setup_device_config(self) -> None:
-    if not (raw_config := self.benchmark.REQUIRED_DEVICE_CONFIG):
+    if not (raw_config := self.benchmark.required_device_config()):
       return
     req_config = RequiredDeviceConfig.parse(raw_config)
     for platform in self.platforms:

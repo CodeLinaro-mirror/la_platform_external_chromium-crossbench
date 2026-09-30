@@ -972,9 +972,10 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
   ) -> Runner:
     runner = self.default_runner()
     runner._required_device_config_mode = mode
-    runner.benchmark.REQUIRED_DEVICE_CONFIG = required
     with mock.patch.object(
-        runner.platform, "device_config", return_value=actual):
+        runner.benchmark, "required_device_config",
+        return_value=required), mock.patch.object(
+            runner.platform, "device_config", return_value=actual):
       runner._setup()
     return runner
 
@@ -1084,7 +1085,7 @@ class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
     """
     runner = self.default_runner(throw=throw)
     runner._required_device_config_mode = mode
-    runner.benchmark.REQUIRED_DEVICE_CONFIG = {
+    required = {
         self.platform.name: {
             "settings": {
                 "secure": {
@@ -1093,6 +1094,10 @@ class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
             },
         },
     }
+    patcher = mock.patch.object(
+        runner.benchmark, "required_device_config", return_value=required)
+    patcher.start()
+    self.addCleanup(patcher.stop)
     secure = {} if value is None else {"test_key": value}
     self.platform.device_config_data = {"settings": {"secure": secure}}
     return runner

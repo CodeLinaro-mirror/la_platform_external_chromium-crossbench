@@ -35,7 +35,6 @@ if TYPE_CHECKING:
   from crossbench.action_runner.config import ActionRunnerConfig
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
-  from crossbench.device_config import DeviceConfig
   from crossbench.flags.base import Flags
   from crossbench.plt.base import Platform
   from crossbench.plt.types import ListCmdArgs
@@ -345,8 +344,6 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
   """Base class for Power benchmarks to share common logic."""
 
   IS_SCENARIO_CLASS: ClassVar[bool] = False
-  REQUIRED_DEVICE_CONFIG: ClassVar[DeviceConfig | None] = (
-      config.config_dir() / "benchmark/web_power/device_config.hjson")
 
   _scenario_benchmarks: ClassVar[list[type[WebPowerBenchmarkBase]]] = []
 
@@ -354,6 +351,11 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     super().__init_subclass__(**kwargs)
     if cls.IS_SCENARIO_CLASS:
       WebPowerBenchmarkBase._scenario_benchmarks.append(cls)
+
+  @classmethod
+  @override
+  def required_device_config(cls) -> pth.LocalPath:
+    return config.config_dir() / "benchmark/web_power/device_config.hjson"
 
   @classmethod
   def scenario_benchmarks(cls) -> tuple[type[WebPowerBenchmarkBase], ...]:

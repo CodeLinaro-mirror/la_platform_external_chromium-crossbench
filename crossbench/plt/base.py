@@ -386,7 +386,7 @@ class Platform(abc.ABC):
     or 'ro.product.model').
 
     The configuration is validated against benchmark requirements
-    (Benchmark.REQUIRED_DEVICE_CONFIG) during run setup.
+    (Benchmark.required_device_config()) during run setup.
     """
     return {}
 

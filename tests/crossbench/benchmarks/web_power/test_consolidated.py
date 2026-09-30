@@ -373,15 +373,7 @@ class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
         config.config_dir() / "benchmark/web_power/perfetto_basic.txtpb")
     if not self.fs.exists(perfetto_basic):
       self.fs.create_file(perfetto_basic, contents="duration_ms: 1000")
-    config_file = WebPowerBenchmark.REQUIRED_DEVICE_CONFIG
-    assert isinstance(config_file, pth.AnyPath)
-    self.fs.add_real_file(config_file)
-    # Created at import time, before pyfakefs patched pth.LocalPath.
-    config_patcher = mock.patch.object(WebPowerBenchmark,
-                                       "REQUIRED_DEVICE_CONFIG",
-                                       pth.LocalPath(config_file))
-    self.addCleanup(config_patcher.stop)
-    config_patcher.start()
+    self.fs.add_real_file(WebPowerBenchmark.required_device_config())
     mock_archive = pth.LocalPath("/mock/archive.wprgo")
     self.fs.create_file(mock_archive)
     archive_patcher = mock.patch(

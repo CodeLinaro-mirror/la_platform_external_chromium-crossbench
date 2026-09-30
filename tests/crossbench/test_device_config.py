@@ -647,22 +647,23 @@ class DeviceConfigTestCase(unittest.TestCase):
     self.assert_parse_raises(
         required, "settings.global.stay_on_while_plugged_in: Invalid config:")
 
-  def test_benchmark_required_device_config_class_var(self):
-    """Verify Benchmark.REQUIRED_DEVICE_CONFIG class variable behavior."""
+  def test_benchmark_required_device_config(self):
+    """Verify Benchmark.required_device_config() can be overridden."""
+    required = {"android": {"key": "val"}}
 
     class CustomBenchmark(Benchmark):
       NAME = "mock"
       DEFAULT_STORY_CLS = MockStory
-      REQUIRED_DEVICE_CONFIG = {"android": {"key": "val"}}
 
-    self.assertIsNone(Benchmark.REQUIRED_DEVICE_CONFIG)
-    self.assertEqual(CustomBenchmark.REQUIRED_DEVICE_CONFIG,
-                     {"android": {
-                         "key": "val",
-                     }})
+      @classmethod
+      def required_device_config(cls) -> DeviceConfigMap:
+        return required
+
+    self.assertIsNone(Benchmark.required_device_config())
+    self.assertEqual(CustomBenchmark.required_device_config(), required)
     mock_story = MockStory("story_1")
     b = CustomBenchmark([mock_story])
-    self.assertEqual(b.REQUIRED_DEVICE_CONFIG, {"android": {"key": "val"}})
+    self.assertEqual(b.required_device_config(), required)
 
   def test_required_device_config_mode_parse(self):
     """Verify parsing strings into RequiredDeviceConfigMode enum values."""

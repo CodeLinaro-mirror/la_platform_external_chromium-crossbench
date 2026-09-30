@@ -179,12 +179,8 @@ class WebPowerRequiredDeviceConfigTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self) -> None:
     super().setUp()
-    config_path = WebPowerBenchmarkBase.REQUIRED_DEVICE_CONFIG
-    self.assertIsInstance(config_path, pth.AnyPath)
-    assert isinstance(config_path, pth.AnyPath)
-    self.fs.add_real_file(config_path)
-    # Created at import time, before pyfakefs patched pth.LocalPath.
-    self.config_path = pth.LocalPath(config_path)
+    self.config_path = WebPowerBenchmarkBase.required_device_config()
+    self.fs.add_real_file(self.config_path)
 
   def discrepancies_for(self, key_path: Sequence[str],
                         value: str | None) -> str:

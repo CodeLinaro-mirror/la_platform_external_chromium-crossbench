@@ -47,7 +47,6 @@ class Benchmark(abc.ABC):
   PROBES: ClassVar[tuple[type[BenchmarkProbeMixin], ...]] = ()
   DEFAULT_REPETITIONS: ClassVar[int] = 1
   DEFAULT_COOL_DOWN: ClassVar[dt.timedelta] = dt.timedelta(seconds=2)
-  REQUIRED_DEVICE_CONFIG: ClassVar[DeviceConfig | None] = None
 
   @classmethod
   def cli_help(cls) -> str:
@@ -134,6 +133,11 @@ class Benchmark(abc.ABC):
 
   @classmethod
   def default_network_config_path(cls) -> pth.LocalPath | None:
+    return None
+
+  @classmethod
+  def required_device_config(cls) -> DeviceConfig | None:
+    """Returns the device config this benchmark requires, if any."""
     return None
 
   @classmethod
