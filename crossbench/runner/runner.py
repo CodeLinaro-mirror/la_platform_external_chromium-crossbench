@@ -18,8 +18,7 @@ from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.cli.ui import ui
 from crossbench.device_config import DeviceConfigError, DeviceConfigSetter, \
-    RequiredDeviceConfigMode, check_device_config, \
-    parse_required_device_config
+    RequiredDeviceConfig, RequiredDeviceConfigMode, check_device_config
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import collection_helper
 from crossbench.helper.wait import WaitRange
@@ -636,9 +635,9 @@ class Runner:
   def _setup_device_config(self) -> None:
     if not (raw_config := self.benchmark.REQUIRED_DEVICE_CONFIG):
       return
-    req_config = parse_required_device_config(raw_config)
+    req_config = RequiredDeviceConfig.parse(raw_config)
     for platform in self.platforms:
-      if not (requirements := req_config.get(platform.name)):
+      if not (requirements := req_config.platforms.get(platform.name)):
         continue
       if self._required_device_config_mode is RequiredDeviceConfigMode.SET:
         setter = DeviceConfigSetter(platform, requirements)

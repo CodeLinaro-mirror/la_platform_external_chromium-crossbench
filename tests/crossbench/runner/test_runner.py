@@ -1036,8 +1036,9 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
           mode=RequiredDeviceConfigMode.THROW)
 
   def test_setup_validates_required_device_config_file_not_found(self):
-    """Verifies setup raises FileNotFoundError when config file is missing."""
-    with self.assertRaises(FileNotFoundError):
+    """Verifies setup raises an argument error when config file is missing."""
+    with self.assertRaisesRegex(argparse.ArgumentTypeError,
+                                "Path does not exist"):
       self._setup_runner(
           required=self.out_dir.parent / "non_existent.json",
           actual=self._valid_device_config(),

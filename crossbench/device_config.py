@@ -12,11 +12,11 @@ import re
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, ClassVar, Final, TypeAlias
 
-from typing_extensions import override
+from immutabledict import immutabledict
+from typing_extensions import Self, override
 
-from crossbench import hjson as cb_hjson
 from crossbench import path as pth
-from crossbench.config import ConfigEnum
+from crossbench.config import ConfigEnum, ConfigObject
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
@@ -109,38 +109,44 @@ class DeviceConfigError(ValueError):
   """Raised on a malformed device configuration, or on a discrepancy."""
 
 
+@dataclasses.dataclass(frozen=True)
+class RequiredDeviceConfig(ConfigObject):
+  """The parsed device config requirements of all platforms.
+
+  Parsed from an inline mapping or from an hjson file holding one. Top-level
+  keys name platforms and are lower-cased; their values are the requirement
+  sections. Nested keys are passed through verbatim, as device settings are
+  case-sensitive.
+
+  Attributes:
+    platforms: The requirements of each platform, by lower-cased name.
+  """
+  platforms: immutabledict[str, DeviceConfigRequirements]
+
+  @classmethod
+  @override
+  def parse_str(cls, value: str) -> Self:
+    raise DeviceConfigError(f"Invalid device config: {value!r}.")
+
+  @classmethod
+  @override
+  def parse_dict(cls, config: dict[str, object], **kwargs) -> Self:
+    cls.expect_no_extra_kwargs(kwargs)
+    platforms: dict[str, DeviceConfigRequirements] = {}
+    for platform, section in config.items():
+      if not isinstance(section, Mapping):
+        raise DeviceConfigError(f"{platform}: Invalid section: {section!r}.")
+      platforms[platform.lower()] = _parse_platform_requirements(section)
+    return cls(immutabledict(platforms))
+
+
 def parse_required_device_config(
     config: DeviceConfig) -> Mapping[str, DeviceConfigRequirements]:
-  """Loads and validates device config requirements from a file or mapping.
+  """Returns the requirements of each platform, by lower-cased name.
 
-  Top-level keys name platforms and are lower-cased; their values are the
-  requirement sections. Nested keys are passed through verbatim, as device
-  settings are case-sensitive.
-
-  Raises:
-    DeviceConfigError: If the config or any of its requirements is malformed.
+  Prefer RequiredDeviceConfig.parse(), which this wraps.
   """
-  data: DeviceConfigMap
-  match config:
-    case Mapping():
-      data = config
-    # AnyPath supports tests that patch LocalPath via pyfakefs.
-    case pth.LocalPath() | pth.AnyPath():
-      data = cb_hjson.loads_unique_keys(config.read_text(encoding="utf-8"))
-    case _:
-      raise DeviceConfigError(f"Invalid config type: {type(config)}")
-  if not isinstance(data, Mapping):
-    raise DeviceConfigError(f"Invalid config type: {type(data)}")
-  required: dict[str, DeviceConfigRequirements] = {}
-  for platform, section in data.items():
-    if not isinstance(section, Mapping):
-      msg = f"{platform}: Invalid platform section: {section!r}."
-      raise DeviceConfigError(msg)
-    try:
-      required[platform.lower()] = _parse_platform_requirements(section)
-    except DeviceConfigError as e:
-      raise DeviceConfigError(f"{platform}: {e}") from e
-  return required
+  return RequiredDeviceConfig.parse(config).platforms
 
 
 def _parse_platform_requirements(

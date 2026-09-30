@@ -184,7 +184,8 @@ class WebPowerRequiredDeviceConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertIsInstance(config_path, pth.AnyPath)
     assert isinstance(config_path, pth.AnyPath)
     self.fs.add_real_file(config_path)
-    self.config_path: pth.LocalPath = config_path
+    # Created at import time, before pyfakefs patched pth.LocalPath.
+    self.config_path = pth.LocalPath(config_path)
 
   def parse(self) -> Any:
     """Parses the shipped config, validating every requirement in it."""

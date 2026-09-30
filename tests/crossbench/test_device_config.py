@@ -16,9 +16,12 @@ from unittest import mock
 
 from crossbench import path as pth
 from crossbench.benchmarks.base import Benchmark
+from crossbench.config import ConfigError
 from crossbench.device_config import DeviceConfigError, DeviceConfigKeyPath, \
-    DeviceConfigMap, DeviceConfigSetter, RequiredDeviceConfigMode, \
-    check_device_config, parse_required_device_config
+    DeviceConfigMap, DeviceConfigSetter, RequiredDeviceConfig, \
+    RequiredDeviceConfigMode, check_device_config, \
+    parse_required_device_config
+from crossbench.exception import ArgumentTypeMultiException
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.base import Platform, SubprocessError
 from tests import test_helper
@@ -33,8 +36,29 @@ def check_config(required: DeviceConfigMap, actual: DeviceConfigMap,
   check_device_config(parsed["platform"], actual, mode)
 
 
+def parse_inline(config: dict[str, Any]) -> RequiredDeviceConfig:
+  """Parses an inline config, raising errors unwrapped.
+
+  Unlike RequiredDeviceConfig.parse(), parse_dict() does not wrap errors in
+  an ArgumentTypeError, so tests can assert on the exact error type.
+  """
+  return RequiredDeviceConfig.parse_dict(config)
+
+
 class DeviceConfigParserTestCase(CrossbenchFakeFsTestCase):
   """Tests for parsing device configuration files and mappings."""
+
+  def assert_parse_raises(
+      self,
+      config: Any,
+      expected_message: str,
+      cause: type[Exception] = DeviceConfigError,
+  ) -> None:
+    """Asserts that parsing raises an argument error, wrapping cause."""
+    with self.assertRaises(ArgumentTypeMultiException) as cm:
+      RequiredDeviceConfig.parse(config)
+    self.assertIn(expected_message, str(cm.exception))
+    self.assertTrue(cm.exception.matching(cause))
 
   def test_parse_mapping(self):
     """Verify that a mapping input is parsed into platform requirements."""
@@ -60,10 +84,8 @@ class DeviceConfigParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(len(required["android"]), 1)
 
   def test_parse_non_mapping_platform_section_raises(self):
-    """Verify DeviceConfigError when a platform section is not a mapping."""
-    with self.assertRaises(DeviceConfigError) as cm:
-      parse_required_device_config({"android": "val"})
-    self.assertIn("android: Invalid platform section", str(cm.exception))
+    """Verify an error when a platform section is not a mapping."""
+    self.assert_parse_raises({"android": "val"}, "android: Invalid section")
 
   def test_parse_valid_json_file(self):
     """Verify that parse_required_device_config correctly parses JSON files."""
@@ -87,73 +109,76 @@ class DeviceConfigParserTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(list(parse_required_device_config(path)), ["android"])
 
   def test_parse_missing_file_raises(self):
-    """Verify FileNotFoundError when config file does not exist."""
-    path = pth.LocalPath("/nonexistent.json")
-    with self.assertRaises(FileNotFoundError):
-      parse_required_device_config(path)
+    """Verify an error when the config file does not exist."""
+    self.assert_parse_raises(
+        pth.LocalPath("/nonexistent.json"),
+        "Path does not exist",
+        cause=argparse.ArgumentTypeError)
 
   def test_parse_invalid_json_raises(self):
-    """Verify ValueError when parsing invalid Hjson/JSON content."""
+    """Verify an error when parsing invalid Hjson/JSON content."""
     path = pth.LocalPath("/invalid.hjson")
     self.fs.create_file(path, contents="{not-json")
-    with self.assertRaises(ValueError):
-      parse_required_device_config(path)
+    self.assert_parse_raises(
+        path, "Invalid hjson file", cause=argparse.ArgumentTypeError)
 
   def test_parse_duplicate_keys_raises(self):
-    """Verify ValueError when parsing config with duplicate keys."""
+    """Verify an error when parsing config with duplicate keys."""
     path = pth.LocalPath("/duplicate.hjson")
     self.fs.create_file(path, contents='{"key": 1, "key": 2}')
-    with self.assertRaises(ValueError):
-      parse_required_device_config(path)
+    self.assert_parse_raises(
+        path, "Duplicate key in hjson: key", cause=argparse.ArgumentTypeError)
 
   def test_parse_non_mapping_file_raises(self):
-    """Verify DeviceConfigError when config file content is not a mapping."""
+    """Verify an error when config file content is not a mapping."""
     path = pth.LocalPath("/list.json")
     self.fs.create_file(path, contents='["not", "a", "mapping"]')
-    with self.assertRaises(DeviceConfigError) as cm:
-      parse_required_device_config(path)
-    self.assertIn("Invalid config type", str(cm.exception))
+    self.assert_parse_raises(
+        path, "Invalid config input type list", cause=ConfigError)
 
     scalar_path = pth.LocalPath("/scalar.json")
     self.fs.create_file(scalar_path, contents='"just_a_string"')
-    with self.assertRaises(DeviceConfigError) as cm:
-      parse_required_device_config(scalar_path)
-    self.assertIn("Invalid config type", str(cm.exception))
+    self.assert_parse_raises(scalar_path,
+                             "Invalid device config: 'just_a_string'.")
 
   def test_parse_invalid_type_raises(self):
-    """Verify DeviceConfigError when input is neither mapping nor path."""
-    with self.assertRaises(DeviceConfigError) as cm:
-      parse_required_device_config(12345)  # type: ignore
-    self.assertIn("Invalid config type", str(cm.exception))
+    """Verify an error when input is neither mapping nor path."""
+    self.assert_parse_raises(
+        12345, "Invalid config input type int", cause=ConfigError)
 
-  def test_parse_string_path_raises(self):
-    """Verify that passing a string path raises DeviceConfigError."""
-    with self.assertRaises(DeviceConfigError) as cm:
-      parse_required_device_config("/config.json")  # type: ignore
-    self.assertIn("Invalid config type", str(cm.exception))
+  def test_parse_string_path(self):
+    """Verify that a string path is parsed like a path."""
+    config = {"android": {"key": "val"}}
+    self.fs.create_file("/config.json", contents=json.dumps(config))
+    required = RequiredDeviceConfig.parse("/config.json")
+    self.assertEqual(list(required.platforms), ["android"])
+
+  def test_parse_inline_hjson(self):
+    """Verify that an inline hjson string is parsed like a mapping."""
+    required = RequiredDeviceConfig.parse('{android: {key: "val"}}')
+    self.assertEqual(list(required.platforms), ["android"])
+
+  def test_parsed_platforms_are_immutable(self):
+    """Verify that parsed platforms cannot be modified."""
+    required = RequiredDeviceConfig.parse({"android": {"key": "val"}})
+    with self.assertRaises(TypeError):
+      required.platforms["macos"] = ()  # type: ignore[index]
 
   def test_parse_validates_requirements(self):
-    """Verify DeviceConfigError on a malformed requirement."""
+    """Verify an error on a malformed requirement."""
     config = {"android": {"settings": {"key": 5}}}
-    with self.assertRaises(DeviceConfigError) as cm:
-      parse_required_device_config(config)
-    self.assertIn("android: settings.key: Invalid config: 5.",
-                  str(cm.exception))
+    self.assert_parse_raises(config, "settings.key: Invalid config: 5.")
 
   def test_parse_validates_requirements_from_file(self):
-    """Verify DeviceConfigError on a malformed requirement in a file."""
+    """Verify an error on a malformed requirement in a file."""
     path = pth.LocalPath("/invalid_requirement.json")
     self.fs.create_file(path, contents=json.dumps({"android": {"key": 5}}))
-    with self.assertRaises(DeviceConfigError) as cm:
-      parse_required_device_config(path)
-    self.assertIn("android: key: Invalid config: 5.", str(cm.exception))
+    self.assert_parse_raises(path, "key: Invalid config: 5.")
 
   def test_parse_validates_other_platform_sections(self):
     """Verify requirements are validated for every platform, not just one."""
     config = {"android": {"key": "val"}, "macos": {"key": 5}}
-    with self.assertRaises(DeviceConfigError) as cm:
-      parse_required_device_config(config)
-    self.assertIn("macos: key: Invalid config: 5.", str(cm.exception))
+    self.assert_parse_raises(config, "key: Invalid config: 5.")
 
 
 class DeviceConfigTestCase(unittest.TestCase):
@@ -887,7 +912,7 @@ class DeviceConfigTestCase(unittest.TestCase):
     """Verify a null bound fails an assertion, even beside a valid one."""
     for bounds in ({"$min": None}, {"$min": None, "$max": "5"}):
       with self.subTest(bounds=bounds), self.assertRaises(AssertionError):
-        parse_required_device_config({"platform": {"key": bounds}})
+        parse_inline({"platform": {"key": bounds}})
 
   def test_numeric_range_predicate_accepts_unquoted_bounds(self):
     """Verify unquoted numeric bounds are read like quoted ones."""
@@ -927,7 +952,7 @@ class DeviceConfigTestCase(unittest.TestCase):
   def test_regex_predicate_rejects_null_pattern(self):
     """Verify a null operator value fails an assertion."""
     with self.assertRaises(AssertionError):
-      parse_required_device_config({"platform": {"key": {"$regex": None}}})
+      parse_inline({"platform": {"key": {"$regex": None}}})
 
   def test_regex_predicate_rejects_invalid_syntax(self):
     """Verify error when regex string has invalid syntax."""
@@ -971,8 +996,8 @@ class DeviceConfigTargetTestCase(unittest.TestCase):
 
   def target_of(self, required: Any) -> str | None:
     """Returns the target of a requirement placed at a single key."""
-    parsed = parse_required_device_config({"platform": {"key": required}})
-    (requirement,) = parsed["platform"]
+    parsed = parse_inline({"platform": {"key": required}})
+    (requirement,) = parsed.platforms["platform"]
     return requirement.target
 
   def assert_parse_raises(self, required: Any, expected_message: str) -> None:
