@@ -321,6 +321,10 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     self.assertFalse(default_story.has_mtp_substory)
     default_flags = self.benchmark_cls.extra_flags(
         self.browsers[0].attributes(), default_story)
+    self.assertIn(
+        "OnDeviceModelIdleTimeout:on_device_model_idle_timeout/10s",
+        str(default_flags),
+    )
     self.assertNotIn("OnDeviceModelSpeculativeDecoding", str(default_flags))
 
     mtp_story_obj = self.story_cls.from_names(["mtp_summary"])[0]

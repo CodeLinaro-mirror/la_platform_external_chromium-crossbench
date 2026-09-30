@@ -172,6 +172,7 @@ class BlinkAIBenchmark(PressBenchmark):
     for feature in (
         ("OnDeviceModelPerformanceParams:"
          "compatible_on_device_performance_classes/*"),
+        "OnDeviceModelIdleTimeout:on_device_model_idle_timeout/10s",
         "AIWriterAPI",
         "AIRewriterAPI",
     ):
