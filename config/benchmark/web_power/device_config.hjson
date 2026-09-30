@@ -93,6 +93,7 @@
         // available replacement for `stay_on_while_plugged_in`.
         "screen_off_timeout": {
           "$min": 1800000
+          "$target": "1800000"
         }
 
         // Enforces standard font scale to avoid text reflow differences.
