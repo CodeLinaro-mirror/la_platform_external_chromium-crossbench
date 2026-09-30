@@ -18,6 +18,7 @@ from crossbench.cli.config.network_speed import NetworkSpeedConfig
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.config import ConfigObject
 from crossbench.helper import txt_helper
+from crossbench.helper.class_helper import get_all_subclasses
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.probes.all import GENERAL_PURPOSE_PROBES
 
@@ -30,20 +31,6 @@ if TYPE_CHECKING:
   from crossbench.config import ConfigParser
 
   HelpData: TypeAlias = dict[str, dict[str, Any]]
-
-
-def get_all_subclasses(cls: type) -> set:
-  """Recursively gets all subclasses of a given class."""
-  all_subclasses = set()
-  for subclass in cls.__subclasses__():
-    if not is_abstract(subclass):
-      all_subclasses.add(subclass)
-    all_subclasses.update(get_all_subclasses(subclass))
-  return all_subclasses
-
-
-def is_abstract(cls: type) -> bool:
-  return bool(getattr(cls, "__abstractmethods__", False))
 
 
 def get_all_config_classes() -> list[type[ConfigObject]]:
