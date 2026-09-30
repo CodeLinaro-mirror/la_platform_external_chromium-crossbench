@@ -19,8 +19,7 @@ from crossbench.benchmarks.base import Benchmark
 from crossbench.config import ConfigError
 from crossbench.device_config import DeviceConfigError, DeviceConfigKeyPath, \
     DeviceConfigMap, DeviceConfigSetter, RequiredDeviceConfig, \
-    RequiredDeviceConfigMode, check_device_config, \
-    parse_required_device_config
+    RequiredDeviceConfigMode, check_device_config
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.base import Platform, SubprocessError
@@ -32,8 +31,8 @@ from tests.crossbench.mock_helper import LinuxMockPlatform, MockStory
 def check_config(required: DeviceConfigMap, actual: DeviceConfigMap,
                  mode: RequiredDeviceConfigMode) -> None:
   """Parses one platform's requirements and checks them, as the runner does."""
-  parsed = parse_required_device_config({"platform": required})
-  check_device_config(parsed["platform"], actual, mode)
+  parsed = parse_inline({"platform": required})
+  check_device_config(parsed.platforms["platform"], actual, mode)
 
 
 def parse_inline(config: dict[str, Any]) -> RequiredDeviceConfig:
@@ -63,24 +62,25 @@ class DeviceConfigParserTestCase(CrossbenchFakeFsTestCase):
   def test_parse_mapping(self):
     """Verify that a mapping input is parsed into platform requirements."""
     config = {"android": {"key": "val"}}
-    self.assertEqual(list(parse_required_device_config(config)), ["android"])
+    self.assertEqual(
+        list(RequiredDeviceConfig.parse(config).platforms), ["android"])
 
   def test_parse_lowercases_top_level_keys(self):
     """Verify that top-level platform keys are normalized to lower case."""
     config = {"Android": {"key": "val"}, "MacOS": {"other": "val2"}}
-    required = parse_required_device_config(config)
+    required = RequiredDeviceConfig.parse(config).platforms
     self.assertEqual(sorted(required), ["android", "macos"])
 
   def test_parse_empty_platform_section(self):
     """Verify an empty platform section imposes no requirements."""
     # An empty section is the only way to state "nothing is required here".
-    self.assertEqual(
-        parse_required_device_config({"android": {}}), {"android": ()})
+    required = RequiredDeviceConfig.parse({"android": {}})
+    self.assertEqual(required.platforms, {"android": ()})
 
   def test_parse_empty_subsection_adds_no_requirements(self):
     """Verify an empty subsection contributes nothing beside a real one."""
     config = {"android": {"settings": {}, "key": "val"}}
-    required = parse_required_device_config(config)
+    required = RequiredDeviceConfig.parse(config).platforms
     self.assertEqual(len(required["android"]), 1)
 
   def test_parse_non_mapping_platform_section_raises(self):
@@ -88,13 +88,14 @@ class DeviceConfigParserTestCase(CrossbenchFakeFsTestCase):
     self.assert_parse_raises({"android": "val"}, "android: Invalid section")
 
   def test_parse_valid_json_file(self):
-    """Verify that parse_required_device_config correctly parses JSON files."""
+    """Verify that JSON files are parsed."""
     path = pth.LocalPath("/config.json")
     self.fs.create_file(path, contents=json.dumps({"android": {"key": "val"}}))
-    self.assertEqual(list(parse_required_device_config(path)), ["android"])
+    self.assertEqual(
+        list(RequiredDeviceConfig.parse(path).platforms), ["android"])
 
   def test_parse_valid_hjson_file(self):
-    """Verify that parse_required_device_config correctly parses Hjson files."""
+    """Verify that Hjson files are parsed."""
     path = pth.LocalPath("/config.hjson")
     hjson_content = """
     # Device configuration comment.
@@ -106,7 +107,8 @@ class DeviceConfigParserTestCase(CrossbenchFakeFsTestCase):
     }
     """
     self.fs.create_file(path, contents=hjson_content)
-    self.assertEqual(list(parse_required_device_config(path)), ["android"])
+    self.assertEqual(
+        list(RequiredDeviceConfig.parse(path).platforms), ["android"])
 
   def test_parse_missing_file_raises(self):
     """Verify an error when the config file does not exist."""
@@ -202,7 +204,7 @@ class DeviceConfigTestCase(unittest.TestCase):
   def assert_parse_raises(self, required: Any, expected_message: str) -> None:
     """Assert that parsing the requirements raises the expected error."""
     with self.assertRaises(ValueError) as cm:
-      parse_required_device_config({"platform": required})
+      parse_inline({"platform": required})
     self.assertIn(expected_message, str(cm.exception))
 
   def _create_mock_android_platform(self) -> tuple[mock.Mock, mock.Mock]:
@@ -1267,7 +1269,7 @@ class DeviceConfigSetterTestCase(unittest.TestCase):
         node = node.setdefault(key, {})
       node[key_path[-1]] = value
     name = self.platform.name
-    requirements = parse_required_device_config({name: nested})
+    requirements = parse_inline({name: nested}).platforms
     return DeviceConfigSetter(self.platform, requirements[name])
 
   def assert_apply_raises(self,

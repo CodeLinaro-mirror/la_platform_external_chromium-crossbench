@@ -140,15 +140,6 @@ class RequiredDeviceConfig(ConfigObject):
     return cls(immutabledict(platforms))
 
 
-def parse_required_device_config(
-    config: DeviceConfig) -> Mapping[str, DeviceConfigRequirements]:
-  """Returns the requirements of each platform, by lower-cased name.
-
-  Prefer RequiredDeviceConfig.parse(), which this wraps.
-  """
-  return RequiredDeviceConfig.parse(config).platforms
-
-
 def _parse_platform_requirements(
     config: DeviceConfigMap) -> DeviceConfigRequirements:
   """Parses one platform's requirement section.

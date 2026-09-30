@@ -27,8 +27,7 @@ from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CBArgumentParser
 from crossbench.device_config import DeviceConfigError, DeviceConfigMap, \
-    RequiredDeviceConfigMode, check_device_config, \
-    parse_required_device_config
+    RequiredDeviceConfig, RequiredDeviceConfigMode, check_device_config
 from crossbench.env.runner_env import ValidationMode
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.parse import ObjectParser
@@ -187,10 +186,6 @@ class WebPowerRequiredDeviceConfigTestCase(CrossbenchFakeFsTestCase):
     # Created at import time, before pyfakefs patched pth.LocalPath.
     self.config_path = pth.LocalPath(config_path)
 
-  def parse(self) -> Any:
-    """Parses the shipped config, validating every requirement in it."""
-    return parse_required_device_config(self.config_path)
-
   def discrepancies_for(self, key_path: Sequence[str],
                         value: str | None) -> str:
     """Reports discrepancies for a device reporting only key_path=value.
@@ -200,8 +195,9 @@ class WebPowerRequiredDeviceConfigTestCase(CrossbenchFakeFsTestCase):
     """
     actual: DeviceConfigMap = {} if value is None else self.nested(
         key_path, value)
+    required = RequiredDeviceConfig.parse(self.config_path)
     try:
-      check_device_config(self.parse()["android"], actual,
+      check_device_config(required.platforms["android"], actual,
                           RequiredDeviceConfigMode.THROW)
     except DeviceConfigError as e:
       return str(e)
@@ -217,7 +213,8 @@ class WebPowerRequiredDeviceConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_parses(self) -> None:
     """Verify the shipped config is valid, with android requirements."""
-    self.assertTrue(self.parse()["android"])
+    required = RequiredDeviceConfig.parse(self.config_path)
+    self.assertTrue(required.platforms["android"])
 
   def test_scale_keys_accept_both_spellings_of_the_default(self) -> None:
     """Verify unset and an explicit "1.0" both satisfy every scale key."""
