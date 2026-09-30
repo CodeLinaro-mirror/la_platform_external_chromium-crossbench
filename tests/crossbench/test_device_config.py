@@ -5,23 +5,25 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import copy
 import json
 import logging
 import subprocess
 import unittest
-from typing import Any
+from typing import Any, Iterator
 from unittest import mock
 
 from crossbench import path as pth
 from crossbench.benchmarks.base import Benchmark
-from crossbench.device_config import DeviceConfigError, DeviceConfigMap, \
-    RequiredDeviceConfigMode, check_device_config, \
-    parse_required_device_config
+from crossbench.device_config import DeviceConfigError, DeviceConfigKeyPath, \
+    DeviceConfigMap, DeviceConfigSetter, RequiredDeviceConfigMode, \
+    check_device_config, parse_required_device_config
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.base import Platform, SubprocessError
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
-from tests.crossbench.mock_helper import MockStory
+from tests.crossbench.mock_helper import LinuxMockPlatform, MockStory
 
 
 def check_config(required: DeviceConfigMap, actual: DeviceConfigMap,
@@ -1193,6 +1195,210 @@ class AndroidDeviceConfigWriterTestCase(unittest.TestCase):
     self.adb.shell.side_effect = SubprocessError(self.platform, proc)
     with self.assertRaises(SubprocessError):
       self.set_value(("settings", "system", "screen_brightness"), "100")
+
+
+class DeviceConfigSetterTestCase(unittest.TestCase):
+  """Tests for setting device config to meet requirements, and restoring."""
+
+  BRIGHTNESS = ("settings", "system", "screen_brightness")
+  TIMEOUT = ("settings", "system", "screen_off_timeout")
+  PEAK_REFRESH = ("settings", "system", "peak_refresh_rate")
+  FONT_SCALE = ("device_config", "accessibility/font_scale")
+
+  # Requirements that INITIAL fails, so apply() writes both.
+  TWO_CHANGES: dict[DeviceConfigKeyPath, Any] = {
+      BRIGHTNESS: "100",
+      FONT_SCALE: "1.0",
+  }
+
+  INITIAL: dict[str, Any] = {
+      "settings": {
+          "system": {
+              "screen_brightness": "50",
+              "screen_off_timeout": "30000",
+          },
+      },
+      "device_config": {
+          "accessibility/font_scale": "2.0",
+      },
+  }
+
+  def setUp(self) -> None:
+    super().setUp()
+    self.platform = LinuxMockPlatform()
+    self.platform.device_config_data = copy.deepcopy(self.INITIAL)
+    self.config = self.platform.device_config_data
+    self.writes = self.platform.device_config_writes
+
+  def setter(self, required: dict[DeviceConfigKeyPath,
+                                  Any]) -> DeviceConfigSetter:
+    """Returns a setter for requirements keyed by key path."""
+    nested: dict[str, Any] = {}
+    for key_path, value in required.items():
+      node = nested
+      for key in key_path[:-1]:
+        node = node.setdefault(key, {})
+      node[key_path[-1]] = value
+    name = self.platform.name
+    requirements = parse_required_device_config({name: nested})
+    return DeviceConfigSetter(self.platform, requirements[name])
+
+  def assert_apply_raises(self,
+                          setter: DeviceConfigSetter,
+                          exception: type[BaseException] = DeviceConfigError,
+                          regex: str = "") -> str:
+    """Asserts that apply() raises, and returns the error message."""
+    with self.assertRaisesRegex(exception, regex) as cm:
+      setter.apply()
+    return str(cm.exception)
+
+  def assert_unchanged(self) -> None:
+    """Asserts that the device config is in its initial state."""
+    self.assertEqual(self.config, self.INITIAL)
+
+  @contextlib.contextmanager
+  def failing_write(self, key_path: DeviceConfigKeyPath, value: str | None,
+                    error: BaseException) -> Iterator[None]:
+    """Makes writing value to key_path raise error."""
+    real_set = self.platform.set_device_config_value
+
+    def set_or_raise(path: DeviceConfigKeyPath, val: str | None) -> None:
+      if (path, val) == (key_path, value):
+        self.writes.append((path, val))
+        raise error
+      real_set(path, val)
+
+    with mock.patch.object(
+        self.platform, "set_device_config_value", side_effect=set_or_raise):
+      yield
+
+  @contextlib.contextmanager
+  def freeze_reads(self) -> Iterator[None]:
+    """Makes device_config() always return the initial config."""
+    with mock.patch.object(
+        self.platform,
+        "device_config",
+        return_value={self.platform.name: self.INITIAL}):
+      yield
+
+  def test_no_discrepancies_writes_nothing(self):
+    """Verify a device meeting every requirement is left untouched."""
+    self.setter({self.BRIGHTNESS: "50"}).apply()
+    self.assertEqual(self.writes, [])
+
+  def test_apply_writes_only_failing_requirements(self):
+    """Verify only requirements the device fails are written."""
+    self.setter({
+        self.BRIGHTNESS: "100",
+        self.TIMEOUT: {
+            "$min": "10000",
+            "$target": "1800000",
+        },
+    }).apply()
+    self.assertEqual(self.writes, [(self.BRIGHTNESS, "100")])
+    self.assertEqual(self.config["settings"]["system"], {
+        "screen_brightness": "100",
+        "screen_off_timeout": "30000",
+    })
+
+  def test_restore_writes_originals_in_reverse_order(self):
+    """Verify restore() undoes every change, last change first."""
+    setter = self.setter(self.TWO_CHANGES)
+    setter.apply()
+    self.writes.clear()
+    self.assertEqual(setter.restore(), [])
+    self.assertEqual(self.writes, [(self.FONT_SCALE, "2.0"),
+                                   (self.BRIGHTNESS, "50")])
+    self.assert_unchanged()
+
+  def test_restore_twice_does_nothing(self):
+    """Verify each change is restored at most once."""
+    setter = self.setter({self.BRIGHTNESS: "100"})
+    setter.apply()
+    setter.restore()
+    self.writes.clear()
+    self.assertEqual(setter.restore(), [])
+    self.assertEqual(self.writes, [])
+
+  def test_restore_deletes_setting_that_was_absent(self):
+    """Verify a setting added by apply() is deleted again on restore."""
+    key_path = ("settings", "system", "new_key")
+    setter = self.setter({key_path: "1"})
+    setter.apply()
+    self.assertEqual(self.config["settings"]["system"]["new_key"], "1")
+    setter.restore()
+    self.assert_unchanged()
+
+  def test_restore_writes_back_literal_null(self):
+    """Verify a setting whose value is the string 'null' is restored as is."""
+    self.config["settings"]["system"]["peak_refresh_rate"] = "null"
+    setter = self.setter({self.PEAK_REFRESH: "60"})
+    setter.apply()
+    setter.restore()
+    self.assertEqual(self.writes[-1], (self.PEAK_REFRESH, "null"))
+    self.assertEqual(self.config["settings"]["system"]["peak_refresh_rate"],
+                     "null")
+
+  def test_null_target_deletes_setting(self):
+    """Verify a 'null' requirement is met by deleting the setting."""
+    setter = self.setter({self.FONT_SCALE: "null"})
+    setter.apply()
+    self.assertEqual(self.writes, [(self.FONT_SCALE, None)])
+    self.assertNotIn("accessibility/font_scale", self.config["device_config"])
+    setter.restore()
+    self.assert_unchanged()
+
+  def test_requirement_without_target_raises(self):
+    """Verify a requirement without $target raises, after other writes."""
+    setter = self.setter({
+        self.BRIGHTNESS: "100",
+        self.TIMEOUT: {
+            "$min": "1800000",
+        },
+    })
+    message = self.assert_apply_raises(setter)
+    self.assertIn(
+        "  - settings.system.screen_off_timeout: got '30000', "
+        "expected numeric value >= 1800000.0.", message)
+    self.assertIn((self.BRIGHTNESS, "100"), self.writes)
+    setter.restore()
+    self.assert_unchanged()
+
+  def test_write_failure_stops_apply(self):
+    """Verify a failed write stops apply(), and restore() undoes the rest."""
+    setter = self.setter(self.TWO_CHANGES)
+    with self.failing_write(self.FONT_SCALE, "1.0", RuntimeError("denied")):
+      self.assert_apply_raises(setter, RuntimeError, "denied")
+    setter.restore()
+    # The failed write is not restored, as it is not known to have happened.
+    self.assertEqual(self.writes, [(self.BRIGHTNESS, "100"),
+                                   (self.FONT_SCALE, "1.0"),
+                                   (self.BRIGHTNESS, "50")])
+    self.assert_unchanged()
+
+  def test_ineffective_write_raises(self):
+    """Verify a write that did not take effect raises."""
+    setter = self.setter(self.TWO_CHANGES)
+    with self.freeze_reads():
+      message = self.assert_apply_raises(setter)
+    self.assertIn(
+        "  - device_config.accessibility/font_scale: got '2.0', "
+        "expected '1.0'.", message)
+    setter.restore()
+    self.assert_unchanged()
+
+  def test_restore_failure_is_returned_and_others_restored(self):
+    """Verify a failed restore is returned without stopping the others."""
+    setter = self.setter(self.TWO_CHANGES)
+    setter.apply()
+    with self.failing_write(self.BRIGHTNESS, "50", RuntimeError("offline")), \
+        self.assertLogs(level=logging.ERROR):
+      failures = setter.restore()
+    self.assertEqual(failures, ["settings.system.screen_brightness: offline"])
+    self.assertEqual(self.config["device_config"]["accessibility/font_scale"],
+                     "2.0")
+    self.assertEqual(self.config["settings"]["system"]["screen_brightness"],
+                     "100")
 
 
 if __name__ == "__main__":

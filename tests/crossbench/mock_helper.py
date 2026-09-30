@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
+import copy
 import dataclasses
 import enum
 import functools
@@ -45,6 +46,7 @@ if TYPE_CHECKING:
 
   from crossbench.action_runner.virtual_device.touchscreen import \
       TouchscreenVirtualDeviceConfig
+  from crossbench.device_config import DeviceConfigKeyPath
   from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo, TupleCmdArgs
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
@@ -162,6 +164,9 @@ class MockPlatformMixin:
     self.mkdir_calls: int = 0
     self.screenshots: list[pth.AnyPath] = []
     self.clipboard: str | None = None
+    # Backs device_config() and set_device_config_value().
+    self.device_config_data: dict[str, Any] = {}
+    self.device_config_writes: list[tuple[DeviceConfigKeyPath, str | None]] = []
     self.fake_fs = fake_fs
     self.use_fs = bool(fake_fs)
     super().__init__(*args, **kwargs)
@@ -335,7 +340,24 @@ class MockPlatformMixin:
 
   @override
   def device_config(self) -> dict[str, Any]:
-    return {}
+    return {self.name: copy.deepcopy(self.device_config_data)}
+
+  @override
+  def set_device_config_value(self, key_path: DeviceConfigKeyPath,
+                              value: str | None) -> None:
+    """Records the call, and writes the value, deleting it if None."""
+    self.device_config_writes.append((key_path, value))
+    *sections, key = key_path
+
+    # Walk down to the section holding the key; missing sections raise.
+    node = self.device_config_data
+    for section in sections:
+      node = node[section]
+
+    if value is None:
+      node.pop(key, None)
+    else:
+      node[key] = value
 
   def sleep(self, duration):
     self.sleeps.append(duration)

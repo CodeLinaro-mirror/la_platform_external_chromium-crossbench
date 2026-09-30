@@ -10,13 +10,16 @@ import enum
 import logging
 import re
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import Any, ClassVar, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, Final, TypeAlias
 
 from typing_extensions import override
 
 from crossbench import hjson as cb_hjson
 from crossbench import path as pth
 from crossbench.config import ConfigEnum
+
+if TYPE_CHECKING:
+  from crossbench.plt.base import Platform
 
 DeviceConfigValue: TypeAlias = (
     str | Sequence["DeviceConfigValue"] | Mapping[str, "DeviceConfigValue"])
@@ -236,6 +239,87 @@ def _get_device_config_value(
       return None
     current = current.get(key)
   return current
+
+
+class DeviceConfigSetter:
+  """Sets a platform's device config to meet requirements, until restored.
+
+  Only requirements that the device fails are written. Each successful
+  write is recorded with the value it replaced, so that restore() can put
+  it back.
+  """
+
+  def __init__(self, platform: Platform,
+               requirements: DeviceConfigRequirements) -> None:
+    self._platform: Final[Platform] = platform
+    self._requirements: Final[DeviceConfigRequirements] = requirements
+    # Discrepancies fixed by a write; restore() writes back their actual
+    # values.
+    self._changed: list[DeviceConfigDiscrepancy] = []
+
+  def apply(self) -> None:
+    """Writes the target of every failing requirement, then checks them all.
+
+    Changes made before a failure are not undone; call restore() for that.
+
+    Raises:
+      DeviceConfigError: If any requirement is still unmet afterwards.
+      Exception: Any error from writing to the platform.
+    """
+    actual = self._read_device_config()
+    for requirement in self._requirements:
+      self._apply_requirement(requirement, actual)
+    check_device_config(self._requirements, self._read_device_config(),
+                        RequiredDeviceConfigMode.THROW)
+
+  def _apply_requirement(self, requirement: DeviceConfigRequirement,
+                         actual: DeviceConfigMap) -> None:
+    if requirement.target is None:
+      return
+    original = _get_device_config_value(actual, requirement.key_path)
+    if not (discrepancy := requirement.check(original)):
+      return
+    target = _written_value(requirement.target)
+    logging.info("Setting device config %s %r -> %r.",
+                 ".".join(requirement.key_path), original, target)
+    self._platform.set_device_config_value(requirement.key_path, target)
+    self._changed.append(discrepancy)
+
+  def restore(self) -> list[str]:
+    """Restores all changes made, in reverse order, best effort.
+
+    Each change is restored at most once, so calling this again does
+    nothing. A failure to restore one change does not stop the others.
+
+    Failures are returned rather than raised, as callers often restore
+    while another exception is already propagating, which raising would
+    mask.
+
+    Returns:
+      A description of each failure to restore, which is also logged.
+    """
+    failures: list[str] = []
+    while self._changed:
+      if failure := self._restore_change(self._changed.pop()):
+        failures.append(failure)
+    return failures
+
+  def _restore_change(self, discrepancy: DeviceConfigDiscrepancy) -> str | None:
+    """Writes back the value a change replaced, returning any failure."""
+    path_str = ".".join(discrepancy.key_path)
+    original = discrepancy.actual
+    assert original is None or isinstance(original, str)
+    logging.info("Restoring device config %s to %r", path_str, original)
+    try:
+      self._platform.set_device_config_value(discrepancy.key_path, original)
+    except Exception as e:
+      logging.exception("Failed to restore device config %s", path_str)
+      return f"{path_str}: {e}"
+    return None
+
+  def _read_device_config(self) -> DeviceConfigMap:
+    """Reads the device config, relative to the platform's namespace."""
+    return self._platform.device_config().get(self._platform.name, {})
 
 
 def _iter_device_config(
