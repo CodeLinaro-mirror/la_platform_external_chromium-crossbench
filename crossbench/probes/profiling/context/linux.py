@@ -193,10 +193,10 @@ class LinuxProfilingContext(PosixProfilingContext):
         f"Probe {self.probe.name}: "
         f"exporting {len(perf_files)} profiles to pprof (slow)",
         verbose=True), ui.spinner():
-      self.browser_platform.sh(  # noqa: S604
-          "gcertstatus >&/dev/null || "
-          "(echo 'Authenticating with gcert:'; gcert)",
-          shell=True)
+      if self.browser_platform.sh(
+          "gcertstatus", check=False, quiet=True).returncode != 0:
+        logging.info("Authenticating with gcert:")
+        self.browser_platform.sh("gcert")
       size = len(perf_files)
       items = zip(perf_files, [run_details_json] * size, strict=True)
       urls: list[str] = []

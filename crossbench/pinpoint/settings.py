@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from typing import Any
 
 import platformdirs
@@ -41,7 +41,7 @@ class Settings:
   @user_id.setter
   def user_id(self, value: str | None) -> None:
     self._update_dirty(self._config.user_id, value)
-    self._config.user_id = value
+    self._config = replace(self._config, user_id=value)
 
   @property
   def collect_metrics(self) -> bool | None:
@@ -50,7 +50,7 @@ class Settings:
   @collect_metrics.setter
   def collect_metrics(self, value: bool | None) -> None:
     self._update_dirty(self._config.collect_metrics, value)
-    self._config.collect_metrics = value
+    self._config = replace(self._config, collect_metrics=value)
 
   def _update_dirty(self, before: Any, after: Any) -> None:
     self._dirty = before != after or self._dirty
@@ -73,7 +73,7 @@ class Settings:
     return config_dir / "settings.json"
 
 
-@dataclass()
+@dataclass(frozen=True)
 class _SettingsConfig(ConfigObject):
   """Configuration of user settings for Pinpoint CLI."""
 

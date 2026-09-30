@@ -36,20 +36,19 @@ class VramProbe(JsonResultProbe):
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
-    # TODO(cbruni): Add a duration range parser for early validation.
-    parser.add_argument(
+    parser.add_default_argument(
         "interval",
-        type=DurationParser.positive_duration,
+        type=DurationParser.duration_range(
+            min=dt.timedelta(seconds=0.05), name="interval"),
         default=dt.timedelta(seconds=1),
         help="Polling interval for VRAM / GPU memory usage.")
     return parser
 
   def __init__(self, interval: dt.timedelta = dt.timedelta(seconds=1)) -> None:
     super().__init__()
+    if interval < dt.timedelta(seconds=0.05):
+      raise ValueError(f"Interval {interval} is too small, must be >= 0.05s")
     self._interval = interval
-    if interval.total_seconds() < 0.05:
-      raise ValueError(
-          f"Polling interval must be >= 0.05s, but got: {interval}")
 
   @property
   def interval(self) -> dt.timedelta:

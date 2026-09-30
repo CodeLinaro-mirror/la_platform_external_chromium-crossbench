@@ -73,8 +73,8 @@ class D8Shell:
     cmd = [str(d8_bin), *flags]
     logging.debug("SHELL: %s", shlex.join(map(str, cmd)))
     logging.debug("CWD: %s", cwd)
-    self._process: Final = subprocess.Popen(
-        cmd,
+    self._process: Final = self._platform.popen(
+        *cmd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         cwd=self._cwd,

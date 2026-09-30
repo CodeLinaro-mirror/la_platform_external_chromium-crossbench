@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import abc
 import re
-import shlex
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable
 
@@ -228,11 +227,8 @@ class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
           "--uri",
           f"content://media/external/downloads/{download.id}",
       )
-      cmd = (
-          shlex.join(read_downloads_cmd) + ">" +
-          shlex.quote(self.browser_platform.path(to_path).as_posix()))
-      # We need shell=True since we pipe to a file.
-      self.browser_platform.sh(cmd, shell=True)  # noqa: S604
+      content = self.browser_platform.sh_stdout_bytes(*read_downloads_cmd)
+      self.browser_platform.write_bytes(to_path, content)
       self._results.append(to_path)
 
   def teardown(self) -> ProbeResult:

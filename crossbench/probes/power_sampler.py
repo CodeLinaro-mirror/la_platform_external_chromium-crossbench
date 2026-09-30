@@ -67,7 +67,8 @@ class PowerSamplerProbe(Probe):
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
-    parser.add_argument("bin_path", type=plt.PLATFORM.parse_local_binary_path)
+    parser.add_default_argument(
+        "bin_path", type=plt.PLATFORM.parse_local_binary_path)
     parser.add_argument(
         "sampling_interval",
         type=DurationParser.positive_duration,

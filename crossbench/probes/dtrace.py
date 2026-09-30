@@ -36,7 +36,7 @@ class DTraceProbe(Probe):
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
-    parser.add_argument(
+    parser.add_default_argument(
         "script_path", required=True, type=PathParser.non_empty_file_path)
     return parser
 
@@ -153,7 +153,10 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
       # DTrace took too long to terminate. Send SIGKILL.
       # Note: Not using .kill() because the process was started with sudo so
       # it would raise an PermissionError exception.
-      subprocess.run(
-          (  # noqa: S607
-              "sudo", "-n", "kill", "-SIGKILL", f"{self._dtrace_process.pid}"),
+      self.browser_platform.sh(
+          "sudo",
+          "-n",
+          "kill",
+          "-SIGKILL",
+          str(self._dtrace_process.pid),
           check=True)

@@ -32,7 +32,7 @@ class LogcatAndroidProbe(Probe):
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
-    parser.add_argument(
+    parser.add_default_argument(
         "filterspec",
         type=str,
         is_list=True,
