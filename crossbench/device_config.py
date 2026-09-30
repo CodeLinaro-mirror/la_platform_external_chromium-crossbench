@@ -4,11 +4,14 @@
 
 from __future__ import annotations
 
+import abc
 import dataclasses
 import enum
 import logging
 from collections.abc import Iterator, Mapping
 from typing import TypeAlias
+
+from typing_extensions import override
 
 from crossbench import hjson as cb_hjson
 from crossbench import path as pth
@@ -25,7 +28,7 @@ DeviceConfigKeyPath: TypeAlias = tuple[str, ...]
 class DeviceConfigDiscrepancy:
   """Represents a device configuration discrepancy."""
   key_path: DeviceConfigKeyPath
-  expected: str
+  expectation: str
   actual: DeviceConfigValue | None
 
   def __str__(self) -> str:
@@ -34,28 +37,37 @@ class DeviceConfigDiscrepancy:
       issue = "value was absent"
     else:
       issue = f"got {self.actual!r}"
-    return f"{path_str}: {issue}, expected {self.expected!r}."
+    return f"{path_str}: {issue}, expected {self.expectation}."
 
 
 @dataclasses.dataclass(frozen=True)
 class DeviceConfigRequirement:
-  """An expected value bound to a specific key in the configuration tree."""
+  """A predicate bound to a specific key in the configuration tree."""
   key_path: DeviceConfigKeyPath
-  expected: str
+  predicate: _Predicate
 
   # TODO: support a 'target' value to write to the device when the
   # requirement is not met, for a future RequiredDeviceConfigMode.SET.
+
+  @classmethod
+  def parse(cls, key_path: DeviceConfigKeyPath,
+            value: DeviceConfigValue) -> DeviceConfigRequirement:
+    """Parses a leaf value, annotating parse errors with its key path."""
+    try:
+      predicate = _Predicate.parse(value)
+    except ValueError as e:
+      raise DeviceConfigError(f"{'.'.join(key_path)}: {e}") from e
+    return cls(key_path, predicate)
 
   def check(
       self,
       actual: DeviceConfigValue | None,
   ) -> DeviceConfigDiscrepancy | None:
-    """Returns a discrepancy if the actual value fails the requirement."""
-    if actual == self.expected:
+    """Returns a discrepancy if the actual value fails the predicate."""
+    if self.predicate.matches(actual):
       return None
-    if actual is None and self.expected == "null":
-      return None
-    return DeviceConfigDiscrepancy(self.key_path, self.expected, actual)
+    return DeviceConfigDiscrepancy(self.key_path, self.predicate.expected_str(),
+                                   actual)
 
 
 # The immutable, parsed requirements of a single platform.
@@ -190,12 +202,52 @@ def _iter_device_config(
   """
   for key, value in config.items():
     key_path = (*prefix, key)
+    if isinstance(value, Mapping):
+      yield from _iter_device_config(value, key_path)
+    else:
+      yield DeviceConfigRequirement.parse(key_path, value)
+
+
+class _Predicate(abc.ABC):
+  """Abstract predicate for validating a device configuration value."""
+
+  @staticmethod
+  def parse(value: DeviceConfigValue) -> _Predicate:
+    """Parses a leaf configuration into a predicate.
+
+    Raises:
+      ValueError: If the value is not a valid leaf configuration.
+    """
     match value:
-      case Mapping():
-        yield from _iter_device_config(value, key_path)
       case str():
-        yield DeviceConfigRequirement(key_path, value)
+        return _ValuePredicate.parse_str(value)
       case _:
-        formatted_key_path = ".".join(key_path)
-        raise DeviceConfigError(
-            f"{formatted_key_path}: Invalid config: {value!r}.")
+        raise ValueError(f"Invalid config: {value!r}.")
+
+  @abc.abstractmethod
+  def matches(self, actual: DeviceConfigValue | None) -> bool:
+    """Returns True if the actual value matches the predicate condition."""
+
+  @abc.abstractmethod
+  def expected_str(self) -> str:
+    """Returns a string describing the expected requirement."""
+
+
+@dataclasses.dataclass(frozen=True)
+class _ValuePredicate(_Predicate):
+  """Matches an exact string value, or absent/None if expected is 'null'."""
+  expected: str
+
+  @classmethod
+  def parse_str(cls, value: str) -> _ValuePredicate:
+    return cls(value)
+
+  @override
+  def matches(self, actual: DeviceConfigValue | None) -> bool:
+    if actual is None:
+      return self.expected == "null"
+    return actual == self.expected
+
+  @override
+  def expected_str(self) -> str:
+    return repr(self.expected)
