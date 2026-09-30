@@ -289,6 +289,17 @@ class PathParserTestCase(CrossbenchFakeFsTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       PathParser.not_existing_path(path)
 
+  def test_value_has_path_prefix(self):
+    self.assertTrue(PathParser.value_has_path_prefix("./foo"))
+    self.assertTrue(PathParser.value_has_path_prefix("../foo"))
+    self.assertTrue(PathParser.value_has_path_prefix("/foo"))
+    self.assertTrue(PathParser.value_has_path_prefix("~/foo"))
+    self.assertTrue(PathParser.value_has_path_prefix(r"C:\foo"))
+    self.assertFalse(PathParser.value_has_path_prefix("foo"))
+    self.assertFalse(PathParser.value_has_path_prefix("foo/bar"))
+    self.assertFalse(PathParser.value_has_path_prefix(""))
+    self.assertFalse(PathParser.value_has_path_prefix("/"))
+
 
 class ObjectParserTestCase(CrossbenchFakeFsTestCase):
 
@@ -465,6 +476,19 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
     for invalid in ("", "-1", "-1.2", "NaN", "inf", "-inf", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.positive_zero_float(invalid)
+
+  def test_parse_positive_float(self):
+    self.assertEqual(NumberParser.positive_float("1"), 1.0)
+    self.assertEqual(NumberParser.positive_float(1), 1.0)
+    self.assertEqual(NumberParser.positive_float("1.23"), 1.23)
+    self.assertEqual(NumberParser.positive_float(1.23), 1.23)
+
+  def test_parse_positive_float_invalid(self):
+    invalid: Any
+    for invalid in ("", "0", 0, "0.0", 0.0, "-1", -1, "-1.2", "NaN", "inf",
+                    "-inf", "invalid"):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        _ = NumberParser.positive_float(invalid)
 
   def test_parse_float_range(self):
     self.assertEqual(NumberParser.float_range()(0.0), 0.0)
@@ -851,6 +875,18 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
         with self.assertRaises(argparse.ArgumentTypeError):
           ObjectParser.str_list(invalid)
 
+  def test_str_tuple(self):
+    self.assertEqual(ObjectParser.str_tuple([]), ())
+    self.assertEqual(ObjectParser.str_tuple(""), ())
+    self.assertEqual(ObjectParser.str_tuple(None), ())
+    self.assertEqual(ObjectParser.str_tuple("a,b, c"), ("a", "b", "c"))
+    self.assertEqual(ObjectParser.str_tuple("a"), ("a",))
+    self.assertEqual(ObjectParser.str_tuple(["a", "b, c"]), ("a", "b, c"))
+    self.assertEqual(ObjectParser.str_tuple([1, 2]), ("1", "2"))
+    self.assertEqual(ObjectParser.str_tuple((1, "2, 3")), ("1", "2, 3"))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ObjectParser.str_tuple(123)
+
   def test_parse_sequence(self):
     self.assertSequenceEqual(ObjectParser.sequence([]), [])
     self.assertSequenceEqual(ObjectParser.sequence([1, 2]), [1, 2])
@@ -1026,6 +1062,36 @@ class ObjectParserTestCase(CrossbenchFakeFsTestCase):
       ObjectParser.regexp("\\")
     pattern = ObjectParser.regexp("^abc$")
     self.assertEqual(pattern.pattern, "^abc$")
+
+  def test_base_url(self):
+    res = ObjectParser.base_url("https://example.com/foo")
+    self.assertEqual(res.scheme, "https")
+    self.assertEqual(res.netloc, "example.com")
+    self.assertEqual(res.path, "/foo")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ObjectParser.base_url("")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ObjectParser.base_url(None)  # type: ignore
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ObjectParser.base_url("http://[::1")
+
+  def test_not_none(self):
+    self.assertEqual(ObjectParser.not_none(123), 123)
+    self.assertEqual(ObjectParser.not_none("test"), "test")
+    self.assertFalse(ObjectParser.not_none(False))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ObjectParser.not_none(None)
+
+  def test_safe_filename(self):
+    self.assertEqual(ObjectParser.safe_filename("simple_name"), "simple_name")
+    self.assertEqual(
+        ObjectParser.safe_filename("name with spaces"), "name_with_spaces")
+    self.assertEqual(
+        ObjectParser.safe_filename("name/with:chars?"), "name_with_chars_")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ObjectParser.safe_filename("")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      ObjectParser.safe_filename(None)
 
   def test_bytes_or_file_contents_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError):

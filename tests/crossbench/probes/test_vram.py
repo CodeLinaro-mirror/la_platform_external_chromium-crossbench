@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import threading
 from unittest import mock
@@ -135,8 +136,14 @@ class VramProbeTestCase(BaseProbeTestCase):
     parser = VramProbe.config_parser()
     probe = parser.parse({"interval": "2s"})
     self.assertEqual(probe.interval, dt.timedelta(seconds=2))
+    probe_min = parser.parse({"interval": "0.05s"})
+    self.assertEqual(probe_min.interval, dt.timedelta(seconds=0.05))
+    with self.assertRaises(argparse.ArgumentTypeError):
+      parser.parse({"interval": "0.01s"})
 
   def test_vram_probe_invalid_interval(self):
+    probe_min = VramProbe(interval=dt.timedelta(seconds=0.05))
+    self.assertEqual(probe_min.interval, dt.timedelta(seconds=0.05))
     with self.assertRaises(ValueError):
       VramProbe(interval=dt.timedelta(seconds=0.01))
 
