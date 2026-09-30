@@ -745,6 +745,168 @@ class DeviceConfigTestCase(unittest.TestCase):
         required, {"key": "unknown"}, "key: got 'unknown', expected any of "
         "(a full match for pattern 'auto.*', 'manual').")
 
+  def test_numeric_range_predicate_matches_within_bounds(self):
+    """Verify {$min: '...', $max: '...'} requirement."""
+    required = {"key": {"$min": "50", "$max": "100"}}
+    for value in ("50", "75.5", "100"):
+      with self.subTest(value=value):
+        check_config(required, {"key": value}, RequiredDeviceConfigMode.THROW)
+
+  def test_numeric_range_predicate_rejects_below_lower_bound(self):
+    """Verify a discrepancy when the value is under the lower bound."""
+    required = {"key": {"$min": "50", "$max": "100"}}
+    self.assert_check_raises(
+        required, {"key": "49"},
+        "key: got '49', expected numeric value between 50.0 and 100.0.")
+
+  def test_numeric_range_predicate_rejects_above_upper_bound(self):
+    """Verify a discrepancy when the value is over the upper bound."""
+    required = {"key": {"$min": "50", "$max": "100"}}
+    self.assert_check_raises(
+        required, {"key": "101"},
+        "key: got '101', expected numeric value between 50.0 and 100.0.")
+
+  def test_numeric_range_predicate_rejects_non_numeric_value(self):
+    """Verify a discrepancy when the value is not a number at all."""
+    required = {"key": {"$min": "50", "$max": "100"}}
+    self.assert_check_raises(
+        required, {"key": "not_a_number"},
+        "key: got 'not_a_number', expected numeric value between 50.0 "
+        "and 100.0.")
+
+  def test_numeric_range_predicate_matches_above_min(self):
+    """Verify {$min: '...'} requirement without $max."""
+    required = {"key": {"$min": "30"}}
+    check_config(required, {"key": "30"}, RequiredDeviceConfigMode.THROW)
+
+  def test_numeric_range_predicate_rejects_below_min(self):
+    """Verify a discrepancy against a lower bound with no upper bound."""
+    required = {"key": {"$min": "30"}}
+    self.assert_check_raises(
+        required, {"key": "29.9"},
+        "key: got '29.9', expected numeric value >= 30.0.")
+
+  def test_numeric_range_predicate_matches_below_max(self):
+    """Verify {$max: '...'} requirement without $min."""
+    required = {"key": {"$max": "60"}}
+    for value in ("59.9", "60.0"):
+      with self.subTest(value=value):
+        check_config(required, {"key": value}, RequiredDeviceConfigMode.THROW)
+
+  def test_numeric_range_predicate_rejects_above_max(self):
+    """Verify a discrepancy against an upper bound with no lower bound."""
+    required = {"key": {"$max": "60"}}
+    self.assert_check_raises(required, {"key": "120"},
+                             "key: got '120', expected numeric value <= 60.0.")
+
+  def test_numeric_range_predicate_matches_exponent_notation(self):
+    """Verify exponent notation is accepted for actual values."""
+    required = {"key": {"$min": "5", "$max": "15"}}
+    check_config(required, {"key": "1e1"}, RequiredDeviceConfigMode.THROW)
+
+  def test_numeric_range_predicate_rejects_absent_value(self):
+    """Verify discrepancy when actual value is absent for numeric range."""
+    required = {"key": {"$min": "10"}}
+    self.assert_check_raises(
+        required, {}, "key: value was absent, expected numeric value >= 10.0.")
+
+  def test_numeric_range_predicate_rejects_mapping_value(self):
+    """Verify discrepancy when actual value is a mapping for numeric range."""
+    required = {"key": {"$min": "10"}}
+    actual = {"key": {"nested": "value"}}
+    self.assert_check_raises(
+        required, actual,
+        "key: got {'nested': 'value'}, expected numeric value >= 10.0.")
+
+  def test_numeric_range_predicate_rejects_nan_value(self):
+    """Verify NaN never satisfies a two-sided numeric range."""
+    # NaN compares False against every bound, so a range check written in
+    # negative form would accept it, even with both bounds specified.
+    required = {"key": {"$min": "0", "$max": "10"}}
+    for actual in ("nan", "NaN", "-nan"):
+      with self.subTest(actual=actual):
+        self.assert_check_raises(
+            required, {"key": actual}, f"key: got {actual!r}, "
+            "expected numeric value between 0.0 and 10.0.")
+
+  def test_numeric_range_predicate_rejects_nan_value_against_one_bound(self):
+    """Verify NaN fails a one-sided numeric range rather than passing it."""
+    required = {"key": {"$min": "0"}}
+    self.assert_check_raises(required, {"key": "nan"},
+                             "key: got 'nan', expected numeric value >= 0.0.")
+
+  def test_any_of_predicate_matches_range_alternative(self):
+    """Verify a requirement list whose alternative is a numeric range."""
+    required = {"key": ["null", {"$max": "60"}]}
+    for actual in ({"key": "null"}, {}, {"key": "60"}):
+      with self.subTest(actual=actual):
+        check_config(required, actual, RequiredDeviceConfigMode.THROW)
+
+  def test_any_of_predicate_rejects_range_alternative_mismatch(self):
+    """Verify a discrepancy describing a numeric range alternative."""
+    required = {"key": ["null", {"$max": "60"}]}
+    self.assert_check_raises(
+        required, {"key": "120"},
+        "key: got '120', expected any of ('null', numeric value <= 60.0).")
+
+  def test_any_of_predicate_matches_mixed_alternatives(self):
+    """Verify requirement list mixing a regex, a string and a range."""
+    required = {"key": [{"$regex": r"auto.*"}, "manual", {"$min": "10"}]}
+    for value in ("auto_mode", "manual", "15"):
+      with self.subTest(value=value):
+        check_config(required, {"key": value}, RequiredDeviceConfigMode.THROW)
+
+  def test_any_of_predicate_rejects_mixed_alternatives_mismatch(self):
+    """Verify a discrepancy describing every mixed alternative."""
+    required = {"key": [{"$regex": r"auto.*"}, "manual", {"$min": "10"}]}
+    for value in ("5", "unknown"):
+      with self.subTest(value=value):
+        self.assert_check_raises(
+            required, {"key": value}, f"key: got {value!r}, expected any of "
+            "(a full match for pattern 'auto.*', 'manual', "
+            "numeric value >= 10.0).")
+
+  def test_predicate_mapping_rejects_conflicting_keys(self):
+    """Verify error on keys owned by different predicate forms."""
+    required = {"key": {"$regex": "1", "$min": "1"}}
+    self.assert_parse_raises(
+        required,
+        "key: Invalid config: unknown or conflicting keys ['$regex', '$min'].")
+
+  def test_numeric_range_predicate_rejects_min_above_max(self):
+    """Verify error when min is greater than max."""
+    required = {"key": {"$min": "100", "$max": "50"}}
+    self.assert_parse_raises(required,
+                             "key: $min (100.0) cannot exceed $max (50.0).")
+
+  def test_numeric_range_predicate_rejects_null_bounds(self):
+    """Verify a null bound fails an assertion, even beside a valid one."""
+    for bounds in ({"$min": None}, {"$min": None, "$max": "5"}):
+      with self.subTest(bounds=bounds), self.assertRaises(AssertionError):
+        parse_required_device_config({"platform": {"key": bounds}})
+
+  def test_numeric_range_predicate_accepts_unquoted_bounds(self):
+    """Verify unquoted numeric bounds are read like quoted ones."""
+    required = {"key": {"$min": 5, "$max": 15}}
+    check_config(required, {"key": "10"}, RequiredDeviceConfigMode.THROW)
+
+  def test_numeric_range_predicate_rejects_non_scalar_bound(self):
+    """Verify error when a bound is neither a number nor a string."""
+    required = {"key": {"$min": ["1"]}}
+    self.assert_parse_raises(required, "key: could not convert string to float")
+
+  def test_numeric_range_predicate_rejects_non_numeric_min(self):
+    """Verify error when min string is not a valid number."""
+    required = {"key": {"$min": "abc"}}
+    self.assert_parse_raises(required,
+                             "key: could not convert string to float: 'abc'")
+
+  def test_numeric_range_predicate_rejects_non_numeric_max(self):
+    """Verify error when max string is not a valid number."""
+    required = {"key": {"$max": "xyz"}}
+    self.assert_parse_raises(required,
+                             "key: could not convert string to float: 'xyz'")
+
   def test_predicate_mapping_rejects_unknown_key(self):
     """Verify error when unknown keys are in predicate dictionary."""
     required = {"key": {"$regex": "foo", "unknown_opt": "bar"}}
@@ -759,10 +921,9 @@ class DeviceConfigTestCase(unittest.TestCase):
                              "key: Invalid $regex: expected str, got 5.")
 
   def test_regex_predicate_rejects_null_pattern(self):
-    """Verify error when a regex pattern is null."""
-    required = {"key": {"$regex": None}}
-    self.assert_parse_raises(required,
-                             "key: Invalid $regex: expected str, got None.")
+    """Verify a null operator value fails an assertion."""
+    with self.assertRaises(AssertionError):
+      parse_required_device_config({"platform": {"key": {"$regex": None}}})
 
   def test_regex_predicate_rejects_invalid_syntax(self):
     """Verify error when regex string has invalid syntax."""

@@ -135,6 +135,7 @@ def _parse_platform_requirements(
   - Disjunction list: [item1, item2, ...] matching if any item matches.
   - Mapping:
       - {"$regex": "pattern"}: matches the actual value in full.
+      - {"$min": "1", "$max": "9"}: a numeric range, with at least one bound.
     Keys starting with '$' are operators: a mapping containing any of them
     is a requirement rather than a section.
 
@@ -309,6 +310,7 @@ class _MappingPredicate(_Predicate):
     """Parses a mapping leaf into a predicate."""
     if not mapping:
       raise ValueError("Invalid empty configuration mapping.")
+    assert None not in mapping.values()
     keys = list(mapping.keys())
     present = frozenset(keys)
     for config_keys, predicate in _MappingPredicate.registry.items():
@@ -346,6 +348,48 @@ class _RegexPredicate(_MappingPredicate, keys={"$regex"}):
   @override
   def expected_str(self) -> str:
     return f"a full match for pattern '{self.pattern.pattern}'"
+
+
+@dataclasses.dataclass(frozen=True)
+class _NumericRangePredicate(_MappingPredicate, keys={"$min", "$max"}):
+  """Matches if the actual value is a number within [min, max]."""
+  min: float | None = None
+  max: float | None = None
+
+  def __post_init__(self) -> None:
+    assert self.min is not None or self.max is not None
+    if self.min is not None and self.max is not None and self.min > self.max:
+      raise ValueError(f"$min ({self.min}) cannot exceed $max ({self.max}).")
+
+  @classmethod
+  @override
+  def from_mapping(cls, mapping: DeviceConfigMap) -> _NumericRangePredicate:
+    min_val = mapping.get("$min")
+    max_val = mapping.get("$max")
+    return cls(
+        float(str(min_val)) if min_val is not None else None,
+        float(str(max_val)) if max_val is not None else None,
+    )
+
+  @override
+  def matches(self, actual: DeviceConfigValue | None) -> bool:
+    if not isinstance(actual, str):
+      return False
+    try:
+      value = float(actual)
+    except ValueError:
+      return False  # Could be 'auto' or some other allowed key word.
+    return ((self.min is None or value >= self.min) and
+            (self.max is None or value <= self.max))
+
+  @override
+  def expected_str(self) -> str:
+    if self.min is not None and self.max is not None:
+      return f"numeric value between {self.min} and {self.max}"
+    if self.min is not None:
+      return f"numeric value >= {self.min}"
+    assert self.max is not None
+    return f"numeric value <= {self.max}"
 
 
 @dataclasses.dataclass(frozen=True)
