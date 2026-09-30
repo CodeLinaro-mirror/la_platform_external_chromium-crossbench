@@ -45,6 +45,7 @@ if TYPE_CHECKING:
       VirtualDeviceConfig
   from crossbench.action_runner.virtual_device.virtual_device_type import \
       VirtualDeviceType
+  from crossbench.device_config import DeviceConfigKeyPath
   from crossbench.plt.base import Platform
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo, TupleCmdArgs
@@ -719,6 +720,10 @@ class AndroidVersion(PosixVersion):
   pass
 
 
+# Namespaces of the 'settings' tool, read and written by device config.
+_SETTINGS_NAMESPACES: Final[tuple[str, ...]] = ("global", "secure", "system")
+
+
 class _AndroidDeviceConfigReader:
   """Reads and parses configuration data from an Android device via ADB."""
 
@@ -749,7 +754,7 @@ class _AndroidDeviceConfigReader:
   def settings(self) -> dict[str, dict[str, str]]:
     """Retrieves Android global, secure, and system settings."""
     settings_dict: dict[str, dict[str, str]] = {}
-    for namespace in ("global", "secure", "system"):
+    for namespace in _SETTINGS_NAMESPACES:
       output = self._adb.shell_stdout("settings", "list", namespace)
       settings_dict[namespace] = self._parse_key_values(output)
     return settings_dict
@@ -1319,6 +1324,24 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
             "settings": reader.settings(),
         },
     }
+
+  @override
+  def set_device_config_value(self, key_path: DeviceConfigKeyPath,
+                              value: str | None) -> None:
+    tool: tuple[str, ...] = ()
+    namespace = key = ""
+    match key_path:
+      case ("settings", namespace, key) if namespace in _SETTINGS_NAMESPACES:
+        tool = ("settings",)
+      case ("device_config", flag):
+        tool = ("cmd", "device_config")
+        namespace, _, key = flag.partition("/")
+    if not (tool and namespace and key):
+      raise ValueError(f"Cannot set device config {'.'.join(key_path)!r}.")
+    if value is None:
+      self.adb.shell(*tool, "delete", namespace, key)
+    else:
+      self.adb.shell(*tool, "put", namespace, key, value)
 
   @functools.lru_cache(maxsize=1)
   @override

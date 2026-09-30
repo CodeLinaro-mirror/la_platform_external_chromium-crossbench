@@ -50,6 +50,7 @@ if TYPE_CHECKING:
   from crossbench.action_runner.display_rectangle import DisplayRectangle
   from crossbench.action_runner.input_events import InputEvent
   from crossbench.benchmarks.loading.input_source import InputSource
+  from crossbench.device_config import DeviceConfigKeyPath
   from crossbench.plt.display_info import DisplayInfo
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
@@ -388,6 +389,20 @@ class Platform(abc.ABC):
     (Benchmark.REQUIRED_DEVICE_CONFIG) during run setup.
     """
     return {}
+
+  def set_device_config_value(self, key_path: DeviceConfigKeyPath,
+                              value: str | None) -> None:
+    """Writes a single device configuration value, deleting it if None.
+
+    Key paths are relative to the platform namespace of device_config(),
+    e.g. ('settings', 'system', 'screen_brightness') on Android.
+
+    Raises:
+      ValueError: If key_path cannot be written on this platform, before
+        the device is touched.
+    """
+    del value
+    raise ValueError(f"Cannot set device config {'.'.join(key_path)!r}.")
 
   @functools.lru_cache(maxsize=1)
   def system_details(self) -> dict[str, Any]:

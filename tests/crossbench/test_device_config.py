@@ -1095,5 +1095,105 @@ class DeviceConfigTargetTestCase(unittest.TestCase):
         "['$regex', '$min'].")
 
 
+class PlatformDeviceConfigWriterTestCase(unittest.TestCase):
+  """Tests for the base Platform's device config writing."""
+
+  def test_set_raises(self):
+    """Verify the base Platform refuses to write any key."""
+    platform = mock.create_autospec(Platform, instance=True)
+    key_path = ("settings", "system", "screen_brightness")
+    with self.assertRaises(ValueError) as cm:
+      Platform.set_device_config_value(platform, key_path, "100")
+    self.assertIn(
+        "Cannot set device config 'settings.system.screen_brightness'",
+        str(cm.exception))
+
+
+class AndroidDeviceConfigWriterTestCase(unittest.TestCase):
+  """Tests for writing single device config values on Android."""
+
+  def setUp(self) -> None:
+    super().setUp()
+    self.adb = mock.Mock()
+    self.platform = mock.create_autospec(AndroidAdbPlatform, instance=True)
+    self.platform.adb = self.adb
+
+  def set_value(self, key_path: tuple[str, ...], value: str | None) -> None:
+    AndroidAdbPlatform.set_device_config_value(self.platform, key_path, value)
+
+  def test_set_settings_in_every_namespace(self):
+    """Verify every settings namespace is writable."""
+    for namespace in ("global", "secure", "system"):
+      with self.subTest(namespace=namespace):
+        self.adb.reset_mock()
+        self.set_value(("settings", namespace, "key"), "1")
+        self.adb.shell.assert_called_once_with("settings", "put", namespace,
+                                               "key", "1")
+
+  def test_set_unsupported_key_paths_raises(self):
+    """Verify writing an unsupported key raises without touching adb."""
+    for key_path in (
+        ("getprop", "ro.product.model"),
+        ("settings", "unknown", "key"),
+        ("settings", "system", ""),
+        ("settings", "system"),
+        ("settings", "system", "key", "extra"),
+        ("device_config", "flag_without_namespace"),
+        ("device_config", "/key"),
+        ("device_config", "namespace/"),
+        ("device_config", "namespace", "key"),
+        ("cmd", "uimode"),
+        (),
+    ):
+      with self.subTest(key_path=key_path), self.assertRaisesRegex(
+          ValueError, "Cannot set device config"):
+        self.set_value(key_path, "1")
+    self.adb.shell.assert_not_called()
+
+  def test_delete_settings_value(self):
+    """Verify a None settings value is deleted with 'settings delete'."""
+    self.set_value(("settings", "global", "animator_duration_scale"), None)
+    self.adb.shell.assert_called_once_with("settings", "delete", "global",
+                                           "animator_duration_scale")
+
+  def test_set_empty_settings_value(self):
+    """Verify an empty value is written rather than deleted."""
+    self.set_value(("settings", "secure", "key"), "")
+    self.adb.shell.assert_called_once_with("settings", "put", "secure", "key",
+                                           "")
+
+  def test_set_literal_null_settings_value(self):
+    """Verify a "null" string is written as is, rather than deleted."""
+    self.set_value(("settings", "secure", "key"), "null")
+    self.adb.shell.assert_called_once_with("settings", "put", "secure", "key",
+                                           "null")
+
+  def test_set_device_config_value(self):
+    """Verify a device_config flag is written with 'device_config put'."""
+    self.set_value(("device_config", "accessibility/font_scale"), "1.0")
+    self.adb.shell.assert_called_once_with("cmd", "device_config", "put",
+                                           "accessibility", "font_scale", "1.0")
+
+  def test_delete_device_config_value(self):
+    """Verify a None flag is deleted with 'device_config delete'."""
+    self.set_value(("device_config", "accessibility/font_scale"), None)
+    self.adb.shell.assert_called_once_with("cmd", "device_config", "delete",
+                                           "accessibility", "font_scale")
+
+  def test_set_device_config_key_with_slash(self):
+    """Verify only the first '/' separates the namespace from the key."""
+    self.set_value(("device_config", "namespace/sub/key"), "1")
+    self.adb.shell.assert_called_once_with("cmd", "device_config", "put",
+                                           "namespace", "sub/key", "1")
+
+  def test_set_propagates_adb_errors(self):
+    """Verify adb command failures propagate as SubprocessError."""
+    proc = subprocess.CompletedProcess(
+        args=["adb", "shell"], returncode=1, stderr=b"device offline")
+    self.adb.shell.side_effect = SubprocessError(self.platform, proc)
+    with self.assertRaises(SubprocessError):
+      self.set_value(("settings", "system", "screen_brightness"), "100")
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
