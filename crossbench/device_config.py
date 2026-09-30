@@ -24,10 +24,16 @@ DeviceConfigMap: TypeAlias = Mapping[str, DeviceConfigValue]
 DeviceConfigFile: TypeAlias = pth.LocalPath
 DeviceConfig: TypeAlias = DeviceConfigMap | DeviceConfigFile
 DeviceConfigKeyPath: TypeAlias = tuple[str, ...]
+# A parsed requirement and its target value, as DeviceConfigRequirement holds.
+_PredicateAndTarget: TypeAlias = tuple["_Predicate", str | None]
 
 # Operator keys, such as "$regex", start with this prefix. Device
 # configuration keys never do, so the two cannot collide.
 _OPERATOR_PREFIX = "$"
+
+# Names the value to write when a requirement is not met. It may accompany
+# any operator form, rather than being one of them.
+_TARGET_KEY = "$target"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -48,22 +54,30 @@ class DeviceConfigDiscrepancy:
 
 @dataclasses.dataclass(frozen=True)
 class DeviceConfigRequirement:
-  """A predicate bound to a specific key in the configuration tree."""
+  """A predicate and its target, bound to a key in the configuration tree.
+
+  Attributes:
+    key_path: The key of the setting in the configuration tree.
+    predicate: The condition the setting's value must meet.
+    target: The value to write so that this requirement is met, or None.
+      None means the value is not to be set, e.g. a regex without "$target":
+      the requirement is only checked. Otherwise the target is written as
+      is, except for "null", which deletes the setting. "" is a real value,
+      written as an empty string, and is distinct from an absent setting.
+  """
   key_path: DeviceConfigKeyPath
   predicate: _Predicate
-
-  # TODO: support a 'target' value to write to the device when the
-  # requirement is not met, for a future RequiredDeviceConfigMode.SET.
+  target: str | None
 
   @classmethod
   def parse(cls, key_path: DeviceConfigKeyPath,
             value: DeviceConfigValue) -> DeviceConfigRequirement:
     """Parses a leaf value, annotating parse errors with its key path."""
     try:
-      predicate = _Predicate.parse(value)
+      predicate, target = _Predicate.parse(value)
     except ValueError as e:
       raise DeviceConfigError(f"{'.'.join(key_path)}: {e}") from e
-    return cls(key_path, predicate)
+    return cls(key_path, predicate, target)
 
   def check(
       self,
@@ -138,6 +152,13 @@ def _parse_platform_requirements(
       - {"$min": "1", "$max": "9"}: a numeric range, with at least one bound.
     Keys starting with '$' are operators: a mapping containing any of them
     is a requirement rather than a section.
+
+  Each requirement may have a target, the value that meets it:
+  - An exact string is its own target, with "null" denoting deletion.
+  - A disjunction list takes the target of its first item, if any.
+  - A mapping has a target only if it names one explicitly, via "$target"
+    beside its operators, e.g. {"$min": "1", "$target": "5"}. The target
+    must meet the requirement it accompanies.
 
   Raises:
     DeviceConfigError: If any requirement is malformed.
@@ -239,12 +260,19 @@ def _iter_device_config(
     yield DeviceConfigRequirement.parse(key_path, value)
 
 
+def _written_value(target: str) -> str | None:
+  """Returns the value a target leaves on the device, None if deleted."""
+  return None if target == "null" else target
+
+
 class _Predicate(abc.ABC):
   """Abstract predicate for validating a device configuration value."""
 
   @staticmethod
-  def parse(value: DeviceConfigValue) -> _Predicate:
-    """Parses a leaf configuration into a predicate.
+  def parse(value: DeviceConfigValue) -> _PredicateAndTarget:
+    """Parses a leaf configuration into a predicate and its target value.
+
+    See DeviceConfigRequirement.target.
 
     Raises:
       ValueError: If the value is not a valid leaf configuration.
@@ -275,8 +303,9 @@ class _ValuePredicate(_Predicate):
   expected: str
 
   @classmethod
-  def parse_str(cls, value: str) -> _ValuePredicate:
-    return cls(value)
+  def parse_str(cls, value: str) -> _PredicateAndTarget:
+    """Parses an exact value, which is its own target."""
+    return cls(value), value
 
   @override
   def matches(self, actual: DeviceConfigValue | None) -> bool:
@@ -299,6 +328,7 @@ class _MappingPredicate(_Predicate):
     super().__init_subclass__(**kwargs)
     config_keys = frozenset(keys)
     assert all(key.startswith(_OPERATOR_PREFIX) for key in config_keys)
+    assert _TARGET_KEY not in config_keys, "$target accompanies any form."
     # No operator key may be registered by more than one subclass. This
     # guarantees parse_mapping() matches at most one subclass, regardless of
     # the registry's iteration order.
@@ -306,16 +336,26 @@ class _MappingPredicate(_Predicate):
     _MappingPredicate.registry[config_keys] = cls
 
   @staticmethod
-  def parse_mapping(mapping: DeviceConfigMap) -> _Predicate:
-    """Parses a mapping leaf into a predicate."""
+  def parse_mapping(mapping: DeviceConfigMap) -> _PredicateAndTarget:
+    """Parses a mapping leaf into a predicate and its "$target", if any."""
     if not mapping:
       raise ValueError("Invalid empty configuration mapping.")
     assert None not in mapping.values()
-    keys = list(mapping.keys())
+    operators = {k: v for k, v in mapping.items() if k != _TARGET_KEY}
+    assert operators
+    predicate = _MappingPredicate._parse_operators(operators)
+    target = mapping.get(_TARGET_KEY)
+    assert isinstance(target, str | None)
+    assert target is None or predicate.matches(_written_value(target))
+    return predicate, target
+
+  @staticmethod
+  def _parse_operators(operators: DeviceConfigMap) -> _Predicate:
+    keys = list(operators.keys())
     present = frozenset(keys)
     for config_keys, predicate in _MappingPredicate.registry.items():
       if present <= config_keys:
-        return predicate.from_mapping(mapping)
+        return predicate.from_mapping(operators)
     raise ValueError(f"Invalid config: unknown or conflicting keys {keys!r}.")
 
   @classmethod
@@ -398,11 +438,16 @@ class _AnyOfPredicate(_Predicate):
   predicates: tuple[_Predicate, ...]
 
   @classmethod
-  def parse_sequence(cls,
-                     sequence: Sequence[DeviceConfigValue]) -> _AnyOfPredicate:
+  def parse_sequence(
+      cls,
+      sequence: Sequence[DeviceConfigValue],
+  ) -> _PredicateAndTarget:
+    """Parses a list of alternatives, taking the first one's target."""
     if not sequence:
       raise ValueError(f"Invalid empty requirement list: {sequence!r}.")
-    return cls(tuple(_Predicate.parse(item) for item in sequence))
+    predicates, targets = zip(*map(_Predicate.parse, sequence), strict=True)
+    # The first alternative's target is assumed to be the canonical one.
+    return cls(predicates), targets[0]
 
   @override
   def matches(self, actual: DeviceConfigValue | None) -> bool:

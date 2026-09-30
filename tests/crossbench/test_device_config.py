@@ -962,5 +962,138 @@ class DeviceConfigTestCase(unittest.TestCase):
       check_config(required, actual, RequiredDeviceConfigMode.WARN)
 
 
+class DeviceConfigTargetTestCase(unittest.TestCase):
+  """Tests for the targets that requirements name, explicitly or not."""
+
+  def target_of(self, required: Any) -> str | None:
+    """Returns the target of a requirement placed at a single key."""
+    parsed = parse_required_device_config({"platform": {"key": required}})
+    (requirement,) = parsed["platform"]
+    return requirement.target
+
+  def assert_parse_raises(self, required: Any, expected_message: str) -> None:
+    """Assert that parsing a requirement at a single key raises."""
+    with self.assertRaises(DeviceConfigError) as cm:
+      self.target_of(required)
+    self.assertIn(expected_message, str(cm.exception))
+
+  def assert_parse_asserts(self, required: Any) -> None:
+    """Assert that parsing a requirement at a single key fails an assertion."""
+    with self.assertRaises(AssertionError):
+      self.target_of(required)
+
+  def test_exact_value_is_its_own_target(self):
+    """Verify an exact string requirement targets that string."""
+    self.assertEqual(self.target_of("1.0"), "1.0")
+
+  def test_null_value_targets_deletion(self):
+    """Verify a 'null' requirement targets deleting the setting."""
+    self.assertEqual(self.target_of("null"), "null")
+
+  def test_empty_value_is_its_own_target(self):
+    """Verify an empty string requirement targets the empty string."""
+    self.assertEqual(self.target_of(""), "")
+
+  def test_explicit_empty_target(self):
+    """Verify an explicit empty target is kept, not treated as absent."""
+    self.assertEqual(self.target_of({"$regex": ".*", "$target": ""}), "")
+
+  def test_regex_without_target_has_none(self):
+    """Verify a regex requirement has no implicit target."""
+    self.assertIsNone(self.target_of({"$regex": "a.*"}))
+
+  def test_numeric_range_without_target_has_none(self):
+    """Verify a numeric range requirement has no implicit target."""
+    self.assertIsNone(self.target_of({"$min": "10"}))
+
+  def test_regex_with_explicit_target(self):
+    """Verify a regex requirement takes its explicit target."""
+    required = {"$regex": "a.*", "$target": "abc"}
+    self.assertEqual(self.target_of(required), "abc")
+
+  def test_numeric_range_with_explicit_target(self):
+    """Verify a numeric range requirement takes its explicit target."""
+    required = {"$min": "10", "$max": "20", "$target": "15"}
+    self.assertEqual(self.target_of(required), "15")
+
+  def test_list_takes_first_value_target(self):
+    """Verify a list requirement takes the target of its first item."""
+    self.assertEqual(self.target_of(["1.0", "null"]), "1.0")
+
+  def test_list_takes_first_null_target(self):
+    """Verify a list whose first item is 'null' targets deletion."""
+    self.assertEqual(self.target_of(["null", "1.0"]), "null")
+
+  def test_list_takes_first_explicit_target(self):
+    """Verify a list takes the explicit target of a first mapping item."""
+    required = [{"$min": "10", "$target": "15"}, "auto"]
+    self.assertEqual(self.target_of(required), "15")
+
+  def test_list_takes_nested_first_target(self):
+    """Verify a nested first item supplies the target of its own list."""
+    required = [["one", "two"], "three"]
+    self.assertEqual(self.target_of(required), "one")
+
+  def test_list_without_first_target_has_none(self):
+    """Verify later items never supply a target the first item lacks."""
+    self.assertIsNone(self.target_of([{"$regex": "a.*"}, "manual"]))
+
+  def test_explicit_target_does_not_change_matching(self):
+    """Verify an explicit target leaves what is accepted unchanged."""
+    required = {"key": {"$min": "10", "$target": "15"}}
+    check_config(required, {"key": "12"}, RequiredDeviceConfigMode.THROW)
+    with self.assertRaises(DeviceConfigError) as cm:
+      check_config(required, {"key": "5"}, RequiredDeviceConfigMode.THROW)
+    self.assertIn("key: got '5', expected numeric value >= 10.0.",
+                  str(cm.exception))
+
+  def test_null_target_failing_regex_asserts(self):
+    """Verify deletion is not a valid target for a regex."""
+    # A regex only ever matches present values, so deleting cannot meet it.
+    self.assert_parse_asserts({"$regex": "(null)?", "$target": "null"})
+
+  def test_target_alone_asserts(self):
+    """Verify a target must accompany an operator."""
+    self.assert_parse_asserts({"$target": "1.0"})
+
+  def test_non_string_target_asserts(self):
+    """Verify a target must be a string."""
+    self.assert_parse_asserts({"$min": "10", "$target": 15})
+
+  def test_null_target_asserts(self):
+    """Verify a null target is rejected rather than read as absent."""
+    self.assert_parse_asserts({"$min": "10", "$target": None})
+
+  def test_target_failing_regex_asserts(self):
+    """Verify a target must match the pattern it accompanies."""
+    self.assert_parse_asserts({"$regex": "a.*", "$target": "bcd"})
+
+  def test_target_failing_numeric_range_asserts(self):
+    """Verify a target must fall within the range it accompanies."""
+    self.assert_parse_asserts({"$min": "10", "$max": "20", "$target": "25"})
+
+  def test_null_target_failing_numeric_range_asserts(self):
+    """Verify deletion is not a valid target for a numeric range."""
+    self.assert_parse_asserts({"$min": "10", "$target": "null"})
+
+  def test_target_failing_in_list_item_asserts(self):
+    """Verify a target is validated inside a requirement list too."""
+    self.assert_parse_asserts(["auto", {"$min": "10", "$target": "5"}])
+
+  def test_target_with_unknown_operator_raises(self):
+    """Verify a target does not mask a misspelled operator."""
+    required = {"$rgex": "a.*", "$target": "abc"}
+    self.assert_parse_raises(
+        required, "key: Invalid config: unknown or conflicting keys "
+        "['$rgex'].")
+
+  def test_target_with_conflicting_operators_raises(self):
+    """Verify a target does not mask operators of different forms."""
+    required = {"$regex": "1", "$min": "1", "$target": "1"}
+    self.assert_parse_raises(
+        required, "key: Invalid config: unknown or conflicting keys "
+        "['$regex', '$min'].")
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
