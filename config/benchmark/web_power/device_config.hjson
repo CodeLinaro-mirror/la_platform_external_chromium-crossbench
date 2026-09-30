@@ -18,11 +18,20 @@
         // https://developer.android.com/reference/android/provider/Settings.Global#STAY_ON_WHILE_PLUGGED_IN
         "stay_on_while_plugged_in": "15"
 
-        // Ensures standard system animation scales.
-        // TODO: Support null | 1.0.
-        "window_animation_scale": "1.0"
-        "transition_animation_scale": "1.0"
-        "animator_duration_scale": "null"
+        // Ensures standard system animation scales. Default / unset is
+        // typically "null" (or 1.0 depending on the OS build).
+        "window_animation_scale": [
+          "null"
+          "1.0"
+        ]
+        "transition_animation_scale": [
+          "null"
+          "1.0"
+        ]
+        "animator_duration_scale": [
+          "null"
+          "1.0"
+        ]
 
         // Enables Airplane mode to prevent cellular radio power spikes.
         // Values: 0 = OFF, 1 = ON.
@@ -77,14 +86,22 @@
         // TODO: Uncomment or remove `min_refresh_rate`.
         // "min_refresh_rate": "null"
 
-        // Keeps display timeout sufficiently long (30 mins = 1800000 ms) to
-        // prevent screen dimming during runs.
+        // Keeps display timeout sufficiently long (at least 30 mins =
+        // 1800000 ms) to prevent screen dimming during runs. Any longer
+        // timeout serves the same purpose.
         // When benchmarking a disconnect device, this is also the best
         // available replacement for `stay_on_while_plugged_in`.
-        "screen_off_timeout": "1800000"
+        "screen_off_timeout": {
+          "$min": 1800000
+        }
 
-        // Enforces standard font scale (1.0) to avoid text reflow differences.
-        "font_scale": "1.0"
+        // Enforces standard font scale to avoid text reflow differences.
+        // Default / unset is typically "null" (or 1.0 depending on the OS
+        // build).
+        "font_scale": [
+          "null"
+          "1.0"
+        ]
 
         // Disables auto-rotation to keep the display orientation locked.
         // Values: 0 = OFF (locked), 1 = ON (auto-rotate).
@@ -101,9 +118,12 @@
       // unexpected app throttling or kills during runs.
       "activity_manager/bg_current_drain_auto_restrict_abusive_apps_enabled": "false"
 
-      // Enforces standard font scale (1.0) to avoid text reflow differences.
-      // TODO: Support null | 1.0.
-      "accessibility/font_scale": "null"
+      // Enforces standard font scale. Default / unset is typically "null"
+      // (or 1.0 depending on the OS build).
+      "accessibility/font_scale": [
+        "null"
+        "1.0"
+      ]
     }
     // TODO: Add support in AndroidAdbPlatform.device_config() for querying
     // services via 'cmd <service>'. Use it to validate night mode.

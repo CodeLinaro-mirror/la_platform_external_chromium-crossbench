@@ -26,7 +26,9 @@ from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CBArgumentParser
-from crossbench.device_config import parse_required_device_config
+from crossbench.device_config import DeviceConfigError, DeviceConfigMap, \
+    RequiredDeviceConfigMode, check_device_config, \
+    parse_required_device_config
 from crossbench.env.runner_env import ValidationMode
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.parse import ObjectParser
@@ -39,7 +41,8 @@ from crossbench.probes.trace_processor.trace_processor import \
     TraceProcessorProbe
 from crossbench.runner.runner import Runner
 from tests import test_helper
-from tests.crossbench.base import BaseCrossbenchTestCase, SysExitTestException
+from tests.crossbench.base import BaseCrossbenchTestCase, \
+    CrossbenchFakeFsTestCase, SysExitTestException
 from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
 
 if TYPE_CHECKING:
@@ -161,6 +164,92 @@ class WebPowerStoryTestCase(unittest.TestCase):
     self.assertEqual(args.network_config.expected_md5_hash, b"")
 
 
+class WebPowerRequiredDeviceConfigTestCase(CrossbenchFakeFsTestCase):
+  """Tests for the device config requirements shipped with WebPower."""
+
+  # Scale factors that a compliant device reports either as unset or as an
+  # explicit "1.0", depending on the OS build.
+  SCALE_KEYS: ClassVar[tuple[tuple[str, ...], ...]] = (
+      ("settings", "global", "window_animation_scale"),
+      ("settings", "system", "font_scale"),
+      ("device_config", "accessibility/font_scale"),
+  )
+
+  SCREEN_OFF_TIMEOUT: ClassVar[tuple[str, ...]] = ("settings", "system",
+                                                   "screen_off_timeout")
+
+  def setUp(self) -> None:
+    super().setUp()
+    config_path = WebPowerBenchmarkBase.REQUIRED_DEVICE_CONFIG
+    self.assertIsInstance(config_path, pth.AnyPath)
+    assert isinstance(config_path, pth.AnyPath)
+    self.fs.add_real_file(config_path)
+    self.config_path: pth.LocalPath = config_path
+
+  def parse(self) -> Any:
+    """Parses the shipped config, validating every requirement in it."""
+    return parse_required_device_config(self.config_path)
+
+  def discrepancies_for(self, key_path: Sequence[str],
+                        value: str | None) -> str:
+    """Reports discrepancies for a device reporting only key_path=value.
+
+    Other requirements are reported as discrepancies too, so callers must
+    only assert on the key under test.
+    """
+    actual: DeviceConfigMap = {} if value is None else self.nested(
+        key_path, value)
+    try:
+      check_device_config(self.parse()["android"], actual,
+                          RequiredDeviceConfigMode.THROW)
+    except DeviceConfigError as e:
+      return str(e)
+    return ""
+
+  @staticmethod
+  def nested(key_path: Sequence[str], value: str) -> DeviceConfigMap:
+    """Wraps value in the sections named by key_path."""
+    node: DeviceConfigMap = {key_path[-1]: value}
+    for key in reversed(key_path[:-1]):
+      node = {key: node}
+    return node
+
+  def test_parses(self) -> None:
+    """Verify the shipped config is valid, with android requirements."""
+    self.assertTrue(self.parse()["android"])
+
+  def test_scale_keys_accept_both_spellings_of_the_default(self) -> None:
+    """Verify unset and an explicit "1.0" both satisfy every scale key."""
+    for key_path in self.SCALE_KEYS:
+      for value in (None, "1.0"):
+        with self.subTest(key=".".join(key_path), value=value):
+          self.assertNotIn(".".join(key_path),
+                           self.discrepancies_for(key_path, value))
+
+  def test_scale_keys_reject_a_non_default_scale(self) -> None:
+    """Verify a rescaled device is still reported for every scale key."""
+    for key_path in self.SCALE_KEYS:
+      with self.subTest(key=".".join(key_path)):
+        self.assertIn(".".join(key_path),
+                      self.discrepancies_for(key_path, "2.0"))
+
+  def test_screen_off_timeout_accepts_longer_timeouts(self) -> None:
+    """Verify the bound accepts 30 mins and anything above it."""
+    # 30 mins exactly, an hour, and "never".
+    for value in ("1800000", "3600000", "2147483647"):
+      with self.subTest(value=value):
+        self.assertNotIn(".".join(self.SCREEN_OFF_TIMEOUT),
+                         self.discrepancies_for(self.SCREEN_OFF_TIMEOUT, value))
+
+  def test_screen_off_timeout_rejects_shorter_timeouts(self) -> None:
+    """Verify a display that may dim mid-run is reported."""
+    # The Android default of 30s, and 10 mins.
+    for value in ("30000", "600000"):
+      with self.subTest(value=value):
+        self.assertIn(".".join(self.SCREEN_OFF_TIMEOUT),
+                      self.discrepancies_for(self.SCREEN_OFF_TIMEOUT, value))
+
+
 class BaseWebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
 
   def parse_args(self, *args: str | Sequence[str]) -> argparse.Namespace:
@@ -202,15 +291,6 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
   def test_default_cool_down(self) -> None:
     self.assertEqual(MockWebPowerBenchmark.DEFAULT_COOL_DOWN,
                      dt.timedelta(minutes=2))
-
-  def test_required_device_config(self) -> None:
-    config_path = WebPowerBenchmarkBase.REQUIRED_DEVICE_CONFIG
-    self.assertIsInstance(config_path, pth.AnyPath)
-    assert isinstance(config_path, pth.AnyPath)
-    self.fs.add_real_file(config_path)
-    # Parsing validates every requirement in the shipped config.
-    config = parse_required_device_config(config_path)
-    self.assertTrue(config["android"])
 
   def test_kwargs_from_cli_site(self) -> None:
     args = self.parse_args("--site", "cnn")
