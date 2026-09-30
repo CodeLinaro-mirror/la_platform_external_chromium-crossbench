@@ -155,7 +155,7 @@ class DeviceConfigParserTestCase(CrossbenchFakeFsTestCase):
 
 
 class DeviceConfigTestCase(unittest.TestCase):
-  """Tests for device configuration comparison and platform querying."""
+  """Tests for the requirement grammar, comparison and platform querying."""
 
   _REQUIRED_IMMERSIVE_CONFIRMED: DeviceConfigMap = {
       "settings": {
@@ -686,12 +686,12 @@ class DeviceConfigTestCase(unittest.TestCase):
         {"key": ["1.0", "2.0"]}, {},
         "key: value was absent, expected any of ('1.0', '2.0').")
 
-  def test_any_of_predicate_rejects_mapping_item(self):
-    """Verify error on a mapping within a requirement list."""
-    # Mappings denote subsections, so they are not valid list items.
+  def test_any_of_predicate_rejects_invalid_mapping_item(self):
+    """Verify error on a mapping with unknown keys in a requirement list."""
     required = {"key": ["valid", {"nested": "value"}]}
-    self.assert_parse_raises(required,
-                             "key: Invalid config: {'nested': 'value'}.")
+    self.assert_parse_raises(
+        required, "key: Invalid config: unknown or conflicting keys "
+        "['nested'].")
 
   def test_any_of_predicate_rejects_empty_list(self):
     """Verify error on empty requirement list."""
@@ -702,6 +702,103 @@ class DeviceConfigTestCase(unittest.TestCase):
     """Verify an empty requirement mapping imposes no requirements."""
     required = {"settings": {"system": {"key": {}}}}
     check_config(required, {}, RequiredDeviceConfigMode.THROW)
+
+  def test_regex_predicate_matches_full_value(self):
+    """Verify a regex requirement matches when the whole value matches."""
+    required = {"key": {"$regex": r"1[4-6](\..*)?"}}
+    for version in ("14", "15.1"):
+      with self.subTest(version=version):
+        check_config(required, {"key": version}, RequiredDeviceConfigMode.THROW)
+
+  def test_regex_predicate_rejects_partial_match(self):
+    """Verify a regex requirement is not satisfied by a substring match."""
+    required = {"key": {"$regex": r"1[4-6](\..*)?"}}
+    self.assert_check_raises(
+        required, {"key": "114"},
+        r"key: got '114', expected a full match for pattern '1[4-6](\..*)?'.")
+
+  def test_regex_predicate_rejects_non_matching_value(self):
+    """Verify a discrepancy when the value does not match the pattern."""
+    required = {"key": {"$regex": r"1[4-6](\..*)?"}}
+    self.assert_check_raises(
+        required, {"key": "13"},
+        r"key: got '13', expected a full match for pattern '1[4-6](\..*)?'.")
+
+  def test_regex_predicate_rejects_absent_value(self):
+    """Verify a discrepancy when the value is absent."""
+    required = {"key": {"$regex": r"1[4-6](\..*)?"}}
+    self.assert_check_raises(
+        required, {}, r"key: value was absent, "
+        r"expected a full match for pattern '1[4-6](\..*)?'.")
+
+  def test_any_of_predicate_matches_regex_alternative(self):
+    """Verify requirement list mixing a regex with an exact string."""
+    required = {"key": [{"$regex": r"auto.*"}, "manual"]}
+    for value in ("auto_mode", "manual"):
+      with self.subTest(value=value):
+        check_config(required, {"key": value}, RequiredDeviceConfigMode.THROW)
+
+  def test_any_of_predicate_rejects_regex_alternative_mismatch(self):
+    """Verify a discrepancy describing a regex alternative."""
+    required = {"key": [{"$regex": r"auto.*"}, "manual"]}
+    self.assert_check_raises(
+        required, {"key": "unknown"}, "key: got 'unknown', expected any of "
+        "(a full match for pattern 'auto.*', 'manual').")
+
+  def test_predicate_mapping_rejects_unknown_key(self):
+    """Verify error when unknown keys are in predicate dictionary."""
+    required = {"key": {"$regex": "foo", "unknown_opt": "bar"}}
+    self.assert_parse_raises(
+        required, "key: Invalid config: unknown or conflicting keys "
+        "['$regex', 'unknown_opt'].")
+
+  def test_regex_predicate_rejects_non_string(self):
+    """Verify error when a regex pattern is not a string."""
+    required = {"key": {"$regex": 5}}
+    self.assert_parse_raises(required,
+                             "key: Invalid $regex: expected str, got 5.")
+
+  def test_regex_predicate_rejects_null_pattern(self):
+    """Verify error when a regex pattern is null."""
+    required = {"key": {"$regex": None}}
+    self.assert_parse_raises(required,
+                             "key: Invalid $regex: expected str, got None.")
+
+  def test_regex_predicate_rejects_invalid_syntax(self):
+    """Verify error when regex string has invalid syntax."""
+    self.assert_parse_raises({"key": {"$regex": "["}}, "key: Invalid $regex:")
+
+  def test_predicate_mapping_rejects_empty_mapping_in_list(self):
+    """Verify error on empty mapping within requirement list."""
+    self.assert_parse_raises({"key": ["valid", {}]},
+                             "key: Invalid empty configuration mapping.")
+
+  def test_predicate_mapping_rejects_unknown_operator(self):
+    """Verify error when a mistyped operator is used."""
+    required = {"key": {"$rgex": "foo"}}
+    self.assert_parse_raises(
+        required, "key: Invalid config: unknown or conflicting keys "
+        "['$rgex'].")
+
+  def test_section_key_may_shadow_an_operator_name(self):
+    """Verify a setting named like an operator stays a section key."""
+    required = {"getprop": {"regex": "abc"}}
+    actual = {"getprop": {"regex": "abc"}}
+    check_config(required, actual, RequiredDeviceConfigMode.THROW)
+
+  def test_section_key_shadowing_an_operator_reports_discrepancy(self):
+    """Verify a setting named like an operator is compared by value."""
+    required = {"getprop": {"regex": "abc"}}
+    actual = {"getprop": {"regex": "other"}}
+    self.assert_check_raises(required, actual,
+                             "getprop.regex: got 'other', expected 'abc'.")
+
+  def test_actual_config_rejects_an_operator_prefixed_key(self):
+    """Verify a device config key may not start with the operator prefix."""
+    required = {"getprop": {"key": "abc"}}
+    actual = {"getprop": {"$key": "abc"}}
+    with self.assertRaises(AssertionError):
+      check_config(required, actual, RequiredDeviceConfigMode.WARN)
 
 
 if __name__ == "__main__":
