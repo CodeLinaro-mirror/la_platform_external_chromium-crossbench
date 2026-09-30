@@ -15,7 +15,7 @@ import colorama
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.helper import terminal
+from crossbench.helper import input_helper, terminal
 from crossbench.helper.spinner import Spinner
 
 if TYPE_CHECKING:
@@ -160,7 +160,7 @@ def spinner(sleep: float = 0.5, title: str = "") -> Iterator[Spinner]:
 def prompt(message: str = "",
            hint: str = "",
            color: str = colorama.Fore.RESET) -> str:
-  return input(f"{color}{message}{colorama.Fore.RESET} {hint}")
+  return input_helper.prompt(f"{color}{message}{colorama.Fore.RESET} {hint}")
 
 
 def link(path_or_url: pth.AnyPathLike, text: str | None = None) -> str:

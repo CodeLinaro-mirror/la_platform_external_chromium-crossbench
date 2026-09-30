@@ -32,7 +32,12 @@ class TestManualBenchmark(BaseBenchmarkTestCase):
       self.assertFalse(urls)
 
   def test_run_auto_start(self):
-    with mock.patch("builtins.input", lambda *args: "y"):
+    with (
+        mock.patch("builtins.input", lambda *args: "y"),
+        mock.patch(
+            "crossbench.helper.input_helper.input_with_timeout",
+            return_value="y"),
+    ):
       self._test_run(start_after=dt.timedelta(seconds=0.2))
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
@@ -40,7 +45,12 @@ class TestManualBenchmark(BaseBenchmarkTestCase):
       self.assertFalse(urls)
 
   def test_run_custom_duration(self):
-    with mock.patch("builtins.input", lambda *args: "y"):
+    with (
+        mock.patch("builtins.input", lambda *args: "y"),
+        mock.patch(
+            "crossbench.helper.input_helper.input_with_timeout",
+            return_value="y"),
+    ):
       self._test_run(run_for=dt.timedelta(seconds=0.2))
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)

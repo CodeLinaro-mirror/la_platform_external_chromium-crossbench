@@ -54,7 +54,8 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
       logging.critical(
           "The browser has launched. Measurement will start in %s"
           " (or press enter to start immediately)", self._start_after)
-      input_helper.input_with_timeout(timeout=self._start_after)
+      with contextlib.suppress(KeyboardInterrupt):
+        input_helper.input_with_timeout(timeout=self._start_after)
     logging.info("Starting Manual Benchmark...")
 
   def run(self, run: Run) -> None:
@@ -78,7 +79,8 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
       logging.critical(
           "Measurement has started. The browser will close in %s"
           " (or press enter to close immediately)", self._run_for)
-      input_helper.input_with_timeout(timeout=self._run_for)
+      with contextlib.suppress(KeyboardInterrupt):
+        input_helper.input_with_timeout(timeout=self._run_for)
 
   @classmethod
   @override
