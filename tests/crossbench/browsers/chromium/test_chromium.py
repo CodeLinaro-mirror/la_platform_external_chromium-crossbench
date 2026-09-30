@@ -9,6 +9,8 @@ import re
 import unittest
 from unittest import mock
 
+import urllib3
+
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.base import ChromiumBaseMixin
@@ -238,6 +240,85 @@ class ChromiumBasedWebDriverTestCase(unittest.TestCase):
       self.assertIsNone(browser.get_renderer_main_tid())
     base_mock = mock.Mock(spec=Browser)
     self.assertIsNone(Browser.get_renderer_main_tid(base_mock))
+
+  def test_find_driver_pid_capabilities_fallback(self):
+    mock_driver = mock.MagicMock(name="Mock Driver")
+    mock_driver.service.process.pid = 1111
+    mock_driver.capabilities = {"goog:processID": 2222}
+    browser = MockChromiumBasedWebDriver("test-driver", mock_driver)
+    browser.platform.is_local = True
+    browser.platform.process_children.return_value = []
+    browser._find_driver_pid()
+    self.assertEqual(browser._driver_pid, 1111)
+    self.assertEqual(browser.pid, 2222)
+
+  def test_quit_waits_for_browser_quit(self):
+    mock_driver = mock.MagicMock(name="Mock Driver")
+    browser = MockChromiumBasedWebDriver("test-driver", mock_driver)
+    browser._is_running = True
+    browser._pid = 2222
+    browser._driver_pid = 1111
+    browser.platform.is_local = True
+    browser.platform.is_android = False
+    browser.platform.is_macos = False
+    browser.platform.host_platform.is_local = True
+    browser.platform.process_info.side_effect = [{"pid": 2222}, None]
+    browser.platform.host_platform.process_info.return_value = None
+
+    with mock.patch.object(browser, "close_all_tabs") as mock_close_all_tabs:
+      browser.quit()
+      mock_close_all_tabs.assert_called_once_with()
+
+    mock_driver.execute.assert_called_once_with(
+        "executeCdpCommand", {
+            "cmd": "Browser.close",
+            "params": {},
+        })
+    mock_driver.close.assert_not_called()
+    self.assertEqual(browser.platform.process_info.call_count, 2)
+    browser.platform.terminate.assert_not_called()
+    self.assertIsNone(browser._pid)
+    mock_driver.quit.assert_called_once_with()
+
+  def test_quit_handles_http_error(self):
+    mock_driver = mock.MagicMock(name="Mock Driver")
+    mock_driver.execute.side_effect = urllib3.exceptions.MaxRetryError(
+        mock.Mock(), "/session/test/chromium/send_command_and_get_result")
+    browser = MockChromiumBasedWebDriver("test-driver", mock_driver)
+    browser._is_running = True
+    browser._pid = 2222
+    browser._driver_pid = 1111
+    browser.platform.is_local = True
+    browser.platform.is_android = False
+    browser.platform.is_macos = False
+    browser.platform.host_platform.is_local = True
+    browser.platform.process_info.side_effect = [{"pid": 2222}, None]
+    browser.platform.host_platform.process_info.return_value = None
+
+    with mock.patch.object(browser, "close_all_tabs") as mock_close_all_tabs:
+      browser.quit()
+      mock_close_all_tabs.assert_called_once_with()
+
+    self.assertEqual(browser.platform.process_info.call_count, 2)
+    browser.platform.terminate.assert_not_called()
+    self.assertIsNone(browser._pid)
+    mock_driver.quit.assert_called_once_with()
+
+  def test_clear_cache_resets_cache_dir_on_rm_error(self):
+    mock_driver = mock.MagicMock(name="Mock Driver")
+    browser = MockChromiumBasedWebDriver("test-driver", mock_driver)
+    # Settings default to clear_cache_dir=True, so the rm path is exercised.
+    self.assertTrue(browser.clear_cache_dir)
+    cache_dir = pth.AnyPath("/tmp/chrome_cache_dir")
+    browser._cache_dir = cache_dir
+    browser.platform.rm.side_effect = PermissionError("Locked file")
+
+    with self.assertRaises(PermissionError):
+      browser._teardown_cache_dir()
+
+    browser.platform.rm.assert_called_once_with(
+        cache_dir, missing_ok=True, dir=True)
+    self.assertIsNone(browser._cache_dir)
 
 
 class ChromeDriverFinderTestCase(BaseCrossbenchTestCase):

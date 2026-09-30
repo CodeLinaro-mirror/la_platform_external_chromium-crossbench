@@ -400,10 +400,12 @@ class Browser(abc.ABC):
     self._clear_cache(self._cache_dir)
 
   def _clear_cache(self, cache_dir: pth.AnyPath | None) -> None:
-    if self.clear_cache_dir and cache_dir:
-      logging.debug("CLEAR CACHE: %s", cache_dir)
-      self.platform.rm(cache_dir, missing_ok=True, dir=True)
-    self._cache_dir = None
+    try:
+      if self.clear_cache_dir and cache_dir:
+        logging.debug("CLEAR CACHE: %s", cache_dir)
+        self.platform.rm(cache_dir, missing_ok=True, dir=True)
+    finally:
+      self._cache_dir = None
 
   def start(self, session: BrowserSessionRunGroup) -> None:
     del session

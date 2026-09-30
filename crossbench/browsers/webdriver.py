@@ -24,6 +24,7 @@ from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
+from crossbench.helper import wait
 from crossbench.probes.internal.browser.driver_log import BrowserDriverLogProbe
 from crossbench.types import JsonDict
 
@@ -368,6 +369,13 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     try:
       assert self._is_running
       self.close_all_tabs()
+      try:
+        self._close_browser_window(self._private_driver)
+      except (selenium.common.exceptions.NoSuchWindowException,
+              selenium.common.exceptions.WebDriverException,
+              urllib3.exceptions.HTTPError) as e:
+        logging.debug("Could not close browser window during quit: %s", e)
+      self._wait_for_browser_quit()
     finally:
       super().quit()
 
@@ -386,27 +394,45 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       super().force_quit()
 
   def force_quit_webdriver(self, driver: webdriver.Remote) -> None:
-    try:
-      # Close the current window.
-      driver.close()
-      time.sleep(0.1)
-    except (selenium.common.exceptions.NoSuchWindowException,
-            selenium.common.exceptions.WebDriverException):
-      # No window is good.
-      pass
-    except selenium.common.exceptions.InvalidSessionIdException:
-      # Closing the last tab will close the session as well.
-      return
+    if self._pid != 0:
+      try:
+        # Close the current window.
+        driver.close()
+        time.sleep(0.1)
+      except (selenium.common.exceptions.NoSuchWindowException,
+              selenium.common.exceptions.WebDriverException,
+              urllib3.exceptions.HTTPError):
+        # No window or unreachable driver is good.
+        pass
     try:
       driver.quit()
-    except selenium.common.exceptions.InvalidSessionIdException:
+    except (selenium.common.exceptions.InvalidSessionIdException,
+            urllib3.exceptions.HTTPError):
       return
     # Sometimes a second quit is needed, ignore any warnings there
+    if (self._driver_pid and self.host_platform.is_local and
+        not self.host_platform.process_info(self._driver_pid)):
+      return
     try:
       driver.quit()
     except Exception as e:  # noqa: BLE001
       logging.debug("Driver raised exception on quit: %s\n%s", e,
                     traceback.format_exc())
+
+  def _close_browser_window(self, driver: webdriver.Remote) -> None:
+    driver.close()
+
+  def _wait_for_browser_quit(self) -> None:
+    if not self._pid or not self.platform.is_local:
+      return
+    try:
+      for _ in wait.WaitRange(min=0.1, timeout=30).wait_with_backoff():
+        if not self.platform.process_info(self._pid):
+          self._pid = 0
+          return
+    except TimeoutError:
+      logging.debug("Timed out waiting for browser process %s to exit.",
+                    self._pid)
 
 
 class RemoteWebDriver(WebDriverBrowser, Browser):

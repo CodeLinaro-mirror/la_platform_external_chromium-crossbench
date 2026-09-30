@@ -123,10 +123,16 @@ class ChromiumBasedWebDriver(
         candidates.append(child["pid"])
     if len(candidates) == 1:
       self._pid = candidates[0]
-    else:
-      logging.debug(
-          "Could not find unique browser process for webdriver: %s, got %s",
-          self, candidates)
+      return
+    if self.platform.is_local:
+      capabilities = self._private_driver.capabilities
+      if isinstance(capabilities, dict) and isinstance(
+          pid := capabilities.get("goog:processID"), int):
+        self._pid = pid
+        return
+    logging.debug(
+        "Could not find unique browser process for webdriver: %s, got %s",
+        self, candidates)
 
   @override
   def _find_driver(self) -> pth.AnyPath:
@@ -416,6 +422,19 @@ class ChromiumBasedWebDriver(
     output = self._tracer.end()
     self._tracer = None
     return output
+
+  @override
+  def _close_browser_window(self, driver: webdriver.Remote) -> None:
+    if self.platform.is_android:
+      super()._close_browser_window(driver)
+      return
+    # Calling driver.close() on the last tab invokes ChromeDriver's
+    # ExecuteClose -> session->chrome->Quit(), which immediately terminates
+    # the browser process on Windows (TerminateProcess) before background
+    # startup tracing (Perfetto) can finish flushing large trace buffers.
+    # Sending CDP Browser.close initiates a graceful browser shutdown on the
+    # UI thread without triggering ChromeDriver's immediate process kill.
+    self._execute_cdp_cmd(driver, "Browser.close", {})
 
   @override
   def force_quit(self) -> None:
