@@ -17,8 +17,9 @@ from crossbench import plt
 from crossbench.benchmarks import benchmark_validator
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.cli.ui import ui
-from crossbench.device_config import DeviceConfigError, DeviceConfigSetter, \
-    RequiredDeviceConfig, RequiredDeviceConfigMode, check_device_config
+from crossbench.device_config import DeviceConfigSetter, \
+    DeviceConfigValueError, RequiredDeviceConfig, RequiredDeviceConfigMode, \
+    check_device_config
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.helper import collection_helper
 from crossbench.helper.wait import WaitRange
@@ -663,7 +664,8 @@ class Runner:
     with self._exceptions.capture("Restoring device config"):
       if failures:
         issues = "\n".join(f"  - {failure}" for failure in failures)
-        raise DeviceConfigError(f"Failed to restore device config:\n{issues}")
+        raise DeviceConfigValueError(
+            f"Failed to restore device config:\n{issues}")
 
   def _setup_runs(self) -> None:
     self._all_runs = list(self._get_runs())

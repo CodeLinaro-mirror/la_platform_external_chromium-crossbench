@@ -26,7 +26,7 @@ from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CBArgumentParser
-from crossbench.device_config import DeviceConfigError, DeviceConfigMap, \
+from crossbench.device_config import DeviceConfigMap, DeviceConfigValueError, \
     RequiredDeviceConfig, RequiredDeviceConfigMode, check_device_config
 from crossbench.env.runner_env import ValidationMode
 from crossbench.network.replay.wpr import WprReplayNetwork
@@ -199,7 +199,7 @@ class WebPowerRequiredDeviceConfigTestCase(CrossbenchFakeFsTestCase):
     try:
       check_device_config(required.platforms["android"], actual,
                           RequiredDeviceConfigMode.THROW)
-    except DeviceConfigError as e:
+    except DeviceConfigValueError as e:
       return str(e)
     return ""
 

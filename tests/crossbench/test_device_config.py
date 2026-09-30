@@ -18,8 +18,8 @@ from crossbench import path as pth
 from crossbench.benchmarks.base import Benchmark
 from crossbench.config import ConfigError
 from crossbench.device_config import DeviceConfigError, DeviceConfigKeyPath, \
-    DeviceConfigMap, DeviceConfigSetter, RequiredDeviceConfig, \
-    RequiredDeviceConfigMode, check_device_config
+    DeviceConfigMap, DeviceConfigSetter, DeviceConfigValueError, \
+    RequiredDeviceConfig, RequiredDeviceConfigMode, check_device_config
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.base import Platform, SubprocessError
@@ -182,6 +182,16 @@ class DeviceConfigParserTestCase(CrossbenchFakeFsTestCase):
     config = {"android": {"key": "val"}, "macos": {"key": 5}}
     self.assert_parse_raises(config, "key: Invalid config: 5.")
 
+  def test_parse_errors_and_discrepancies_are_distinct(self):
+    """Verify only malformed requirements raise a ConfigError."""
+    with self.assertRaises(ConfigError) as parse_cm:
+      parse_inline({"platform": {"key": 5}})
+    self.assertNotIsInstance(parse_cm.exception, DeviceConfigValueError)
+
+    with self.assertRaises(DeviceConfigValueError) as check_cm:
+      check_config({"key": "val"}, {}, RequiredDeviceConfigMode.THROW)
+    self.assertNotIsInstance(check_cm.exception, ConfigError)
+
 
 class DeviceConfigTestCase(unittest.TestCase):
   """Tests for the requirement grammar, comparison and platform querying."""
@@ -197,13 +207,13 @@ class DeviceConfigTestCase(unittest.TestCase):
   def assert_check_raises(self, required: Any, actual: Any,
                           expected_message: str) -> None:
     """Assert that check_device_config raises the expected error."""
-    with self.assertRaises(DeviceConfigError) as cm:
+    with self.assertRaises(DeviceConfigValueError) as cm:
       check_config(required, actual, RequiredDeviceConfigMode.THROW)
     self.assertIn(expected_message, str(cm.exception))
 
   def assert_parse_raises(self, required: Any, expected_message: str) -> None:
     """Assert that parsing the requirements raises the expected error."""
-    with self.assertRaises(ValueError) as cm:
+    with self.assertRaises(DeviceConfigError) as cm:
       parse_inline({"platform": required})
     self.assertIn(expected_message, str(cm.exception))
 
@@ -229,7 +239,7 @@ class DeviceConfigTestCase(unittest.TestCase):
     check_config(config, config, RequiredDeviceConfigMode.THROW)
 
   def test_major_mismatch_default(self):
-    """Verify that value mismatches raise DeviceConfigError in THROW mode."""
+    """Verify value mismatches raise DeviceConfigValueError in THROW mode."""
     actual = {
         "settings": {
             "secure": {
@@ -467,7 +477,7 @@ class DeviceConfigTestCase(unittest.TestCase):
             "runtime_native/flag_one": "42",
         },
     }
-    with self.assertRaises(DeviceConfigError) as cm:
+    with self.assertRaises(DeviceConfigValueError) as cm:
       check_config(required, actual, RequiredDeviceConfigMode.THROW)
     error_msg = str(cm.exception)
     self.assertIn(
@@ -502,7 +512,7 @@ class DeviceConfigTestCase(unittest.TestCase):
             },
         },
     }
-    with self.assertRaises(DeviceConfigError) as cm:
+    with self.assertRaises(DeviceConfigValueError) as cm:
       check_config(required, actual, RequiredDeviceConfigMode.THROW)
     error_msg = str(cm.exception)
     self.assertIn(
@@ -511,10 +521,10 @@ class DeviceConfigTestCase(unittest.TestCase):
     self.assertNotIn("key_matching", error_msg)
 
   def test_check_device_config_invalid_mode(self):
-    """Verify that invalid modes raise DeviceConfigError."""
+    """Verify that invalid modes raise DeviceConfigValueError."""
     actual = {"key": "val1"}
     required = {"key": "val2"}
-    with self.assertRaises(DeviceConfigError):
+    with self.assertRaises(DeviceConfigValueError):
       check_config(
           required,
           actual,
@@ -626,13 +636,13 @@ class DeviceConfigTestCase(unittest.TestCase):
       platform.device_config()
 
   def test_boolean_in_config_raises(self):
-    """Verify that boolean values in required config raise ValueError."""
+    """Verify that boolean values in required config fail to parse."""
     required = {"device_config": {"activity_manager/flag1": True}}
     self.assert_parse_raises(
         required, "device_config.activity_manager/flag1: Invalid config:")
 
   def test_integer_in_config_raises(self):
-    """Verify that integer values in required config raise ValueError."""
+    """Verify that integer values in required config fail to parse."""
     required = {"settings": {"global": {"stay_on_while_plugged_in": 15}}}
     self.assert_parse_raises(
         required, "settings.global.stay_on_while_plugged_in: Invalid config:")
@@ -1073,7 +1083,7 @@ class DeviceConfigTargetTestCase(unittest.TestCase):
     """Verify an explicit target leaves what is accepted unchanged."""
     required = {"key": {"$min": "10", "$target": "15"}}
     check_config(required, {"key": "12"}, RequiredDeviceConfigMode.THROW)
-    with self.assertRaises(DeviceConfigError) as cm:
+    with self.assertRaises(DeviceConfigValueError) as cm:
       check_config(required, {"key": "5"}, RequiredDeviceConfigMode.THROW)
     self.assertIn("key: got '5', expected numeric value >= 10.0.",
                   str(cm.exception))
@@ -1272,10 +1282,11 @@ class DeviceConfigSetterTestCase(unittest.TestCase):
     requirements = parse_inline({name: nested}).platforms
     return DeviceConfigSetter(self.platform, requirements[name])
 
-  def assert_apply_raises(self,
-                          setter: DeviceConfigSetter,
-                          exception: type[BaseException] = DeviceConfigError,
-                          regex: str = "") -> str:
+  def assert_apply_raises(
+      self,
+      setter: DeviceConfigSetter,
+      exception: type[BaseException] = DeviceConfigValueError,
+      regex: str = "") -> str:
     """Asserts that apply() raises, and returns the error message."""
     with self.assertRaisesRegex(exception, regex) as cm:
       setter.apply()

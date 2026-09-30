@@ -16,7 +16,7 @@ from typing_extensions import override
 
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.webdriver import RemoteWebDriver
-from crossbench.device_config import DeviceConfig, DeviceConfigError, \
+from crossbench.device_config import DeviceConfig, DeviceConfigValueError, \
     RequiredDeviceConfigMode
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
@@ -992,8 +992,8 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
         mode=RequiredDeviceConfigMode.THROW)
 
   def test_setup_validates_required_device_config_error(self):
-    """Verifies setup raises DeviceConfigError on device config discrepancy."""
-    with self.assertRaises(DeviceConfigError):
+    """Verifies setup raises DeviceConfigValueError on a device discrepancy."""
+    with self.assertRaises(DeviceConfigValueError):
       self._setup_runner(
           required=self._valid_device_config(),
           actual=self._valid_device_config(value="wrong_val"),
@@ -1025,11 +1025,11 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
         required=config, actual=actual, mode=RequiredDeviceConfigMode.THROW)
 
   def test_setup_validates_required_device_config_from_json_file_error(self):
-    """Verifies setup raises DeviceConfigError on file config discrepancy."""
+    """Verifies setup raises DeviceConfigValueError on a file discrepancy."""
     config = self._valid_device_config()
     json_path = self.out_dir.parent / "required_device_config.json"
     json_path.write_text(json.dumps(config), encoding="utf-8")
-    with self.assertRaises(DeviceConfigError):
+    with self.assertRaises(DeviceConfigValueError):
       self._setup_runner(
           required=json_path,
           actual=self._valid_device_config(value="wrong_val"),
@@ -1165,7 +1165,7 @@ class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
 
   def test_dry_run_keeps_throw_mode(self):
     runner = self._runner("wrong_val", mode=RequiredDeviceConfigMode.THROW)
-    with self.assertRaises(DeviceConfigError):
+    with self.assertRaises(DeviceConfigValueError):
       runner.run(is_dry_run=True)
     self.assertEqual(self.writes, [])
 
@@ -1176,7 +1176,7 @@ class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
     with self.assertLogs(level=logging.ERROR) as logs:
       self._run_failing(runner, runner, "_run")
     self.assertIn("Failed to restore device config", "\n".join(logs.output))
-    self.assertEqual(runner._exceptions.matching(DeviceConfigError), [])
+    self.assertEqual(runner._exceptions.matching(DeviceConfigValueError), [])
     self.assertEqual(self.value, "test_val")
 
   def test_run_reports_failed_device_config_restore(self):
@@ -1195,7 +1195,7 @@ class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
     with mock.patch.object(runner, "_run", side_effect=run_then_break_restore):
       with self.assertRaises(MultiException):
         runner.run()
-    errors = runner._exceptions.matching(DeviceConfigError)
+    errors = runner._exceptions.matching(DeviceConfigValueError)
     self.assertEqual(len(errors), 1)
     self.assertIn("Failed to restore device config", str(errors[0]))
     self.assertEqual(self.value, "test_val")

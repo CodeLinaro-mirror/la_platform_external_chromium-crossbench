@@ -16,7 +16,7 @@ from immutabledict import immutabledict
 from typing_extensions import Self, override
 
 from crossbench import path as pth
-from crossbench.config import ConfigEnum, ConfigObject
+from crossbench.config import ConfigEnum, ConfigError, ConfigObject
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
@@ -105,8 +105,12 @@ class RequiredDeviceConfigMode(ConfigEnum):
          "then restore the original values.")
 
 
-class DeviceConfigError(ValueError):
-  """Raised on a malformed device configuration, or on a discrepancy."""
+class DeviceConfigValueError(ValueError):
+  """Raised when the device does not meet its config requirements."""
+
+
+class DeviceConfigError(ConfigError):
+  """Raised on malformed device config requirements."""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -197,10 +201,10 @@ def check_device_config(
       msg = (f"{msg}\nUse --required-device-config-mode=warn to bypass.\n"
              "Use --required-device-config-mode=set to set the values "
              "for the run.")
-      raise DeviceConfigError(msg)
+      raise DeviceConfigValueError(msg)
     case _:
       msg = f"Unhandled device config mode: {mode!r}.\n{msg}"
-      raise DeviceConfigError(msg)
+      raise DeviceConfigValueError(msg)
 
 
 def _has_reserved_keys(config: DeviceConfigMap) -> bool:
@@ -269,7 +273,7 @@ class DeviceConfigSetter:
     Changes made before a failure are not undone; call restore() for that.
 
     Raises:
-      DeviceConfigError: If any requirement is still unmet afterwards.
+      DeviceConfigValueError: If any requirement is still unmet afterwards.
       Exception: Any error from writing to the platform.
     """
     actual = self._read_device_config()
@@ -278,7 +282,7 @@ class DeviceConfigSetter:
     # Not check_device_config(), whose error suggests using SET mode.
     if discrepancies := _compare_device_config(self._requirements,
                                                self._read_device_config()):
-      raise DeviceConfigError(_format_discrepancies(discrepancies))
+      raise DeviceConfigValueError(_format_discrepancies(discrepancies))
 
   def _apply_requirement(self, requirement: DeviceConfigRequirement,
                          actual: DeviceConfigMap) -> None:
