@@ -29,6 +29,9 @@
             name: "org.chromium.histogram_sample"
             chromium_histogram_samples {
               histograms {
+                histogram_name: "Startup.BrowserWindow.FirstPaint"
+              }
+              histograms {
                 histogram_name: "Startup.FirstWebContents.NonEmptyPaint3"
               }
               histograms {
@@ -51,9 +54,14 @@
           "sql":
             '''
             SELECT
-              (paint.ts - (SELECT min(ts) FROM slice)) / 1e6 AS browser_window_first_paint_ms
-            FROM slice AS paint
-            WHERE paint.name LIKE '%Startup.BrowserWindow.FirstPaint'
+              a_sample.int_value AS browser_window_first_paint_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'Startup.BrowserWindow.FirstPaint'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
             LIMIT 1
             '''
         }
@@ -69,6 +77,22 @@
             WHERE s.name = 'HistogramSample'
               AND a_name.key = 'chrome_histogram_sample.name'
               AND a_name.string_value = 'InitialWebUI.Startup.ReloadButton.FirstContentfulPaint'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "first_web_contents_non_empty_paint"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS first_web_contents_non_empty_paint_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'Startup.FirstWebContents.NonEmptyPaint3'
               AND a_sample.key = 'chrome_histogram_sample.sample'
             LIMIT 1
             '''
