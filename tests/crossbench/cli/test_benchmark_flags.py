@@ -399,10 +399,10 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
   def test_required_device_config_mode_default(self) -> None:
     args = self.parse_args()
     self.assertEqual(args.required_device_config_mode,
-                     RequiredDeviceConfigMode.THROW)
+                     RequiredDeviceConfigMode.SET)
     runner_kwargs = Runner.kwargs_from_cli(args)
     self.assertEqual(runner_kwargs["required_device_config_mode"],
-                     RequiredDeviceConfigMode.THROW)
+                     RequiredDeviceConfigMode.SET)
 
   def test_required_device_config_mode_modes(self) -> None:
     for mode in RequiredDeviceConfigMode:
@@ -1091,11 +1091,11 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
       )
 
   def test_required_device_config_mode_default(self) -> None:
-    cli, runner = self._run_loading()
+    cli, runner = self._run_loading(is_dry_run=False)
     self.assertEqual(cli.args.required_device_config_mode,
-                     RequiredDeviceConfigMode.THROW)
+                     RequiredDeviceConfigMode.SET)
     self.assertEqual(runner._required_device_config_mode,
-                     RequiredDeviceConfigMode.THROW)
+                     RequiredDeviceConfigMode.SET)
 
   def test_required_device_config_mode_modes(self) -> None:
     for mode in RequiredDeviceConfigMode:

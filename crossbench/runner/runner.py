@@ -261,7 +261,7 @@ class Runner:
       ignore_partial_failures: bool = False,
       disabled_probes: Iterable[str] = (),
       required_device_config_mode: RequiredDeviceConfigMode = (
-          RequiredDeviceConfigMode.THROW),
+          RequiredDeviceConfigMode.SET),
   ) -> None:
     self.out_dir = out_dir.absolute()
     self._disabled_probes: frozenset[str] = frozenset(disabled_probes)

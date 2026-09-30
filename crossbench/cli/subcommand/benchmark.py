@@ -403,7 +403,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
             ValidationMode.help_text(indent=2)))
     env_group.add_argument(
         "--required-device-config-mode",
-        default=RequiredDeviceConfigMode.THROW,
+        default=RequiredDeviceConfigMode.SET,
         type=RequiredDeviceConfigMode.parse,
         help=("Action to take when discrepancies between device configuration "
               "and benchmark requirements are found:\n" +
