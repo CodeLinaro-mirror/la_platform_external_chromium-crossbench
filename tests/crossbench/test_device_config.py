@@ -168,24 +168,24 @@ class DeviceConfigParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_validates_requirements(self):
     """Verify an error on a malformed requirement."""
-    config = {"android": {"settings": {"key": 5}}}
-    self.assert_parse_raises(config, "settings.key: Invalid config: 5.")
+    config = {"android": {"settings": {"key": True}}}
+    self.assert_parse_raises(config, "settings.key: Invalid config: True.")
 
   def test_parse_validates_requirements_from_file(self):
     """Verify an error on a malformed requirement in a file."""
     path = pth.LocalPath("/invalid_requirement.json")
-    self.fs.create_file(path, contents=json.dumps({"android": {"key": 5}}))
-    self.assert_parse_raises(path, "key: Invalid config: 5.")
+    self.fs.create_file(path, contents=json.dumps({"android": {"key": True}}))
+    self.assert_parse_raises(path, "key: Invalid config: True.")
 
   def test_parse_validates_other_platform_sections(self):
     """Verify requirements are validated for every platform, not just one."""
-    config = {"android": {"key": "val"}, "macos": {"key": 5}}
-    self.assert_parse_raises(config, "key: Invalid config: 5.")
+    config = {"android": {"key": "val"}, "macos": {"key": True}}
+    self.assert_parse_raises(config, "key: Invalid config: True.")
 
   def test_parse_errors_and_discrepancies_are_distinct(self):
     """Verify only malformed requirements raise a ConfigError."""
     with self.assertRaises(ConfigError) as parse_cm:
-      parse_inline({"platform": {"key": 5}})
+      parse_inline({"platform": {"key": True}})
     self.assertNotIsInstance(parse_cm.exception, DeviceConfigValueError)
 
     with self.assertRaises(DeviceConfigValueError) as check_cm:
@@ -641,12 +641,6 @@ class DeviceConfigTestCase(unittest.TestCase):
     self.assert_parse_raises(
         required, "device_config.activity_manager/flag1: Invalid config:")
 
-  def test_integer_in_config_raises(self):
-    """Verify that integer values in required config fail to parse."""
-    required = {"settings": {"global": {"stay_on_while_plugged_in": 15}}}
-    self.assert_parse_raises(
-        required, "settings.global.stay_on_while_plugged_in: Invalid config:")
-
   def test_benchmark_required_device_config(self):
     """Verify Benchmark.required_device_config() can be overridden."""
     required = {"android": {"key": "val"}}
@@ -1098,9 +1092,34 @@ class DeviceConfigTargetTestCase(unittest.TestCase):
     """Verify a target must accompany an operator."""
     self.assert_parse_asserts({"$target": "1.0"})
 
-  def test_non_string_target_asserts(self):
-    """Verify a target must be a string."""
-    self.assert_parse_asserts({"$min": "10", "$target": 15})
+  def test_numeric_value_targets_its_string_form(self):
+    """Verify an unquoted number targets its string form."""
+    self.assertEqual(self.target_of(15), "15")
+    self.assertEqual(self.target_of(1.5), "1.5")
+
+  def test_numeric_value_matches_numerically(self):
+    """Verify an unquoted number matches any spelling of that number."""
+    for actual in ("1", "1.0"):
+      with self.subTest(actual=actual):
+        check_config({"key": 1}, {"key": actual},
+                     RequiredDeviceConfigMode.THROW)
+    with self.assertRaises(DeviceConfigValueError) as cm:
+      check_config({"key": 1}, {"key": "2"}, RequiredDeviceConfigMode.THROW)
+    self.assertIn("key: got '2', expected numeric value 1.", str(cm.exception))
+
+  def test_bool_value_raises(self):
+    """Verify a boolean is not read as the number it subclasses."""
+    self.assert_parse_raises({"key": True}, "key: Invalid config: True.")
+
+  def test_numeric_target_is_read_as_string(self):
+    """Verify a numeric target is written in its string form."""
+    self.assertEqual(self.target_of({"$min": 10, "$target": 15}), "15")
+
+  def test_non_scalar_target_asserts(self):
+    """Verify a target must be a string or a number."""
+    for target in (True, ["15"]):
+      with self.subTest(target=target):
+        self.assert_parse_asserts({"$min": "10", "$target": target})
 
   def test_null_target_asserts(self):
     """Verify a null target is rejected rather than read as absent."""

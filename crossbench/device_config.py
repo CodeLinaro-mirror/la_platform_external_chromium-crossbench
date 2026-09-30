@@ -23,7 +23,8 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 DeviceConfigValue: TypeAlias = (
-    str | Sequence["DeviceConfigValue"] | Mapping[str, "DeviceConfigValue"])
+    str | int | float | Sequence["DeviceConfigValue"]
+    | Mapping[str, "DeviceConfigValue"])
 DeviceConfigMap: TypeAlias = Mapping[str, DeviceConfigValue]
 DeviceConfigFile: TypeAlias = pth.LocalPath
 DeviceConfig: TypeAlias = DeviceConfigMap | DeviceConfigFile
@@ -153,6 +154,8 @@ def _parse_platform_requirements(
   a section that imposes no requirements. Leaf nodes specify expectations and
   can be one of:
   - Exact string: "expected_val" (or "null" for an absent setting).
+    A number matches numerically, e.g. 1.0 matches "1", as HJSON reads
+    1.0 as 1.
   - Disjunction list: [item1, item2, ...] matching if any item matches.
   - Mapping:
       - {"$regex": "pattern"}: matches the actual value in full.
@@ -161,11 +164,12 @@ def _parse_platform_requirements(
     is a requirement rather than a section.
 
   Each requirement may have a target, the value that meets it:
-  - An exact string is its own target, with "null" denoting deletion.
+  - An exact value is its own target, with "null" denoting deletion. A
+    number targets its string form.
   - A disjunction list takes the target of its first item, if any.
   - A mapping has a target only if it names one explicitly, via "$target"
     beside its operators, e.g. {"$min": "1", "$target": "5"}. The target
-    must meet the requirement it accompanies.
+    must meet the requirement it accompanies, and may be a number too.
 
   Raises:
     DeviceConfigError: If any requirement is malformed.
@@ -362,6 +366,11 @@ def _written_value(target: str) -> str | None:
   return None if target == "null" else target
 
 
+def _is_number(value: object) -> bool:
+  """Returns True for an int or float, but not for a bool."""
+  return isinstance(value, int | float) and not isinstance(value, bool)
+
+
 class _Predicate(abc.ABC):
   """Abstract predicate for validating a device configuration value."""
 
@@ -377,6 +386,8 @@ class _Predicate(abc.ABC):
     match value:
       case str():
         return _ValuePredicate.parse_str(value)
+      case int() | float() if _is_number(value):
+        return _NumericRangePredicate(value, value), str(value)
       case Mapping():
         return _MappingPredicate.parse_mapping(value)
       # Strings and bytes are sequences, but are not requirement lists.
@@ -430,6 +441,8 @@ class _MappingPredicate(_Predicate):
     assert operators
     predicate = _MappingPredicate._parse_operators(operators)
     target = mapping.get(_TARGET_KEY)
+    if _is_number(target):
+      target = str(target)
     assert isinstance(target, str | None)
     assert target is None or predicate.matches(_written_value(target))
     return predicate, target
@@ -513,6 +526,8 @@ class _NumericRangePredicate(_MappingPredicate):
 
   @override
   def expected_str(self) -> str:
+    if self.min == self.max:
+      return f"numeric value {self.min}"
     if self.min is not None and self.max is not None:
       return f"numeric value between {self.min} and {self.max}"
     if self.min is not None:
