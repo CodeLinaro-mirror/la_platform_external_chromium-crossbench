@@ -210,18 +210,28 @@ class PinpointJobConfigMixin:
   @classmethod
   def resolve_story(cls, benchmark: str,
                     story: str | None) -> tuple[str | None, str | None]:
+    if not benchmark:
+      return story, None
     if is_crossbench_benchmark(benchmark):
+      stories = all_stories(benchmark)
       if not story:
         story = default_story(benchmark)
-      elif story not in all_stories(benchmark):
-        return story, f"Unknown story: {story}"
     else:
       stories = fetch_stories(benchmark)
       if not story and len(stories) == 1:
         story = stories[0]
 
-      if story not in stories:
-        return story, f"Unknown story: {story}"
+    if not story:
+      return story, (
+          f"Missing story for benchmark {benchmark}.\n"
+          f"Run 'cb pp stories {benchmark}' to list all available stories.")
+    if not stories:
+      return story, f"Unknown story: {story}"
+    if story not in stories:
+      msg, _ = close_matches_message(story, stories, "story")
+      return story, (
+          f"{msg}\n"
+          f"Run 'cb pp stories {benchmark}' to list all available stories.")
     return story, None
 
   @classmethod

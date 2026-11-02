@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Final
 from immutabledict import immutabledict
 
 import crossbench.benchmarks.all as benchmarks
-from crossbench.benchmarks.base import StoryFilter
+from crossbench.benchmarks.base import PressBenchmark, StoryFilter
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import Benchmark
@@ -69,7 +69,8 @@ def all_stories(pinpoint_name: str) -> list[str]:
     return []
   stories = list(benchmark.DEFAULT_STORY_CLS.all_story_names())
   if default_story_name := default_story(pinpoint_name):
-    return [default_story_name, *stories]
+    if default_story_name not in stories:
+      return [default_story_name, *stories]
   return stories
 
 
@@ -77,5 +78,6 @@ def default_story(pinpoint_name: str) -> str | None:
   benchmark = _BENCHMARK_BY_PINPOINT_NAME.get(pinpoint_name)
   if not benchmark:
     return None
-  filter_cls = getattr(benchmark, "STORY_FILTER_CLS", StoryFilter)
-  return filter_cls.DEFAULT_STORY_NAME
+  if issubclass(benchmark, PressBenchmark):
+    return benchmark.STORY_FILTER_CLS.DEFAULT_STORY_NAME
+  return StoryFilter.DEFAULT_STORY_NAME

@@ -9,6 +9,8 @@ from typing import Final
 from unittest import mock
 
 from crossbench.cli.config.flags import FlagsConfig
+from crossbench.helper.collection_helper import close_matches_message
+from crossbench.pinpoint.benchmarks import all_stories
 from crossbench.pinpoint.config import BisectEndVariantConfig, \
     BisectStartVariantConfig, PinpointBisectJobConfig, PinpointTryJobConfig, \
     VariantConfig
@@ -501,6 +503,15 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
           benchmark="test_benchmark", bot="test_bot")
     self.mock_fetch_stories.assert_called_once_with("test_benchmark")
 
+  def test_parse_and_override_missing_story_with_tags_show_warning(self):
+    self.mock_fetch_stories.return_value = ["story1", "story2"]
+    PinpointTryJobConfig.parse_and_override(
+        benchmark="test_benchmark", bot="test_bot", story_tags="tag1")
+    self.mock_show_warnings.assert_called_once_with([
+        "Missing story for benchmark test_benchmark.\n"
+        "Run 'cb pp stories test_benchmark' to list all available stories.",
+    ])
+
   def test_parse_and_override_story_auto_fetch_no_story(self):
     self.mock_fetch_stories.return_value = []
     with self.assertRaises(ValueError):
@@ -556,6 +567,25 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
     self.mock_fetch_stories.return_value = ["other_story"]
     PinpointTryJobConfig.parse_and_override(
         benchmark="test_benchmark", bot="test_bot", story="test_story")
+    msg, _ = close_matches_message("test_story", ["other_story"], "story")
+    self.mock_show_warnings.assert_called_once_with([
+        f"{msg}\n"
+        "Run 'cb pp stories test_benchmark' to list all available stories.",
+    ])
+
+  def test_parse_and_override_unknown_story_no_close_matches_show_warning(self):
+    self.mock_fetch_stories.return_value = ["xyz"]
+    PinpointTryJobConfig.parse_and_override(
+        benchmark="test_benchmark", bot="test_bot", story="abc")
+    self.mock_show_warnings.assert_called_once_with([
+        "Invalid story: 'abc'. Choices are xyz\n"
+        "Run 'cb pp stories test_benchmark' to list all available stories.",
+    ])
+
+  def test_parse_and_override_unknown_story_no_choices_show_warning(self):
+    self.mock_fetch_stories.return_value = []
+    PinpointTryJobConfig.parse_and_override(
+        benchmark="test_benchmark", bot="test_bot", story="test_story")
     self.mock_show_warnings.assert_called_once_with(
         ["Unknown story: test_story"])
 
@@ -590,8 +620,53 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
         benchmark="speedometer3.0.crossbench",
         bot="test_bot",
         story="invalid_story")
-    self.mock_show_warnings.assert_called_once_with(
-        ["Unknown story: invalid_story"])
+    stories = all_stories("speedometer3.0.crossbench")
+    msg, _ = close_matches_message("invalid_story", stories, "story")
+    self.mock_show_warnings.assert_called_once_with([
+        f"{msg}\n"
+        "Run 'cb pp stories speedometer3.0.crossbench' to list all available "
+        "stories.",
+    ])
+
+  def test_parse_and_override_crossbench_benchmark_close_match_story(self):
+    self.mock_fetch_benchmarks.return_value = ["speedometer3.0.crossbench"]
+    PinpointTryJobConfig.parse_and_override(
+        benchmark="speedometer3.0.crossbench", bot="test_bot", story="TodoMVC")
+    stories = all_stories("speedometer3.0.crossbench")
+    msg, _ = close_matches_message("TodoMVC", stories, "story")
+    self.mock_show_warnings.assert_called_once_with([
+        f"{msg}\n"
+        "Run 'cb pp stories speedometer3.0.crossbench' to list all available "
+        "stories.",
+    ])
+
+  def test_parse_and_override_jetstream_invalid_story_warning(self):
+    self.mock_fetch_benchmarks.return_value = [
+        "jetstream3.0.crossbench",
+        "jetstream-main.crossbench",
+    ]
+    for benchmark in ("jetstream3.0.crossbench", "jetstream-main.crossbench"):
+      self.mock_show_warnings.reset_mock()
+      PinpointTryJobConfig.parse_and_override(
+          benchmark=benchmark, bot="test_bot", story="JetStream")
+      stories = all_stories(benchmark)
+      msg, _ = close_matches_message("JetStream", stories, "story")
+      self.mock_show_warnings.assert_called_once_with([
+          f"{msg}\n"
+          f"Run 'cb pp stories {benchmark}' to list all available stories.",
+      ])
+
+  def test_parse_and_override_jetstream_single_close_match_story(self):
+    self.mock_fetch_benchmarks.return_value = ["jetstream3.0.crossbench"]
+    PinpointTryJobConfig.parse_and_override(
+        benchmark="jetstream3.0.crossbench", bot="test_bot", story="zlib")
+    stories = all_stories("jetstream3.0.crossbench")
+    msg, _ = close_matches_message("zlib", stories, "story")
+    self.mock_show_warnings.assert_called_once_with([
+        f"{msg}\n"
+        "Run 'cb pp stories jetstream3.0.crossbench' to list all available "
+        "stories.",
+    ])
 
   def test_parser_raw_config_minimal(self):
     config = PinpointTryJobConfig.from_response_dict(self.response_dict)

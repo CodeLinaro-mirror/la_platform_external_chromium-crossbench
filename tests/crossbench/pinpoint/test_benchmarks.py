@@ -24,12 +24,21 @@ class BenchmarksTest(BaseCrossbenchTestCase):
   def test_is_crossbench_benchmark(self):
     self.assertTrue(is_crossbench_benchmark("speedometer3.0.crossbench"))
     self.assertTrue(is_crossbench_benchmark("devtools_frontend.crossbench"))
+    self.assertTrue(is_crossbench_benchmark("jetstream3.0.crossbench"))
+    self.assertTrue(is_crossbench_benchmark("jetstream-main.crossbench"))
     self.assertFalse(is_crossbench_benchmark("invalid_benchmark"))
 
   def test_all_stories_with_substories(self):
     stories = all_stories("speedometer3.0.crossbench")
     self.assertIn("default", stories)
     self.assertIn("TodoMVC-JavaScript-ES5", stories)
+
+  def test_all_stories_jetstream(self):
+    for benchmark in ("jetstream3.0.crossbench", "jetstream-main.crossbench"):
+      stories = all_stories(benchmark)
+      self.assertIn("default", stories)
+      self.assertIn("zlib-wasm", stories)
+      self.assertNotIn("JetStream", stories)
 
   def test_all_stories_without_substories(self):
     stories = all_stories("devtools_frontend.crossbench")
