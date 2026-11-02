@@ -10,7 +10,9 @@ import os
 import plistlib
 import re
 import shutil
+import stat
 import tempfile
+import zipfile
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, NamedTuple
 
 from typing_extensions import override
@@ -289,58 +291,70 @@ class Downloader(abc.ABC):
 class ArchiveHelper(abc.ABC):
 
   @classmethod
-  @abc.abstractmethod
   def extract(cls, platform: Platform, archive_path: pth.LocalPath,
               dest_path: pth.LocalPath) -> pth.LocalPath:
+    return cls(platform, archive_path, dest_path).run()
+
+  def __init__(self, platform: Platform, archive_path: pth.LocalPath,
+               dest_path: pth.LocalPath) -> None:
+    self._platform: Final[Platform] = platform
+    self._archive_path: Final[pth.LocalPath] = archive_path
+    self._dest_path: Final[pth.LocalPath] = dest_path
+
+  def run(self) -> pth.LocalPath:
+    self._extract()
+    if not self._platform.exists(self._dest_path):
+      raise ValueError(f"Could not extract archive to {self._dest_path}")
+    return self._dest_path
+
+  @abc.abstractmethod
+  def _extract(self) -> None:
     pass
 
 
 class RPMArchiveHelper(ArchiveHelper):
 
-  @classmethod
   @override
-  def extract(cls, platform: Platform, archive_path: pth.LocalPath,
-              dest_path: pth.LocalPath) -> pth.LocalPath:
+  def _extract(self) -> None:
+    platform = self._platform
     rpm2cpio = platform.which("rpm2cpio")
     assert rpm2cpio, ("Need rpm2cpio to extract downloaded .rpm archive")
     cpio = platform.which("cpio")
     assert cpio, ("Need cpio to extract downloaded .rpm archive")
-    cpio_file = archive_path.with_suffix(".cpio")
-    assert not cpio_file.exists(), f"{cpio_file} already exists."
-    archive_path.parent.mkdir(parents=True, exist_ok=True)
+    cpio_file = self._archive_path.with_suffix(".cpio")
+    assert not platform.exists(cpio_file), f"{cpio_file} already exists."
+    platform.mkdir(self._archive_path.parent)
     with cpio_file.open("w") as f:
-      platform.sh(rpm2cpio, archive_path, stdout=f)
-    assert cpio_file.is_file(), f"Could not extract archive: {archive_path}"
-    assert not dest_path.exists(), f"{dest_path} already exists."
+      platform.sh(rpm2cpio, self._archive_path, stdout=f)
+    assert cpio_file.is_file(), (
+        f"Could not extract archive: {self._archive_path}")
+    assert not platform.exists(
+        self._dest_path), (f"{self._dest_path} already exists.")
     with cpio_file.open() as f:
       platform.sh(
           cpio,
           "--extract",
-          f"--directory={dest_path}",
+          f"--directory={self._dest_path}",
           "--make-directories",
           stdin=f)
     cpio_file.unlink()
-    if not dest_path.exists():
-      raise ValueError(f"Could not extract archive to {dest_path}")
-    return dest_path
 
 
-class DMGArchiveHelper:
+class DMGArchiveHelper(ArchiveHelper):
 
-  @classmethod
-  def extract(cls, platform: Platform, archive_path: pth.LocalPath,
-              dest_path: pth.LocalPath) -> pth.LocalPath:
+  @override
+  def _extract(self) -> None:
+    platform = self._platform
     assert platform.is_macos, "DMG are only supported on macOS."
     assert not platform.is_remote, "Remote platform not supported yet"
     result = platform.sh_stdout("hdiutil", "attach", "-plist",
-                                archive_path).strip()
+                                self._archive_path).strip()
     data = plistlib.loads(str.encode(result))
     dmg_path: pth.LocalPath | None = None
     for item in data["system-entities"]:
-      mount_point = item.get("mount-point", None)
-      if mount_point:
+      if mount_point := item.get("mount-point"):
         dmg_path = pth.LocalPath(mount_point)
-        if dmg_path.exists():
+        if platform.exists(dmg_path):
           break
     if not dmg_path:
       raise ValueError("Could not mount downloaded disk image")
@@ -348,14 +362,123 @@ class DMGArchiveHelper:
     assert len(apps) == 1, "Mounted disk image contains more than 1 app"
     app = apps[0]
     try:
-      logging.info("COPYING BROWSER src=%s dst=%s", app, dest_path)
+      logging.info("COPYING BROWSER src=%s dst=%s", app, self._dest_path)
       shutil.copytree(
           os.fspath(app),
-          os.fspath(dest_path),
+          os.fspath(self._dest_path),
           symlinks=True,
           dirs_exist_ok=False)
     finally:
       platform.sh("hdiutil", "detach", dmg_path)
-    if not dest_path.exists():
-      raise ValueError(f"Could not extract archive to {dest_path}")
-    return dest_path
+
+
+class ZipArchiveHelper(ArchiveHelper):
+  """Extracts zip archives while preserving POSIX executable bits and
+  symlinks, which zipfile.ZipFile.extractall() silently drops."""
+
+  # Zip archives created on POSIX systems store the entry's st_mode (file type
+  # and permission bits) in the upper 16 bits of ZipInfo.external_attr. The
+  # lower 16 bits hold MS-DOS attributes.
+  # TODO: Clean up once we require python 3.12+ (zipfile.Path.is_symlink).
+  UNIX_MODE_SHIFT: Final[int] = 16
+  # Common POSIX st_mode values for zip entries.
+  FILE_MODE: Final[int] = stat.S_IFREG | 0o644
+  EXECUTABLE_MODE: Final[int] = stat.S_IFREG | 0o755
+  SYMLINK_MODE: Final[int] = stat.S_IFLNK | 0o777
+
+  @classmethod
+  def unix_mode(cls, info: zipfile.ZipInfo) -> int:
+    return info.external_attr >> cls.UNIX_MODE_SHIFT
+
+  @classmethod
+  def create_zip_info(cls, filename: str, unix_mode: int) -> zipfile.ZipInfo:
+    """Create a ZipInfo entry with the given POSIX st_mode, e.g.
+    EXECUTABLE_MODE or SYMLINK_MODE."""
+    info = zipfile.ZipInfo(filename)
+    info.external_attr = unix_mode << cls.UNIX_MODE_SHIFT
+    return info
+
+  @classmethod
+  @override
+  def extract(cls,
+              platform: Platform,
+              archive_path: pth.LocalPath,
+              dest_path: pth.LocalPath,
+              archive_subpath: pth.LocalPath | None = None) -> pth.LocalPath:
+    return cls(platform, archive_path, dest_path, archive_subpath).run()
+
+  def __init__(self,
+               platform: Platform,
+               archive_path: pth.LocalPath,
+               dest_path: pth.LocalPath,
+               archive_subpath: pth.LocalPath | None = None) -> None:
+    super().__init__(platform, archive_path, dest_path)
+    self._archive_subpath: Final[pth.LocalPath | None] = (
+        self._validate_subpath(archive_subpath))
+
+  @classmethod
+  def _validate_subpath(
+      cls, archive_subpath: pth.LocalPath | None) -> pth.LocalPath | None:
+    if archive_subpath is None:
+      return None
+    if (archive_subpath.is_absolute() or bool(archive_subpath.anchor) or
+        not archive_subpath.parts or ".." in archive_subpath.parts):
+      raise ValueError(f"Invalid archive subpath: {archive_subpath}")
+    return archive_subpath
+
+  @override
+  def _extract(self) -> None:
+    assert not self._platform.exists(
+        self._dest_path), (f"{self._dest_path} already exists.")
+    self._platform.mkdir(self._dest_path.parent)
+    if not self._archive_subpath:
+      self._extract_zip(self._dest_path)
+    else:
+      self._extract_zip_subpath(self._archive_subpath)
+
+  def _extract_zip_subpath(self, archive_subpath: pth.LocalPath) -> None:
+    with self._platform.TemporaryDirectory(
+        prefix="cb_zip_", dir=self._dest_path.parent) as tmp_dir:
+      local_tmp_dir = self._platform.local_path(tmp_dir)
+      self._extract_zip(local_tmp_dir)
+      src_path = local_tmp_dir / archive_subpath
+      if not self._platform.exists(src_path):
+        raise ValueError(f"Expected {archive_subpath} in {self._archive_path}, "
+                         f"but {src_path} does not exist.")
+      self._platform.rename(src_path, self._dest_path)
+
+  def _extract_zip(self, extract_dir: pth.LocalPath) -> None:
+    self._platform.mkdir(extract_dir)
+    # Resolve once so that all entry paths below can be checked lexically.
+    extract_dir = extract_dir.resolve()
+    with zipfile.ZipFile(self._archive_path, "r") as zip_file:
+      for info in zip_file.infolist():
+        self._extract_zip_info(zip_file, info, extract_dir)
+
+  def _extract_zip_info(self, zip_file: zipfile.ZipFile, info: zipfile.ZipInfo,
+                        extract_dir: pth.LocalPath) -> None:
+    target_path = (extract_dir / info.filename).resolve()
+    if not target_path.is_relative_to(extract_dir):
+      raise ValueError(
+          f"Unsafe zip entry path outside extract dir: {info.filename}")
+    mode = self.unix_mode(info)
+    if stat.S_ISLNK(mode):
+      self._extract_zip_symlink(zip_file, info, target_path, extract_dir)
+      return
+    extracted_item = pth.LocalPath(zip_file.extract(info, extract_dir))
+    if not info.is_dir() and (mode &
+                              (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)):
+      self._platform.chmod(extracted_item, stat.S_IMODE(mode))
+
+  def _extract_zip_symlink(self, zip_file: zipfile.ZipFile,
+                           info: zipfile.ZipInfo, target_path: pth.LocalPath,
+                           extract_dir: pth.LocalPath) -> None:
+    # Symlink entries store the link target as the entry's file contents.
+    link_target = pth.LocalPath(zip_file.read(info).decode("utf-8"))
+    resolved_target = (target_path.parent / link_target).resolve()
+    if (link_target.is_absolute() or
+        not resolved_target.is_relative_to(extract_dir)):
+      raise ValueError(
+          f"Unsafe zip symlink target outside extract dir: {link_target}")
+    self._platform.mkdir(target_path.parent)
+    self._platform.symlink_or_copy(link_target, target_path)

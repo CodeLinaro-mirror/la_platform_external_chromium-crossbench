@@ -9,7 +9,6 @@ import logging
 import os
 import shutil
 import tempfile
-import zipfile
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Iterator, \
     NamedTuple
 
@@ -18,7 +17,8 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.downloader import ArchiveUrlCandidate, \
-    DMGArchiveHelper, Downloader, IncompatibleVersionError, RPMArchiveHelper
+    DMGArchiveHelper, Downloader, IncompatibleVersionError, RPMArchiveHelper, \
+    ZipArchiveHelper
 from crossbench.browsers.version import BrowserVersion, BrowserVersionChannel
 from crossbench.helper import url_helper
 from crossbench.plt.android_adb import AndroidAdbPlatform
@@ -621,10 +621,6 @@ class ChromeDownloaderWin(ChromeDownloader):
 
   @override
   def _install_archive(self, archive_path: pth.LocalPath) -> None:
-    extracted_path = self._extracted_path()
-    tmp_path = self.host_platform.mkdtemp()
-    with zipfile.ZipFile(archive_path, "r") as zip_file:
-      zip_file.extractall(tmp_path)
-    self.host_platform.rename(tmp_path / self._archive_stem, extracted_path)
-    assert self.host_platform.is_dir(extracted_path), (
-        f"Could not extract {archive_path} into {extracted_path}")
+    ZipArchiveHelper.extract(self.host_platform, archive_path,
+                             self._extracted_path(),
+                             pth.LocalPath(self._archive_stem))

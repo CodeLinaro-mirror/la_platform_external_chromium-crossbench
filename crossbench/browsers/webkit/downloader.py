@@ -6,12 +6,12 @@ from __future__ import annotations
 
 import os
 import shutil
-import zipfile
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping
 
 from typing_extensions import override
 
-from crossbench.browsers.downloader import ArchiveUrlCandidate, Downloader
+from crossbench.browsers.downloader import ArchiveUrlCandidate, Downloader, \
+    ZipArchiveHelper
 from crossbench.browsers.webkit.version import WebKitVersion
 
 if TYPE_CHECKING:
@@ -129,8 +129,5 @@ class WebKitDownloaderMacOS(WebKitDownloader):
 
   @override
   def _install_archive(self, archive_path: pth.LocalPath) -> None:
-    extracted_path = self._extracted_path()
-    with zipfile.ZipFile(archive_path, "r") as zip_file:
-      zip_file.extractall(extracted_path)
-    assert self.host_platform.is_dir(extracted_path), (
-        f"Could not extract {archive_path} into {extracted_path}")
+    ZipArchiveHelper.extract(self.host_platform, archive_path,
+                             self._extracted_path())
