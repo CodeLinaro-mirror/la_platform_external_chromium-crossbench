@@ -136,6 +136,7 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
     self.assertIsInstance(probe, TracingProbe)
     tracing_probe = cast(TracingProbe, probe)
     self.assertIsNotNone(tracing_probe.categories)
+    self.assertIsNotNone(tracing_probe.trace_config_file)
     self.assertTrue(tracing_probe.trace_config_file.is_file())
     self.assertEqual(tracing_probe.trace_config_file, trace_config_file)
 

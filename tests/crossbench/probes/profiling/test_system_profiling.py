@@ -627,6 +627,9 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
 
 class LinuxProfilingContextTestCase(GenericProbeTestCase):
+  # Overrides `unittest.TestCase.run()` method with a mock Run attribute.
+  # pyrefly: ignore[bad-override]
+  run: mock.Mock
 
   @override
   def setup_platform(self) -> LinuxMockPlatform:

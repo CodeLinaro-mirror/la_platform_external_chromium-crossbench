@@ -45,6 +45,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.probes.probe import Probe
+  from crossbench.runner.run import Run
   from crossbench.stories.story import Story
 
 
@@ -74,7 +75,7 @@ class TestThreadModeTestCase(unittest.TestCase):
     self.root_dir = pathlib.Path()
     self.env = self.runner.env
     self.probes: list[Probe] = []
-    self.runs = (
+    self.runs: list[Run] = [
         MockRun(self.runner, self.create_session(self.browser_a_1, 1), "run 1"),
         MockRun(self.runner, self.create_session(self.browser_a_2, 2), "run 2"),
         MockRun(self.runner, self.create_session(self.browser_a_1, 3), "run 3"),
@@ -83,8 +84,8 @@ class TestThreadModeTestCase(unittest.TestCase):
         MockRun(self.runner, self.create_session(self.browser_b_2, 6), "run 6"),
         MockRun(self.runner, self.create_session(self.browser_b_1, 7), "run 7"),
         MockRun(self.runner, self.create_session(self.browser_b_2, 8), "run 8"),
-    )
-    self.runner.runs = self.runs
+    ]
+    self.runner.runs = tuple(self.runs)
 
   def test_default_runs(self):
     session_ids = {run.browser_session.index for run in self.runs}
@@ -126,12 +127,12 @@ class TestThreadModeTestCase(unittest.TestCase):
   def test_group_session_2(self):
     session_1 = self.create_session(self.browser_a_1, 1)
     session_2 = self.create_session(self.browser_a_2, 2)
-    runs = (
+    runs: list[Run] = [
         MockRun(self.runner, session_1, "story 1"),
         MockRun(self.runner, session_2, "story 2"),
         MockRun(self.runner, session_1, "story 3"),
         MockRun(self.runner, session_2, "story 4"),
-    )
+    ]
     groups = ThreadMode.SESSION.group(runs)
     group_a, group_b = groups
     self.assertSequenceEqual(group_a.runs, (runs[0], runs[2]))
@@ -599,6 +600,8 @@ class RunnerTestCase(BaseRunnerTestCase):
   def test_has_only_single_run_platforms_multi_platform(self):
     benchmark = MockBenchmark((self.stories[0],))
 
+    # FullMockPlatform is dynamically bound to an OS-specific mock class.
+    # pyrefly: ignore[invalid-inheritance]
     class RemoteMockPlatform(FullMockPlatform):
 
       @property
@@ -615,6 +618,8 @@ class RunnerTestCase(BaseRunnerTestCase):
 
   def test_has_only_single_run_platforms_multi_platform_stories(self):
 
+    # FullMockPlatform is dynamically bound to an OS-specific mock class.
+    # pyrefly: ignore[invalid-inheritance]
     class RemoteMockPlatform(FullMockPlatform):
 
       @property

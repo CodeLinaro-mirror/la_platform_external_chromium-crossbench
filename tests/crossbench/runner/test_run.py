@@ -5,29 +5,45 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 from unittest import mock
 
 from typing_extensions import override
 
+from crossbench.browsers.settings import Settings
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.probes.video import VideoProbe
 from crossbench.runner.run import Run
 from crossbench.runner.run_annotation import RunAnnotation
 from tests import test_helper
+from tests.crossbench.mock_browser import MockBrowser, MockChromeDev
 from tests.crossbench.mock_helper import MockStory
 from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
 from tests.crossbench.runner.helper import MockProbe
 
 if TYPE_CHECKING:
+  from crossbench.benchmarks.base import Benchmark
+  from crossbench.browsers.browser import Browser
+  from crossbench.probes.probe import Probe
   from crossbench.runner.runner import Runner
 
 
 class RunTestCase(BaseRunGroupTestCase):
 
   @override
-  def default_runner(self) -> Runner:
-    return super().default_runner(create_symlinks=False)
+  def default_runner(
+      self,
+      browsers: Iterable[Browser] | None = None,
+      benchmark: Benchmark | None = None,
+      probes: Iterable[Probe] | None = None,
+      throw: bool = True,
+      create_symlinks: bool = False,
+      disabled_probes: Iterable[str] = (),
+      pause_on_error: bool = False,
+  ) -> Runner:
+    return super().default_runner(browsers, benchmark, probes, throw,
+                                  create_symlinks, disabled_probes,
+                                  pause_on_error)
 
   def _create_run(self) -> Run:
     session = self.default_session()
@@ -36,6 +52,7 @@ class RunTestCase(BaseRunGroupTestCase):
 
   def _run_actions_and_get_new_marks(self, **kwargs) -> list[str]:
     run = self._create_run()
+    self.assertIsInstance(run.browser, MockBrowser)
     initial_marks = list(run.browser.performance_marks)
     initial_trace_marks = list(self.platform.trace_marks)
     with run.actions("Some_Custom_Action", **kwargs):
@@ -141,14 +158,16 @@ class RunTestCase(BaseRunGroupTestCase):
       def run(self, run: Run) -> None:
         run.performance_mark("no-browser-mark")
 
-    session = self.default_session()
-    session.browser.settings._start_browser = False
+    browser = MockChromeDev(
+        "dev", settings=Settings(platform=self.platform, start_browser=False))
+    session = self.default_session(browser=browser)
     run = Run(self.runner, session, NoBrowserStory("no_browser"), 1, False,
               "1_default", 1, "test run", dt.timedelta(minutes=1), True)
     session.set_ready()
     with mock.patch.object(run, "teardown_write_results_db"), session.open():
       run.run(is_dry_run=False)
       self.assertTrue(run.is_success)
+      self.assertIsInstance(run.browser, MockBrowser)
       self.assertFalse(run.browser.is_running)
       self.assertFalse(run.browser.did_run)
       self.assertEqual(run.browser.url_list, [])
@@ -174,8 +193,9 @@ class RunTestCase(BaseRunGroupTestCase):
         with run.actions("Reopen") as actions:
           actions.show_url("https://example.org")
 
-    session = self.default_session()
-    session.browser.settings._start_browser = False
+    browser = MockChromeDev(
+        "dev", settings=Settings(platform=self.platform, start_browser=False))
+    session = self.default_session(browser=browser)
     run = Run(self.runner, session, ExplicitBrowserStory("explicit_browser"), 1,
               False, "1_default", 1, "test run", dt.timedelta(minutes=1), True)
     session.set_ready()
@@ -189,6 +209,7 @@ class RunTestCase(BaseRunGroupTestCase):
         run.run(is_dry_run=False)
       self.assertTrue(run.is_success)
       mock_splashscreen.assert_not_called()
+      self.assertIsInstance(run.browser, MockBrowser)
       self.assertIn("https://example.com", run.browser.url_list)
       self.assertIn("https://example.org", run.browser.url_list)
 

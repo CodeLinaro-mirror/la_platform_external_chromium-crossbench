@@ -43,7 +43,7 @@ _EXPECTED_COLUMNS: Final[tuple[str, ...]] = (
 _CANONICAL_SITES: Final[tuple[str, ...]] = ("ajnews", "cnn", "msn")
 _SITE_SCENARIOS: Final[tuple[str, ...]] = ("idle", "scroll", "page-load")
 # Repetitions come from --fast to keep CQ runtime short.
-_DEFAULT_ITERATIONS: Final[int] = (
+_DEFAULT_ITERATIONS: Final[int] = NumberParser.positive_int(
     WebPowerBenchmarkBase.fast_mode_default_overrides()["repetitions"])
 
 

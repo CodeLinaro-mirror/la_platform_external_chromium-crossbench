@@ -117,7 +117,7 @@ def test_chrome_name(browser_path) -> str:
 
 
 @pytest.fixture(scope="session")
-def test_chrome_version(browser_path) -> int:
+def test_chrome_version(browser_path: pth.LocalPath | None) -> int | str:
   if not browser_path:
     return "unknown"
   # extract the first number from the version string

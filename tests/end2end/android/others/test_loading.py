@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from crossbench import path as pth
 from crossbench import plt
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.plt.android_adb import Adb
@@ -281,7 +282,7 @@ class TestAndroidLoading(TestDesktopLoading):
     self.run_loading_test(browser_config, page_config, test_env)
     self.assert_run_succeeded(test_env)
 
-    adb = Adb(plt.PLATFORM, device_id, adb_path)
+    adb = Adb(plt.PLATFORM, device_id, pth.LocalPath(adb_path))
     stack_list = adb.shell_stdout("am", "stack", "list")
     assert "com.android.settings/" not in stack_list
 
@@ -320,7 +321,7 @@ class TestAndroidLoading(TestDesktopLoading):
     self.run_loading_test(browser_config, page_config, test_env)
     self.assert_run_succeeded(test_env)
 
-    adb = Adb(plt.PLATFORM, device_id, adb_path)
+    adb = Adb(plt.PLATFORM, device_id, pth.LocalPath(adb_path))
     stack_list = adb.shell_stdout("am", "stack", "list")
     assert "com.android.settings/" not in stack_list
 

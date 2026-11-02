@@ -131,6 +131,7 @@ class VideoProbeContextIOSTestCase(unittest.TestCase):
         self.context.probe)
 
   def test_recorder_platform(self):
+    self.assertIsNotNone(VideoProbeContext._recorder_platform.fget)
     self.context.browser_platform = self._ios_platform(is_simulator=False)
     self.assertIs(
         VideoProbeContext._recorder_platform.fget(self.context),

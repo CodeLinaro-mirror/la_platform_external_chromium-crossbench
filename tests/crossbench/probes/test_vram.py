@@ -76,6 +76,7 @@ class VramProbeTestCase(BaseProbeTestCase):
     context.stop()
 
     data = context.to_json(mock_actions)
+    self.assertIsInstance(data, dict)
     self.assertEqual(data["gpu_0/baseline_mb"], 100.0)
     self.assertEqual(data["gpu_0/peak_mb"], 200.0)
     self.assertEqual(data["gpu_0/delta_mb"], 100.0)
@@ -122,6 +123,7 @@ class VramProbeTestCase(BaseProbeTestCase):
     context.stop()
 
     data = context.to_json(mock_actions)
+    self.assertIsInstance(data, dict)
     self.assertEqual(data["gpu_0/baseline_mb"], 100.0)
     self.assertEqual(data["gpu_0/peak_mb"], 300.0)
     self.assertEqual(data["gpu_0/delta_mb"], 200.0)

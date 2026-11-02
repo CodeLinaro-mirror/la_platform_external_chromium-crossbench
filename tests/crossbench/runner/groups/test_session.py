@@ -7,8 +7,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest import mock
 
+from crossbench.browsers.settings import Settings
 from crossbench.helper.state import UnexpectedStateError
 from tests import test_helper
+from tests.crossbench import mock_browser
 from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
 from tests.crossbench.runner.helper import MockProbe, MockRun
 
@@ -36,7 +38,7 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     self.assertEqual(session.info["index"], 0)
     self.assertIn("0", str(session))
     self.assertIn(str(self.browsers[0]), str(session))
-    self.assertTrue(session.browser_tmp_dir.is_dir())
+    self.assertTrue(session.browser_platform.is_dir(session.browser_tmp_dir))
     with self.assertRaises(IndexError):
       _ = session.timing
 
@@ -327,8 +329,9 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
       self.assertEqual(session.browser._cache_dir, cache_dir)
 
   def test_start_and_stop_browser_in_session(self) -> None:
-    session = self.default_session()
-    session.browser.settings._start_browser = False
+    browser = mock_browser.MockChromeDev(
+        "dev", settings=Settings(platform=self.platform, start_browser=False))
+    session = self.default_session(browser=browser)
     run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
@@ -357,6 +360,7 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
       self.assertFalse(session.browser.is_running)
       self.assertEqual(mock_quit.call_count, 2)
       self.assertIn("browser-stop-1", session.durations.to_json())
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

@@ -137,6 +137,7 @@ SIMULATORS_SAMPLE = {
 
 
 class BaseIOsMockPlatformTestCase(BaseMockPlatformTestCase):
+  platform: IOSPlatform
   SAFARI_PATH = "/Applications/Safari.app"
 
   @override
@@ -480,6 +481,8 @@ class IOsMockPlatformTestCase(BaseIOsMockPlatformTestCase):
     with self.assertRaises(TimeoutError):
       platform_physical.ports.forward(8100, 8100)
     mock_proc.terminate.assert_called_once()
+    self.assertIsInstance(platform_physical._default_port_manager,
+                          IOSPortManager)
     self.assertNotIn(8100,
                      platform_physical._default_port_manager._forward_popens)
 
@@ -1051,8 +1054,11 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
         wda.base_url + "/session/x/actions",
         500,
         "Internal Server Error",
+        # HTTPError accepts None for hdrs and BytesIO for fp at runtime.
+        # pyrefly: ignore[bad-argument-type]
         hdrs=None,
-        fp=body)  # type: ignore[arg-type]
+        # pyrefly: ignore[bad-argument-type]
+        fp=body)
     with mock.patch("urllib.request.urlopen", side_effect=http_error):
       with self.assertRaisesRegex(WDAError, "HTTP 500.*bad actions") as cm:
         wda._request("POST", "/session/x/actions", {"actions": []})
@@ -1277,6 +1283,7 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
       self.assertEqual(wda.ensure_session(), "session-1")
       self.assertEqual(wda.base_url, "http://localhost:54321")
       self.assertTrue(self.platform.ports.is_forwarded_port_used(54321))
+      self.assertIsInstance(self.host_platform.popen, mock.MagicMock)
       self.assertEqual(self.host_platform.popen.call_count, 1)
 
       self.assertEqual(wda.ensure_session(), "session-1")
@@ -1300,6 +1307,7 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
         self.assertEqual(wda.ensure_session(), "session-1")
         self.assertEqual(wda.base_url, "http://localhost:54321")
         self.assertTrue(self.platform.ports.is_forwarded_port_used(54321))
+        self.assertIsInstance(self.host_platform.popen, mock.MagicMock)
         self.assertEqual(self.host_platform.popen.call_count, 1)
 
       with self.platform.ports.nested():
@@ -1314,6 +1322,7 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
     with self.mock_wda_server():
       with self.platform.ports.nested():
         self.assertEqual(wda.ensure_session(), "session-1")
+        self.assertIsInstance(self.host_platform.popen, mock.MagicMock)
         self.assertEqual(self.host_platform.popen.call_count, 1)
 
       wda.terminate_app("com.apple.mobilesafari")
@@ -1339,6 +1348,7 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
       wda.start()
     self.assertEqual(wda.base_url, "http://localhost:8100")
     self.assertTrue(platform.ports.is_forwarded_port_used(8100))
+    self.assertIsInstance(self.host_platform.popen, mock.MagicMock)
     self.host_platform.popen.assert_not_called()
 
 

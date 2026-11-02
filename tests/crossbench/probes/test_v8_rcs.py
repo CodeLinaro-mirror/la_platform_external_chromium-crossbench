@@ -7,6 +7,7 @@ from typing import Final
 
 from crossbench.benchmarks.loading.page.live import LivePage
 from crossbench.probes.v8.rcs import V8RCSProbe
+from crossbench.runner.runner import CacheTemperature
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
 
@@ -85,7 +86,7 @@ class V8RCSProbeTestCase(GenericProbeTestCase):
         LivePage("amazon", "https://amazon.com"),
     ]
     repetitions = 2
-    cache_temperatures = ("cold", "warm")
+    cache_temperatures = (CacheTemperature.COLD, CacheTemperature.WARM)
     runner = self.create_runner(
         stories,
         js_side_effects=[EXAMPLE_RCS_DATA, EXAMPLE_RCS_DATA],

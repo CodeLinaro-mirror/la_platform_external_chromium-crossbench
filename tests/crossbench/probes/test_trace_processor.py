@@ -27,6 +27,8 @@ from crossbench.probes.trace_processor.helper import \
     CBBatchTraceProcessorConfig, CBTraceProcessorConfig
 from crossbench.probes.trace_processor.query_config import \
     DeviceSpecificTraceProcessorQuery, TraceProcessorQueryConfig
+from crossbench.probes.trace_processor.trace_processor import \
+    TraceProcessorOutputFormat
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase, \
     CrossbenchFakeFsTestCase
@@ -48,7 +50,6 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
     self.assertEqual(len(probes), 2)
     probe = probes[0]
     self.assertIsInstance(probe, TraceProcessorProbe)
-    assert isinstance(probe, TraceProcessorProbe)
     queries = probe.queries
     self.assertEqual(len(queries), 2)
     speedometer_cpu_time_sql = read_query_sql("speedometer_cpu_time.sql")
@@ -99,7 +100,6 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
     self.assertEqual(len(probes), 2)
     tp_probe = probes[0]
     self.assertIsInstance(tp_probe, TraceProcessorProbe)
-    assert isinstance(tp_probe, TraceProcessorProbe)
     self.assertEqual(len(tp_probe.queries), 1)
     self.assertEqual(tp_probe.queries[0].name, "wv_heapdump_memory")
     self.assertEqual(tp_probe.queries[0].sql,
@@ -246,10 +246,14 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
 
   def test_init_invalid_output_to_stdout_option(self):
     with self.assertRaises(ValueError):
+      # Intentionally passing an invalid str instead of enum to test validation.
+      # pyrefly: ignore[bad-argument-type]
       TraceProcessorProbe(output_to_stdout=["invalid_choice"])
 
   def test_init_invalid_output_to_clipboard_option(self):
     with self.assertRaises(ValueError):
+      # Intentionally passing an invalid str instead of enum to test validation.
+      # pyrefly: ignore[bad-argument-type]
       TraceProcessorProbe(output_to_clipboard=["invalid_choice"])
 
   def test_init_clipboard_missing_raises(self):
@@ -258,7 +262,8 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     with unittest.mock.patch.object(plt, "PLATFORM", mock_platform):
       with self.assertRaisesRegex(
           RuntimeError, "Clipboard tool unavailable on current platform."):
-        TraceProcessorProbe(output_to_clipboard=["json"])
+        TraceProcessorProbe(
+            output_to_clipboard=[TraceProcessorOutputFormat.JSON])
 
   def test_create_context_platform(self):
     probe = TraceProcessorProbe.parse_dict({"queries": self._QUERIES})
@@ -937,6 +942,7 @@ class TraceProcessorHelperTestCase(unittest.TestCase):
 
   def test_default_trace_processor_config(self):
     config = CBTraceProcessorConfig()
+    self.assertIsNotNone(config.add_sql_packages)
     self.assertIn(MODULES_DIR.as_posix(), config.add_sql_packages)
     self.assertIsNone(config.bin_path)
 
@@ -950,6 +956,7 @@ class TraceProcessorHelperTestCase(unittest.TestCase):
     self.assertEqual(config.bin_path, "/path/to/tp")
     self.assertTrue(config.verbose)
     self.assertTrue(config.enable_dev_features)
+    self.assertIsNotNone(config.add_sql_packages)
     self.assertIn(MODULES_DIR.as_posix(), config.add_sql_packages)
     self.assertIn(custom_dir.as_posix(), config.add_sql_packages)
 
@@ -957,11 +964,13 @@ class TraceProcessorHelperTestCase(unittest.TestCase):
     with unittest.mock.patch.object(
         plt.PLATFORM, "path", side_effect=pth.AnyWindowsPath):
       config = CBTraceProcessorConfig(module_paths=[r"C:\custom\modules\ext"])
+    self.assertIsNotNone(config.add_sql_packages)
     self.assertIn("C:/custom/modules/ext", config.add_sql_packages)
 
   def test_default_batch_trace_processor_config(self):
     btp_config = CBBatchTraceProcessorConfig()
     self.assertIsNotNone(btp_config.tp_config)
+    self.assertIsNotNone(btp_config.tp_config.add_sql_packages)
     self.assertIn(MODULES_DIR.as_posix(), btp_config.tp_config.add_sql_packages)
 
   def test_batch_trace_processor_config_with_tp_config(self):

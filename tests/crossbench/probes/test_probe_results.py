@@ -4,18 +4,24 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Any
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
+from crossbench import path as pth
 from crossbench.action_runner.action_runner import ActionRunner
 from crossbench.probes.probe import Probe
 from crossbench.probes.results import BrowserProbeResult, \
     DuplicateProbeResult, EmptyProbeResult, LocalProbeResult, \
     ProbeResultDict
+from crossbench.runner.run import Run
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase, \
     CrossbenchFakeFsTestCase
+
+if TYPE_CHECKING:
+  from crossbench.browsers.browser import Browser
+  from crossbench.plt.base import Platform
 
 
 class ProbeResultTestCase(CrossbenchFakeFsTestCase):
@@ -83,7 +89,7 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(result.url, url)
     self.assertSequenceEqual(result.url_list, [url])
     self.assertSequenceEqual(list(result.all_files()), [])
-    failed: Any = None
+    failed: object = None
     with self.assertRaises(ValueError):
       failed = result.file
     with self.assertRaises(ValueError):
@@ -107,7 +113,7 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(result.file, path)
     self.assertSequenceEqual(result.file_list, [path])
     self.assertSequenceEqual(list(result.all_files()), [path])
-    failed: Any = None
+    failed: object = None
     with self.assertRaises(ValueError):
       failed = result.url
     with self.assertRaises(ValueError):
@@ -132,7 +138,7 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertSequenceEqual(result.get_all("csv"), [path])
     self.assertSequenceEqual(list(result.all_files()), [path])
     self.assertEqual(result.file, path)
-    failed: Any = None
+    failed: object = None
     with self.assertRaises(ValueError):
       failed = result.url
     with self.assertRaises(ValueError):
@@ -157,7 +163,7 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertSequenceEqual(result.get_all("json"), [path])
     self.assertSequenceEqual(list(result.all_files()), [path])
     self.assertEqual(result.file, path)
-    failed: Any = None
+    failed: object = None
     with self.assertRaises(ValueError):
       failed = result.url
     with self.assertRaises(ValueError):
@@ -293,19 +299,66 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertSequenceEqual(list(result.perfetto_list), [trace])
 
 
-class MockRun:
+class MockRun(Run):
 
   def __init__(self,
-               browser,
-               browser_platform,
+               browser: Browser,
+               browser_platform: Platform,
                action_runner: ActionRunner | None = None):
-    self.browser = browser
-    self.browser_platform = browser_platform
-    self.is_remote = False
-    self.action_runner: ActionRunner = action_runner or ActionRunner(self)
+    self._mock_browser: Browser = browser
+    self._browser_platform: Platform = browser_platform
+    self._is_remote: bool = False
+    self._mock_out_dir: pth.LocalPath = pth.LocalPath()
+    self._mock_browser_tmp_dir: pth.AnyPath = pth.AnyPath()
+    self._mock_action_runner: ActionRunner = action_runner or ActionRunner(self)
+
+  @property
+  @override
+  def browser(self) -> Browser:
+    return self._mock_browser
+
+  @property
+  @override
+  def browser_platform(self) -> Platform:
+    return self._browser_platform
+
+  @property
+  @override
+  def is_remote(self) -> bool:
+    return self._is_remote
+
+  @is_remote.setter
+  def is_remote(self, value: bool) -> None:
+    self._is_remote = value
+
+  @property
+  @override
+  def out_dir(self) -> pth.LocalPath:
+    return self._mock_out_dir
+
+  @out_dir.setter
+  def out_dir(self, value: pth.LocalPath) -> None:
+    self._mock_out_dir = value
+
+  @property
+  @override
+  def browser_tmp_dir(self) -> pth.AnyPath:
+    return self._mock_browser_tmp_dir
+
+  @browser_tmp_dir.setter
+  def browser_tmp_dir(self, value: pth.AnyPath) -> None:
+    self._mock_browser_tmp_dir = value
+
+  @property
+  @override
+  def action_runner(self) -> ActionRunner:
+    return self._mock_action_runner
 
 
 class BrowserProbeResultTestCase(BaseCrossbenchTestCase):
+  # Overrides `unittest.TestCase.run()` method with a MockRun attribute.
+  # pyrefly: ignore[bad-override]
+  run: MockRun
 
   @override
   def setUp(self) -> None:
@@ -357,9 +410,9 @@ class BrowserProbeResultTestCase(BaseCrossbenchTestCase):
     self.assertTrue(out_dir_local.is_dir())
     self.assertTrue(out_dir_remote.is_dir())
     remote_txt = self.create_file(
-        out_dir_remote / "result.txt", contents="a1 b2 c3")
+        str(out_dir_remote / "result.txt"), contents="a1 b2 c3")
     remote_json = self.create_file(
-        out_dir_remote / "result.json", contents="[]")
+        str(out_dir_remote / "result.json"), contents="[]")
     self.run.is_remote = True
     self.run.out_dir = out_dir_local
     self.run.browser_tmp_dir = out_dir_remote

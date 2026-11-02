@@ -26,6 +26,7 @@ from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
 class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
                                 BasePosixMockPlatformTestCase):
   __test__ = True
+  platform: MacOsMockPlatform
 
   @override
   def setUp(self) -> None:

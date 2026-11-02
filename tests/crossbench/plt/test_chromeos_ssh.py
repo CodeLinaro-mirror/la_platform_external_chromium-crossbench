@@ -214,11 +214,12 @@ CHROMEOS_RELEASE_UNIBUILD=1
     self._expect_sh_ssh("cat /etc/lsb-release", result=lsb_release)
 
     details = self.platform.system_details()
+    chromeos = details["ChromeOS"]
+    self.assertIsInstance(chromeos, dict)
 
-    self.assertEqual(len(details["ChromeOS"]), 22)
-    self.assertEqual(details["ChromeOS"]["CHROMEOS_RELEASE_BOARD"], "dedede")
-    self.assertEqual(details["ChromeOS"]["CHROMEOS_RELEASE_BUILD_NUMBER"],
-                     "16093")
+    self.assertEqual(len(chromeos), 22)
+    self.assertEqual(chromeos["CHROMEOS_RELEASE_BOARD"], "dedede")
+    self.assertEqual(chromeos["CHROMEOS_RELEASE_BUILD_NUMBER"], "16093")
 
   def test_setup_virtual_devices(self) -> None:
     path = SCRIPTS_DIR / "evemu_wrapper.sh"

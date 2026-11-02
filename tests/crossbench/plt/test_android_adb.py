@@ -344,6 +344,8 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     self.fs.create_file(local_path, contents="some data")
     self.expect_adb("push", "C:\\foo\\push.local.data",
                     "/data/local/tmp/push.remote.data")
+    # Testing Windows PurePath handling on a mocked host platform.
+    # pyrefly: ignore[bad-argument-type]
     self.platform.push(local_path, remote_path)
 
   def test_push_remote_win_path(self):
@@ -353,6 +355,8 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     self.fs.create_file(local_path, contents="some data")
     self.expect_adb("push", "C:\\foo\\push.local.data",
                     "custom/push.remote.data")
+    # Testing Windows PurePath handling on a mocked host platform.
+    # pyrefly: ignore[bad-argument-type]
     self.platform.push(local_path, remote_path)
 
 
@@ -878,7 +882,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_app_path_to_package_apk(self):
     path = self.create_file("test.apk")
     aapt_bin = pathlib.Path("/usr/bin/aapt")
-    self.create_file(aapt_bin)
+    self.fs.create_file(aapt_bin)
     self.host_platform.expect_sh(
         aapt_bin,
         "dump",
@@ -899,7 +903,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with zipfile.ZipFile(apk_data, "w") as apk_zip:
       apk_zip.writestr("AndroidManifest.xml",
                        self._create_axml("com.example.app"))
-    self.create_file(path, contents=apk_data.getvalue())
+    self.fs.create_file(path, contents=apk_data.getvalue())
 
     self.assertEqual(self.platform.app_path_to_package(path), "com.example.app")
 
@@ -920,7 +924,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
       apks_zip.writestr("base.apk", base_apk_data)
     apks_data = apks_buffer.getvalue()
 
-    self.create_file(path, contents=apks_data)
+    self.fs.create_file(path, contents=apks_data)
 
     self.assertEqual(
         self.platform.app_path_to_package(path), "com.example.apks")
@@ -928,7 +932,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_app_path_to_package_apk_aapt_error(self):
     path = self.create_file("test.apk")
     aapt_bin = pathlib.Path("/usr/bin/aapt")
-    self.create_file(aapt_bin)
+    self.fs.create_file(aapt_bin)
     self.host_platform.expect_sh(
         aapt_bin, "dump", "badging", path, result="some other output")
     with mock.patch(
@@ -944,7 +948,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     apk_buffer = io.BytesIO()
     with zipfile.ZipFile(apk_buffer, "w") as apk_zip:
       apk_zip.writestr("AndroidManifest.xml", b"no package name here")
-    self.create_file(path, contents=apk_buffer.getvalue())
+    self.fs.create_file(path, contents=apk_buffer.getvalue())
 
     with self.assertRaisesRegex(ValueError,
                                 "Invalid Android Binary XML header"):
@@ -960,7 +964,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     apk_buffer = io.BytesIO()
     with zipfile.ZipFile(apk_buffer, "w") as apk_zip:
       apk_zip.writestr("AndroidManifest.xml", invalid_axml)
-    self.create_file(path, contents=apk_buffer.getvalue())
+    self.fs.create_file(path, contents=apk_buffer.getvalue())
 
     with self.assertRaisesRegex(ValueError, "Expected String Pool chunk"):
       self.platform.app_path_to_package(path)

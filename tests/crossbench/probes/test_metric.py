@@ -57,6 +57,8 @@ class MetricTestCase(unittest.TestCase):
     self.assertTrue(values.is_numeric)
     values.append(5)
     self.assertTrue(values.is_numeric)
+    # Intentionally appending a str to `Metric[int]` to test `is_numeric`.
+    # pyrefly: ignore[bad-argument-type]
     values.append("6")
     self.assertFalse(values.is_numeric)
 
@@ -65,10 +67,12 @@ class MetricTestCase(unittest.TestCase):
 
   def test_to_json_empty(self):
     json_data = Metric().to_json()
+    self.assertIsInstance(json_data, dict)
     self.assertDictEqual(json_data, {"values": []})
 
   def test_to_json_any(self):
     json_data = Metric(["a", "b", "c"]).to_json()
+    self.assertIsInstance(json_data, dict)
     self.assertDictEqual(json_data, {"values": ["a", "b", "c"]})
 
   def test_to_json_repeated(self):
@@ -77,7 +81,10 @@ class MetricTestCase(unittest.TestCase):
 
   def test_to_json_numeric_repeated(self):
     json_data = Metric([1, 1, 1]).to_json()
-    self.assertSequenceEqual(json_data["values"], [1, 1, 1])
+    self.assertIsInstance(json_data, dict)
+    values = json_data["values"]
+    self.assertIsInstance(values, list)
+    self.assertSequenceEqual(values, [1, 1, 1])
     self.assertEqual(json_data["min"], 1)
     self.assertEqual(json_data["max"], 1)
     self.assertEqual(json_data["geomean"], 1)
@@ -86,7 +93,10 @@ class MetricTestCase(unittest.TestCase):
 
   def test_to_json_numeric_average_0(self):
     json_data = Metric([-1, 0, 1]).to_json()
-    self.assertSequenceEqual(json_data["values"], [-1, 0, 1])
+    self.assertIsInstance(json_data, dict)
+    values = json_data["values"]
+    self.assertIsInstance(values, list)
+    self.assertSequenceEqual(values, [-1, 0, 1])
     self.assertEqual(json_data["min"], -1)
     self.assertEqual(json_data["max"], 1)
     self.assertEqual(json_data["geomean"], 0)
@@ -190,10 +200,13 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     self.assertSequenceEqual(data["b"].values, [3, 3])
     self.assertSequenceEqual(data["c/cc/ccc"].values, [4, 4])
     json_data = merger.to_json()
-    self.assertSequenceEqual(json_data["a/aa"]["values"], [1, 1])
-    self.assertSequenceEqual(json_data["a/ab"]["values"], [2, 2])
-    self.assertSequenceEqual(json_data["b"]["values"], [3, 3])
-    self.assertSequenceEqual(json_data["c/cc/ccc"]["values"], [4, 4])
+    for key, expected in (("a/aa", [1, 1]), ("a/ab", [2, 2]), ("b", [3, 3]),
+                          ("c/cc/ccc", [4, 4])):
+      entry = json_data[key]
+      self.assertIsInstance(entry, dict)
+      values = entry["values"]
+      self.assertIsInstance(values, list)
+      self.assertSequenceEqual(values, expected)
 
   def test_repeated_non_numeric(self):
     merger = MetricsMerger()

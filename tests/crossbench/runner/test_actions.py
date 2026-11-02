@@ -54,6 +54,7 @@ class ActionsTestCase(BaseRunGroupTestCase):
   def test_wait_for_url_matches(self):
     run = self.mock_run()
     with Actions("test", run) as actions:
+      self.assertIsInstance(actions._browser, mock.MagicMock)
       actions._browser.current_url = "https://example.com/product/sample.html"
       actions.wait_for_url_matches(
           re.compile(r"product/.*\.html", re.IGNORECASE),
@@ -66,6 +67,7 @@ class ActionsTestCase(BaseRunGroupTestCase):
   def test_wait_for_url_matches_timeout(self):
     run = self.mock_run()
     with Actions("test", run) as actions:
+      self.assertIsInstance(actions._browser, mock.MagicMock)
       actions._browser.current_url = "https://example.com/custom_path/sub"
       with self.assertRaises(TimeoutError):
         actions.wait_for_url_matches(

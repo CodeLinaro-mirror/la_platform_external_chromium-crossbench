@@ -142,7 +142,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
   def validate_known_binary_default(self, platform: plt.Platform,
                                     result: pth.AnyPath, binary: Binary):
     self.assertSequenceEqual(
-        [path_entry.binary for path_entry in binary.platform_path(platform)],
+        [path_entry.path for path_entry in binary.platform_path(platform)],
         [result])
     self.assertFalse(binary.exists(platform))
     with self.assertRaises(BinaryNotFoundError):
@@ -153,7 +153,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     self.assertTrue(binary.exists(platform))
     self.assertEqual(pth.AnyPath(binary.resolve(platform)), result)
     self.assertEqual(pth.AnyPath(binary.resolve_cached(platform)), result)
-    self.fs.remove(result)
+    self.fs.remove(str(result))
     self.assertFalse(binary.exists(platform))
     self.assertEqual(pth.AnyPath(binary.resolve_cached(platform)), result)
     with self.assertRaises(BinaryNotFoundError):
@@ -178,7 +178,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
                                              result: pth.AnyPath,
                                              binary: Binary):
     self.assertSequenceEqual(
-        [path_entry.binary for path_entry in binary.platform_path(platform)],
+        [path_entry.path for path_entry in binary.platform_path(platform)],
         [default_miss, result])
     with self.assertRaises(BinaryNotFoundError):
       binary.resolve(platform)
@@ -187,7 +187,7 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     self.fs.create_file(result, st_size=100)
     self.assertEqual(pth.AnyPath(binary.resolve(platform)), result)
     self.assertEqual(pth.AnyPath(binary.resolve_cached(platform)), result)
-    self.fs.remove(result)
+    self.fs.remove(str(result))
     with self.assertRaises(BinaryNotFoundError):
       binary.resolve(platform)
 
@@ -591,7 +591,6 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
     build_path = ChromeBuildPath("trace_processor_shell")
     win_path = build_path.for_windows()
     self.assertIsInstance(win_path, ChromeBuildPath)
-    assert isinstance(win_path, ChromeBuildPath)
     self.assertEqual(win_path.binary, pth.AnyPath("trace_processor_shell.exe"))
     build_path_exe = ChromeBuildPath("trace_processor_shell.exe")
     self.assertIs(build_path_exe.for_windows(), build_path_exe)
@@ -621,7 +620,7 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(build_path.resolve(linux_plt), target_bin)
 
     # Test glob fallback for non-standard build directory name
-    self.fs.remove(target_bin)
+    self.fs.remove(str(target_bin))
     self.assertIsNone(build_path.resolve(linux_plt))
     custom_dir = out_dir / "custom_arm64"
     self.fs.create_dir(custom_dir)
@@ -641,7 +640,6 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
     perfetto_path = PerfettoChromePath("trace_processor")
     win_path = perfetto_path.for_windows()
     self.assertIsInstance(win_path, PerfettoChromePath)
-    assert isinstance(win_path, PerfettoChromePath)
     self.assertEqual(
         win_path.relative_path,
         pth.AnyPath("third_party/perfetto/tools/trace_processor.exe"))

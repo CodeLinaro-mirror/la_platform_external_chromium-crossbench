@@ -53,6 +53,7 @@ class BitsProbeTestCase(BaseProbeTestCase):
     with mock.patch("crossbench.probes.bits.dt.datetime") as mock_datetime:
       mock_datetime.now.return_value = now
       context = probe.create_context(run)
+      self.assertIsInstance(context, BitsProbeContext)
       self.assertEqual(context.bits_out_id, "20260702_170055")
 
   def test_distinct_runs_have_distinct_ids(self) -> None:
@@ -66,6 +67,8 @@ class BitsProbeTestCase(BaseProbeTestCase):
       mock_datetime.now.side_effect = [now, later]
       context1 = probe.create_context(run1)
       context2 = probe.create_context(run2)
+      self.assertIsInstance(context1, BitsProbeContext)
+      self.assertIsInstance(context2, BitsProbeContext)
 
     self.assertEqual(context1.bits_out_id, "20260702_170055")
     self.assertEqual(context2.bits_out_id, "20260702_170110")
@@ -424,6 +427,9 @@ class ClockSyncTestCase(unittest.TestCase):
 class _BitsProbeContextTestCase(BaseProbeTestCase):
   """Shared setup: a context whose BITS commands are mocked out, writing the
   BITS trace on --write_perfetto if trace_bytes is given."""
+  # Overrides `unittest.TestCase.run()` method with a mock Run attribute.
+  # pyrefly: ignore[bad-override]
+  run: mock.MagicMock
   HOST_REALTIME_NS = 1_791_367_605_185_683_067
   DEVICE_BOOTTIME_NS = 505_175_536_601_118
 
@@ -447,6 +453,7 @@ class _BitsProbeContextTestCase(BaseProbeTestCase):
   ) -> tuple[BitsProbeContext, pth.LocalPath]:
     probe = BitsProbe(self.bits_path, "test_run_id", port=1234)
     context = probe.create_context(self.run)
+    self.assertIsInstance(context, BitsProbeContext)
     perfetto_path = context.local_result_path / "test_run_id.pftrace"
 
     def sh_side_effect(*args: Any, **_: Any) -> None:
@@ -880,6 +887,9 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
 
 
 class BitsProbeResultsFileTestCase(BaseProbeTestCase):
+  # Overrides `unittest.TestCase.run()` method with a mock Run attribute.
+  # pyrefly: ignore[bad-override]
+  run: mock.MagicMock
   MOCK_NOW = dt.datetime(2026, 7, 2, 17, 0, 55)
   MOCK_NOW_STR = "20260702_170055"
   HOST_REALTIME_NS = 1_000
@@ -905,6 +915,7 @@ class BitsProbeResultsFileTestCase(BaseProbeTestCase):
     with mock.patch("crossbench.probes.bits.dt.datetime") as mock_datetime:
       mock_datetime.now.return_value = self.MOCK_NOW
       context = probe.create_context(self.run)
+      self.assertIsInstance(context, BitsProbeContext)
     return context
 
   def _teardown(self, context: BitsProbeContext) -> LocalProbeResult:

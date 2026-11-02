@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING
 
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.page.live import InteractivePage
@@ -14,12 +14,15 @@ from crossbench.probes.meminfo import MeminfoProbe
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
 
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
+
 
 def mock_meminfo(info_stack: list[str],
                  name: str,
                  title: str | None = None,
-                 system: bool = False) -> dict[str, Any]:
-  meminfo = {
+                 system: bool = False) -> JsonDict:
+  meminfo: JsonDict = {
       "info_stack":
           info_stack,
       "processes": [

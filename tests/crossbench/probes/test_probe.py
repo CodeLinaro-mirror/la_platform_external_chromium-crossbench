@@ -65,7 +65,7 @@ from tests.crossbench.mock_helper import LinuxMockPlatform
 from tests.crossbench.probes.helper import BaseProbeTestCase
 
 if TYPE_CHECKING:
-  from tests.crossbench.mock_helper import MockPlatform
+  from tests.crossbench.mock_helper import MockPlatformMixin
   from tests.crossbench.runner.helper import MockRun
 
 
@@ -305,7 +305,7 @@ class ShellProbeExecutionTestCase(BaseProbeTestCase):
 
   def _verify_shell_probe_execution(self, probe_cls: type[ShellProbeBase],
                                     run: MockRun,
-                                    target_platform: MockPlatform) -> None:
+                                    target_platform: MockPlatformMixin) -> None:
     cmds = {
         "setup_cmd": ["setup-cmd", "1", "2"],
         "start_cmd": ["start-cmd", "3", "4"],
@@ -386,6 +386,7 @@ class BaseShellProbeValidationTestCase(BaseProbeTestCase):
                                               0o644)
 
     run = self.mock_run()
+    self.assertIsInstance(run.browser, mock.MagicMock)
     self.browser = run.browser
     self.browser_platform = self.setup_platform()
     self.browser_platform.use_fs = True

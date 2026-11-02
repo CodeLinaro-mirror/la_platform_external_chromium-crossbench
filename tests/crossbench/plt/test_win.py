@@ -25,6 +25,7 @@ from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
 class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
                               BaseMockPlatformTestCase):
   __test__ = True
+  platform: WinMockPlatform
 
   @override
   def setUp(self) -> None:

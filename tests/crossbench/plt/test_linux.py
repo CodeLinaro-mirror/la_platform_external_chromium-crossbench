@@ -26,7 +26,7 @@ from crossbench.plt.linux import CPUFREQ_POLICY0_PATH, \
 from crossbench.plt.posix import TRACE_MARKER_PATH, PosixPlatform, PosixVersion
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
-from tests.crossbench.mock_helper import LinuxMockPlatform, MockPlatform, \
+from tests.crossbench.mock_helper import LinuxMockPlatform, \
     RemoteLinuxMockPlatform, ShResult
 from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
     BasePosixMockPlatformTestCase, PlatformClipboardTestCase
@@ -345,7 +345,7 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
     return LinuxMockPlatform()
 
   @override
-  def setup_platform(self) -> MockPlatform:
+  def setup_platform(self) -> RemoteLinuxMockPlatform:
     return RemoteLinuxMockPlatform(self.host_platform)
 
   def cpu_info(self, processor_id, physical_id, core_id):

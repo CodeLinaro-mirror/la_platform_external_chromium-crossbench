@@ -50,7 +50,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
         returncode=returncode)
 
   def _expect_sh_ssh_shell(self, *args, result=""):
-    ssh_opts = " ".join(plt.LinuxSshPlatform.SSH_OPTIONS)
+    ssh_opts = " ".join(map(str, plt.LinuxSshPlatform.SSH_OPTIONS))
     cmd_string = (
         f"ssh {ssh_opts} -p {self.SSH_PORT!s} {self.SSH_USER}@{self.HOST} ")
     cmd_string += " ".join(map(str, args))
@@ -253,7 +253,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
         "source/path/file",
         f"{self.SSH_USER}@{self.HOST}:remote/dest/path/file")
     self.platform.push(
-        self.host_platform.path("source/path/file"),
+        self.host_platform.local_path("source/path/file"),
         self.platform.path("remote/dest/path/file"))
 
   def test_push_dir(self):
@@ -261,7 +261,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.host_platform.expect_sh(
         "scp", *plt.LinuxSshPlatform.SSH_OPTIONS, "-P", self.SSH_PORT, "-r",
         "source/path/dir", f"{self.SSH_USER}@{self.HOST}:remote/dest/path/dir")
-    source_dir = self.host_platform.path("source/path/dir")
+    source_dir = self.host_platform.local_path("source/path/dir")
     self.fs.create_dir(source_dir)
     self.platform.push(source_dir, self.platform.path("remote/dest/path/dir"))
 
@@ -272,7 +272,7 @@ class LinuxSshMockPlatformTestCase(BasePosixMockPlatformTestCase):
         "local/dest/path/file")
     self.platform.pull(
         self.platform.path("remote/source/path/file"),
-        self.platform.path("local/dest/path/file"))
+        pth.LocalPath("local/dest/path/file"))
 
     self.assertEqual(self.host_platform.mkdir_calls, 1)
     self.assertTrue(pth.LocalPath("local/dest/path").exists())

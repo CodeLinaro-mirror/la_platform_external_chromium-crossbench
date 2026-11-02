@@ -202,7 +202,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.platform.mkdir(path, parents=True, exist_ok=False)
       self.assertTrue(self.platform.is_dir(path))
       if self.platform.is_local:
-        self.assertTrue(path.is_dir())
+        self.assertTrue(pathlib.Path(path).is_dir())
       with self.assertRaisesRegex(Exception, str(path.parent)):
         self.platform.rm(path.parent)
       self.platform.rm(path.parent, dir=True)
@@ -247,14 +247,14 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     with self.platform.TemporaryDirectory() as tmp_dir:
       tmp_file = tmp_dir / "test.txt"
       if self.platform.is_local:
-        self.assertFalse(tmp_file.exists())
+        self.assertFalse(pathlib.Path(tmp_file).exists())
       self.assertFalse(self.platform.exists(tmp_file))
       self.platform.touch(tmp_file)
       if self.platform.is_local:
-        self.assertTrue(tmp_file.exists())
+        self.assertTrue(pathlib.Path(tmp_file).exists())
       self.assertTrue(self.platform.exists(tmp_file))
       if self.platform.is_local:
-        self.assertEqual(tmp_file.stat().st_size, 0)
+        self.assertEqual(pathlib.Path(tmp_file).stat().st_size, 0)
 
   def test_rename(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
@@ -262,16 +262,16 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       tmp_file_renamed = tmp_file.with_name("test_renamed.txt")
       self.platform.touch(tmp_file)
       if self.platform.is_local:
-        self.assertTrue(tmp_file.exists())
-        self.assertFalse(tmp_file_renamed.exists())
+        self.assertTrue(pathlib.Path(tmp_file).exists())
+        self.assertFalse(pathlib.Path(tmp_file_renamed).exists())
       self.assertTrue(self.platform.exists(tmp_file))
       self.assertFalse(self.platform.exists(tmp_file_renamed))
 
       result = self.platform.rename(tmp_file, tmp_file_renamed)
       self.assertEqual(result, tmp_file_renamed)
       if self.platform.is_local:
-        self.assertFalse(tmp_file.exists())
-        self.assertTrue(tmp_file_renamed.exists())
+        self.assertFalse(pathlib.Path(tmp_file).exists())
+        self.assertTrue(pathlib.Path(tmp_file_renamed).exists())
       self.assertFalse(self.platform.exists(tmp_file))
       self.assertTrue(self.platform.exists(tmp_file_renamed))
 
@@ -649,6 +649,7 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     if self.platform.is_remote:
       self.skipTest("Not supported yet on remote platforms.")
     process_info = self.platform.process_info(os.getpid())
+    self.assertIsNotNone(process_info)
     self.assertIn("python", process_info["name"].lower())
 
     # Test with explicit attrs
@@ -914,10 +915,12 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     with self.platform.override_binary(path, overridden_binary):
       result_path = self.platform.search_binary(path)
       self.assertEqual(result_path, overridden_binary)
+      self.assertIsNotNone(result_path)
       self.assertTrue(self.platform.exists(result_path))
 
     result_path_2 = self.platform.search_binary(path)
     self.assertNotEqual(result_path_2, result_path)
+    self.assertIsNotNone(result_path_2)
     self.assertTrue(self.platform.exists(result_path_2))
     self.assertIsNone(self.platform.lookup_binary_override(path))
 
@@ -1130,6 +1133,8 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
   @override
   def setUp(self):
     super().setUp()
+    # MockRemotePosixPlatform inherits from dynamic type(plt.PLATFORM).
+    # pyrefly: ignore[bad-instantiation]
     self.platform = MockRemotePosixPlatform()
 
   def test_is_remote(self):
@@ -1195,7 +1200,8 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
       self.skipTest("Refresh rate not supported")
 
     with mock.patch.object(self.platform, "sleep") as mock_sleep:
-      result = self.platform.set_display_refresh_rate(rate)
+      self.assertIsNotNone(rate)
+      result = self.platform.set_display_refresh_rate(int(rate))
       self.assertTrue(result.success)
       mock_sleep.assert_not_called()
 
@@ -1246,16 +1252,17 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
       self.assertEqual(binary.name, "Calendar.app")
 
   def test_app_version_app(self):
-    app = pathlib.Path(self.platform.search_app(pathlib.Path("Safari.app")))
-    self.assertIsNotNone(app)
+    app_path = self.platform.search_app(pathlib.Path("Safari.app"))
+    self.assertIsNotNone(app_path)
+    app = pathlib.Path(app_path)
     self.assertTrue(app.is_dir())
     version = self.platform.app_version(app)
     self.assertRegex(version, r"[0-9]+\.[0-9]+")
 
   def test_app_version_app_binary(self):
-    binary = pathlib.Path(
-        self.platform.search_binary(pathlib.Path("Safari.app")))
-    self.assertIsNotNone(binary)
+    binary_path = self.platform.search_binary(pathlib.Path("Safari.app"))
+    self.assertIsNotNone(binary_path)
+    binary = pathlib.Path(binary_path)
     self.assertTrue(binary.is_file())
     version = self.platform.app_version(binary)
     self.assertRegex(version, r"[0-9]+\.[0-9]+")
@@ -1354,16 +1361,18 @@ class WinNativePlatformTestCase(BaseNativePlatformTestCase):
   def test_search_binary(self):
     with self.assertRaises(ValueError):
       self.platform.search_binary(pathlib.Path("does not exist"))
-    path = pathlib.Path(
-        self.platform.search_binary(
-            pathlib.Path("Windows NT/Accessories/wordpad.exe")))
-    self.assertTrue(path and path.exists())
+    binary_path = self.platform.search_binary(
+        pathlib.Path("Windows NT/Accessories/wordpad.exe"))
+    self.assertIsNotNone(binary_path)
+    path = pathlib.Path(binary_path)
+    self.assertTrue(path.exists())
 
   def test_app_version(self):
-    path = pathlib.Path(
-        self.platform.search_binary(
-            pathlib.Path("Windows NT/Accessories/wordpad.exe")))
-    self.assertTrue(path and path.exists())
+    binary_path = self.platform.search_binary(
+        pathlib.Path("Windows NT/Accessories/wordpad.exe"))
+    self.assertIsNotNone(binary_path)
+    path = pathlib.Path(binary_path)
+    self.assertTrue(path.exists())
     version = self.platform.app_version(path)
     self.assertIsNotNone(version)
 
