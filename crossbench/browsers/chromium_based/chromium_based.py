@@ -440,14 +440,16 @@ class ChromiumBased(Browser):
     pid = self.js("return chrome?.benchmarking?.getRendererPid?.();")
     if pid is None:
       return None
-    return int(pid)
+    assert isinstance(pid, int)
+    return pid
 
   @override
   def get_renderer_main_tid(self) -> int | None:
     tid = self.js("return chrome?.benchmarking?.getRendererMainTid?.();")
     if tid is None:
       return None
-    return int(tid)
+    assert isinstance(tid, int)
+    return tid
 
   @override
   def quit(self) -> None:

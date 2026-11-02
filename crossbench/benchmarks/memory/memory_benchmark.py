@@ -223,21 +223,22 @@ class MemoryProbeContext(ActionRunnerListener,
       cur_handle: str = action.current_window_id()
       navigation_start_time = action.js(
           "return window.performance.timing.navigationStart")
+      assert isinstance(navigation_start_time, float)
       logging.debug("Browser: %s. Navigation starttime for handle %s is %s.",
                     run.browser.unique_name, cur_handle, navigation_start_time)
       self._navigation_time_ms[cur_handle] = navigation_start_time
 
       tab_index = self._tab_count - 1
-      page_loaded = float(
-          action.js(
-              f"return performance.getEntriesByName('page-loaded~{tab_index}')"
-              "[0].startTime"))
-      alloc_start = float(
-          action.js("return performance.getEntriesByName"
-                    f"('allocation-start~{tab_index}')[0].startTime"))
-      alloc_done = float(
-          action.js("return performance.getEntriesByName"
-                    f"('allocation-done~{tab_index}')[0].startTime"))
+      page_loaded = action.js(
+          f"return performance.getEntriesByName('page-loaded~{tab_index}')"
+          "[0].startTime")
+      assert isinstance(page_loaded, float)
+      alloc_start = action.js("return performance.getEntriesByName"
+                              f"('allocation-start~{tab_index}')[0].startTime")
+      assert isinstance(alloc_start, float)
+      alloc_done = action.js("return performance.getEntriesByName"
+                             f"('allocation-done~{tab_index}')[0].startTime")
+      assert isinstance(alloc_done, float)
       alloc_dur = alloc_done - alloc_start
       self._page_load_duration_ms_by_tab_index[str(tab_index)] = page_loaded
       self._allocation_duration_ms_by_tab_index[str(tab_index)] = alloc_dur
@@ -263,6 +264,7 @@ class MemoryProbeContext(ActionRunnerListener,
           action.switch_window(handle)
           navigation_start_time = action.js(
               "return window.performance.timing.navigationStart", timeout=2)
+          assert isinstance(navigation_start_time, float)
           if navigation_start_time == handle_navigation_time_ms:
             alive_count += 1
           else:

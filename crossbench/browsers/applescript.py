@@ -8,7 +8,7 @@ import abc
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Sequence
 
 import psutil
 from typing_extensions import override
@@ -188,7 +188,8 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
       self,
       script: str,
       timeout: dt.timedelta | None = None,
-      arguments: Sequence[object] = ()) -> Any:
+      arguments: Sequence[object] = (),
+  ) -> object:
     del timeout
     js_script = AppleScript.js_script_with_args(script, arguments)
     json_result: str = self._exec_apple_script(

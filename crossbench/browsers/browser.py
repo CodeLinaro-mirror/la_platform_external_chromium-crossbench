@@ -9,7 +9,7 @@ import datetime as dt
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Any, Final, Iterable, Sequence
+from typing import TYPE_CHECKING, Final, Iterable, Sequence
 
 from ordered_set import OrderedSet
 
@@ -477,7 +477,8 @@ class Browser(abc.ABC):
       self,
       script: str,
       timeout: dt.timedelta | None = None,
-      arguments: Sequence[object] = ()) -> Any:
+      arguments: Sequence[object] = (),
+  ) -> object:
     pass
 
   def clear_cache(self) -> None:

@@ -116,6 +116,7 @@ class MotionMark20Story(MotionMark1Story):
         return counter;
         """,
         arguments=[self._substories])
+    assert isinstance(num_enabled, int)
     assert num_enabled > 0, f"No tests were enabled for {self._substories}"
     actions.wait(0.1)
 

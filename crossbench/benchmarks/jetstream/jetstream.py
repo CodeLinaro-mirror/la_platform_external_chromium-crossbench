@@ -163,9 +163,9 @@ class JetStreamProbeContext(JsonResultProbeContext):
   def to_json(self, actions: Actions) -> dict[str, float]:
     # Use serialized json as transport format to preserve object key order.
     json_payload = actions.js(self.JS)
+    assert isinstance(json_payload, str)
     json_data = json.loads(json_payload)
-    ObjectParser.non_empty_dict(json_data, f"{self.probe.name} metrics")
-    return json_data
+    return ObjectParser.non_empty_dict(json_data, f"{self.probe.name} metrics")
 
   @override
   def process_json_data(self, json_data: Json) -> Json:

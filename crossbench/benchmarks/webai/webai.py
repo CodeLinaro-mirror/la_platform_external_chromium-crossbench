@@ -111,6 +111,7 @@ class WebAIProbeContext(JsonResultProbeContext):
   @override
   def to_json(self, actions: Actions) -> Json:
     json_payload = actions.js(self.JS)
+    assert isinstance(json_payload, str)
     return json.loads(json_payload)
 
   @override

@@ -121,6 +121,7 @@ class BlinkAIProbeContext(JsonResultProbeContext[BlinkAIProbe]):
   def to_json(self, actions: Actions) -> Json:
     metrics: JsonDict = {}
     if json_payload := actions.js(self.JS):
+      assert isinstance(json_payload, str)
       metrics.update(json.loads(json_payload))
     self._extract_vram_metrics(metrics)
     return metrics

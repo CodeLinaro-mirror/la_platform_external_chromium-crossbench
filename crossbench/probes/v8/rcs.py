@@ -130,7 +130,9 @@ class V8RCSProbeContext(ProbeContext[V8RCSProbe]):
 
   def stop(self) -> None:
     with self.run.actions("Extract RCS") as actions:
-      self._rcs_table = actions.js("return %GetAndResetRuntimeCallStats();")
+      rcs_table = actions.js("return %GetAndResetRuntimeCallStats();")
+      assert rcs_table is None or isinstance(rcs_table, str)
+      self._rcs_table = rcs_table
 
   def teardown(self) -> ProbeResult:
     if not self._rcs_table:

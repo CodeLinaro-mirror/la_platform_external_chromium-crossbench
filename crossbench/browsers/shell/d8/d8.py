@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import logging
 import urllib.request
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Sequence
 
 from typing_extensions import override
 
@@ -142,7 +142,8 @@ class D8(ShellBrowser):
       self,
       script: str,
       timeout: dt.timedelta | None = None,
-      arguments: Sequence[object] = ()) -> Any:
+      arguments: Sequence[object] = (),
+  ) -> object:
     logging.debug("JS: %s", script)
     args_str: str = json.dumps(arguments)
     script = f"""JSON.stringify((function exceptionWrapper(){{

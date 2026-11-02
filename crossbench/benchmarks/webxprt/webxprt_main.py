@@ -127,7 +127,9 @@ class WebXPRT5ProbeContext(
 
   @override
   def to_json(self, actions: Actions) -> Json:
-    raw_data = json.loads(actions.js(self._script))
+    json_payload = actions.js(self._script)
+    assert isinstance(json_payload, str)
+    raw_data = json.loads(json_payload)
     return ObjectParser.non_empty_dict(raw_data, f"{self.probe.name} raw json")
 
   @override

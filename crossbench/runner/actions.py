@@ -10,8 +10,7 @@ import logging
 import re
 import sys
 import time as py_time
-from typing import TYPE_CHECKING, Any, Callable, Final, Iterator, Self, \
-    Sequence
+from typing import TYPE_CHECKING, Callable, Final, Iterator, Self, Sequence
 
 import selenium.common.exceptions
 
@@ -118,7 +117,7 @@ class Actions(TimeScope):
          timeout: AnyTimeUnit = 10,
          absolute_time: bool = False,
          arguments: Sequence[object] = (),
-         **kwargs) -> Any:
+         **kwargs: object) -> object:
     self._assert_is_active()
     assert js_code, "js_code must be a valid JS script"
     if kwargs:
@@ -134,7 +133,7 @@ class Actions(TimeScope):
       delay: AnyTimeUnit = 0,
       absolute_time: bool = False,
       arguments: Sequence[object] = (),
-      success_condition: Callable[[Any], bool] = _default_success_condition,
+      success_condition: Callable[..., bool] = _default_success_condition,
   ) -> None:
     """
     Runs the `js_code` at a regular interval until either the `timeout` is
@@ -214,7 +213,7 @@ class Actions(TimeScope):
       self.wait_for_ready_state(ready_state, timeout)
 
   def current_url(self) -> str:
-    return self.js("return document.URL;")
+    return str(self.js("return document.URL;"))
 
   def wait(self,
            time: AnyTimeUnit = dt.timedelta(seconds=1),

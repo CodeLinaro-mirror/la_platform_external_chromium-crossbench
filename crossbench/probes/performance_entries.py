@@ -70,7 +70,7 @@ class PerformanceEntriesProbeContext(JsonResultProbeContext):
 
   @override
   def to_json(self, actions: Actions) -> Json:
-    return actions.js("""
+    data = actions.js("""
       let data = { __proto__: null, paint: {}, mark: {} };
       for (let entryType of Object.keys(data)) {
         for (let entry of performance.getEntriesByType(entryType)) {
@@ -93,3 +93,5 @@ class PerformanceEntriesProbeContext(JsonResultProbeContext):
       }
       return data;
       """)
+    assert isinstance(data, dict)
+    return data

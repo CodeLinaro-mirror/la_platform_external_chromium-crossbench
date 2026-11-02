@@ -9,7 +9,7 @@ import json
 import logging
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Sequence
 
 import websocket
 from typing_extensions import override
@@ -260,7 +260,7 @@ class CdpAndroidBrowser(ChromiumBased):
       script: str,
       timeout: dt.timedelta | None = None,
       arguments: Sequence[object] = (),
-  ) -> Any:
+  ) -> object:
     del timeout
     args_json = json.dumps(arguments)
     expression = f"(function(){{{script}}}).apply(window, {args_json})"

@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import argparse
-import copy
 import csv
+from typing import TYPE_CHECKING
 import unittest.mock
 
 from typing_extensions import override
@@ -22,7 +22,10 @@ from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
 from tests.crossbench.benchmarks import helper
-from tests.crossbench.mock_browser import MockBrowser
+from tests.crossbench.mock_browser import JsInvocation
+
+if TYPE_CHECKING:
+  from tests.crossbench.mock_browser import MockBrowser
 
 
 class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
@@ -72,24 +75,45 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
   def test_run_default(self):
     self._test_run()
 
-  def _test_run(self, throw: bool = False):
+  def _expect_tab_js(self, browser: MockBrowser, tab_index: int) -> None:
+    # Inject alloc.js payload.
+    browser.expect_js(JsInvocation(None, "/* alloc */"))
+    # Record navigation start and performance mark timestamps.
+    browser.expect_js(
+        JsInvocation(1000.0 + tab_index,
+                     "return window.performance.timing.navigationStart"))
+    browser.expect_js(
+        JsInvocation(
+            100.0, "return performance.getEntriesByName("
+            f"'page-loaded~{tab_index}')[0].startTime"))
+    browser.expect_js(
+        JsInvocation(
+            200.0, "return performance.getEntriesByName("
+            f"'allocation-start~{tab_index}')[0].startTime"))
+    browser.expect_js(
+        JsInvocation(
+            350.0, "return performance.getEntriesByName("
+            f"'allocation-done~{tab_index}')[0].startTime"))
+    browser.expect_js(
+        JsInvocation(
+            None, "performance.mark('crossbench_tab_timing', { detail: {"
+            f" tab_index: {tab_index}, page_load_duration_ms: 100.0,"
+            " allocation_duration_ms: 150.0 } })"))
+    # Record alive tabs count (liveness check skipped while tab_count <= 40).
+    browser.expect_js(
+        JsInvocation(
+            None, "performance.mark('tabs_alive', { detail: {"
+            f" tab_index: {tab_index}, alive_count: {tab_index + 1} }} }})"))
+
+  def _test_run(self, throw: bool = False) -> None:
     tab_count = 2
     repetitions = 2
     stories = self._create_stories(tab_count=tab_count)
-    for _ in range(repetitions):
-      for _ in stories:
-        for browser in self.browsers:
-          # wait for ready state
-          browser.expect_js(result=True)
-          # Record navigation time
-          browser.expect_js(result="1000")
-
-          # wait for ready state
-          browser.expect_js(result=True)
-          # Record navigation time
-          browser.expect_js(result="1001")
     for browser in self.browsers:
-      browser.expected_js = copy.deepcopy(browser.expected_js)
+      for _ in range(repetitions):
+        for _ in stories:
+          for tab_index in range(tab_count):
+            self._expect_tab_js(browser, tab_index)
 
     benchmark = self.benchmark_cls(stories)
     self.assertTrue(len(benchmark.describe()) > 0)
@@ -107,18 +131,6 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
     self.fs.create_file(
         pth.LocalPath(mb.__file__).parent / "scripts" / "alloc.js",
         contents="/* alloc */")
-    original_js = MockBrowser.js
-
-    def safe_js(self, script, *args, **kwargs):
-      try:
-        return original_js(self, script, *args, **kwargs)
-      except AssertionError as e:
-        if "Not enough expected_js available" in str(e):
-          if isinstance(script, str) and ("performance.getEntriesByName"
-                                          in script):
-            return 1000.0
-          return None
-        raise
 
     with unittest.mock.patch(
         "crossbench.plt.base.Platform.system_memory_bytes",
@@ -127,11 +139,11 @@ class MemoryBenchmarkTestCase(helper.BaseBenchmarkTestCase):
         unittest.mock.patch(
             "crossbench.browsers.browser.Browser.switch_window"), \
         unittest.mock.patch(
-            "crossbench.browsers.browser.Browser.close_all_tabs"), \
-        unittest.mock.patch(
-            "tests.crossbench.mock_browser.MockBrowser.js", new=safe_js):
+            "crossbench.browsers.browser.Browser.close_all_tabs"):
       runner.run()
     assert runner.is_success
+    for browser in self.browsers:
+      self.assertFalse(browser.expected_js)
 
     with (self.out_dir /
           f"{self.probe_cls.NAME}.csv").open(encoding="utf-8") as f:

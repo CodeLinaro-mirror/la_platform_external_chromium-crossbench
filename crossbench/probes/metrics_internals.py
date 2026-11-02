@@ -134,6 +134,7 @@ chrome.send(
       data = actions.js(self.STRUCTURED_METRICS_DATA)
       if not data:
         raise RuntimeError(f"No structured metrics data fetched for {label}")
+      assert isinstance(data, list)
       metrics = data[self.probe.event_index]["metrics"]
       metrics_dict = {m["key"]: m["value"] for m in metrics}
       if self.probe.metric_key not in metrics_dict:

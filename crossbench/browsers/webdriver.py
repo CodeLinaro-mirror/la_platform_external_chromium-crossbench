@@ -12,7 +12,7 @@ import subprocess
 import time
 import traceback
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Final, Iterator, NoReturn, Sequence
+from typing import TYPE_CHECKING, Final, Iterator, NoReturn, Sequence
 
 import selenium.common.exceptions
 import urllib3
@@ -365,7 +365,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       self,
       script: str,
       timeout: dt.timedelta | None = None,
-      arguments: Sequence[object] = ()) -> Any:
+      arguments: Sequence[object] = (),
+  ) -> object:
     logging.debug("WebDriverBrowser.js() timeout=%s, args: %s, script: %s",
                   timeout, arguments, script)
     assert self._is_running

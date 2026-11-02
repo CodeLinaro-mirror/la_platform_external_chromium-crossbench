@@ -12,7 +12,7 @@ import math
 import sys
 import time
 from typing import TYPE_CHECKING, Callable, Final, Iterable, Iterator, \
-    Sequence, TypedDict
+    Sequence, TypedDict, cast
 
 import numpy as np
 
@@ -156,6 +156,25 @@ class ActionRunner:
   @functools.cached_property
   def _select_element_script(self) -> str:
     return (SCRIPTS_DIR / "select_element.js").read_text()
+
+  def _select_element(
+      self,
+      actions: Actions,
+      selector: str | None,
+      scroll_into_view: bool | None = None,
+      click: bool = False,
+      scroll_to: float | None = None,
+  ) -> SelectElementResult:
+    args: dict[str, object] = {"selector": selector}
+    if scroll_into_view is not None:
+      args["scrollIntoView"] = scroll_into_view
+    if click:
+      args["click"] = True
+    if scroll_to is not None:
+      args["scrollTo"] = scroll_to
+    res = actions.js(self._select_element_script, arguments=[args])
+    assert isinstance(res, dict)
+    return cast(SelectElementResult, res)
 
   @property
   def run(self) -> Run:
@@ -309,13 +328,11 @@ class ActionRunner:
             timeout=action.timeout,
             required=selector_config.required,
         )
-      res: SelectElementResult = actions.js(
-          self._select_element_script,
-          arguments=[{
-              "selector": selector_config.selector,
-              "scrollIntoView": selector_config.scroll_into_view,
-              "click": True,
-          }],
+      res: SelectElementResult = self._select_element(
+          actions,
+          selector=selector_config.selector,
+          scroll_into_view=selector_config.scroll_into_view,
+          click=True,
       )
       if not res["count"] and selector_config.required:
         raise ElementNotFoundError(selector_config.selector)
@@ -428,12 +445,10 @@ class ActionRunner:
                          actions: Actions,
                          selector: str | None,
                          scroll_into_view: bool = False) -> ViewportInfo:
-    res: SelectElementResult = actions.js(
-        self._select_element_script,
-        arguments=[{
-            "selector": selector,
-            "scrollIntoView": scroll_into_view,
-        }],
+    res: SelectElementResult = self._select_element(
+        actions,
+        selector=selector,
+        scroll_into_view=scroll_into_view,
     )
     element_rect: DisplayRectangle | None = None
     if rect := res["element_rect"]:
@@ -478,12 +493,8 @@ class ActionRunner:
 
   def scroll_js(self, action: i_action.ScrollAction) -> None:
     with self.actions("ScrollAction", measure=False) as actions:
-      res: SelectElementResult = actions.js(
-          self._select_element_script,
-          arguments=[{
-              "selector": action.selector,
-          }],
-      )
+      res: SelectElementResult = self._select_element(
+          actions, selector=action.selector)
 
       if not res["count"]:
         if action.required:
@@ -503,22 +514,12 @@ class ActionRunner:
         if time_delta >= duration_s:
           break
         scroll_y = initial_scroll_y + time_delta / duration_s * distance
-        actions.js(
-            self._select_element_script,
-            arguments=[{
-                "selector": action.selector,
-                "scrollTo": scroll_y,
-            }],
-        )
+        self._select_element(
+            actions, selector=action.selector, scroll_to=scroll_y)
         actions.wait(0.2)
       scroll_y = initial_scroll_y + distance
-      actions.js(
-          self._select_element_script,
-          arguments=[{
-              "selector": action.selector,
-              "scrollTo": scroll_y,
-          }],
-      )
+      self._select_element(
+          actions, selector=action.selector, scroll_to=scroll_y)
 
   def scroll_touch(self, action: i_action.ScrollAction) -> None:
     with self.actions("ScrollAction", measure=False) as actions:

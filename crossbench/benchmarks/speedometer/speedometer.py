@@ -139,6 +139,7 @@ class SpeedometerProbeContext(JsonResultProbeContext):
   def to_json(self, actions: Actions) -> Json:
     # Use serialized json as transport format to preserve object key order.
     json_payload = actions.js(self.JS)
+    assert isinstance(json_payload, str)
     return json.loads(json_payload)
 
   @override

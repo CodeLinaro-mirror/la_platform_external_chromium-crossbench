@@ -119,12 +119,14 @@ class MotionMark1ProbeContext(JsonResultProbeContext):
 
   @override
   def to_json(self, actions: Actions) -> Json:
-    return actions.js(self.JS)
+    data = actions.js(self.JS)
+    assert isinstance(data, list)
+    return data
 
   @override
   def flatten_json_data(self, json_data: Json) -> Json:
-    assert isinstance(json_data, list) and len(json_data) == 1, (
-        "Motion12MarkProbe requires a results list.")
+    assert isinstance(json_data, list)
+    assert len(json_data) == 1, "Motion12MarkProbe requires a results list."
     first_data = json_data[0]
     assert isinstance(first_data, dict)
     return Flatten(
@@ -300,6 +302,7 @@ class MotionMark1Story(PressBenchmarkStory):
       return counter
       """,
         arguments=[self._substories])
+    assert isinstance(num_enabled, int)
     assert num_enabled > 0, "No tests were enabled"
     actions.wait(0.1)
 

@@ -63,11 +63,12 @@ class V8BuiltinsPGOProbeContext(ProbeContext[V8BuiltinsPGOProbe]):
 
   def stop(self) -> None:
     with self.run.actions("Extract Builtins PGO DATA") as actions:
-      self._pgo_counters = actions.js(
-          "return %GetAndResetTurboProfilingData();")
+      pgo_counters = actions.js("return %GetAndResetTurboProfilingData();")
+      assert pgo_counters is None or isinstance(pgo_counters, str)
+      self._pgo_counters = pgo_counters
 
   def teardown(self) -> ProbeResult:
-    assert self._pgo_counters is not None and self._pgo_counters, (
+    assert self._pgo_counters, (
         "Chrome didn't produce any V8 builtins PGO data. "
         "Please make sure to set the v8_enable_builtins_profiling=true "
         "gn args.")
