@@ -736,11 +736,14 @@ class WDAClient:
       self,
       bundle_id: str,
       arguments: Sequence[str] | None = None,
+      env_vars: Mapping[str, str] | None = None,
   ) -> None:
     """Launch an application on the device by bundle identifier."""
     payload: dict[str, Any] = {"bundleId": bundle_id}
     if arguments:
       payload["arguments"] = list(arguments)
+    if env_vars:
+      payload["environment"] = dict(env_vars)
     self._session_post("wda/apps/launch", payload)
     # Tell WDA which app is in the foreground so that gesture requests do
     # not have to discover the active application through the accessibility

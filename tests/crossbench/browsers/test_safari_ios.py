@@ -14,8 +14,10 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.safari.webdriver import SafariWdaIOS
+from crossbench.browsers.safari.webdriver import SafariWdaIOS, \
+    SafariWebdriverIOS
 from crossbench.browsers.settings import Settings
+from crossbench.cli.config.env import EnvConfig
 from crossbench.plt.ios import IOSPlatform
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
@@ -115,7 +117,8 @@ class SafariIosBrowserTestCase(CrossbenchFakeFsTestCase):
 
     browser.start(session)
     mock_wda.terminate_app.assert_called_once_with("com.apple.mobilesafari")
-    mock_wda.launch_app.assert_called_once_with("com.apple.mobilesafari")
+    mock_wda.launch_app.assert_called_once_with(
+        "com.apple.mobilesafari", env_vars={})
     self.assertTrue(browser.is_running)
 
     browser.show_url("https://example.com", WindowTarget.SELF)
@@ -206,6 +209,113 @@ class SafariIosBrowserTestCase(CrossbenchFakeFsTestCase):
     # WDA stays disabled: nothing may reattach it after a manual run either.
     self.assertFalse(mock_wda.enabled)
     self.assertFalse(browser.is_running)
+
+  def test_wda_start_with_env_vars(self) -> None:
+    platform = self.setup_platform()
+    mock_network = mock.MagicMock()
+    mock_network.is_running = True
+    mock_network.extra_flags.return_value = ()
+    env_config = EnvConfig.parse({"env_vars": {"JSC_useBaselineJIT": "false"}})
+    browser = SafariWdaIOS(
+        "test-safari",
+        platform.path("/Applications/Safari.app"),
+        settings=Settings(
+            platform=platform, network=mock_network, env_config=env_config),
+    )
+    mock_wda = mock.MagicMock()
+    platform._wda = mock_wda
+
+    session = mock.create_autospec(
+        BrowserSessionRunGroup,
+        instance=True,
+        extra_flags=(),
+    )
+    session.network = mock.MagicMock()
+    session.network.extra_flags.return_value = ()
+
+    browser.start(session)
+    mock_wda.terminate_app.assert_called_once_with("com.apple.mobilesafari")
+    mock_wda.launch_app.assert_called_once_with(
+        "com.apple.mobilesafari",
+        env_vars={
+            "JSC_useBaselineJIT": "false",
+            "__XPC_JSC_useBaselineJIT": "false",
+        },
+    )
+
+  def test_wda_manual_mode_with_env_vars(self) -> None:
+    platform = self.setup_platform()
+    mock_network = mock.MagicMock()
+    mock_network.is_running = True
+    mock_network.extra_flags.return_value = ()
+    env_config = EnvConfig.parse({"env_vars": {"JSC_useDFGJIT": "false"}})
+    browser = SafariWdaIOS(
+        "test-safari",
+        platform.path("/Applications/Safari.app"),
+        settings=Settings(
+            platform=platform, network=mock_network, env_config=env_config),
+    )
+    browser.manual = True
+    mock_wda = mock.MagicMock()
+    platform._wda = mock_wda
+
+    session = mock.create_autospec(
+        BrowserSessionRunGroup,
+        instance=True,
+        extra_flags=(),
+    )
+    session.network = mock.MagicMock()
+    session.network.extra_flags.return_value = ()
+
+    browser.start(session)
+    with mock.patch.object(platform, "launch_app") as mock_launch_app:
+      browser.show_url("https://example.com", WindowTarget.SELF)
+      mock_launch_app.assert_called_once_with(
+          "com.apple.mobilesafari",
+          env_vars={
+              "JSC_useDFGJIT": "false",
+              "__XPC_JSC_useDFGJIT": "false",
+          },
+          payload_url="https://example.com",
+      )
+
+  def test_webdriver_ios_env_vars(self) -> None:
+    platform = self.setup_platform()
+    self.fs.create_file("/usr/bin/safaridriver", st_mode=0o755)
+    self.host_platform.expect_sh(
+        "/usr/bin/safaridriver",
+        "--version",
+        result="Included with Safari 17.1 (19616.2.9.11.7)")
+    env_config = EnvConfig.parse({"env_vars": {"JSC_useFTLJIT": "false"}})
+    browser = SafariWebdriverIOS(
+        "test-safari",
+        platform.path("/Applications/Safari.app"),
+        settings=Settings(platform=platform, env_config=env_config),
+    )
+    self.assertIsNone(browser._get_service_env())
+    with (
+        mock.patch.object(platform, "launch_app") as mock_launch_app,
+        mock.patch.object(self.host_platform, "sleep") as mock_sleep,
+    ):
+      browser._launch_with_env_vars()
+      mock_launch_app.assert_called_once_with(
+          "com.apple.mobilesafari",
+          env_vars={
+              "JSC_useFTLJIT": "false",
+              "__XPC_JSC_useFTLJIT": "false",
+          },
+      )
+      mock_sleep.assert_called_once_with(SafariWebdriverIOS.ENV_LAUNCH_SETTLE)
+
+      mock_launch_app.reset_mock()
+      with (
+          mock.patch(
+              "crossbench.browsers.safari.webdriver.SafariWebDriver.quit",
+              side_effect=RuntimeError("quit failed")),
+          self.assertRaisesRegex(RuntimeError, "quit failed"),
+      ):
+        browser.quit()
+      mock_launch_app.assert_called_once_with("com.apple.mobilesafari")
 
 
 if __name__ == "__main__":

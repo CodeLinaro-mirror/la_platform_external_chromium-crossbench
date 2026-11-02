@@ -10,7 +10,7 @@ import functools
 import json
 import re
 import subprocess
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Final, Mapping, cast
 
 from typing_extensions import override
 
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
   from crossbench.plt.details import CpuDetails, OsDetails, PythonDetails
   from crossbench.plt.display_info import DisplayInfo, DisplayResolution
   from crossbench.plt.signals import AnySignals
-  from crossbench.plt.types import ProcessInfo
+  from crossbench.plt.types import ListCmdArgs, ProcessInfo
 
 pattern: re.Pattern[str] = re.compile(
     r"(?P<name>[^\(\)]+) \((?P<version>[0-9\.]+)\) (- Connecting )?"
@@ -322,7 +322,25 @@ class IOSPlatform(RemotePlatformMixin, Platform):
     if self.is_simulator:
       self.host_platform.sh("xcrun", "simctl", "openurl", self.udid, url)
       return
-    self.host_platform.sh(
+    self.launch_app(bundle_id, payload_url=url)
+
+  @override
+  def launch_app(
+      self,
+      component: str,
+      env_vars: Mapping[str, str] | None = None,
+      terminate_existing: bool = True,
+      payload_url: str | None = None,
+  ) -> None:
+    if self.is_simulator:
+      self._launch_simulator_app(
+          component,
+          env_vars=env_vars,
+          terminate_existing=terminate_existing,
+          payload_url=payload_url,
+      )
+      return
+    cmd: ListCmdArgs = [
         "xcrun",
         "devicectl",
         "device",
@@ -330,11 +348,39 @@ class IOSPlatform(RemotePlatformMixin, Platform):
         "launch",
         "--device",
         self.udid,
-        "--terminate-existing",
-        "--payload-url",
-        url,
-        bundle_id,
-    )
+    ]
+    if terminate_existing:
+      cmd.append("--terminate-existing")
+    if env_vars:
+      cmd.extend((
+          "--environment-variables",
+          json.dumps(dict(env_vars)),
+      ))
+    if payload_url:
+      cmd.extend(("--payload-url", payload_url))
+    cmd.append(component)
+    self.host_platform.sh(*cmd)
+
+  def _launch_simulator_app(
+      self,
+      bundle_id: str,
+      env_vars: Mapping[str, str] | None = None,
+      terminate_existing: bool = True,
+      payload_url: str | None = None,
+  ) -> None:
+    cmd: ListCmdArgs = ["xcrun", "simctl", "launch"]
+    if terminate_existing:
+      cmd.append("--terminate-running-process")
+    cmd.extend((self.udid, bundle_id))
+    env: dict[str, str] | None = None
+    if env_vars:
+      env = dict(self.host_platform.environ)
+      for key, value in env_vars.items():
+        env[f"SIMCTL_CHILD_{key}"] = value
+    self.host_platform.sh(*cmd, env=env)
+    if payload_url:
+      self.host_platform.sh("xcrun", "simctl", "openurl", self.udid,
+                            payload_url)
 
   @override
   def display_resolution(self) -> DisplayResolution:

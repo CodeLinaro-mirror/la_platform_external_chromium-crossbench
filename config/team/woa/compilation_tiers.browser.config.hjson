@@ -1,0 +1,58 @@
+{
+  // Compares JavaScript compilation tiers between Safari (JavaScriptCore) and
+  // Chrome (V8):
+  // - Tier 0 (interpreter only): JSC_useBaselineJIT=false <-> --max-opt=0
+  // - Tier 1 (+ baseline JIT):   JSC_useDFGJIT=false      <-> --max-opt=1
+  // - Tier 2 (+ mid-tier JIT):   JSC_useFTLJIT=false      <-> --max-opt=2
+  // - Default (all tiers):       LLInt+Baseline+DFG+FTL   <-> Ignition+Sparkplug+Maglev+TurboFan
+  "browsers": {
+    "safari-max-opt-0": {
+      "path": "safari"
+      "env": {
+        "env_vars": {
+          "JSC_useBaselineJIT": "false"
+        }
+      }
+    }
+    "safari-max-opt-1": {
+      "path": "safari"
+      "env": {
+        "env_vars": {
+          "JSC_useDFGJIT": "false"
+        }
+      }
+    }
+    "safari-max-opt-2": {
+      "path": "safari"
+      "env": {
+        "env_vars": {
+          "JSC_useFTLJIT": "false"
+        }
+      }
+    }
+    "safari-default": {
+      "path": "safari"
+    }
+    "chrome-max-opt-0": {
+      "path": "chrome-stable"
+      "flags": [
+        "--js-flags=--max-opt=0"
+      ]
+    }
+    "chrome-max-opt-1": {
+      "path": "chrome-stable"
+      "flags": [
+        "--js-flags=--max-opt=1"
+      ]
+    }
+    "chrome-max-opt-2": {
+      "path": "chrome-stable"
+      "flags": [
+        "--js-flags=--max-opt=2"
+      ]
+    }
+    "chrome-default": {
+      "path": "chrome-stable"
+    }
+  }
+}

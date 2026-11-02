@@ -114,9 +114,18 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     """
     assert not self._service, "safaridriver service is already running"
     service = SafariService(
-        executable_path=os.fspath(driver_path), reuse_service=True)
+        executable_path=os.fspath(driver_path),
+        reuse_service=True,
+        env=self._get_service_env())
     self._service = service
     return service
+
+  def _get_service_env(self) -> dict[str, str] | None:
+    if not self.platform.is_macos:
+      return None
+    if env_vars := self._get_env_vars():
+      return dict(self.host_platform.environ) | env_vars
+    return None
 
   def _ensure_service_running(self, service: SafariService) -> None:
     """(Re)starts safaridriver if needed and waits for device discovery.
@@ -235,11 +244,15 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
 
 class SafariWebdriverIOS(SafariWebDriver):
+  BUNDLE_ID: Final[str] = "com.apple.mobilesafari"
   MAX_STARTUP_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=15)
   # USB-attached devices are discovered noticeably later than Wi-Fi
   # (CoreDevice) ones. Without this delay safaridriver only considers the
   # Wi-Fi devices for the first session request and fails for USB devices.
   DRIVER_WARMUP_DELAY: ClassVar[dt.timedelta] = dt.timedelta(seconds=1)
+  # Wait after launching Safari via devicectl so safaridriver can attach to
+  # the running process without pairing errors.
+  ENV_LAUNCH_SETTLE: ClassVar[dt.timedelta] = dt.timedelta(seconds=8)
 
   @classmethod
   @override
@@ -247,6 +260,24 @@ class SafariWebdriverIOS(SafariWebDriver):
     return ((super().attributes() & ~BrowserAttributes.DESKTOP)
             | BrowserAttributes.MOBILE
             | BrowserAttributes.REMOTE)
+
+  @property
+  def ios_platform(self) -> IOSPlatform:
+    assert isinstance(self.platform, IOSPlatform)
+    return self.platform
+
+  @override
+  def _start_driver(self, session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath) -> webdriver.Remote:
+    self._launch_with_env_vars()
+    return super()._start_driver(session, driver_path)
+
+  def _launch_with_env_vars(self) -> None:
+    if env_vars := self._get_env_vars():
+      logging.info("Launching %s with environment variables: %s",
+                   self.BUNDLE_ID, env_vars)
+      self.ios_platform.launch_app(self.BUNDLE_ID, env_vars=env_vars)
+      self.host_platform.sleep(self.ENV_LAUNCH_SETTLE)
 
   @override
   def _get_driver_options(self,
@@ -273,6 +304,16 @@ class SafariWebdriverIOS(SafariWebDriver):
   @override
   def _setup_window(self) -> None:
     pass
+
+  @override
+  def quit(self) -> None:
+    try:
+      super().quit()
+    finally:
+      if self._get_env_vars():
+        # Relaunch Safari without custom environment variables so subsequent
+        # sessions do not attach to a process with stale environment variables.
+        self.ios_platform.launch_app(self.BUNDLE_ID)
 
   @override
   def _resolve_binary(self,
@@ -357,7 +398,8 @@ class SafariWdaIOS(Safari):
       self.ios_platform.wda.terminate_app(self.BUNDLE_ID)
     except (WDAError, OSError) as e:
       logging.debug("Safari not running before launch: %s", e)
-    self.ios_platform.wda.launch_app(self.BUNDLE_ID)
+    self.ios_platform.wda.launch_app(
+        self.BUNDLE_ID, env_vars=self._get_env_vars())
     self._is_running = True
 
   @override
@@ -380,7 +422,8 @@ class SafariWdaIOS(Safari):
     if not url or url == "about:blank" or url.startswith("data:"):
       return
     if self._manual:
-      self.ios_platform.open_url_in_app(self.BUNDLE_ID, url)
+      self.ios_platform.launch_app(
+          self.BUNDLE_ID, env_vars=self._get_env_vars(), payload_url=url)
       return
     self.ios_platform.wda.open_url(url)
 

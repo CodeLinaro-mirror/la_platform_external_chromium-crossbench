@@ -1465,6 +1465,66 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(browser_2.settings.env_config.cpu_max_usage_percent, 99)
     self.assertEqual(browser_3.settings.env_config.cpu_max_usage_percent, 42)
 
+  def test_env_vars_safari_and_non_safari(self):
+    self.fs.makedirs(Safari.default_path(self.platform), exist_ok=True)
+    with self._patch_get_browser_cls(mock_browser.MockSafari):
+      config = BrowserVariantsConfigDict(
+          {
+              "browsers": {
+                  "safari-no-baseline": {
+                      "path": "safari",
+                      "env": {
+                          "env_vars": {
+                              "JSC_useBaselineJIT": "false",
+                          },
+                      },
+                  },
+              },
+          },
+          args=self.mock_args())
+    self.assertEqual(len(config.variants), 1)
+    self.assertEqual(
+        dict(config.variants[0].settings.env_config.env_vars or {}),
+        {"JSC_useBaselineJIT": "false"})
+
+    with self.assertRaisesRegex(ConfigError, "env_vars is only supported"):
+      with self._patch_get_browser_cls(mock_browser.MockChromeStable):
+        BrowserVariantsConfigDict(
+            {
+                "browsers": {
+                    "chrome-env-vars": {
+                        "path": "chrome-stable",
+                        "env": {
+                            "env_vars": {
+                                "FOO": "1",
+                            },
+                        },
+                    },
+                },
+            },
+            args=self.mock_args())
+
+  def test_parse_woa_compilation_tiers_config(self):
+    self.fs.makedirs(Safari.default_path(self.platform), exist_ok=True)
+    config_path = (
+        test_helper.config_dir() /
+        "team/woa/compilation_tiers.browser.config.hjson")
+    self.fs.add_real_file(config_path)
+
+    def mock_get_browser_cls(browser_config: BrowserConfig):
+      if "safari" in str(browser_config.path).lower():
+        return mock_browser.MockSafari
+      return mock_browser.MockChromeStable
+
+    with self._patch_get_browser_cls(side_effect=mock_get_browser_cls):
+      with config_path.open(encoding="utf-8") as f:
+        config = BrowserVariantsConfigDict()
+        config.parse_text_io(f, args=self.mock_args())
+    self.assertEqual(len(config.variants), 8)
+    self.assertEqual(
+        dict(config.variants[0].settings.env_config.env_vars or {}),
+        {"JSC_useBaselineJIT": "false"})
+
   def test_get_browser_cls_unsupported(self):
     variants = BrowserVariantsConfig()
     with self.assertRaisesRegex(argparse.ArgumentTypeError,

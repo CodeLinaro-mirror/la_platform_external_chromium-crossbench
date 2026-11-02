@@ -106,3 +106,11 @@ class Safari(Browser):
     super()._clear_cache(cache_dir)
     # This magic wait lowers safaridriver startup failures.
     self.platform.sleep(0.5)
+
+  def _get_env_vars(self) -> dict[str, str]:
+    expanded: dict[str, str] = {}
+    for key, value in (self.settings.env_config.env_vars or {}).items():
+      expanded[key] = value
+      if not key.startswith("__XPC_"):
+        expanded[f"__XPC_{key}"] = value
+    return expanded

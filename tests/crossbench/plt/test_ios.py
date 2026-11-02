@@ -510,6 +510,77 @@ class IOsMockPlatformTestCase(BaseIOsMockPlatformTestCase):
     self.assertEqual(res, DisplayResolution(440, 956))
     mock_wda.window_size.assert_called_once()
 
+  def test_launch_app_default(self):
+    self.expect_startup_devices(DEVICES_MULTIPLE)
+    platform_a = IOSPlatform(self.host_platform, "iPhone Pro")
+    self.host_platform.expect_sh(
+        "xcrun",
+        "devicectl",
+        "device",
+        "process",
+        "launch",
+        "--device",
+        "00002222-11AA22BB33DD",
+        "--terminate-existing",
+        "com.apple.mobilesafari",
+        result="")
+    platform_a.launch_app("com.apple.mobilesafari")
+
+  def test_launch_app_with_env_vars_and_payload_url(self):
+    self.expect_startup_devices(DEVICES_MULTIPLE)
+    platform_a = IOSPlatform(self.host_platform, "iPhone Pro")
+    env_vars = {
+        "JSC_useBaselineJIT": "false",
+        "__XPC_JSC_useBaselineJIT": "false",
+    }
+    self.host_platform.expect_sh(
+        "xcrun",
+        "devicectl",
+        "device",
+        "process",
+        "launch",
+        "--device",
+        "00002222-11AA22BB33DD",
+        "--environment-variables",
+        json.dumps(env_vars),
+        "--payload-url",
+        "https://example.com",
+        "com.apple.mobilesafari",
+        result="")
+    platform_a.launch_app(
+        "com.apple.mobilesafari",
+        env_vars=env_vars,
+        terminate_existing=False,
+        payload_url="https://example.com",
+    )
+
+  def test_launch_app_simulator(self):
+    self.expect_startup_devices(
+        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+    platform_sim = IOSPlatform(self.host_platform, IPHONE_SIMULATOR["udid"])
+    self.host_platform.expect_sh(
+        "xcrun",
+        "simctl",
+        "launch",
+        "--terminate-running-process",
+        IPHONE_SIMULATOR["udid"],
+        "com.apple.mobilesafari",
+        result="com.apple.mobilesafari: 5555\n",
+    )
+    self.host_platform.expect_sh(
+        "xcrun",
+        "simctl",
+        "openurl",
+        IPHONE_SIMULATOR["udid"],
+        "https://example.com",
+        result="",
+    )
+    platform_sim.launch_app(
+        "com.apple.mobilesafari",
+        env_vars={"JSC_useBaselineJIT": "false"},
+        payload_url="https://example.com",
+    )
+
 
 class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
   __test__ = True
@@ -657,6 +728,7 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
       wda.launch_app(
           "com.apple.mobilesafari",
           arguments=["-u", "https://example.com"],
+          env_vars={"JSC_useBaselineJIT": "false"},
       )
       mock_request.assert_has_calls([
           mock.call(
@@ -665,6 +737,9 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
               {
                   "bundleId": "com.apple.mobilesafari",
                   "arguments": ["-u", "https://example.com"],
+                  "environment": {
+                      "JSC_useBaselineJIT": "false",
+                  },
               },
               timeout=mock.ANY,
           ),

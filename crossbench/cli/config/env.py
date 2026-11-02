@@ -8,8 +8,9 @@ import argparse
 import dataclasses
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, ClassVar, Self, TypeVar
+from typing import TYPE_CHECKING, ClassVar, Mapping, Self, TypeVar
 
+from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench.config import ConfigObject, ConfigParser
@@ -91,6 +92,25 @@ def merge_duration_max(name: str, left: dt.timedelta | None,
   return max(left, right)
 
 
+def merge_str_dict(
+    name: str,
+    left: Mapping[str, str] | None,
+    right: Mapping[str, str] | None,
+) -> immutabledict[str, str] | None:
+  if left is None:
+    return None if right is None else immutabledict(right)
+  if right is None:
+    return immutabledict(left)
+  merged = dict(left)
+  for key, right_val in right.items():
+    left_val = merged.get(key)
+    if left_val is not None and left_val != right_val:
+      raise ValueError(f"Conflicting merge values for {name}[{key!r}]: "
+                       f"{left_val!r} vs. {right_val!r}")
+    merged[key] = right_val
+  return immutabledict(merged)
+
+
 ENV_CONFIG_PRESETS: dict[str, EnvConfig] = {}
 
 
@@ -105,6 +125,7 @@ class EnvConfig(ConfigObject):
   cpu_min_relative_speed: float | None = IGNORE
   cpu_power_mode: str | None = IGNORE
   disk_min_free_space_gib: float | None = IGNORE
+  env_vars: immutabledict[str, str] | None = IGNORE
   power_use_battery: bool | None = IGNORE
   require_probes: bool | None = IGNORE
   screen_allow_autobrightness: bool | None = IGNORE
@@ -165,6 +186,8 @@ class EnvConfig(ConfigObject):
         "disk_min_free_space_gib",
         type=NumberParser.positive_float,
         default=cls.IGNORE)
+    parser.add_argument(
+        "env_vars", type=ObjectParser.env_dict, default=cls.IGNORE)
     parser.add_argument("power_use_battery", type=ObjectParser.bool)
     parser.add_argument("require_probes", type=ObjectParser.bool)
     parser.add_argument(
@@ -207,6 +230,7 @@ class EnvConfig(ConfigObject):
         disk_min_free_space_gib=merge_number_max("disk_min_free_space_gib",
                                                  self.disk_min_free_space_gib,
                                                  other.disk_min_free_space_gib),
+        env_vars=merge_str_dict("env_vars", self.env_vars, other.env_vars),
         power_use_battery=merge_bool("power_use_battery",
                                      self.power_use_battery,
                                      other.power_use_battery),

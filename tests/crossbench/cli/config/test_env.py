@@ -4,9 +4,11 @@
 
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 
 import hjson
+from immutabledict import immutabledict
 
 from crossbench import hjson as cb_hjson
 from crossbench import path as pth
@@ -156,6 +158,53 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
         low.merge(high).system_min_uptime, dt.timedelta(minutes=10))
     self.assertEqual(
         high.merge(low).system_min_uptime, dt.timedelta(minutes=10))
+
+  def test_parse_env_vars(self):
+    config = EnvConfig.parse({"env_vars": {"JSC_useBaselineJIT": "false"}})
+    self.assertEqual(config.env_vars,
+                     immutabledict({"JSC_useBaselineJIT": "false"}))
+
+  def test_parse_env_vars_invalid(self):
+    for invalid in (
+        "FOO=1",
+        {
+            "": "1",
+        },
+        {
+            "1FOO": "1",
+        },
+        {
+            "FOO-BAR": "1",
+        },
+        {
+            "FOO": 1,
+        },
+        {
+            "FOO": None,
+        },
+    ):
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          EnvConfig.parse({"env_vars": invalid})
+
+  def test_combine_env_vars(self):
+    default = EnvConfig()
+    self.assertIsNone(default.env_vars)
+
+    env_a = EnvConfig(env_vars=immutabledict({"A": "1"}))
+    env_b = EnvConfig(env_vars=immutabledict({"B": "2"}))
+    self.assertEqual(default.merge(env_a).env_vars, immutabledict({"A": "1"}))
+    self.assertEqual(env_a.merge(default).env_vars, immutabledict({"A": "1"}))
+    self.assertEqual(env_a.merge(env_a).env_vars, immutabledict({"A": "1"}))
+    self.assertEqual(
+        env_a.merge(env_b).env_vars, immutabledict({
+            "A": "1",
+            "B": "2",
+        }))
+
+    env_conflict = EnvConfig(env_vars=immutabledict({"A": "2"}))
+    with self.assertRaises(ValueError):
+      env_a.merge(env_conflict)
 
   def test_parse_example_config_file(self):
     example_config_file = test_helper.config_dir() / "doc/env.config.hjson"

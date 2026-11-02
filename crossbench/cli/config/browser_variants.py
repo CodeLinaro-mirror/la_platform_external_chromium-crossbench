@@ -381,6 +381,11 @@ class BaseBrowserVariantsConfig(abc.ABC):
       clear_cache_dir = True
     if apk_config and not browser_platform.is_android:
       raise ConfigError("apk is only valid for Android browser variants")
+    # TODO: Support env_vars for all WebDriver browsers (e.g. via a
+    # Browser.supports_env_vars() helper).
+    if env_config.env_vars and not browser_cls.attributes().is_safari:
+      raise ConfigError("env_vars is only supported for Safari browsers, "
+                        f"got {browser_cls.type_name()!r}")
     settings = Settings(
         cache_dir=browser_cache_dir,
         clear_cache_dir=clear_cache_dir,

@@ -15,6 +15,7 @@ import unittest
 from typing import TYPE_CHECKING, Any, Final
 from urllib import parse as urlparse
 
+from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench import path as pth
@@ -1596,6 +1597,48 @@ class ObjectParserTestCase(BaseFileParserTestCase):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
           ObjectParser.md5_hash(invalid)
+
+  def test_env_dict(self):
+    self.assertEqual(ObjectParser.env_dict({}), immutabledict())
+    self.assertEqual(
+        ObjectParser.env_dict({
+            "JSC_useBaselineJIT": "false",
+            "_FOO_123": "",
+        }),
+        immutabledict({
+            "JSC_useBaselineJIT": "false",
+            "_FOO_123": "",
+        }),
+    )
+
+  def test_env_dict_invalid(self):
+    for invalid in (
+        "FOO=1",
+        {
+            "": "1",
+        },
+        {
+            "1FOO": "1",
+        },
+        {
+            "FOO-BAR": "1",
+        },
+        {
+            "FOO BAR": "1",
+        },
+        {
+            "FOO=BAR": "1",
+        },
+        {
+            "FOO": 1,
+        },
+        {
+            "FOO": None,
+        },
+    ):
+      with self.subTest(invalid=invalid):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          ObjectParser.env_dict(invalid)
 
 
 class TimeUnitTestCase(unittest.TestCase):

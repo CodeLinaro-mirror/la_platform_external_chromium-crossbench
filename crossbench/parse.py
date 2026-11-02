@@ -20,6 +20,7 @@ from urllib import parse as urlparse
 import google.protobuf.message
 import hjson
 from google.protobuf import text_format
+from immutabledict import immutabledict
 
 from crossbench import hjson as cb_hjson
 from crossbench import path as pth
@@ -368,6 +369,24 @@ class ObjectParser(BaseParser):
       raise argparse.ArgumentTypeError(
           f"Expected {name} to be a non-empty dict.")
     return dict_value
+
+  ENV_VAR_KEY_RE: Final[re.Pattern[str]] = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*")
+
+  @classmethod
+  def env_dict(cls,
+               value: object,
+               name: str = "env_vars") -> immutabledict[str, str]:
+    raw_dict = cls.dict(value, name)
+    result: dict[str, str] = {}
+    for key, val in raw_dict.items():
+      key_str = cls.non_empty_str(key, f"{name} key")
+      if not cls.ENV_VAR_KEY_RE.fullmatch(key_str):
+        raise argparse.ArgumentTypeError(
+            f"Invalid {name} key {key_str!r}, "
+            f"must match {cls.ENV_VAR_KEY_RE.pattern!r}")
+      val_str = cls.any_str(val, f"{name}[{key_str!r}]")
+      result[key_str] = val_str
+    return immutabledict(result)
 
   @classmethod
   def sequence(cls, value: object, name: str = "value") -> Sequence[Any]:
