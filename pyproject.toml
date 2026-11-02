@@ -227,6 +227,7 @@ required-imports = [ "from __future__ import annotations" ]
 project-includes = [
     "PRESUBMIT.py",
     "crossbench",
+    "tests",
     "tools",
 ]
 ignore-missing-imports = [

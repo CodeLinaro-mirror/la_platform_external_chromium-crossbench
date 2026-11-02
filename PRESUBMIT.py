@@ -242,13 +242,11 @@ def TyperPaths(
   if on_commit:
     typer_files_to_check.add(str(crossbench_path))
     typer_files_to_check.add(str(root_path / "tools"))
+    typer_files_to_check.add(str(root_path / "tests"))
   else:
     typer_files_to_check.update(modified_py_files)
-  # TODO: enable type checking on all tests
   result: list[str] = []
   for file in typer_files_to_check:
-    if file.startswith("tests/"):
-      continue
     if PresubmitCheck.is_skipped_path(input_api, file):
       continue
     result.append(file)
