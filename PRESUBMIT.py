@@ -22,6 +22,9 @@ USE_PYTHON3: Final[bool] = True
 
 SOURCE_SKIP_RE: Final[tuple[str, ...]] = (r"^third_party/.*",)
 
+POETRY_FILES: Final[frozenset[str]] = frozenset(
+    ("pyproject.toml", "poetry.lock"))
+
 
 def CheckChange(
     input_api: InputApi,
@@ -63,7 +66,11 @@ def CheckChange(
   # ---------------------------------------------------------------------------
   # Poetry Lock Validation:
   # ---------------------------------------------------------------------------
-  if shutil.which("poetry", path=input_api.environ.get("PATH")):
+  # `poetry.lock` can only go out of sync when one of `POETRY_FILES` changes,
+  # so skip the check (and the missing-poetry warning) for all other CLs.
+  poetry_files_affected: bool = PoetryFilesAffected(input_api)
+  if poetry_files_affected and shutil.which(
+      "poetry", path=input_api.environ.get("PATH")):
     tests.append(
         input_api.Command(
             name="poetry check --lock",
@@ -79,7 +86,7 @@ def CheckChange(
             kwargs={},
             python3=True,
         ))
-  else:
+  elif poetry_files_affected:
     results.append(
         output_api.PresubmitPromptWarning(
             "poetry not found in PATH, skipping lock file validation."))
@@ -207,6 +214,11 @@ def ModifiedFiles(
       continue
     files_to_check.append(file_path)
   return files_to_check
+
+
+def PoetryFilesAffected(input_api: InputApi) -> bool:
+  return any(
+      file.LocalPath() in POETRY_FILES for file in input_api.AffectedFiles())
 
 
 def GetUntrackedFiles(input_api: InputApi) -> list[str]:
