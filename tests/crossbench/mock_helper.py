@@ -751,10 +751,7 @@ class MockAdb(Adb):
 
 
 class AndroidAdbMockPlatform(PosixMockPlatformMixin, AndroidAdbPlatform):
-
-  @override
-  def close_all_apps(self) -> None:
-    pass
+  pass
 
 
 # MockPlatformMixin overrides Platform methods with mock-specific signatures.

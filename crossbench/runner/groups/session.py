@@ -290,11 +290,6 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   def _setup(self, is_dry_run: bool) -> None:
     self._state.expect(State.SETUP)
-    if not is_dry_run:
-      try:
-        self.browser_platform.close_all_apps()
-      except NotImplementedError:
-        logging.debug("Skipping close_all_apps on %s", self.browser_platform)
     self._probe_session_context_manager.setup(self.probes, is_dry_run)
     # TODO: handle session vs run probe.
     for run in self.runs:
@@ -374,11 +369,6 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
       try:
         self._browser.start(self)
         assert self._browser.is_running, "Browser did not start up correctly"
-        if self._browser_start_count == 1:
-          try:
-            self._browser.close_all_tabs()
-          except NotImplementedError:
-            logging.debug("Skipping close_all_tabs on %s", self._browser)
       except Exception as e:
         logging.debug("Browser setup failed: %s", e)
         # Clean up half-setup browser instances
