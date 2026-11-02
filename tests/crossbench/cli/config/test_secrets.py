@@ -74,6 +74,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
 
   def test_parse_interactive(self):
     secrets = Secrets.parse({"google": "interactive"})
+    self.assertIsNotNone(secrets.google)
     self.assertTrue(secrets.google.is_interactive)
 
   def test_parse_google(self):
@@ -84,6 +85,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
         }})
     self.assertEqual(secrets.google,
                      GoogleUsernamePassword("user@test.com", "pw"))
+    self.assertIsNotNone(secrets.google)
     self.assertFalse(secrets.google.is_interactive)
     secrets = Secrets.parse(
         {"google": {
@@ -110,6 +112,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
             client_x509_cert_url="https://example.com/x509/my-project.cert",
             universe_domain="example.com",
         ))
+    self.assertIsNotNone(secrets.bond)
     self.assertFalse(secrets.bond.is_interactive)
 
   def test_parse_google_workspace(self):
@@ -131,6 +134,7 @@ class SecretsConfigTestCase(BaseConfigTestCase):
                 universe_domain="example.com",
             ),
             shared_drive_id="my-shared-drive-id"))
+    self.assertIsNotNone(secrets.google_workspace)
     self.assertFalse(secrets.google_workspace.is_interactive)
 
   def test_equal_empty(self):
@@ -286,8 +290,12 @@ class SecretsConfigTestCase(BaseConfigTestCase):
 
     # Validate strict Immutability.
     with self.assertRaises(dataclasses.FrozenInstanceError):
+      # Intentionally mutating frozen dataclass field to test immutability.
+      # pyrefly: ignore[read-only]
       cycled_account.username = "mutated_username"
     with self.assertRaises(dataclasses.FrozenInstanceError):
+      # Intentionally mutating frozen dataclass field to test immutability.
+      # pyrefly: ignore[read-only]
       cycled_account.password = "mutated_password"
 
   def test_cycled_account_invalid_range_raises_value_error(self):
@@ -324,6 +332,8 @@ class SecretsConfigTestCase(BaseConfigTestCase):
 
     # Immutability validation on the inherited subclass
     with self.assertRaises(dataclasses.FrozenInstanceError):
+      # Intentionally mutating frozen dataclass field to test immutability.
+      # pyrefly: ignore[read-only]
       google_account.username = "new_username"
 
     # Serialization completeness on the GoogleUsernamePassword dataclass
@@ -352,6 +362,8 @@ class SecretsConfigTestCase(BaseConfigTestCase):
       CycledUsernamePassword.create(
           username="user@user.com",
           password="secret_password",
+          # Intentionally passing unknown kwarg to test TypeError.
+          # pyrefly: ignore[unexpected-keyword]
           extra_unused_kwarg="ignored",
       )
 
@@ -389,6 +401,8 @@ class SecretsConfigTestCase(BaseConfigTestCase):
       )
 
     with self.assertRaises(dataclasses.FrozenInstanceError):
+      # Intentionally mutating frozen dataclass field to test immutability.
+      # pyrefly: ignore[read-only]
       account_cycle.username = "mutated_username"
 
 

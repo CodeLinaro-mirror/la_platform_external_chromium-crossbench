@@ -55,6 +55,7 @@ class MockDevToolsRemoteClient:
     if self.next_response is not None:
       return DevToolsCommandResult(*self.next_response)
     cmd_id = command_payload.get("id", 1)
+    assert isinstance(cmd_id, int)
     return DevToolsCommandResult(True, {"id": cmd_id, "result": {}})
 
   def switch_to_new_tab(self, url: str = "about:blank") -> str:

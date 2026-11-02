@@ -14,7 +14,7 @@ from tests import test_helper
 class AddBotsConfigTestCase(unittest.TestCase):
 
   def test_minimal(self) -> None:
-    config_dict = {"num_of_bots": 3, "ttl_secs": 123}
+    config_dict: dict[str, object] = {"num_of_bots": 3, "ttl_secs": 123}
     config = AddBotsConfig.parse_dict(config_dict)
     config.validate()
 
@@ -45,7 +45,7 @@ class AddBotsConfigTestCase(unittest.TestCase):
         })
 
   def test_all(self) -> None:
-    config_dict = {
+    config_dict: dict[str, object] = {
         "num_of_bots": 4,
         "ttl_secs": 234,
         "allow_vp9": False,

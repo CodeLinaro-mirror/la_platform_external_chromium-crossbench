@@ -25,6 +25,7 @@ class ProbeConfigTestCase(BaseConfigTestCase):
     config = ProbeConfig.parse(src_str)
     self.assertEqual(config.src_str, src_str)
     self.assertIsNone(config.config_str)
+    self.assertIsNotNone(config.config_dict)
     self.assertDictEqual(config.config_dict, config_data)
 
   def test_parse_inline_str_preset(self):
@@ -42,6 +43,7 @@ class ProbeConfigTestCase(BaseConfigTestCase):
     config = ProbeConfig.parse(src_str)
     self.assertEqual(config.src_str, src_str)
     self.assertIsNone(config.config_str)
+    self.assertIsNotNone(config.config_dict)
     self.assertDictEqual(config.config_dict,
                          hjson.loads(probe_config_file.read_text()))
 

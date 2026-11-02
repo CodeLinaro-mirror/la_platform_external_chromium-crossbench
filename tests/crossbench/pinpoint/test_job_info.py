@@ -425,19 +425,21 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
   def test_job_type(self):
     job_info = PinpointJobInfo(
         job_id="1",
-        status="completed",
+        status=JobStatus.COMPLETED,
         comparison_mode=ComparisonMode.PERFORMANCE)
     self.assertEqual(job_info.job_type, "bisect")
 
     job_info = PinpointJobInfo(
-        job_id="1", status="completed", comparison_mode=ComparisonMode.TRY)
+        job_id="1",
+        status=JobStatus.COMPLETED,
+        comparison_mode=ComparisonMode.TRY)
     self.assertEqual(job_info.job_type, "try")
 
-    job_info = PinpointJobInfo(job_id="1", status="completed")
+    job_info = PinpointJobInfo(job_id="1", status=JobStatus.COMPLETED)
     self.assertEqual(job_info.job_type, "")
 
     job_info = PinpointJobInfo(
-        job_id="1", status="completed", comparison_mode=None)
+        job_id="1", status=JobStatus.COMPLETED, comparison_mode=None)
     self.assertEqual(job_info.job_type, "")
 
   def test_time_formatting(self):
@@ -572,7 +574,7 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertEqual(job_dict["cancel_reason"], "User cancelled")
 
   def test_from_json_property_fallbacks(self):
-    data = {
+    data: JsonDict = {
         "job_id": "1",
         "story": "top_story",
         "benchmark": "top_benchmark",
@@ -598,7 +600,7 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertIsNone(job_info.story)
 
   def test_from_json_progress_bisect(self):
-    bisect_data = {
+    bisect_data: JsonDict = {
         "job_id":
             "1",
         "status":
@@ -622,7 +624,7 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertEqual(job_info.progress, "2 commits, 1 attempt")
 
   def test_from_json_progress_bisect_with_start_git_hash(self):
-    data = {
+    data: JsonDict = {
         "job_id": "1",
         "status": "Running",
         "arguments": {
@@ -636,7 +638,7 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertEqual(job_info.progress, "1 commit")
 
   def test_from_json_progress_try(self):
-    data = {
+    data: JsonDict = {
         "job_id":
             "1",
         "status":
@@ -666,7 +668,9 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertEqual(job_info.progress, "20/20 (100%)")
 
     # Fallback to completed count when initial_attempt_count is missing
-    del data["arguments"]["initial_attempt_count"]
+    arguments = data["arguments"]
+    self.assertIsInstance(arguments, dict)
+    del arguments["initial_attempt_count"]
     data["status"] = "Running"
     job_info = PinpointJobInfo.from_json(data)
     self.assertEqual(job_info.progress, "1 completed")

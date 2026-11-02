@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Final
 from unittest import mock
 
 import requests
@@ -16,8 +17,11 @@ from crossbench.pinpoint.job_config import convert_job_config, \
 from tests import test_helper
 from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
+
 _TEST_JOB_ID = "1234567890"
-_TEST_JOB_RESPONSE = {
+_TEST_JOB_RESPONSE: Final[JsonDict] = {
     "job_id": _TEST_JOB_ID,
     "configuration": "win-11-perf",
     "results_url": "https://storage.cloud.google.com/1234567890.html",

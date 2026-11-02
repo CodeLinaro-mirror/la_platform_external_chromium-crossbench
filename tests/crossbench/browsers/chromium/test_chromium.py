@@ -12,6 +12,7 @@ from unittest import mock
 
 import selenium.common.exceptions
 import urllib3
+from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
@@ -162,6 +163,7 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
 
 
 class MockChromiumBasedWebDriver(ChromiumBaseMixin, ChromiumBasedWebDriver):
+  platform: mock.MagicMock
 
   def __init__(self, label, driver) -> None:
     mock_platform = mock.MagicMock(name="Mock Platform")
@@ -591,6 +593,7 @@ class ChromiumPathLinuxTest(BaseCrossbenchTestCase):
 
 class MockLocalChromiumWebDriverAndroid(ChromiumBaseMixin,
                                         LocalChromiumWebDriverAndroid):
+  _private_driver: mock.MagicMock
 
   def _create_driver(self, options, service):
     raise RuntimeError("start() should not be called")
@@ -598,6 +601,7 @@ class MockLocalChromiumWebDriverAndroid(ChromiumBaseMixin,
 
 class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
 
+  @override
   def setup_platform(self) -> MockPlatform:
     mock_adb = mock.MagicMock()
     mock_adb.serial_id = "mock-serial-id"
@@ -609,6 +613,8 @@ class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
     platform = AndroidAdbMockPlatform(host_platform=host_platform, adb=mock_adb)
     platform.exists = mock.MagicMock(return_value=True)
     platform.is_file = mock.MagicMock(return_value=True)
+    # AndroidAdbMockPlatform substitutes for host MockPlatform in Android tests.
+    # pyrefly: ignore[bad-return]
     return platform
 
   def _create_android_browser(

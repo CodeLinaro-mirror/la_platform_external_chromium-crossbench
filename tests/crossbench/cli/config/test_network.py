@@ -188,6 +188,8 @@ class NetworkConfigTestCase(BaseConfigTestCase):
   def test_validate(self):
     with self.assertRaisesRegex(argparse.ArgumentTypeError,
                                 "Missing NetworkConfig.type"):
+      # Intentionally passing None to test NetworkConfig validation.
+      # pyrefly: ignore[bad-argument-type]
       NetworkConfig(type=None)
 
     class FalsyNetworkSpeedConfig(NetworkSpeedConfig):

@@ -158,9 +158,10 @@ class FastCliTestCasePartB(BaseCliTestCase):
     other_dir = pth.LocalPath("/other/benchmark")
     self.fs.create_file(other_dir / "index.html")
     runner = self._run_speedometer_cli(f"--local-file-server={other_dir}")
+    self.assertIsInstance(runner.benchmark, Speedometer31Benchmark)
     self.assertIsNone(runner.benchmark.custom_url)
     network = runner.browsers[0].network
-    assert isinstance(network, LocalFileNetwork)
+    self.assertIsInstance(network, LocalFileNetwork)
     self.assertEqual(network.path, other_dir)
 
   def test_browser_identifiers_multiple(self):

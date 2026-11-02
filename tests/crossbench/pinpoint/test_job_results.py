@@ -6,13 +6,16 @@ from __future__ import annotations
 
 import pathlib
 import unittest
-from typing import Final
+from typing import TYPE_CHECKING, Final
 from unittest import mock
 
 from crossbench.pinpoint.job_results import PinpointAttemptResults, \
     PinpointJobResults, PinpointVariantResults, download_results
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
 
 _JOB_ID: Final[str] = "1234567890"
 _RESULTS_URL: Final[
@@ -404,12 +407,12 @@ class PinpointJobResultsTestCase(unittest.TestCase):
       PinpointJobResults(_JOB_ID)
 
   def test_variant_name_with_label(self):
-    data = {"change": {"label": "test-label"}, "attempts": []}
+    data: JsonDict = {"change": {"label": "test-label"}, "attempts": []}
     variant = PinpointVariantResults(data, 0)
     self.assertEqual(variant.name, "test-label")
 
   def test_variant_name_with_commits(self):
-    data = {
+    data: JsonDict = {
         "change": {
             "commits": [{
                 "repository": "chromium",
@@ -425,12 +428,12 @@ class PinpointJobResultsTestCase(unittest.TestCase):
     self.assertEqual(variant.name, "chromium_123_v8_456")
 
   def test_variant_name_fallback(self):
-    data = {"change": {}, "attempts": []}
+    data: JsonDict = {"change": {}, "attempts": []}
     variant = PinpointVariantResults(data, 5)
     self.assertEqual(variant.name, "variant_5")
 
   def test_find_isolate(self):
-    data = {
+    data: JsonDict = {
         "executions": [
             {},  # 0: build
             {  # 1: test
@@ -445,12 +448,12 @@ class PinpointJobResultsTestCase(unittest.TestCase):
     self.assertEqual(attempt.cas_isolate, "123abchash")
 
   def test_find_isolate_missing(self):
-    data = {"executions": [{}, {}]}
+    data: JsonDict = {"executions": [{}, {}]}
     attempt = PinpointAttemptResults(data, 0)
     self.assertIsNone(attempt.cas_isolate)
 
   def test_find_trace(self):
-    data = {
+    data: JsonDict = {
         "executions": [
             {},
             {},
@@ -468,12 +471,12 @@ class PinpointJobResultsTestCase(unittest.TestCase):
                      {"trace.pb": "gs://bucket/trace.pb"})
 
   def test_find_trace_missing(self):
-    data = {"executions": [{}, {}, {}]}
+    data: JsonDict = {"executions": [{}, {}, {}]}
     attempt = PinpointAttemptResults(data, 0)
     self.assertEqual(attempt.perfetto_trace_url_by_name, {})
 
   def test_find_multiple_traces(self):
-    data = {
+    data: JsonDict = {
         "executions": [
             {},
             {},

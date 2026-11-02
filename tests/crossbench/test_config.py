@@ -120,7 +120,7 @@ class CustomConfigObject(ConfigObject):
   depending_many: dict[str, Any] | None = None
 
   @classmethod
-  def default(cls) -> CustomConfigObject:
+  def default(cls) -> Self:
     return cls("default")
 
   @classmethod
@@ -163,7 +163,7 @@ class CustomConfigObject(ConfigObject):
 
   @classmethod
   @override
-  def config_parser(cls) -> ConfigParser[CustomConfigObject]:
+  def config_parser(cls) -> ConfigParser[Self]:
     parser = cls.base_config_parser()
     parser.add_argument(
         "name", aliases=("name_alias", "name_alias2"), type=str, required=True)
@@ -189,21 +189,23 @@ class CustomConfigObject(ConfigObject):
     return parser
 
   @classmethod
-  def base_config_parser(cls) -> ConfigParser[CustomConfigObject]:
+  def base_config_parser(cls) -> ConfigParser[Self]:
     return ConfigParser(cls)
 
 
 class CustomConfigObjectStrict(CustomConfigObject):
 
   @classmethod
-  def base_config_parser(cls) -> ConfigParser[CustomConfigObjectStrict]:
+  @override
+  def base_config_parser(cls) -> ConfigParser[Self]:
     return ConfigParser(cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
 
 
 class CustomConfigObjectWithDefault(CustomConfigObject):
 
   @classmethod
-  def base_config_parser(cls) -> ConfigParser[CustomConfigObjectWithDefault]:
+  @override
+  def base_config_parser(cls) -> ConfigParser[Self]:
     return ConfigParser(cls, default=cls.default())
 
 
@@ -222,6 +224,8 @@ class ConfigParserTestCase(unittest.TestCase):
 
   def test_invalid_type(self):
     with self.assertRaises(TypeError):
+      # Intentionally passing a non-callable str as type to test TypeError.
+      # pyrefly: ignore[bad-argument-type]
       self.parser.add_argument("foo", type="something")
 
   def test_invalid_alias(self):
@@ -584,6 +588,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(config.name, "foo")
     config = CustomConfigObject.parse({"name": "foo", "array": []})
     self.assertEqual(config.name, "foo")
+    self.assertIsNotNone(config.array)
     self.assertSequenceEqual(config.array, [])
     data = {"name": "foo", "array": [1, 2, 3], "integer": 153}
     config = CustomConfigObject.parse(dict(data))
@@ -601,6 +606,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
         "name": "foo",
     }, array=[], integer=123)
     self.assertEqual(config.name, "foo")
+    self.assertIsNotNone(config.array)
     self.assertSequenceEqual(config.array, [])
     self.assertEqual(config.integer, 123)
 
@@ -822,7 +828,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     long_string = "abcd" * 1_000
     test_dict["nested"] = long_string
     config = CustomConfigObject.parse_dict(test_dict)
-    assert isinstance(config, CustomConfigObject)
+    self.assertIsInstance(config, CustomConfigObject)
+    self.assertIsNotNone(config.nested)
     self.assertEqual(config.nested.name, long_string)
 
   def test_parse_nested_long_os_error(self):
@@ -835,7 +842,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     with mock.patch.object(pathlib.Path, "is_file", raise_os_error):
       config = CustomConfigObject.parse_dict(test_dict)
-      assert isinstance(config, CustomConfigObject)
+      self.assertIsInstance(config, CustomConfigObject)
+    self.assertIsNotNone(config.nested)
     self.assertEqual(config.nested.name, long_string)
 
   def test_parse_missing_depending(self):
@@ -858,6 +866,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
         "nested": "nested string value",
         "depending_nested": "a value",
     })
+    self.assertIsNotNone(config.depending_nested)
     self.assertDictEqual(config.depending_nested, {
         "value": "a value",
         "nested": config.nested,
@@ -988,6 +997,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
+    self.assertIsNotNone(config.nested)
 
     self.assertEqual(config.nested.name, "nested")
 
@@ -1162,6 +1172,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = CustomConfigObject.parse(args)
     self.assertIsInstance(config, CustomConfigObject)
+    self.assertIsNotNone(config.nested)
 
     self.assertEqual(config.nested.name, "arg_value")
 
@@ -1185,6 +1196,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
+    self.assertIsNotNone(config.nested)
 
     self.assertEqual(config.name, "top-level-name")
     self.assertEqual(config.nested.name, "second-level-name")
@@ -1216,6 +1228,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
+    self.assertIsNotNone(config.nested)
 
     self.assertEqual(config.name, "top-level-name")
     self.assertEqual(config.nested.name, "nested")
@@ -1283,6 +1296,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
+    self.assertIsNotNone(config.nested)
 
     self.assertEqual(config.name, "from-top-level")
     self.assertEqual(config.nested.name, "from-top-level")
@@ -1306,6 +1320,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
+    self.assertIsNotNone(config.nested)
 
     self.assertEqual(config.name, "hello")
     self.assertEqual(config.nested.name, "hello world")
@@ -1377,6 +1392,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
+    self.assertIsNotNone(config.nested)
 
     self.assertEqual(config.nested.name, "https://www.google.com")
 
@@ -1394,6 +1410,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     config = CustomConfigObject.parse(config_dict)
     self.assertIsInstance(config, CustomConfigObject)
     self.assertEqual(config.name, "name")
+    self.assertIsNotNone(config.array)
     self.assertEqual(config.array[0], "/templates/test_file")
 
   def test_parse_templated_config_relative_filepaths_as_str_preserved(self):
@@ -1451,6 +1468,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     }
 
     config = CustomConfigObject.parse(config)
+    self.assertIsNotNone(config.array)
     self.assertEqual(len(config.array), 4)
     self.assertEqual(config.array[3], "arg_value")
 
@@ -1471,6 +1489,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     }
 
     config = CustomConfigObject.parse(config)
+    self.assertIsNotNone(config.array)
     self.assertEqual(len(config.array), 4)
     self.assertEqual(config.array[0], "arg_value")
 
@@ -1491,6 +1510,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     }
 
     config = CustomConfigObject.parse(config)
+    self.assertIsNotNone(config.array)
     self.assertEqual(len(config.array), 4)
     self.assertEqual(config.array[2], "arg_value")
 
@@ -1511,6 +1531,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     }
 
     config = CustomConfigObject.parse(config)
+    self.assertIsNotNone(config.array)
     self.assertEqual(len(config.array), 5)
     self.assertEqual(config.array[2], "arg_value")
     self.assertEqual(config.array[3], "another arg value")
@@ -1537,6 +1558,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     }
 
     config = CustomConfigObject.parse(config)
+    self.assertIsNotNone(config.array)
     self.assertEqual(len(config.array), 4)
     self.assertEqual(config.array[2], "list entry")
 
@@ -1557,6 +1579,7 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     }
 
     config = CustomConfigObject.parse(config)
+    self.assertIsNotNone(config.array)
     self.assertSequenceEqual(config.array, ["some", "string", "values"])
 
   def test_parse_template_unbound_list_spread_arg(self):
@@ -1582,6 +1605,8 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
 
     config = CustomConfigObject.parse(config)
     self.assertIsInstance(config, CustomConfigObject)
+    self.assertIsNotNone(config.nested)
+    self.assertIsNotNone(config.nested.array)
     self.assertSequenceEqual(config.nested.array, ["first", "second", "third"])
 
 

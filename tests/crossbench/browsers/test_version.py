@@ -393,6 +393,8 @@ class ChromiumVersionTestCase(_BrowserVersionTestCase):
 
   def test_init_invalid(self):
     with self.assertRaises(VersionParseError):
+      # Intentionally passing None to test VersionParseError.
+      # pyrefly: ignore[bad-argument-type]
       ChromiumVersion(None)
     with self.assertRaises(VersionParseError):
       ChromiumVersion((-1, -2))
@@ -532,7 +534,7 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
   BETA_VERSION_STR = "Google Chrome 116.0.5845.50 beta"
   ALPHA_VERSION_STR = "Google Chrome 117.0.5911.2 dev"
   PRE_ALPHA_VERSION_STR = "Google Chrome 117.0.5921.0 canary"
-  VERSION_CLS = ChromeVersion
+  VERSION_CLS: ClassVar[type[ChromeVersion]] = ChromeVersion
 
   @override
   def _version_factories(
@@ -903,7 +905,7 @@ class EdgeBrowserVersionTestCase(_BrowserVersionTestCase):
   BETA_VERSION_STR = "Microsoft Edge 116.0.5845.50 beta"
   ALPHA_VERSION_STR = "Microsoft Edge 117.0.5911.2 dev"
   PRE_ALPHA_VERSION_STR = "Microsoft Edge 117.0.5921.0 canary"
-  VERSION_CLS = EdgeVersion
+  VERSION_CLS: ClassVar[type[EdgeVersion]] = EdgeVersion
 
   @override
   def _version_factories(
@@ -1284,16 +1286,18 @@ class ChromiumVersionRangeTestCase(unittest.TestCase):
     with self.assertRaisesRegex(ValueError, "min .* > max"):
       ChromiumVersionRange.any((120, 0, 6099, 50), (120, 0, 6099, 10))
     with self.assertRaisesRegex(TypeError, "Expected ChromiumVersion"):
-      ChromiumVersionRange(UnknownBrowserVersion(),
-                           ChromeVersion.any(126))  # type: ignore
+      # Intentionally passing non-ChromiumVersion to test runtime TypeError.
+      # pyrefly: ignore[bad-argument-type]
+      ChromiumVersionRange(UnknownBrowserVersion(), ChromeVersion.any(126))
     with self.assertRaisesRegex(TypeError, "Expected ChromiumVersion"):
       ChromiumVersionRange(ChromeVersion.any(120),
                            UnknownBrowserVersion())  # type: ignore
     safari_version = SafariVersion.parse(
         SafariBrowserVersionTestCase.STABLE_VERSION_STR)
     with self.assertRaisesRegex(TypeError, "Expected ChromiumVersion"):
-      ChromiumVersionRange(safari_version,
-                           ChromeVersion.any(126))  # type: ignore
+      # Intentionally passing SafariVersion to test runtime TypeError.
+      # pyrefly: ignore[bad-argument-type]
+      ChromiumVersionRange(safari_version, ChromeVersion.any(126))
     with self.assertRaisesRegex(ValueError, "channel-specific version"):
       ChromiumVersionRange(
           ChromeVersion.parse("Chrome Stable"), ChromeVersion.any(126))

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import json
-from typing import Final
+from typing import TYPE_CHECKING, Final
 from unittest import mock
 
 from crossbench.cli.config.flags import FlagsConfig
@@ -17,6 +17,9 @@ from crossbench.pinpoint.config import BisectEndVariantConfig, \
 from crossbench.pinpoint.list_builds import Build
 from tests import test_helper
 from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
+
+if TYPE_CHECKING:
+  from crossbench.types import JsonDict
 
 _TEST_PATCH: Final[
     str] = "https://chromium-review.googlesource.com/c/crossbench/+/12345"
@@ -195,7 +198,7 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
     self.mock_show_warnings = self.enterContext(
         mock.patch("crossbench.pinpoint.config.show_warnings"))
 
-    self.response_dict = {
+    self.response_dict: JsonDict = {
         "comparison_mode": "try",
         "job_id": "1234567890",
         "arguments": {
@@ -681,10 +684,14 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
         experiment=VariantConfig(commit="HEAD"),
     )
     self.assertEqual(config, expectation)
+    # PinpointTryJobConfig.parse_and_override is typed as `config: str | None`,
+    # but delegates to ConfigObject.parse which also accepts a dict.
+    # pyrefly: ignore[bad-argument-type]
     self.assertEqual(config.parse_and_override(config.to_dict()), expectation)
 
   def test_parser_raw_config(self):
     arguments = self.response_dict["arguments"]
+    self.assertIsInstance(arguments, dict)
     arguments["base_git_hash"] = "abcdef00"
     arguments["end_git_hash"] = "1234abcd"
     arguments["story_tags"] = "tag1,tag2"
@@ -716,6 +723,9 @@ class PinpointTryJobConfigTest(MockHttpRequestsMixin):
         ),
     )
     self.assertEqual(config, expectation)
+    # PinpointTryJobConfig.parse_and_override is typed as `config: str | None`,
+    # but delegates to ConfigObject.parse which also accepts a dict.
+    # pyrefly: ignore[bad-argument-type]
     self.assertEqual(config.parse_and_override(config.to_dict()), expectation)
 
   def test_parser_raise_if_not_try_job(self):

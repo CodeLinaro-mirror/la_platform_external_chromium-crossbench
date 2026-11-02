@@ -12,6 +12,7 @@ import unittest
 from typing import Iterator
 
 from crossbench.cli.cli import CrossBenchCLI
+from crossbench.cli.subcommand.perfetto import PerfettoCrossbenchSubcommand
 from crossbench.probes.perfetto_info import CategoryDescription
 from tests import test_helper
 
@@ -21,7 +22,9 @@ class PerfettoSubcommandTest(unittest.TestCase):
   def setUp(self):
     super().setUp()
     self.cli = CrossBenchCLI()
-    self.subcommand = self.cli.subcommands["perfetto"]
+    subcommand = self.cli.subcommands["perfetto"]
+    self.assertIsInstance(subcommand, PerfettoCrossbenchSubcommand)
+    self.subcommand = subcommand
     self.test_categories = (CategoryDescription(
         data_source="track_event",
         name="blink",

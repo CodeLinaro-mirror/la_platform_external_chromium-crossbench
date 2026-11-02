@@ -123,11 +123,17 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
   def test_parse_inline_json_adb(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
-    config_dict = {"type": "adb", "settings": {"device_id": "0a388e93"}}
+    config_dict: dict[str, object] = {
+        "type": "adb",
+        "settings": {
+            "device_id": "0a388e93",
+        },
+    }
     config_1 = DriverConfig.parse(hjson.dumps(config_dict))
-    assert isinstance(config_1, DriverConfig)
+    self.assertIsInstance(config_1, DriverConfig)
     self.assertEqual(config_1.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config_1.device_id, "0a388e93")
+    self.assertIsNotNone(config_1.settings)
     self.assertEqual(config_1.settings["device_id"], "0a388e93")
     self.assertFalse(config_1.is_remote)
     self.assertTrue(config_1.is_local)
@@ -137,9 +143,10 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_2 = DriverConfig.parse_dict(config_dict)
-    assert isinstance(config_2, DriverConfig)
+    self.assertIsInstance(config_2, DriverConfig)
     self.assertEqual(config_2.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config_2.device_id, "0a388e93")
+    self.assertIsNotNone(config_2.settings)
     self.assertEqual(config_2.settings["device_id"], "0a388e93")
     self.assertFalse(config_2.is_remote)
     self.assertTrue(config_2.is_local)

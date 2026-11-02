@@ -16,6 +16,7 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 
 class AbstractDownloaderTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
   __test__ = False
+  platform: mock.Mock
 
   @override
   def setUp(self) -> None:

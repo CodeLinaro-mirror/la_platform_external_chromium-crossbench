@@ -181,7 +181,7 @@ class PinpointSubcommandTest(unittest.TestCase):
         story="default",
         story_tags="tag1,tag2",
         repeat=42,
-        bug="12345",
+        bug=12345,
         base=VariantConfig(
             commit="HEAD",
             patch="https://base.patch",
@@ -253,7 +253,7 @@ class PinpointSubcommandTest(unittest.TestCase):
         story="default",
         story_tags="tag1,tag2",
         repeat=42,
-        bug="12345",
+        bug=12345,
         start=BisectStartVariantConfig(commit="HEAD"),
         end=BisectEndVariantConfig(commit="recent"),
     )
@@ -717,6 +717,9 @@ class PinpointSubcommandTest(unittest.TestCase):
     self.assertIsNot(data1["arguments"], data2["arguments"])
     self.assertIsNot(data1["state"], data2["state"])
     data1["status"] = "Mutated"
+    self.assertIsInstance(data1["arguments"], dict)
+    self.assertIsInstance(data2["arguments"], dict)
+    self.assertIsInstance(_TEST_STATUS_JOB_DATA["arguments"], dict)
     data1["arguments"]["benchmark"] = "Mutated"
     self.assertEqual(data2["status"], "Running")
     self.assertEqual(data2["arguments"]["benchmark"], "speedometer3")

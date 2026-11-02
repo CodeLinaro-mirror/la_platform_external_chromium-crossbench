@@ -65,8 +65,7 @@ class ChromiumCheckoutFinderTestCase(BaseCheckoutTestCase):
         self.assertIsNone(ChromiumCheckoutFinder(self.platform).path)
         self._add_chrome_checkout_files(fake_chrome_root)
         self.assertEqual(
-            pathlib.Path(ChromiumCheckoutFinder(self.platform).path),
-            fake_chrome_root)
+            ChromiumCheckoutFinder(self.platform).path, fake_chrome_root)
 
   def test_chromium_src_relative_local_path_shallow(self):
     with mock.patch("crossbench.path.ROOT_DIR", pathlib.Path("/crossbench")):
@@ -89,8 +88,7 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
       self.assertIsNone(V8CheckoutFinder(self.platform).path)
     self._add_v8_checkout_files(candidate_dir)
     with mock.patch.dict(os.environ, {"D8_PATH": str(d8_path)}, clear=True):
-      self.assertEqual(
-          pathlib.Path(V8CheckoutFinder(self.platform).path), candidate_dir)
+      self.assertEqual(V8CheckoutFinder(self.platform).path, candidate_dir)
       self.assertEqual(
           V8CheckoutFinder(self.platform).local_path, candidate_dir)
     # Still NONE without custom D8_PATH env var.
@@ -115,10 +113,8 @@ class V8CheckoutFinderTestCase(BaseCheckoutTestCase):
         self._add_v8_checkout_files(checkout_dir)
         self.assertIsNotNone(ChromiumCheckoutFinder(self.platform).path)
         self.assertEqual(
-            pathlib.Path(ChromiumCheckoutFinder(self.platform).path),
-            fake_chrome_root)
-        self.assertEqual(
-            pathlib.Path(V8CheckoutFinder(self.platform).path), checkout_dir)
+            ChromiumCheckoutFinder(self.platform).path, fake_chrome_root)
+        self.assertEqual(V8CheckoutFinder(self.platform).path, checkout_dir)
 
 
 class ChromiumBuildBinaryFinderTestCase(BaseCheckoutTestCase):
@@ -253,7 +249,7 @@ class WprToolsFinderTestCase(BasePosixMockPlatformTestCase):
 
   def _setup_adb(self):
     self.fs.create_file("/usr/bin/adb", contents="adb")
-    self.platform.expect_sh(
+    self.expect_sh(
         "/usr/bin/adb",
         "devices",
         "-l",
@@ -281,7 +277,7 @@ class WprToolsFinderTestCase(BasePosixMockPlatformTestCase):
 
     self.fs.create_file(root / "third_party/webpagereplay/scripts/build.py")
     self.assertIsNotNone(WprGoFinder(self.platform).local_path)
-    self.platform.expect_sh(
+    self.expect_sh(
         sys.executable,
         root / "third_party/webpagereplay/scripts/build.py",
         "--os",
@@ -298,7 +294,7 @@ class WprToolsFinderTestCase(BasePosixMockPlatformTestCase):
         WprGoFinder(self.platform).httparchive(),
         root / "cache/webpagereplay/linux/x64/httparchive")
 
-    self.platform.expect_sh(
+    self.expect_sh(
         sys.executable,
         root / "third_party/webpagereplay/scripts/build.py",
         "--os",

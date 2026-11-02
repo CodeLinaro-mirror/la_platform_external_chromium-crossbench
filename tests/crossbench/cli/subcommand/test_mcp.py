@@ -4,18 +4,29 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import sys
 import tempfile
 import unittest
+from typing import TYPE_CHECKING
 from unittest import mock
 
 from immutabledict import immutabledict
+from typing_extensions import override
 
 from crossbench import path as pth
+from crossbench.benchmarks.base import Benchmark
+from crossbench.cli.cli import CrossBenchCLI
+from crossbench.cli.parser import CBArgumentParser
+from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.cli.subcommand.mcp import McpSubcommand
 from tests import test_helper
+
+if TYPE_CHECKING:
+  import argparse
+
+  from crossbench.cli.cli import BenchmarkClass, BenchmarkSubcommands
+  from crossbench.cli.types import Subparsers
 
 
 class McpSubcommandTest(unittest.TestCase):
@@ -23,49 +34,44 @@ class McpSubcommandTest(unittest.TestCase):
   def setUp(self):
     super().setUp()
 
-    class DummyParser:
-
-      def add_argument(self, *args, **kwargs):
-        pass
-
-      def set_defaults(self, *args, **kwargs):
-        pass
-
-    class DummySubparsers:
-
-      def add_parser(self, *args, **kwargs):
-        return DummyParser()
-
-    class MockBenchmarkCls:
+    class MockBenchmarkCls(Benchmark):
+      """Manual benchmark"""
       NAME = "manual"
 
-      @classmethod
-      def aliases(cls) -> tuple[str, ...]:
-        return ()
-
-      @classmethod
-      def describe(cls) -> dict[str, str]:
-        return {"doc": "Manual benchmark"}
-
-    class MockSubcommand:
+    class MockSubcommand(BenchmarkSubcommand):
 
       def __init__(self) -> None:
-        self.parser = argparse.ArgumentParser()
+        self._parser: argparse.ArgumentParser | None = CBArgumentParser()
 
+      @override
       def init_cli_parser(self) -> None:
         pass
 
-    class DummyCLI:
+    class DummyCLI(CrossBenchCLI):
+      BENCHMARKS: tuple[BenchmarkClass, ...] = (MockBenchmarkCls,)
 
       def __init__(self) -> None:
-        self.BENCHMARKS = [MockBenchmarkCls]
-        self.subparsers = DummySubparsers()
-        self.benchmark_subcommands = immutabledict(
+        self._dummy_subparsers: Subparsers = (
+            CBArgumentParser().add_subparsers(parser_class=CBArgumentParser))
+        self._dummy_benchmark_subcommands: BenchmarkSubcommands = immutabledict(
             {MockBenchmarkCls: MockSubcommand()})
 
-      def add_debugging_arguments(self,
-                                  parser: argparse.ArgumentParser) -> None:
-        pass
+      @property
+      @override
+      def subparsers(self) -> Subparsers:
+        return self._dummy_subparsers
+
+      @property
+      @override
+      def benchmark_subcommands(self) -> BenchmarkSubcommands:
+        return self._dummy_benchmark_subcommands
+
+      @override
+      def add_debugging_arguments(
+          self,
+          parser: argparse.ArgumentParser,
+      ) -> argparse._ArgumentGroup:
+        return parser.add_argument_group()
 
     self.cli = DummyCLI()
     self.cli.subparsers.add_parser("mcp")
@@ -128,7 +134,7 @@ class McpSubcommandTest(unittest.TestCase):
   def test_start_benchmark_invalid_name(self):
     status = self.mcp_cmd.start_benchmark("invalid_benchmark", [])
     self.assertFalse(status.running)
-    self.assertIn("Unknown benchmark", status.error)
+    self.assertIn("Unknown benchmark", str(status.error))
 
   def test_start_build_command_manual_defaults(self):
     cmd = self.mcp_cmd._start_build_command("manual", [])
@@ -338,7 +344,7 @@ class McpSubcommandTest(unittest.TestCase):
   def test_describe_benchmark_with_arg(self):
     res = self.mcp_cmd.describe_benchmark("manual")
     self.assertIsInstance(res, dict)
-    self.assertIn("doc", res)
+    self.assertIn("description", res)
 
   def test_describe_probes_without_arg(self):
     res = self.mcp_cmd.describe_probes()

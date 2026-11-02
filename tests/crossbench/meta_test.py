@@ -231,6 +231,8 @@ class ConfigObjectMetaTest(unittest.TestCase):
 
   def validate_dataclass_frozen(self, cls: type[ConfigObject],
                                 class_name: str) -> list[str]:
+    # __dataclass_params__ is injected dynamically by @dataclass.
+    # pyrefly: ignore[missing-attribute]
     if not cls.__dataclass_params__.frozen:
       return [
           f"{class_name}: Declared with frozen=False. Concrete ConfigObject "
@@ -242,6 +244,7 @@ class ConfigObjectMetaTest(unittest.TestCase):
   def validate_no_ghost_annotations(self, cls: type[ConfigObject],
                                     class_name: str) -> list[str]:
     violations: list[str] = []
+    self.assertTrue(dataclasses.is_dataclass(cls))
     registered_fields = {field.name for field in dataclasses.fields(cls)}
     for attr_name, attr_type in cls.__annotations__.items():
       if "ClassVar" in str(attr_type):

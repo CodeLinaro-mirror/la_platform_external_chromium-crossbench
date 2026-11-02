@@ -51,8 +51,12 @@ class SizeTestCase(unittest.TestCase):
     with self.assertRaises(ValueError):
       Size(42)
     with self.assertRaises(KeyError):
+      # Intentionally looking up invalid enum member name to test KeyError.
+      # pyrefly: ignore[bad-index]
       _ = Size["KB"]
     with self.assertRaises(KeyError):
+      # Intentionally looking up invalid enum member name to test KeyError.
+      # pyrefly: ignore[bad-index]
       _ = Size["MB"]
 
   def test_enum_iteration_and_units(self) -> None:

@@ -72,9 +72,13 @@ class TestFlags(unittest.TestCase):
   def test_set_invalid(self):
     flags = self.CLASS()
     with self.assertRaises(TypeError) as cm:
+      # Intentionally assigning int flag value to test runtime TypeError.
+      # pyrefly: ignore[unsupported-operation]
       flags["--foo"] = 123
     self.assertIn("123", str(cm.exception))
     with self.assertRaises(ValueError) as cm:
+      # Intentionally assigning int flag value to test runtime ValueError.
+      # pyrefly: ignore[unsupported-operation]
       flags["foo"] = 123
     self.assertIn("-", str(cm.exception))
 

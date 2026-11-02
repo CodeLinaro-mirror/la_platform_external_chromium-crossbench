@@ -22,7 +22,6 @@ from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
 if TYPE_CHECKING:
-  from crossbench.browsers.browser import Browser
   from crossbench.cli.config.browser import BrowserConfig
   from tests.crossbench.mock_helper import MockCLI
 
@@ -131,7 +130,7 @@ class CliSlowTestCase(BaseCliTestCase):
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
-    browsers: list[Browser] = []
+    browsers: list[mock_browser.MockBrowser] = []
 
     def get_browser(self, args: argparse.Namespace):
       session = Settings(

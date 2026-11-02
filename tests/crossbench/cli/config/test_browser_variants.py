@@ -8,7 +8,7 @@ import argparse
 import contextlib
 import copy
 import json
-from typing import TYPE_CHECKING, Any, Mapping
+from typing import TYPE_CHECKING, Mapping
 from unittest import mock
 
 import hjson
@@ -42,6 +42,7 @@ from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.config import ConfigError
 from crossbench.helper.cwd import change_cwd
+from crossbench.network.traffic_shaping.ts_proxy import TsProxyTrafficShaper
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.cli.config.base import ADB_DEVICES_SINGLE_OUTPUT, \
@@ -78,7 +79,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
                  BrowserConfig(mock_browser.MockChromeDev.mock_app_path())),
         }
     for (_, browser_config) in self.browser_lookup.values():
-      self.assertTrue(browser_config.path.exists())
+      self.assertTrue(pth.LocalPath(browser_config.path).exists())
 
   @contextlib.contextmanager
   def _patch_get_browser_cls(self,
@@ -181,7 +182,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.mock_platform_default_tmp_dir(plt.LinuxSshPlatform)
     self._expect_sh_linux_ssh_browser_config()
     self._expect_sh_linux_ssh_browser_config()
-    config_dict = {
+    config_dict: dict[str, object] = {
         "browsers": {
             "linux-ssh-chrome-auto-start-driver": {
                 "path": "/path/to/google/chrome",
@@ -293,7 +294,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertIn("chrome-stable-custom", message)
 
   def test_parse_invalid_browser_type(self):
-    invalid: Any
+    invalid: object
     for invalid in (None, 1, []):
       with self.assertRaises(ConfigError) as cm:
         BrowserVariantsConfigDict(
@@ -850,7 +851,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_custom_driver(self):
     chromedriver = pth.LocalPath("path/to/chromedriver")
-    variants_config = {
+    variants_config: dict[str, object] = {
         "browsers": {
             "chrome-stable": {
                 "browser": "chrome-stable",
@@ -871,6 +872,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
           variants_config,
           browser_lookup_override=self.browser_lookup,
           args=self.mock_args())
+    self.assertIsInstance(variants_config["browsers"], dict)
     self.assertTrue(variants_config["browsers"]["chrome-stable"])
     self.assertEqual(len(config.variants), 1)
     browser_0 = config.variants[0]
@@ -952,17 +954,17 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(len(config.variants), 3 * 3)
     for variant in config.variants:
       self.assertEqual(variant.browser_cls, mock_browser.MockChromeStable)
-      expected_flags = (
-          "--always_1=true --always_2=true --always_3=true",
-          "--bar --always_1=true --always_2=true --always_3=true",
-          "--bar=w1 --always_1=true --always_2=true --always_3=true",
-          "--foo --always_1=true --always_2=true --always_3=true",
-          "--foo --bar --always_1=true --always_2=true --always_3=true",
-          "--foo --bar=w1 --always_1=true --always_2=true --always_3=true",
-          "--foo=v1 --always_1=true --always_2=true --always_3=true",
-          "--foo=v1 --bar --always_1=true --always_2=true --always_3=true",
-          "--foo=v1 --bar=w1 --always_1=true --always_2=true --always_3=true",
-      )
+    expected_flags = (
+        "--always_1=true --always_2=true --always_3=true",
+        "--bar --always_1=true --always_2=true --always_3=true",
+        "--bar=w1 --always_1=true --always_2=true --always_3=true",
+        "--foo --always_1=true --always_2=true --always_3=true",
+        "--foo --bar --always_1=true --always_2=true --always_3=true",
+        "--foo --bar=w1 --always_1=true --always_2=true --always_3=true",
+        "--foo=v1 --always_1=true --always_2=true --always_3=true",
+        "--foo=v1 --bar --always_1=true --always_2=true --always_3=true",
+        "--foo=v1 --bar=w1 --always_1=true --always_2=true --always_3=true",
+    )
     self.verify_variant_flags(config.variants, expected_flags)
 
   def verify_variant_flags(self, variants, expected_flags):
@@ -1280,7 +1282,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
         },
     }
     with self.platform.NamedTemporaryFile() as config_file:
-      with config_file.open("w", encoding="utf-8") as f:
+      with pth.LocalPath(config_file).open("w", encoding="utf-8") as f:
         json.dump(browser_config, f)
 
       args = self.mock_args(
@@ -1302,7 +1304,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     chrome_dev = BrowserConfig.parse_str("chrome-dev")
 
     with self.platform.NamedTemporaryFile() as config_file:
-      with config_file.open("w", encoding="utf-8") as f:
+      with pth.LocalPath(config_file).open("w", encoding="utf-8") as f:
         json.dump(browser_config, f)
 
       args = self.mock_args(browser=[chrome_dev], browser_config=config_file)
@@ -1352,11 +1354,15 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     # Browser 2: uses the default --network:
     self.assertTrue(browser_2.network.is_live)
     self.assertFalse(browser_2.network.traffic_shaper.is_live)
+    self.assertIsInstance(browser_2.network.traffic_shaper,
+                          TsProxyTrafficShaper)
     self.assertEqual(browser_2.network.traffic_shaper.ts_proxy.in_kbps,
                      network_3g.speed.in_kbps)
     # Browser 3; Uses an explicit 4G override:
     self.assertTrue(browser_3.network.is_live)
     self.assertFalse(browser_3.network.traffic_shaper.is_live)
+    self.assertIsInstance(browser_3.network.traffic_shaper,
+                          TsProxyTrafficShaper)
     self.assertEqual(browser_3.network.traffic_shaper.ts_proxy.in_kbps,
                      network_4g.speed.in_kbps)
 
@@ -1466,7 +1472,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     self.assertEqual(browser_3.settings.env_config.cpu_max_usage_percent, 42)
 
   def test_env_vars_safari_and_non_safari(self):
-    self.fs.makedirs(Safari.default_path(self.platform), exist_ok=True)
+    pth.LocalPath(Safari.default_path(self.platform)).mkdir(
+        parents=True, exist_ok=True)
     with self._patch_get_browser_cls(mock_browser.MockSafari):
       config = BrowserVariantsConfigDict(
           {
@@ -1505,7 +1512,8 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
             args=self.mock_args())
 
   def test_parse_woa_compilation_tiers_config(self):
-    self.fs.makedirs(Safari.default_path(self.platform), exist_ok=True)
+    pth.LocalPath(Safari.default_path(self.platform)).mkdir(
+        parents=True, exist_ok=True)
     config_path = (
         test_helper.config_dir() /
         "team/woa/compilation_tiers.browser.config.hjson")
@@ -1693,7 +1701,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_cache_dir_empty(self):
     args = self.mock_args()
-    config_data = {
+    config_data: dict[str, object] = {
         "browsers": {
             "chrome-release": {
                 "path": "chrome-stable",
@@ -1713,7 +1721,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_cache_dir(self):
     args = self.mock_args()
-    config_data = {
+    config_data: dict[str, object] = {
         "browsers": {
             "chrome-release": {
                 "path": "chrome-stable",
@@ -1759,7 +1767,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_clear_cache_dir(self):
     args = self.mock_args()
-    config_data = {
+    config_data: dict[str, object] = {
         "browsers": {
             "chrome-release": {
                 "path": "chrome-stable",
@@ -1788,7 +1796,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
 
   def test_clear_cache_dir_override_positive(self):
     args = self.mock_args()
-    config_data = {
+    config_data: dict[str, object] = {
         "browsers": {
             "chrome-release": {
                 "path": "chrome-stable",

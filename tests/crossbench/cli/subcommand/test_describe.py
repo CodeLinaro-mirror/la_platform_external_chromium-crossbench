@@ -41,8 +41,14 @@ class DescribeSubcommandTest(unittest.TestCase):
     # Verify arguments structure inside group
     repeat_group = next(
         g for g in groups if g["name"] == "Run & Repetition Options")
+    self.assertIsInstance(repeat_group, dict)
     self.assertIn("arguments", repeat_group)
-    flag_names = [f["name"] for f in repeat_group["arguments"]]
+    arguments = repeat_group["arguments"]
+    self.assertIsInstance(arguments, list)
+    flag_names: list[object] = []
+    for f in arguments:
+      self.assertIsInstance(f, dict)
+      flag_names.append(f["name"])
     self.assertIn("--repetitions", flag_names)
 
   def test_describe_benchmark_json_output(self) -> None:

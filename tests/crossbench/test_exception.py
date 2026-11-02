@@ -34,6 +34,8 @@ class ExceptionHandlerTestCase(unittest.TestCase):
   def test_invalid_get_item(self):
     annotator = ExceptionAnnotator()
     with self.assertRaises(TypeError):
+      # Intentionally indexing with str instead of int to test TypeError.
+      # pyrefly: ignore[bad-index]
       _ = annotator["invalid key"]
     with self.assertRaises(IndexError):
       _ = annotator[1]
@@ -115,8 +117,7 @@ class ExceptionHandlerTestCase(unittest.TestCase):
           with annotate_argparsing("000"):
             raise argparse.ArgumentTypeError("some arg type error")
     self.assertEqual(len(cm.exception), 1)
-    exception: argparse.ArgumentTypeError = cm.exception.matching(
-        argparse.ArgumentTypeError)[0]
+    exception = cm.exception.matching(argparse.ArgumentTypeError)[0]
     self.assertIsInstance(exception, argparse.ArgumentTypeError)
     self.assertEqual(str(exception), "some arg type error")
 
@@ -154,6 +155,7 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertFalse(annotator.is_success)
     serialized = annotator.to_json()
     self.assertEqual(len(serialized), 1)
+    self.assertIsInstance(serialized[0], dict)
     self.assertEqual(serialized[0]["title"], str(exception))
     with mock.patch("logging.debug") as logging_mock:
       annotator.log("custom title")
@@ -171,6 +173,7 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertFalse(annotator.is_success)
     serialized: JsonList = annotator.to_json()
     self.assertEqual(len(serialized), 1)
+    self.assertIsInstance(serialized[0], dict)
     self.assertEqual(serialized[0]["title"], str(exception))
 
   def test_info_stack(self):
@@ -190,8 +193,11 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertSequenceEqual(entry.info_stack, ("info 1", "info 2"))
     serialized = annotator.to_json()
     self.assertEqual(len(serialized), 1)
+    self.assertIsInstance(serialized[0], dict)
     self.assertEqual(serialized[0]["title"], str(exception))
-    self.assertSequenceEqual(serialized[0]["info_stack"], ("info 1", "info 2"))
+    info_stack = serialized[0]["info_stack"]
+    self.assertIsInstance(info_stack, tuple)
+    self.assertSequenceEqual(info_stack, ("info 1", "info 2"))
 
   def test_info_stack_logging(self):
     annotator = ExceptionAnnotator()

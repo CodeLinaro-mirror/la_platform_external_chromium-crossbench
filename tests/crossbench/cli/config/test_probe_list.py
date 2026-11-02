@@ -283,7 +283,7 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_empty_config_file(self):
     with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
-      with config_file.open("w", encoding="utf-8") as f:
+      with pth.LocalPath(config_file).open("w", encoding="utf-8") as f:
         hjson.dump({"probes": []}, f)
       args = self.mock_args(probe_config=config_file, probe=[])
       probe_list = ProbeListConfig.parse_args(args)
@@ -291,7 +291,7 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_merge_empty_config_file_with_single_probe(self):
     with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
-      with config_file.open("w", encoding="utf-8") as f:
+      with pth.LocalPath(config_file).open("w", encoding="utf-8") as f:
         hjson.dump({"probes": []}, f)
       args = self.mock_args(
           probe_config=config_file, probe=[ProbeConfig.parse("v8.log")])
@@ -303,7 +303,7 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_merge_config_file_single_probe(self):
     with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
-      with config_file.open("w", encoding="utf-8") as f:
+      with pth.LocalPath(config_file).open("w", encoding="utf-8") as f:
         hjson.dump({"probes": ["v8.rcs"]}, f)
       args = self.mock_args(
           probe_config=config_file, probe=[ProbeConfig.parse("v8.log")])
@@ -316,7 +316,7 @@ class TestProbeListConfig(BaseConfigTestCase):
   def test_merge_config_file_conflict(self):
     # By default --probe args override --probe-config args
     with self.platform.NamedTemporaryFile("probe.config.hjson") as config_file:
-      with config_file.open("w", encoding="utf-8") as f:
+      with pth.LocalPath(config_file).open("w", encoding="utf-8") as f:
         hjson.dump({"probes": ["v8.rcs"]}, f)
       args = self.mock_args(
           probe_config=config_file, probe=[ProbeConfig.parse("v8.rcs")])

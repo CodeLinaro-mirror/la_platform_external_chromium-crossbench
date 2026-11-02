@@ -14,6 +14,7 @@ from crossbench.cli.config.flags import DEFAULT_LABEL
 from crossbench.config import ConfigError
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.flags.base import Flags
+from crossbench.flags.chrome import ChromeFlags
 from tests import test_helper
 from tests.crossbench.base import CrossbenchMockArgsMixin
 
@@ -532,6 +533,7 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     group = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group), 1)
     flags = group[0].flags
+    self.assertIsInstance(flags, ChromeFlags)
     self.assertEqual(str(flags.js_flags), "--no-turbofan")
     self.assertIn("FOO", flags.features.enabled)
 

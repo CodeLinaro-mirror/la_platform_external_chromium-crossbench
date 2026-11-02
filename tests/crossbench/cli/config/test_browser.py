@@ -41,8 +41,12 @@ class BrowserConfigTestCase(BaseConfigTestCase):
 
   def test_validate(self):
     with self.assertRaises(ValueError):
+      # Intentionally passing None to test BrowserConfig validation.
+      # pyrefly: ignore[bad-argument-type]
       BrowserConfig(browser=None)
     with self.assertRaises(ValueError):
+      # Intentionally passing None for driver to test BrowserConfig validation.
+      # pyrefly: ignore[bad-argument-type]
       BrowserConfig(browser=Chrome.stable_path(self.platform), driver=None)
 
   def test_preset_no_overlap(self):
@@ -164,7 +168,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     config_a = BrowserConfig.parse(config)
     with self.platform.NamedTemporaryFile(
         "browser_config.hjson") as config_file:
-      with config_file.open("w", encoding="utf-8") as f:
+      with pth.LocalPath(config_file).open("w", encoding="utf-8") as f:
         json.dump(config, f)
       config_b = BrowserConfig.parse(config_file)
     self.assertEqual(config_a, config_b)
@@ -175,6 +179,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
 
   def test_parse_relative_browser_path(self):
     with self.platform.TemporaryDirectory() as tmp_dir:
+      tmp_dir = pth.LocalPath(tmp_dir)
       cwd = tmp_dir / "crossbench"
       cwd.mkdir()
       with change_cwd(cwd):
@@ -204,6 +209,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     home_browser_path: str = "~/chromium/src/out/Release/chrome"
     config_a = BrowserConfig.parse(home_browser_path)
     self.assertEqual(config_a.browser, browser_path)
+    self.assertIsInstance(config_a.browser, pth.AnyPath)
     self.assertTrue(config_a.browser.is_absolute())
     config_dict = {"browser": home_browser_path}
     config_b = BrowserConfig.parse(config_dict)
@@ -685,7 +691,12 @@ class BrowserConfigTestCase(BaseConfigTestCase):
       BrowserConfig.parse("{path:something}")
 
   def test_parse_inline_hjson(self):
-    config_dict: JsonDict = {"browser": "chrome", "driver": {"type": "adb"}}
+    config_dict: dict[str, object] = {
+        "browser": "chrome",
+        "driver": {
+            "type": "adb",
+        },
+    }
 
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     with self.assertRaises(MultiException) as cm:
@@ -703,7 +714,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config_2.driver.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config_1, config_2)
 
-    short_config_dict: JsonDict = {
+    short_config_dict: dict[str, object] = {
         "browser": "chrome",
         "driver": "adb",
     }
@@ -721,7 +732,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
   def test_parse_inline_hjson_short_string(self):
     # We cannot easily configure the driver property from within the browser
     # config property.
-    config_dict: JsonDict = {
+    config_dict: dict[str, object] = {
         "browser": "adb:chrome",
     }
     with self.assertRaises(argparse.ArgumentTypeError):
