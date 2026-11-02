@@ -329,6 +329,7 @@ class RunnerTestCase(BaseRunnerTestCase):
 
   def test_run_remote_web_driver(self):
     driver = mock.Mock()
+    driver.window_handles = []
     driver.capabilities = {
         "browserVersion": "123.0.4567.89",
         "setWindowRect": False,
