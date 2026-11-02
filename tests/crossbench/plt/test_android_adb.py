@@ -10,6 +10,7 @@ import datetime as dt
 import io
 import pathlib
 import struct
+import unittest
 import zipfile
 from typing import TYPE_CHECKING, Any, Final
 from unittest import mock
@@ -38,7 +39,7 @@ from crossbench.action_runner.virtual_device.virtual_device_config import \
 from crossbench.benchmarks.loading.point import Point
 from crossbench.helper.version import VersionParseError
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, \
-    AndroidDeviceInfo, AndroidVersion
+    AndroidBuildType, AndroidDeviceInfo, AndroidVersion
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.axml import RES_STRING_POOL_TYPE, \
     RES_XML_START_ELEMENT_TYPE, RES_XML_TYPE, \
@@ -421,6 +422,11 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_sdk_version(self) -> None:
     with self.patch_getprop(37):
       self.assertEqual(self.adb.sdk_version, 37)
+
+  def test_build_type(self) -> None:
+    with self.patch_getprop("userdebug") as mock_getprop:
+      self.assertEqual(self.adb.build_type, "userdebug")
+      mock_getprop.assert_called_once_with("ro.build.type")
 
   @contextlib.contextmanager
   def _patch_uinput_setup(
@@ -1563,6 +1569,32 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         "<HHL", RES_XML_TYPE, 0x0008,
         8 + len(string_pool_chunk) + len(start_element_chunk))
     return axml_header + string_pool_chunk + start_element_chunk
+
+
+class AndroidBuildTypeTestCase(unittest.TestCase):
+
+  def test_parse_set_wildcard(self) -> None:
+    self.assertIsNone(AndroidBuildType.parse_set("*"))
+
+  def test_parse_set_single(self) -> None:
+    self.assertEqual(
+        AndroidBuildType.parse_set("user"), frozenset({AndroidBuildType.USER}))
+    self.assertEqual(
+        AndroidBuildType.parse_set("USERDEBUG"),
+        frozenset({AndroidBuildType.USERDEBUG}))
+
+  def test_parse_set_list(self) -> None:
+    self.assertEqual(
+        AndroidBuildType.parse_set("user, eng,user"),
+        frozenset({AndroidBuildType.USER, AndroidBuildType.ENG}))
+
+  def test_parse_set_invalid(self) -> None:
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "debug"):
+      AndroidBuildType.parse_set("user,debug")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      AndroidBuildType.parse_set("")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      AndroidBuildType.parse_set("*,user")
 
 
 if __name__ == "__main__":

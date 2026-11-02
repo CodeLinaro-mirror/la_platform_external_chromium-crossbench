@@ -4,10 +4,12 @@
 
 from __future__ import annotations
 
+import argparse
 import atexit
 import contextlib
 import dataclasses
 import datetime as dt
+import enum
 import functools
 import logging
 import math
@@ -35,11 +37,12 @@ from crossbench.action_runner.keyboard_layout import \
     REVERSE_US_KEYBOARD_LAYOUT, W3C_TO_ANDROID_KEYCODE
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.chromium.devtools import DevToolsRemoteClient
+from crossbench.config import ConfigEnum
 from crossbench.flags.base import Flags, FlagsData
 from crossbench.helper.path_finder import BundletoolFinder
 from crossbench.helper.size import Size
 from crossbench.helper.wait import WaitRange
-from crossbench.parse import NumberParser
+from crossbench.parse import NumberParser, ObjectParser
 from crossbench.plt import axml
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
@@ -130,6 +133,34 @@ data_sources {{
 data_source_stop_timeout_ms: {data_source_stop_timeout_ms}
 duration_ms: 1000
 """
+
+
+@enum.unique
+class AndroidBuildType(ConfigEnum):
+  """The build variant of an Android image, as reported by ro.build.type.
+
+  AOSP only accepts these three variants, see
+  https://source.android.com/docs/setup/create/new-device#build-variants
+  and INTERNAL_VALID_VARIANTS in build/make/core/main.mk.
+  """
+  USER = ("user", "Production build, as shipped to end users.")
+  USERDEBUG = ("userdebug", "Like 'user', but with extra debugging features.")
+  ENG = ("eng", "Development build with extra tools.")
+
+  @classmethod
+  def parse_set(cls, value: object) -> frozenset[AndroidBuildType] | None:
+    """Parses a comma-separated list of build types, or '*'.
+
+    Returns None for '*', meaning no restriction: this also covers build
+    types unknown to AndroidBuildType, or a missing ro.build.type.
+    """
+    if value == "*":
+      return None
+    build_types = ObjectParser.enum_list(cls.__name__, cls, value)
+    if not build_types:
+      raise argparse.ArgumentTypeError(
+          f"Expected '*' or at least one {cls.__name__}, got {value!r}.")
+    return frozenset(build_types)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -273,6 +304,11 @@ class Adb:
   @functools.cached_property
   def build_description(self) -> str:
     return self.getprop("ro.build.description")
+
+  @functools.cached_property
+  def build_type(self) -> str:
+    """Returns the raw ro.build.type, usually an AndroidBuildType value."""
+    return self.getprop("ro.build.type")
 
   @property
   def device_info(self) -> AndroidDeviceInfo:

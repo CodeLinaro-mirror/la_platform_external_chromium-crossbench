@@ -25,6 +25,7 @@ from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.parse import DurationParser, NumberParser, ObjectParser, \
     PathParser
+from crossbench.plt.android_adb import AndroidAdbPlatform, AndroidBuildType
 from crossbench.probes.bits import BitsProbe
 from crossbench.probes.junction_temperature import \
     JunctionTemperatureProbe as JtProbe
@@ -394,20 +395,32 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
   DEFAULT_STORY_CLS: ClassVar[type[WebPowerStory]]
   PROBES: ClassVar = (WebPowerProbe,)
 
+  DEFAULT_ALLOWED_BUILD_TYPES: ClassVar[frozenset[AndroidBuildType]] = (
+      frozenset({AndroidBuildType.USER}))
+
   def __init__(
       self,
       stories: Sequence[WebPowerStory],
       action_runner_config: ActionRunnerConfig | None = None,
       bits_probe: BitsProbe | None = None,
       has_custom_network: bool = False,
+      allowed_build_types: frozenset[AndroidBuildType]
+      | None = (DEFAULT_ALLOWED_BUILD_TYPES),
   ) -> None:
     self._bits_probe: Final[BitsProbe | None] = bits_probe
     self._has_custom_network: Final[bool] = has_custom_network
+    # None means any build type is allowed, including unknown ones.
+    self._allowed_build_types: Final[frozenset[AndroidBuildType] | None] = (
+        allowed_build_types)
     super().__init__(stories, action_runner_config)
 
   @property
   def bits_probe(self) -> BitsProbe | None:
     return self._bits_probe
+
+  @property
+  def allowed_build_types(self) -> frozenset[AndroidBuildType] | None:
+    return self._allowed_build_types
 
   @override
   def _validate_stories(self, stories: Sequence[Story]) -> list[Story]:
@@ -418,6 +431,7 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
   @override
   def setup(self, runner: Runner) -> None:
     super().setup(runner)
+    self._validate_build_types(runner)
     if any(b.platform.is_ios for b in runner.browsers):
       wda_flags = [
           story.REQUIRES_IOS_WDA
@@ -429,6 +443,33 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     # TODO: Move JtProbe attachment to WebPowerProbe.get_extra_probes().
     if not runner.has_probe(JtProbe.NAME):
       runner.attach_probe(JtProbe(), matching_browser_only=True)
+
+  def _validate_build_types(self, runner: Runner) -> None:
+    """Checks that Android devices run an allowed build type.
+
+    Failures go through the runner env, so --env-validation decides whether
+    to prompt (the default), warn or throw.
+    """
+    if self._allowed_build_types is None:
+      return
+    allowed = sorted(t.value for t in self._allowed_build_types)
+    violations: list[str] = []
+    for platform in runner.platforms:
+      if not isinstance(platform, AndroidAdbPlatform):
+        continue
+      build_type = platform.adb.build_type
+      if build_type not in allowed:
+        violations.append(f"{platform.adb}: {build_type!r}")
+    if not violations:
+      return
+    details = "\n".join(f"  - {violation}" for violation in violations)
+    allowed_str = ", ".join(repr(build_type) for build_type in allowed)
+    runner.env.handle_validation_warning(
+        f"Web Power only allows build types {allowed_str}, but got:\n"
+        f"{details}\n"
+        "Other build types are usually unintended. Use --allow-build-type to "
+        "set the allowed types, e.g. --allow-build-type=user,userdebug or "
+        "--allow-build-type=*.")
 
   @override
   def teardown(self, runner: Runner) -> None:
@@ -541,6 +582,15 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
         help=("How long to wait to stabilize after loading the page, "
               "but before the story run starts."),
     )
+    parser.add_argument(
+        "--allow-build-type",
+        dest="allowed_build_types",
+        type=AndroidBuildType.parse_set,
+        default=cls.DEFAULT_ALLOWED_BUILD_TYPES,
+        help=("Comma-separated Android build types (ro.build.type) to allow, "
+              "or '*' for any, including unknown ones. Defaults to 'user'. "
+              "Choices:\n" + AndroidBuildType.help_text(indent=2)),
+    )
     if cls.IS_SCENARIO_CLASS:
       return cls.add_scenario_cli_arguments(parser)
     return parser
@@ -552,6 +602,7 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     cls._configure_ios_browsers(args, kwargs["stories"])
     kwargs["has_custom_network"] = bool(args.network_config and
                                         not args.network_config.is_default())
+    kwargs["allowed_build_types"] = args.allowed_build_types
     cls._select_network(args)
     if bits_probe := cls._parse_bits_probe(args):
       kwargs["bits_probe"] = bits_probe

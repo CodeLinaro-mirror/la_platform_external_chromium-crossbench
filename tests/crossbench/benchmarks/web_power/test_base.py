@@ -32,6 +32,7 @@ from crossbench.device_config import DeviceConfigMap, DeviceConfigValueError, \
 from crossbench.env.runner_env import ValidationMode
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.parse import ObjectParser
+from crossbench.plt.android_adb import AndroidAdbPlatform, AndroidBuildType
 from crossbench.probes.bits import BitsProbe, BitsProbeContext
 from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe, TraceConfig
 from crossbench.probes.junction_temperature import JunctionTemperatureProbe
@@ -535,6 +536,97 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     args = self.parse_args("--site", "cnn", "--bits-out", "run_id")
     with self.assertRaises(argparse.ArgumentTypeError):
       MockWebPowerBenchmark.kwargs_from_cli(args)
+
+  def test_kwargs_from_cli_allow_build_type_default(self) -> None:
+    kwargs = MockWebPowerBenchmark.kwargs_from_cli(
+        self.parse_args("--site", "cnn"))
+    self.assertEqual(kwargs["allowed_build_types"],
+                     frozenset({AndroidBuildType.USER}))
+
+  def test_kwargs_from_cli_allow_build_type(self) -> None:
+    kwargs = MockWebPowerBenchmark.kwargs_from_cli(
+        self.parse_args("--site", "cnn", "--allow-build-type=userdebug,eng"))
+    self.assertEqual(
+        kwargs["allowed_build_types"],
+        frozenset({AndroidBuildType.USERDEBUG, AndroidBuildType.ENG}))
+    benchmark = MockWebPowerBenchmark.from_cli_args(
+        self.parse_args("--site", "cnn", "--allow-build-type=*"))
+    self.assertIsNone(benchmark.allowed_build_types)
+
+  def test_kwargs_from_cli_allow_build_type_invalid(self) -> None:
+    with self.assertRaisesRegex(argparse.ArgumentError, "--allow-build-type"):
+      self.parse_args("--site=cnn", "--allow-build-type=debug")
+
+  def _validate_build_types(
+      self,
+      *build_types: str,
+      allowed_build_types: frozenset[AndroidBuildType]
+      | None = (MockWebPowerBenchmark.DEFAULT_ALLOWED_BUILD_TYPES),
+  ) -> mock.MagicMock:
+    """Validates one Android device per build type, returning the runner."""
+    runner = mock.MagicMock()
+    runner.platforms = []
+    for build_type in build_types:
+      platform = mock.MagicMock(spec=AndroidAdbPlatform)
+      platform.adb.build_type = build_type
+      runner.platforms.append(platform)
+    benchmark = MockWebPowerBenchmark(
+        stories=[MockWebPowerStory.from_site("cnn")],
+        allowed_build_types=allowed_build_types)
+    benchmark._validate_build_types(runner)
+    return runner
+
+  def test_validate_build_types_user(self) -> None:
+    runner = self._validate_build_types("user")
+    runner.env.handle_validation_warning.assert_not_called()
+
+  def test_validate_build_types_userdebug_rejected_by_default(self) -> None:
+    runner = self._validate_build_types("userdebug")
+    runner.env.handle_validation_warning.assert_called_once()
+    message = runner.env.handle_validation_warning.call_args.args[0]
+    self.assertIn("'userdebug'", message)
+    self.assertIn("--allow-build-type", message)
+
+  def test_validate_build_types_warns_once_for_all_devices(self) -> None:
+    runner = self._validate_build_types("userdebug", "user", "eng")
+    runner.env.handle_validation_warning.assert_called_once()
+    message = runner.env.handle_validation_warning.call_args.args[0]
+    self.assertIn("only allows build types 'user', but got", message)
+    devices = [line for line in message.splitlines() if line.startswith("  - ")]
+    self.assertEqual(len(devices), 2)
+    self.assertTrue(devices[0].endswith("'userdebug'"))
+    self.assertTrue(devices[1].endswith("'eng'"))
+
+  def test_validate_build_types_userdebug_allowed(self) -> None:
+    runner = self._validate_build_types(
+        "userdebug",
+        allowed_build_types=frozenset({AndroidBuildType.USERDEBUG}))
+    runner.env.handle_validation_warning.assert_not_called()
+
+  def test_validate_build_types_wildcard(self) -> None:
+    runner = self._validate_build_types(
+        "eng", "unknown-future-value", "", allowed_build_types=None)
+    runner.env.handle_validation_warning.assert_not_called()
+
+  def test_validate_build_types_unknown_rejected_by_default(self) -> None:
+    runner = self._validate_build_types("unknown-future-value")
+    runner.env.handle_validation_warning.assert_called_once()
+    message = runner.env.handle_validation_warning.call_args.args[0]
+    self.assertIn("'unknown-future-value'", message)
+
+  def test_validate_build_types_unknown_rejected_with_all_known(self) -> None:
+    runner = self._validate_build_types(
+        "unknown-future-value", allowed_build_types=frozenset(AndroidBuildType))
+    runner.env.handle_validation_warning.assert_called_once()
+
+  def test_validate_build_types_skips_non_android(self) -> None:
+    platform = mock.MagicMock()
+    runner = mock.MagicMock()
+    runner.platforms = [platform]
+    benchmark = MockWebPowerBenchmark(
+        stories=[MockWebPowerStory.from_site("cnn")])
+    benchmark._validate_build_types(runner)
+    runner.env.handle_validation_warning.assert_not_called()
 
   def _parse_and_get_kwargs(
       self, *cli_args: str) -> tuple[argparse.Namespace, dict[str, Any]]:
