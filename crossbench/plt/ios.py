@@ -118,8 +118,12 @@ class IOSSimulatorPortManager(PortManager):
 
   @override
   def reverse_forward(self, remote_port: int, local_port: int) -> int:
-    del remote_port, local_port
-    raise NotImplementedError(f"reverse_forward not implemented for {self}")
+    # Simulators share the host's network stack, so nothing is forwarded.
+    remote_port = NumberParser.positive_zero_int(remote_port, "remote_port")
+    local_port = NumberParser.port_number(local_port, "local_port")
+    if remote_port and remote_port != local_port:
+      raise ValueError(f"Cannot remap port {local_port} on iOS simulator.")
+    return local_port
 
   @override
   def stop_reverse_forward(self, remote_port: int) -> None:

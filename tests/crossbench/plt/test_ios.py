@@ -439,6 +439,17 @@ class IOsMockPlatformTestCase(BaseIOsMockPlatformTestCase):
     with self.assertRaises(ValueError):
       platform_sim.ports.forward(8200, 8100)
 
+  def test_simulator_reverse_port_forward(self):
+    self.expect_startup_devices(
+        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+    platform_sim = IOSPlatform(self.host_platform, IPHONE_SIMULATOR["udid"])
+    self.assertTrue(platform_sim.supports_reverse_port_forwarding)
+    port = platform_sim.ports.reverse_forward(8100, 8100)
+    self.assertEqual(port, 8100)
+    platform_sim.ports.stop_reverse_forward(8100)
+    with self.assertRaises(ValueError):
+      platform_sim.ports.reverse_forward(8200, 8100)
+
   def test_physical_port_forward(self):
     self.expect_startup_devices(
         devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
