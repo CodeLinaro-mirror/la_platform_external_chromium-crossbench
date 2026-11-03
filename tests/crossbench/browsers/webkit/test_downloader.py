@@ -5,12 +5,11 @@
 from __future__ import annotations
 
 import abc
-import pathlib
 
-from typing_extensions import override
-
+from crossbench import path as pth
 from crossbench.browsers.webkit.downloader import WebKitDownloader, \
     WebKitDownloaderMacOS
+from crossbench.plt.arch import MachineArch
 from tests import test_helper
 from tests.crossbench.browsers.downloader_helper import \
     AbstractDownloaderTestCase
@@ -35,16 +34,14 @@ class AbstractWebKitDownloaderTestCase(
 
   def test_empty_path(self) -> None:
     with self.assertRaises(ValueError):
-      WebKitDownloader.load(pathlib.Path("custom"), self.platform)
+      WebKitDownloader.load(pth.LocalPath("custom"), self.platform)
 
 
 class BasicWebKitDownloaderTestCaseLinux(AbstractWebKitDownloaderTestCase):
   __test__ = True
 
-  @override
-  def setUp(self) -> None:
-    super().setUp()
-    self.platform.is_linux = True
+  OS_NAME = "linux"
+  MACHINE = MachineArch.X64
 
   # TODO: Add linux support
 
@@ -52,16 +49,12 @@ class BasicWebKitDownloaderTestCaseLinux(AbstractWebKitDownloaderTestCase):
 class BasicWebKitDownloaderTestCaseMacOS(AbstractWebKitDownloaderTestCase):
   __test__ = True
 
-  @override
-  def setUp(self) -> None:
-    super().setUp()
-    self.platform.is_macos = True
+  OS_NAME = "macos"
+  MACHINE = MachineArch.ARM_64
 
   def test_is_valid_archive(self) -> None:
-    path = pathlib.Path("download/archive.zip")
-    self.fs.create_file(path)
-    self.assertTrue(WebKitDownloader.is_valid(path, self.platform))
-    self.assertTrue(WebKitDownloaderMacOS.is_valid(path, self.platform))
+    self._assert_valid_archive("archive.zip", WebKitDownloader,
+                               WebKitDownloaderMacOS)
 
   def test_is_valid_strings(self) -> None:
     self.assertFalse(WebKitDownloader.is_valid("", self.platform))

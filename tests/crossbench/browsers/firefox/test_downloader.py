@@ -5,12 +5,11 @@
 from __future__ import annotations
 
 import abc
-import pathlib
 
-from typing_extensions import override
-
+from crossbench import path as pth
 from crossbench.browsers.firefox.downloader import FirefoxDownloader, \
     FirefoxDownloaderLinux, FirefoxDownloaderMacOS, FirefoxDownloaderWin
+from crossbench.plt.arch import MachineArch
 from tests import test_helper
 from tests.crossbench.browsers.downloader_helper import \
     AbstractDownloaderTestCase
@@ -69,41 +68,31 @@ class AbstractFirefoxDownloaderTestCase(
 
   def test_empty_path(self) -> None:
     with self.assertRaises(ValueError):
-      FirefoxDownloader.load(pathlib.Path("custom"), self.platform)
+      FirefoxDownloader.load(pth.LocalPath("custom"), self.platform)
 
 
 class BasicFirefoxDownloaderLinuxTestCase(AbstractFirefoxDownloaderTestCase):
   __test__ = True
 
-  @override
-  def setUp(self) -> None:
-    super().setUp()
-    self.platform.is_linux = True
+  OS_NAME = "linux"
+  MACHINE = MachineArch.X64
 
   def test_is_valid_archive(self) -> None:
-    path = pathlib.Path("download/archive.tar.bz2")
-    self.fs.create_file(path)
-    self.assertTrue(FirefoxDownloader.is_valid(path, self.platform))
-    self.assertTrue(FirefoxDownloaderLinux.is_valid(path, self.platform))
-    self.assertFalse(FirefoxDownloaderMacOS.is_valid(path, self.platform))
-    self.assertFalse(FirefoxDownloaderWin.is_valid(path, self.platform))
+    self._assert_valid_archive("archive.tar.bz2", FirefoxDownloader,
+                               FirefoxDownloaderLinux,
+                               (FirefoxDownloaderMacOS, FirefoxDownloaderWin))
 
 
 class BasicFirefoxDownloaderMacOSTestCase(AbstractFirefoxDownloaderTestCase):
   __test__ = True
 
-  @override
-  def setUp(self) -> None:
-    super().setUp()
-    self.platform.is_macos = True
+  OS_NAME = "macos"
+  MACHINE = MachineArch.ARM_64
 
   def test_is_valid_archive(self) -> None:
-    path = pathlib.Path("download/archive.dmg")
-    self.fs.create_file(path)
-    self.assertTrue(FirefoxDownloader.is_valid(path, self.platform))
-    self.assertFalse(FirefoxDownloaderLinux.is_valid(path, self.platform))
-    self.assertTrue(FirefoxDownloaderMacOS.is_valid(path, self.platform))
-    self.assertFalse(FirefoxDownloaderWin.is_valid(path, self.platform))
+    self._assert_valid_archive("archive.dmg", FirefoxDownloader,
+                               FirefoxDownloaderMacOS,
+                               (FirefoxDownloaderLinux, FirefoxDownloaderWin))
 
 
 if __name__ == "__main__":
