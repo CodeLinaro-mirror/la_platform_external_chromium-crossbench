@@ -120,7 +120,7 @@ class RecordFormat(ConfigEnum):
 
 
 def parse_trace_config_file_path(value: str) -> pth.LocalPath:
-  data = ObjectParser.json_file(value)
+  data = ObjectParser.dict(ObjectParser.json_file(value))
   if "trace_config" not in data:
     raise argparse.ArgumentTypeError("Missing 'trace_config' property.")
   NumberParser.positive_int(
@@ -129,7 +129,7 @@ def parse_trace_config_file_path(value: str) -> pth.LocalPath:
     raise argparse.ArgumentTypeError(
         "Explicit 'result_file' is not allowed with crossbench. "
         "--probe=tracing sets a results location automatically.")
-  config = data["trace_config"]
+  config = ObjectParser.dict(data["trace_config"], "trace_config")
   if "included_categories" not in config and (
       "excluded_categories" not in config) and ("memory_dump_config"
                                                 not in config):

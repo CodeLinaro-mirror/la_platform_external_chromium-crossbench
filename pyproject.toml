@@ -144,7 +144,6 @@ ignore = [
     "TC006", # Allow non-string type in casts
     "ANN002", # Missing type annotation for `**args`
     "ANN003", # Missing type annotation for `**kwargs`
-    "ANN401", # Using typing.Any
     "B027",   # empty-method-without-abstract-decorator
     "B019",   # Use of `functools.lru_cache` or `functools.cache` on methods can lead to memory leaks
     "LOG015", # Disallow root-logger-calls
@@ -175,11 +174,13 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "PRESUBMIT.py" = [
+    "ANN401",   # depot_tools input_api and output_api are untyped
     "N",        # Presubmit functions in depot_tools are CamelCase
     "PLC0415",  # Inline imports inside CheckChange for PresubmitLocalPath
     "TID251",   # Presubmit needs raw pathlib
 ]
 "tools/presubmit/*" = [
+    "ANN401",   # depot_tools input_api and output_api are untyped
     "N",        # Presubmit functions in depot_tools are CamelCase
     "TID251",   # Presubmit tools need raw pathlib
 ]

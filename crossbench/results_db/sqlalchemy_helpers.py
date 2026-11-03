@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Session, relationship
 
@@ -27,7 +27,7 @@ else:
     from sqlalchemy import Column
     from sqlalchemy.ext.declarative import declarative_base
     DeclarativeBase = declarative_base()
-    Mapped = Any
+    Mapped = object
 
-    def mapped_column(*args: Any, **kwargs: Any) -> Any:
+    def mapped_column(*args: object, **kwargs: object) -> Column:
       return Column(*args, **kwargs)

@@ -13,6 +13,7 @@ from immutabledict import immutabledict
 from crossbench import hjson as cb_hjson
 from crossbench import path as pth
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
+from crossbench.parse import ObjectParser
 from tests import test_helper
 from tests.crossbench.cli.config.base import BaseConfigTestCase
 
@@ -210,8 +211,8 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
     example_config_file = test_helper.config_dir() / "doc/env.config.hjson"
     self.fs.add_real_file(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
-      data = cb_hjson.load_unique_keys(f)
-    EnvConfig(**data["env"])
+      data = ObjectParser.dict(cb_hjson.load_unique_keys(f))
+    EnvConfig(**ObjectParser.dict(data["env"]))
 
 
 if __name__ == "__main__":

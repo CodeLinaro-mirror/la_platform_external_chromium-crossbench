@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import IO, TYPE_CHECKING, Any, Iterable
+from typing import IO, TYPE_CHECKING, Iterable
 
 import hjson
 
@@ -22,10 +22,10 @@ def _check_for_duplicate_keys(
   return result
 
 
-def load_unique_keys(file: IO[str]) -> Any:
+def load_unique_keys(file: IO[str]) -> Json:
   return hjson.load(
       file, object_pairs_hook=_check_for_duplicate_keys)  # type: ignore
 
 
-def loads_unique_keys(string_value: str) -> Any:
+def loads_unique_keys(string_value: str) -> Json:
   return hjson.loads(string_value, object_pairs_hook=_check_for_duplicate_keys)

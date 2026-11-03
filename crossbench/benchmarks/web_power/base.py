@@ -170,13 +170,13 @@ class WebPowerStory(Story):
   }
 
   @classmethod
-  def from_site(cls, site_key: str, *args: Any, **kwargs: Any) -> Self:
+  def from_site(cls, site_key: str, *args, **kwargs) -> Self:
     if site_key not in cls.SITES:
       raise ValueError(f"Unknown web power benchmark site key: {site_key}")
     return cls(site_key, cls.SITES[site_key], *args, **kwargs)
 
   @classmethod
-  def from_url(cls, url: str, *args: Any, **kwargs: Any) -> Self:
+  def from_url(cls, url: str, *args, **kwargs) -> Self:
     return cls("custom", WebPowerSiteConfig(url=url), *args, **kwargs)
 
   def __init__(self, name_suffix: str, site_config: WebPowerSiteConfig,

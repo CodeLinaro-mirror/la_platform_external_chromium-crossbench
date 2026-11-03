@@ -21,6 +21,7 @@ class HjsonTestCase(unittest.TestCase):
     }
     """)
 
+    self.assertIsInstance(parsed, dict)
     self.assertEqual(parsed["key"], 1)
     self.assertEqual(parsed["key2"], 2)
 

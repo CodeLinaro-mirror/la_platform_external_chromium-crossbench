@@ -459,7 +459,8 @@ class ConfigObject(abc.ABC):
     return self
 
   @classmethod
-  def create(cls: type[Self], *args: Any, **kwargs: Any) -> Self:
+  # Unannotated *args/**kwargs allow subclasses to specialize create().
+  def create(cls: type[Self], *args, **kwargs) -> Self:
     """Factory method for creating ConfigObject instances.
 
     ConfigParser delegates object creation to this method. Subclasses with
@@ -646,7 +647,7 @@ class ConfigObject(abc.ABC):
   def parse_inline_hjson(cls, value: str, **kwargs) -> Self:
     """Called on strings which pass is_hjson_like() test."""
     with exception.annotate(f"Parsing inline {cls.__name__}"):
-      data = ObjectParser.inline_hjson(value)
+      data = ObjectParser.dict(ObjectParser.inline_hjson(value))
       return cls.parse_dict(data, **kwargs)
     raise exception.UnreachableError
 

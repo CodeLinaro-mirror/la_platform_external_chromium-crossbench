@@ -77,14 +77,14 @@ class ProbeConfig(ConfigObject):
     if not probe_cls:
       return None
     config: dict[str, object] = {"name": probe_name}
-    inline_config: dict = {}
+    inline_config: dict[str, object] = {}
     if cls.is_path_like(config_str) and config_str.endswith(
         (".json", ".hjson")):
       # Variant, hjson path: "name:path/to/config.hjson"
-      inline_config = ObjectParser.hjson_file(config_str)
+      inline_config = ObjectParser.dict(ObjectParser.hjson_file(config_str))
     elif cls.is_hjson_like(config_str):
       # Variant, inline hjson: "name:{hjson}"
-      inline_config = ObjectParser.inline_hjson(config_str)
+      inline_config = ObjectParser.dict(ObjectParser.inline_hjson(config_str))
     else:
       return cls(probe_cls, src_str=value, config_str=config_str)
     if inline_config.get("name", probe_name) is not probe_name:

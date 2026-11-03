@@ -690,7 +690,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
           "--config cannot be used together with --browser-config")
 
     config_file = args.config
-    config_data = ObjectParser.hjson_file(config_file)
+    config_data = ObjectParser.dict(ObjectParser.hjson_file(config_file))
     found_any_config = False
 
     if env_config_data := config_data.get("env"):

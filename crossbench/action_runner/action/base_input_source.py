@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import dataclasses
 import functools
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Self
 
 from typing_extensions import override
 
@@ -28,9 +28,10 @@ class InputSourceAction(BaseDurationAction, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def create(cls: type[Self], *args: Any, **kwargs: Any) -> Self:
+  def create(cls: type[Self], *args: object, **kwargs: object) -> Self:
     source = kwargs.get("source", args[0] if args else InputSource.JS)
     if kwargs.get("source_device") is None:
+      assert isinstance(source, InputSource)
       if default_device := DEFAULT_VIRTUAL_DEVICES.get(source):
         kwargs["source_device"] = default_device.name
     return super().create(*args, **kwargs)

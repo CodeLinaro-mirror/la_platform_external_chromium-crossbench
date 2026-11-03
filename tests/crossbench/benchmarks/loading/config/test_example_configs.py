@@ -12,6 +12,7 @@ from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.helper.cwd import change_cwd
+from crossbench.parse import ObjectParser
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -33,7 +34,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(example_config_file)
     file_config = PagesConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
-      data = cb_hjson.load_unique_keys(f)
+      data = ObjectParser.dict(cb_hjson.load_unique_keys(f))
     dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
@@ -76,7 +77,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(example_config_file)
     file_config = PagesConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
-      data = cb_hjson.load_unique_keys(f)
+      data = ObjectParser.dict(cb_hjson.load_unique_keys(f))
     dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
     self.assertTrue(file_config.pages)
@@ -93,7 +94,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(config_file)
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:
-      data = cb_hjson.load_unique_keys(f)
+      data = ObjectParser.dict(cb_hjson.load_unique_keys(f))
     with change_cwd(test_helper.config_dir() / "benchmark/loadline"):
       dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)
@@ -112,7 +113,7 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(config_file)
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:
-      data = cb_hjson.load_unique_keys(f)
+      data = ObjectParser.dict(cb_hjson.load_unique_keys(f))
     with change_cwd(test_helper.config_dir() / "benchmark/loadline"):
       dict_config = PagesConfig.parse_dict(data)
     self.assertTrue(dict_config.pages)

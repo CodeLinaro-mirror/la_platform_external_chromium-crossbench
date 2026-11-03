@@ -285,7 +285,7 @@ class EmbedderBenchmark(SubStoryBenchmark):
     if global_config := args.config:
       # TODO: migrate --config to an already parsed hjson/json dict
       config_file = global_config
-      config_data = ObjectParser.hjson_file(config_file)
+      config_data = ObjectParser.dict(ObjectParser.hjson_file(config_file))
       if cujs_config_dict := config_data.get("cujs"):
         if args.cujs_config:
           raise argparse.ArgumentTypeError(

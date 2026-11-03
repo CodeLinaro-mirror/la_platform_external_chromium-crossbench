@@ -1006,9 +1006,9 @@ class ObjectParserTestCase(BaseFileParserTestCase):
       ObjectParser.inline_hjson("{invalid json}")
     with self.assertRaises(argparse.ArgumentTypeError):
       ObjectParser.inline_hjson("{'asdfas':'asdf}")
-    self.assertDictEqual(
-        self._json_test_data,
-        ObjectParser.inline_hjson(json.dumps(self._json_test_data)))
+    result = ObjectParser.inline_hjson(json.dumps(self._json_test_data))
+    self.assertIsInstance(result, dict)
+    self.assertDictEqual(self._json_test_data, result)
 
   def test_bool(self):
     self.assertIs(ObjectParser.bool("true"), True)

@@ -27,6 +27,7 @@ from crossbench import path as pth
 
 if TYPE_CHECKING:
   from crossbench import plt
+  from crossbench.types import Json
 
   # mypy has issues if there is a dict instance-method.
   PyDict = dict
@@ -301,7 +302,7 @@ class ObjectParser(BaseParser):
     return value[0] == "{" and value[-1] == "}"
 
   @classmethod
-  def inline_hjson(cls, value: object) -> Any:
+  def inline_hjson(cls, value: object) -> Json:
     value_str = cls.non_empty_str(value, "hjson")
     if not cls.is_hjson_like(value_str):
       raise argparse.ArgumentTypeError(
@@ -316,7 +317,7 @@ class ObjectParser(BaseParser):
       raise argparse.ArgumentTypeError(message) from e
 
   @classmethod
-  def json_file(cls, value: object) -> Any:
+  def json_file(cls, value: object) -> Json:
     path = PathParser.file_path(value)
     with path.open(encoding="utf-8") as f:
       try:
@@ -327,7 +328,7 @@ class ObjectParser(BaseParser):
         raise argparse.ArgumentTypeError(message) from e
 
   @classmethod
-  def hjson_file(cls, value: object) -> Any:
+  def hjson_file(cls, value: object) -> Json:
     path = PathParser.file_path(value)
     with path.open(encoding="utf-8") as f:
       try:
@@ -338,7 +339,7 @@ class ObjectParser(BaseParser):
         raise argparse.ArgumentTypeError(message) from e
 
   @classmethod
-  def non_empty_hjson_file(cls, value: object) -> Any:
+  def non_empty_hjson_file(cls, value: object) -> Json:
     data = cls.hjson_file(value)
     if not data:
       raise argparse.ArgumentTypeError(

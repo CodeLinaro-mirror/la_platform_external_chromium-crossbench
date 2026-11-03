@@ -500,9 +500,9 @@ class BrowserVariantsConfigDict(BaseBrowserVariantsConfig):
 
   def parse_text_io(self, f: TextIO, args: argparse.Namespace) -> None:
     with exception.annotate(f"Loading browser config file: {f.name}"):
-      config = {}
+      config: dict[str, object] = {}
       with exception.annotate("Parsing hjson"):
-        config = cb_hjson.load_unique_keys(f)
+        config = ObjectParser.dict(cb_hjson.load_unique_keys(f))
       with exception.annotate(f"Parsing config file: {f.name}"):
         self.parse_dict(config, args)
 

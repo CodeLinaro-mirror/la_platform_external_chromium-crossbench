@@ -13,11 +13,16 @@ if TYPE_CHECKING:
   InputT = TypeVar("InputT")
   KeyT = TypeVar("KeyT")
   ValueT = TypeVar("ValueT")
+  # Concrete groups (e.g. RunGroup.append(Run) or list[T].append(T)) only
+  # accept a specific item type rather than arbitrary `object`, so
+  # GroupTProtocol must be generic over the item type. Because append() only
+  # consumes items and never returns them, subtyping is contravariant.
+  GroupItemT_contra = TypeVar("GroupItemT_contra", contravariant=True)
   PathT = TypeVar("PathT", bound=pth.AnyPath)
 
-  class GroupTProtocol(Protocol):
+  class GroupTProtocol(Protocol[GroupItemT_contra]):
 
-    def append(self, item: Any, /) -> None:
+    def append(self, item: GroupItemT_contra, /) -> None:
       pass
 
   GroupT = TypeVar("GroupT", bound=GroupTProtocol)

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from crossbench import hjson as cb_hjson
 from crossbench.benchmarks.embedder.config.cujs import CUJsConfig
+from crossbench.parse import ObjectParser
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -18,7 +19,7 @@ class TestExampleCUJConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(example_config_file)
     file_config = CUJsConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
-      data = cb_hjson.load_unique_keys(f)
+      data = ObjectParser.dict(cb_hjson.load_unique_keys(f))
     dict_config = CUJsConfig.parse_dict(data)
     self.assertTrue(dict_config.cujs)
     self.assertTrue(file_config.cujs)
@@ -32,7 +33,7 @@ class TestExampleCUJConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(example_config_file)
     file_config = CUJsConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
-      data = cb_hjson.load_unique_keys(f)
+      data = ObjectParser.dict(cb_hjson.load_unique_keys(f))
     dict_config = CUJsConfig.parse_dict(data)
     self.assertTrue(dict_config.cujs)
     self.assertTrue(file_config.cujs)

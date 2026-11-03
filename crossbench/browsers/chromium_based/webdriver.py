@@ -9,8 +9,7 @@ import base64
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Final, Iterable, Sequence, TextIO, \
-    TypeAlias
+from typing import TYPE_CHECKING, Final, Iterable, Sequence, TextIO, TypeAlias
 
 import requests
 import selenium.common.exceptions
@@ -47,7 +46,7 @@ if TYPE_CHECKING:
 
 
 _DEFAULT_TAB_TIMEOUT: Final[dt.timedelta] = dt.timedelta(seconds=0)
-ScriptIdKwargs: TypeAlias = dict[str, str]
+ScriptIdKwargs: TypeAlias = dict[str, object]
 
 
 class ChromiumBasedWebDriver(
@@ -82,7 +81,7 @@ class ChromiumBasedWebDriver(
     return None
 
   def _execute_cdp_cmd(self, driver: webdriver.Remote, cmd: str,
-                       cmd_args: dict) -> Any:
+                       cmd_args: dict[str, object]) -> dict[str, object]:
     return driver.execute("executeCdpCommand", {
         "cmd": cmd,
         "params": cmd_args,
@@ -93,6 +92,7 @@ class ChromiumBasedWebDriver(
     response = self._execute_cdp_cmd(self._private_driver,
                                      "Tracing.getTrackEventDescriptor", {})
     if descriptor_b64 := response.get("descriptor", ""):
+      assert isinstance(descriptor_b64, str)
       data = base64.b64decode(descriptor_b64)
       descriptor.ParseFromString(data)
       return descriptor
@@ -100,9 +100,11 @@ class ChromiumBasedWebDriver(
     # Fallback to get plain category names without descriptions or tags.
     res = self._execute_cdp_cmd(self._private_driver, "Tracing.getCategories",
                                 {})
-    for c in res.get("categories", []):
+    categories = res.get("categories", [])
+    assert isinstance(categories, list)
+    for c in categories:
       cat = descriptor.available_categories.add()
-      cat.name = c
+      cat.name = str(c)
     return descriptor
 
   @override
