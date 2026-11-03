@@ -210,7 +210,7 @@
           }
           {
             "action": "wait"
-            "duration": "100ms"
+            "duration": "150ms"
           }
           {
             "action": "js"
