@@ -7,7 +7,8 @@ from __future__ import annotations
 import atexit
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Final
+import threading
+from typing import IO, TYPE_CHECKING, Final
 
 from crossbench.cli.ui import ui
 from crossbench.helper.wait import WaitRange, wait_with_backoff
@@ -16,8 +17,12 @@ if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.plt.macos import MacOSPlatform
 
-_START_TIMEOUT_S: Final[int] = 10
+_START_TIMEOUT_S: Final[int] = 30
 _DEFAULT_STOP_TIMEOUT_S: Final[int] = 3 * 60
+_OUTPUT_THREAD_JOIN_TIMEOUT_S: Final[int] = 5
+# Printed by `xctrace record` once it is actually capturing events. The trace
+# bundle is created a few seconds earlier, so its existence is not enough.
+_RECORDING_STARTED_MARKER: Final[str] = "Ctrl-C to stop the recording"
 
 
 class XctraceRecorder:
@@ -48,6 +53,8 @@ class XctraceRecorder:
     self._device_udid: Final[str | None] = device_udid
     self._stop_timeout_s: Final[int] = stop_timeout_s
     self._process: subprocess.Popen | None = None
+    self._output_thread: threading.Thread | None = None
+    self._recording_started: Final[threading.Event] = threading.Event()
 
   @property
   def is_recording(self) -> bool:
@@ -62,6 +69,7 @@ class XctraceRecorder:
     process_filter = (["--attach", str(self._attach_pid)]
                       if self._attach_pid is not None else ["--all-processes"])
     device_args = (["--device", self._device_udid] if self._device_udid else [])
+    self._recording_started.clear()
     self._process = self._host_platform.popen(
         "xctrace",
         "record",
@@ -71,15 +79,34 @@ class XctraceRecorder:
         *process_filter,
         "--output",
         self._output_path,
-        stdin=subprocess.PIPE)
-    # xctrace takes a moment to spin up and create the trace bundle.
-    first_result_file = self._output_path / "Trace1.run"
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        encoding="utf-8")
+    assert self._process.stdout, "Missing xctrace stdout pipe"
+    self._output_thread = threading.Thread(
+        target=self._read_output, args=(self._process.stdout,), daemon=True)
+    self._output_thread.start()
+    self._wait_for_recording_started()
+
+  def _read_output(self, stdout: IO[str]) -> None:
+    """Forwards xctrace's output to the log and detects the recording start.
+
+    Runs on a background thread, which also keeps the pipe drained.
+    """
+    for line in stdout:
+      logging.info("xctrace: %s", line.rstrip())
+      if _RECORDING_STARTED_MARKER in line:
+        self._recording_started.set()
+
+  def _wait_for_recording_started(self) -> None:
+    assert self._process
     try:
       for _ in wait_with_backoff(WaitRange(timeout=_START_TIMEOUT_S)):
+        if self._recording_started.is_set():
+          return
         if self._process.poll() is not None:
           raise ValueError("Could not start xctrace record")
-        if self._host_platform.exists(first_result_file):
-          break
     except TimeoutError:
       logging.warning("xctrace took too long to start recording. "
                       "Samples might be missing.")
@@ -115,4 +142,7 @@ class XctraceRecorder:
       logging.error("xctrace failed to flush cleanly. "
                     "The trace bundle might be corrupted or empty.")
     self._process = None
+    if self._output_thread:
+      self._output_thread.join(timeout=_OUTPUT_THREAD_JOIN_TIMEOUT_S)
+      self._output_thread = None
     atexit.unregister(self.finalize)

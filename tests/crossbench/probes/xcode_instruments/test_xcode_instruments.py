@@ -5,6 +5,9 @@
 from __future__ import annotations
 
 import enum
+import io
+import subprocess
+from typing import Final
 from unittest import mock
 
 from crossbench import path as pth
@@ -19,6 +22,9 @@ from crossbench.probes.xcode_instruments.xcode_instruments import \
     XcodeInstrumentsProbe
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
+
+_RECORDING_OUTPUT: Final[str] = ("Starting recording with the template.\n"
+                                 "Ctrl-C to stop the recording\n")
 
 
 class TargetPlatform(enum.Enum):
@@ -213,6 +219,7 @@ class XctraceRecorderTestCase(CrossbenchFakeFsTestCase):
     mock_platform.exists.return_value = True
     mock_process = mock.Mock()
     mock_process.poll.return_value = None
+    mock_process.stdout = io.StringIO(_RECORDING_OUTPUT)
     mock_platform.popen.return_value = mock_process
     mock_platform.signals.SIGINT = 2
 
@@ -227,6 +234,7 @@ class XctraceRecorderTestCase(CrossbenchFakeFsTestCase):
     mock_platform.exists.return_value = True
     mock_process = mock.Mock()
     mock_process.poll.return_value = None
+    mock_process.stdout = io.StringIO(_RECORDING_OUTPUT)
     mock_platform.popen.return_value = mock_process
     mock_platform.signals.SIGINT = 2
 
@@ -235,6 +243,33 @@ class XctraceRecorderTestCase(CrossbenchFakeFsTestCase):
     recorder.finalize()
     mock_platform.terminate_gracefully.assert_called_once()
     self.assertFalse(recorder.is_recording)
+
+  def test_start_waits_for_recording_marker(self):
+    mock_platform = mock.Mock()
+    mock_platform.is_file.return_value = True
+    mock_process = mock.Mock()
+    mock_process.poll.return_value = None
+    mock_process.stdout = io.StringIO(_RECORDING_OUTPUT)
+    mock_platform.popen.return_value = mock_process
+
+    recorder = XctraceRecorder(mock_platform, self.template, self.output_path)
+    recorder.start()
+    self.assertTrue(recorder.is_recording)
+    popen_kwargs = mock_platform.popen.call_args.kwargs
+    self.assertEqual(popen_kwargs["stdout"], subprocess.PIPE)
+    self.assertEqual(popen_kwargs["stderr"], subprocess.STDOUT)
+
+  def test_start_fails_if_xctrace_exits(self):
+    mock_platform = mock.Mock()
+    mock_platform.is_file.return_value = True
+    mock_process = mock.Mock()
+    mock_process.poll.return_value = 1
+    mock_process.stdout = io.StringIO("Error: invalid template\n")
+    mock_platform.popen.return_value = mock_process
+
+    recorder = XctraceRecorder(mock_platform, self.template, self.output_path)
+    with self.assertRaisesRegex(ValueError, "Could not start xctrace"):
+      recorder.start()
 
 
 if __name__ == "__main__":
