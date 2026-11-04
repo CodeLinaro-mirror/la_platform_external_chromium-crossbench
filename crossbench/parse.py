@@ -13,7 +13,7 @@ import logging
 import math
 import re
 import shlex
-from typing import TYPE_CHECKING, Any, Callable, Final, Iterable, Sequence, \
+from typing import TYPE_CHECKING, Callable, Final, Iterable, Sequence, \
     TypeGuard, TypeVar
 from urllib import parse as urlparse
 
@@ -27,7 +27,7 @@ from crossbench import path as pth
 
 if TYPE_CHECKING:
   from crossbench import plt
-  from crossbench.types import Json
+  from crossbench.types import Json, JsonDict
 
   # mypy has issues if there is a dict instance-method.
   PyDict = dict
@@ -157,8 +157,7 @@ class PathParser(BaseParser):
       platform: plt.Platform,
       name: str = "binary",
   ) -> pth.AnyPath:
-    not_none: pth.AnyPathLike = ObjectParser.not_none(value,
-                                                      name)  # type: ignore
+    not_none: pth.AnyPathLike = ObjectParser.not_none(value, name)
     maybe_path: pth.AnyPath = platform.path(not_none)
     if platform.is_file(maybe_path):
       return maybe_path
@@ -172,7 +171,7 @@ class PathParser(BaseParser):
                name: str = "value") -> pth.AnyPath:
     """Parse a path than can be on a local or remote file system."""
     if some_value := ObjectParser.not_none(value, name):
-      return pth.AnyPath(some_value)  # type: ignore
+      return pth.AnyPath(some_value)
     raise argparse.ArgumentTypeError(f"Expected non empty path {name}.")
 
   @classmethod
@@ -348,7 +347,7 @@ class ObjectParser(BaseParser):
     return data
 
   @classmethod
-  def dict_hjson_file(cls, value: object) -> dict[str, Any]:
+  def dict_hjson_file(cls, value: object) -> JsonDict:
     data = cls.non_empty_hjson_file(value)
     if not isinstance(data, dict):
       raise argparse.ArgumentTypeError(
@@ -390,14 +389,14 @@ class ObjectParser(BaseParser):
     return immutabledict(result)
 
   @classmethod
-  def sequence(cls, value: object, name: str = "value") -> Sequence[Any]:
+  def sequence(cls, value: object, name: str = "value") -> Sequence[object]:
     if isinstance(value, (list, tuple)):
       return value
     raise argparse.ArgumentTypeError(
         f"Expected sequence, but {name} is {type_str(value)}: {value!r}")
 
   @classmethod
-  def iterable(cls, value: object, name: str = "value") -> Iterable[Any]:
+  def iterable(cls, value: object, name: str = "value") -> Iterable[object]:
     if isinstance(value, str):
       raise argparse.ArgumentTypeError(
           f"Expected iterable {name}, but got string: {value!r}")
@@ -409,7 +408,7 @@ class ObjectParser(BaseParser):
   @classmethod
   def non_empty_sequence(cls,
                          value: object,
-                         name: str = "value") -> Sequence[Any]:
+                         name: str = "value") -> Sequence[object]:
     sequence_value = cls.sequence(value, name)
     if not sequence_value:
       raise argparse.ArgumentTypeError(

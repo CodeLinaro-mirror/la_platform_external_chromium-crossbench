@@ -18,7 +18,7 @@ import os
 import select
 import sys
 import threading
-from typing import TYPE_CHECKING, Any, Callable, Final
+from typing import TYPE_CHECKING, Callable, Final
 
 from typing_extensions import override
 
@@ -29,8 +29,8 @@ try:
   import termios
   import tty
 except ImportError:
-  termios = None  # type: ignore
-  tty = None  # type: ignore
+  termios = None
+  tty = None
 
 KeyHandler = Callable[[], None]
 _POLL_INTERVAL_SEC: Final[float] = 0.05
@@ -206,7 +206,7 @@ class _TerminalModeController:
   """Enables cbreak mode on stdin and restores it later."""
 
   def __init__(self) -> None:
-    self._old_termios: list[Any] | None = None
+    self._old_termios: list[int | list[bytes | int]] | None = None
 
   def enable_cbreak(self) -> int | None:
     assert termios and tty

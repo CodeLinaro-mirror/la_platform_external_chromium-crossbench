@@ -9,7 +9,7 @@ import dataclasses
 import logging
 import sys
 import types
-from typing import TYPE_CHECKING, Any, Mapping, Never, Sequence
+from typing import TYPE_CHECKING, Mapping, Never, Sequence
 
 import colorama
 from typing_extensions import Self, override
@@ -24,13 +24,12 @@ if TYPE_CHECKING:
 class CBArgumentGroup(argparse._ArgumentGroup):  # noqa: SLF001
 
   @override
-  def add_argument(self, *args: Any, **kwargs: Any) -> argparse.Action:
+  def add_argument(self, *args: str, **kwargs) -> argparse.Action:
     CBArgumentParser.validate_add_argument(self, args, kwargs)
     return super().add_argument(*args, **kwargs)
 
   @override
-  def add_mutually_exclusive_group(self,
-                                   **kwargs: Any) -> CBMutuallyExclusiveGroup:
+  def add_mutually_exclusive_group(self, **kwargs) -> CBMutuallyExclusiveGroup:
     group = CBMutuallyExclusiveGroup(self, **kwargs)
     self._mutually_exclusive_groups.append(group)
     return group
@@ -41,7 +40,7 @@ class CBMutuallyExclusiveGroup(
 ):
 
   @override
-  def add_argument(self, *args: Any, **kwargs: Any) -> argparse.Action:
+  def add_argument(self, *args: str, **kwargs) -> argparse.Action:
     CBArgumentParser.validate_add_argument(self, args, kwargs)
     return super().add_argument(*args, **kwargs)
 
@@ -290,25 +289,24 @@ class CBArgumentParser(argparse.ArgumentParser):
               "Expected list or None.")
 
   @override
-  def add_argument(self, *args: Any, **kwargs: Any) -> argparse.Action:
+  def add_argument(self, *args: str, **kwargs) -> argparse.Action:
     self.validate_add_argument(self, args, kwargs)
     return super().add_argument(*args, **kwargs)
 
   @override
-  def add_argument_group(self, *args: Any, **kwargs: Any) -> CBArgumentGroup:
+  def add_argument_group(self, *args, **kwargs) -> CBArgumentGroup:
     group = CBArgumentGroup(self, *args, **kwargs)
     self._action_groups.append(group)
     return group
 
   @override
-  def add_mutually_exclusive_group(self,
-                                   **kwargs: Any) -> CBMutuallyExclusiveGroup:
+  def add_mutually_exclusive_group(self, **kwargs) -> CBMutuallyExclusiveGroup:
     group = CBMutuallyExclusiveGroup(self, **kwargs)
     self._mutually_exclusive_groups.append(group)
     return group
 
   @override
-  def parse_known_args(  # type: ignore[override]
+  def parse_known_args(  # pyrefly: ignore[bad-override]
       self,
       args: Sequence[str] | None = None,
       namespace: argparse.Namespace
@@ -322,7 +320,7 @@ class CBArgumentParser(argparse.ArgumentParser):
     return parsed_namespace, unprocessed
 
   @override
-  def parse_args(  # type: ignore[override]
+  def parse_args(  # pyrefly: ignore[bad-override]
       self,
       args: Sequence[str] | None = None,
       namespace: argparse.Namespace | None = None,

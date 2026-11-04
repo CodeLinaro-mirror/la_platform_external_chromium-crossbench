@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, ClassVar, Iterable, Mapping, Sequence
 
 from typing_extensions import override
 
@@ -185,7 +185,7 @@ class DevToolsFrontendBenchmark(Benchmark):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
     arg_sites = ObjectParser.str_tuple(args.sites, "sites")
     sites = [site for site in arg_sites if site in cls.STORY_URLS] or tuple(

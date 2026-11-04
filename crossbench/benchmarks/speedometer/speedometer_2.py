@@ -25,11 +25,10 @@ class Speedometer2ProbeContext(SpeedometerProbeContext):
 
   @override
   def process_json_data(self, json_data: Json) -> Json:
-    json_data = ObjectParser.non_empty_sequence(json_data,
-                                                f"{self.probe.name} metrics")
     # Move aggregate scores to the end
-    for iteration_data in json_data:
-      assert isinstance(iteration_data, dict)
+    for raw_iteration_data in ObjectParser.non_empty_sequence(
+        json_data, f"{self.probe.name} metrics"):
+      iteration_data = ObjectParser.dict(raw_iteration_data, "iteration data")
       iteration_data["Mean"] = iteration_data.pop("mean")
       iteration_data["Total"] = iteration_data.pop("total")
       iteration_data["Geomean"] = iteration_data.pop("geomean")

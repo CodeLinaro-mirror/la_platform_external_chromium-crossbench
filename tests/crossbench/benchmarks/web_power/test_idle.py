@@ -65,7 +65,7 @@ class WebPowerIdleBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
   def test_kwargs_from_cli_defaults(self) -> None:
     args = self.parse_args("--site", "cnn")
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerIdleStory)
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.idle_duration, WebPowerIdleStory.DEFAULT_DURATION)
     self.assertEqual(story.stabilization_time,
@@ -78,7 +78,7 @@ class WebPowerIdleBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         "--stabilization-time=15s",
     )
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerIdleStory)
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.idle_duration, dt.timedelta(seconds=45))
     self.assertEqual(story.stabilization_time, dt.timedelta(seconds=15))
@@ -89,7 +89,7 @@ class WebPowerIdleBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         "--duration=20s",
     )
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerIdleStory)
     self.assertEqual(story.url, "https://www.google.com")
     self.assertEqual(story.idle_duration, dt.timedelta(seconds=20))
 
@@ -99,7 +99,7 @@ class WebPowerIdleBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         "--duration=0s",
     )
     kwargs = WebPowerIdleBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerIdleStory)
     self.assertGreaterEqual(story.idle_duration, dt.timedelta(days=365))
 
   def test_kwargs_from_cli_invalid(self) -> None:

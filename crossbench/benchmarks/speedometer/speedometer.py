@@ -144,8 +144,10 @@ class SpeedometerProbeContext(JsonResultProbeContext):
 
   @override
   def flatten_json_data(self, json_data: Json) -> Json:
-    metrics_data = ObjectParser.non_empty_sequence(json_data,
-                                                   f"{self.probe.name} metrics")
+    metrics_data = [
+        ObjectParser.dict(item) for item in ObjectParser.non_empty_sequence(
+            json_data, f"{self.probe.name} metrics")
+    ]
     # json_data may contain multiple iterations, merge those first
     merged = MetricsMerger(
         metrics_data, key_fn=_probe_remove_tests_segments).to_json(

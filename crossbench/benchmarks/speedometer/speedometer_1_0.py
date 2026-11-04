@@ -11,7 +11,7 @@ from typing_extensions import override
 from crossbench.benchmarks.speedometer.speedometer import ProbeClsTupleT, \
     SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext, \
     SpeedometerStory
-from crossbench.parse import ObjectParser
+from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
@@ -30,13 +30,12 @@ class Speedometer10ProbeContext(SpeedometerProbeContext):
 
   @override
   def process_json_data(self, json_data: Json) -> Json:
-    json_data = ObjectParser.non_empty_sequence(json_data,
-                                                f"{self.probe.name} metrics")
     # Move aggregate scores to the end
-    for iteration_data in json_data:
-      assert isinstance(iteration_data, dict)
-      total = iteration_data.pop("total")
-      suite_count = len(iteration_data["tests"])
+    for raw_iteration_data in ObjectParser.non_empty_sequence(
+        json_data, f"{self.probe.name} metrics"):
+      iteration_data = ObjectParser.dict(raw_iteration_data, "iteration data")
+      total = NumberParser.any_float(iteration_data.pop("total"), "total")
+      suite_count = len(ObjectParser.dict(iteration_data["tests"], "tests"))
       iteration_data["Total"] = total
       # Manually compute the v1.0 Score
       iteration_data["Score"] = 60 * 1000 * suite_count / total

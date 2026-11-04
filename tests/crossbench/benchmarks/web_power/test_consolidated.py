@@ -13,7 +13,7 @@ from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
-from crossbench.benchmarks.web_power.base import VERSION_STRING
+from crossbench.benchmarks.web_power.base import VERSION_STRING, WebPowerStory
 from crossbench.benchmarks.web_power.consolidated import WebPowerBenchmark, \
     WebPowerConsolidatedStoryFilter
 from crossbench.benchmarks.web_power.idle import WebPowerIdleStory
@@ -138,10 +138,10 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
   def test_kwargs_from_cli_defaults_instantiates_all_types(self) -> None:
     args = self.parse_args()
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
-    stories = kwargs["stories"]
+    stories = self.extract_stories(kwargs)
     self.assertEqual(len(stories), 10)
 
-    counts = {
+    counts: dict[type[WebPowerStory], int] = {
         WebPowerIdleStory: 0,
         WebPowerScrollStory: 0,
         WebPowerPageLoadStory: 0,
@@ -161,7 +161,7 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     # We do not assert that a WebPowerIdleStory was found here;
     # test_kwargs_from_cli_defaults_instantiates_all_types ensures
     # we have at least one.
-    for story in kwargs["stories"]:
+    for story in self.extract_stories(kwargs):
       if not isinstance(story, WebPowerIdleStory):
         continue
       self.assertEqual(story.idle_duration, WebPowerIdleStory.DEFAULT_DURATION)
@@ -172,7 +172,7 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     kwargs = WebPowerBenchmark.kwargs_from_cli(self.parse_args())
     # test_kwargs_from_cli_defaults_instantiates_all_types ensures
     # we have at least one.
-    for story in kwargs["stories"]:
+    for story in self.extract_stories(kwargs):
       if not isinstance(story, WebPowerScrollStory):
         continue
       self.assertEqual(story.scroll_count,
@@ -185,7 +185,7 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     kwargs = WebPowerBenchmark.kwargs_from_cli(self.parse_args())
     # test_kwargs_from_cli_defaults_instantiates_all_types ensures
     # we have at least one.
-    for story in kwargs["stories"]:
+    for story in self.extract_stories(kwargs):
       if not isinstance(story, WebPowerPageLoadStory):
         continue
       expected_count = (
@@ -201,7 +201,7 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     kwargs = WebPowerBenchmark.kwargs_from_cli(self.parse_args())
     # test_kwargs_from_cli_defaults_instantiates_all_types ensures
     # we have at least one.
-    for story in kwargs["stories"]:
+    for story in self.extract_stories(kwargs):
       if not isinstance(story, WebPowerMediaPlaybackStory):
         continue
       self.assertEqual(story.playback_duration,
@@ -224,9 +224,10 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         WebPowerMediaPlaybackStory.DEFAULT_DURATION.total_seconds())
     args = self.parse_args(f"--duration={expected_duration}s")
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
+    stories = self.extract_stories(kwargs)
 
-    self.assertEqual(len(kwargs["stories"]), 10)
-    for story in kwargs["stories"]:
+    self.assertEqual(len(stories), 10)
+    for story in stories:
       match story:
         case WebPowerIdleStory():
           self.assertEqual(story.idle_duration,
@@ -250,7 +251,7 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     )
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
 
-    stories = kwargs["stories"]
+    stories = self.extract_stories(kwargs)
     self.assertEqual(len(stories), 4)
 
     # 1. WebPowerIdleStory
@@ -285,8 +286,7 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
   def test_extra_flags_story_autoplay_assignment(self) -> None:
     args = self.parse_args(
         "--stories=idle-msn,page-load-cnn,media-playback-youtube")
-    kwargs = WebPowerBenchmark.kwargs_from_cli(args)
-    benchmark = WebPowerBenchmark(**kwargs)
+    benchmark = WebPowerBenchmark.from_cli_args(args)
 
     for story in benchmark.stories:
       flags = benchmark.extra_flags(BrowserAttributes.CHROMIUM_BASED, story)
@@ -301,7 +301,7 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         "--fullscreen",
     )
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerMediaPlaybackStory)
     self.assertTrue(story.fullscreen)
 
     args = self.parse_args(
@@ -309,7 +309,7 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         "--no-fullscreen",
     )
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerMediaPlaybackStory)
     self.assertFalse(story.fullscreen)
 
   def test_kwargs_from_cli_benchmark_version(self) -> None:

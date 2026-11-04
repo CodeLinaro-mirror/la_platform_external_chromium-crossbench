@@ -208,9 +208,8 @@ class BondClient:
         response_body_dict["numOfFailures"], "numOfFailures")
     if num_of_failures > 0:
       raise RuntimeError(f"{num_of_failures} failures when adding bots")
-    bot_ids = ObjectParser.sequence(response_body_dict["botIds"])
-    for bot_id in bot_ids:
-      NumberParser.any_int(bot_id)
+    raw_bot_ids = ObjectParser.sequence(response_body_dict["botIds"])
+    bot_ids = [NumberParser.any_int(bot_id) for bot_id in raw_bot_ids]
     self._meetings_with_bots.add(conference_code)
     return bot_ids
 

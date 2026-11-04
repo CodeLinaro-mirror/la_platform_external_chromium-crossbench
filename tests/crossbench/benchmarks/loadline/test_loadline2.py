@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
+from typing import Sequence
 from unittest import mock
 
 import pandas as pd
@@ -168,8 +169,10 @@ class BaseLoadLine2BenchmarkTestCase(
     kwargs = self.benchmark_cls.kwargs_from_cli(args)
     self.assertTrue(kwargs["deterministic"])
     self.assertIsInstance(kwargs["action_runner_config"], ActionRunnerConfig)
-    self.assertEqual(len(kwargs["stories"]), 1)
-    self.assertIsInstance(kwargs["stories"][0], CombinedPage)
+    stories = kwargs["stories"]
+    self.assertIsInstance(stories, Sequence)
+    self.assertEqual(len(stories), 1)
+    self.assertIsInstance(stories[0], CombinedPage)
 
 
 class TestLoadLine2PhoneBenchmark(BaseLoadLine2BenchmarkTestCase):

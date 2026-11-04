@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Final, TypedDict
+from typing import TYPE_CHECKING, ClassVar, Final, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -277,7 +277,7 @@ class LoadLine2Benchmark(LoadLineBenchmark):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["deterministic"] = args.deterministic
     return kwargs

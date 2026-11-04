@@ -1362,6 +1362,46 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
     self.assertIsInstance(self.host_platform.popen, mock.MagicMock)
     self.host_platform.popen.assert_not_called()
 
+  def test_wda_is_connected_malformed_value_asserts(self) -> None:
+    wda = WDAClient(self.platform)
+    ready_resp: dict[str, object] = {"value": {"ready": True}}
+    with mock.patch.object(wda, "_request", return_value=ready_resp):
+      self.assertTrue(wda.is_connected())
+    with mock.patch.object(wda, "_request", return_value={}):
+      self.assertFalse(wda.is_connected())
+    for invalid_value in ("not-a-mapping", 123, ["ready"], None):
+      bad_resp: dict[str, object] = {"value": invalid_value}
+      with self.subTest(value=invalid_value), mock.patch.object(
+          wda, "_request", return_value=bad_resp):
+        with self.assertRaisesRegex(AssertionError, "Invalid WDA status value"):
+          wda.is_connected()
+
+  def test_wda_extract_session_id_malformed_asserts(self) -> None:
+    self.assertEqual(
+        WDAClient._extract_session_id({"sessionId": "top-1"}), "top-1")
+    nested_resp: dict[str, object] = {"value": {"sessionId": "nested-1"}}
+    self.assertEqual(WDAClient._extract_session_id(nested_resp), "nested-1")
+    self.assertIsNone(WDAClient._extract_session_id({}))
+    self.assertIsNone(WDAClient._extract_session_id({"sessionId": ""}))
+
+    for invalid_session_id in (123, ["s"], {"id": "s"}):
+      with self.subTest(top_session_id=invalid_session_id):
+        with self.assertRaisesRegex(AssertionError, "Invalid WDA sessionId"):
+          WDAClient._extract_session_id({"sessionId": invalid_session_id})
+      with self.subTest(nested_session_id=invalid_session_id):
+        bad_nested: dict[str, object] = {
+            "value": {
+                "sessionId": invalid_session_id,
+            },
+        }
+        with self.assertRaisesRegex(AssertionError, "Invalid WDA sessionId"):
+          WDAClient._extract_session_id(bad_nested)
+
+    for invalid_value in ("not-a-mapping", 123, ["sessionId"], None):
+      with self.subTest(value=invalid_value):
+        with self.assertRaisesRegex(AssertionError, "Invalid WDA value"):
+          WDAClient._extract_session_id({"value": invalid_value})
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

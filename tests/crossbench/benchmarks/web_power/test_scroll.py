@@ -109,7 +109,7 @@ class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
   def test_kwargs_from_cli_defaults(self) -> None:
     args = self.parse_args("--site", "cnn")
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerScrollStory)
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.scroll_count,
                      WebPowerScrollStory.DEFAULT_SCROLL_COUNT)
@@ -125,7 +125,7 @@ class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         "--stabilization-time=15s",
     )
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerScrollStory)
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.scroll_count, 12)
     self.assertEqual(story.input_rate, 100)
@@ -138,7 +138,7 @@ class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         "--rate=90",
     )
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerScrollStory)
     self.assertEqual(story.scroll_count, 15)
     self.assertEqual(story.input_rate, 90)
 

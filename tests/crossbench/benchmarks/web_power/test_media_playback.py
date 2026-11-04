@@ -87,7 +87,7 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
   def test_kwargs_from_cli_defaults(self) -> None:
     args = self.parse_args("--site", "youtube")
     kwargs = WebPowerMediaPlaybackBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerMediaPlaybackStory)
     self.assertEqual(story.url, "https://www.youtube.com/watch?v=XITHbsUUlYI")
     self.assertEqual(story.volume, "on")
     self.assertEqual(story.playback_duration,
@@ -107,7 +107,7 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
         "--ambient-mode=unchanged",
     )
     kwargs = WebPowerMediaPlaybackBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerMediaPlaybackStory)
     self.assertEqual(story.url, "https://www.youtube.com/watch?v=XITHbsUUlYI")
     self.assertEqual(story.volume, "off")
     self.assertEqual(story.playback_duration, dt.timedelta(seconds=45))
@@ -118,12 +118,12 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
   def test_kwargs_from_cli_fullscreen(self) -> None:
     args = self.parse_args("--site=youtube", "--fullscreen")
     kwargs = WebPowerMediaPlaybackBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerMediaPlaybackStory)
     self.assertTrue(story.fullscreen)
 
     args = self.parse_args("--site=youtube", "--no-fullscreen")
     kwargs = WebPowerMediaPlaybackBenchmark.kwargs_from_cli(args)
-    [story] = kwargs["stories"]
+    story = self.extract_single_story(kwargs, WebPowerMediaPlaybackStory)
     self.assertFalse(story.fullscreen)
 
   def test_kwargs_from_cli_ambient_mode(self) -> None:
@@ -134,7 +134,7 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     ):
       args = self.parse_args("--site=youtube", f"--ambient-mode={mode_str}")
       kwargs = WebPowerMediaPlaybackBenchmark.kwargs_from_cli(args)
-      [story] = kwargs["stories"]
+      story = self.extract_single_story(kwargs, WebPowerMediaPlaybackStory)
       self.assertEqual(story.ambient_mode, mode_enum)
 
   def test_kwargs_from_cli_volume(self) -> None:
@@ -145,7 +145,7 @@ class WebPowerMediaPlaybackBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     ):
       args = self.parse_args("--site=youtube", f"--volume={vol}")
       kwargs = WebPowerMediaPlaybackBenchmark.kwargs_from_cli(args)
-      [story] = kwargs["stories"]
+      story = self.extract_single_story(kwargs, WebPowerMediaPlaybackStory)
       self.assertEqual(story.volume, expected_vol)
 
   def test_kwargs_from_cli_invalid(self) -> None:

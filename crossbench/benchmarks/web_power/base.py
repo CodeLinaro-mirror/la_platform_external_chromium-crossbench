@@ -8,8 +8,8 @@ import dataclasses
 import datetime as dt
 import functools
 import inspect
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Generic, Iterable, \
-    Mapping, Self, Sequence, TypeVar
+from typing import TYPE_CHECKING, ClassVar, Final, Generic, Iterable, \
+    Mapping, Self, Sequence, TypeVar, cast
 
 from typing_extensions import override
 
@@ -258,7 +258,7 @@ WebPowerStoryT = TypeVar("WebPowerStoryT", bound=WebPowerStory)
 class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
   """Base story filter for Web Power benchmarks."""
 
-  STORY_CLS: ClassVar[type[WebPowerStory]] = WebPowerStory  # type: ignore
+  STORY_CLS: ClassVar[type[WebPowerStory]] = WebPowerStory
 
   IS_SCENARIO_CLASS: ClassVar[bool] = False
 
@@ -284,12 +284,12 @@ class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
       **story_kwargs: object,
   ) -> None:
     self._url: Final[str] = url
-    self._story_kwargs: Final[dict[str, Any]] = story_kwargs
+    self._story_kwargs: Final[dict[str, object]] = story_kwargs
     super().__init__(story_cls, patterns, args, separate, tags)
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
     if site := args.site:
       kwargs["patterns"] = (site,)
@@ -597,9 +597,10 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
-    cls._configure_ios_browsers(args, kwargs["stories"])
+    stories = cast(Sequence[WebPowerStory], kwargs["stories"])
+    cls._configure_ios_browsers(args, stories)
     kwargs["has_custom_network"] = bool(args.network_config and
                                         not args.network_config.is_default())
     kwargs["allowed_build_types"] = args.allowed_build_types

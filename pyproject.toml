@@ -171,6 +171,8 @@ ignore = [
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "pathlib".msg = "Use `from crossbench import path as pth` and `pth.LocalPath` / `pth.AnyPath` instead."
+"typing.Any".msg = "Do not use `typing.Any`; use concrete types or `object` instead."
+"typing_extensions.Any".msg = "Do not use `typing_extensions.Any`; use concrete types or `object` instead."
 
 [tool.ruff.lint.per-file-ignores]
 "PRESUBMIT.py" = [

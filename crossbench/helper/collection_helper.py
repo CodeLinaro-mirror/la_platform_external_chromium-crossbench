@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import difflib
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Protocol, TypeVar
+from typing import TYPE_CHECKING, Callable, Iterable, Protocol, Self, TypeVar
 
 if TYPE_CHECKING:
   from crossbench import path as pth
@@ -19,6 +19,13 @@ if TYPE_CHECKING:
   # consumes items and never returns them, subtyping is contravariant.
   GroupItemT_contra = TypeVar("GroupItemT_contra", contravariant=True)
   PathT = TypeVar("PathT", bound=pth.AnyPath)
+
+  class ComparableProtocol(Protocol):
+
+    def __lt__(self, other: Self, /) -> bool:
+      pass
+
+  ComparableT = TypeVar("ComparableT", bound=ComparableProtocol)
 
   class GroupTProtocol(Protocol[GroupItemT_contra]):
 
@@ -37,7 +44,7 @@ def group_by(
     *,
     key: Callable[[InputT], KeyT],
     value: Callable[[InputT], ValueT] | None = None,
-    sort_key: Callable[[tuple[KeyT, Any]], Any] | None = str,
+    sort_key: Callable[[tuple[KeyT, list[ValueT]]], ComparableT] | None = str,
 ) -> dict[KeyT, list[ValueT]]:
   """
   Works similar to itertools.groupby but does a global, SQL-style grouping
@@ -63,7 +70,7 @@ def group_by_custom(
     key: Callable[[InputT], KeyT],
     group: Callable[[KeyT], GroupT],
     value: Callable[[InputT], ValueT] | None = None,
-    sort_key: Callable[[tuple[KeyT, Any]], Any] | None = str,
+    sort_key: Callable[[tuple[KeyT, GroupT]], ComparableT] | None = str,
 ) -> dict[KeyT, GroupT]:
   """
   Works similar to itertools.groupby but does a global, SQL-style grouping
@@ -91,9 +98,9 @@ def _group_by(
     key_fn: Callable[[InputT], KeyT],
     group_fn: Callable[[KeyT], GroupT],
     value_fn: Callable[[InputT], ValueT],
-    sort_key_fn: Callable[[tuple[KeyT, Any]], Any] | None = str,
+    sort_key_fn: Callable[[tuple[KeyT, GroupT]], ComparableT] | None = str,
 ) -> dict[KeyT, GroupT]:
-  if not key_fn:  # type: ignore
+  if not key_fn:
     raise ValueError("No key function provided")
   groups: dict[KeyT, GroupT] = {}
 

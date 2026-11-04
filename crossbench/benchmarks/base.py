@@ -9,7 +9,7 @@ import argparse
 import datetime as dt
 import logging
 import re
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Generic, Iterable, \
+from typing import TYPE_CHECKING, ClassVar, Final, Generic, Iterable, \
     Mapping, NotRequired, Sequence, TypeAlias, TypedDict, TypeVar
 
 from ordered_set import OrderedSet
@@ -58,7 +58,7 @@ class BenchmarkDescription(TypedDict):
 class Benchmark(abc.ABC):
   # TODO: migrate to abstract class methods
   NAME: ClassVar[str]
-  DEFAULT_STORY_CLS: ClassVar[type[Story]] = Story  # type: ignore
+  DEFAULT_STORY_CLS: ClassVar[type[Story]] = Story
   PROBES: ClassVar[tuple[type[BenchmarkProbeMixin], ...]] = ()
   DEFAULT_REPETITIONS: ClassVar[int] = 1
   DEFAULT_COOL_DOWN: ClassVar[dt.timedelta] = dt.timedelta(seconds=2)
@@ -169,12 +169,13 @@ class Benchmark(abc.ABC):
     return Flags()
 
   @classmethod
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     return {"action_runner_config": args.action_runner_config}
 
   @classmethod
   def from_cli_args(cls, args: argparse.Namespace) -> Self:
     kwargs = cls.kwargs_from_cli(args)
+    # pyrefly: ignore[bad-argument-type]
     return cls(**kwargs)
 
   def __init__(self,
@@ -288,7 +289,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
     group.set_defaults(separate=False)
 
   @classmethod
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     if story_tags := args.story_tags:
       tags: tuple[str, ...] = ObjectParser.str_tuple(story_tags, "story_tags")
       patterns: tuple[str, ...] = ()
@@ -347,6 +348,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
   def from_cli_args(cls, story_cls: type[StoryT],
                     args: argparse.Namespace) -> Self:
     kwargs = cls.kwargs_from_cli(args)
+    # pyrefly: ignore[bad-argument-type]
     return cls(story_cls, **kwargs)
 
   def __init__(
@@ -415,7 +417,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
 
 
 class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
-  STORY_FILTER_CLS: ClassVar[type[StoryFilter]] = StoryFilter  # type: ignore
+  STORY_FILTER_CLS: ClassVar[type[StoryFilter]] = StoryFilter
 
   @classmethod
   @override
@@ -435,7 +437,7 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["stories"] = cls.stories_from_cli_args(args)
     return kwargs
@@ -727,7 +729,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["separate"] = args.separate
     kwargs["url"] = args.custom_benchmark_url
@@ -755,8 +757,7 @@ class PressBenchmarkStoryFilter(StoryFilter[PressBenchmarkStoryT],
 class PressBenchmark(SubStoryBenchmark):
   STORY_FILTER_CLS: ClassVar[
       type[PressBenchmarkStoryFilter]] = PressBenchmarkStoryFilter
-  DEFAULT_STORY_CLS: ClassVar[
-      type[PressBenchmarkStory]] = PressBenchmarkStory  # type: ignore
+  DEFAULT_STORY_CLS: ClassVar[type[PressBenchmarkStory]] = PressBenchmarkStory
   # Crossbench-relative dir of the benchmark sources (see DEPS), served by
   # default from a local file server. None if not available.
   LOCAL_DIR: ClassVar[pth.LocalPath | None] = None
@@ -862,7 +863,7 @@ class PressBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["custom_url"] = args.custom_benchmark_url
     return kwargs

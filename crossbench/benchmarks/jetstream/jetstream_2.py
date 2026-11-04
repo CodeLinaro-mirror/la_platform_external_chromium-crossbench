@@ -7,8 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterable, Mapping, \
-    Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, Sequence
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -194,7 +193,7 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["url_params"] = cls.url_params_from_cli(args)
     return kwargs

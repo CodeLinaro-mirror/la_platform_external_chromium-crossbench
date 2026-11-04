@@ -8,7 +8,7 @@ import abc
 import contextlib
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, Final
+from typing import TYPE_CHECKING, ClassVar, Final
 
 from typing_extensions import override
 
@@ -145,7 +145,7 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["start_after"] = args.start_after
     kwargs["run_for"] = args.run_for

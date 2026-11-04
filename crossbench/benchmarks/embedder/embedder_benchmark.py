@@ -9,8 +9,7 @@ import argparse
 import datetime as dt
 import logging
 import re
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterator, Mapping, \
-    Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Iterator, Mapping, Sequence
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -267,7 +266,7 @@ class EmbedderBenchmark(SubStoryBenchmark):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["embedder_process_name"] = args.embedder_process_name
     kwargs["embedder_push_files"] = args.embedder_push_files

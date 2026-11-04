@@ -117,8 +117,10 @@ class WebAIProbeContext(JsonResultProbeContext):
   @override
   def flatten_json_data(self, json_data: Json) -> Json:
     if isinstance(json_data, list):
-      metrics_data = ObjectParser.non_empty_sequence(
-          json_data, f"{self.probe.name} metrics")
+      metrics_data = [
+          ObjectParser.dict(item) for item in ObjectParser.non_empty_sequence(
+              json_data, f"{self.probe.name} metrics")
+      ]
       return MetricsMerger(metrics_data).to_json(
           value_fn=lambda values: values.average)
     if isinstance(json_data, dict):

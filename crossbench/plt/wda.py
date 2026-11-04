@@ -33,7 +33,7 @@ import subprocess
 import tempfile
 import urllib.error
 import urllib.request
-from typing import IO, TYPE_CHECKING, Any, Final, Mapping, Sequence
+from typing import IO, TYPE_CHECKING, Final, Mapping, Sequence, cast
 
 from crossbench.helper.wait import wait_with_backoff
 from crossbench.plt.bin import Binaries
@@ -43,6 +43,7 @@ from crossbench.plt.port_manager import PortForwardException
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.plt.ios import IOSPlatform
+  from crossbench.types import JsonDict, JsonMapping
 
 # The keys under which WebDriver responses carry an element's id: the W3C
 # WebDriver "web element identifier" (a fixed string, see
@@ -73,7 +74,7 @@ class WDAClient:
     self._local_port: int = 0
     self._remote_port: Final[int] = remote_port
     self._session_id: str | None = None
-    self._xcodebuild_proc: subprocess.Popen[Any] | None = None
+    self._xcodebuild_proc: subprocess.Popen | None = None
     # While not enabled, no session is created: requests fail instead of
     # silently relaunching the XCTest runner (see SafariWdaIOS.manual).
     self._enabled: bool = True
@@ -91,9 +92,9 @@ class WDAClient:
       self,
       method: str,
       endpoint: str,
-      data: dict[str, Any] | None = None,
+      data: JsonMapping | None = None,
       timeout: dt.timedelta = REQUEST_TIMEOUT,
-  ) -> dict[str, Any]:
+  ) -> JsonDict:
     url = f"{self.base_url}/{endpoint.lstrip('/')}"
     req_data = json.dumps(data).encode("utf-8") if data is not None else None
     req = urllib.request.Request(  # noqa: S310
@@ -115,7 +116,7 @@ class WDAClient:
       self,
       endpoint: str,
       timeout: dt.timedelta = REQUEST_TIMEOUT,
-  ) -> dict[str, Any]:
+  ) -> JsonDict:
     """GET an endpoint of the active session, starting one if needed."""
     session_id = self.ensure_session()
     return self._request(
@@ -124,9 +125,9 @@ class WDAClient:
   def _session_post(
       self,
       endpoint: str,
-      data: dict[str, Any] | None = None,
+      data: JsonMapping | None = None,
       timeout: dt.timedelta = REQUEST_TIMEOUT,
-  ) -> dict[str, Any]:
+  ) -> JsonDict:
     """POST to an endpoint of the active session, starting one if needed."""
     session_id = self.ensure_session()
     return self._request(
@@ -137,6 +138,7 @@ class WDAClient:
     try:
       status = self._request("GET", "/status", timeout=dt.timedelta(seconds=2))
       value = status.get("value", {})
+      assert isinstance(value, Mapping), f"Invalid WDA status value: {value!r}"
       return bool(value.get("ready", False))
     except (WDAError, urllib.error.URLError, TimeoutError, OSError):
       return False
@@ -386,8 +388,7 @@ class WDAClient:
 
     try:
       status = self._request("GET", "/status", timeout=self.REQUEST_TIMEOUT)
-      if session_id := (status.get("sessionId") or
-                        status.get("value", {}).get("sessionId")):
+      if session_id := self._extract_session_id(status):
         self._session_id = session_id
         self._configure_session()
         return session_id
@@ -405,14 +406,28 @@ class WDAClient:
           timeout=self.REQUEST_TIMEOUT)
     except (WDAError, urllib.error.URLError, TimeoutError, OSError) as e:
       raise WDAError("Failed to create WebDriverAgent session") from e
-    session_id = resp.get("sessionId") or resp.get("value", {}).get("sessionId")
+    session_id = self._extract_session_id(resp)
     if not session_id:
       raise WDAError(f"Failed to create WebDriverAgent session: {resp}")
     self._session_id = session_id
     self._configure_session()
     return self._session_id
 
-  def set_settings(self, settings: dict[str, Any]) -> None:
+  @staticmethod
+  def _extract_session_id(resp: Mapping[str, object]) -> str | None:
+    session_id = resp.get("sessionId")
+    assert session_id is None or isinstance(
+        session_id, str), f"Invalid WDA sessionId: {session_id!r}"
+    if session_id:
+      return session_id
+    value = resp.get("value", {})
+    assert isinstance(value, Mapping), f"Invalid WDA value: {value!r}"
+    session_id = value.get("sessionId")
+    assert session_id is None or isinstance(
+        session_id, str), f"Invalid WDA sessionId: {session_id!r}"
+    return session_id
+
+  def set_settings(self, settings: JsonMapping) -> None:
     """Update WebDriverAgent runtime settings for the active session."""
     self._session_post("appium/settings", {"settings": settings})
 
@@ -432,7 +447,7 @@ class WDAClient:
   def window_size(self) -> DisplayResolution:
     """Return device window dimensions in points."""
     resp = self._session_get("window/size")
-    val = resp.get("value", {})
+    val = cast(Mapping[str, float], resp.get("value", {}))
     width = int(val.get("width", 0))
     height = int(val.get("height", 0))
     if width <= 0 or height <= 0:
@@ -460,9 +475,10 @@ class WDAClient:
       if not elem_id:
         return None
       rect_resp = self._session_get(f"element/{elem_id}/rect")
-      rect = rect_resp.get("value", {})
+      rect = rect_resp.get("value")
       if isinstance(rect, dict) and "x" in rect and "y" in rect:
-        return (int(rect["x"]), int(rect["y"]))
+        coords = cast(dict[str, float], rect)
+        return (int(coords["x"]), int(coords["y"]))
     except (WDAError, urllib.error.URLError, TimeoutError, OSError,
             ValueError) as e:
       logging.debug("Could not query WebView offset from WDA: %s", e)
@@ -525,12 +541,12 @@ class WDAClient:
       duration: dt.timedelta,
       settle_duration: dt.timedelta,
       start_delay_ms: int = 0,
-  ) -> list[dict[str, object]]:
+  ) -> list[JsonDict]:
     duration_ms = max(50, int(duration.total_seconds() * 1000))
     settle_ms = max(0, int(settle_duration.total_seconds() * 1000))
     dx = to_x - from_x
     dy = to_y - from_y
-    actions: list[dict[str, object]] = []
+    actions: list[JsonDict] = []
     if start_delay_ms > 0:
       actions.append({"type": "pause", "duration": start_delay_ms})
     actions.extend([
@@ -636,7 +652,7 @@ class WDAClient:
     cycle_ms = (
         duration_ms + max(0, int(settle_duration.total_seconds() * 1000)) +
         max(0, int(lift_duration.total_seconds() * 1000)))
-    pointer_chains = []
+    pointer_chains: list[JsonDict] = []
     for i, (from_x, from_y, to_x, to_y) in enumerate(swipes):
       pointer_chains.append({
           "type":
@@ -662,7 +678,7 @@ class WDAClient:
 
   def perform_pointer_chains(
       self,
-      pointer_chains: Sequence[dict[str, Any]],
+      pointer_chains: Sequence[JsonMapping],
       total_duration: dt.timedelta,
   ) -> None:
     """Execute a batch of W3C pointer action chains in a single request."""
@@ -739,7 +755,7 @@ class WDAClient:
       env_vars: Mapping[str, str] | None = None,
   ) -> None:
     """Launch an application on the device by bundle identifier."""
-    payload: dict[str, Any] = {"bundleId": bundle_id}
+    payload: JsonDict = {"bundleId": bundle_id}
     if arguments:
       payload["arguments"] = list(arguments)
     if env_vars:

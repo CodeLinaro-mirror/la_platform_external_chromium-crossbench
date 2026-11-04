@@ -16,7 +16,7 @@ import json
 import logging
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Final, Generic, \
+from typing import TYPE_CHECKING, Callable, ClassVar, Final, Generic, \
     Iterable, Sequence, TypeAlias, TypeGuard, TypeVar, cast
 
 import tabulate
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
   import builtins
   import urllib.parse as urlparse
 
-  ArgParserType: TypeAlias = Callable[..., object] | type[Any]
+  ArgParserType: TypeAlias = Callable[..., object] | type
 
 
 class ConfigError(argparse.ArgumentTypeError):
@@ -200,10 +200,13 @@ class ConfigArgParser:
   def _validate_enum_default(self, enum_type: type[enum.Enum],
                              default: object) -> object:
     if self.is_list:
+      assert isinstance(
+          default,
+          Iterable), (f"Default must be an iterable, but got: {default}")
       default_list = default
     else:
       default_list = (default,)
-    for default_item in default_list:  # type: ignore
+    for default_item in default_list:
       assert isinstance(default_item, enum_type), (
           f"Default must be a {enum_type} enum, but got: {default}")
     return default
@@ -293,7 +296,7 @@ class ConfigArgParser:
   def _enum_help_text(self,
                       enum_type: type[enum.Enum]) -> list[tuple[str, str]]:
     if issubclass(enum_type, StrEnumWithHelp):
-      return [("choices", ""), *enum_type.help_text_items()]  # type: ignore
+      return [("choices", ""), *enum_type.help_text_items()]
     assert self.choices, "Expected choices"
     return [self._choices_help_text(choice.value for choice in self.choices)]
 
@@ -420,7 +423,7 @@ class ConfigArgParser:
                       data: object) -> enum.Enum:
     assert self.choices, "Expected choices"
     if issubclass(enum_type, ConfigEnum):
-      return enum_type.parse(data)  # type: ignore
+      return enum_type.parse(data)
     return ObjectParser.enum(self.name, enum_type, data, self.choices)
 
 
@@ -1266,7 +1269,9 @@ class ConfigParser(Generic[ConfigResultObjectT]):
   def parse_str(self, value: str) -> ConfigResultObjectT:
     if not self._default_arg:
       if issubclass(self.cls, ConfigObject):
-        return self.cls.parse_str(value)  # type: ignore[return-value]
+        result = self.cls.parse_str(value)
+        assert isinstance(result, self._cls)
+        return result
       raise ValueError(f"{self.key}: Cannot parse string: {value!r}")
     default_arg_name: str = self._default_arg.name
     config_data = {default_arg_name: value}

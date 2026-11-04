@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Sequence
 
 from typing_extensions import override
 
@@ -147,7 +147,7 @@ class PowerlineStoryFilter(StoryFilter[PowerlineStory]):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["run_for"] = args.run_for
     return kwargs

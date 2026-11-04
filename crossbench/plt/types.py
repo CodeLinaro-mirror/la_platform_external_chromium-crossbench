@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from asyncio.subprocess import Process
 from subprocess import Popen
-from typing import IO, Any, NotRequired, Sequence, TypeAlias, TypedDict
+from typing import IO, NotRequired, Sequence, TypeAlias, TypedDict
 
 from crossbench import path as pth
 
@@ -18,7 +18,7 @@ CmdArgs: TypeAlias = ListCmdArgs | TupleCmdArgs
 
 ProcessLike: TypeAlias = Popen | Process | int
 
-ProcessIo: TypeAlias = int | IO[Any] | None
+ProcessIo: TypeAlias = int | IO[str] | IO[bytes] | None
 
 PlatformKey: TypeAlias = tuple[str, ...]
 

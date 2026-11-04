@@ -10,7 +10,7 @@ import datetime as dt
 import logging
 import subprocess
 import time
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Final, Iterable
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable
 
 from immutabledict import immutabledict
 from typing_extensions import override
@@ -419,13 +419,19 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
     current_time = start_time
 
     for event in events:
-      if isinstance(event, WaitEvent):
-        current_time += event.duration
-        continue
-      generator = self._EVENT_GENERATORS.get(type(event))
-      if generator is None:
-        raise ValueError(f"Unsupported event type: {type(event).__name__}")
-      generator(self, lines, event, current_time)
+      match event:
+        case WaitEvent():
+          current_time += event.duration
+        case KeyEvent():
+          self._generate_key_event(lines, event, current_time)
+        case TouchEvent():
+          self._generate_touch_event(lines, event, current_time)
+        case MouseButtonEvent():
+          self._generate_mouse_button_event(lines, event, current_time)
+        case MouseMoveEvent():
+          self._generate_mouse_move_event(lines, event, current_time)
+        case _:
+          raise ValueError(f"Unsupported event type: {type(event).__name__}")
 
     return ("\n".join(lines) + "\n" if lines else ""), current_time
 
@@ -495,13 +501,3 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
     self._add_line(lines, current_time, EV_ABS, ABS_MT_POSITION_Y,
                    event.position.y)
     self._add_line(lines, current_time, EV_SYN, SYN_REPORT, 0)
-
-  _EVENT_GENERATORS: ClassVar[immutabledict[
-      type[InputEvent],
-      Callable[[Any, list[str], Any, dt.timedelta], None],
-  ]] = immutabledict({
-      KeyEvent: _generate_key_event,
-      TouchEvent: _generate_touch_event,
-      MouseButtonEvent: _generate_mouse_button_event,
-      MouseMoveEvent: _generate_mouse_move_event,
-  })

@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Iterable, Mapping, \
-    Self, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, Self, \
+    Sequence
 
 from typing_extensions import override
 
@@ -162,7 +162,7 @@ class LoadingPageFilter(StoryFilter[Page]):
 
   @classmethod
   @override
-  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, Any]:
+  def kwargs_from_cli(cls, args: argparse.Namespace) -> dict[str, object]:
     kwargs = super().kwargs_from_cli(args)
     kwargs["separate"] = args.separate
     kwargs["pages_config"] = args.pages_config
@@ -181,6 +181,7 @@ class LoadingPageFilter(StoryFilter[Page]):
                   config: PagesConfig) -> Self:
     kwargs = cls.kwargs_from_cli(args)
     kwargs["pages_config"] = config
+    # pyrefly: ignore[bad-argument-type]
     return cls(story_cls, **kwargs)
 
   def __init__(
@@ -309,7 +310,7 @@ class LoadingBenchmark(SubStoryBenchmark):
     --urls=http://twitter.com,5s,http://cnn.com,10s
   """
   NAME: ClassVar = "loading"
-  DEFAULT_STORY_CLS: ClassVar = Page
+  DEFAULT_STORY_CLS: ClassVar[type[Page]] = Page
   STORY_FILTER_CLS: ClassVar[type[LoadingPageFilter]] = LoadingPageFilter
 
   @classmethod
@@ -330,11 +331,8 @@ class LoadingBenchmark(SubStoryBenchmark):
         raise argparse.ArgumentTypeError(
             f"Cannot specify --stories={args.stories!r} "
             "with any other page config option.")
-      return cls.STORY_FILTER_CLS.from_config(
-          cls.DEFAULT_STORY_CLS,  # type: ignore[type-abstract]
-          args,
-          config,
-      ).stories
+      return cls.STORY_FILTER_CLS.from_config(cls.DEFAULT_STORY_CLS, args,
+                                              config).stories
 
     if args.urls:
       # TODO: make urls and stories mutually exclusive.
