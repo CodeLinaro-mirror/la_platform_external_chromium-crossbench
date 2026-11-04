@@ -22,16 +22,16 @@ if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
 
 
-class MotionMark20Probe(MotionMark1Probe):
+class MotionMark2PreviewProbe(MotionMark1Probe):
   __doc__ = MotionMark1Probe.__doc__
-  NAME: ClassVar = "motionmark_2.0"
+  NAME: ClassVar[str] = "motionmark_2.0-preview"
 
   @override
-  def get_context_cls(self) -> type[MotionMark20ProbeContext]:
-    return MotionMark20ProbeContext
+  def get_context_cls(self) -> type[MotionMark2PreviewProbeContext]:
+    return MotionMark2PreviewProbeContext
 
 
-class MotionMark20ProbeContext(MotionMark1ProbeContext):
+class MotionMark2PreviewProbeContext(MotionMark1ProbeContext):
   JS: ClassVar[str] = """
     const runnerClient = window.benchmarkController?.runnerClient ||
         window.benchmarkRunnerClient;
@@ -40,11 +40,12 @@ class MotionMark20ProbeContext(MotionMark1ProbeContext):
   """
 
 
-class MotionMark20Story(MotionMark1Story):
-  NAME: ClassVar = "motionmark_2.0"
-  URL: ClassVar[str] = "https://browserben.ch/motionmark/v2.0-custom/MotionMark"
-  URL_OFFICIAL: ClassVar[
-      str] = "https://browserben.ch/motionmark/v2.0-custom/MotionMark"
+class MotionMark2PreviewStory(MotionMark1Story):
+  NAME: ClassVar[str] = "motionmark_2.0-preview"
+  URL: ClassVar[str] = (
+      "https://browserben.ch/motionmark/v2.0-experimental-custom/MotionMark")
+  URL_OFFICIAL: ClassVar[str] = (
+      "https://browserben.ch/motionmark/v2.0-experimental-custom/MotionMark")
   READY_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=12)
   DEVELOPER_READY_JS: ClassVar[str] = (
       "return !(document.querySelector('#frame-rate-detection span'));")
@@ -139,19 +140,26 @@ class MotionMark20Story(MotionMark1Story):
           delay=self.substory_duration / 4)
 
 
-class MotionMark20Benchmark(MotionMark1Benchmark):
+class MotionMark2PreviewBenchmark(MotionMark1Benchmark):
   """
-  Benchmark runner for MotionMark 2.0.
+  Benchmark runner for MotionMark 2.0 preview.
   """
 
-  NAME: ClassVar = "motionmark_2.0"
-  DEFAULT_STORY_CLS: ClassVar = MotionMark20Story
-  PROBES: ClassVar = (MotionMark20Probe,)
+  NAME: ClassVar[str] = "motionmark_2.0-preview"
+  DEFAULT_STORY_CLS: ClassVar[
+      type[MotionMark2PreviewStory]] = MotionMark2PreviewStory
+  PROBES: ClassVar[tuple[type[MotionMark2PreviewProbe],
+                         ...]] = (MotionMark2PreviewProbe,)
 
   @classmethod
   @override
   def version(cls) -> VersionParts:
     return (2, 0)
+
+  @classmethod
+  @override
+  def aliases(cls) -> tuple[str, ...]:
+    return ("mm2-preview", "motionmark2-preview")
 
   @override
   def setup(self, runner: Runner) -> None:

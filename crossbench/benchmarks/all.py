@@ -26,8 +26,8 @@ from crossbench.benchmarks.manual import ManualBenchmark
 from crossbench.benchmarks.memory.memory_benchmark import MemoryBenchmark
 from crossbench.benchmarks.motionmark import MotionMark10Benchmark, \
     MotionMark11Benchmark, MotionMark12Benchmark, MotionMark13Benchmark, \
-    MotionMark20Benchmark, MotionMark131Benchmark, MotionMark132Benchmark, \
-    MotionMarkMainBenchmark
+    MotionMark2PreviewBenchmark, MotionMark131Benchmark, \
+    MotionMark132Benchmark, MotionMarkMainBenchmark
 from crossbench.benchmarks.multiwindow_memory_stress import \
     MultiwindowMemoryStressBenchmark
 from crossbench.benchmarks.powerline import PowerlineBenchmark
@@ -74,7 +74,7 @@ __all__ = [
     "MotionMark131Benchmark",
     "MotionMark132Benchmark",
     "MotionMark13Benchmark",
-    "MotionMark20Benchmark",
+    "MotionMark2PreviewBenchmark",
     "MotionMarkMainBenchmark",
     "MultiwindowMemoryStressBenchmark",
     "PowerlineBenchmark",

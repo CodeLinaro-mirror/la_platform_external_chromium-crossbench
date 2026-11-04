@@ -185,7 +185,7 @@ class CrossBenchCLI:
       benchmarks.MotionMark13Benchmark,
       benchmarks.MotionMark131Benchmark,
       benchmarks.MotionMark132Benchmark,
-      benchmarks.MotionMark20Benchmark,
+      benchmarks.MotionMark2PreviewBenchmark,
       benchmarks.MotionMarkMainBenchmark,
       # Multiwindow memory stress:
       benchmarks.MultiwindowMemoryStressBenchmark,

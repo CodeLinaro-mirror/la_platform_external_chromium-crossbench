@@ -10,9 +10,9 @@ from unittest import mock
 
 from typing_extensions import override
 
-from crossbench.benchmarks.motionmark.motionmark_2_0 import \
-    MotionMark20Benchmark, MotionMark20Probe, MotionMark20ProbeContext, \
-    MotionMark20Story
+from crossbench.benchmarks.motionmark.motionmark_2_preview import \
+    MotionMark2PreviewBenchmark, MotionMark2PreviewProbe, \
+    MotionMark2PreviewProbeContext, MotionMark2PreviewStory
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
@@ -20,7 +20,7 @@ from tests.crossbench.benchmarks.motionmark.helper import \
     MotionMark1BaseTestCase
 
 
-class MotionMark20TestCase(MotionMark1BaseTestCase):
+class MotionMark2PreviewTestCase(MotionMark1BaseTestCase):
 
   EXAMPLE_PROBE_DATA = [{
       "testsResults": {
@@ -63,22 +63,29 @@ class MotionMark20TestCase(MotionMark1BaseTestCase):
   @property
   @override
   def benchmark_cls(self):
-    return MotionMark20Benchmark
+    return MotionMark2PreviewBenchmark
 
   @property
   @override
   def story_cls(self):
-    return MotionMark20Story
+    return MotionMark2PreviewStory
 
   @property
   @override
   def probe_cls(self):
-    return MotionMark20Probe
+    return MotionMark2PreviewProbe
 
   @property
   @override
   def probe_context_cls(self):
-    return MotionMark20ProbeContext
+    return MotionMark2PreviewProbeContext
+
+  @override
+  def test_aliases(self):
+    super().test_aliases()
+    self.assertEqual(self.benchmark_cls.NAME, "motionmark_2.0-preview")
+    self.assertEqual(self.benchmark_cls.aliases(),
+                     ("mm2-preview", "motionmark2-preview"))
 
   @override
   def _test_run(self, custom_url: str | None = None, throw: bool = False):
