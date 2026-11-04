@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import copy
 import datetime as dt
 import json
@@ -15,7 +16,7 @@ from immutabledict import immutabledict
 from typing_extensions import override
 
 from crossbench.benchmarks.blink_ai.blink_ai import BlinkAIBenchmark, \
-    BlinkAIStory
+    BlinkAIStory, BlinkAIStoryFilter
 from crossbench.benchmarks.blink_ai.config.base import BlinkAIApiConfig, \
     BlinkAIModelConfig, BlinkAISubstoryConfig
 from crossbench.benchmarks.blink_ai.config.language_model import \
@@ -68,6 +69,14 @@ class BlinkAITestCase(helper.SubStoryTestCase):
   @property
   def probe_context_cls(self):
     return BlinkAIProbeContext
+
+  @override
+  def test_instantiate_all_stories(self) -> None:
+    with self.assertRaises(ValueError):
+      self.story_filter(self.story_cls.all_story_names(), separate=False)
+    stories = self.story_filter(
+        self.story_cls.all_story_names(), separate=True).stories
+    self.benchmark_cls(stories)
 
   def _setup_run_js_expect(
       self,
@@ -465,6 +474,68 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     with self.assertRaises(ValueError):
       self.story_cls.from_names(["language_model"], model="unknown_model")
 
+  def test_story_filter_cohort_validation(self) -> None:
+    self.assertIs(self.benchmark_cls.STORY_FILTER_CLS, BlinkAIStoryFilter)
+    self.assertIn("language_model", BlinkAIStoryFilter.api_configs_help())
+    self.assertEqual(BlinkAIStoryFilter.model_choices(), ("default", "v4"))
+    self.assertTrue(self.benchmark_cls.cli_description())
+    with self.assertRaises(ValueError):
+      BlinkAIStoryFilter.parse_api_names("language_model,language_model")
+    with self.assertRaises(ValueError):
+      BlinkAIStoryFilter.parse_api_names(())
+
+    compatible_filter = self.story_filter(["mtp_summary", "mtp_flight"],
+                                          separate=False)
+    self.assertEqual(len(compatible_filter.stories), 1)
+
+    with self.assertRaises(ValueError):
+      self.story_filter(["language_model", "mtp_summary"], separate=False)
+
+    args_conflict = self.parse_args("--stories=language_model,tool_calling",
+                                    "--combined")
+    with self.assertRaises(ValueError):
+      self.benchmark_cls.from_cli_args(args_conflict)
+
+    args_separate = self.parse_args(
+        "--stories=language_model,mtp_summary,tool_calling",
+        "--separate",
+        "--api=language_model",
+    )
+    benchmark = self.benchmark_cls.from_cli_args(args_separate)
+    self.assertEqual(len(benchmark.stories), 3)
+
+    single_neg_args = self.parse_args(
+        "--stories=default,-multimodal_audio,-multimodal_images")
+    single_neg_bm = self.benchmark_cls.from_cli_args(single_neg_args)
+    self.assertEqual(
+        single_neg_bm.stories[0].substories,
+        ("language_model", "multimodal_image"),
+    )
+
+    with self.assertRaises(ValueError):
+      compatible_filter.filter_by_name("default")
+
+  def test_cli_model_argument(self) -> None:
+    args = self.parse_args("--stories=language_model", "--model=v4")
+    benchmark = self.benchmark_cls.from_cli_args(args)
+    self.assertEqual(len(benchmark.stories), 1)
+    story = benchmark.stories[0]
+    assert isinstance(story, BlinkAIStory)
+    self.assertEqual(story.model, "v4")
+    flags = self.benchmark_cls.extra_flags(self.browsers[0].attributes(), story)
+    self.assertIn("AIApiFoundationalModel:model_version/v4", str(flags))
+
+    tool_v4_args = self.parse_args("--stories=tool_calling", "--model=v4")
+    tool_v4_benchmark = self.benchmark_cls.from_cli_args(tool_v4_args)
+    self.assertEqual(len(tool_v4_benchmark.stories), 1)
+    self.assertEqual(tool_v4_benchmark.stories[0].name,
+                     "language_model_tool_calling")
+
+    tool_conflict_args = self.parse_args("--stories=tool_calling",
+                                         "--model=default")
+    with self.assertRaises(ValueError):
+      self.benchmark_cls.from_cli_args(tool_conflict_args)
+
   def test_custom_api_config_and_setup_js_global(self) -> None:
     writer_api = BlinkAIApiConfig.create(
         name="writer",
@@ -516,6 +587,111 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       self.assertEqual(len(cropped_name), MAX_STORY_NAME_LEN)
       self.assertTrue(cropped_name.startswith(long_name[:55]))
       self.assertEqual(cropped_name, short_story._crop_name(long_name))
+
+      multi_args = self.parse_args("--api=language_model,writer")
+      multi_benchmark = self.benchmark_cls.from_cli_args(multi_args)
+      self.assertEqual(
+          len(multi_benchmark.stories),
+          len(LANGUAGE_MODEL_API.default_substories) +
+          len(writer_api.default_substories),
+      )
+
+      all_api_args = self.parse_args("--api=all")
+      all_api_benchmark = self.benchmark_cls.from_cli_args(all_api_args)
+      self.assertEqual(
+          len(all_api_benchmark.stories),
+          len(LANGUAGE_MODEL_API.default_substories) +
+          len(writer_api.default_substories),
+      )
+
+      all_api_sep_args = self.parse_args("--api=all", "--separate")
+      all_api_sep_benchmark = self.benchmark_cls.from_cli_args(all_api_sep_args)
+      self.assertEqual(
+          len(all_api_sep_benchmark.stories),
+          len(LANGUAGE_MODEL_API.default_substories) +
+          len(writer_api.default_substories),
+      )
+
+      with self.assertRaises(argparse.ArgumentTypeError):
+        self.benchmark_cls.from_cli_args(
+            self.parse_args("--api=language_model,writer", "--combined"))
+
+      qualified_subset_args = self.parse_args(
+          "--api=language_model,writer",
+          "--stories=language_model:mtp_summary,writer:short",
+      )
+      qualified_subset_bm = self.benchmark_cls.from_cli_args(
+          qualified_subset_args)
+      self.assertEqual(
+          tuple(s.name for s in qualified_subset_bm.stories),
+          ("language_model_mtp_summary", "writer_short"),
+      )
+
+      for neg_pattern in ("writer:-long", "-writer:-long", "-writer:long"):
+        neg_bm = self.benchmark_cls.from_cli_args(
+            self.parse_args(
+                "--api=language_model,writer",
+                f"--stories=writer:default,{neg_pattern}",
+            ))
+        self.assertEqual(
+            tuple(s.name for s in neg_bm.stories),
+            ("writer_short",),
+        )
+
+      with self.assertRaises(ValueError):
+        self.benchmark_cls.from_cli_args(
+            self.parse_args(
+                "--api=language_model,writer",
+                "--stories=writer:short,-writer:short",
+            ))
+      with self.assertRaises(ValueError):
+        self.benchmark_cls.from_cli_args(
+            self.parse_args("--api=writer", "--stories=writer:"))
+
+      multi_filter = self.story_filter(
+          ["default"],
+          separate=True,
+          api_names=("language_model", "writer"),
+      )
+      assert isinstance(multi_filter, BlinkAIStoryFilter)
+      from_names_stories = multi_filter.stories_from_names(
+          ("language_model:mtp_summary", "writer:short"))
+      self.assertEqual(
+          tuple(s.name for s in from_names_stories),
+          ("language_model_mtp_summary", "writer_short"),
+      )
+      with self.assertRaises(ValueError):
+        multi_filter.stories_from_names(("short",))
+      with self.assertRaises(ValueError):
+        self.story_filter(
+            ["default"],
+            separate=False,
+            api_names=("language_model", "writer"),
+        )
+
+      with self.assertRaises(ValueError):
+        self.benchmark_cls.from_cli_args(
+            self.parse_args("--api=language_model,writer",
+                            "--stories=mtp_summary"))
+      with self.assertRaises(ValueError):
+        self.benchmark_cls.from_cli_args(
+            self.parse_args("--api=language_model", "--stories=writer:short"))
+      with self.assertRaises(ValueError):
+        self.benchmark_cls.from_cli_args(
+            self.parse_args("--api=language_model", "--stories=:short"))
+
+      with self.assertRaises(argparse.ArgumentTypeError):
+        self.benchmark_cls.from_cli_args(
+            self.parse_args("--api=language_model,writer", "--model=v4"))
+      with self.assertRaises(ValueError):
+        self.story_filter(
+            ["default"],
+            separate=True,
+            api_names=("language_model", "writer"),
+            model="v4",
+        )
+      with self.assertRaises(argparse.ArgumentError):
+        self.parse_args("--api=all,writer")
 
       mock_actions = mock.MagicMock()
       mock_actions.__enter__.return_value = mock_actions
