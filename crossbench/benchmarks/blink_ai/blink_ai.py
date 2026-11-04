@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence
 
 from typing_extensions import override
 
@@ -17,8 +17,11 @@ from crossbench.benchmarks.base import PressBenchmark, \
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper import url_helper
+from crossbench.parse import ObjectParser
 from crossbench.stories.press_benchmark import PressBenchmarkStory
 
+from .config.language_model import LANGUAGE_MODEL_API
+from .config.registry import get_api_config
 from .probe import BlinkAIProbe
 
 if TYPE_CHECKING:
@@ -28,6 +31,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.stories.story import Story
 
+  from .config.base import BlinkAIApiConfig
+
 
 class BlinkAIStory(PressBenchmarkStory):
   NAME: ClassVar[str] = "blink_ai"
@@ -35,45 +40,97 @@ class BlinkAIStory(PressBenchmarkStory):
   URL_OFFICIAL: ClassVar[str] = (
       "https://chromium-workloads.web.app/blink-ai/main/")
   URL_LOCAL: ClassVar[str] = "http://localhost:8000/"
-  DEFAULT_SUBSTORIES: ClassVar[tuple[str, ...]] = (
-      "language_model",
-      "multimodal_image",
-      "multimodal_images",
-      "multimodal_audio",
-  )
-  MTP_SUBSTORIES: ClassVar[tuple[str, ...]] = (
-      "mtp_summary",
-      "mtp_flight",
-      "mtp_emoji",
-      # Article summary with constrained decoding (responseConstraint).
-      "mtp_constrained_summary",
-  )
-  TOOL_USE_SUBSTORIES: ClassVar[tuple[str, ...]] = ("tool_calling",)
-  SUBSTORIES: ClassVar[tuple[str, ...]] = (
-      DEFAULT_SUBSTORIES + MTP_SUBSTORIES + TOOL_USE_SUBSTORIES
-  )
+  SUBSTORIES: ClassVar[tuple[str, ...]] = LANGUAGE_MODEL_API.all_substory_names
 
   @classmethod
   @override
   def default_story_names(cls) -> tuple[str, ...]:
-    return cls.DEFAULT_SUBSTORIES
+    return LANGUAGE_MODEL_API.default_substories
 
-  @property
-  def has_mtp_substory(self) -> bool:
-    return any(substory in self.MTP_SUBSTORIES for substory in self.substories)
+  @classmethod
+  @override
+  def all(cls,
+          separate: bool = False,
+          url: str | None = None,
+          api_name: str = LANGUAGE_MODEL_API.name,
+          **kwargs: object) -> tuple[Self, ...]:
+    api_config = get_api_config(api_name)
+    return cls.from_names(
+        api_config.all_substory_names,
+        separate=separate,
+        url=url,
+        api_name=api_name,
+        **kwargs)
 
-  @property
-  def has_tool_use_substory(self) -> bool:
-    return any(
-        substory in self.TOOL_USE_SUBSTORIES for substory in self.substories
-    )
+  @classmethod
+  @override
+  def default(cls,
+              separate: bool = False,
+              url: str | None = None,
+              api_name: str = LANGUAGE_MODEL_API.name,
+              **kwargs: object) -> tuple[Self, ...]:
+    api_config = get_api_config(api_name)
+    return cls.from_names(
+        api_config.default_substories,
+        separate=separate,
+        url=url,
+        api_name=api_name,
+        **kwargs)
 
-  def __init__(self,
-               substories: Sequence[str] = (),
-               url: str | None = None) -> None:
+  def __init__(
+      self,
+      substories: Sequence[str] = (),
+      url: str | None = None,
+      api_name: str = LANGUAGE_MODEL_API.name,
+      model: str | None = None,
+  ) -> None:
+    self._api_config: Final[BlinkAIApiConfig] = get_api_config(api_name)
+    if model is not None:
+      self._api_config.get_model_config(model)
+    self._model: Final[str | None] = model
     if not substories:
-      substories = self.default_story_names()
+      substories = self._api_config.default_substories
     super().__init__(substories=substories, url=url or self.URL)
+
+  @property
+  def api_config(self) -> BlinkAIApiConfig:
+    return self._api_config
+
+  @property
+  def api_name(self) -> str:
+    return self._api_config.name
+
+  @property
+  def model(self) -> str | None:
+    return self._model
+
+  @property
+  def required_features(self) -> tuple[str, ...]:
+    return self._api_config.resolve_features(self.substories, model=self._model)
+
+  @property
+  @override
+  def has_default_substories(self) -> bool:
+    return tuple(self.substories) == self._api_config.default_substories
+
+  @override
+  def _get_unique_name(self) -> str:
+    substories_set = set(self._substories)
+    if substories_set == set(self._api_config.default_substories):
+      return self.api_name
+    if substories_set == set(self._api_config.all_substory_names):
+      return f"{self.api_name}_all"
+    name = "_".join((self.api_name, *self._substories))
+    return self._crop_name(name)
+
+  @override
+  def _verify_substories(self) -> None:
+    ObjectParser.unique_sequence(self.substories, "substories", ValueError)
+    for substory in self.substories:
+      if substory == "all":
+        raise ValueError("Substory name cannot be 'all'")
+      self.verify_story_name(substory)
+      self._api_config.resolve_model_name(substory, self._model)
 
   @property
   @override
@@ -87,9 +144,10 @@ class BlinkAIStory(PressBenchmarkStory):
 
   @property
   def url_params(self) -> dict[str, str]:
-    if not self.substories:
-      return {}
-    return {"stories": ",".join(self.substories)}
+    return {
+        "api": self.api_name,
+        "stories": ",".join(self.substories),
+    }
 
   @property
   @override
@@ -104,17 +162,18 @@ class BlinkAIStory(PressBenchmarkStory):
   @override
   def setup(self, run: Run) -> None:
     url = self.get_run_url(run)
+    js_global = self.api_config.js_global
     with run.actions("Setup") as actions:
       actions.show_url(url)
-      logging.info("Waiting for window.LanguageModel to become available...")
+      logging.info("Waiting for window.%s to become available...", js_global)
       try:
         actions.wait_js_condition(
-            "return !!window.LanguageModel && window.testStatus === 'waiting'",
+            f"return !!window.{js_global} && window.testStatus === 'waiting'",
             0.5,
             timeout=dt.timedelta(seconds=45))
       except Exception as e:
-        raise RuntimeError("Built-in AI API (window.LanguageModel) failed to"
-                           " initialize within 30 seconds.") from e
+        raise RuntimeError(f"Built-in AI API (window.{js_global}) failed to"
+                           " initialize within 45 seconds.") from e
 
   @override
   def run(self, run: Run) -> None:
@@ -179,24 +238,8 @@ class BlinkAIBenchmark(PressBenchmark):
       return flags
 
     chrome_flags = ChromeFlags(flags)
+    assert isinstance(story, BlinkAIStory)
     logging.info("Injecting experimental built-in AI flags for Chrome...")
-    for feature in (
-        ("OnDeviceModelPerformanceParams:"
-         "compatible_on_device_performance_classes/*"),
-        "OnDeviceModelIdleTimeout:on_device_model_idle_timeout/10s",
-        "OnDeviceAiDefaultEnabled",
-        "AIWriterAPI",
-        "AIRewriterAPI",
-    ):
+    for feature in story.required_features:
       chrome_flags.features.enable(feature)
-    if isinstance(story, BlinkAIStory):
-      if story.has_mtp_substory:
-        chrome_flags.features.enable("OnDeviceModelSpeculativeDecoding")
-      if story.has_tool_use_substory:
-        for tool_feature in (
-            "AIPromptAPIToolUse",
-            "OnDeviceModelConversationBackend",
-            "AIApiFoundationalModel:model_version/v4",
-        ):
-          chrome_flags.features.enable(tool_feature)
     return chrome_flags

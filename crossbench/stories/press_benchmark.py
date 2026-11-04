@@ -95,6 +95,9 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     if substories_set == set(self.all_story_names()):
       return "all"
     name = "_".join(self._substories)
+    return self._crop_name(name)
+
+  def _crop_name(self, name: str) -> str:
     if len(name) > MAX_STORY_NAME_LEN:
       # Crop the name and append a stable hash of the full name to keep
       # different substory selections distinguishable.
