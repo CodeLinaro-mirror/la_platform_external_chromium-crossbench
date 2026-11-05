@@ -178,10 +178,12 @@ class ChromeHistogramsProbe(JsonResultProbe):
   def get_context_cls(self) -> type[ChromeHistogramsProbeContext]:
     return ChromeHistogramsProbeContext
 
+  @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        repetition_group.results[self].json
-        for repetition_group in group.repetitions_groups)
+        (repetition_group.results[self].json
+         for repetition_group in group.repetitions_groups),
+        merge_duplicate_paths=True)
     return self.write_group_result(group, merged)
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:

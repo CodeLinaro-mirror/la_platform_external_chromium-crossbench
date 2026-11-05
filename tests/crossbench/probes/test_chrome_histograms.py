@@ -4,14 +4,19 @@
 from __future__ import annotations
 
 import argparse
+import json
 import unittest
+from unittest import mock
 
 import hjson
 import pytest
 
+from crossbench import path as pth
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.chrome_histograms import ChromeHistogramMetric, \
     ChromeHistogramSample, ChromeHistogramsProbe, parse_histogram_metrics
+from crossbench.probes.metric import MetricsMerger
+from crossbench.probes.results import LocalProbeResult, ProbeResultDict
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
 
@@ -195,6 +200,49 @@ class ChromeHistogramProbeTestCase(GenericProbeTestCase):
         "PageLoad.PaintTiming.NavigationToFirstContentfulPaint_mean",
     ])
     self.assertEqual(probe.use_baseline, False)
+
+  def test_merge_stories_multiple_stories(self) -> None:
+    probe: ChromeHistogramsProbe = ChromeHistogramsProbe.parse_dict({
+        "metrics": {
+            "Startup.BrowserWindow.FirstPaint": ["mean"],
+        },
+        "baseline": False,
+    })
+    story_1_json = pth.LocalPath("/results/stories/story_1/histograms.json")
+    story_2_json = pth.LocalPath("/results/stories/story_2/histograms.json")
+    self.fs.create_file(
+        story_1_json,
+        contents=json.dumps(
+            MetricsMerger({
+                "Startup.BrowserWindow.FirstPaint_mean": [100.0, 110.0],
+            }).to_json()))
+    self.fs.create_file(
+        story_2_json,
+        contents=json.dumps(
+            MetricsMerger({
+                "Startup.BrowserWindow.FirstPaint_mean": [120.0, 130.0],
+            }).to_json()))
+
+    rep_group_1 = mock.MagicMock()
+    rep_group_1.results = ProbeResultDict(story_1_json.parent)
+    rep_group_1.results[probe] = LocalProbeResult(json=(story_1_json,))
+    rep_group_2 = mock.MagicMock()
+    rep_group_2.results = ProbeResultDict(story_2_json.parent)
+    rep_group_2.results[probe] = LocalProbeResult(json=(story_2_json,))
+
+    merged_path = pth.LocalPath("/results/stories/chrome_histograms.json")
+    stories_group = mock.MagicMock()
+    stories_group.repetitions_groups = [rep_group_1, rep_group_2]
+    stories_group.info = {"runs": 4}
+    stories_group.get_local_probe_result_path.return_value = merged_path
+
+    result = probe.merge_stories(stories_group)
+    self.assertEqual(result.json, merged_path)
+    with merged_path.open(encoding="utf-8") as f:
+      merged_data = json.load(f)
+    self.assertEqual(
+        merged_data["Startup.BrowserWindow.FirstPaint_mean"]["values"],
+        [100.0, 110.0, 120.0, 130.0])
 
 
 if __name__ == "__main__":
