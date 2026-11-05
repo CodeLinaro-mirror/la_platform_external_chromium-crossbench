@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import abc
 import dataclasses
+import datetime as dt
 import enum
 import functools
 from typing import TYPE_CHECKING, ClassVar, Final, Self, cast
@@ -22,9 +23,9 @@ from crossbench.config import ConfigEnum, ConfigObject, ConfigParser, \
 from crossbench.parse import DurationParser, NumberParser, ObjectParser
 
 if TYPE_CHECKING:
-  import datetime as dt
-
   from crossbench.types import JsonDict
+
+DEFAULT_CLICK_DURATION: Final[dt.timedelta] = dt.timedelta(milliseconds=50)
 
 
 @enum.unique

@@ -4,12 +4,18 @@
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as dt
 import logging
 import time
 from typing import TYPE_CHECKING, Final
 
 from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.mouse_move import MouseMoveAction
+from crossbench.action_runner.action.position import PositionConfig
+from crossbench.action_runner.action.swipe import SwipeAction
+from crossbench.benchmarks.loading.point import Point
 from crossbench.cli.ui import ui
 
 if TYPE_CHECKING:
@@ -39,6 +45,8 @@ class AgentDriver:
     self._session_dir: Final[pth.LocalPath] = run.out_dir / "agent_session"
     self._screenshots_dir: Final[pth.LocalPath] = (
         self._session_dir / "screenshots")
+    self._display_resolution: Final[tuple[int, int]] = (
+        self.browser_platform.display_resolution())
     self._client: LlmConversationClient = (
         client or self._create_default_client())
 
@@ -49,6 +57,47 @@ class AgentDriver:
   @property
   def browser_platform(self) -> Platform:
     return self._run.browser_platform
+
+  def _scale_coordinates(self, x: int, y: int) -> tuple[int, int]:
+    width, height = self._display_resolution
+    return (
+        round(x * width / 1000.0),
+        round(y * height / 1000.0),
+    )
+
+  def _scale_action_coordinates(self, action: Action) -> Action:
+    # Multimodal LLMs natively emit screenshot coordinates in a normalized
+    # 0..1000 space (independent of device/session display resolution).
+    match action:
+      case ClickAction():
+        if coords := action.position.coordinates:
+          scaled_x, scaled_y = self._scale_coordinates(coords.x, coords.y)
+          return dataclasses.replace(
+              action,
+              position=PositionConfig.from_coordinates(scaled_x, scaled_y),
+          )
+        return action
+      case SwipeAction():
+        start_x, start_y = self._scale_coordinates(action.start_x,
+                                                   action.start_y)
+        end_x, end_y = self._scale_coordinates(action.end_x, action.end_y)
+        return dataclasses.replace(
+            action,
+            start_x=start_x,
+            start_y=start_y,
+            end_x=end_x,
+            end_y=end_y,
+        )
+      case MouseMoveAction():
+        scaled_waypoints = tuple(
+            Point(*self._scale_coordinates(wp.x, wp.y))
+            for wp in action.waypoints)
+        return dataclasses.replace(action, waypoints=scaled_waypoints)
+      case _:
+        return action
+
+  def prepare_sub_action(self, action: Action) -> Action:
+    return self._scale_action_coordinates(action)
 
   def _create_default_client(self) -> LlmConversationClient:
     raise NotImplementedError(
@@ -140,11 +189,12 @@ class AgentDriver:
       self,
       step_idx: int,
       sub_idx: int,
-      sub_action: Action,
+      raw_sub_action: Action,
   ) -> str:
-    if sub_action.TYPE == ActionType.AGENT:
+    if raw_sub_action.TYPE == ActionType.AGENT:
       return f"Step {step_idx}.{sub_idx}: Nested agent action is not allowed."
 
+    sub_action = self.prepare_sub_action(raw_sub_action)
     label = f"agent_step_{step_idx:03d}_{sub_idx}"
     self._run.performance_mark(f"{label}_start")
     t0 = time.monotonic()

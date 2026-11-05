@@ -29,8 +29,9 @@ from crossbench.action_runner.action_runner import SCRIPTS_DIR, ActionRunner, \
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
-from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
-    MouseButtonEvent, MouseMoveEvent, TouchEvent, WaitEvent
+from crossbench.action_runner.input_events import DEFAULT_CLICK_DURATION, \
+    InputEvent, KeyEvent, MouseButtonEvent, MouseMoveEvent, TouchEvent, \
+    WaitEvent
 from crossbench.action_runner.virtual_device.touchscreen import \
     TouchscreenVirtualDeviceConfig
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
@@ -480,7 +481,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
 
     self.assert_input_events_injected([
         TouchEvent(Point(50, 60), is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         TouchEvent(Point(50, 60), is_down=False),
     ])
 
@@ -506,7 +507,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
 
     self.assert_input_events_injected([
         TouchEvent(Point(50, 60), is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         TouchEvent(Point(50, 60), is_down=False),
     ],
                                       expected_device_name="my_touch_device")
@@ -521,7 +522,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
 
     self.assert_input_events_injected([
         TouchEvent(Point(125, 220), is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         TouchEvent(Point(125, 220), is_down=False),
     ])
 
@@ -536,7 +537,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
 
     self.assert_input_events_injected([
         TouchEvent(Point(125, 220), is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         TouchEvent(Point(125, 220), is_down=False),
     ])
 
@@ -572,7 +573,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
 
     self.assert_input_events_injected([
         TouchEvent(Point(10, 20), is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         TouchEvent(Point(10, 20), is_down=False),
     ])
 
@@ -584,7 +585,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
     self.assert_input_events_injected([
         MouseMoveEvent(Point(50, 60)),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=False),
     ])
 
@@ -612,7 +613,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
     self.assert_input_events_injected([
         MouseMoveEvent(Point(50, 60)),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=False),
     ],
                                       expected_device_name="my_mouse_device")
@@ -628,7 +629,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
     self.assert_input_events_injected([
         MouseMoveEvent(Point(125, 220)),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=False),
     ])
 
@@ -644,7 +645,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
     self.assert_input_events_injected([
         MouseMoveEvent(Point(125, 220)),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=False),
     ])
 
@@ -681,7 +682,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
     self.assert_input_events_injected([
         MouseMoveEvent(Point(10, 20)),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=False),
     ])
 
@@ -710,7 +711,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
 
     self.assert_input_events_injected([
         TouchEvent(Point(125, 220), is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         TouchEvent(Point(125, 220), is_down=False),
     ])
 
@@ -725,7 +726,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
     self.assert_input_events_injected([
         MouseMoveEvent(Point(125, 220)),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=False),
     ])
 
@@ -741,7 +742,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
 
     self.assert_input_events_injected([
         TouchEvent(Point(125, 220), is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         TouchEvent(Point(125, 220), is_down=False),
     ])
 
@@ -758,7 +759,7 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
     self.assert_input_events_injected([
         MouseMoveEvent(Point(125, 220)),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=True),
-        WaitEvent(duration=ActionRunner.DEFAULT_CLICK_DURATION),
+        WaitEvent(duration=DEFAULT_CLICK_DURATION),
         MouseButtonEvent(button=ButtonClick.LEFT, is_down=False),
     ])
 

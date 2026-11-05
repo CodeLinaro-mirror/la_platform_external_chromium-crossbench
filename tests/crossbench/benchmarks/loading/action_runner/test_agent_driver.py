@@ -5,16 +5,20 @@
 from __future__ import annotations
 
 import pathlib
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 from crossbench.action_runner.action.agent import AgentAction
 from crossbench.action_runner.action.click import ClickAction
+from crossbench.action_runner.action.mouse_move import MouseMoveAction
 from crossbench.action_runner.action.scroll import ScrollAction
+from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.wait import WaitAction
 from crossbench.action_runner.action_runner import ActionRunner
 from crossbench.action_runner.agent_driver import AgentDriver
 from crossbench.action_runner.llm_client import AgentTurnResponse, \
     LlmConversationClient
+from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.settings import Settings
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -35,6 +39,9 @@ class AgentDriverTestCase(ActionRunnerTestCase):
     self.root_dir = pathlib.Path("/tmp/results")
     self.fs.create_dir(self.root_dir)
     self.platform = LinuxMockPlatform(fake_fs=self.fs)
+    self.mock_display_resolution = self.enterContext(
+        patch.object(
+            self.platform, "display_resolution", return_value=(1920, 1080)))
     self.enterContext(
         patch.object(
             self.platform, "screenshot", side_effect=self.platform.touch))
@@ -292,6 +299,83 @@ class AgentDriverTestCase(ActionRunnerTestCase):
     self.assertEqual(mock_client.send_turn.call_count, 2)
     second_turn_prompt = mock_client.send_turn.call_args_list[1].args[0]
     self.assertIn("Browser is not running", second_turn_prompt)
+
+  def test_agent_driver_scales_normalized_coordinates(self) -> None:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    action = AgentAction.parse_dict({
+        "action": "agent",
+        "prompt": "Test coordinate scaling",
+        "max_steps": 1,
+        "duration": "1m",
+    })
+    self.mock_display_resolution.return_value = (2880, 1800)
+    driver = AgentDriver(
+        self.action_runner,
+        self.mock_run,
+        action,
+        client=mock_client,
+    )
+
+    scaled_click = cast(
+        ClickAction,
+        driver.prepare_sub_action(
+            ClickAction.parse_dict({
+                "action": "click",
+                "source": "touch",
+                "pos": {
+                    "x": 500,
+                    "y": 500,
+                },
+            })))
+    assert scaled_click.position.coordinates is not None
+    self.assertEqual(scaled_click.position.coordinates.x, 1440)
+    self.assertEqual(scaled_click.position.coordinates.y, 900)
+
+    scaled_swipe = cast(
+        SwipeAction,
+        driver.prepare_sub_action(
+            SwipeAction.parse_dict({
+                "action": "swipe",
+                "start_x": 250,
+                "start_y": 800,
+                "end_x": 750,
+                "end_y": 200,
+                "duration": "400ms",
+            })))
+    self.assertEqual(scaled_swipe.start_x, 720)
+    self.assertEqual(scaled_swipe.start_y, 1440)
+    self.assertEqual(scaled_swipe.end_x, 2160)
+    self.assertEqual(scaled_swipe.end_y, 360)
+
+    scaled_mouse_move = cast(
+        MouseMoveAction,
+        driver.prepare_sub_action(
+            MouseMoveAction.parse_dict({
+                "action": "mouse_move",
+                "waypoints": [
+                    {
+                        "x": 500,
+                        "y": 500,
+                    },
+                    {
+                        "x": 550,
+                        "y": 500,
+                    },
+                    {
+                        "x": 450,
+                        "y": 500,
+                    },
+                ],
+                "duration": "240ms",
+            })))
+    self.assertEqual(
+        scaled_mouse_move.waypoints,
+        (
+            Point(1440, 900),
+            Point(1584, 900),
+            Point(1296, 900),
+        ),
+    )
 
 
 if __name__ == "__main__":

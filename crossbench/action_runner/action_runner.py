@@ -26,8 +26,9 @@ from crossbench.action_runner.bond_action_runner import BondActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
     ElementNotFoundError
-from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
-    MouseButtonEvent, MouseMoveEvent, TouchEvent, WaitEvent
+from crossbench.action_runner.input_events import DEFAULT_CLICK_DURATION, \
+    InputEvent, KeyEvent, MouseButtonEvent, MouseMoveEvent, TouchEvent, \
+    WaitEvent
 from crossbench.action_runner.keyboard_layout import US_KEYBOARD_LAYOUT
 from crossbench.action_runner.screenshot_annotation import \
     ScreenshotPointAnnotation, ScreenshotRectAnnotation
@@ -138,8 +139,6 @@ class ActionRunner:
   SHIFT_KEY_HOLD_WEIGHT: Final[int] = 3
   SHIFT_POST_DWELL_WEIGHT: Final[int] = 1
   SHIFT_GAP_WEIGHT: Final[int] = 5
-
-  DEFAULT_CLICK_DURATION: Final[dt.timedelta] = dt.timedelta(milliseconds=50)
 
   _bond: BondActionRunner | None = None
 
@@ -373,7 +372,7 @@ class ActionRunner:
       if not click_location:
         return
 
-      duration = action.duration or self.DEFAULT_CLICK_DURATION
+      duration = action.duration or DEFAULT_CLICK_DURATION
       events = events_fn(click_location, duration)
 
       assert action.source_device
