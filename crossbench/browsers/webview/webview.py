@@ -54,3 +54,7 @@ class Webview(ChromeWebDriverAndroid, metaclass=abc.ABCMeta):
           break
 
     return self.version_cls().parse(self.platform.app_version(webview_provider))
+
+  @override
+  def close_all_tabs(self) -> None:
+    raise NotImplementedError(f"Closing all tabs is not supported by {self}")

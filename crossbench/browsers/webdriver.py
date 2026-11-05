@@ -379,20 +379,50 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       logging.debug("WebDriverException: %s", e)
       raise ValueError(f"Could not execute JS: {e.msg}")  # noqa: B904
 
+  @override
   def close_all_tabs(self) -> None:
+    driver = self._private_driver
     try:
-      all_handles = self._private_driver.window_handles
-    except selenium.common.exceptions.WebDriverException as e:
+      handles = driver.window_handles
+    except (selenium.common.exceptions.WebDriverException,
+            urllib3.exceptions.HTTPError) as e:
       logging.warning("%s: Could not get window handles: %s", self, e)
-      all_handles = []
-    for handle in all_handles:
+      return
+    if not handles:
+      return
+
+    try:
+      current_handle: str | None = driver.current_window_handle
+    except (selenium.common.exceptions.WebDriverException,
+            urllib3.exceptions.HTTPError) as e:
+      logging.warning("%s: Could not get current window handle: %s", self, e)
+      current_handle = None
+
+    handle_to_keep: str = handles[-1]
+    if current_handle is not None and current_handle in handles:
+      handle_to_keep = current_handle
+
+    for handle in handles:
+      if handle == handle_to_keep:
+        continue
       try:
-        self._private_driver.switch_to.window(handle)
-        self._private_driver.close()
+        driver.switch_to.window(handle)
+        driver.close()
       except (selenium.common.exceptions.WebDriverException,
-              urllib3.exceptions.MaxRetryError) as e:
-        logging.warning("%s: Got errors while closing tab %s: {%s}", self,
-                        handle, e)
+              urllib3.exceptions.HTTPError) as e:
+        logging.warning("%s: Got errors while closing tab %s: %s", self, handle,
+                        e)
+
+    try:
+      # Closing every tab ends the WebDriver session or exits the browser.
+      # Keep one tab open and navigate it to about:blank instead.
+      driver.switch_to.window(handle_to_keep)
+      self.show_url("about:blank")
+    except (selenium.common.exceptions.WebDriverException,
+            urllib3.exceptions.HTTPError) as e:
+      logging.warning(
+          "%s: Got errors while navigating final tab to about:blank: %s", self,
+          e)
 
   @override
   def maximize_window(self) -> None:

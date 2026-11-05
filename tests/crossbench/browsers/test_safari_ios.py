@@ -22,6 +22,7 @@ from crossbench.plt.ios import IOSPlatform
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
+from tests.crossbench.browsers.test_webdriver import FakeWebDriver
 from tests.crossbench.mock_helper import MacOsMockPlatform
 from tests.crossbench.plt.test_ios import DEVICES_SINGLE, SIMULATORS_SAMPLE
 
@@ -316,6 +317,33 @@ class SafariIosBrowserTestCase(CrossbenchFakeFsTestCase):
       ):
         browser.quit()
       mock_launch_app.assert_called_once_with("com.apple.mobilesafari")
+
+  def test_webdriver_ios_close_all_tabs_preserves_window_for_js(self) -> None:
+    platform = self.setup_platform()
+    self.fs.create_file("/usr/bin/safaridriver", st_mode=0o755)
+    self.host_platform.expect_sh(
+        "/usr/bin/safaridriver",
+        "--version",
+        result="Included with Safari 17.1 (19616.2.9.11.7)")
+    browser = SafariWebdriverIOS(
+        "test-safari",
+        platform.path("/Applications/Safari.app"),
+        settings=Settings(platform=platform),
+    )
+    driver = FakeWebDriver(
+        handles=["tab-1", "tab-2"],
+        current_handle="tab-1",
+        invalidate_session_on_last_close=False,
+    )
+    browser._private_driver = driver
+    browser._is_running = True
+
+    browser.close_all_tabs()
+
+    self.assertEqual(driver.closed_handles, ["tab-2"])
+    self.assertEqual(driver.window_handles, ["tab-1"])
+    self.assertEqual(driver.urls_by_handle["tab-1"], "about:blank")
+    self.assertEqual(browser.user_agent(), "FakeBrowser/123.0")
 
 
 if __name__ == "__main__":

@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Final, Iterable, Sequence, TextIO, TypeAlias
 
 import requests
 import selenium.common.exceptions
-import urllib3
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
@@ -390,46 +389,6 @@ class ChromiumBasedWebDriver(
       # When a tab closes itself, arbitrarily default
       # to switching to the first tab.
       driver.switch_to.window(handles[0])
-
-  @override
-  def close_all_tabs(self) -> None:
-    driver = self._private_driver
-    try:
-      current_handle = driver.current_window_handle
-    except selenium.common.exceptions.WebDriverException as e:
-      logging.warning("%s: Could not get current window handle: %s", self, e)
-      current_handle = None
-
-    try:
-      handles = driver.window_handles
-    except selenium.common.exceptions.WebDriverException as e:
-      logging.warning("%s: Could not get window handles: %s", self, e)
-      handles = []
-
-    for handle in handles:
-      if handle == current_handle:
-        continue
-      try:
-        driver.switch_to.window(handle)
-        driver.close()
-      except (selenium.common.exceptions.WebDriverException,
-              urllib3.exceptions.MaxRetryError) as e:
-        logging.warning("%s: Got errors while closing tab %s: %s", self, handle,
-                        e)
-
-    try:
-      # Closing every tab will cause the browser to exit.
-      # As a workaround navigate the final tab to about:blank.
-      if current_handle:
-        driver.switch_to.window(current_handle)
-      elif driver.window_handles:
-        driver.switch_to.window(driver.window_handles[-1])
-      self.show_url("about:blank")
-    except (selenium.common.exceptions.WebDriverException,
-            urllib3.exceptions.MaxRetryError) as e:
-      logging.warning(
-          "%s: Got errors while navigating final tab to about:blank: %s", self,
-          e)
 
   @property
   def current_url(self) -> str:
