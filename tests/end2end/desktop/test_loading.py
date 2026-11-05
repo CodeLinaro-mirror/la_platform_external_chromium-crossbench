@@ -495,6 +495,59 @@ class TestDesktopLoading:
     self.run_loading_test(browser_config, page_config, test_env)
     self.assert_run_succeeded(test_env)
 
+  def test_close_all_tabs(self, browser_config: str, test_env: TestEnv) -> None:
+    page_1 = urllib.parse.quote(
+        "<!doctype html><html><head><title>Page 1</title></head></html>")
+    page_2 = urllib.parse.quote(
+        "<!doctype html><html><head><title>Page 2</title></head></html>")
+    page_3 = urllib.parse.quote(
+        "<!doctype html><html><head><title>Page 3</title></head></html>")
+    final_page = urllib.parse.quote(
+        "<!doctype html><html><head><title>Final Page</title></head></html>")
+
+    page_config = {
+        "pages": {
+            "CloseAllTabsTest": {
+                "actions": [{
+                    "action": "get",
+                    "url": f"data:text/html;charset=utf-8,{page_1}",
+                    "ready_state": "complete",
+                }, {
+                    "action": "get",
+                    "url": f"data:text/html;charset=utf-8,{page_2}",
+                    "target": "_blank",
+                    "ready_state": "complete",
+                }, {
+                    "action": "get",
+                    "url": f"data:text/html;charset=utf-8,{page_3}",
+                    "target": "_blank",
+                    "ready_state": "complete",
+                }, {
+                    "action": "close_all_tabs",
+                }, {
+                    "action": "wait_for_condition",
+                    "condition": "return window.location.href === "
+                                 "'about:blank';",
+                    "timeout": "5s",
+                }, {
+                    "action": "get",
+                    "url": f"data:text/html;charset=utf-8,{final_page}",
+                    "ready_state": "complete",
+                }, {
+                    "action": "switch_tab",
+                    "relative_tab_index": 1,
+                }, {
+                    "action": "wait_for_condition",
+                    "condition": "return document.title === 'Final Page';",
+                    "timeout": "5s",
+                }],
+            },
+        },
+    }
+
+    self.run_loading_test(browser_config, page_config, test_env)
+    self.assert_run_succeeded(test_env)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

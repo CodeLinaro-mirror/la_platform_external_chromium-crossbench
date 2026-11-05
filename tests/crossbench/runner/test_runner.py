@@ -34,6 +34,7 @@ from crossbench.runner.pause_controller import ResumeMode
 from crossbench.runner.runner import CacheTemperature, Runner, \
     RunnerException, ThreadMode
 from tests import test_helper
+from tests.crossbench.browsers.test_webdriver import FakeWebDriver
 from tests.crossbench.mock_browser import MockChromeDev
 from tests.crossbench.mock_helper import MockBenchmark
 from tests.crossbench.mock_helper import MockPlatform as FullMockPlatform
@@ -328,15 +329,17 @@ class RunnerTestCase(BaseRunnerTestCase):
           run.story.name == "story_2",
       )
 
-  def test_run_remote_web_driver(self):
-    driver = mock.Mock()
-    driver.capabilities = {
-        "browserVersion": "123.0.4567.89",
-        "setWindowRect": False,
-    }
+  def test_run_remote_web_driver(self) -> None:
+    driver = FakeWebDriver(
+        handles=["active-tab"],
+        current_handle="active-tab",
+        invalidate_session_on_last_close=True,
+    )
     browser = RemoteWebDriver("test-driver", driver)
     runner = self.default_runner(browsers=[browser])
     runner.run()
+    self.assertTrue(runner.is_success)
+    self.assertEqual(driver.window_handles, ["active-tab"])
 
   def _validate_successful_run(self, run, runner, probe, probe_data):
     results = run.results[probe]
