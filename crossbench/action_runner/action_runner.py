@@ -21,6 +21,7 @@ from crossbench import path as pth
 from crossbench.action_runner.action.enums import ButtonClick, ScrollMode
 from crossbench.action_runner.action_runner_listener import \
     ActionRunnerListener
+from crossbench.action_runner.agent_driver import AgentDriver
 from crossbench.action_runner.bond_action_runner import BondActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
 from crossbench.action_runner.element_not_found_error import \
@@ -891,8 +892,9 @@ class ActionRunner:
     DevToolsClient().open_frontend(self.browser, action.panel_name)
 
   def agent(self, action: i_action.AgentAction) -> None:
-    del action
-    raise NotImplementedError("AgentAction is not implemented yet")
+    with self.actions("AgentAction", measure=False):
+      driver = AgentDriver(self, self.run, action)
+      driver.execute()
 
   def screenshot_impl(
       self,
@@ -978,6 +980,11 @@ class ActionRunner:
     assert self._info_stack is None, (
         f"Got unexpected info stack {self._info_stack}")
     with self._info_stack_annotate(f"playback_{i}"):
+      yield
+
+  @contextlib.contextmanager
+  def info_stack_annotate(self, name: str) -> Iterator[None]:
+    with self._info_stack_annotate(name):
       yield
 
   @contextlib.contextmanager
