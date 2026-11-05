@@ -47,7 +47,7 @@ export const GIS_CLIENT_ID_STORAGE_KEY = 'crossbench_gis_client_id';
 export const DEFAULT_GCS_READONLY_SCOPE =
     'https://www.googleapis.com/auth/devstorage.read_only';
 export const DEFAULT_CLIENT_ID =
-    '161886483514-ii0p3mlg6na6cbimqs18rqsgc50hj1f7.apps.googleusercontent.com';
+    '618987115343-18956ij0b16h8l7qeima1lftmrl7t41e.apps.googleusercontent.com';
 
 declare global {
   interface Window {

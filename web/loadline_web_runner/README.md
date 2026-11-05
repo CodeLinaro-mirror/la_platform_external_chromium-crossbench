@@ -126,7 +126,7 @@ If setting up deployment from scratch or on a new workstation:
    ```json
    {
      "projects": {
-       "default": "loadline-web-runner"
+       "default": "loadline-web"
      }
    }
    ```
@@ -137,8 +137,8 @@ If setting up deployment from scratch or on a new workstation:
 
 3. **Permissions & Access Control (IAM)**:
    To deploy to Firebase Hosting, your Google account must be granted access to
-   the `loadline-web-runner` Google Cloud project. Access can be requested via
-   [GCP IAM Console](https://console.cloud.google.com/iam-admin/iam?project=loadline-web-runner).
+   the `loadline-web` Google Cloud project. Access can be requested via
+   [GCP IAM Console](https://console.cloud.google.com/iam-admin/iam?project=loadline-web).
 
    The required IAM role is `roles/firebase.developAdmin`. The following
    broader roles are also enough: `roles/firebase.admin`, `roles/editor`,
@@ -150,7 +150,8 @@ If setting up deployment from scratch or on a new workstation:
    in its **Authorized JavaScript origins** and **Authorized redirect URIs**:
    - `http://localhost:5173` (local dev server)
    - `http://localhost:4173` (local preview server)
-   - `https://loadline-web-runner.web.app`
+   - `https://loadline.browserben.ch`
+   - `https://loadline-web.web.app`
 
 5. **Build and Deploy**:
    ```bash
