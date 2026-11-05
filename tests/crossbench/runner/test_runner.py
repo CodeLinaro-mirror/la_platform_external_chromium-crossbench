@@ -331,7 +331,7 @@ class RunnerTestCase(BaseRunnerTestCase):
 
   def test_run_remote_web_driver(self) -> None:
     driver = FakeWebDriver(
-        handles=["active-tab"],
+        handles=["leftover-tab", "active-tab"],
         current_handle="active-tab",
         invalidate_session_on_last_close=True,
     )
@@ -339,6 +339,7 @@ class RunnerTestCase(BaseRunnerTestCase):
     runner = self.default_runner(browsers=[browser])
     runner.run()
     self.assertTrue(runner.is_success)
+    self.assertEqual(driver.closed_handles, ["leftover-tab"])
     self.assertEqual(driver.window_handles, ["active-tab"])
 
   def _validate_successful_run(self, run, runner, probe, probe_data):

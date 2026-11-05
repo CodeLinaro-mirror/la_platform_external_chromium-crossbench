@@ -548,6 +548,64 @@ class TestDesktopLoading:
     self.run_loading_test(browser_config, page_config, test_env)
     self.assert_run_succeeded(test_env)
 
+  def test_session_start_closes_open_tabs(self, browser_config: str,
+                                          test_env: TestEnv) -> None:
+    platform = self.get_test_platform(browser_config)
+    if not platform.is_local:
+      pytest.skip("Local user-data-dir test requires a local browser platform")
+
+    leftover_1 = urllib.parse.quote(
+        "<!doctype html><html><head><title>Leftover 1</title></head></html>")
+    leftover_2 = urllib.parse.quote(
+        "<!doctype html><html><head><title>Leftover 2</title></head></html>")
+    story_page = urllib.parse.quote(
+        "<!doctype html><html><head><title>Story Page</title></head></html>")
+
+    with tempfile.TemporaryDirectory() as user_data_dir:
+      default_profile_dir = pth.LocalPath(user_data_dir) / "Default"
+      default_profile_dir.mkdir(parents=True)
+      preferences = {
+          "session": {
+              "restore_on_startup":
+                  4,
+              "startup_urls": [
+                  f"data:text/html;charset=utf-8,{leftover_1}",
+                  f"data:text/html;charset=utf-8,{leftover_2}",
+              ],
+          },
+      }
+      (default_profile_dir / "Preferences").write_text(
+          json.dumps(preferences), encoding="utf-8")
+
+      page_config = {
+          "pages": {
+              "SessionStartClosesOpenTabsTest": {
+                  "actions": [{
+                      "action": "get",
+                      "url": f"data:text/html;charset=utf-8,{story_page}",
+                      "ready_state": "complete",
+                  }, {
+                      "action": "switch_tab",
+                      "relative_tab_index": 1,
+                  }, {
+                      "action": "wait_for_condition",
+                      "condition": "return document.title === 'Story Page';",
+                      "timeout": "5s",
+                  }],
+              },
+          },
+      }
+
+      self.run_loading_test(
+          browser_config,
+          page_config,
+          test_env,
+          extra_args=[
+              f"--browser-cache-dir={user_data_dir}",
+              "--keep-browser-cache",
+          ])
+      self.assert_run_succeeded(test_env)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

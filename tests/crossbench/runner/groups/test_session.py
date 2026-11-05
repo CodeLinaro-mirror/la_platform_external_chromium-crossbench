@@ -361,6 +361,58 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
       self.assertEqual(mock_quit.call_count, 2)
       self.assertIn("browser-stop-1", session.durations.to_json())
 
+  def test_open_closes_all_apps(self) -> None:
+    session = self.default_session()
+    run = MockRun(self.runner, session, "story 0")
+    session.append(run)
+    session.set_ready()
+    with mock.patch.object(session.browser_platform,
+                           "close_all_apps") as mock_close_all_apps:
+      with session.open() as startup_is_success:
+        self.assertTrue(startup_is_success)
+      mock_close_all_apps.assert_called_once_with()
+
+  def test_open_dry_run_skips_close_all_apps(self) -> None:
+    session = self.default_session()
+    run = MockRun(self.runner, session, "story 0")
+    session.append(run)
+    session.set_ready()
+    with mock.patch.object(session.browser_platform,
+                           "close_all_apps") as mock_close_all_apps:
+      with session.open(is_dry_run=True) as startup_is_success:
+        self.assertTrue(startup_is_success)
+      mock_close_all_apps.assert_not_called()
+
+  def test_first_browser_launch_closes_all_tabs(self) -> None:
+    browser = mock_browser.MockChromeDev(
+        "dev", settings=Settings(platform=self.platform, start_browser=False))
+    session = self.default_session(browser=browser)
+    run = MockRun(self.runner, session, "story 0")
+    session.append(run)
+    session.set_ready()
+    with mock.patch.object(session.browser,
+                           "close_all_tabs") as mock_close_all_tabs:
+      with session.open() as startup_is_success:
+        self.assertTrue(startup_is_success)
+        mock_close_all_tabs.assert_not_called()
+        session.start_browser()
+        mock_close_all_tabs.assert_called_once_with()
+        session.stop_browser()
+        session.start_browser()
+        mock_close_all_tabs.assert_called_once_with()
+
+  def test_first_browser_launch_skips_unsupported_close_all_tabs(self) -> None:
+    session = self.default_session()
+    run = MockRun(self.runner, session, "story 0")
+    session.append(run)
+    session.set_ready()
+    with mock.patch.object(
+        session.browser, "close_all_tabs",
+        side_effect=NotImplementedError) as mock_close_all_tabs:
+      with session.open() as startup_is_success:
+        self.assertTrue(startup_is_success)
+      mock_close_all_tabs.assert_called_once_with()
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

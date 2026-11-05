@@ -325,6 +325,33 @@ class TestAndroidLoading(TestDesktopLoading):
     stack_list = adb.shell_stdout("am", "stack", "list")
     assert "com.android.settings/" not in stack_list
 
+  def test_session_start_closes_open_apps(self, browser_config: str,
+                                          device_id: str, adb_path: str,
+                                          test_env: TestEnv) -> None:
+    adb = Adb(plt.PLATFORM, device_id, pth.LocalPath(adb_path))
+    adb.shell("am", "start", "-W", "-n", "com.android.settings/.Settings")
+    assert "com.android.settings/" in adb.shell_stdout("am", "stack", "list")
+
+    test_page = urllib.parse.quote(
+        "<!doctype html><html><head><title>Session Start Test</title></head>"
+        "</html>")
+    page_config = {
+        "pages": {
+            "SessionStartClosesOpenAppsTest": {
+                "actions": [{
+                    "action": "get",
+                    "url": f"data:text/html;charset=utf-8,{test_page}",
+                    "ready_state": "complete",
+                }],
+            },
+        },
+    }
+
+    self.run_loading_test(browser_config, page_config, test_env)
+    self.assert_run_succeeded(test_env)
+    assert "com.android.settings/" not in adb.shell_stdout(
+        "am", "stack", "list")
+
 
 del TestDesktopLoading
 
