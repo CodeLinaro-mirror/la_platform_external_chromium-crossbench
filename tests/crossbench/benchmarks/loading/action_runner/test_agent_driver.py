@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import pathlib
 from typing import cast
 from unittest.mock import MagicMock, patch
@@ -13,6 +14,7 @@ from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.mouse_move import MouseMoveAction
 from crossbench.action_runner.action.scroll import ScrollAction
 from crossbench.action_runner.action.swipe import SwipeAction
+from crossbench.action_runner.action.text_input import TextInputAction
 from crossbench.action_runner.action.wait import WaitAction
 from crossbench.action_runner.action_runner import ActionRunner
 from crossbench.action_runner.agent_driver import AgentDriver
@@ -376,6 +378,56 @@ class AgentDriverTestCase(ActionRunnerTestCase):
             Point(1296, 900),
         ),
     )
+
+  def test_agent_driver_enforces_realistic_typing_duration(self) -> None:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    action = AgentAction.parse_dict({
+        "action": "agent",
+        "prompt": "Test typing duration",
+        "max_steps": 1,
+        "duration": "1m",
+    })
+    driver = AgentDriver(
+        self.action_runner,
+        self.mock_run,
+        action,
+        client=mock_client,
+    )
+
+    scaled_typing_no_dur = cast(
+        TextInputAction,
+        driver.prepare_sub_action(
+            TextInputAction.parse_dict({
+                "action": "text_input",
+                "source": "keyboard",
+                "text": "hello world",
+            })))
+    self.assertEqual(scaled_typing_no_dur.duration,
+                     dt.timedelta(milliseconds=1100))
+
+    scaled_typing_too_fast = cast(
+        TextInputAction,
+        driver.prepare_sub_action(
+            TextInputAction.parse_dict({
+                "action": "text_input",
+                "source": "keyboard",
+                "text": "hello world",
+                "duration": "200ms",
+            })))
+    self.assertEqual(scaled_typing_too_fast.duration,
+                     dt.timedelta(milliseconds=1100))
+
+    scaled_typing_slow_enough = cast(
+        TextInputAction,
+        driver.prepare_sub_action(
+            TextInputAction.parse_dict({
+                "action": "text_input",
+                "source": "keyboard",
+                "text": "hi",
+                "duration": "1s",
+            })))
+    self.assertEqual(scaled_typing_slow_enough.duration,
+                     dt.timedelta(seconds=1))
 
 
 if __name__ == "__main__":

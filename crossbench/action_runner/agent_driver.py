@@ -15,6 +15,7 @@ from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.mouse_move import MouseMoveAction
 from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.swipe import SwipeAction
+from crossbench.action_runner.action.text_input import TextInputAction
 from crossbench.benchmarks.loading.point import Point
 from crossbench.cli.ui import ui
 
@@ -31,6 +32,8 @@ if TYPE_CHECKING:
 
 class AgentDriver:
   """Executes an AgentAction loop within a Crossbench Run."""
+
+  MIN_TYPING_MS_PER_CHAR: Final[int] = 100
 
   def __init__(
       self,
@@ -65,6 +68,16 @@ class AgentDriver:
         round(y * height / 1000.0),
     )
 
+  def _ensure_realistic_typing_duration(
+      self, action: TextInputAction) -> TextInputAction:
+    if not action.text:
+      return action
+    min_duration = dt.timedelta(
+        milliseconds=len(action.text) * self.MIN_TYPING_MS_PER_CHAR)
+    if action.duration >= min_duration:
+      return action
+    return dataclasses.replace(action, duration=min_duration)
+
   def _scale_action_coordinates(self, action: Action) -> Action:
     # Multimodal LLMs natively emit screenshot coordinates in a normalized
     # 0..1000 space (independent of device/session display resolution).
@@ -97,7 +110,10 @@ class AgentDriver:
         return action
 
   def prepare_sub_action(self, action: Action) -> Action:
-    return self._scale_action_coordinates(action)
+    scaled = self._scale_action_coordinates(action)
+    if isinstance(scaled, TextInputAction):
+      return self._ensure_realistic_typing_duration(scaled)
+    return scaled
 
   def _create_default_client(self) -> LlmConversationClient:
     raise NotImplementedError(
