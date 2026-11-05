@@ -14,6 +14,7 @@ from typing import Any, Final, cast
 from crossbench.action_runner.action.action import ACTION_TIMEOUT, ACTIONS, \
     Action
 from crossbench.action_runner.action.action_type import ActionType
+from crossbench.action_runner.action.agent import AgentAction
 from crossbench.action_runner.action.all import ACTIONS_TUPLE
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.close_all_apps import CloseAllAppsAction
@@ -1804,6 +1805,112 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.TYPE, ActionType.DUMP_HTML)
     self.assertEqual(action.probe_cls, DumpHtmlProbe)
     self.assertFalse(action.kwargs)
+
+  def test_parse_agent_default(self) -> None:
+    config_dict: dict[str, object] = {
+        "action": "agent",
+        "prompt": "Navigate to example.com and click the first link",
+    }
+    action = AgentAction.parse_dict(config_dict)
+    self.assertEqual(action.TYPE, ActionType.AGENT)
+    self.assertEqual(action.prompt,
+                     "Navigate to example.com and click the first link")
+    self.assertEqual(action.model, "gemini-3.8-flash")
+    self.assertEqual(action.temperature, 1.0)
+    self.assertEqual(action.max_steps, 25)
+    self.assertEqual(action.duration, dt.timedelta(minutes=5))
+    self.assertEqual(action.settle_delay, dt.timedelta(seconds=5))
+    self.assertTrue(action.stop_on_done)
+    self.assertEqual(action.max_history_screenshots, 3)
+    action.validate()
+
+    action_2 = AgentAction.parse_dict(dict(action.to_json()))
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+    action_from_str = AgentAction.parse(
+        "Navigate to example.com and click the first link")
+    self.assertEqual(action, action_from_str)
+    action_from_str.validate()
+
+  def test_parse_agent_aliases(self) -> None:
+    for prompt_alias in ("instructions", "goal"):
+      with self.subTest(prompt_alias=prompt_alias):
+        action = AgentAction.parse_dict({
+            "action": "agent",
+            prompt_alias: "Explore page",
+            "steps": 12,
+            "temp": 0.5,
+            "max_screenshots": 4,
+            "duration": "2m",
+        })
+        self.assertEqual(action.prompt, "Explore page")
+        self.assertEqual(action.max_steps, 12)
+        self.assertEqual(action.temperature, 0.5)
+        self.assertEqual(action.max_history_screenshots, 4)
+
+  def test_parse_agent_missing_or_invalid_fields(self) -> None:
+    with self.assertRaises(ValueError) as cm:
+      AgentAction.parse_dict({"action": "agent"})
+    self.assertIn("prompt", str(cm.exception))
+
+    with self.assertRaises(ValueError):
+      AgentAction.parse_dict({"action": "agent", "prompt": ""})
+
+    with self.assertRaises(ValueError):
+      AgentAction.parse_str("")
+
+    with self.assertRaises(ValueError):
+      AgentAction.parse_dict({
+          "action": "agent",
+          "prompt": "Zero steps",
+          "max_steps": 0,
+      })
+
+    with self.assertRaises(ValueError):
+      AgentAction.parse_dict({
+          "action": "agent",
+          "prompt": "Zero duration",
+          "duration": "0s",
+      })
+
+  def test_parse_agent_custom(self) -> None:
+    config_dict: dict[str, object] = {
+        "action": "agent",
+        "prompt": "Search for documentation",
+        "model": "gemini-2.5-pro",
+        "temperature": 1.6,
+        "max_steps": 40,
+        "duration": "10m",
+        "settle_delay": "1s",
+        "stop_on_done": False,
+        "max_history_screenshots": 5,
+    }
+    action = AgentAction.parse_dict(config_dict)
+    self.assertEqual(action.TYPE, ActionType.AGENT)
+    self.assertEqual(action.prompt, "Search for documentation")
+    self.assertEqual(action.model, "gemini-2.5-pro")
+    self.assertEqual(action.temperature, 1.6)
+    self.assertEqual(action.max_steps, 40)
+    self.assertEqual(action.duration, dt.timedelta(minutes=10))
+    self.assertEqual(action.settle_delay, dt.timedelta(seconds=1))
+    self.assertFalse(action.stop_on_done)
+    self.assertEqual(action.max_history_screenshots, 5)
+    action.validate()
+
+    action_2 = AgentAction.parse_dict(dict(action.to_json()))
+    self.assertEqual(action, action_2)
+    action_2.validate()
+
+  def test_parse_agent_invalid_temperature(self) -> None:
+    with self.assertRaises(ValueError):
+      AgentAction.parse_dict({
+          "action": "agent",
+          "prompt": "Invalid temp",
+          "max_steps": 10,
+          "duration": "1m",
+          "temperature": 2.5,
+      })
 
   def test_all_actions_validate_on_init(self):
     for action_cls in ACTIONS_TUPLE:

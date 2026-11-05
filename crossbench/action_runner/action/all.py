@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from crossbench.action_runner.action.action import ACTIONS, Action
+from crossbench.action_runner.action.agent import AgentAction
 from crossbench.action_runner.action.clear_cache import ClearCacheAction
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.close_all_apps import CloseAllAppsAction
@@ -45,6 +46,7 @@ from crossbench.action_runner.action.wait_for_url_matches import \
     WaitForUrlMatchesAction
 
 ACTIONS_TUPLE: tuple[type[Action], ...] = (
+    AgentAction,
     ClearCacheAction,
     ClickAction,
     CloseAllAppsAction,

@@ -890,6 +890,10 @@ class ActionRunner:
     logging.info("Opening DevTools panel '%s'...", action.panel_name)
     DevToolsClient().open_frontend(self.browser, action.panel_name)
 
+  def agent(self, action: i_action.AgentAction) -> None:
+    del action
+    raise NotImplementedError("AgentAction is not implemented yet")
+
   def screenshot_impl(
       self,
       suffix: str,

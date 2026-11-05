@@ -299,5 +299,18 @@
         "action": "stop_browser"
       }
     ]
+    "agent": [
+      {
+        "action": "agent"
+        "prompt": "Navigate to example.com and interact with the page"
+      }
+      {
+        "action": "agent"
+        "prompt": "Navigate to example.com and interact with the page"
+        "temperature": 1.2
+        "max_steps": 10
+        "duration": "2m"
+      }
+    ]
   }
 }

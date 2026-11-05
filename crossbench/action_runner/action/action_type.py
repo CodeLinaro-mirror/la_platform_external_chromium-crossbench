@@ -54,3 +54,5 @@ class ActionType(ConfigEnum):
   LAUNCH_APP = ("launch_app", "Launch a native application or activity")
   CLOSE_APP = ("close_app", "Close a native application")
   CLOSE_ALL_APPS = ("close_all_apps", "Close all native applications")
+  AGENT = ("agent",
+           "Run an AI agent to dynamically generate and execute actions")
