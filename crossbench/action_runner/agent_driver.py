@@ -6,28 +6,35 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
+import functools
 import logging
+import string
 import time
 from typing import TYPE_CHECKING, Final
 
+from crossbench import path as pth
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.mouse_move import MouseMoveAction
 from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.text_input import TextInputAction
+from crossbench.action_runner.llm_client import LlmConversationClient
 from crossbench.benchmarks.loading.point import Point
 from crossbench.cli.ui import ui
 
 if TYPE_CHECKING:
-  from crossbench import path as pth
   from crossbench.action_runner.action.action import Action
   from crossbench.action_runner.action.agent import AgentAction
   from crossbench.action_runner.action_runner import ActionRunner
-  from crossbench.action_runner.llm_client import AgentTurnResponse, \
-      LlmConversationClient
+  from crossbench.action_runner.llm_client import AgentTurnResponse
   from crossbench.plt.base import Platform
   from crossbench.runner.run import Run
+
+PROMPTS_DIR: Final[pth.LocalPath] = (
+    pth.ROOT_DIR / "crossbench" / "action_runner" / "prompts")
+SYSTEM_INSTRUCTION_TEMPLATE_PATH: Final[pth.LocalPath] = (
+    PROMPTS_DIR / "agent_system_instruction.txt")
 
 
 class AgentDriver:
@@ -115,9 +122,20 @@ class AgentDriver:
       return self._ensure_realistic_typing_duration(scaled)
     return scaled
 
+  @functools.cached_property
+  def _system_instruction_template(self) -> string.Template:
+    return string.Template(
+        SYSTEM_INSTRUCTION_TEMPLATE_PATH.read_text(encoding="utf-8"))
+
   def _create_default_client(self) -> LlmConversationClient:
-    raise NotImplementedError(
-        "Default LlmConversationClient is not implemented yet")
+    system_instruction = self._system_instruction_template.substitute(
+        prompt=self._action.prompt)
+    return LlmConversationClient(
+        model=self._action.model,
+        system_instruction=system_instruction,
+        temperature=self._action.temperature,
+        max_history_screenshots=self._action.max_history_screenshots,
+    )
 
   def _collect_environment_context(self) -> str:
     if tasks := self.browser_platform.get_active_tasks():

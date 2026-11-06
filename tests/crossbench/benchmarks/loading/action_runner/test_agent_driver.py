@@ -17,7 +17,8 @@ from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.text_input import TextInputAction
 from crossbench.action_runner.action.wait import WaitAction
 from crossbench.action_runner.action_runner import ActionRunner
-from crossbench.action_runner.agent_driver import AgentDriver
+from crossbench.action_runner.agent_driver import PROMPTS_DIR, \
+    SYSTEM_INSTRUCTION_TEMPLATE_PATH, AgentDriver
 from crossbench.action_runner.llm_client import AgentTurnResponse, \
     LlmConversationClient
 from crossbench.benchmarks.loading.point import Point
@@ -455,6 +456,28 @@ class AgentDriverTestCase(ActionRunnerTestCase):
           "  - com.google.android.calculator\n"
           "  - com.dropbox.android",
       )
+
+  def test_create_default_client(self) -> None:
+    self.assertTrue(PROMPTS_DIR.is_dir())
+    self.assertTrue(SYSTEM_INSTRUCTION_TEMPLATE_PATH.is_file())
+    action = AgentAction.parse_dict({
+        "action": "agent",
+        "prompt": "Default client prompt",
+        "model": "gemini-2.5-pro",
+        "temperature": 1.4,
+        "max_steps": 1,
+        "duration": "1m",
+        "max_history_screenshots": 4,
+    })
+    driver = AgentDriver(self.action_runner, self.mock_run, action)
+    self.assertIsInstance(driver._client, LlmConversationClient)
+    self.assertEqual(driver._client._model, "gemini-2.5-pro")
+    self.assertEqual(driver._client._max_history_screenshots, 4)
+    self.assertIsNone(driver._client._api_key)
+    rendered_instruction = str(driver._client._config.system_instruction)
+    self.assertIn("Default client prompt", rendered_instruction)
+    self.assertNotIn("$prompt", rendered_instruction)
+    self.assertIn('{"action": "click"', rendered_instruction)
 
 
 if __name__ == "__main__":
