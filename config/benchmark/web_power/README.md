@@ -1,5 +1,7 @@
 # Web Power Benchmark
 
+![Web Power logo](web_power_logo.png)
+
 The "Web Power" benchmark measures the power consumption of Web workloads.
 
 Currently supported scenarios:
