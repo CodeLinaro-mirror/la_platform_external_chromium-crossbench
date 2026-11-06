@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import dataclasses
 import json
 import re
@@ -11,7 +12,7 @@ import unittest
 
 import hjson
 
-from crossbench.cli.config.secrets import CycledUsernamePassword, \
+from crossbench.cli.config.secrets import AiSecrets, CycledUsernamePassword, \
     GoogleUsernamePassword, GoogleWorkspaceSecrets, Secrets, \
     SecretsMergeError, ServiceAccount, UsernamePassword
 from tests import test_helper
@@ -237,6 +238,34 @@ class SecretsConfigTestCase(BaseConfigTestCase):
     with self.assertRaisesRegex(SecretsMergeError,
                                 "Conflicting Google secrets"):
       secrets_1.merge(fallback=secrets_2, strict=True)
+
+  def test_parse_ai_secrets(self) -> None:
+    secrets = Secrets.parse({"ai": {"api_key": "test-api-key"}})
+    self.assertEqual(secrets.ai, AiSecrets(api_key="test-api-key"))
+    self.assertIsNotNone(secrets.ai)
+    self.assertFalse(secrets.ai.is_interactive)
+
+    for alias in ("gemini", "llm"):
+      with self.subTest(alias=alias):
+        aliased = Secrets.parse({alias: {"key": "aliased-key"}})
+        self.assertEqual(aliased.ai, AiSecrets(api_key="aliased-key"))
+
+    token_secrets = Secrets.parse({"ai": {"token": "token-key"}})
+    self.assertEqual(token_secrets.ai, AiSecrets(api_key="token-key"))
+
+    shorthand = Secrets.parse({"ai": "shorthand-api-key"})
+    self.assertEqual(shorthand.ai, AiSecrets(api_key="shorthand-api-key"))
+
+  def test_merge_ai_secrets(self) -> None:
+    primary = Secrets.parse({"ai": "primary-key"})
+    fallback = Secrets.parse({"ai": "fallback-key"})
+    empty = Secrets.parse({})
+
+    self.assertEqual(empty.merge(fallback=fallback), fallback)
+    self.assertEqual(primary.merge(fallback=fallback), primary)
+    self.assertEqual(primary.merge(fallback=primary, strict=True), primary)
+    with self.assertRaisesRegex(SecretsMergeError, "Conflicting AI secrets"):
+      primary.merge(fallback=fallback, strict=True)
 
   def test_cycled_account_default(self):
     cycled_account = CycledUsernamePassword.parse({
@@ -476,6 +505,32 @@ class ServiceAccountTestCase(unittest.TestCase):
         universe_domain="example.com",
     )
     self.assertNotEqual(account_1, account_3)
+
+
+class AiSecretsTestCase(unittest.TestCase):
+
+  def test_parse_variants(self) -> None:
+    secret_str = AiSecrets.parse("my-secret-key")
+    secret_dict = AiSecrets.parse({"api_key": "my-secret-key"})
+    secret_hjson = AiSecrets.parse('{api_key: "my-secret-key"}')
+    self.assertEqual(secret_str, AiSecrets(api_key="my-secret-key"))
+    self.assertEqual(secret_str, secret_dict)
+    self.assertEqual(secret_str, secret_hjson)
+
+  def test_parse_empty_invalid(self) -> None:
+    with self.assertRaises(argparse.ArgumentTypeError):
+      AiSecrets.parse("")
+    with self.assertRaises(argparse.ArgumentTypeError):
+      AiSecrets.parse({"api_key": ""})
+    with self.assertRaises(argparse.ArgumentTypeError):
+      AiSecrets(api_key="")
+
+  def test_immutability(self) -> None:
+    secret = AiSecrets(api_key="immutable-key")
+    with self.assertRaises(dataclasses.FrozenInstanceError):
+      # Intentionally mutating frozen dataclass field to test immutability.
+      # pyrefly: ignore[read-only]
+      secret.api_key = "mutated-key"
 
 
 if __name__ == "__main__":

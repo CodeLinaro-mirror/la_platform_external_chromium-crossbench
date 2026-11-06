@@ -35,6 +35,7 @@ class Secrets(ConfigObject):
   google: UsernamePassword | None = None
   bond: ServiceAccount | None = None
   google_workspace: GoogleWorkspaceSecrets | None = None
+  ai: AiSecrets | None = None
 
   @classmethod
   @override
@@ -43,6 +44,11 @@ class Secrets(ConfigObject):
     parser.add_argument("google", type=GoogleUsernamePassword)
     parser.add_argument("bond", type=ServiceAccount)
     parser.add_argument("google_workspace", type=GoogleWorkspaceSecrets)
+    parser.add_argument(
+        "ai",
+        aliases=("gemini", "llm"),
+        type=AiSecrets,
+        help="API key configuration for AI/LLM services.")
     return parser
 
   @classmethod
@@ -56,6 +62,7 @@ class Secrets(ConfigObject):
         self._merge_secret("Bond", self.bond, fallback.bond, strict),
         self._merge_secret("Google Workspace", self.google_workspace,
                            fallback.google_workspace, strict),
+        self._merge_secret("AI", self.ai, fallback.ai, strict),
     )
 
   def _merge_secret(self, name: str, primary: SecretT | None,
@@ -71,6 +78,34 @@ class Secret(ConfigObject):
   @property
   def is_interactive(self) -> bool:
     return False
+
+
+@dataclasses.dataclass(frozen=True)
+class AiSecrets(Secret):
+  """API key secret for AI/LLM providers (e.g. Gemini)."""
+  api_key: str
+
+  @override
+  def validate(self) -> None:
+    super().validate()
+    ObjectParser.non_empty_str(self.api_key, "api_key")
+
+  @classmethod
+  @override
+  def config_parser(cls) -> ConfigParser[Self]:
+    parser = ConfigParser(cls)
+    parser.add_default_argument(
+        "api_key",
+        aliases=("key", "token"),
+        type=ObjectParser.non_empty_str,
+        required=True,
+        help="API key for authenticating with the AI model service.")
+    return parser
+
+  @classmethod
+  @override
+  def parse_str(cls, value: str) -> Self:
+    return cls.config_parser().parse_str(value)
 
 
 @dataclasses.dataclass(frozen=True)

@@ -23,6 +23,7 @@ from crossbench.action_runner.llm_client import AgentTurnResponse, \
     LlmConversationClient
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.settings import Settings
+from crossbench.cli.config.secrets import Secrets
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
@@ -478,6 +479,10 @@ class AgentDriverTestCase(ActionRunnerTestCase):
     self.assertIn("Default client prompt", rendered_instruction)
     self.assertNotIn("$prompt", rendered_instruction)
     self.assertIn('{"action": "click"', rendered_instruction)
+
+    self.mock_run.story_secrets = Secrets.parse({"ai": "secret-ai-key"})
+    driver_with_key = AgentDriver(self.action_runner, self.mock_run, action)
+    self.assertEqual(driver_with_key._client._api_key, "secret-ai-key")
 
 
 if __name__ == "__main__":

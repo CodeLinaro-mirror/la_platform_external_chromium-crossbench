@@ -68,6 +68,11 @@ class AgentDriver:
   def browser_platform(self) -> Platform:
     return self._run.browser_platform
 
+  def _resolve_api_key(self) -> str | None:
+    if (run_secrets := self._run.secrets) and run_secrets.ai:
+      return run_secrets.ai.api_key
+    return None
+
   def _scale_coordinates(self, x: int, y: int) -> tuple[int, int]:
     width, height = self._display_resolution
     return (
@@ -134,6 +139,7 @@ class AgentDriver:
         model=self._action.model,
         system_instruction=system_instruction,
         temperature=self._action.temperature,
+        api_key=self._resolve_api_key(),
         max_history_screenshots=self._action.max_history_screenshots,
     )
 
