@@ -9,11 +9,13 @@ from typing import TYPE_CHECKING, Final
 
 from typing_extensions import override
 
-import crossbench.path as pth
+from crossbench import path as pth
 from crossbench.cli.ui import ui
 from crossbench.plt.macos import MacOSPlatform
 from crossbench.probes.profiling.context.base import PosixProfilingContext
 from crossbench.probes.profiling.enum import TargetMode
+from crossbench.probes.xcode_instruments.instrument_package import \
+    InstrumentPackage
 from crossbench.probes.xcode_instruments.recorder import XctraceRecorder
 
 if TYPE_CHECKING:
@@ -21,8 +23,9 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.run import Run
 
-_MAC_TRACE_TEMPLATE_PATH: Final[pth.LocalPath] = pth.LocalPath(
-    __file__).parents[1] / "time-profile.tracetemplate"
+# What xctrace records: CPU samples and Points of Interest signposts.
+MAC_INSTRUMENT_PATH: Final[pth.LocalPath] = pth.LocalPath(
+    __file__).parents[1] / "time-profile.instrpkg"
 
 _XPATH_EXPRESSION: Final[str] = (
     "//trace-toc/run/data/table["
@@ -41,17 +44,34 @@ class MacOSProfilingContext(PosixProfilingContext):
         TargetMode.SYSTEM_WIDE, TargetMode.RENDERER_PROCESS_ONLY), (
             f"Unsupported profiling mode for Mac: {self.target!s}")
     self._recorder: XctraceRecorder | None = None
+    self._package: InstrumentPackage | None = None
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "profile.trace"
 
-  def _start_xctrace(self, pid: int | None = None) -> None:
+  @property
+  def _macos_platform(self) -> MacOSPlatform:
     browser_platform = self.browser_platform
     assert isinstance(browser_platform, MacOSPlatform)
+    return browser_platform
+
+  @override
+  def setup(self) -> None:
+    super().setup()
+    # Cached across runs, see InstrumentPackage.build.
+    self._package = InstrumentPackage.build(self._macos_platform,
+                                            MAC_INSTRUMENT_PATH)
+
+  @property
+  def package(self) -> InstrumentPackage:
+    assert self._package, "Instrument package is built in setup()"
+    return self._package
+
+  def _start_xctrace(self, pid: int | None = None) -> None:
     self._recorder = XctraceRecorder(
-        browser_platform,
-        _MAC_TRACE_TEMPLATE_PATH,
+        self._macos_platform,
+        self.package,
         self.result_path,
         attach_pid=pid,
         stop_timeout_s=_STOP_TIMEOUT_S)

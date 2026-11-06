@@ -16,6 +16,8 @@ from crossbench.helper.wait import WaitRange, wait_with_backoff
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.plt.macos import MacOSPlatform
+  from crossbench.probes.xcode_instruments.instrument_package import \
+      InstrumentPackage
 
 _START_TIMEOUT_S: Final[int] = 30
 _DEFAULT_STOP_TIMEOUT_S: Final[int] = 3 * 60
@@ -30,7 +32,7 @@ class XctraceRecorder:
 
   def __init__(self,
                host_platform: MacOSPlatform,
-               template: pth.AnyPath,
+               package: InstrumentPackage,
                output_path: pth.AnyPath,
                attach_pid: int | None = None,
                device_udid: str | None = None,
@@ -39,7 +41,7 @@ class XctraceRecorder:
 
     Args:
       host_platform: Host platform to execute `xctrace` on.
-      template: Path to the `.tracetemplate` to record with.
+      package: The built Instruments package whose instruments to record.
       output_path: Destination path for the `.trace` bundle.
       attach_pid: Optional PID to attach to. If None (default), records all
         processes on the target device (`--all-processes`).
@@ -47,7 +49,7 @@ class XctraceRecorder:
       stop_timeout_s: Maximum seconds to wait for xctrace to stop and finalize.
     """
     self._host_platform: Final[MacOSPlatform] = host_platform
-    self._template: Final[pth.AnyPath] = template
+    self._package: Final[InstrumentPackage] = package
     self._output_path: Final[pth.AnyPath] = output_path
     self._attach_pid: Final[int | None] = attach_pid
     self._device_udid: Final[str | None] = device_udid
@@ -61,8 +63,8 @@ class XctraceRecorder:
     return self._process is not None
 
   def start(self) -> None:
-    assert self._host_platform.is_file(
-        self._template), f"Didn't find trace template {self._template}"
+    assert self._host_platform.exists(self._package.path), (
+        f"Didn't find instrument package {self._package.path}")
     # Finalize even if the run is interrupted, so the trace is not corrupted.
     atexit.register(self.finalize)
 
@@ -73,8 +75,7 @@ class XctraceRecorder:
     self._process = self._host_platform.popen(
         "xctrace",
         "record",
-        "--template",
-        self._template,
+        *self._package.record_args,
         *device_args,
         *process_filter,
         "--output",

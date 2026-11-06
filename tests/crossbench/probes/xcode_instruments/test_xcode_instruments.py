@@ -17,14 +17,19 @@ from crossbench.plt.macos import MacOSPlatform
 from crossbench.probes.probe_error import ProbeIncompatibleBrowser, \
     ProbeValidationError
 from crossbench.probes.profiling.enum import TargetMode
+from crossbench.probes.xcode_instruments.instrument_package import \
+    InstrumentPackage
 from crossbench.probes.xcode_instruments.recorder import XctraceRecorder
 from crossbench.probes.xcode_instruments.xcode_instruments import \
     XcodeInstrumentsProbe
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
-_RECORDING_OUTPUT: Final[str] = ("Starting recording with the template.\n"
+_RECORDING_OUTPUT: Final[str] = ("Starting recording with the instrument.\n"
                                  "Ctrl-C to stop the recording\n")
+
+_INSTRPKG: Final[str] = (
+    "<package><instrument><title>na</title></instrument></package>")
 
 
 class TargetPlatform(enum.Enum):
@@ -54,64 +59,70 @@ class XcodeInstrumentsProbeTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self) -> None:
     super().setUp()
-    self.template = pth.LocalPath("/tmp/counters.tracetemplate")
-    self.fs.create_file(self.template)
-    self.template = self.template.resolve()
+    self.instrument = pth.LocalPath("/tmp/counters.instrpkg")
+    self.fs.create_file(self.instrument, contents=_INSTRPKG)
+    self.instrument = self.instrument.resolve()
 
   def test_default_target(self):
-    probe = XcodeInstrumentsProbe(template=self.template)
+    probe = XcodeInstrumentsProbe(instrument=self.instrument)
     self.assertEqual(probe.target, TargetMode.SYSTEM_WIDE)
 
-  def test_template_is_required(self):
+  def test_instrument_is_required(self):
     with self.assertRaises(ArgumentTypeMultiException):
       XcodeInstrumentsProbe.parse_dict({})
 
   def test_parse_dict(self):
     probe = XcodeInstrumentsProbe.parse_dict({
-        "template": str(self.template),
+        "instrument": str(self.instrument),
         "target": "browser_app_only",
     })
-    self.assertEqual(probe.template, self.template)
+    self.assertEqual(probe.instrument, self.instrument)
     self.assertEqual(probe.target, TargetMode.BROWSER_APP_ONLY)
 
   def test_parse_str(self):
-    probe = XcodeInstrumentsProbe.parse_str(str(self.template))
-    self.assertEqual(probe.template, self.template)
+    probe = XcodeInstrumentsProbe.parse_str(str(self.instrument))
+    self.assertEqual(probe.instrument, self.instrument)
     self.assertEqual(probe.target, TargetMode.SYSTEM_WIDE)
 
-  def test_parse_dict_missing_template_file(self):
+  def test_parse_dict_missing_instrument_file(self):
     with self.assertRaises(ArgumentTypeMultiException):
-      XcodeInstrumentsProbe.parse_dict({"template": "/does/not/exist.xyz"})
+      XcodeInstrumentsProbe.parse_dict({"instrument": "/does/not/exist.xyz"})
 
-  def test_key_differs_by_template(self):
-    probe_a = XcodeInstrumentsProbe(template=self.template)
-    other = pth.LocalPath("/tmp/other.tracetemplate")
+  def test_parse_dict_invalid_instrument_file(self):
+    invalid = pth.LocalPath("/tmp/invalid.instrpkg")
+    self.fs.create_file(invalid, contents="<package/>")
+    with self.assertRaises(ArgumentTypeMultiException):
+      XcodeInstrumentsProbe.parse_dict({"instrument": str(invalid)})
+
+  def test_key_differs_by_instrument(self):
+    probe_a = XcodeInstrumentsProbe(instrument=self.instrument)
+    other = pth.LocalPath("/tmp/other.instrpkg")
     self.fs.create_file(other)
-    probe_b = XcodeInstrumentsProbe(template=other)
+    probe_b = XcodeInstrumentsProbe(instrument=other)
     self.assertNotEqual(probe_a.key, probe_b.key)
 
   def test_key_differs_by_target(self):
     probe_a = XcodeInstrumentsProbe(
-        template=self.template, target=TargetMode.SYSTEM_WIDE)
+        instrument=self.instrument, target=TargetMode.SYSTEM_WIDE)
     probe_b = XcodeInstrumentsProbe(
-        template=self.template, target=TargetMode.BROWSER_APP_ONLY)
+        instrument=self.instrument, target=TargetMode.BROWSER_APP_ONLY)
     self.assertNotEqual(probe_a.key, probe_b.key)
 
   def test_validate_macos_ok(self):
-    probe = XcodeInstrumentsProbe(template=self.template)
+    probe = XcodeInstrumentsProbe(instrument=self.instrument)
     probe.validate_browser(
         mock.Mock(),
         _mock_browser(
             TargetPlatform.MACOS, host_is_macos=True, has_xctrace=True))
 
   def test_validate_ios_ok(self):
-    probe = XcodeInstrumentsProbe(template=self.template)
+    probe = XcodeInstrumentsProbe(instrument=self.instrument)
     probe.validate_browser(
         mock.Mock(),
         _mock_browser(TargetPlatform.IOS, host_is_macos=True, has_xctrace=True))
 
   def test_validate_rejects_other_platform(self):
-    probe = XcodeInstrumentsProbe(template=self.template)
+    probe = XcodeInstrumentsProbe(instrument=self.instrument)
     with self.assertRaisesRegex(ProbeIncompatibleBrowser, "(?i)macOS and iOS"):
       probe.validate_browser(
           mock.Mock(),
@@ -119,7 +130,7 @@ class XcodeInstrumentsProbeTestCase(CrossbenchFakeFsTestCase):
               TargetPlatform.OTHER, host_is_macos=True, has_xctrace=True))
 
   def test_validate_rejects_non_macos_host(self):
-    probe = XcodeInstrumentsProbe(template=self.template)
+    probe = XcodeInstrumentsProbe(instrument=self.instrument)
     with self.assertRaisesRegex(ProbeIncompatibleBrowser, "(?i)macOS host"):
       probe.validate_browser(
           mock.Mock(),
@@ -127,7 +138,7 @@ class XcodeInstrumentsProbeTestCase(CrossbenchFakeFsTestCase):
               TargetPlatform.IOS, host_is_macos=False, has_xctrace=True))
 
   def test_validate_rejects_missing_xctrace(self):
-    probe = XcodeInstrumentsProbe(template=self.template)
+    probe = XcodeInstrumentsProbe(instrument=self.instrument)
     with self.assertRaisesRegex(ProbeValidationError, "(?i)install Xcode"):
       probe.validate_browser(
           mock.Mock(),
@@ -138,14 +149,14 @@ class XcodeInstrumentsProbeTestCase(CrossbenchFakeFsTestCase):
     browser = _mock_browser(
         TargetPlatform.MACOS, host_is_macos=True, has_xctrace=True)
     probe_auto = XcodeInstrumentsProbe(
-        template=self.template, target=TargetMode.AUTO)
+        instrument=self.instrument, target=TargetMode.AUTO)
     with self.assertRaisesRegex(
         ProbeIncompatibleBrowser,
         f"(?i)Unsupported target mode: {TargetMode.AUTO}"):
       probe_auto.validate_browser(mock.Mock(), browser)
 
     probe_renderer_main = XcodeInstrumentsProbe(
-        template=self.template, target=TargetMode.RENDERER_MAIN_ONLY)
+        instrument=self.instrument, target=TargetMode.RENDERER_MAIN_ONLY)
     with self.assertRaisesRegex(
         ProbeIncompatibleBrowser,
         f"(?i)Unsupported target mode: {TargetMode.RENDERER_MAIN_ONLY}"):
@@ -156,9 +167,7 @@ class XcodeInstrumentsContextTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self) -> None:
     super().setUp()
-    self.template = pth.LocalPath("/tmp/counters.tracetemplate")
-    self.fs.create_file(self.template)
-    self.template = self.template.resolve()
+    self.instrument = pth.LocalPath("/tmp/counters.instrpkg")
 
   def _create_context(self, probe, browser):
     run = mock.Mock()
@@ -167,9 +176,22 @@ class XcodeInstrumentsContextTestCase(CrossbenchFakeFsTestCase):
         "/tmp/result")
     return probe.create_context(run)
 
+  def test_setup_builds_package(self):
+    probe = XcodeInstrumentsProbe(instrument=self.instrument)
+    browser = _mock_browser(
+        TargetPlatform.MACOS, host_is_macos=True, has_xctrace=True)
+    context = self._create_context(probe, browser)
+    package = InstrumentPackage(
+        pth.LocalPath("/tmp/cache/counters.instrdst"), ("Counters",))
+    with mock.patch.object(
+        InstrumentPackage, "build", return_value=package) as build:
+      context.setup()
+    build.assert_called_once_with(browser.host_platform, self.instrument)
+    self.assertIs(context._package, package)
+
   def test_get_attach_pid_system_wide(self):
     probe = XcodeInstrumentsProbe(
-        template=self.template, target=TargetMode.SYSTEM_WIDE)
+        instrument=self.instrument, target=TargetMode.SYSTEM_WIDE)
     browser = _mock_browser(
         TargetPlatform.MACOS, host_is_macos=True, has_xctrace=True)
     context = self._create_context(probe, browser)
@@ -177,7 +199,7 @@ class XcodeInstrumentsContextTestCase(CrossbenchFakeFsTestCase):
 
   def test_get_attach_pid_browser_app_only(self):
     probe = XcodeInstrumentsProbe(
-        template=self.template, target=TargetMode.BROWSER_APP_ONLY)
+        instrument=self.instrument, target=TargetMode.BROWSER_APP_ONLY)
     browser = _mock_browser(
         TargetPlatform.MACOS, host_is_macos=True, has_xctrace=True)
     browser.pid = 1234
@@ -191,7 +213,7 @@ class XcodeInstrumentsContextTestCase(CrossbenchFakeFsTestCase):
 
   def test_get_attach_pid_renderer_process_only(self):
     probe = XcodeInstrumentsProbe(
-        template=self.template, target=TargetMode.RENDERER_PROCESS_ONLY)
+        instrument=self.instrument, target=TargetMode.RENDERER_PROCESS_ONLY)
     browser = _mock_browser(
         TargetPlatform.MACOS, host_is_macos=True, has_xctrace=True)
     browser.get_renderer_pid.return_value = 5678
@@ -208,9 +230,9 @@ class XctraceRecorderTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self) -> None:
     super().setUp()
-    self.template = pth.LocalPath("/tmp/counters.tracetemplate")
+    self.package = InstrumentPackage(
+        pth.LocalPath("/tmp/counters.instrdst"), ("Counters", "Signposts"))
     self.output_path = pth.LocalPath("/tmp/result/trace.trace")
-    self.fs.create_file(self.template)
     self.fs.create_dir(self.output_path.parent)
 
   def test_request_stop_signals_sigint(self):
@@ -223,7 +245,7 @@ class XctraceRecorderTestCase(CrossbenchFakeFsTestCase):
     mock_platform.popen.return_value = mock_process
     mock_platform.signals.SIGINT = 2
 
-    recorder = XctraceRecorder(mock_platform, self.template, self.output_path)
+    recorder = XctraceRecorder(mock_platform, self.package, self.output_path)
     recorder.start()
     recorder.request_stop()
     mock_platform.send_signal.assert_called_once_with(mock_process, 2)
@@ -238,7 +260,7 @@ class XctraceRecorderTestCase(CrossbenchFakeFsTestCase):
     mock_platform.popen.return_value = mock_process
     mock_platform.signals.SIGINT = 2
 
-    recorder = XctraceRecorder(mock_platform, self.template, self.output_path)
+    recorder = XctraceRecorder(mock_platform, self.package, self.output_path)
     recorder.start()
     recorder.finalize()
     mock_platform.terminate_gracefully.assert_called_once()
@@ -252,9 +274,13 @@ class XctraceRecorderTestCase(CrossbenchFakeFsTestCase):
     mock_process.stdout = io.StringIO(_RECORDING_OUTPUT)
     mock_platform.popen.return_value = mock_process
 
-    recorder = XctraceRecorder(mock_platform, self.template, self.output_path)
+    recorder = XctraceRecorder(mock_platform, self.package, self.output_path)
     recorder.start()
     self.assertTrue(recorder.is_recording)
+    self.assertEqual(mock_platform.popen.call_args.args,
+                     ("xctrace", "record", "--package", self.package.path,
+                      "--instrument", "Counters", "--instrument", "Signposts",
+                      "--all-processes", "--output", self.output_path))
     popen_kwargs = mock_platform.popen.call_args.kwargs
     self.assertEqual(popen_kwargs["stdout"], subprocess.PIPE)
     self.assertEqual(popen_kwargs["stderr"], subprocess.STDOUT)
@@ -264,10 +290,10 @@ class XctraceRecorderTestCase(CrossbenchFakeFsTestCase):
     mock_platform.is_file.return_value = True
     mock_process = mock.Mock()
     mock_process.poll.return_value = 1
-    mock_process.stdout = io.StringIO("Error: invalid template\n")
+    mock_process.stdout = io.StringIO("Error: invalid package\n")
     mock_platform.popen.return_value = mock_process
 
-    recorder = XctraceRecorder(mock_platform, self.template, self.output_path)
+    recorder = XctraceRecorder(mock_platform, self.package, self.output_path)
     with self.assertRaisesRegex(ValueError, "Could not start xctrace"):
       recorder.start()
 

@@ -25,10 +25,14 @@ from crossbench.probes.profiling.context.android import \
     AndroidProfilingContext, generate_simpleperf_command_line
 from crossbench.probes.profiling.context.linux import LinuxProfilingContext, \
     linux_perf_probe_pprof
+from crossbench.probes.profiling.context.macos import MAC_INSTRUMENT_PATH, \
+    MacOSProfilingContext
 from crossbench.probes.profiling.enum import CallGraphMode, CleanupMode, \
     PprofMode, TargetMode, TraceconvMode
 from crossbench.probes.profiling.system_profiling import RENDERER_CMD_PATH, \
     ProfilingProbe
+from crossbench.probes.xcode_instruments.instrument_package import \
+    InstrumentPackage
 from tests import test_helper
 from tests.crossbench.mock_browser import MockChromeStable, MockFirefox, \
     MockSafari
@@ -623,6 +627,20 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     browser2.platform = AndroidAdbMockPlatform(
         host_platform2, adb=adb2, fake_fs=self.fs)
     self.assertTrue(probe.run_traceconv(browser2))
+
+  def test_macos_context_setup_builds_instrument(self) -> None:
+    probe = ProfilingProbe(target=TargetMode.SYSTEM_WIDE)
+    platform = MacOsMockPlatform()
+    run = mock.Mock()
+    run.browser_platform = platform
+    run.browser.platform = platform
+    run.get_default_probe_result_path.return_value = pth.LocalPath(
+        "/tmp/result/profiling")
+    context = MacOSProfilingContext(probe, run)
+    with mock.patch.object(InstrumentPackage, "build") as build:
+      context.setup()
+    build.assert_called_once_with(platform, MAC_INSTRUMENT_PATH)
+    self.assertIs(context._package, build.return_value)
 
 
 

@@ -509,6 +509,8 @@ class Binaries:
   SIMPLEPERF: ClassVar = AndroidBinary("simpleperf")
   WMIC: ClassVar = Binary("wmic", win="wmic.exe")
   XCODEBUILD: ClassVar = MacOsBinary("xcodebuild")
+  XCODE_SELECT: ClassVar = MacOsBinary("xcode-select")
+  XCRUN: ClassVar = MacOsBinary("xcrun")
   XCTRACE: ClassVar = MacOsBinary("xctrace")
   WDA_XCTESTRUN: ClassVar[Binary] = Binary(
       "wda-xctestrun", macos=XcodeXctestrunPath("iphoneos"))

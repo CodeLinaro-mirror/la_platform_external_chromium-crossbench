@@ -218,7 +218,7 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
         EtmProbe,
         # Reason: requires bits_path and bits_out parameters
         BitsProbe,
-        # Reason: requires a `template` .tracetemplate to record with.
+        # Reason: requires an `instrument` .instrpkg to record with.
         XcodeInstrumentsProbe,
     }
     for probe_cls in GENERAL_PURPOSE_PROBES:

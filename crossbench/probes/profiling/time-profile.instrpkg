@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  The tables the macOS profiling probe exports: CPU samples and Points of
+  Interest signposts. Equivalent to the CPU Profiler (high frequency sampling,
+  no kernel callstacks) and Points of Interest instruments.
+
+  Only the <create-table>s matter. The "na" values are required by
+  instrumentbuilder but unused.
+-->
+<package>
+  <id>na</id>
+  <title>na</title>
+  <owner>
+    <name>na</name>
+  </owner>
+
+  <import-schema>cpu-profile</import-schema>
+  <import-schema>os-signpost</import-schema>
+
+  <instrument>
+    <id>na.na</id>
+    <title>na</title>
+    <category>CPU</category>
+    <purpose>na</purpose>
+    <icon>na</icon>
+
+    <!-- The recorded process(es): attached or all processes. -->
+    <import-parameter>
+      <from-scope>trace</from-scope>
+      <name>?target-pid</name>
+    </import-parameter>
+
+    <create-table>
+      <id>cpu-profile</id>
+      <schema-ref>cpu-profile</schema-ref>
+      <attribute>
+        <name>high-frequency-sampling</name>
+        <integer>1</integer>
+      </attribute>
+      <attribute>
+        <name>needs-kernel-callstack</name>
+        <integer>0</integer>
+      </attribute>
+      <attribute>
+        <name>target-pid</name>
+        <parameter-ref>?target-pid</parameter-ref>
+      </attribute>
+    </create-table>
+
+    <create-table>
+      <id>os-signpost</id>
+      <schema-ref>os-signpost</schema-ref>
+      <attribute>
+        <name>category</name>
+        <string>PointsOfInterest</string>
+      </attribute>
+      <attribute>
+        <name>target-pid</name>
+        <parameter-ref>?target-pid</parameter-ref>
+      </attribute>
+    </create-table>
+
+    <!-- Required by instrumentbuilder: a view for the Instruments app. -->
+    <list>
+      <title>na</title>
+      <table-ref>os-signpost</table-ref>
+      <column>time</column>
+    </list>
+  </instrument>
+</package>

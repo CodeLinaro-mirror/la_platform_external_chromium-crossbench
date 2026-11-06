@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  Example package recording signposts. See xcode_instruments.config.hjson.
+
+  Only the <create-table>s matter. The "na" values are required by
+  instrumentbuilder but unused.
+-->
+<package>
+  <id>na</id>
+  <title>na</title>
+  <owner>
+    <name>na</name>
+  </owner>
+
+  <import-schema>os-signpost</import-schema>
+
+  <instrument>
+    <id>na.na</id>
+    <title>na</title>
+    <category>CPU</category>
+    <purpose>na</purpose>
+    <icon>na</icon>
+
+    <create-table>
+      <id>os-signpost</id>
+      <schema-ref>os-signpost</schema-ref>
+    </create-table>
+
+    <!-- Required by instrumentbuilder: a view for the Instruments app. -->
+    <list>
+      <title>na</title>
+      <table-ref>os-signpost</table-ref>
+      <column>time</column>
+    </list>
+  </instrument>
+</package>

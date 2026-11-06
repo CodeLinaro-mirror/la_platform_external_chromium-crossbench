@@ -9,13 +9,14 @@ from typing import TYPE_CHECKING, ClassVar, Final, Self
 from typing_extensions import override
 
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
-from crossbench.parse import PathParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, \
     ProbeIncompatibleBrowser, ProbeKeyT
 from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.profiling.enum import TargetMode
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.xcode_instruments.context import XcodeInstrumentsContext
+from crossbench.probes.xcode_instruments.instrument_package import \
+    InstrumentPackage
 
 if TYPE_CHECKING:
   from crossbench import path as pth
@@ -25,7 +26,11 @@ if TYPE_CHECKING:
 
 
 class XcodeInstrumentsProbe(Probe):
-  """Records an Xcode Instruments trace with `xctrace`."""
+  """Records an Xcode Instruments trace with `xctrace`.
+
+  What is recorded is defined by a human-readable Instruments package source
+  (.instrpkg), see InstrumentPackage.
+  """
   NAME: ClassVar = "xcode_instruments"
   # xctrace always runs on the host Mac, even when recording an iOS device, so
   # the resulting .trace bundle lives on the host.
@@ -36,12 +41,13 @@ class XcodeInstrumentsProbe(Probe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_default_argument(
-        "template",
-        type=PathParser.existing_file_path,
+        "instrument",
+        type=InstrumentPackage.parse_source,
         required=True,
-        help=("Path to the Instruments .tracetemplate to record with. The "
-              "template determines which instruments are recorded. Required: "
-              "there is no default template."))
+        help=("Path to the Instruments package source (.instrpkg) to record "
+              "with. All its instruments are recorded; they declare which "
+              "built-in Instruments tables are recorded and their settings. "
+              "Required: there is no default instrument."))
     parser.add_argument(
         "target",
         type=TargetMode,
@@ -55,15 +61,15 @@ class XcodeInstrumentsProbe(Probe):
     return parser
 
   def __init__(self,
-               template: pth.LocalPath,
+               instrument: pth.LocalPath,
                target: TargetMode = TargetMode.SYSTEM_WIDE) -> None:
     super().__init__()
-    self._template: Final[pth.LocalPath] = template
+    self._instrument: Final[pth.LocalPath] = instrument
     self._target: Final[TargetMode] = target
 
   @property
-  def template(self) -> pth.LocalPath:
-    return self._template
+  def instrument(self) -> pth.LocalPath:
+    return self._instrument
 
   @property
   def target(self) -> TargetMode:
@@ -75,7 +81,7 @@ class XcodeInstrumentsProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("template", str(self._template)),
+    return (*super().key, ("instrument", str(self._instrument)),
             ("target", str(self._target)))
 
   @override

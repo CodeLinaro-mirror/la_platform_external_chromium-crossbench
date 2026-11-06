@@ -12,6 +12,8 @@ from crossbench.plt.ios import IOSPlatform
 from crossbench.plt.macos import MacOSPlatform
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.profiling.enum import TargetMode
+from crossbench.probes.xcode_instruments.instrument_package import \
+    InstrumentPackage
 from crossbench.probes.xcode_instruments.recorder import XctraceRecorder
 
 if TYPE_CHECKING:
@@ -29,10 +31,16 @@ class XcodeInstrumentsContext(ProbeContext["XcodeInstrumentsProbe"]):
     super().__init__(probe, run)
     self._recorder: XctraceRecorder | None = None
     self._target: Final[TargetMode] = self.probe.target
+    self._package: InstrumentPackage | None = None
 
   @property
   def target(self) -> TargetMode:
     return self._target
+
+  @property
+  def package(self) -> InstrumentPackage:
+    assert self._package, "Instrument package is built in setup()"
+    return self._package
 
   @property
   def _host(self) -> MacOSPlatform:
@@ -67,6 +75,12 @@ class XcodeInstrumentsContext(ProbeContext["XcodeInstrumentsProbe"]):
     return result_dir / "trace.trace"
 
   @override
+  def setup(self) -> None:
+    super().setup()
+    # Cached across runs, see InstrumentPackage.build.
+    self._package = InstrumentPackage.build(self._host, self.probe.instrument)
+
+  @override
   def start(self) -> None:
     pass
 
@@ -81,7 +95,7 @@ class XcodeInstrumentsContext(ProbeContext["XcodeInstrumentsProbe"]):
     attach_pid = self.get_attach_pid()
     self._recorder = XctraceRecorder(
         self._host,
-        self.probe.template,
+        self.package,
         self.local_result_path,
         attach_pid=attach_pid,
         device_udid=device_udid)
