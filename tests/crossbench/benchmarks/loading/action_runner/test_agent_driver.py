@@ -26,6 +26,7 @@ from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
 from crossbench.flags.base import Flags
+from crossbench.plt.bin import Binaries
 from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
@@ -774,6 +775,48 @@ class AgentDriverTestCase(ActionRunnerTestCase):
     self.assertEqual(len(anomalies_data), 1)
     self.assertEqual(anomalies_data[0]["anomaly"], "Stall without perfetto")
     self.assertIsNone(anomalies_data[0]["perfetto_snapshot_label"])
+
+  def _setup_driver_with_screenshot(self, prompt: str) -> AgentDriver:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    action = AgentAction.parse_dict({
+        "action": "agent",
+        "prompt": prompt,
+        "max_steps": 1,
+        "duration": "1m",
+    })
+    driver = AgentDriver(
+        self.action_runner,
+        self.mock_run,
+        action,
+        client=mock_client,
+    )
+    screenshots_dir = driver.episode_dir / "screenshots"
+    self.fs.create_file(screenshots_dir / "step_001.png", contents="png")
+    return driver
+
+  def test_generate_timelapse_invokes_ffmpeg_when_screenshots_exist(
+      self) -> None:
+    driver = self._setup_driver_with_screenshot("Test timelapse")
+    ffmpeg_path = pathlib.Path("/usr/bin/ffmpeg")
+    with (
+        patch.object(Binaries.FFMPEG, "search", return_value=ffmpeg_path),
+        patch.object(self.platform, "sh") as mock_sh,
+    ):
+      driver._generate_timelapse()
+      mock_sh.assert_called_once()
+      call_args = mock_sh.call_args.args
+      self.assertEqual(call_args[0], ffmpeg_path)
+      self.assertIn("libwebp_anim", call_args)
+      self.assertIn(driver.episode_dir / "timelapse.webp", call_args)
+
+  def test_generate_timelapse_skips_when_ffmpeg_missing(self) -> None:
+    driver = self._setup_driver_with_screenshot("Test timelapse without ffmpeg")
+    with (
+        patch.object(Binaries.FFMPEG, "search", return_value=None),
+        patch.object(self.platform, "sh") as mock_sh,
+    ):
+      driver._generate_timelapse()
+      mock_sh.assert_not_called()
 
 
 if __name__ == "__main__":

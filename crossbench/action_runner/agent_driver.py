@@ -25,6 +25,7 @@ from crossbench.action_runner.llm_client import LlmConversationClient
 from crossbench.benchmarks.loading.point import Point
 from crossbench.cli.ui import ui
 from crossbench.plt.base import SubprocessError
+from crossbench.plt.bin import Binaries
 from crossbench.runner.probe_context_lookup_error import \
     ProbeContextLookupError
 
@@ -74,6 +75,8 @@ class AgentDriver:
         self._episode_dir / "replay_actions.hjson")
     self._anomalies_path: Final[pth.LocalPath] = (
         self._episode_dir / "anomalies.json")
+    self._timelapse_path: Final[pth.LocalPath] = (
+        self._episode_dir / "timelapse.webp")
     self._executed_actions: list[JsonDict] = []
     self._anomalies: list[JsonDict] = []
     self._display_resolution: Final[tuple[int, int]] = (
@@ -248,6 +251,7 @@ class AgentDriver:
           self._run.runner.wait(self._action.settle_delay)
     finally:
       self._write_replay_file()
+      self._generate_timelapse()
 
   def _write_episode_metadata(self) -> None:
     metadata: JsonDict = {
@@ -400,3 +404,33 @@ class AgentDriver:
         self._replay_path,
         json.dumps(replay_payload, indent=2),
     )
+
+  def _generate_timelapse(self) -> None:
+    first_frame = self._screenshots_dir / "step_001.png"
+    if not self.host_platform.is_file(first_frame):
+      return
+    if not (ffmpeg_bin := Binaries.FFMPEG.search(self.host_platform)):
+      logging.debug("Skipping timelapse.webp generation: ffmpeg not found")
+      return
+    input_pattern = self._screenshots_dir / "step_%03d.png"
+    try:
+      self.host_platform.sh(
+          ffmpeg_bin,
+          "-y",
+          "-loglevel",
+          "error",
+          "-framerate",
+          "4",
+          "-i",
+          input_pattern,
+          "-vf",
+          "scale=720:-1:flags=lanczos",
+          "-c:v",
+          "libwebp_anim",
+          "-loop",
+          "0",
+          self._timelapse_path,
+      )
+      logging.info("Generated agent timelapse WebP: %s", self._timelapse_path)
+    except (SubprocessError, OSError) as e:
+      logging.warning("Failed to generate timelapse.webp: %s", e)
