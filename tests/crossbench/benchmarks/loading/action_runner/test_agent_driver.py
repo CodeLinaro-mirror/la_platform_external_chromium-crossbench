@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import pathlib
-from typing import cast
+from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, patch
 
 from crossbench.action_runner.action.agent import AgentAction
@@ -26,6 +26,7 @@ from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
 from crossbench.flags.base import Flags
+from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.action_runner.action_runner_test_case import \
@@ -33,6 +34,9 @@ from tests.crossbench.action_runner.action_runner_test_case import \
 from tests.crossbench.mock_browser import MockChromeStable
 from tests.crossbench.mock_helper import LinuxMockPlatform
 from tests.crossbench.runner.helper import MockRun, MockRunner
+
+if TYPE_CHECKING:
+  from crossbench.probes.probe import Probe
 
 
 class AgentDriverTestCase(ActionRunnerTestCase):
@@ -633,6 +637,143 @@ class AgentDriverTestCase(ActionRunnerTestCase):
     self.mock_run.story_secrets = Secrets.parse({"ai": "secret-ai-key"})
     driver_with_key = AgentDriver(self.action_runner, self.mock_run, action)
     self.assertEqual(driver_with_key._client._api_key, "secret-ai-key")
+
+  def test_record_anomaly_clones_perfetto_snapshot_and_writes_anomalies(
+      self) -> None:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    mock_client.send_turn.side_effect = [
+        AgentTurnResponse.parse({
+            "observation": "Initial screen",
+            "thought": "Normal step with whitespace anomaly field",
+            "done": False,
+            "anomaly": "   ",
+            "actions": [],
+        }),
+        AgentTurnResponse.parse({
+            "observation": "Second screen",
+            "thought": "Report UI stall",
+            "done": True,
+            "anomaly": "Detected UI stall",
+            "actions": [],
+        }),
+    ]
+    mock_perfetto_ctx = MagicMock()
+
+    def get_probe_ctx(probe_cls: type[Probe]) -> MagicMock | None:
+      if probe_cls is PerfettoProbe:
+        return mock_perfetto_ctx
+      return None
+
+    action = AgentAction.parse_dict({
+        "action": "agent",
+        "prompt": "Snapshot test",
+        "max_steps": 3,
+        "duration": "1m",
+    })
+    driver = AgentDriver(
+        self.action_runner,
+        self.mock_run,
+        action,
+        client=mock_client,
+    )
+    with patch.object(
+        self.mock_run, "get_probe_context", side_effect=get_probe_ctx):
+      driver.execute()
+
+    mock_perfetto_ctx.invoke.assert_called_once()
+    anomalies_file = driver.episode_dir / "anomalies.json"
+    self.assertTrue(anomalies_file.is_file())
+    anomalies_data = json.loads(anomalies_file.read_text(encoding="utf-8"))
+    self.assertEqual(len(anomalies_data), 1)
+    self.assertEqual(anomalies_data[0]["episode_id"], "episode_000")
+    self.assertEqual(anomalies_data[0]["step"], 2)
+    self.assertEqual(anomalies_data[0]["anomaly"], "Detected UI stall")
+    self.assertEqual(
+        anomalies_data[0]["perfetto_snapshot_label"],
+        "episode_000_step_002_anomaly",
+    )
+
+  def test_record_anomaly_clones_snapshot_on_every_anomaly_turn(self) -> None:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    mock_client.send_turn.side_effect = [
+        AgentTurnResponse.parse({
+            "observation": "Step 1",
+            "thought": "Report first stall",
+            "done": False,
+            "anomaly": "First stall",
+            "actions": [],
+        }),
+        AgentTurnResponse.parse({
+            "observation": "Step 2",
+            "thought": "Report second stall immediately",
+            "done": True,
+            "anomaly": "Second stall",
+            "actions": [],
+        }),
+    ]
+    action = AgentAction.parse_dict({
+        "action": "agent",
+        "prompt": "Consecutive snapshots test",
+        "max_steps": 2,
+        "duration": "1m",
+        "settle_delay": "0s",
+    })
+    driver = AgentDriver(
+        self.action_runner,
+        self.mock_run,
+        action,
+        client=mock_client,
+    )
+    mock_perfetto_ctx = MagicMock()
+    with patch.object(
+        self.mock_run, "get_probe_context", return_value=mock_perfetto_ctx):
+      driver.execute()
+
+    self.assertEqual(mock_perfetto_ctx.invoke.call_count, 2)
+    anomalies_file = driver.episode_dir / "anomalies.json"
+    anomalies_data = json.loads(anomalies_file.read_text(encoding="utf-8"))
+    self.assertEqual(len(anomalies_data), 2)
+    self.assertEqual(
+        anomalies_data[0]["perfetto_snapshot_label"],
+        "episode_000_step_001_anomaly",
+    )
+    self.assertEqual(
+        anomalies_data[1]["perfetto_snapshot_label"],
+        "episode_000_step_002_anomaly",
+    )
+
+  def test_record_anomaly_records_null_snapshot_when_perfetto_inactive(
+      self) -> None:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    mock_client.send_turn.side_effect = [
+        AgentTurnResponse.parse({
+            "observation": "Step 1",
+            "thought": "Report stall without perfetto probe",
+            "done": True,
+            "anomaly": "Stall without perfetto",
+            "actions": [],
+        }),
+    ]
+    action = AgentAction.parse_dict({
+        "action": "agent",
+        "prompt": "No perfetto probe test",
+        "max_steps": 1,
+        "duration": "1m",
+    })
+    driver = AgentDriver(
+        self.action_runner,
+        self.mock_run,
+        action,
+        client=mock_client,
+    )
+    driver.execute()
+
+    anomalies_file = driver.episode_dir / "anomalies.json"
+    self.assertTrue(anomalies_file.is_file())
+    anomalies_data = json.loads(anomalies_file.read_text(encoding="utf-8"))
+    self.assertEqual(len(anomalies_data), 1)
+    self.assertEqual(anomalies_data[0]["anomaly"], "Stall without perfetto")
+    self.assertIsNone(anomalies_data[0]["perfetto_snapshot_label"])
 
 
 if __name__ == "__main__":

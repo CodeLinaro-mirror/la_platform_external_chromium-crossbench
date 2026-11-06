@@ -26,6 +26,7 @@ class AgentTurnResponseTestCase(unittest.TestCase):
         "observation": "Page loaded",
         "thought": "Wait 10ms",
         "done": False,
+        "anomaly": "UI stall",
         "actions": [{
             "action": "wait",
             "duration": "10ms",
@@ -35,6 +36,7 @@ class AgentTurnResponseTestCase(unittest.TestCase):
     self.assertEqual(turn.observation, "Page loaded")
     self.assertEqual(turn.thought, "Wait 10ms")
     self.assertFalse(turn.done)
+    self.assertEqual(turn.anomaly, "UI stall")
     self.assertEqual(len(turn.actions), 1)
     self.assertIsInstance(turn.actions[0], WaitAction)
     assert isinstance(turn.actions[0], WaitAction)
@@ -107,6 +109,8 @@ class LlmConversationClientTestCase(unittest.TestCase):
         "observation": "Obs 1",
         "thought": "Thought 1",
         "done": False,
+        "request_trace_snapshot": False,
+        "anomaly_reason": "",
         "actions": [{
             "action": "wait",
             "duration": "10ms",

@@ -28,12 +28,14 @@ assert ACTIONS_TUPLE, "import failed"
 class AgentTurnResponse(ConfigObject):
   """Structured single-turn JSON response emitted by an LLM agent.
 
-  Contains the agent's current screen observation, reasoning, completion flag,
-  and the sequence of Crossbench actions to execute next.
+  Contains the agent's current screen observation, reasoning, completion status,
+  optional anomaly description, and the sequence of Crossbench actions to
+  execute next.
   """
   observation: str = ""
   thought: str = ""
   done: bool = False
+  anomaly: str = ""
   actions: tuple[Action, ...] = ()
 
   @classmethod
@@ -62,6 +64,13 @@ class AgentTurnResponse(ConfigObject):
         type=ObjectParser.bool,
         default=False,
         help="Whether the requested task instructions are complete.")
+    parser.add_argument(
+        "anomaly",
+        type=ObjectParser.any_str,
+        default="",
+        help=("Non-empty description when an anomaly is observed on this turn "
+              "(records an entry in anomalies.json and clones a Perfetto "
+              "snapshot)."))
     parser.add_argument(
         "actions",
         type=Action,

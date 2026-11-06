@@ -14,6 +14,7 @@ import time
 from typing import TYPE_CHECKING, Final
 
 from crossbench import path as pth
+from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.mouse_move import MouseMoveAction
@@ -23,9 +24,11 @@ from crossbench.action_runner.action.text_input import TextInputAction
 from crossbench.action_runner.llm_client import LlmConversationClient
 from crossbench.benchmarks.loading.point import Point
 from crossbench.cli.ui import ui
+from crossbench.plt.base import SubprocessError
+from crossbench.runner.probe_context_lookup_error import \
+    ProbeContextLookupError
 
 if TYPE_CHECKING:
-  from crossbench.action_runner.action.action import Action
   from crossbench.action_runner.action.agent import AgentAction
   from crossbench.action_runner.action_runner import ActionRunner
   from crossbench.action_runner.llm_client import AgentTurnResponse
@@ -69,7 +72,10 @@ class AgentDriver:
         self._episode_dir / "transcript.jsonl")
     self._replay_path: Final[pth.LocalPath] = (
         self._episode_dir / "replay_actions.hjson")
+    self._anomalies_path: Final[pth.LocalPath] = (
+        self._episode_dir / "anomalies.json")
     self._executed_actions: list[JsonDict] = []
+    self._anomalies: list[JsonDict] = []
     self._display_resolution: Final[tuple[int, int]] = (
         self.browser_platform.display_resolution())
     self._client: LlmConversationClient = (
@@ -219,6 +225,9 @@ class AgentDriver:
           break
 
         turn = self._request_turn(step_idx, feedback)
+        if anomaly := turn.anomaly.strip():
+          self._record_anomaly(step_idx, anomaly)
+
         action_results = self._execute_turn_actions(step_idx, turn.actions)
         elapsed_total_s = int(time.monotonic() - start_time)
         feedback = (
@@ -321,6 +330,48 @@ class AgentDriver:
     finally:
       self._run.performance_mark(f"{label}_end")
 
+  def _record_anomaly(self, step_idx: int, anomaly: str) -> None:
+    step_suffix = f"step_{step_idx:03d}_anomaly"
+    info_label = f"agent_{self._episode_index:03d}_{step_suffix}"
+    snapshot_name = f"{self._episode_id}_{step_suffix}"
+    snapshot_label: str | None = None
+    if self._clone_perfetto_snapshot(snapshot_name, info_label):
+      snapshot_label = snapshot_name
+
+    entry: JsonDict = {
+        "episode_id": self._episode_id,
+        "step": step_idx,
+        "timestamp": dt.datetime.now(dt.UTC).isoformat(),
+        "anomaly": anomaly,
+        "perfetto_snapshot_label": snapshot_label,
+        "recent_actions": self._executed_actions[-10:],
+    }
+    self._anomalies.append(entry)
+    self.host_platform.write_text(
+        self._anomalies_path,
+        json.dumps(self._anomalies, indent=2),
+    )
+
+  def _clone_perfetto_snapshot(self, label: str, info_label: str) -> bool:
+    try:
+      probe_action = Action.parse_dict({
+          "action": "probe",
+          "probe": "perfetto",
+          "kwargs": {
+              "label": label,
+          },
+      })
+      with self._action_runner.info_stack_annotate(info_label):
+        probe_action.run_with(self._action_runner)
+      return True
+    except ProbeContextLookupError:
+      logging.debug(
+          "Skipping Perfetto snapshot %r: perfetto probe is not active", label)
+      return False
+    except (SubprocessError, RuntimeError, ValueError, OSError) as e:
+      logging.warning("Failed to clone Perfetto snapshot %r: %s", label, e)
+      return False
+
   def _append_transcript(
       self,
       step_idx: int,
@@ -335,6 +386,7 @@ class AgentDriver:
         "observation": turn.observation,
         "thought": turn.thought,
         "done": turn.done,
+        "anomaly": turn.anomaly,
         "actions": [action.to_json() for action in turn.actions],
     }
     with self._transcript_path.open("a", encoding="utf-8") as f:

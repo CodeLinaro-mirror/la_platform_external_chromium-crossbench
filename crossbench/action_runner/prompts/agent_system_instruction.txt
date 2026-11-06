@@ -11,6 +11,7 @@ Respond ONLY with a valid JSON object matching this exact structure:
   "observation": "Visible screen state and whether the last action succeeded.",
   "thought": "Your reasoning for the next step based on the task instructions.",
   "done": false,
+  "anomaly": "",
   "actions": [
     { "action": "..." },
     { "action": "..." }
@@ -22,6 +23,8 @@ example: clicking an input field, typing text, and pressing Enter; or
 launching an app, waiting briefly, and interacting with it), chain multiple
 actions together in the "actions" array in a single turn to make faster
 progress and reduce round-trips.
+Set "anomaly" to a brief description of what went wrong when requested by the
+task instructions (leave "" otherwise).
 Set "done": true only when the task instructions are completely finished.
 
 Supported Crossbench action objects in the "actions" array:
