@@ -298,12 +298,13 @@ export function getOrCreateWorkerClient(webAdbBridge: WebAdbBridge):
       async (method, args) => {
         if (method === 'shell') {
           const cmd = args[0] as string;
+          const input = args[1] as string | undefined;
           if (!webAdbBridge.isConnected) {
             throw new Error(
                 `ADB device is not connected. Cannot execute shell command: ${
                     cmd}`);
           }
-          return await webAdbBridge.shell(cmd);
+          return await webAdbBridge.shell(cmd, input);
         }
         if (method === 'startDevTools') {
           if (!webAdbBridge.isConnected) {
@@ -459,6 +460,21 @@ export function getOrCreateWorkerClient(webAdbBridge: WebAdbBridge):
           }
           const procId = await webAdbBridge.spawnProcess(cmd);
           return String(procId);
+        }
+        if (method === 'writeProcessStdin') {
+          const [procId, data] = args;
+          if (!webAdbBridge.isConnected) {
+            throw new Error(
+                `ADB device is not connected. Cannot write to process #${
+                    procId} stdin`);
+          }
+          await webAdbBridge.writeProcessStdin(Number(procId), String(data));
+          return 'OK';
+        }
+        if (method === 'closeProcessStdin') {
+          const [procId] = args;
+          await webAdbBridge.closeProcessStdin(Number(procId));
+          return 'OK';
         }
         if (method === 'readProcessLog') {
           const [procId, offset] = args;

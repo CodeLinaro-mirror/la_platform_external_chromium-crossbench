@@ -9,7 +9,7 @@
 
 export interface WebAdbProxy {
   serial?: string;
-  shell(cmd: string): Uint8Array|string;
+  shell(cmd: string, input?: string): Uint8Array|string;
   push(src: string, dest: string): void;
   pull(src: string, dest: string): void;
   startDevTools?(): string;
@@ -17,6 +17,8 @@ export interface WebAdbProxy {
   switchTab?(url?: string): string;
   sendCdpCommand?(method: string, paramsJson: string): string;
   spawnProcess?(cmd: string): number;
+  writeProcessStdin?(id: number, data: string): void;
+  closeProcessStdin?(id: number): void;
   readProcessLog?(id: number, offset: number): string;
   killProcess?(id: number): void;
   gcsGetMetadata?(url: string): string;
@@ -180,8 +182,9 @@ export class SynchronousWorkerAdbBridge implements WebAdbProxy {
     return responseText;
   }
 
-  shell(cmd: string): Uint8Array {
-    const {status, bytes} = this.callSyncRpcRaw('shell', [cmd]);
+  shell(cmd: string, input?: string): Uint8Array {
+    const args: any[] = input !== undefined ? [cmd, input] : [cmd];
+    const {status, bytes} = this.callSyncRpcRaw('shell', args);
     if (status === 2) {
       const errText = new TextDecoder().decode(bytes);
       throw new Error(`ADB sync RPC error (shell): ${errText}`);
@@ -255,6 +258,14 @@ export class SynchronousWorkerAdbBridge implements WebAdbProxy {
           `Failed to parse process PID from spawnProcess response: "${res}"`);
     }
     return pid;
+  }
+
+  writeProcessStdin(id: number, data: string): void {
+    this.callSyncRpc('writeProcessStdin', [id, data]);
+  }
+
+  closeProcessStdin(id: number): void {
+    this.callSyncRpc('closeProcessStdin', [id]);
   }
 
   readProcessLog(id: number, offset: number): string {

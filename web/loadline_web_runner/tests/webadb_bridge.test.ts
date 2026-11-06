@@ -227,6 +227,42 @@ describe('WebAdbBridge operations', () => {
             'Unexpected output format from ADB shell command "echo test"');
   });
 
+  it('runs shell command with stdin input and closes stdin', async () => {
+    const writtenChunks: Uint8Array[] = [];
+    let stdinClosed = false;
+    const procMock = {
+      stdin: new WritableStream<Uint8Array>({
+        write(chunk) {
+          writtenChunks.push(chunk);
+        },
+        close() {
+          stdinClosed = true;
+        },
+      }),
+      stdout: new ReadableStream<Uint8Array>({
+        start(c) {
+          c.enqueue(new TextEncoder().encode('I|0|mark\n'));
+          c.close();
+        },
+      }),
+      stderr: new ReadableStream<Uint8Array>({
+        start(c) {
+          c.close();
+        },
+      }),
+      exited: Promise.resolve(0),
+    };
+    bridge.adbInstance.subprocess.shellProtocol.spawn.mockResolvedValue(
+        procMock);
+
+    const result = await bridge.shell(
+        'tee /sys/kernel/tracing/trace_marker', 'I|0|mark\n');
+    expect(new TextDecoder().decode(result)).toBe('I|0|mark\n');
+    expect(writtenChunks.length).toBe(1);
+    expect(new TextDecoder().decode(writtenChunks[0])).toBe('I|0|mark\n');
+    expect(stdinClosed).toBe(true);
+  });
+
   it('push() uses ADB sync', async () => {
     const mockSync = {
       write: vi.fn().mockResolvedValue(undefined),
@@ -322,6 +358,44 @@ describe('WebAdbBridge operations', () => {
     await expect(bridge.killProcess(999))
         .rejects.toThrow('Process #999 not found in active processes.');
   });
+
+  it('writeProcessStdin and closeProcessStdin write and close stream',
+     async () => {
+       const writtenChunks: Uint8Array[] = [];
+       let closed = false;
+       const procMock = {
+         stdin: new WritableStream<Uint8Array>({
+           write(chunk) {
+             writtenChunks.push(chunk);
+           },
+           close() {
+             closed = true;
+           },
+         }),
+         stdout: new ReadableStream({
+           start(c) {
+             c.close();
+           },
+         }),
+         kill: vi.fn().mockResolvedValue(undefined),
+         exited: new Promise(() => {}),
+       };
+       const shellProto = bridge.adbInstance.subprocess.shellProtocol;
+       shellProto.spawn.mockResolvedValue(procMock);
+
+       const procId = await bridge.spawnProcess('uinput -');
+       await bridge.writeProcessStdin(procId, 'N: touch1\n');
+       await bridge.writeProcessStdin(procId, 'E:\n');
+       await bridge.closeProcessStdin(procId);
+
+       expect(writtenChunks.length).toBe(2);
+       expect(new TextDecoder().decode(writtenChunks[0])).toBe('N: touch1\n');
+       expect(new TextDecoder().decode(writtenChunks[1])).toBe('E:\n');
+       expect(closed).toBe(true);
+
+       await expect(bridge.closeProcessStdin(999))
+           .rejects.toThrow('Process #999 not found in active processes.');
+     });
 });
 
 describe('WebAdbBridge getDevToolsVersion', () => {

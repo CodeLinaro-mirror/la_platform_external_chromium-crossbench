@@ -42,34 +42,35 @@ describe('Pyodide Integration Test (Real WebAssembly)', () => {
   it('loads real Pyodide, mounts crossbench, runs loading story, ' +
          'and tests TraceProcessor probe',
      async () => {
+       const encoder = new TextEncoder();
        const mockWebAdb: WebAdbProxy = {
          serial: 'mock-usb-device',
-         shell: vi.fn().mockImplementation((cmd: string) => {
+         shell: vi.fn().mockImplementation((cmd: string, input?: string) => {
            if (cmd.includes('getprop ro.build.version.release')) {
-             return '14\n';
+             return encoder.encode('14\n');
            }
            if (cmd.includes('getprop ro.build.version.sdk'))
-             return '34\n';
+             return encoder.encode('34\n');
            if (cmd.includes('getprop ro.product.model'))
-             return 'Pixel 8\n';
+             return encoder.encode('Pixel 8\n');
            if (cmd.includes('getprop ro.product.cpu.abi')) {
-             return 'arm64-v8a\n';
+             return encoder.encode('arm64-v8a\n');
            }
            if (cmd.includes('getprop')) {
-             return '[ro.build.version.release]: [14]\n';
+             return encoder.encode('[ro.build.version.release]: [14]\n');
            }
            if (cmd.includes('get-current-user'))
-             return '0\n';
+             return encoder.encode('0\n');
            if (cmd.includes('list users')) {
-             return 'UserInfo{0:null:4c13} running\n';
+             return encoder.encode('UserInfo{0:null:4c13} running\n');
            }
            if (cmd.includes('list packages')) {
-             return (
+             return encoder.encode(
                  'package:com.android.chrome\n' +
                  'package:com.google.android.apps.chrome\n');
            }
            if (cmd.includes('dumpsys package')) {
-             return 'versionName=120.0.6099.144\n';
+             return encoder.encode('versionName=120.0.6099.144\n');
            }
            if (cmd.includes('dumpsys window displays --proto')) {
              const repoRoot = path.resolve(__dirname, '../../..');
@@ -79,31 +80,34 @@ describe('Pyodide Integration Test (Real WebAssembly)', () => {
                  fileBuf.buffer, fileBuf.byteOffset, fileBuf.byteLength);
            }
            if (cmd.includes('dumpsys window')) {
-             return 'mAppBounds=Rect(0, 0 - 1080, 2400)\n';
+             return encoder.encode('mAppBounds=Rect(0, 0 - 1080, 2400)\n');
            }
            if (cmd.includes('dumpsys power')) {
-             return 'mHoldingDisplaySuspendBlocker=true\n';
+             return encoder.encode('mHoldingDisplaySuspendBlocker=true\n');
            }
            if (cmd.includes('dumpsys battery')) {
-             return 'level: 100\ntemperature: 250\n';
+             return encoder.encode('level: 100\ntemperature: 250\n');
            }
            if (cmd.includes('uname -m'))
-             return 'aarch64\n';
+             return encoder.encode('aarch64\n');
            if (cmd.includes('cat') && cmd.includes('chrome-command-line')) {
-             return '';
+             return encoder.encode('');
            }
            if (cmd.includes('am set-debug-app'))
-             return 'Success\n';
+             return encoder.encode('Success\n');
            if (cmd.includes('am start')) {
-             return (
+             return encoder.encode(
                  'Starting: Intent { act=android.intent.action.VIEW ' +
                  'dat=about:blank pkg=com.android.chrome }\n');
            }
            if (cmd.includes('pm clear') || cmd.includes('am stop-app') ||
                cmd.includes('am force-stop')) {
-             return 'Success\n';
+             return encoder.encode('Success\n');
            }
-           return '';
+           if (cmd.includes('tee /sys/kernel/tracing/trace_marker') && !input) {
+             throw new Error(`Hanging tee command without stdin input: ${cmd}`);
+           }
+           return encoder.encode('');
          }),
          push: vi.fn(),
          pull: vi.fn(),
@@ -134,6 +138,16 @@ describe('Pyodide Integration Test (Real WebAssembly)', () => {
            }
            return JSON.stringify({});
          }),
+         spawnProcess: vi.fn().mockReturnValue(201),
+         writeProcessStdin: vi.fn(),
+         closeProcessStdin: vi.fn(),
+         readProcessLog: vi.fn().mockReturnValue(JSON.stringify({
+           text: '',
+           nextOffset: 0,
+           isExited: false,
+           exitCode: null,
+         })),
+         killProcess: vi.fn(),
        };
 
        const logs: string[] = [];
@@ -163,6 +177,10 @@ describe('Pyodide Integration Test (Real WebAssembly)', () => {
          '--throw',
        ]);
        expect(mockWebAdb.shell).toHaveBeenCalled();
+       expect(mockWebAdb.shell)
+           .toHaveBeenCalledWith(
+               'tee /sys/kernel/tracing/trace_marker',
+               expect.stringContaining('crossbench-iteration-start'));
        expect(mockWebAdb.startDevTools).toHaveBeenCalled();
        expect(mockWebAdb.sendCdpCommand).toHaveBeenCalled();
 
@@ -183,6 +201,40 @@ assert isinstance(text, str) and len(text) > 0, (
 `;
        const perfettoRes = await runner.runScript(perfettoTestScript);
        expect(perfettoRes).toBe('OK');
+
+       // Test uinput virtual device setup and event injection in Pyodide
+       const uinputTestScript = `
+from unittest import mock
+from crossbench.action_runner.input_events import TouchEvent
+from crossbench.action_runner.virtual_device.touchscreen import (
+    TouchscreenVirtualDeviceConfig,
+)
+from crossbench.benchmarks.loading.point import Point
+from crossbench.plt.pyodide_adb import PyodideAndroidAdbPlatform
+
+plt = PyodideAndroidAdbPlatform()
+with mock.patch.object(plt.adb, "getprop", return_value="37"), \\
+     mock.patch.object(plt, "sleep"):
+  plt.setup_virtual_devices(
+      (TouchscreenVirtualDeviceConfig(name="touch1", width=1080, height=2400),)
+  )
+  plt.inject_input_events(
+      "touch1",
+      (
+          TouchEvent(Point(100, 200), is_down=True),
+          TouchEvent(Point(100, 200), is_down=False),
+      ),
+  )
+"OK"
+`;
+       const uinputRes = await runner.runScript(uinputTestScript);
+       expect(uinputRes).toBe('OK');
+       expect(mockWebAdb.spawnProcess).toHaveBeenCalledWith('uinput -');
+       expect(mockWebAdb.writeProcessStdin)
+           .toHaveBeenCalledWith(201, expect.stringContaining('N: touch1'));
+       expect(mockWebAdb.writeProcessStdin)
+           .toHaveBeenCalledWith(
+               201, expect.stringContaining('0003 0035 0100'));
 
        // Test Perfetto TraceProcessor in Pyodide with real pandas, numpy, scipy
        const tpTestScript = `

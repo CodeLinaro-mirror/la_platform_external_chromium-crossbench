@@ -16,10 +16,12 @@ from typing import IO, TYPE_CHECKING, Final, Mapping, cast
 from typing_extensions import override
 
 from crossbench.plt import android_adb
-from crossbench.plt.pyodide import PyodideGcsBlob, PyodidePlatform, \
+from crossbench.plt.pyodide import JsBuffer, PyodideGcsBlob, PyodidePlatform, \
     is_pyodide_env
 
 if TYPE_CHECKING:
+  from typing_extensions import Buffer
+
   from crossbench import path as pth
   from crossbench.flags.base import FlagsData
   from crossbench.plt.base import Platform
@@ -164,10 +166,18 @@ class PyodideAdb(android_adb.Adb):
       self._webadb.acknowledgeInterrupt()
       raise KeyboardInterrupt("Benchmark execution interrupted by user")
 
-  def _run_shell(self, cmd_str: str) -> bytes:
+  def _run_shell(
+      self,
+      cmd_str: str,
+      input: bytes | None = None,  # pylint: disable=redefined-builtin
+  ) -> bytes:
     self._check_interrupted()
     try:
-      return self._to_bytes(self._webadb.shell(cmd_str))
+      if input is None:
+        raw = self._webadb.shell(cmd_str)
+      else:
+        raw = self._webadb.shell(cmd_str, input.decode("utf-8"))
+      return self._to_bytes(raw)
     except Exception as e:
       if "BenchmarkExecutionInterrupted" in str(e) or "Stopped by user" in str(
           e):
@@ -191,7 +201,7 @@ class PyodideAdb(android_adb.Adb):
       check: bool = True,
       use_serial_id: bool = True,
   ) -> subprocess.CompletedProcess:
-    del shell, capture_output, stdout, stderr, stdin, input, quiet, check
+    del shell, capture_output, stdout, stderr, stdin, quiet, check
     del use_serial_id
     self._check_interrupted()
     if not args:
@@ -201,7 +211,7 @@ class PyodideAdb(android_adb.Adb):
     if cmd != "shell":
       raise NotImplementedError(
           f"ADB command '{cmd}' is not supported on Pyodide.")
-    return self.shell(*sub_args)
+    return self.shell(*sub_args, input=input)
 
   @override
   def _adb_stdout_bytes(
@@ -213,28 +223,28 @@ class PyodideAdb(android_adb.Adb):
       use_serial_id: bool = True,
       check: bool = True,
   ) -> bytes:
-    del quiet, stdin, input, use_serial_id, check
-    res = self._adb(*args)
-    stdout = res.stdout
-    if isinstance(stdout, bytes):
-      return stdout
-    return str(stdout).encode("utf-8")
+    del quiet, stdin, use_serial_id, check
+    res = self._adb(*args, input=input)
+    assert isinstance(res.stdout, bytes)
+    return res.stdout
 
-  def _build_shell_cmd_str(self, *args: CmdArg, shell: bool = False) -> str:
+  def _build_shell_cmd_str(
+      self,
+      *args: CmdArg,
+      shell: bool = False,
+  ) -> str:
     if not shell:
       return shlex.join(map(str, args))
     if len(args) == 1:
       return str(args[0])
     raise ValueError(f"Expected single sh arg with shell=True, but got: {args}")
 
-  def _to_bytes(self, raw: object) -> bytes:
+  def _to_bytes(self, raw: str | bytes | JsBuffer) -> bytes:
     if isinstance(raw, bytes):
       return raw
     if isinstance(raw, str):
       return raw.encode("utf-8")
-    if isinstance(raw, (bytearray, memoryview)):
-      return bytes(raw)
-    raise TypeError(f"Unsupported type: {type(raw)}")
+    return raw.to_bytes()
 
   @override
   def shell(
@@ -251,10 +261,10 @@ class PyodideAdb(android_adb.Adb):
       quiet: bool = False,
       check: bool = True,
   ) -> subprocess.CompletedProcess:
-    del capture_output, stdout, stderr, stdin, input, env, cwd, quiet
+    del capture_output, stdout, stderr, stdin, env, cwd, quiet
     del check
     cmd_str = self._build_shell_cmd_str(*args, shell=shell)
-    out = self._run_shell(cmd_str)
+    out = self._run_shell(cmd_str, input=input)
     return subprocess.CompletedProcess(
         args=args, returncode=0, stdout=out, stderr=b"")
 
@@ -270,9 +280,9 @@ class PyodideAdb(android_adb.Adb):
       cwd: pth.AnyPath | None = None,
       check: bool = True,
   ) -> bytes:
-    del quiet, stdin, input, env, cwd, check
+    del quiet, stdin, env, cwd, check
     cmd_str = self._build_shell_cmd_str(*args, shell=shell)
-    return self._run_shell(cmd_str)
+    return self._run_shell(cmd_str, input=input)
 
 
 class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
@@ -418,7 +428,7 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
       quiet: bool = False,
       auto_terminate: bool = True,
   ) -> subprocess.Popen:
-    del shell, bufsize, stdin, quiet, encoding, auto_terminate
+    del shell, bufsize, quiet, encoding, auto_terminate
     assert not env, "ADB does not support env vars"
     self._check_interrupted()
 
@@ -437,10 +447,49 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
         cmd=cmd_str,
         stdout=stdout,
         stderr=stderr,
+        stdin=stdin,
         local_log_file=local_file,
     )
     popen_obj.poll()
     return popen_obj
+
+
+class PyodidePopenStdin(io.RawIOBase):
+  """Writable stdin stream for a PyodideStreamingPopen process."""
+
+  def __init__(
+      self,
+      platform: PyodideAndroidAdbPlatform,
+      proc_id: int,
+  ) -> None:
+    super().__init__()
+    self._platform: Final[PyodideAndroidAdbPlatform] = platform
+    self._proc_id: Final[int] = proc_id
+
+  @override
+  def writable(self) -> bool:
+    return True
+
+  @override
+  def write(self, b: Buffer, /) -> int:
+    if self.closed:
+      raise ValueError("write to closed file")
+    raw_bytes = bytes(b)
+    if not raw_bytes:
+      return 0
+    text = raw_bytes.decode("utf-8")
+    try:
+      self._platform.webadb.writeProcessStdin(self._proc_id, text)
+    except Exception as e:
+      raise BrokenPipeError(str(e)) from e
+    return len(raw_bytes)
+
+  @override
+  def close(self) -> None:
+    if self.closed:
+      return
+    super().close()
+    self._platform.webadb.closeProcessStdin(self._proc_id)
 
 
 class PyodideStreamingPopen(subprocess.Popen):
@@ -457,6 +506,7 @@ class PyodideStreamingPopen(subprocess.Popen):
       cmd: str,
       stdout: ProcessIo = None,
       stderr: ProcessIo = None,
+      stdin: ProcessIo = None,
       local_log_file: IO[str] | None = None,
   ) -> None:
     self._platform: Final[PyodideAndroidAdbPlatform] = platform
@@ -470,8 +520,12 @@ class PyodideStreamingPopen(subprocess.Popen):
     self.stdout = None
     self.stderr = None
     self.stdin = None
+    if stdin == subprocess.PIPE:
+      self.stdin = cast(IO[bytes],
+                        PyodidePopenStdin(self._platform, self._proc_id))
     if stdout == subprocess.PIPE or stderr == subprocess.PIPE:
-      raise ValueError("PIPE is not supported in PyodideStreamingPopen")
+      raise ValueError(
+          "stdout/stderr PIPE is not supported in PyodideStreamingPopen")
 
   @property
   def proc_id(self) -> int:
@@ -540,6 +594,7 @@ __all__ = [
     "PyodideAndroidAdbPlatform",
     "PyodideGcsBlob",
     "PyodidePlatform",
+    "PyodidePopenStdin",
     "PyodideStreamingPopen",
     "is_pyodide_env",
 ]

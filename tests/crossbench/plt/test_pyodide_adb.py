@@ -8,13 +8,18 @@ import io
 import json
 import pathlib
 import shlex
+import subprocess
 from typing import TYPE_CHECKING
 from unittest import mock
 
 from typing_extensions import override
 
+from crossbench.action_runner.input_events import TouchEvent
+from crossbench.action_runner.virtual_device.touchscreen import \
+    TouchscreenVirtualDeviceConfig
+from crossbench.benchmarks.loading.point import Point
 from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
-from crossbench.plt.android_adb import AndroidDeviceInfo
+from crossbench.plt.android_adb import AndroidAdbPlatform, AndroidDeviceInfo
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import Platform
 from crossbench.plt.pyodide_adb import PyodideAdb, PyodideAndroidAdbPlatform, \
@@ -33,11 +38,21 @@ if TYPE_CHECKING:
 MOCK_GCS_FILE_SIZE: int = 45678
 
 
+class MockJsBuffer:
+
+  def __init__(self, data: bytes) -> None:
+    self._data: bytes = data
+
+  def to_bytes(self) -> bytes:
+    return self._data
+
+
 class MockWebAdb:
 
   def __init__(self, serial: str = "mock-serial-123") -> None:
     self.serial = serial
     self.shell_calls: list[str] = []
+    self.shell_inputs: list[str | None] = []
     self._expected_sh_cmds: list[str] | None = None
     self._sh_results: list[ShResult] = []
     self.push_calls: list[tuple[str, str]] = []
@@ -49,6 +64,8 @@ class MockWebAdb:
     self.spawned_processes: list[str] = []
     self.killed_processes: list[int] = []
     self.process_logs: dict[int, list[str]] = {}
+    self.process_stdin: dict[int, list[str]] = {}
+    self.closed_stdin_processes: list[int] = []
     self._next_proc_id: int = 100
 
   @property
@@ -80,6 +97,23 @@ class MockWebAdb:
     self._next_proc_id += 1
     return self._next_proc_id
 
+  def writeProcessStdin(  # noqa: N802
+      self,
+      proc_id: int,
+      data: str,
+  ) -> None:
+    self.process_stdin.setdefault(proc_id, []).append(data)
+
+  def closeProcessStdin(self, proc_id: int) -> None:  # noqa: N802
+    self.closed_stdin_processes.append(proc_id)
+    self.process_logs.setdefault(proc_id, []).append(
+        json.dumps({
+            "text": "",
+            "nextOffset": 1,
+            "isExited": True,
+            "exitCode": 0,
+        }))
+
   def killProcess(self, proc_id: int) -> None:  # noqa: N802
     self.killed_processes.append(proc_id)
 
@@ -89,7 +123,11 @@ class MockWebAdb:
       return logs[offset]
     return ""
 
-  def shell(self, cmd: str) -> str | bytes:
+  def shell(
+      self,
+      cmd: str,
+      input: str | None = None,  # pylint: disable=redefined-builtin
+  ) -> str | bytes:
     if self._expected_sh_cmds is not None:
       assert self._expected_sh_cmds, (
           f"Missing expected sh_cmds, but got: {cmd}")
@@ -98,6 +136,7 @@ class MockWebAdb:
                                f"  expected: {expected!r}\n"
                                f"  got:      {cmd!r}")
     self.shell_calls.append(cmd)
+    self.shell_inputs.append(input)
     if self._sh_results:
       return self._sh_results.pop(0).result
     if self._expected_sh_cmds is not None:
@@ -286,6 +325,34 @@ class PyodideAdbTest(CrossbenchFakeFsTestCase):
   def test_shell_stdout(self) -> None:
     out = self.adb.shell_stdout("echo", "hello")
     self.assertEqual(out, "mock_out: echo hello")
+
+  def test_shell_js_buffer_and_bytes(self) -> None:
+    js_buf = MockJsBuffer(b"package:com.android.chrome\n")
+    with mock.patch.object(self.webadb, "shell", return_value=js_buf):
+      self.assertEqual(
+          self.adb.shell_stdout_bytes("pm", "list", "packages"),
+          b"package:com.android.chrome\n",
+      )
+      self.assertEqual(
+          self.adb.shell_stdout("pm", "list", "packages"),
+          "package:com.android.chrome\n",
+      )
+    self.assertEqual(self.adb._to_bytes(b"abc"), b"abc")
+    self.assertEqual(self.adb._to_bytes("xyz"), b"xyz")
+
+  def test_shell_input(self) -> None:
+    res = self.adb.shell(
+        "tee", "/sys/kernel/tracing/trace_marker", input=b"I|0|mark\n")
+    self.assertEqual(res.returncode, 0)
+    self.assertEqual(
+        self.webadb.shell_calls[-1],
+        "tee /sys/kernel/tracing/trace_marker",
+    )
+    self.assertEqual(self.webadb.shell_inputs[-1], "I|0|mark\n")
+    out = self.adb.shell_stdout_bytes("cat", input=b"hello\n")
+    self.assertEqual(self.webadb.shell_calls[-1], "cat")
+    self.assertEqual(self.webadb.shell_inputs[-1], "hello\n")
+    self.assertEqual(out, b"mock_out: cat")
 
   def test_adb_shell(self) -> None:
     res = self.adb._adb("shell", "echo", "hello")
@@ -512,6 +579,53 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
     self.platform.kill_all_popens()
     self.assertEqual(self.webadb.shell_calls[-1], "kill -9 101")
 
+  @override
+  def test_trace_mark(self) -> None:
+    super().test_trace_mark()
+    self.assertEqual(self.webadb.shell_inputs[-1],
+                     "I|0|crossbench-android-mark\n")
+
+  @override
+  def test_sh_input(self) -> None:
+    self.expect_sh("cat", result="hello world")
+    hello_world = self.platform.sh_stdout("cat", input=b"hello world")
+    self.assertEqual(hello_world, "hello world")
+    self.assertEqual(self.webadb.shell_inputs[-1], "hello world")
+
+    self.expect_sh("cat", result=b"hello world bytes")
+    hello_world_bytes = self.platform.sh_stdout_bytes(
+        "cat", input=b"hello world bytes")
+    self.assertEqual(hello_world_bytes, b"hello world bytes")
+    self.assertEqual(self.webadb.shell_inputs[-1], "hello world bytes")
+
+  def test_uinput_end_to_end_via_webadb(self) -> None:
+    with (
+        self.patch_getprop(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION),
+        mock.patch.object(self.platform, "sleep"),
+    ):
+      self.platform.setup_virtual_devices((TouchscreenVirtualDeviceConfig(
+          name="touch1", width=1080, height=2400),))
+      self.assertEqual(self.webadb.spawned_processes, ["uinput -"])
+      self.assertIn("touch1", self.platform._virtual_devices)
+      proc_id = self.platform._virtual_devices["touch1"].proc.pid
+      self.assertEqual(len(self.webadb.process_stdin[proc_id]), 1)
+      self.assertIn("N: touch1", self.webadb.process_stdin[proc_id][0])
+
+      self.platform.inject_input_events(
+          "touch1",
+          (
+              TouchEvent(Point(100, 200), is_down=True),
+              TouchEvent(Point(100, 200), is_down=False),
+          ),
+      )
+      self.assertEqual(len(self.webadb.process_stdin[proc_id]), 2)
+      self.assertIn("0003 0035 0100", self.webadb.process_stdin[proc_id][1])
+      self.assertIn("0003 0036 0200", self.webadb.process_stdin[proc_id][1])
+
+      self.platform.teardown_virtual_devices()
+      self.assertIn(proc_id, self.webadb.closed_stdin_processes)
+      self.assertEqual(self.platform._virtual_devices, {})
+
 
 class PyodideStreamingPopenTest(CrossbenchFakeFsTestCase):
   __test__ = True
@@ -634,6 +748,22 @@ class PyodideStreamingPopenTest(CrossbenchFakeFsTestCase):
     self.assertIn("cat /dev/null", self.webadb.spawned_processes)
     proc.kill()
     self.assertEqual(proc.returncode, -9)
+
+  def test_stdin_pipe_write_and_close(self) -> None:
+    proc = self.android_platform.popen("uinput", "-", stdin=subprocess.PIPE)
+    self.assertIsNotNone(proc.stdin)
+    assert proc.stdin is not None
+    self.assertTrue(proc.stdin.writable())
+    self.assertEqual(proc.stdin.write(b""), 0)
+    self.assertEqual(proc.stdin.write(b"N: touch1\n"), 10)
+    proc.stdin.flush()
+    self.assertEqual(self.webadb.process_stdin[proc.pid], ["N: touch1\n"])
+    proc.stdin.close()
+    self.assertIn(proc.pid, self.webadb.closed_stdin_processes)
+    with self.assertRaises(ValueError):
+      proc.stdin.write(b"more")
+    with self.assertRaises(ValueError):
+      proc.stdin.flush()
 
 
 del AndroidAdbMockPlatformTest, LocalLinuxMockPlatformTestCase

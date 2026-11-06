@@ -28,6 +28,12 @@ def is_pyodide_env() -> bool:
   return sys.platform == "emscripten"
 
 
+class JsBuffer(Protocol):
+
+  def to_bytes(self) -> bytes:
+    ...
+
+
 class WebAdb(Protocol):
   serial: str
 
@@ -55,7 +61,11 @@ class WebAdb(Protocol):
   def pull(self, src: str, dest: str) -> None:
     ...
 
-  def shell(self, cmd: str) -> str | bytes:
+  def shell(
+      self,
+      cmd: str,
+      input: str | None = None,  # pylint: disable=redefined-builtin
+  ) -> str | bytes | JsBuffer:
     ...
 
   def startDevTools(self) -> str:  # noqa: N802
@@ -71,6 +81,16 @@ class WebAdb(Protocol):
     ...
 
   def spawnProcess(self, cmd: str) -> int:  # noqa: N802
+    ...
+
+  def writeProcessStdin(  # noqa: N802
+      self,
+      proc_id: int,
+      data: str,
+  ) -> None:
+    ...
+
+  def closeProcessStdin(self, proc_id: int) -> None:  # noqa: N802
     ...
 
   def readProcessLog(self, proc_id: int, offset: int) -> str:  # noqa: N802

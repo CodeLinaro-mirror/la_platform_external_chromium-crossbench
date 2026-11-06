@@ -202,17 +202,60 @@ export class WebAdbBridge {
         'Ensure Chrome is running on the device with debugging enabled.');
   }
 
+  private async readStreamBytes(stream: ReadableStream<Uint8Array>):
+      Promise<Uint8Array> {
+    const reader = stream.getReader();
+    const chunks: Uint8Array[] = [];
+    let totalLen = 0;
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) {
+        break;
+      }
+      if (value && value.byteLength > 0) {
+        chunks.push(value);
+        totalLen += value.byteLength;
+      }
+    }
+    const result = new Uint8Array(totalLen);
+    let offset = 0;
+    for (const chunk of chunks) {
+      result.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return result;
+  }
+
   /**
    * Executes a shell command on the connected Android device via ADB
    * subprocess service and returns raw binary bytes without text
    * decoding/mangling.
    */
-  async shell(cmd: string): Promise<Uint8Array> {
+  async shell(cmd: string, input?: string): Promise<Uint8Array> {
     if (!this.adbInstance) {
       throw new Error('ADB device is not connected. Call connect() first.');
     }
     const service = this.adbInstance.subprocess.shellProtocol ||
         this.adbInstance.subprocess.noneProtocol;
+    if (input !== undefined) {
+      const proc = await service.spawn(cmd);
+      const writeStdin = async () => {
+        const writer = proc.stdin.getWriter();
+        if (input) {
+          await writer.write(new TextEncoder().encode(input));
+        }
+        await writer.close();
+      };
+      const stdoutStream = (proc as any).stdout || (proc as any).output;
+      const stderrStream = (proc as any).stderr;
+      const [stdout] = await Promise.all([
+        this.readStreamBytes(stdoutStream),
+        stderrStream ? this.readStreamBytes(stderrStream) : Promise.resolve(),
+        writeStdin(),
+        proc.exited,
+      ]);
+      return stdout;
+    }
     const output = await service.spawnWait(cmd);
     if (output instanceof Uint8Array) {
       return output;
@@ -265,26 +308,8 @@ export class WebAdbBridge {
     }
     const sync = await this.adbInstance.sync();
     try {
-      const stream = sync.read(remotePath);
-      const reader = stream.getReader();
-      const chunks: Uint8Array[] = [];
-      let totalLen = 0;
-      while (true) {
-        const {done, value} = await reader.read();
-        if (done)
-          break;
-        if (value) {
-          chunks.push(value);
-          totalLen += value.length;
-        }
-      }
-      const result = new Uint8Array(totalLen);
-      let offset = 0;
-      for (const chunk of chunks) {
-        result.set(chunk, offset);
-        offset += chunk.length;
-      }
-      return result;
+      return await this.readStreamBytes(
+          sync.read(remotePath) as unknown as ReadableStream<Uint8Array>);
     } finally {
       await sync.dispose();
     }
@@ -370,6 +395,41 @@ export class WebAdbBridge {
     }
 
     return procId;
+  }
+
+  /**
+   * Writes data to the stdin stream of a spawned background process.
+   */
+  async writeProcessStdin(procId: number, data: string): Promise<void> {
+    const activeProc = this.activeProcesses.get(procId);
+    if (!activeProc) {
+      throw new Error(`Process #${procId} not found in active processes.`);
+    }
+    if (activeProc.isExited) {
+      throw new Error(`Process #${procId} has already exited.`);
+    }
+    const writer = activeProc.process.stdin.getWriter();
+    try {
+      await writer.write(new TextEncoder().encode(data));
+    } finally {
+      writer.releaseLock();
+    }
+  }
+
+  /**
+   * Closes the stdin stream of a spawned background process.
+   */
+  async closeProcessStdin(procId: number): Promise<void> {
+    const activeProc = this.activeProcesses.get(procId);
+    if (!activeProc) {
+      throw new Error(`Process #${procId} not found in active processes.`);
+    }
+    const writer = activeProc.process.stdin.getWriter();
+    try {
+      await writer.close();
+    } finally {
+      writer.releaseLock();
+    }
   }
 
   /**
