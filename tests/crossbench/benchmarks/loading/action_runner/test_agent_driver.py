@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 import pathlib
 from typing import cast
 from unittest.mock import MagicMock, patch
@@ -106,9 +107,158 @@ class AgentDriverTestCase(ActionRunnerTestCase):
     driver.execute()
 
     self.assertEqual(mock_client.send_turn.call_count, 2)
-    screenshots_dir = self.mock_run.out_dir / "agent_session" / "screenshots"
+    episode_dir = self.mock_run.out_dir / "agent_episodes" / "episode_000"
+    self.assertEqual(driver.episode_dir, episode_dir)
+    screenshots_dir = episode_dir / "screenshots"
     self.assertTrue((screenshots_dir / "step_001.png").is_file())
     self.assertTrue((screenshots_dir / "step_002.png").is_file())
+
+    episode_meta_file = episode_dir / "episode.json"
+    replay_file = episode_dir / "replay_actions.hjson"
+    transcript_file = episode_dir / "transcript.jsonl"
+    self.assertTrue(episode_meta_file.is_file())
+    self.assertTrue(replay_file.is_file())
+    self.assertTrue(transcript_file.is_file())
+
+    episode_meta = json.loads(episode_meta_file.read_text(encoding="utf-8"))
+    self.assertEqual(episode_meta["episode_id"], "episode_000")
+    self.assertEqual(episode_meta["episode_index"], 0)
+    self.assertEqual(episode_meta["info_stack"], [])
+    self.assertEqual(episode_meta["action"]["prompt"],
+                     "Navigate to example.com")
+
+    replay_data = json.loads(replay_file.read_text(encoding="utf-8"))
+    self.assertEqual(len(replay_data["actions"]), 1)
+    self.assertEqual(replay_data["actions"][0]["type"], "wait")
+
+    transcript_lines = (
+        transcript_file.read_text(encoding="utf-8").strip().splitlines())
+    self.assertEqual(len(transcript_lines), 2)
+    first_entry = json.loads(transcript_lines[0])
+    self.assertEqual(first_entry["episode_id"], "episode_000")
+    self.assertEqual(first_entry["step"], 1)
+    self.assertEqual(first_entry["thought"], "Wait briefly then finish")
+
+  def test_agent_driver_isolates_multiple_episodes(self) -> None:
+    first_client = MagicMock(spec=LlmConversationClient)
+    first_client.send_turn.side_effect = [
+        AgentTurnResponse(
+            observation="First episode step 1",
+            thought="Wait 10ms",
+            done=False,
+            actions=(WaitAction.parse_dict({
+                "action": "wait",
+                "duration": "10ms",
+            }),),
+        ),
+        AgentTurnResponse(
+            observation="First episode step 2",
+            thought="Finish first episode",
+            done=True,
+            actions=(),
+        ),
+    ]
+    second_client = MagicMock(spec=LlmConversationClient)
+    second_client.send_turn.side_effect = [
+        AgentTurnResponse(
+            observation="Second episode step 1",
+            thought="Wait 25ms and finish",
+            done=True,
+            actions=(WaitAction.parse_dict({
+                "action": "wait",
+                "duration": "25ms",
+            }),),
+        ),
+    ]
+
+    first_action = AgentAction.parse_dict({
+        "action": "agent",
+        "prompt": "First agent task",
+        "max_steps": 5,
+        "duration": "1m",
+    })
+    second_action = AgentAction.parse_dict({
+        "action": "agent",
+        "prompt": "Second agent task",
+        "max_steps": 5,
+        "duration": "1m",
+    })
+
+    with (
+        self.action_runner.info_stack_annotate("playback_0"),
+        self.action_runner.info_stack_annotate("block_0"),
+    ):
+      with self.action_runner.info_stack_annotate("action_1"):
+        first_driver = AgentDriver(
+            self.action_runner,
+            self.mock_run,
+            first_action,
+            client=first_client,
+        )
+        first_driver.execute()
+      with self.action_runner.info_stack_annotate("action_2"):
+        second_driver = AgentDriver(
+            self.action_runner,
+            self.mock_run,
+            second_action,
+            client=second_client,
+        )
+        second_driver.execute()
+
+    expected_first_dir = (
+        self.mock_run.out_dir / "agent_episodes" /
+        "episode_000_playback_0_block_0_action_1")
+    expected_second_dir = (
+        self.mock_run.out_dir / "agent_episodes" /
+        "episode_001_playback_0_block_0_action_2")
+    self.assertEqual(first_driver.episode_dir, expected_first_dir)
+    self.assertEqual(second_driver.episode_dir, expected_second_dir)
+
+    self.assertTrue(
+        (expected_first_dir / "screenshots" / "step_001.png").is_file())
+    self.assertTrue(
+        (expected_first_dir / "screenshots" / "step_002.png").is_file())
+    self.assertTrue(
+        (expected_second_dir / "screenshots" / "step_001.png").is_file())
+    self.assertFalse(
+        (expected_second_dir / "screenshots" / "step_002.png").exists())
+
+    first_meta = json.loads(
+        (expected_first_dir / "episode.json").read_text(encoding="utf-8"))
+    second_meta = json.loads(
+        (expected_second_dir / "episode.json").read_text(encoding="utf-8"))
+    self.assertEqual(first_meta["action"]["prompt"], "First agent task")
+    self.assertEqual(first_meta["info_stack"],
+                     ["playback_0", "block_0", "action_1"])
+    self.assertEqual(second_meta["action"]["prompt"], "Second agent task")
+    self.assertEqual(second_meta["info_stack"],
+                     ["playback_0", "block_0", "action_2"])
+
+    first_transcript = (expected_first_dir / "transcript.jsonl").read_text(
+        encoding="utf-8").strip().splitlines()
+    second_transcript = (expected_second_dir / "transcript.jsonl").read_text(
+        encoding="utf-8").strip().splitlines()
+    self.assertEqual(len(first_transcript), 2)
+    self.assertEqual(len(second_transcript), 1)
+    self.assertEqual(
+        json.loads(second_transcript[0])["episode_id"],
+        "episode_001_playback_0_block_0_action_2",
+    )
+    self.assertEqual(json.loads(second_transcript[0])["step"], 1)
+
+    first_replay = json.loads(
+        (expected_first_dir /
+         "replay_actions.hjson").read_text(encoding="utf-8"))
+    second_replay = json.loads(
+        (expected_second_dir /
+         "replay_actions.hjson").read_text(encoding="utf-8"))
+    self.assertEqual(first_replay["actions"][0]["duration"], 0.01)
+    self.assertEqual(second_replay["actions"][0]["duration"], 0.025)
+
+    self.assertIn("crossbench-agent_000_step_001_1_start",
+                  self.browser.performance_marks)
+    self.assertIn("crossbench-agent_001_step_001_1_start",
+                  self.browser.performance_marks)
 
   def test_agent_driver_rejects_nested_agent_action(self) -> None:
     mock_client = MagicMock(spec=LlmConversationClient)

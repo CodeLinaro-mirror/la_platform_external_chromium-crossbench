@@ -149,6 +149,7 @@ class ActionRunner:
     self._run: Final[Run] = run
     self._listener = ActionRunnerListener()
     self._info_stack: exception.TInfoStack | None = None
+    self._agent_episode_count: int = 0
     self._step_by_step_mode: Final[bool] = step_by_step_mode
     self._failure_screenshot_annotations: list[ScreenshotAnnotation] = []
     self.browser_platform.setup_virtual_devices(virtual_devices)
@@ -208,6 +209,14 @@ class ActionRunner:
     if not self._info_stack:
       raise RuntimeError("info_stack can not be called before run_blocks")
     return self._info_stack
+
+  def current_info_stack(self) -> exception.TInfoStack:
+    return self._info_stack or ()
+
+  def next_agent_episode_index(self) -> int:
+    index = self._agent_episode_count
+    self._agent_episode_count += 1
+    return index
 
   @property
   def bond(self) -> BondActionRunner:
