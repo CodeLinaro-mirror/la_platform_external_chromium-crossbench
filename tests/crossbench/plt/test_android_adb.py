@@ -288,6 +288,30 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
         self.host_platform, "SomeDeviceId", adb=self.adb)
     self.assertNotEqual(self.platform.unique_name, platform_2.unique_name)
 
+  def _create_activities_proto(self, *tasks: tuple[int, int, str]) -> bytes:
+    dump = (
+        activitymanagerservice_pb2.ActivityManagerServiceDumpActivitiesProto())
+    wc = dump.root_window_container.window_container
+    for task_id, activity_type, real_activity in tasks:
+      task = wc.children.add().task
+      task.id = task_id
+      task.activity_type = activity_type
+      task.real_activity = real_activity
+    return dump.SerializeToString()
+
+  @override
+  def test_get_active_tasks(self) -> None:
+    proto_out = self._create_activities_proto(
+        (1000154, 1, "com.google.android.calculator/.Calculator"),
+        (1000151, 1, "com.dropbox.android/.activity.DropboxBrowser"),
+        (1000001, 2, "com.google.android.apps.nexuslauncher/.Launcher"),
+    )
+    self.expect_sh("dumpsys activity --proto activities", result=proto_out)
+    self.assertEqual(
+        self.platform.get_active_tasks(),
+        ["com.google.android.calculator", "com.dropbox.android"],
+    )
+
 
 class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   __test__ = True
@@ -1333,17 +1357,6 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_launch_app(self) -> None:
     self.expect_sh("am start -W -n com.android.settings/.Settings")
     self.platform.launch_app("com.android.settings/.Settings")
-
-  def _create_activities_proto(self, *tasks: tuple[int, int, str]) -> bytes:
-    dump = (
-        activitymanagerservice_pb2.ActivityManagerServiceDumpActivitiesProto())
-    wc = dump.root_window_container.window_container
-    for task_id, activity_type, real_activity in tasks:
-      task = wc.children.add().task
-      task.id = task_id
-      task.activity_type = activity_type
-      task.real_activity = real_activity
-    return dump.SerializeToString()
 
   def test_close_app(self) -> None:
     proto_out = self._create_activities_proto(

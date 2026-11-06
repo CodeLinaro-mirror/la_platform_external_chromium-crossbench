@@ -1445,6 +1445,17 @@ class Platform(abc.ABC):
     raise NotImplementedError(
         f"'close_all_apps' is not supported on {self.name}")
 
+  def get_active_tasks(self) -> list[str]:
+    """Returns user-perceptible application windows or tasks that can be
+    interacted with (whether visible, occluded, or minimized/backgrounded),
+    rather than raw OS processes.
+
+    On Android this corresponds to standard tasks in the recents stack; on
+    desktop platforms a future implementation would list open top-level
+    application windows from the window manager. Defaults to empty where
+    not yet implemented.
+    """
+    return []
 
   def user_id(self) -> int:
     self.assert_is_local()

@@ -429,6 +429,33 @@ class AgentDriverTestCase(ActionRunnerTestCase):
     self.assertEqual(scaled_typing_slow_enough.duration,
                      dt.timedelta(seconds=1))
 
+  def test_collect_environment_context_includes_active_tasks(self) -> None:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    action = AgentAction.parse_dict({
+        "action": "agent",
+        "prompt": "Check active tasks",
+        "max_steps": 1,
+        "duration": "1m",
+    })
+    driver = AgentDriver(
+        self.action_runner,
+        self.mock_run,
+        action,
+        client=mock_client,
+    )
+    self.assertEqual(driver._collect_environment_context(), "")
+    with patch.object(
+        self.platform,
+        "get_active_tasks",
+        return_value=["com.google.android.calculator", "com.dropbox.android"],
+    ):
+      self.assertEqual(
+          driver._collect_environment_context(),
+          "Active tasks (2 total):\n"
+          "  - com.google.android.calculator\n"
+          "  - com.dropbox.android",
+      )
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

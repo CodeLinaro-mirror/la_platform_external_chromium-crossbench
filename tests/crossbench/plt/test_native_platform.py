@@ -779,6 +779,9 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     uptime: dt.timedelta = self.platform.uptime()
     self.assertLess(0, uptime.total_seconds())
 
+  def test_get_active_tasks(self) -> None:
+    self.assertEqual(self.platform.get_active_tasks(), [])
+
 
 class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
   platform: PosixPlatform

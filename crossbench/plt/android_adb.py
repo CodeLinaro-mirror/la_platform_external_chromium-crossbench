@@ -1729,6 +1729,10 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
       self.sh("am", "stack", "remove", task_id, check=False)
 
   @override
+  def get_active_tasks(self) -> list[str]:
+    return [package for _, package in self._list_standard_tasks()]
+
+  @override
   def gpu_vram_used(self) -> dict[str, float]:
     """Queries graphics / unified memory allocation on Android."""
     # Try Qualcomm Adreno sysfs if available

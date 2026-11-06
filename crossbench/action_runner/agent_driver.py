@@ -119,14 +119,26 @@ class AgentDriver:
     raise NotImplementedError(
         "Default LlmConversationClient is not implemented yet")
 
+  def _collect_environment_context(self) -> str:
+    if tasks := self.browser_platform.get_active_tasks():
+      task_lines = "\n".join(f"  - {task}" for task in tasks)
+      return f"Active tasks ({len(tasks)} total):\n{task_lines}"
+    return ""
+
+  def _build_turn_feedback(self, feedback: str) -> str:
+    if env_context := self._collect_environment_context():
+      return f"{feedback}\n\n{env_context}"
+    return feedback
+
   def _request_turn(self, step_idx: int, feedback: str) -> AgentTurnResponse:
+    turn_feedback = self._build_turn_feedback(feedback)
     screenshot_bytes = self._capture_step_screenshot(step_idx)
     with (
         self._action_runner.actions(f"Agent step {step_idx}", measure=False),
         ui.timer("Waiting for agent"),
     ):
       logging.info("Agent step %d | waiting for agent response...", step_idx)
-      turn = self._client.send_turn(feedback, screenshot_bytes)
+      turn = self._client.send_turn(turn_feedback, screenshot_bytes)
     logging.info("Agent step %d | thought: %s", step_idx, turn.thought)
     return turn
 
