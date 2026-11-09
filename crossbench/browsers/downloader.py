@@ -20,6 +20,7 @@ from typing_extensions import override
 from crossbench import path as pth
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
 from crossbench.cli.ui import ui
+from crossbench.plt.bin import Binaries
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
@@ -317,27 +318,73 @@ class RPMArchiveHelper(ArchiveHelper):
   @override
   def _extract(self) -> None:
     platform = self._platform
-    rpm2cpio = platform.which("rpm2cpio")
-    assert rpm2cpio, ("Need rpm2cpio to extract downloaded .rpm archive")
-    cpio = platform.which("cpio")
-    assert cpio, ("Need cpio to extract downloaded .rpm archive")
+    assert not platform.exists(
+        self._dest_path), f"{self._dest_path} already exists."
+    rpm2archive = Binaries.RPM2ARCHIVE.search(platform)
+    tar = Binaries.TAR.search(platform)
+    if rpm2archive and tar:
+      self._extract_with_rpm2archive(rpm2archive, tar)
+      return
+    self._extract_with_rpm2cpio()
+
+  def _extract_with_rpm2archive(self, rpm2archive: pth.AnyPath,
+                                tar: pth.AnyPath) -> None:
+    platform = self._platform
+    tar_file = self._archive_path.with_suffix(".tar")
+    assert not platform.exists(tar_file), f"{tar_file} already exists."
+    platform.mkdir(self._archive_path.parent)
+    try:
+      with (
+          self._archive_path.open("rb") as rpm_f,
+          tar_file.open("wb") as tar_f,
+      ):
+        # Pass "-" to stream from stdin to stdout across RPM 4.17+ versions
+        # (older rpm2archive writes a .tar/.tgz file next to filename args).
+        platform.sh(
+            rpm2archive, "--nocompression", "-", stdin=rpm_f, stdout=tar_f)
+      assert platform.is_file(tar_file), (
+          f"Could not extract archive: {self._archive_path}")
+      platform.mkdir(self._dest_path)
+      try:
+        platform.sh(tar, "--extract", "--directory", self._dest_path, "--file",
+                    tar_file)
+      except Exception:
+        platform.rm(self._dest_path, dir=True, missing_ok=True)
+        raise
+      if platform.is_dir(
+          self._dest_path) and not any(platform.iterdir(self._dest_path)):
+        platform.rm(self._dest_path, dir=True, missing_ok=True)
+    finally:
+      platform.rm(tar_file, missing_ok=True)
+
+  def _extract_with_rpm2cpio(self) -> None:
+    platform = self._platform
+    rpm2cpio = Binaries.RPM2CPIO.search(platform)
+    assert rpm2cpio, "Need rpm2archive or rpm2cpio to extract .rpm archive"
+    cpio = Binaries.CPIO.search(platform)
+    assert cpio, "Need cpio to extract downloaded .rpm archive"
     cpio_file = self._archive_path.with_suffix(".cpio")
     assert not platform.exists(cpio_file), f"{cpio_file} already exists."
     platform.mkdir(self._archive_path.parent)
-    with cpio_file.open("w") as f:
-      platform.sh(rpm2cpio, self._archive_path, stdout=f)
-    assert cpio_file.is_file(), (
-        f"Could not extract archive: {self._archive_path}")
-    assert not platform.exists(
-        self._dest_path), (f"{self._dest_path} already exists.")
-    with cpio_file.open() as f:
-      platform.sh(
-          cpio,
-          "--extract",
-          f"--directory={self._dest_path}",
-          "--make-directories",
-          stdin=f)
-    cpio_file.unlink()
+    try:
+      with cpio_file.open("wb") as f:
+        platform.sh(rpm2cpio, self._archive_path, stdout=f)
+      assert platform.is_file(cpio_file), (
+          f"Could not extract archive: {self._archive_path}")
+      try:
+        with cpio_file.open("rb") as f:
+          platform.sh(
+              cpio,
+              "--extract",
+              "--directory",
+              self._dest_path,
+              "--make-directories",
+              stdin=f)
+      except Exception:
+        platform.rm(self._dest_path, dir=True, missing_ok=True)
+        raise
+    finally:
+      platform.rm(cpio_file, missing_ok=True)
 
 
 class DMGArchiveHelper(ArchiveHelper):
