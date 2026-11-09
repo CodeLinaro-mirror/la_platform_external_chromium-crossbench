@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 684 684" width="684" height="684">
+<title>Crossbench logo</title>
+<defs>
+<linearGradient id="cbGrad" gradientUnits="userSpaceOnUse" x1="191" y1="460" x2="418.5" y2="198"><stop offset="0" stop-color="#005EFA"/><stop offset="0.5" stop-color="#03A3F5"/><stop offset="1" stop-color="#06E7F0"/></linearGradient>
+<linearGradient id="needleGrad" gradientUnits="userSpaceOnUse" x1="4596.2" y1="4007.1" x2="4833.8" y2="3792.9"><stop offset="0" stop-color="#FF8660"/><stop offset="1" stop-color="#F85A55"/></linearGradient>
+<linearGradient id="hlGrad" gradientUnits="userSpaceOnUse" x1="191" y1="460" x2="418" y2="198"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.06"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0.20"/></linearGradient>
+<clipPath id="lettersClip"><use href="#c"/><use href="#b"/></clipPath>
+</defs>
+<circle cx="342" cy="342" r="342" fill="#243349"/>
+<circle cx="342" cy="342" r="321" fill="#1B2335"/>
+<g id="content" transform="translate(342 342) scale(1.1) translate(-347.5 -342)">
+<g id="ticks" fill="#8F9AAA" transform="translate(402.7 340.3)">
+<rect transform="rotate(-96)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-90)" x="149" y="-4.5" width="33" height="9"/>
+<rect transform="rotate(-84)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-78)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-72)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-66)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-60)" x="149" y="-4.5" width="33" height="9"/>
+<rect transform="rotate(-54)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-48)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-42)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-36)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-30)" x="149" y="-4.5" width="33" height="9"/>
+<rect transform="rotate(-24)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-18)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-12)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(-6)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(0)" x="149" y="-4.5" width="33" height="9"/>
+<rect transform="rotate(6)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(12)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(18)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(24)" x="162" y="-2.5" width="20" height="5"/>
+<rect transform="rotate(30)" x="149" y="-4.5" width="33" height="9"/>
+</g>
+<g id="letters" fill="url(#cbGrad)">
+<path id="c" d="M300.7 422.9 A111.4 111.4 0 1 1 300.7 265.3 L271.9 294.1 A70.7 70.7 0 1 0 271.9 393.1 Z"/>
+<path id="b" d="M321.0 308.0 L321.0 456.0 L340.3 455.8 L359.5 455.5 L359.8 447.0 C360.2 432.6 359.2 433.4 369.3 439.6 C386.9 450.5 401.8 455.0 423.1 455.7 C439.8 456.3 446.9 455.4 461.1 450.9 C497.0 439.4 525.3 409.3 535.2 372.2 C537.8 362.1 538.8 339.1 537.0 327.1 A112.2 112.2 0 0 0 510.1 270.6 L486.0 307.3 A70.7 70.7 0 0 1 496.0 353.6 C492.3 381.6 473.3 403.8 446.0 412.1 C440.4 413.8 436.0 414.4 428.0 414.4 C415.5 414.4 409.2 413.1 398.5 408.0 C363.9 391.5 349.1 349.1 365.9 314.5 C373.4 298.8 382.8 289.2 397.8 281.6 C408.5 276.2 416.2 274.7 430.5 275.3 A69.6 69.6 0 0 1 447.8 276.9 L478.0 245.1 A111.7 111.7 0 0 0 461.5 238.1 C449.3 234.1 437.3 232.6 422.0 233.3 C402.2 234.3 384.9 240.0 367.5 251.3 L360.5 255.9 L360.2 207.9 L360.0 160.0 L340.5 160.0 L321.0 160.0 L321.0 308.0 Z"/>
+</g>
+<g id="highlights" fill="url(#hlGrad)" clip-path="url(#lettersClip)">
+<path id="c-highlight" d="M300.7 422.9 A111.4 111.4 0 1 1 300.7 265.3 L286.3 279.7 A91 91 0 1 0 286.3 408.5 Z"/>
+<path id="stem-highlight" d="M340 160 H359 V254.2 A111.8 111.8 0 0 0 340 272.1 Z"/>
+<path id="bowl-highlight" d="M442.7 247.4 A98 98 0 0 1 442.7 440.4 L440.8 429.6 A87 87 0 0 0 440.8 258.2 Z"/>
+</g>
+<g id="needle" fill="url(#needleGrad)" transform="rotate(-3.5 425.7 343.9) translate(7.6 -10.23) translate(0,684) scale(0.1,-0.1)">
+<path d="M5465 4732 c-22 -20 -218 -202 -435 -403 -217 -201 -516 -478 -665 -615 -148 -138 -270 -255 -269 -262 1 -7 2 -64 3 -127 l1 -115 113 6 c61 4 122 11 134 18 20 10 1174 1537 1161 1536 -2 0 -21 -17 -43 -38z"/>
+</g>
+</g>
+</svg>
