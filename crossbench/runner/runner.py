@@ -188,7 +188,7 @@ class Runner:
         "--thread-mode",
         "--parallel",
         default=ThreadMode.NONE,
-        type=ThreadMode,  # type: ignore
+        type=ThreadMode,
         help=("Change how Runs are executed.\n" +
               ThreadMode.help_text(indent=2)))
     thread_or_pause_group.add_argument(

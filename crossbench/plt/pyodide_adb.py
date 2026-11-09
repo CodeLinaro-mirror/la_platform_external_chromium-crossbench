@@ -52,13 +52,15 @@ class PyodideAdb(android_adb.Adb):
     self._webadb: Final[WebAdb] = webadb
     if host_platform is None:
       host_platform = PyodidePlatform(webadb=webadb)
-    # Skip native binary discovery by manually initializing superclass state
-    self._host_platform = host_platform  # type: ignore[misc]
-    self._adb_bin = host_platform.path("webadb")  # type: ignore[misc]
-    self._bundletool = None  # type: ignore[misc]
+    # Skip native binary discovery by manually initializing Final superclass
+    # attributes instead of calling Adb.__init__.
+    self._host_platform = host_platform  # pyrefly: ignore[bad-override]
+    self._adb_bin = (  # pyrefly: ignore[bad-override]
+        host_platform.path("webadb"))
+    self._bundletool = None  # pyrefly: ignore[bad-override]
     serial_id, device_info = self._start(device_identifier)
-    self._serial_id = serial_id  # type: ignore[misc]
-    self._device_info = device_info  # type: ignore[misc]
+    self._serial_id = serial_id  # pyrefly: ignore[bad-override]
+    self._device_info = device_info  # pyrefly: ignore[bad-override]
 
   @property
   def webadb(self) -> WebAdb:

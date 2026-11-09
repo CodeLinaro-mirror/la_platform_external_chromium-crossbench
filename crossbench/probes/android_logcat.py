@@ -80,7 +80,7 @@ class AndroidLogcatProbeContextMixin(BaseProbeContext[LogcatAndroidProbe]):
 
   @property
   def browser_platform(self) -> AndroidAdbPlatform:
-    browser_platform = super().browser_platform  # type: ignore
+    browser_platform = super().browser_platform
     assert isinstance(browser_platform, AndroidAdbPlatform), (
         f"Expected android platform, but got {browser_platform}")
     return browser_platform

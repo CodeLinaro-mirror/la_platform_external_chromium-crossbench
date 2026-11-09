@@ -25,5 +25,5 @@ def validate_cls(cls: type[Benchmark]) -> None:
     assert issubclass(benchmark_probe_cls, BenchmarkProbeMixin), (
         f"{benchmark_probe_cls} should be BenchmarkProbeMixin "
         f"for {type(cls)}.PROBES")
-    assert benchmark_probe_cls.NAME, (  # type: ignore
+    assert benchmark_probe_cls.NAME, (
         f"Expected probe.NAME for {benchmark_probe_cls}")

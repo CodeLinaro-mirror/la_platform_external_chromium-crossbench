@@ -160,14 +160,13 @@ class CdpAndroidBrowser(ChromiumBased):
   @override
   def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
     assert isinstance(flags, ChromeFlags)
-    chrome_flags: ChromeFlags = flags
     for flag in self.UNSUPPORTED_FLAGS:
-      if flag not in chrome_flags:
+      if flag not in flags:
         continue
-      flag_value = chrome_flags.pop(flag, None)
+      flag_value = flags.pop(flag, None)
       logging.debug("Chromium: Removed unsupported flag: %s=%s", flag,
                     flag_value)
-    return chrome_flags  # type: ignore
+    return flags
 
   def _setup_binary_permissions(self) -> None:
     try:

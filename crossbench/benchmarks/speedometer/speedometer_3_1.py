@@ -48,7 +48,7 @@ class Speedometer31Benchmark(Speedometer3Benchmark):
   Benchmark runner for Speedometer 3.1
   """
   NAME: ClassVar[str] = "speedometer_3.1"
-  DEFAULT_STORY_CLS: ClassVar = Speedometer31Story  # type: ignore
+  DEFAULT_STORY_CLS: ClassVar[type[Speedometer31Story]] = Speedometer31Story
   PROBES: ClassVar[ProbeClsTupleT] = (Speedometer31Probe,)
   LOCAL_DIR = pth.LocalPath("third_party/speedometer/v3.1")
 

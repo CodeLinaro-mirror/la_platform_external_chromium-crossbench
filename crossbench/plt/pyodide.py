@@ -10,7 +10,7 @@ import sys
 import time
 from typing import TYPE_CHECKING, Final, Protocol
 
-import google.cloud.storage.blob as gcloud_blob  # type: ignore
+import google.cloud.storage.blob as gcloud_blob
 from typing_extensions import override
 
 from crossbench.plt import linux as plt_linux

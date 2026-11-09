@@ -34,7 +34,7 @@ class VirtualDeviceTypeConfigParser(ConfigParser[VirtualDeviceType]):
 
   def new_instance_from_kwargs(self, kwargs: dict[str,
                                                   object]) -> VirtualDeviceType:
-    return VirtualDeviceType(kwargs["device_type"])  # type: ignore
+    return VirtualDeviceType(kwargs["device_type"])
 
 
 _DEVICE_TYPE_CONFIG_PARSER: Final = VirtualDeviceTypeConfigParser()
@@ -62,7 +62,7 @@ class VirtualDeviceConfig(ConfigObject, metaclass=abc.ABCMeta):
   @override
   def parse_dict(cls, config: dict[str, object], **kwargs) -> Self:
     device_type: VirtualDeviceType = _DEVICE_TYPE_CONFIG_PARSER.parse(config)
-    target_cls: type[Self] = VIRTUAL_DEVICES[device_type]  # type: ignore
+    target_cls = VIRTUAL_DEVICES[device_type]
 
     config = dict(config)
     config.pop("device_type", None)

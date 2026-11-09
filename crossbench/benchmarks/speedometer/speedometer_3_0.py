@@ -47,7 +47,7 @@ class Speedometer30Benchmark(Speedometer3Benchmark):
   Benchmark runner for Speedometer 3.0
   """
   NAME: ClassVar[str] = "speedometer_3.0"
-  DEFAULT_STORY_CLS: ClassVar = Speedometer30Story  # type: ignore
+  DEFAULT_STORY_CLS: ClassVar[type[Speedometer30Story]] = Speedometer30Story
   PROBES: ClassVar[ProbeClsTupleT] = (Speedometer30Probe,)
 
   @classmethod

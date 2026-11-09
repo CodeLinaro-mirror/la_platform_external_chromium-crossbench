@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Final, Iterable
+from typing import Final, ItemsView
 
 from typing_extensions import Self, override
 
@@ -212,17 +212,18 @@ class ChromeFlags(Flags):
     for name, value in other.base_items():
       self.set(name, value)
 
-  def base_items(self) -> Iterable[tuple[str, str | None]]:
-    yield from super().items()
+  def base_items(self) -> ItemsView[str, str | None]:
+    return super().items()
 
   @override
-  def items(self) -> Iterable[tuple[str, str | None]]:  # type: ignore
-    yield from self.base_items()
+  def items(self) -> ItemsView[str, str | None]:
+    result: dict[str, str | None] = dict(self.base_items())
     if self._js_flags:
-      yield (self.JS_FLAG, str(self.js_flags))
-    yield from self.features.items()
-    yield from self.blink_features.items()
-    yield from self.extensions.items()
+      result[self.JS_FLAG] = str(self.js_flags)
+    result.update(self.features.items())
+    result.update(self.blink_features.items())
+    result.update(self.extensions.items())
+    return result.items()
 
   def __bool__(self) -> bool:
     return bool(self.data) or bool(self._js_flags) or bool(

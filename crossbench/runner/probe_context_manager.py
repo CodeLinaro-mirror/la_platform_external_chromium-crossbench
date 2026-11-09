@@ -9,10 +9,11 @@ import contextlib
 import datetime as dt
 import logging
 from typing import TYPE_CHECKING, Final, Generic, Iterable, Iterator, Self, \
-    TypeVar
+    TypeVar, cast
 
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.all import PROBE_LOOKUP
+from crossbench.probes.probe import ProbeT
 from crossbench.probes.probe_context import BaseProbeContext, ProbeContext
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 from crossbench.runner.result_origin import ResultOrigin
@@ -20,7 +21,7 @@ from crossbench.runner.result_origin import ResultOrigin
 if TYPE_CHECKING:
   from crossbench.exception import ExceptionAnnotator
   from crossbench.helper.durations import Durations
-  from crossbench.probes.probe import Probe, ProbeT
+  from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResultDict
 
 ResultOriginT = TypeVar("ResultOriginT", bound=ResultOrigin)
@@ -183,5 +184,5 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
     if probe_context := self._probe_contexts.get(probe_cls):
       assert isinstance(probe_context.probe, probe_cls), (
           f"Expected instance of {probe_cls}: got {probe_context.probe}")
-      return probe_context  # type: ignore
+      return cast(ProbeContext[ProbeT], probe_context)
     return None

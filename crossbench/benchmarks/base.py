@@ -175,6 +175,7 @@ class Benchmark(abc.ABC):
   @classmethod
   def from_cli_args(cls, args: argparse.Namespace) -> Self:
     kwargs = cls.kwargs_from_cli(args)
+    # kwargs_from_cli returns dict[str, object] for subclass extensibility.
     # pyrefly: ignore[bad-argument-type]
     return cls(**kwargs)
 
@@ -348,6 +349,7 @@ class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
   def from_cli_args(cls, story_cls: type[StoryT],
                     args: argparse.Namespace) -> Self:
     kwargs = cls.kwargs_from_cli(args)
+    # kwargs_from_cli returns dict[str, object] for subclass extensibility.
     # pyrefly: ignore[bad-argument-type]
     return cls(story_cls, **kwargs)
 

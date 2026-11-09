@@ -212,10 +212,8 @@ class LoadLineBenchmark(LoadingBenchmark, metaclass=abc.ABCMeta):
           page for page in config.pages if page.label in filtered_page_labels)
       config = PagesConfig(pages=filtered_pages, secrets=config.secrets)
 
-    return cls.STORY_FILTER_CLS.from_config(
-        cls.DEFAULT_STORY_CLS,  # type: ignore[type-abstract]
-        args,
-        config).stories
+    return cls.STORY_FILTER_CLS.from_config(cls.DEFAULT_STORY_CLS, args,
+                                            config).stories
 
   @classmethod
   @override

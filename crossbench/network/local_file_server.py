@@ -63,7 +63,7 @@ class CustomHeadersRequestHandler(http.server.SimpleHTTPRequestHandler):
       extra_headers: Mapping[str, str],
   ) -> type[CustomHeadersRequestHandler]:
     # Use a temporary class to bind arguments.
-    class BoundDirectoryRequestHandler(cls):  # type: ignore
+    class BoundDirectoryRequestHandler(CustomHeadersRequestHandler):
 
       def __init__(self, *args, **kwargs) -> None:
         super().__init__(

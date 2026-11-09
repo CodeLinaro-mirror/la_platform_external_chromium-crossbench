@@ -74,7 +74,7 @@ class SpeedometerMainBenchmark(Speedometer3Benchmark):
   Benchmark runner for the Speedometer main version.
   """
   NAME: ClassVar[str] = "speedometer_main"
-  DEFAULT_STORY_CLS: ClassVar = SpeedometerMainStory  # type: ignore
+  DEFAULT_STORY_CLS: ClassVar[type[SpeedometerMainStory]] = SpeedometerMainStory
   PROBES: ClassVar[ProbeClsTupleT] = (SpeedometerMainProbe,)
   STORY_FILTER_CLS: ClassVar = SpeedometerMainBenchmarkStoryFilter
 

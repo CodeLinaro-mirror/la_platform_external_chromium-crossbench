@@ -140,6 +140,7 @@ extend-select = [
     "PLW",  # pylint warnings
     "RUF010", # explicit-f-string-type-conversion
     "UP",     # pyupgrade rules
+    "PGH003", # blanket-type-ignore
 ]
 ignore = [
     "TC006", # Allow non-string type in casts
@@ -202,6 +203,7 @@ ignore = [
 ]
 "tests/*" = [
     "ANN",      # tests are allowed to skip type annotations
+    "PGH003",   # Allow blanket type-ignore in tests for now
     "S",        # general security issues and input validation.
     "B018",     # Found useless attribute access
     "BLE",      # flake8-blind-except

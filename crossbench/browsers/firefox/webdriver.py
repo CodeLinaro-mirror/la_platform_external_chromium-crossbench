@@ -66,7 +66,7 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     env_copy = dict(self.platform.environ)
     service = FirefoxService(
         executable_path=os.fspath(driver_path),
-        log_output=driver_log_path,  # type: ignore
+        log_output=driver_log_path,
         # TODO: remove after upgrading the vpython selenium version.
         log_path=driver_log_path,
         service_args=service_args,

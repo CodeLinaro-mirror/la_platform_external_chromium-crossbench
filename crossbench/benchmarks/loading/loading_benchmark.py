@@ -181,6 +181,7 @@ class LoadingPageFilter(StoryFilter[Page]):
                   config: PagesConfig) -> Self:
     kwargs = cls.kwargs_from_cli(args)
     kwargs["pages_config"] = config
+    # kwargs_from_cli returns dict[str, object] for subclass extensibility.
     # pyrefly: ignore[bad-argument-type]
     return cls(story_cls, **kwargs)
 

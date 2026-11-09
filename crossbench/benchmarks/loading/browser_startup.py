@@ -219,10 +219,8 @@ class BrowserStartupBenchmark(LoadingBenchmark):
                              if page.any_label in filtered_page_labels)
       page_config = PagesConfig(
           pages=filtered_pages, secrets=page_config.secrets)
-    return cls.STORY_FILTER_CLS.from_config(
-        cls.DEFAULT_STORY_CLS,  # type: ignore[type-abstract]
-        args,
-        page_config).stories
+    return cls.STORY_FILTER_CLS.from_config(cls.DEFAULT_STORY_CLS, args,
+                                            page_config).stories
 
   @classmethod
   @override

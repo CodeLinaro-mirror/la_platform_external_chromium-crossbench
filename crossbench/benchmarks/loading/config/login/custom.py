@@ -18,6 +18,8 @@ class LoginBlock(BaseLoginBlock):
 
   @classmethod
   @override
-  def parse_str(cls, value: str) -> BaseLoginBlock:  # type: ignore
+  # Returns BaseLoginBlock (PresetLoginBlock) instead of Self.
+  # pyrefly: ignore[bad-override]
+  def parse_str(cls, value: str) -> BaseLoginBlock:
     login_type = LoginType.parse(value)
     return LOGIN_LOOKUP[login_type]()

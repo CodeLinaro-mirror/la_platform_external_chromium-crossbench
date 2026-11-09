@@ -79,7 +79,7 @@ class CrossBenchArgumentError(argparse.ArgumentError):
             f"{formatted}")
 
 
-argparse.ArgumentError = CrossBenchArgumentError  # type: ignore
+argparse.ArgumentError = CrossBenchArgumentError
 
 
 class EnableDebuggingAction(argparse.Action):
@@ -475,7 +475,7 @@ class CrossBenchCLI:
       logging.getLogger().setLevel(logging.CRITICAL)
       return
     if hasattr(sys.stdout, "reconfigure"):
-      sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+      sys.stdout.reconfigure(encoding="utf-8")
     self._console_handler = logging.StreamHandler(sys.stderr)
     self._console_handler.addFilter(logging.Filter("root"))
     self._console_handler.setLevel(logging.INFO)

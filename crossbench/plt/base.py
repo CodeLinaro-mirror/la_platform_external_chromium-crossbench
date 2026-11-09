@@ -47,7 +47,7 @@ from crossbench.plt.port_manager import LocalPortManager, PortManager, \
 from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
-  import google.cloud.storage.blob as gcloud_blob  # type: ignore
+  import google.cloud.storage.blob as gcloud_blob
 
   from crossbench.action_runner.action.position import UiSelectorConfig
   from crossbench.action_runner.display_rectangle import DisplayRectangle
@@ -348,7 +348,7 @@ class Platform(abc.ABC):
   @property
   def is_battery_powered(self) -> bool:
     self.assert_is_local()
-    if not psutil.sensors_battery:  # type: ignore
+    if not psutil.sensors_battery:
       return False
     status = psutil.sensors_battery()
     if not status:

@@ -23,8 +23,7 @@ def _check_for_duplicate_keys(
 
 
 def load_unique_keys(file: IO[str]) -> Json:
-  return hjson.load(
-      file, object_pairs_hook=_check_for_duplicate_keys)  # type: ignore
+  return hjson.load(file, object_pairs_hook=_check_for_duplicate_keys)
 
 
 def loads_unique_keys(string_value: str) -> Json:

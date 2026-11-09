@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import ClassVar, Final, Iterable, Iterator, Self, TypeAlias, \
-    TypeVar, Union
+from typing import ClassVar, Final, ItemsView, Iterable, Iterator, Self, \
+    TypeAlias, TypeVar, Union
 
 from typing_extensions import override
 
@@ -171,7 +171,8 @@ class BasicFlags(Freezable, collections.UserDict):
       raise ValueError(f"Flag {flag_name}={flag_value!r} was already set "
                        f"with a different previous value: {old_value!r}")
 
-  def update(  # type: ignore
+  # Custom FlagsData signature incompatible with UserDict.update.
+  def update(  # pyrefly: ignore[bad-override]
       self,
       initial_data: FlagsData = None,
       should_override: bool = False) -> None:
@@ -219,10 +220,11 @@ class BasicFlags(Freezable, collections.UserDict):
     return f"{flag_name}={value}"
 
   @override
-  def items(self) -> Iterable[tuple[str, str | None]]:  # type: ignore
+  def items(self) -> ItemsView[str, str | None]:
     return self.data.items()
 
   def to_dict(self) -> dict[str, str | None]:
+    # Return a fresh dict so mutable internal self.data is not exposed.
     return dict(self.items())
 
   def clear(self) -> None:

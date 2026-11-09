@@ -306,6 +306,7 @@ class CBArgumentParser(argparse.ArgumentParser):
     return group
 
   @override
+  # Narrows Namespace to CBNamespace against ArgumentParser's generic _N.
   def parse_known_args(  # pyrefly: ignore[bad-override]
       self,
       args: Sequence[str] | None = None,
@@ -320,6 +321,7 @@ class CBArgumentParser(argparse.ArgumentParser):
     return parsed_namespace, unprocessed
 
   @override
+  # Narrows Namespace to CBNamespace against ArgumentParser's generic _N.
   def parse_args(  # pyrefly: ignore[bad-override]
       self,
       args: Sequence[str] | None = None,

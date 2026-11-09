@@ -413,7 +413,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     env_group.add_argument(
         "--env-validation",
         default=None,
-        type=ValidationMode,  # type: ignore
+        type=ValidationMode,
         help=(
             "Set how runner env is validated (see also --env-config/--env):\n" +
             ValidationMode.help_text(indent=2)))

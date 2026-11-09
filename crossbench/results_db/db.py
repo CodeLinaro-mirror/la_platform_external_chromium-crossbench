@@ -68,7 +68,9 @@ class ResultsDB:
     # We don't use BaseRecord.metadata.create_all(self._engine) so every probe
     # can lazily initialize tables depending if they're used or not.
     for cls in DEFAULT_CLASSES:
-      cls.__table__.create(self._engine)  # type: ignore
+      table = cls.__table__
+      assert isinstance(table, sqlalchemy.Table)
+      table.create(self._engine)
     with self.session() as session:
       UnitRecord.create_defaults(session)
       session.commit()
@@ -126,9 +128,8 @@ class ResultsDB:
       run_record = session.get(RunRecord, run.index)
       assert run_record, f"Could not find run {run.index}"
       run_record.error_count = len(run.exceptions)
-      # TODO: Fix JSON types and remove the type ignore comment.
-      run_record.errors = run.exceptions.to_json()  # type: ignore
+      run_record.errors = run.exceptions.to_json()
       run_record.start_datetime = run.start_datetime
-      run_record.durations = run.durations.to_json()  # type: ignore
+      run_record.durations = run.durations.to_json()
       session.add(run_record)
       session.commit()

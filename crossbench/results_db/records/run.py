@@ -14,6 +14,9 @@ from crossbench.results_db import sqlalchemy_helpers as orm
 from crossbench.results_db.records.base import BaseRecord
 from crossbench.results_db.records.browser import BrowserRecord
 from crossbench.results_db.sqlalchemy_helpers import Mapped
+# SQLAlchemy evaluates Mapped[Json] at runtime via typing.get_type_hints(),
+# which requires Json's forward-referenced aliases in module globals.
+from crossbench.types import Json, JsonMapping, JsonSequence  # noqa: F401
 
 if TYPE_CHECKING:
   from crossbench.runner.run import Run
@@ -46,10 +49,8 @@ class RunRecord(BaseRecord):
 
   error_count: Mapped[int] = orm.mapped_column(
       orm_types.Integer(), nullable=True)
-  errors: Mapped[orm_types.JSON] = orm.mapped_column(
-      orm_types.JSON(), nullable=True)
+  errors: Mapped[Json] = orm.mapped_column(orm_types.JSON(), nullable=True)
 
   start_datetime: Mapped[dt.datetime] = orm.mapped_column(
       orm_types.DateTime(), nullable=True)
-  durations: Mapped[orm_types.JSON] = orm.mapped_column(
-      orm_types.JSON(), nullable=True)
+  durations: Mapped[Json] = orm.mapped_column(orm_types.JSON(), nullable=True)

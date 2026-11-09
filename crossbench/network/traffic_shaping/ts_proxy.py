@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 fcntl = None
 try:
-  import fcntl  # type: ignore
+  import fcntl
 except ModuleNotFoundError as not_found:
   logging.debug("No fcntl support %s", not_found)
 
