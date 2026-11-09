@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 800" width="500" height="800">
+  <defs>
+    <clipPath id="browser-clip">
+      <rect x="78" y="138" width="344" height="584" rx="14" ry="14"/>
+    </clipPath>
+  </defs>
+
+  <!-- Battery terminal nub (drawn first so the body overlaps it). -->
+  <rect x="170" y="10" width="160" height="90" rx="22" ry="22" fill="#334155"/>
+
+  <!-- Battery body outline. -->
+  <rect x="10" y="70" width="480" height="720" rx="60" ry="60" fill="#334155"/>
+
+  <!-- White interior of the battery. -->
+  <rect x="50" y="110" width="400" height="640" rx="30" ry="30" fill="#FFFFFF"/>
+
+  <!-- Browser window. -->
+  <g clip-path="url(#browser-clip)">
+    <!-- Web contents (bright green). -->
+    <rect x="78" y="138" width="344" height="584" fill="#22C55E"/>
+    <!-- Toolbar (deep green). -->
+    <rect x="78" y="138" width="344" height="70" fill="#1A8A4A"/>
+  </g>
+
+  <!-- Toolbar: traffic-light dots and omnibox. -->
+  <g fill="#FFFFFF">
+    <circle cx="112" cy="173" r="10"/>
+    <circle cx="148" cy="173" r="10"/>
+    <circle cx="184" cy="173" r="10"/>
+    <rect x="222" y="158" width="178" height="30" rx="15" ry="15"/>
+  </g>
+
+  <!-- Skeleton page content. -->
+  <g fill="#FFFFFF">
+    <rect x="102" y="238" width="296" height="60" rx="14" ry="14"/>
+    <rect x="102" y="322" width="296" height="20" rx="10" ry="10"/>
+    <rect x="102" y="372" width="230" height="20" rx="10" ry="10"/>
+    <rect x="102" y="422" width="170" height="20" rx="10" ry="10"/>
+    <!-- Hero image placeholder. -->
+    <rect x="102" y="476" width="296" height="216" rx="14" ry="14"/>
+  </g>
+
+  <!-- Amber lightning bolt inside the hero image, left of the "2". -->
+  <polygon fill="#F5A623"
+           transform="translate(201 584) scale(0.95) translate(-542 -285)"
+           points="556,218 500,296 534,296 516,352 584,268 548,268"/>
+
+  <!-- Amber "2" inside the hero image (glyph reused from web_power_2_logo.svg). -->
+  <path fill="#F5A623" fill-rule="evenodd"
+        transform="translate(296 584) scale(1.3) translate(-135.07 -264)"
+        d="M105.75 306L105.75 293.61L137.6 263.53C141.3 260.07 143.66 257.16 144.68 254.8C145.7 252.44 146.22 250.28 146.22 248.31C146.22 245.08 145.09 242.57 142.85 240.76C140.61 238.95 137.33 238.04 133 238.04C129.46 238.04 126.22 238.71 123.27 240.05C120.32 241.39 117.86 243.47 115.9 246.3L101.97 237.34C105.2 232.62 109.6 228.88 115.19 226.13C120.77 223.38 127.3 222 134.77 222C140.91 222 146.27 223 150.88 225.01C155.48 227.01 159.06 229.83 161.61 233.44C164.17 237.06 165.45 241.39 165.45 246.42C165.45 249.1 165.09 251.75 164.38 254.38C163.68 257.02 162.34 259.81 160.37 262.76C158.41 265.71 155.5 268.96 151.64 272.49L132.65 290.43L168.16 290.43L168.16 306Z"/>
+</svg>

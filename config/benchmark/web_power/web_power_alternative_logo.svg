@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <clipPath id="browser-clip">
+      <rect x="78" y="78" width="584" height="344" rx="14" ry="14"/>
+    </clipPath>
+  </defs>
+
+  <!-- Battery terminal nub (drawn first so the body overlaps it). -->
+  <rect x="700" y="170" width="90" height="160" rx="22" ry="22" fill="#334155"/>
+
+  <!-- Battery body outline. -->
+  <rect x="10" y="10" width="720" height="480" rx="60" ry="60" fill="#334155"/>
+
+  <!-- White interior of the battery. -->
+  <rect x="50" y="50" width="640" height="400" rx="30" ry="30" fill="#FFFFFF"/>
+
+  <!-- Browser window. -->
+  <g clip-path="url(#browser-clip)">
+    <!-- Web contents (bright green). -->
+    <rect x="78" y="78" width="584" height="344" fill="#22C55E"/>
+    <!-- Toolbar (deep green). -->
+    <rect x="78" y="78" width="584" height="70" fill="#1A8A4A"/>
+  </g>
+
+  <!-- Toolbar: traffic-light dots and omnibox. -->
+  <g fill="#FFFFFF">
+    <circle cx="112" cy="113" r="10"/>
+    <circle cx="148" cy="113" r="10"/>
+    <circle cx="184" cy="113" r="10"/>
+    <rect x="222" y="98" width="418" height="30" rx="15" ry="15"/>
+  </g>
+
+  <!-- Skeleton page content. -->
+  <g fill="#FFFFFF">
+    <rect x="102" y="178" width="308" height="60" rx="14" ry="14"/>
+    <rect x="102" y="262" width="308" height="20" rx="10" ry="10"/>
+    <rect x="102" y="312" width="243" height="20" rx="10" ry="10"/>
+    <rect x="102" y="362" width="178" height="20" rx="10" ry="10"/>
+    <!-- Hero image placeholder. -->
+    <rect x="440" y="178" width="200" height="214" rx="14" ry="14"/>
+  </g>
+
+  <!-- Amber lightning bolt inside the hero image. -->
+  <polygon fill="#F5A623"
+           points="556,218 500,296 534,296 516,352 584,268 548,268"/>
+</svg>
