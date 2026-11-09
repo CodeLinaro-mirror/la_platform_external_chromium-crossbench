@@ -41,6 +41,33 @@
               histograms {
                 histogram_name: "InitialWebUI.Startup.ReloadButton.FirstContentfulPaint"
               }
+              histograms {
+                histogram_name: "NewTabPage.LoadTime.FirstContentfulPaint2"
+              }
+              histograms {
+                histogram_name: "NewTabPage.MainUi.ShownTime"
+              }
+              histograms {
+                histogram_name: "NewTabPage.LoadTime.Startup"
+              }
+              histograms {
+                histogram_name: "NewTabPage.LoadTime.NewTab"
+              }
+              histograms {
+                histogram_name: "NewTabPage.OneGoogleBar.ShownTime"
+              }
+              histograms {
+                histogram_name: "Graphics.Smoothness.PercentDroppedFrames3.AllSequences"
+              }
+              histograms {
+                histogram_name: "Graphics.Smoothness.PercentDroppedFrames3.AllAnimations"
+              }
+              histograms {
+                histogram_name: "Graphics.Smoothness.PercentDroppedFrames3.AllInteractions"
+              }
+              histograms {
+                histogram_name: "Webium.Graphics.Smoothness.PercentDroppedFrames3.AllSequences"
+              }
             }
           }
         }
@@ -114,6 +141,157 @@
               AND a_name.key = 'chrome_histogram_sample.name'
               AND a_name.string_value = 'Startup.FirstWebContents.NonEmptyPaint3'
               AND a_sample.key = 'chrome_histogram_sample.sample'
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "ntp_fcp"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS ntp_fcp_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'NewTabPage.LoadTime.FirstContentfulPaint2'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "ntp_main_ui_shown_time"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS ntp_main_ui_shown_time_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'NewTabPage.MainUi.ShownTime'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "ntp_load_time_startup"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS ntp_load_time_startup_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'NewTabPage.LoadTime.Startup'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "ntp_load_time_new_tab"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS ntp_load_time_new_tab_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'NewTabPage.LoadTime.NewTab'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "ntp_one_google_bar_shown_time"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS ntp_one_google_bar_shown_time_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'NewTabPage.OneGoogleBar.ShownTime'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "graphics_smoothness_percent_dropped_frames_all_sequences"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS graphics_smoothness_percent_dropped_frames_all_sequences
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'Graphics.Smoothness.PercentDroppedFrames3.AllSequences'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "graphics_smoothness_percent_dropped_frames_all_animations"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS graphics_smoothness_percent_dropped_frames_all_animations
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'Graphics.Smoothness.PercentDroppedFrames3.AllAnimations'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "graphics_smoothness_percent_dropped_frames_all_interactions"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS graphics_smoothness_percent_dropped_frames_all_interactions
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'Graphics.Smoothness.PercentDroppedFrames3.AllInteractions'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "webium_graphics_smoothness_percent_dropped_frames_all_sequences"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS webium_graphics_smoothness_percent_dropped_frames_all_sequences
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'Webium.Graphics.Smoothness.PercentDroppedFrames3.AllSequences'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
             LIMIT 1
             '''
         }

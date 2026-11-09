@@ -13,6 +13,7 @@ from crossbench import plt
 from crossbench.benchmarks.loadline import LoadLine1TabletBenchmark, \
     LoadLine1TabletDebugBenchmark, LoadLine2TabletBenchmark, \
     LoadLine2TabletDebugBenchmark
+from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder_base import default_chromium_candidates
@@ -105,6 +106,10 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self._add_real_directory(config_path.parent)
     probes = ProbeListConfig.parse(str(config_path)).probes
     self.assertTrue(probes)
+    interactive_story_path = config_path.parent / "story_interactive.hjson"
+    pages_config = PagesConfig.parse(str(interactive_story_path))
+    self.assertEqual(len(pages_config.pages), 1)
+    self.assertEqual(pages_config.pages[0].label, "newtab_interactive")
 
 
 if __name__ == "__main__":

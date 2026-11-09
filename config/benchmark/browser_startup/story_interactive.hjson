@@ -1,0 +1,46 @@
+{
+  "pages": {
+    "newtab_interactive": [
+      {
+        "action": "start_browser"
+      }
+      {
+        "action": "wait"
+        "duration": "1200ms"
+      }
+      {
+        "action": "get"
+        "url": "chrome://newtab/"
+        "target": "_new_tab"
+        "ready_state": "complete"
+      }
+      {
+        "action": "js"
+        "script":
+          '''
+          const el = document.body;
+          el.animate(
+            [
+              { transform: "translateY(0px)" },
+              { transform: "translateY(20px)" },
+              { transform: "translateY(0px)" }
+            ],
+            { duration: 2200, iterations: 1 }
+          );
+          const start = performance.now();
+          function step(now) {
+            el.style.outlineOffset = ((now - start) % 10) + "px";
+            if (now - start < 2200) {
+              requestAnimationFrame(step);
+            }
+          }
+          requestAnimationFrame(step);
+          '''
+      }
+      {
+        "action": "wait"
+        "duration": "2400ms"
+      }
+    ]
+  }
+}
