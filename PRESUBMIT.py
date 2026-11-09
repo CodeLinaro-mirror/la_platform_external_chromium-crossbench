@@ -132,6 +132,7 @@ def CheckChange(
                 "-m",
                 "pyrefly",
                 "check",
+                f"--python-interpreter-path={input_api.python3_executable}",
                 "--output-format=json",
                 "-c",
                 str(root_path / "pyproject.toml"),
