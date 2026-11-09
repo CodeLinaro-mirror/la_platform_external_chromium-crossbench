@@ -2038,14 +2038,14 @@ files = [
 
 [[package]]
 name = "perfetto"
-version = "0.58.2"
+version = "0.59.1"
 description = "Python APIs and bindings for Perfetto (perfetto.dev)"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "perfetto-0.58.2-py3-none-any.whl", hash = "sha256:024d37db3e1938a0247311337daf419c7204af757fb303cdc1dca46fa8d83cfe"},
-    {file = "perfetto-0.58.2.tar.gz", hash = "sha256:54e0e8616dcd9fc1e087914d747370375aeb2f8dacf68ae7ead8c3c5e596a0c7"},
+    {file = "perfetto-0.59.1-py3-none-any.whl", hash = "sha256:fde529ecdf28042112d452ed431d51b797b4eea1378c10d7d25af5d36db719a3"},
+    {file = "perfetto-0.59.1.tar.gz", hash = "sha256:afc0258041b6f06a9e6532c68791ef44abbe1e31651d1ca50122adf8ef70eb67"},
 ]
 
 [package.dependencies]
@@ -3878,4 +3878,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.13"
-content-hash = "c7e4aa1384b5d912bfb5d7599c4e761bd3445af3f1f19d3cef14988bf8d6c9f9"
+content-hash = "d0ecf7822c64dd734e5df198f34d344dd7db2c9fd0382677d4caefbc13bdafa6"
