@@ -11,9 +11,8 @@ from typing import TYPE_CHECKING, Final, Iterable, Iterator
 
 from typing_extensions import override
 
-from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.dump_html import DumpHtmlAction
-from crossbench.action_runner.action.get import GetAction
+from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController
@@ -23,7 +22,6 @@ from crossbench.runner.probe_context_lookup_error import \
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action_runner import ActionRunner
-  from crossbench.benchmarks.loading.config.blocks import ActionBlock
   from crossbench.benchmarks.loading.config.login.custom import LoginBlock
   from crossbench.cli.config.secrets import Secrets
   from crossbench.runner.run import Run
@@ -102,11 +100,8 @@ class InteractivePage(Page):
   @property
   @override
   def first_url(self) -> str:
-    for block in self.blocks:
-      for action in block:
-        if action.TYPE == ActionType.GET:
-          assert isinstance(action, GetAction)
-          return action.url
+    if url := ActionBlock.find_first_url(self.blocks):
+      return url
     raise RuntimeError("No GET action with an URL found.")
 
   def create_failure_artifacts(self,

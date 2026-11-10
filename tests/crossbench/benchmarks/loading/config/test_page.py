@@ -275,6 +275,40 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(len(config.teardown), 2)
     self.assertEqual(config.teardown.first_url, "http://test.com/teardown")
 
+  def test_first_url_missing(self):
+    setup_only = PageConfig.parse({
+        "login": ["http://test.com/login"],
+        "setup": ["http://test.com/setup"],
+        "teardown": ["http://test.com/teardown"],
+    })
+    self.assertEqual(setup_only.first_url, "")
+
+    non_get_blocks = PageConfig.parse({
+        "actions": [{
+            "action": "wait",
+            "duration": "1s",
+        }],
+    })
+    self.assertEqual(non_get_blocks.first_url, "")
+
+  def test_first_url_later_block(self):
+    config = PageConfig.parse({
+        "blocks": {
+            "b0": [{
+                "action": "wait",
+                "duration": "1s",
+            }],
+            "b1": [{
+                "action": "get",
+                "url": "http://test.com/1",
+            }, {
+                "action": "get",
+                "url": "http://test.com/2",
+            }],
+        },
+    })
+    self.assertEqual(config.first_url, "http://test.com/1")
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

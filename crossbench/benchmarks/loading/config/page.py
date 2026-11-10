@@ -12,8 +12,6 @@ from typing import TYPE_CHECKING, ClassVar, Iterator, Self, Sequence
 from typing_extensions import override
 
 from crossbench import path as pth
-from crossbench.action_runner.action.action_type import ActionType
-from crossbench.action_runner.action.get import GetAction
 from crossbench.benchmarks.loading.config.blocks import ActionBlock, \
     ActionBlockListConfig
 from crossbench.benchmarks.loading.config.login.custom import LoginBlock
@@ -177,9 +175,7 @@ class PageConfig(ConfigObject):
 
   @property
   def first_url(self) -> str:
-    for action in self.actions():
-      if action.TYPE == ActionType.GET:
-        assert isinstance(action, GetAction)
-        return action.url
+    if url := ActionBlock.find_first_url(self.blocks or ()):
+      return url
     logging.debug("PageConfig: No GET action with an URL found.")
     return ""

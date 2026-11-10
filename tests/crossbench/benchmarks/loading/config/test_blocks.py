@@ -154,6 +154,52 @@ class ActionBlockTestCase(unittest.TestCase):
     with self.assertRaisesRegex(ConfigError, "two 'stop_browser' actions"):
       ActionBlock(actions=(close_all, stop))
 
+  def test_find_first_url_empty(self) -> None:
+    self.assertIsNone(ActionBlock.find_first_url(()))
+    self.assertIsNone(
+        ActionBlock.find_first_url((ActionBlock(), ActionBlock())))
+
+  def test_find_first_url_no_get(self) -> None:
+    wait = WaitAction.create(duration=dt.timedelta(seconds=1))
+    js = JsAction.create("console.log('hi');")
+    block_1 = ActionBlock(actions=(wait,))
+    block_2 = ActionBlock(actions=(js,))
+    self.assertIsNone(ActionBlock.find_first_url((block_1, block_2)))
+
+  def test_find_first_url(self) -> None:
+    wait = WaitAction.create(duration=dt.timedelta(seconds=1))
+    js = JsAction.create("console.log('hi');")
+    get_1 = GetAction.create("http://test.com/1")
+    get_2 = GetAction.create("http://test.com/2")
+    get_3 = GetAction.create("http://test.com/3")
+    blocks = (
+        ActionBlock(),
+        ActionBlock(actions=(wait, js)),
+        ActionBlock(actions=(wait, get_1, get_2)),
+        ActionBlock(actions=(get_3,)),
+    )
+    self.assertEqual(ActionBlock.find_first_url(blocks), "http://test.com/1")
+    self.assertEqual(
+        ActionBlock.find_first_url(iter(blocks)), "http://test.com/1")
+
+  def test_first_url(self) -> None:
+    wait = WaitAction.create(duration=dt.timedelta(seconds=1))
+    get_1 = GetAction.create("http://test.com/1")
+    get_2 = GetAction.create("http://test.com/2")
+    self.assertEqual(
+        ActionBlock(actions=(get_1,)).first_url, "http://test.com/1")
+    self.assertEqual(
+        ActionBlock(actions=(wait, get_1, get_2)).first_url,
+        "http://test.com/1")
+
+  def test_first_url_missing(self) -> None:
+    wait = WaitAction.create(duration=dt.timedelta(seconds=1))
+    for block in (ActionBlock(), ActionBlock(actions=(wait,))):
+      with self.subTest(actions=tuple(str(a.TYPE) for a in block)):
+        with self.assertRaisesRegex(RuntimeError,
+                                    "No GET action with an URL found."):
+          _ = block.first_url
+
 
 class LoginBlockTestCase(unittest.TestCase):
 

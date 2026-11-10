@@ -17,6 +17,7 @@ from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.get import GetAction
+from crossbench.action_runner.action.wait import WaitAction
 from crossbench.action_runner.action_runner import SCRIPTS_DIR
 from crossbench.benchmarks.loading.config.blocks import ActionBlock, \
     ActionBlockListConfig
@@ -229,6 +230,38 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
     self.assertTrue(page.has_any_blocks)
     self.assertTrue(bool(page))
     self.assertEqual(len(page.blocks), 0)
+
+  def test_interactive_page_first_url(self):
+    wait = WaitAction.create(duration=dt.timedelta(seconds=1))
+    get_1 = GetAction.create("http://test.com/1")
+    get_2 = GetAction.create("http://test.com/2")
+    get_3 = GetAction.create("http://test.com/3")
+    setup = ActionBlock.from_url("http://test.com/setup",
+                                 dt.timedelta(seconds=1))
+    page = InteractivePage(
+        "test",
+        blocks=(
+            ActionBlock(actions=(wait,)),
+            ActionBlock(actions=(wait, get_1, get_2)),
+            ActionBlock(actions=(get_3,)),
+        ),
+        setup=setup)
+    self.assertEqual(page.first_url, "http://test.com/1")
+
+  def test_interactive_page_first_url_missing(self):
+    wait = WaitAction.create(duration=dt.timedelta(seconds=1))
+    setup = ActionBlock.from_url("http://test.com/setup",
+                                 dt.timedelta(seconds=1))
+    setup_only = InteractivePage("test", setup=setup)
+    with self.assertRaisesRegex(RuntimeError,
+                                "No GET action with an URL found."):
+      _ = setup_only.first_url
+
+    non_get = InteractivePage(
+        "test", blocks=(ActionBlock(actions=(wait,)),), setup=setup)
+    with self.assertRaisesRegex(RuntimeError,
+                                "No GET action with an URL found."):
+      _ = non_get.first_url
 
   def test_all_stories(self):
     stories = self.story_filter(["all"]).stories

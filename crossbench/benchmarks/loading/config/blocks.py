@@ -167,12 +167,19 @@ class ActionBlock(ConfigObject):
   def __len__(self) -> int:
     return len(self.actions)
 
+  @classmethod
+  def find_first_url(cls, blocks: Iterable[ActionBlock]) -> str | None:
+    for block in blocks:
+      for action in block:
+        if action.TYPE == ActionType.GET:
+          assert isinstance(action, GetAction)
+          return action.url
+    return None
+
   @property
   def first_url(self) -> str:
-    for action in self.actions:
-      if action.TYPE == ActionType.GET:
-        assert isinstance(action, GetAction)
-        return action.url
+    if url := self.find_first_url((self,)):
+      return url
     raise RuntimeError("No GET action with an URL found.")
 
 
