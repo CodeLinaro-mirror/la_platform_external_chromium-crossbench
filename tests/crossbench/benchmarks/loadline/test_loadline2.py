@@ -6,11 +6,13 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
+import json
 from typing import Sequence, override
 from unittest import mock
 
 import pandas as pd
 
+from crossbench import path as pth
 from crossbench.action_runner.action.js import JsAction
 from crossbench.action_runner.action.wait import WaitAction
 from crossbench.action_runner.action_runner import ActionRunner
@@ -24,7 +26,13 @@ from crossbench.benchmarks.loadline import LoadLine2PhoneBenchmark, \
     LoadLine2WebApiPhoneDebugBenchmark
 from crossbench.benchmarks.loadline.loadline_2 import LoadLine2CombinedPage, \
     process_scores
+from crossbench.benchmarks.loadline.loadline_2_webapi import \
+    LoadLine2WebApiProbe
 from crossbench.browsers.attributes import BrowserAttributes
+from crossbench.browsers.browser import Browser
+from crossbench.probes.results import LocalProbeResult
+from crossbench.runner.groups.browsers import BrowsersRunGroup
+from crossbench.runner.run import Run
 from crossbench.stories.story import Story
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -139,6 +147,38 @@ class TestLoadLine2Helpers(BaseCrossbenchTestCase):
     self.assertEqual(click_action.position.selector.selector, "html")
     remaining_blocks = action_runner.run_blocks.call_args[0][0]
     self.assertEqual(tuple(remaining_blocks[0].actions), (wait_action,))
+
+  def test_webapi_compute_score_skips_empty_js_result(self) -> None:
+    empty_json = pth.LocalPath("/test/empty_js.json")
+    valid_json = pth.LocalPath("/test/valid_js.json")
+    valid_data = {
+        "story_navigation_start_ts": 1000.0,
+        "story_visual_end_ts": 1600.0,
+        "story_interactive_end_ts": 2200.0,
+    }
+    self.fs.create_file(empty_json, contents="{}")
+    self.fs.create_file(valid_json, contents=json.dumps(valid_data))
+
+    empty_run = mock.MagicMock(spec=Run)
+    empty_run.results.get_by_name.return_value = LocalProbeResult(
+        json=(empty_json,))
+    valid_run = mock.MagicMock(spec=Run)
+    valid_run.results.get_by_name.return_value = LocalProbeResult(
+        json=(valid_json,))
+
+    browser = mock.MagicMock(spec=Browser)
+    browser.unique_name = "chrome"
+    group = mock.MagicMock(spec=BrowsersRunGroup)
+    group.browsers = (browser,)
+    group.runs = (empty_run, valid_run)
+
+    probe = LoadLine2WebApiProbe(
+        benchmark=mock.MagicMock(spec=LoadLine2WebApiPhoneBenchmark))
+    scores = probe._compute_score(group, expected_metrics=2)
+
+    self.assertEqual(scores["chrome"].loc["story_visual"], "100.000")
+    self.assertEqual(scores["chrome"].loc["story_interactive"], "50.000")
+    self.assertEqual(scores["chrome"].loc["TOTAL_SCORE"], "70.711")
 
 
 class BaseLoadLine2BenchmarkTestCase(

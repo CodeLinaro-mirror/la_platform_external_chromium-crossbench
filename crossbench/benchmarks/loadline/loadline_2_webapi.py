@@ -72,8 +72,13 @@ class LoadLine2WebApiProbe(LoadLineProbe):
   def get_context_cls(self) -> type[LoadLine2WebApiProbeContext]:
     return LoadLine2WebApiProbeContext
 
+  # `expected_metrics` is overridden in tests.
   @override
-  def _compute_score(self, group: BrowsersRunGroup) -> pd.DataFrame:
+  def _compute_score(
+      self,
+      group: BrowsersRunGroup,
+      expected_metrics: int = N_EXPECTED_METRICS,
+  ) -> pd.DataFrame:
     timings: dict[str, list] = {
         "cb_browser": [],
         "metric": [],
@@ -91,11 +96,9 @@ class LoadLine2WebApiProbe(LoadLineProbe):
         # TODO: warn the user.
         continue
 
-      j = {}
       with js_results.json.open() as file:
         j = json.load(file)
 
-      assert j
       ts_per_story_and_event: dict[str, dict[Event, float]] = (
           split_ts_per_story_and_event(j))
 
@@ -127,7 +130,7 @@ class LoadLine2WebApiProbe(LoadLineProbe):
 
       assert len(new_metrics) == len(new_values)
       # TODO(victorvianna): Show scores even when stories are filtered.
-      if len(new_metrics) != N_EXPECTED_METRICS:
+      if len(new_metrics) != expected_metrics:
         continue
 
       timings["cb_browser"].extend([browsers[0].unique_name] * len(new_metrics))
@@ -135,7 +138,8 @@ class LoadLine2WebApiProbe(LoadLineProbe):
       timings["metric"].extend(new_metrics)
       timings["value"].extend(new_values)
 
-    return process_scores(pd.DataFrame.from_dict(timings))
+    return process_scores(
+        pd.DataFrame.from_dict(timings), expected_metrics=expected_metrics)
 
   @override
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
