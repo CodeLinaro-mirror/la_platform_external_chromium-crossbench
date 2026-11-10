@@ -8,12 +8,12 @@ import datetime as dt
 import logging
 import os
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Final, Sequence, TypedDict
+from typing import TYPE_CHECKING, ClassVar, Final, Sequence, TypedDict, \
+    override
 
 from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
 from selenium.webdriver.safari.service import Service as SafariService
-from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth

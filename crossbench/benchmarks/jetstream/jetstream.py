@@ -10,9 +10,7 @@ import json
 import logging
 import statistics
 from collections import defaultdict
-from typing import TYPE_CHECKING, ClassVar, Final, Mapping, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Mapping, Sequence, override
 
 from crossbench.benchmarks.base import PressBenchmark
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin

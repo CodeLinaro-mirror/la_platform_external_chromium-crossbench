@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-from typing import TYPE_CHECKING, ClassVar, Final, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, override
 
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.parse import DurationParser

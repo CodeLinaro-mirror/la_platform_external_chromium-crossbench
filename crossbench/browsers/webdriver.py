@@ -12,14 +12,13 @@ import subprocess
 import time
 import traceback
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Final, Iterator, NoReturn, Sequence
+from typing import TYPE_CHECKING, Final, Iterator, NoReturn, Sequence, override
 
 import selenium.common.exceptions
 import urllib3
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.remote_connection import RemoteConnection
-from typing_extensions import override
 
 from crossbench import exception
 from crossbench.action_runner.action.enums import WindowTarget

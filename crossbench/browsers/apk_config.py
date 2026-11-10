@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-from typing import TYPE_CHECKING, ClassVar
-
-from typing_extensions import Self, override
+from typing import TYPE_CHECKING, ClassVar, Self, override
 
 if TYPE_CHECKING:
   from crossbench import path as pth

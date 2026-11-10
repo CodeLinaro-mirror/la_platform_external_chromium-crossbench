@@ -10,13 +10,12 @@ import logging
 import os
 import shlex
 from typing import TYPE_CHECKING, Final, MutableMapping, MutableSet, \
-    Sequence, cast
+    Sequence, cast, override
 
 from immutabledict import immutabledict
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
-from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.webview.webview import Webview

@@ -7,9 +7,7 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, ClassVar, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Self, override
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.base_duration import BaseDurationAction

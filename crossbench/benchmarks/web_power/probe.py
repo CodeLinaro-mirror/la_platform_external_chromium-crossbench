@@ -7,12 +7,12 @@ from __future__ import annotations
 import csv
 import functools
 import logging
-from typing import TYPE_CHECKING, ClassVar, Iterable, NamedTuple, cast
+from typing import TYPE_CHECKING, ClassVar, Iterable, NamedTuple, cast, \
+    override
 
 import pandas as pd
 from perfetto.batch_trace_processor.api import BatchTraceProcessor
 from tabulate import tabulate
-from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth

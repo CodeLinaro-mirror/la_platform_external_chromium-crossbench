@@ -9,10 +9,9 @@ import json
 import logging
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, override
 
 import websocket
-from typing_extensions import override
 
 from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.browsers.attributes import BrowserAttributes

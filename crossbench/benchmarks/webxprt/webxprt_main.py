@@ -12,10 +12,9 @@ import logging
 import re
 from collections import defaultdict
 from typing import TYPE_CHECKING, ClassVar, Final, Generic, Iterable, \
-    Mapping, Sequence, TypeVar
+    Mapping, Sequence, TypeVar, override
 
 from tabulate import tabulate
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.action_runner.action.enums import ReadyState

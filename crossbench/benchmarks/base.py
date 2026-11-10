@@ -10,10 +10,10 @@ import datetime as dt
 import logging
 import re
 from typing import TYPE_CHECKING, ClassVar, Final, Generic, Iterable, \
-    Mapping, NotRequired, Sequence, TypeAlias, TypedDict, TypeVar
+    Mapping, NotRequired, Self, Sequence, TypeAlias, TypedDict, TypeVar, \
+    override
 
 from ordered_set import OrderedSet
-from typing_extensions import Self, override
 
 from crossbench import path as pth
 from crossbench.action_runner.config import ActionRunnerConfig

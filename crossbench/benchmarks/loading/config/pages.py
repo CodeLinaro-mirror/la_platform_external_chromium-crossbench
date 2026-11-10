@@ -9,9 +9,7 @@ import dataclasses
 import datetime as dt
 import logging
 from typing import TYPE_CHECKING, ClassVar, Mapping, Required, Self, \
-    Sequence, TypedDict, cast
-
-from typing_extensions import override
+    Sequence, TypedDict, cast, override
 
 from crossbench import exception
 from crossbench import path as pth

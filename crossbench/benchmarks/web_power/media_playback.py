@@ -7,9 +7,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, ClassVar, Final
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, override
 
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
     WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or

@@ -7,9 +7,7 @@ from __future__ import annotations
 import abc
 import dataclasses
 import functools
-from typing import TYPE_CHECKING
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, override
 
 from crossbench.action_runner.action.action import Action, Self
 from crossbench.parse import NumberParser, ObjectParser

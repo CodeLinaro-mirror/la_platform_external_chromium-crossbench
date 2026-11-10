@@ -7,9 +7,7 @@ from __future__ import annotations
 import abc
 import os
 import shutil
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, override
 
 from crossbench.browsers.downloader import ArchiveUrlCandidate, \
     DMGArchiveHelper, Downloader

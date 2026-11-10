@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import abc
 import re
-from typing import TYPE_CHECKING
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.webdriver import ChromeWebDriverAndroid

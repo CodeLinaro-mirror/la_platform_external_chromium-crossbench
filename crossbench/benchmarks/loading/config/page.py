@@ -7,9 +7,7 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Iterator, Self, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Iterator, Self, Sequence, override
 
 from crossbench import path as pth
 from crossbench.benchmarks.loading.config.blocks import ActionBlock, \

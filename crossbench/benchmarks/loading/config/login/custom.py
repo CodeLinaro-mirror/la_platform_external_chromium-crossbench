@@ -5,8 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-
-from typing_extensions import override
+from typing import override
 
 from crossbench.benchmarks.loading.config.login.base import BaseLoginBlock
 from crossbench.benchmarks.loading.config.login.login_type import \

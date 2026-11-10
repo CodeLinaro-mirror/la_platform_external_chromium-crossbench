@@ -8,12 +8,11 @@ import dataclasses
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Mapping, Self, Sequence
+from typing import TYPE_CHECKING, Mapping, Self, Sequence, override
 
 import google.auth.transport.requests
 from google.auth.credentials import TokenState
 from google.oauth2 import service_account
-from typing_extensions import override
 
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.helper import url_helper

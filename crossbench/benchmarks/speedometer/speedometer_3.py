@@ -8,9 +8,8 @@ import abc
 import argparse
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, ClassVar, Final, Mapping, Sequence
-
-from typing_extensions import Self, override
+from typing import TYPE_CHECKING, ClassVar, Final, Mapping, Self, Sequence, \
+    override
 
 from crossbench.benchmarks.speedometer.speedometer import \
     SpeedometerBenchmark, SpeedometerBenchmarkStoryFilter, SpeedometerProbe, \

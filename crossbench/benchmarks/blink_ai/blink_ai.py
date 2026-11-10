@@ -7,10 +7,10 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, Sequence, \
+    override
 
 from ordered_set import OrderedSet
-from typing_extensions import override
 
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.position import PositionConfig

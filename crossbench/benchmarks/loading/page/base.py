@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import TYPE_CHECKING, Final, Iterable
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterable, override
 
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController

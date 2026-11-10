@@ -10,9 +10,7 @@ import os
 import shutil
 import tempfile
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Iterator, \
-    NamedTuple
-
-from typing_extensions import override
+    NamedTuple, override
 
 from crossbench import path as pth
 from crossbench.browsers.chrome.version import ChromeVersion

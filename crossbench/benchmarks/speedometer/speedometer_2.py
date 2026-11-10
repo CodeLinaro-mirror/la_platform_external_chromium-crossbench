@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, MutableMapping
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, MutableMapping, override
 
 from crossbench.benchmarks.speedometer.speedometer import SpeedometerProbe, \
     SpeedometerProbeContext, SpeedometerStory

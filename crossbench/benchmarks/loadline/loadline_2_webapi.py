@@ -7,10 +7,9 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 from enum import StrEnum
-from typing import TYPE_CHECKING, ClassVar, Final
+from typing import TYPE_CHECKING, ClassVar, Final, override
 
 import pandas as pd
-from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth

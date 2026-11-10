@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Final, Mapping
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Mapping, override
 
 from crossbench.benchmarks.jetstream.jetstream_3 import JetStream3Benchmark, \
     JetStream3Probe, JetStream3ProbeContext, JetStream3Story, ProbeClsTupleT

@@ -7,9 +7,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, Self, \
-    Sequence
-
-from typing_extensions import override
+    Sequence, override
 
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.loading.config.pages import \

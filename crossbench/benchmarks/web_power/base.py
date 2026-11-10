@@ -9,9 +9,7 @@ import datetime as dt
 import functools
 import inspect
 from typing import TYPE_CHECKING, ClassVar, Final, Generic, Iterable, \
-    Mapping, Self, Sequence, TypeVar, cast
-
-from typing_extensions import override
+    Mapping, Self, Sequence, TypeVar, cast, override
 
 from crossbench import config
 from crossbench.action_runner.action.enums import WindowTarget

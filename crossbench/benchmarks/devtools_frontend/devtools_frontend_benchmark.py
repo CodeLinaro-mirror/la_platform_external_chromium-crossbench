@@ -5,9 +5,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, Iterable, Mapping, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Iterable, Mapping, Sequence, \
+    override
 
 from crossbench.action_runner.action.open_devtools import OpenDevToolsAction
 from crossbench.benchmarks.base import Benchmark

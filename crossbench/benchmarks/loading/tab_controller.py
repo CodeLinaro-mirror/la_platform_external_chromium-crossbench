@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import abc
 import dataclasses
-from typing import Iterator
-
-from typing_extensions import override
+from typing import Iterator, override
 
 from crossbench.config import ConfigObject
 from crossbench.parse import NumberParser

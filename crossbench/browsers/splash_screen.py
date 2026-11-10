@@ -8,9 +8,7 @@ import abc
 import dataclasses
 import html
 from argparse import ArgumentTypeError
-from typing import TYPE_CHECKING, ClassVar, Final, Mapping
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Mapping, override
 
 from crossbench import path as pth
 from crossbench.helper import url_helper

@@ -9,9 +9,7 @@ import datetime as dt
 import itertools
 import json
 import logging
-from typing import TYPE_CHECKING, ClassVar, Mapping
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Mapping, override
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin

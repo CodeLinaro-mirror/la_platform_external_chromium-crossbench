@@ -5,11 +5,10 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, Mapping, Sequence
+from typing import TYPE_CHECKING, ClassVar, Mapping, Sequence, override
 
 import pandas as pd
 from tabulate import tabulate
-from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth

@@ -4,12 +4,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Final, TypedDict
+from typing import TYPE_CHECKING, ClassVar, Final, TypedDict, override
 
 import numpy as np
 import pandas as pd
 from scipy.stats import t as scipy_t
-from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth

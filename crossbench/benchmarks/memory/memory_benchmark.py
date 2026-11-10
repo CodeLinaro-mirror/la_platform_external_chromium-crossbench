@@ -8,11 +8,10 @@ import datetime as dt
 import json
 import logging
 from typing import TYPE_CHECKING, ClassVar, Final, NotRequired, Sequence, \
-    TypedDict, cast
+    TypedDict, cast, override
 
 import selenium.common.exceptions
 import urllib3.exceptions
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.action_runner.action.js import JsAction

@@ -9,14 +9,14 @@ import base64
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Final, Iterable, Sequence, TextIO, TypeAlias
+from typing import TYPE_CHECKING, Final, Iterable, Sequence, TextIO, \
+    TypeAlias, override
 
 import requests
 import selenium.common.exceptions
 from selenium.webdriver.chromium.options import ChromiumOptions
 from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
-from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder, \

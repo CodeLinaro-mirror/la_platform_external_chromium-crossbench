@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import abc
 import argparse
-from typing import TYPE_CHECKING, ClassVar, Mapping, Sequence
-
-from typing_extensions import Self, override
+from typing import TYPE_CHECKING, ClassVar, Mapping, Self, Sequence, override
 
 from crossbench.benchmarks.jetstream.jetstream_2 import JetStream2Benchmark, \
     JetStream2BenchmarkStoryFilter, JetStream2Probe, JetStream2ProbeContext, \

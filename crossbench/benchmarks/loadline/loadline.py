@@ -8,11 +8,10 @@ import abc
 import argparse
 import logging
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Final, Mapping
+from typing import TYPE_CHECKING, ClassVar, Final, Mapping, override
 
 import pandas as pd
 from tabulate import tabulate
-from typing_extensions import override
 
 from crossbench.benchmarks.base import RegexFilter
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin

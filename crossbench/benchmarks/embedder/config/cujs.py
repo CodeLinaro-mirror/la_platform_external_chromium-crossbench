@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-from typing import Mapping, Self
-
-from typing_extensions import override
+from typing import Mapping, Self, override
 
 from crossbench import exception
 from crossbench.benchmarks.loading.config.blocks import ActionBlock, \

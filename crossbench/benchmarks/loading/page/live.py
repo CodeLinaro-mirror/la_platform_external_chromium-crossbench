@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Final, Iterable
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterable, override
 
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.page.base import DEFAULT_DURATION, PAGE_LIST

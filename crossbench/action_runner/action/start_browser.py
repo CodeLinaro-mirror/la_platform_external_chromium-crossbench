@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, ClassVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.action_type import ActionType

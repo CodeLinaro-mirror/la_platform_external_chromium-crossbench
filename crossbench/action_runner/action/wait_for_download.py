@@ -6,10 +6,9 @@ from __future__ import annotations
 
 import dataclasses
 import functools
-from typing import TYPE_CHECKING, ClassVar, Self
+from typing import TYPE_CHECKING, ClassVar, Self, override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench.action_runner.action.action import ACTION_TIMEOUT
 from crossbench.action_runner.action.action_type import ActionType

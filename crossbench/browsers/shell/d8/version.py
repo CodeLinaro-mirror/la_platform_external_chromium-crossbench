@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import Final
-
-from typing_extensions import override
+from typing import Final, override
 
 from crossbench.browsers.version import BrowserVersion, \
     BrowserVersionChannel, VersionParseResult

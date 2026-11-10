@@ -5,11 +5,10 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Mapping, Self, Sequence
+from typing import Mapping, Self, Sequence, override
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
-from typing_extensions import override
 
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import ObjectParser

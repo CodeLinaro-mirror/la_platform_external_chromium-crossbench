@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.benchmarks.jetstream.jetstream import JetStreamBenchmark, \

@@ -9,9 +9,7 @@ import dataclasses
 import enum
 import functools
 import re
-from typing import Final, Generic, NamedTuple, Self, TypeVar
-
-from typing_extensions import override
+from typing import Final, Generic, NamedTuple, Self, TypeVar, override
 
 from crossbench.helper.version import Version, VersionParseError, \
     VersionPartsData

@@ -10,9 +10,7 @@ import functools
 import logging
 import re
 from typing import TYPE_CHECKING, ClassVar, Final, Iterator, Mapping, Self, \
-    Sequence
-
-from typing_extensions import override
+    Sequence, override
 
 from crossbench import path as pth
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget

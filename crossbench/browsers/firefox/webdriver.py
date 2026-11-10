@@ -9,13 +9,12 @@ import os
 import shutil
 import stat
 import tempfile
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, override
 
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
-from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth

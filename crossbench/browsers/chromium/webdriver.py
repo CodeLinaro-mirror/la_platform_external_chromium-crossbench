@@ -10,12 +10,11 @@ import logging
 import re
 import subprocess
 import time
-from typing import TYPE_CHECKING, Final, Self, Sequence
+from typing import TYPE_CHECKING, Final, Self, Sequence, override
 
 from immutabledict import immutabledict
 from selenium.webdriver.chromium import webdriver as chromium_webdriver
 from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
-from typing_extensions import override
 
 from crossbench import exception
 from crossbench import hjson as cb_hjson

@@ -6,11 +6,10 @@ from __future__ import annotations
 
 import dataclasses
 import functools
-from typing import TYPE_CHECKING, Final, Self
+from typing import TYPE_CHECKING, Final, Self, override
 
 from google import genai
 from google.genai import types
-from typing_extensions import override
 
 from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.all import ACTIONS_TUPLE

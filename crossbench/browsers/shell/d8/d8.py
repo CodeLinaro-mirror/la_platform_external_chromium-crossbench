@@ -7,9 +7,7 @@ from __future__ import annotations
 import json
 import logging
 import urllib.request
-from typing import TYPE_CHECKING, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Sequence, override
 
 from crossbench import exception
 from crossbench.action_runner.action.enums import WindowTarget

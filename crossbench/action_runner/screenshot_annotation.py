@@ -6,10 +6,8 @@ from __future__ import annotations
 
 import abc
 import dataclasses
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, override
 from xml.sax.saxutils import escape
-
-from typing_extensions import override
 
 if TYPE_CHECKING:
   from crossbench.action_runner.display_rectangle import DisplayRectangle

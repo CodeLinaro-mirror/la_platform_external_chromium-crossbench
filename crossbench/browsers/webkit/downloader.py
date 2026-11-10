@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import os
 import shutil
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, override
 
 from crossbench.browsers.downloader import ArchiveUrlCandidate, Downloader, \
     ZipArchiveHelper

@@ -13,9 +13,8 @@ import shutil
 import stat
 import tempfile
 import zipfile
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, NamedTuple
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, NamedTuple, \
+    override
 
 from crossbench import path as pth
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion

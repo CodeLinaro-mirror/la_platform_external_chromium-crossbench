@@ -8,9 +8,7 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, ClassVar, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Sequence, override
 
 from crossbench.benchmarks.base import PressBenchmark, \
     PressBenchmarkStoryFilter

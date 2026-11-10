@@ -9,10 +9,10 @@ import argparse
 import datetime as dt
 import logging
 import re
-from typing import TYPE_CHECKING, ClassVar, Final, Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Iterator, Mapping, \
+    Sequence, override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.benchmarks.base import SubStoryBenchmark

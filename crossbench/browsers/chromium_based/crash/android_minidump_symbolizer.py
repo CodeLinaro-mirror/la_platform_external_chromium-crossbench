@@ -9,9 +9,7 @@ from __future__ import annotations
 import datetime
 import logging
 import re
-from typing import TYPE_CHECKING, Final
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, override
 
 from crossbench import path as pth
 from crossbench.browsers.chromium_based.crash import helper

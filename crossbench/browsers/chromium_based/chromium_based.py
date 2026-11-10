@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Final
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, override
 
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes

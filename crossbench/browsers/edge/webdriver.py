@@ -9,12 +9,11 @@ import os
 import shutil
 import stat
 import tempfile
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, override
 
 from selenium import webdriver
 from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.edge.service import Service as EdgeService
-from typing_extensions import override
 
 import crossbench
 import crossbench.exception

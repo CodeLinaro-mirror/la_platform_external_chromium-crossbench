@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, override
 
 from crossbench.action_runner.action.clear_cache import ClearCacheAction
 from crossbench.action_runner.action.enums import WindowTarget

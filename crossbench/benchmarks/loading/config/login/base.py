@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, override
 
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
 

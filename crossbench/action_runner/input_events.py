@@ -9,10 +9,9 @@ import dataclasses
 import datetime as dt
 import enum
 import functools
-from typing import TYPE_CHECKING, ClassVar, Final, Self, cast
+from typing import TYPE_CHECKING, ClassVar, Final, Self, cast, override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench import exception
 from crossbench.action_runner.action.enums import ButtonClick

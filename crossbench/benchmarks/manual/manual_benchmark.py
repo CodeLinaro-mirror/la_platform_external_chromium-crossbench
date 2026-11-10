@@ -8,9 +8,7 @@ import abc
 import contextlib
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, override
 
 from crossbench.benchmarks.base import Benchmark
 from crossbench.cli.ui import ui

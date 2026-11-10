@@ -7,9 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import itertools
 import logging
-from typing import TYPE_CHECKING, ClassVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench.benchmarks.motionmark.motionmark_1 import \
     MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext, \

@@ -7,9 +7,7 @@ from __future__ import annotations
 import abc
 import dataclasses
 import functools
-from typing import TYPE_CHECKING, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Self, override
 
 from crossbench.action_runner.action.base_duration import BaseDurationAction
 from crossbench.action_runner.virtual_device.all import DEFAULT_VIRTUAL_DEVICES

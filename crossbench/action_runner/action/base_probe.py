@@ -6,10 +6,9 @@ from __future__ import annotations
 
 import abc
 import dataclasses
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.action_type import ActionType

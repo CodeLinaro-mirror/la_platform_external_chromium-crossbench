@@ -7,10 +7,10 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, \
+    Sequence, override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.benchmarks.base import PressBenchmarkStoryFilter

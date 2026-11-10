@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar, Final, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Sequence, override
 
 from crossbench import config
 from crossbench.action_runner.action.enums import ReadyState

@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import ClassVar
-
-from typing_extensions import override
+from typing import ClassVar, override
 
 from crossbench.browsers.applescript import AppleScriptBrowser
 from crossbench.browsers.attributes import BrowserAttributes

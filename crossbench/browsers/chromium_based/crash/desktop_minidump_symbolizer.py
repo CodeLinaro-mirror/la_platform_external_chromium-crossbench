@@ -8,8 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
-
-from typing_extensions import override
+from typing import override
 
 from crossbench import path as pth
 from crossbench.browsers.chromium_based.crash import helper

@@ -8,10 +8,9 @@ import abc
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, ClassVar, Final, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Sequence, override
 
 import psutil
-from typing_extensions import override
 
 from crossbench import plt
 from crossbench.action_runner.action.enums import WindowTarget

@@ -4,12 +4,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
-from typing_extensions import override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.base import ChromeBaseMixin

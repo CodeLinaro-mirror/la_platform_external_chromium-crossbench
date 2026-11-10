@@ -8,10 +8,10 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, \
+    Sequence, override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.position import PositionConfig, \

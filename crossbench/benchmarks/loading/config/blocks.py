@@ -8,9 +8,7 @@ import dataclasses
 import datetime as dt
 import functools
 from typing import TYPE_CHECKING, Final, Iterable, Iterator, Mapping, Self, \
-    Sequence
-
-from typing_extensions import override
+    Sequence, override
 
 from crossbench import exception
 from crossbench.action_runner.action.action import Action

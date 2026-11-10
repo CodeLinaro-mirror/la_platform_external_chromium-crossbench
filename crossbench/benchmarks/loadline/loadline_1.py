@@ -4,10 +4,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Final
+from typing import TYPE_CHECKING, ClassVar, Final, override
 
 import numpy as np
-from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
