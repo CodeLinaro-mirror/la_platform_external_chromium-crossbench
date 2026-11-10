@@ -8,10 +8,8 @@ import abc
 import contextlib
 import hashlib
 import logging
-from typing import TYPE_CHECKING, Final, Iterator, Self, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Self, TypeVar, override
 from urllib.parse import urlparse
-
-from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth

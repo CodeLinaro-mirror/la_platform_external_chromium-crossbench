@@ -7,9 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 from typing import TYPE_CHECKING, ClassVar, Final, NotRequired, Self, \
-    TypedDict, cast
-
-from typing_extensions import override
+    TypedDict, cast, override
 
 from crossbench import path as pth
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext

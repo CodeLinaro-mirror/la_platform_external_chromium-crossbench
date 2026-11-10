@@ -7,9 +7,7 @@ from __future__ import annotations
 import abc
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, override
 
 import crossbench.path as pth
 from crossbench import exception

@@ -10,9 +10,7 @@ import contextlib
 import dataclasses
 import logging
 from typing import TYPE_CHECKING, Final, Iterator, Mapping, Self, Sequence, \
-    TextIO
-
-from typing_extensions import override
+    TextIO, override
 
 import crossbench.browsers.all as all_browsers
 from crossbench import exception

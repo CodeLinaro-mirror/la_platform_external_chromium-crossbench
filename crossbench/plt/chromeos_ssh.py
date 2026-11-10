@@ -9,9 +9,7 @@ import functools
 import json
 import logging
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Final, Iterator
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterator, override
 
 from crossbench import path as pth
 from crossbench import plt

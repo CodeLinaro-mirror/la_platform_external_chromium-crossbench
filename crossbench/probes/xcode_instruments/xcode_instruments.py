@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Final, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, override
 
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.probes.probe import Probe, ProbeConfigParser, \

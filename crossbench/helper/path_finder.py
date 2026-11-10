@@ -8,9 +8,7 @@ import abc
 import logging
 import subprocess
 import sys
-from typing import TYPE_CHECKING, Final, Iterator, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterator, Sequence, override
 
 from crossbench import path as pth
 from crossbench import plt

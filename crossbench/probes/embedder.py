@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Final
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.webview.embedder import WebviewEmbedder

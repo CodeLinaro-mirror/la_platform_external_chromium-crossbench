@@ -9,9 +9,7 @@ import datetime
 import logging
 import subprocess
 import sys
-from typing import TYPE_CHECKING, Final
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, override
 
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.cli.ui import ui

@@ -19,12 +19,11 @@ import shlex
 import subprocess
 import time
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Iterator, \
-    Mapping, Sequence, cast
+    Mapping, Sequence, cast, override
 
 from immutabledict import immutabledict
 from mobly.controllers import android_device
 from snippet_uiautomator import uiautomator
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.action_runner.display_rectangle import DisplayRectangle

@@ -9,10 +9,9 @@ import dataclasses
 import logging
 import sys
 import types
-from typing import TYPE_CHECKING, Mapping, Never, Sequence
+from typing import TYPE_CHECKING, Mapping, Never, Self, Sequence, override
 
 import colorama
-from typing_extensions import Self, override
 
 from crossbench.cli.ui import ui
 from crossbench.parse import ObjectParser

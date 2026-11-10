@@ -6,10 +6,9 @@ from __future__ import annotations
 
 import abc
 import enum
-from typing import TYPE_CHECKING, Final, Self
+from typing import TYPE_CHECKING, Final, Self, override
 
 from selenium.webdriver.safari.options import Options as SafariOptions
-from typing_extensions import override
 
 import crossbench.probes.cb_perfetto.traceconv as cb_traceconv
 from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver

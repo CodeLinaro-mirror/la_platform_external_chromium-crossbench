@@ -8,10 +8,9 @@ import datetime as dt
 import json
 import sys
 import time
-from typing import TYPE_CHECKING, Final, Protocol
+from typing import TYPE_CHECKING, Final, Protocol, override
 
 import google.cloud.storage.blob as gcloud_blob
-from typing_extensions import override
 
 from crossbench.plt import linux as plt_linux
 

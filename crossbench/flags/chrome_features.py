@@ -5,10 +5,9 @@
 from __future__ import annotations
 
 import abc
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, override
 
 from ordered_set import OrderedSet
-from typing_extensions import override
 
 from crossbench.flags.base import Freezable
 

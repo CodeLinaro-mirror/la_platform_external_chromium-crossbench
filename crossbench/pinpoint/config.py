@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import re
-from typing import TYPE_CHECKING, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Self, override
 
 from crossbench.cli.config.flags import FlagsConfig
 from crossbench.cli.ui import ui

@@ -8,10 +8,9 @@ import dataclasses
 import json
 from collections import defaultdict
 from typing import TYPE_CHECKING, ClassVar, Mapping, NamedTuple, Sequence, \
-    TypedDict
+    TypedDict, override
 
 import tabulate as tbl
-from typing_extensions import override
 
 from crossbench.cli.config.env import ENV_CONFIG_PRESETS, EnvConfig
 from crossbench.cli.config.network import NetworkConfig, NetworkType

@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Iterator, Self, TypeVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Iterator, Self, TypeVar, override
 
 from crossbench.network.base import Network
 

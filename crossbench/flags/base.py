@@ -7,9 +7,7 @@ from __future__ import annotations
 import collections
 import re
 from typing import ClassVar, Final, ItemsView, Iterable, Iterator, Self, \
-    TypeAlias, TypeVar, Union
-
-from typing_extensions import override
+    TypeAlias, TypeVar, Union, override
 
 
 class FrozenFlagsError(RuntimeError):

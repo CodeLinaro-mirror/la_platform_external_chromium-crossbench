@@ -10,10 +10,9 @@ import datetime as dt
 import logging
 import subprocess
 import time
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench.action_runner.action.enums import ButtonClick
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \

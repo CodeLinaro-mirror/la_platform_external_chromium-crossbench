@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, ClassVar, Final, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, override
 
 from crossbench.probes.cpu_frequency_map import CPUFrequencyMap
 from crossbench.probes.env_modifier import EnvModifier

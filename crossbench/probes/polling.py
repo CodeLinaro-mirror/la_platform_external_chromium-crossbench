@@ -9,9 +9,7 @@ import datetime as dt
 import logging
 import threading
 import time
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, override
 
 from crossbench.parse import DurationParser, ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \

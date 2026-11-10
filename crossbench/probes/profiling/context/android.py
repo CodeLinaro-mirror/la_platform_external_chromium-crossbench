@@ -8,9 +8,7 @@ import io
 import logging
 import subprocess
 import time
-from typing import TYPE_CHECKING, Iterable
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Iterable, override
 
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.probes.profiling.context.base import PosixProfilingContext

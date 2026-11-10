@@ -5,10 +5,9 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Mapping, Self, cast
+from typing import TYPE_CHECKING, Mapping, Self, cast, override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench import exception
 from crossbench.config import ConfigObject, ConfigParser

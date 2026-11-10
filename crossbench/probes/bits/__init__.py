@@ -10,9 +10,7 @@ import json
 import logging
 import subprocess
 import time
-from typing import IO, TYPE_CHECKING, ClassVar, Final, Iterator, Self
-
-from typing_extensions import override
+from typing import IO, TYPE_CHECKING, ClassVar, Final, Iterator, Self, override
 
 from crossbench.config import ConfigEnum
 from crossbench.helper import fs_helper

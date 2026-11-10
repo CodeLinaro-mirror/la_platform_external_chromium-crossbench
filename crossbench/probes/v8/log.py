@@ -11,9 +11,8 @@ import logging
 import os
 import re
 import subprocess
-from typing import TYPE_CHECKING, Callable, ClassVar, Final, Iterable, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Callable, ClassVar, Final, Iterable, Self, \
+    override
 
 from crossbench import plt
 from crossbench.cli.ui import ui

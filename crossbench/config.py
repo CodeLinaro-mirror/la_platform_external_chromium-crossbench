@@ -17,10 +17,9 @@ import logging
 import re
 import textwrap
 from typing import TYPE_CHECKING, Callable, ClassVar, Final, Generic, \
-    Iterable, Sequence, TypeAlias, TypeGuard, TypeVar, cast
+    Iterable, Self, Sequence, TypeAlias, TypeGuard, TypeVar, cast, override
 
 import tabulate
-from typing_extensions import Self, override
 
 from crossbench import exception
 from crossbench import path as pth

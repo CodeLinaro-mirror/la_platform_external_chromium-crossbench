@@ -6,10 +6,9 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, replace
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, override
 
 import platformdirs
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.config import ConfigObject, ConfigParser

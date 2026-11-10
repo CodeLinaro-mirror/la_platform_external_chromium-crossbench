@@ -7,10 +7,9 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import json
-from typing import TYPE_CHECKING, Final, Mapping, Sequence
+from typing import TYPE_CHECKING, Final, Mapping, Sequence, TypeAlias, override
 
 import tabulate as tbl
-from typing_extensions import TypeAlias, override
 
 from crossbench import path as pth
 from crossbench import plt

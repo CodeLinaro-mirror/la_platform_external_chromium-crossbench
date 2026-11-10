@@ -17,9 +17,7 @@ import subprocess
 import time
 import traceback as tb
 from subprocess import SubprocessError
-from typing import TYPE_CHECKING, Final, Iterator, cast
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterator, cast, override
 
 from crossbench import path as pth
 from crossbench.helper.size import Size

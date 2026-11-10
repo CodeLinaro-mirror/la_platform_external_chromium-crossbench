@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, ClassVar, Iterable
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Iterable, override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium_based.crash.minidump_finder import \

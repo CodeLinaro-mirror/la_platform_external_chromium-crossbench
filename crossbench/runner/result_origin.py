@@ -7,9 +7,7 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Iterable, Iterator
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Iterable, Iterator, override
 
 from crossbench.decor.target_protocol import DecoratorTargetProtocol
 from crossbench.probes.result_location import ResultLocation

@@ -9,9 +9,7 @@ import datetime as dt
 import itertools
 import logging
 import sys
-from typing import TYPE_CHECKING, Final, Iterable, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterable, Sequence, override
 
 from crossbench import exception
 from crossbench import path as pth

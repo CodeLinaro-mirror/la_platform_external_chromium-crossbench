@@ -8,9 +8,7 @@ import argparse
 import dataclasses
 import enum
 import functools
-from typing import TYPE_CHECKING, ClassVar, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Self, override
 
 from crossbench import exception
 from crossbench.cli.config.network_speed import NetworkSpeedConfig, \

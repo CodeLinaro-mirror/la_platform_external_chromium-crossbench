@@ -8,9 +8,7 @@ import argparse
 import json
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, TypedDict
-
-from typing_extensions import Self, override
+from typing import TYPE_CHECKING, ClassVar, Self, TypedDict, override
 
 from crossbench import path as pth
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver

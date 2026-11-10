@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import TYPE_CHECKING, Final, Iterator
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterator, override
 
 from crossbench import path as pth
 from crossbench.browsers.chromium_based import helper as chromium_helper

@@ -7,9 +7,7 @@ from __future__ import annotations
 import contextlib
 import enum
 import logging
-from typing import TYPE_CHECKING, Final, Iterable, Iterator
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterable, Iterator, override
 
 from crossbench.flags.js_flags import JSFlags
 from crossbench.helper.cwd import change_cwd

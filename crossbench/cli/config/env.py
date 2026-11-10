@@ -8,10 +8,9 @@ import argparse
 import dataclasses
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, ClassVar, Mapping, Self, TypeVar
+from typing import TYPE_CHECKING, ClassVar, Mapping, Self, TypeVar, override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import DurationParser, NumberParser, ObjectParser

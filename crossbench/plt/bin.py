@@ -7,9 +7,7 @@ from __future__ import annotations
 import abc
 import functools
 from typing import TYPE_CHECKING, Callable, ClassVar, Final, Self, TypeAlias, \
-    cast
-
-from typing_extensions import override
+    cast, override
 
 from crossbench import path as pth
 from crossbench.helper.path_finder_base import ChromiumCheckoutFinder

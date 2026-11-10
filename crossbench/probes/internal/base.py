@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, TypeVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, TypeVar, override
 
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.probe import Probe, ProbePriority

@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Final, Self, TextIO
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, TextIO, override
 
 from crossbench.parse import PathParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \

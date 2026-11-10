@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, override
 
 from crossbench import path as pth
 from crossbench.browsers.chromium.devtools import \

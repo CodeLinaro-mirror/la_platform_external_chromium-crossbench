@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench.probes.polling import PollingProbe
 from crossbench.probes.probe_error import ProbeValidationError

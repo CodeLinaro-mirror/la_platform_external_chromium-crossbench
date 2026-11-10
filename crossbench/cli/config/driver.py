@@ -8,10 +8,9 @@ import argparse
 import dataclasses
 import logging
 import re
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt

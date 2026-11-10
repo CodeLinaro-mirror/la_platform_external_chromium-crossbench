@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final, Iterable
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterable, override
 
 from crossbench.runner.groups.base import RunGroup
 

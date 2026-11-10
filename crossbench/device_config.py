@@ -10,10 +10,9 @@ import enum
 import logging
 import re
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, ClassVar, Final, TypeAlias
+from typing import TYPE_CHECKING, ClassVar, Final, Self, TypeAlias, override
 
 from immutabledict import immutabledict
-from typing_extensions import Self, override
 
 from crossbench import path as pth
 from crossbench.config import ConfigEnum, ConfigError, ConfigObject

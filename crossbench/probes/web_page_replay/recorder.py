@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import logging
 import shutil
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, TypedDict
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, TypedDict, \
+    override
 
 from crossbench.helper import fs_helper
 from crossbench.helper.path_finder import WprGoFinder

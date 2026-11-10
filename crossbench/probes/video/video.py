@@ -9,9 +9,7 @@ import logging
 import os
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, ClassVar, Final, Self, TextIO
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, TextIO, override
 
 from crossbench import path as pth
 from crossbench import plt

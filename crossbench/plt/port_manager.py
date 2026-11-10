@@ -9,9 +9,7 @@ import atexit
 import contextlib
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Final, Iterator, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterator, Self, override
 
 from crossbench import exception
 from crossbench.parse import NumberParser

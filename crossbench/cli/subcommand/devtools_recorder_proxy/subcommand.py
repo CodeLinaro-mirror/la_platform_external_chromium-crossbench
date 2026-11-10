@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, override
 
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.cli.subcommand.devtools_recorder_proxy.default import \

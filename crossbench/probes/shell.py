@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import abc
 from typing import TYPE_CHECKING, ClassVar, Final, Generic, Iterable, Self, \
-    TypeVar
-
-from typing_extensions import override
+    TypeVar, override
 
 from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT

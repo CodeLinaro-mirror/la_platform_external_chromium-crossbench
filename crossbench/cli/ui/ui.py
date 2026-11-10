@@ -9,10 +9,9 @@ import datetime as dt
 import logging
 import sys
 import threading
-from typing import TYPE_CHECKING, Final, Iterator
+from typing import TYPE_CHECKING, Final, Iterator, override
 
 import colorama
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.helper import input_helper, terminal

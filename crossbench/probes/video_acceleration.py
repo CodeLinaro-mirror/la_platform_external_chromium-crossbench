@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chromium.devtools import \

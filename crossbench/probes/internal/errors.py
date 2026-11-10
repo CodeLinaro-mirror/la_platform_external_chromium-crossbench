@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, ClassVar, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Self, override
 
 from crossbench.probes.internal.base import InternalJsonResultProbe, \
     InternalJsonResultProbeContext

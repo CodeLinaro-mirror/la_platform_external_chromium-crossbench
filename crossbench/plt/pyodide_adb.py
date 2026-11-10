@@ -11,16 +11,14 @@ import logging
 import shlex
 import subprocess
 import time
-from typing import IO, TYPE_CHECKING, Final, Mapping, cast
-
-from typing_extensions import override
+from typing import IO, TYPE_CHECKING, Final, Mapping, cast, override
 
 from crossbench.plt import android_adb
 from crossbench.plt.pyodide import JsBuffer, PyodideGcsBlob, PyodidePlatform, \
     is_pyodide_env
 
 if TYPE_CHECKING:
-  from typing_extensions import Buffer
+  from collections.abc import Buffer
 
   from crossbench import path as pth
   from crossbench.flags.base import FlagsData

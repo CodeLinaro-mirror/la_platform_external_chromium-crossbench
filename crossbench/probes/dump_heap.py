@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar, Final, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, override
 
 from crossbench.config import ConfigEnum
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext

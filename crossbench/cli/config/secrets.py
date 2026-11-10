@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import secrets
-from typing import TYPE_CHECKING, Final, Self, TypeVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Self, TypeVar, override
 
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser

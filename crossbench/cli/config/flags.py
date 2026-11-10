@@ -9,11 +9,10 @@ import dataclasses
 import functools
 import logging
 from typing import TYPE_CHECKING, Final, Iterable, Mapping, Self, Sequence, \
-    TypeAlias, cast
+    TypeAlias, cast, override
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
-from typing_extensions import override
 
 from crossbench import exception
 from crossbench.browsers.browser_helper import convert_flags_to_label

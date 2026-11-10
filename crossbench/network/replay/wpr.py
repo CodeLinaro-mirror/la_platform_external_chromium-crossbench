@@ -8,9 +8,8 @@ import abc
 import contextlib
 import json
 import logging
-from typing import TYPE_CHECKING, Final, Iterable, Iterator, Self, TypeVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterable, Iterator, Self, TypeVar, \
+    override
 
 from crossbench.flags.base import Flags
 from crossbench.helper.path_finder import WprGoFinder

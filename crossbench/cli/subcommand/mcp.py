@@ -12,10 +12,9 @@ import shlex
 import shutil
 import subprocess
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from mcp.server.fastmcp import FastMCP
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt

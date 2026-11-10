@@ -7,9 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Final, Iterable, TypedDict
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterable, TypedDict, override
 
 from crossbench import path as pth
 from crossbench.browsers.splash_screen import SplashScreenData

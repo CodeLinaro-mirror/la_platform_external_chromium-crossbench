@@ -15,9 +15,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Final, Iterator, Self, TypeVar
-
-from typing_extensions import override
+from typing import IO, TYPE_CHECKING, Final, Iterator, Self, TypeVar, override
 
 from crossbench import exception
 from crossbench.flags.base import Flags

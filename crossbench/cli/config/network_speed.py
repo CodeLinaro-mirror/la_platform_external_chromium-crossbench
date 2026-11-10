@@ -7,9 +7,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-from typing import TYPE_CHECKING, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Self, override
 
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser
 from crossbench.network.traffic_shaping import ts_proxy_settings

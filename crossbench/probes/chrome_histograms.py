@@ -11,9 +11,8 @@ import datetime as dt
 import functools
 import logging
 import re
-from typing import TYPE_CHECKING, ClassVar, Final, Mapping, Self, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Mapping, Self, Sequence, \
+    override
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.browsers.attributes import BrowserAttributes

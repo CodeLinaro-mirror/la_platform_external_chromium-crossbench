@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Final
-
-from typing_extensions import override
+from typing import Final, override
 
 from crossbench import path as pth
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform

@@ -8,9 +8,7 @@ import io
 import logging
 import subprocess
 from functools import cached_property
-from typing import TYPE_CHECKING, Final, Iterable, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterable, Self, override
 
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.helper import wait

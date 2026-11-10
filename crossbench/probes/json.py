@@ -10,12 +10,11 @@ import json
 import logging
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, ClassVar, Generic, Mapping, \
-    TypeVar, cast
+from typing import TYPE_CHECKING, Callable, ClassVar, Final, Generic, \
+    Mapping, TypeVar, cast, override
 
 import xlsxwriter
 from tabulate import tabulate
-from typing_extensions import Final, override
 from xlsxwriter.utility import xl_rowcol_to_cell
 
 from crossbench.probes import helper

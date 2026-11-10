@@ -7,10 +7,9 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, override
 
 from google.protobuf import json_format
-from typing_extensions import override
 
 from crossbench import exception
 from crossbench import path as pth

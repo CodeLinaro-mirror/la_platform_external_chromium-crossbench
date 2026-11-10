@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Final, Iterable, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Final, Iterable, TypeVar, cast, overload, \
+    override
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.parse import ObjectParser

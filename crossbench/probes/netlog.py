@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import enum
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, override
 
 from crossbench.helper import fs_helper
 from crossbench.probes.chromium_probe import ChromiumProbe

@@ -9,9 +9,7 @@ import dataclasses
 import logging
 import re
 import zipfile
-from typing import TYPE_CHECKING, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Self, override
 
 from crossbench.config import ConfigObject
 from crossbench.helper import url_helper

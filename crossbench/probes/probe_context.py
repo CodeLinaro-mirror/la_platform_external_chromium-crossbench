@@ -8,9 +8,7 @@ import abc
 import contextlib
 import datetime as dt
 from typing import TYPE_CHECKING, Final, Generic, Iterable, Iterator, \
-    Mapping, TypeVar
-
-from typing_extensions import override
+    Mapping, TypeVar, override
 
 from crossbench.probes.results import BrowserProbeResult, EmptyProbeResult, \
     LocalProbeResult, ProbeResult

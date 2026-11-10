@@ -12,11 +12,10 @@ import json
 import logging
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Final, Iterator, final
+from typing import TYPE_CHECKING, Final, Iterator, final, override
 
 import yaml
 from tabulate import tabulate
-from typing_extensions import override
 
 from crossbench import plt
 from crossbench.cli.parser import CBArgumentParser

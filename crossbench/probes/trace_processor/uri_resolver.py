@@ -4,10 +4,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final, Iterable
+from typing import TYPE_CHECKING, Final, Iterable, override
 
 from perfetto.trace_uri_resolver.resolver import TraceUriResolver
-from typing_extensions import override
 
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.trace_processor.constants import PROBE_NAME

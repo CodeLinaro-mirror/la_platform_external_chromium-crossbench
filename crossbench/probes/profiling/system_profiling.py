@@ -8,9 +8,7 @@ import functools
 import logging
 import shlex
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, Sequence, \
-    TypeAlias
-
-from typing_extensions import override
+    TypeAlias, override
 
 from crossbench import path as pth
 from crossbench import plt

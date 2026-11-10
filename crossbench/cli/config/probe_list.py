@@ -7,10 +7,9 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import logging
-from typing import TYPE_CHECKING, Iterable, Self, Sequence
+from typing import TYPE_CHECKING, Iterable, Self, Sequence, override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench import exception
 from crossbench.cli.config.probe import ProbeConfig, ProbeConfigError

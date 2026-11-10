@@ -6,11 +6,10 @@ from __future__ import annotations
 
 import argparse
 import json
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Protocol, override
 
 import pandas as pd
 from tabulate import tabulate
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.benchmarks.web_power.probe import WebPowerProbe

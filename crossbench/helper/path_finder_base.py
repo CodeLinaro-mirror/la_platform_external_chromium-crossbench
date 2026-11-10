@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Final, Iterator
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterator, override
 
 from crossbench import path as pth
 

@@ -10,9 +10,7 @@ import enum
 import logging
 import os
 import re
-from typing import Final, NamedTuple, Self
-
-from typing_extensions import override
+from typing import Final, NamedTuple, Self, override
 
 import crossbench.browsers.all as all_browsers
 from crossbench import path as pth

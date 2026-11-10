@@ -12,11 +12,11 @@ import os
 import sys
 import textwrap
 import traceback
-from typing import TYPE_CHECKING, Final, Iterator, Sequence, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Sequence, TypeAlias, \
+    TypeVar, override
 
 import tabulate as tbl
 from immutabledict import immutabledict
-from typing_extensions import override
 
 import crossbench.benchmarks.all as benchmarks
 import crossbench.plt as plt

@@ -10,9 +10,7 @@ import functools
 import json
 import re
 import subprocess
-from typing import TYPE_CHECKING, Final, Mapping, cast
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Mapping, cast, override
 
 from crossbench import path as pth
 from crossbench.parse import NumberParser, ObjectParser

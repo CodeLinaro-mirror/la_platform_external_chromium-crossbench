@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import subprocess
-from typing import TYPE_CHECKING, Final, Mapping
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Mapping, override
 
 if TYPE_CHECKING:
   import datetime as dt

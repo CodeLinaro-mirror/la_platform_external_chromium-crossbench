@@ -8,9 +8,7 @@ import abc
 import datetime as dt
 import hashlib
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence, override
 
 from crossbench.parse import ObjectParser
 from crossbench.stories.story import Story

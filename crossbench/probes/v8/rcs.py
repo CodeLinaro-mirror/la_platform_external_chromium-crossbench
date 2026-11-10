@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import collections
 import logging
-from typing import TYPE_CHECKING, ClassVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe_context import ProbeContext

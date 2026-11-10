@@ -7,9 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence, override
 
 from crossbench.parse import DurationParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \

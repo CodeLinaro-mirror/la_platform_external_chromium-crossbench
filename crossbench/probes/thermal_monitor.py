@@ -9,9 +9,7 @@ import json
 import logging
 import re
 from enum import IntEnum
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, override
 
 from crossbench.cli.ui import ui
 from crossbench.helper.wait import WaitRange

@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Final, ItemsView
-
-from typing_extensions import Self, override
+from typing import Final, ItemsView, Self, override
 
 from crossbench import path as pth
 from crossbench.flags.base import Flags, FlagsData

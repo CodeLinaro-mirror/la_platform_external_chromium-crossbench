@@ -11,10 +11,10 @@ import json
 import logging
 import os
 import threading
-from typing import TYPE_CHECKING, Final, Iterator, Mapping, NamedTuple, Self
+from typing import TYPE_CHECKING, Final, Iterator, Mapping, NamedTuple, Self, \
+    override
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench import exception
 from crossbench.network.base import Network

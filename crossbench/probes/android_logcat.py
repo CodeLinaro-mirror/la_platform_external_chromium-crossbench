@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, override
 
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \

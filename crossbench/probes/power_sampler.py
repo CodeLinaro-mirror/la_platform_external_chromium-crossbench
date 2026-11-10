@@ -9,9 +9,7 @@ import datetime as dt
 import enum
 import logging
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence, override
 
 from crossbench import plt
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder

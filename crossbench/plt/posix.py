@@ -12,9 +12,7 @@ import logging
 import pathlib
 import re
 import shlex
-from typing import TYPE_CHECKING, Final, Generator, Iterator, Mapping
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Generator, Iterator, Mapping, override
 
 from crossbench import path as pth
 from crossbench.helper.wait import WaitRange

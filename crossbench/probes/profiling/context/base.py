@@ -7,9 +7,7 @@ from __future__ import annotations
 import abc
 import logging
 from functools import cached_property
-from typing import TYPE_CHECKING, Final, NamedTuple, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, NamedTuple, Sequence, override
 
 from crossbench.cli.ui import ui
 from crossbench.plt.bin import Binaries

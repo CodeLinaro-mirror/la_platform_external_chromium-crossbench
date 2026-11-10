@@ -11,9 +11,7 @@ import enum
 import json
 import os
 import threading
-from typing import TYPE_CHECKING, Final, Iterator
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Iterator, override
 
 from crossbench.helper.state import BaseState, StateMachine
 

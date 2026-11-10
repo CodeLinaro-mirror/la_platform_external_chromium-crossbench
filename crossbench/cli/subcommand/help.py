@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, ClassVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 

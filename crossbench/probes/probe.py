@@ -8,9 +8,7 @@ import abc
 import enum
 import logging
 from typing import TYPE_CHECKING, ClassVar, Final, Hashable, Iterable, Self, \
-    TypeVar
-
-from typing_extensions import override
+    TypeVar, override
 
 from crossbench import path as pth
 from crossbench import plt

@@ -10,9 +10,7 @@ import functools
 import logging
 import os
 import shutil
-from typing import TYPE_CHECKING
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, override
 
 if TYPE_CHECKING:
   from crossbench.plt.types import TupleCmdArgs

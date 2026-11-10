@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import shlex
-from typing import TYPE_CHECKING, Final, Mapping
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Mapping, override
 
 from crossbench.plt.linux import RemoteLinuxPlatform
 from crossbench.plt.ssh import SshPlatformMixin

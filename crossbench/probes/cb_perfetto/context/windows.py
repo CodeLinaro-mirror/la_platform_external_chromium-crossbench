@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, override
 
 from crossbench.probes.cb_perfetto.constants import PERFETTO_TRACE_NAME
 from crossbench.probes.cb_perfetto.context.base import PerfettoProbeContext

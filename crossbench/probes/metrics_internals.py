@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Generic, Self, TypeVar
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Generic, Self, TypeVar, \
+    override
 
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.browsers.attributes import BrowserAttributes

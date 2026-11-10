@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import argparse
 import enum
-from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence, override
 
 import crossbench.probes.cb_perfetto.traceconv as cb_traceconv
 from crossbench import path as pth

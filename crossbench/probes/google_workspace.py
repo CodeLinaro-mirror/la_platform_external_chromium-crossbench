@@ -5,11 +5,10 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar, Self
+from typing import TYPE_CHECKING, ClassVar, Self, override
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from typing_extensions import override
 
 from crossbench.config import ConfigEnum
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext

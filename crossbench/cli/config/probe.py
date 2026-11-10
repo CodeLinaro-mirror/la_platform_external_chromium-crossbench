@@ -7,9 +7,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 import re
-from typing import TYPE_CHECKING, Final, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Final, Self, override
 
 from crossbench import exception
 from crossbench.config import ConfigError, ConfigObject

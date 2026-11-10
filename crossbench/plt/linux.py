@@ -13,9 +13,7 @@ import os
 import re
 import subprocess
 import textwrap
-from typing import TYPE_CHECKING, ClassVar, Final, Iterator
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterator, override
 
 from crossbench import path as pth
 from crossbench.helper.size import Size

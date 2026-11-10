@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import shlex
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, override
 
 from crossbench import plt
 from crossbench.browsers.attributes import BrowserAttributes

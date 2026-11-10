@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence, override
 
 from crossbench.action_runner.screenshot_annotation import \
     ScreenshotAnnotation, annotate_screenshot_svg

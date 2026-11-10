@@ -18,9 +18,7 @@ import os
 import select
 import sys
 import threading
-from typing import TYPE_CHECKING, Callable, Final
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Callable, Final, override
 
 if TYPE_CHECKING:
   from collections.abc import Iterator

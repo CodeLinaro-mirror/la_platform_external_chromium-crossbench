@@ -9,10 +9,9 @@ import atexit
 import datetime as dt
 import logging
 import subprocess
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, override
 
 import google.protobuf.text_format as proto_text_format
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.parse import NumberParser, ObjectParser

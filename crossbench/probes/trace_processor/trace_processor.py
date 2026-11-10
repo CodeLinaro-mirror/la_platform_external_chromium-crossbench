@@ -9,7 +9,8 @@ import json
 import logging
 import os
 from enum import StrEnum, unique
-from typing import TYPE_CHECKING, ClassVar, Final, Hashable, Iterable, Self
+from typing import TYPE_CHECKING, ClassVar, Final, Hashable, Iterable, Self, \
+    override
 
 import pandas as pd
 from google.protobuf.json_format import MessageToJson
@@ -18,7 +19,6 @@ from perfetto.batch_trace_processor.api import BatchTraceProcessor, \
 from perfetto.trace_processor.api import TraceProcessor, TraceProcessorConfig
 from perfetto.trace_uri_resolver.path import PathUriResolver
 from perfetto.trace_uri_resolver.registry import ResolverRegistry
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt

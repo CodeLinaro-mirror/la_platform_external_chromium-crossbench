@@ -12,9 +12,7 @@ import re
 import shlex
 import subprocess
 import time
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, TextIO
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, TextIO, override
 
 from crossbench import path as pth
 from crossbench.helper import input_helper, url_helper
