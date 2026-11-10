@@ -10,10 +10,8 @@ import datetime as dt
 import json
 import pathlib
 from io import StringIO
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.benchmarks.loading.playback_controller import \
     PlaybackController

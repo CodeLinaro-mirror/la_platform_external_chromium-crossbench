@@ -5,10 +5,10 @@
 from __future__ import annotations
 
 import abc
+from typing import override
 from unittest import mock
 
 import pandas as pd
-from typing_extensions import override
 
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.benchmarks.loadline import LoadLine1PhoneBenchmark, \

@@ -4,9 +4,8 @@
 
 from __future__ import annotations
 
+from typing import override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.plt.ios import IOSDeviceInfo

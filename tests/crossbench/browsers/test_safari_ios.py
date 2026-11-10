@@ -6,10 +6,10 @@ from __future__ import annotations
 
 import contextlib
 import json
+from typing import override
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.action_runner.action.enums import WindowTarget

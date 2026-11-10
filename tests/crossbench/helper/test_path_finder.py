@@ -6,9 +6,8 @@ from __future__ import annotations
 import os
 import pathlib
 import sys
+from typing import override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.helper import path_finder_base
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder, \

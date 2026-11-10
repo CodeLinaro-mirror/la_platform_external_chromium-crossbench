@@ -5,10 +5,8 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Iterator
+from typing import Iterator, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt

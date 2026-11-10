@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing_extensions import override
+from typing import override
 
 from crossbench.benchmarks.jetstream.jetstream_2_1 import \
     JetStream21Benchmark, JetStream21Probe, JetStream21ProbeContext, \

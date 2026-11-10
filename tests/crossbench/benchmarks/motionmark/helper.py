@@ -7,10 +7,8 @@ from __future__ import annotations
 import abc
 import copy
 import csv
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.plt.display_info import DisplayRefreshRateResult

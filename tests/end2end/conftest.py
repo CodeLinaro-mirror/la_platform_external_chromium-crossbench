@@ -10,12 +10,11 @@ import pathlib
 import re
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Final, Iterator
+from typing import TYPE_CHECKING, Final, Iterator, override
 from unittest import mock
 
 import psutil
 import pytest
-from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers import all as browsers

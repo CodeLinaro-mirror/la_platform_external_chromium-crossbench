@@ -12,10 +12,8 @@ import fnmatch
 import pathlib
 import unittest
 from typing import TYPE_CHECKING, Callable, ClassVar, Final, Iterable, \
-    TypeAlias
+    TypeAlias, override
 from unittest import mock
-
-from typing_extensions import override
 
 from tests import test_helper
 from tools.presubmit import ast_checks, banned_builtins, constant_final, \

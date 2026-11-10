@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, override
 from unittest import mock
 
 import selenium.common.exceptions
@@ -12,7 +12,6 @@ import urllib3
 from selenium import webdriver
 from selenium.webdriver.remote.client_config import ClientConfig
 from selenium.webdriver.remote.remote_connection import RemoteConnection
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.safari.webdriver import SafariWebDriver

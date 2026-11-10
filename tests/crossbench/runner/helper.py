@@ -6,10 +6,8 @@ from __future__ import annotations
 
 import abc
 import pathlib
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Iterable, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.settings import Settings

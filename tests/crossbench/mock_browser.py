@@ -9,9 +9,7 @@ import contextlib
 import copy
 import dataclasses
 import datetime as dt
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, override
 
 from crossbench import path as pth
 from crossbench import plt

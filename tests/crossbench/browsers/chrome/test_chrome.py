@@ -5,13 +5,12 @@ from __future__ import annotations
 
 import argparse
 import unittest
-from typing import Final
+from typing import Final, override
 from unittest import mock
 
 import selenium.common.exceptions
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.chrome.version import ChromeVersion

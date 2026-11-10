@@ -8,11 +8,10 @@ import json
 import sys
 import tempfile
 import unittest
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from unittest import mock
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.benchmarks.base import Benchmark

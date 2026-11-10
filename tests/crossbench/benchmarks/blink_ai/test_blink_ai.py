@@ -9,11 +9,10 @@ import copy
 import datetime as dt
 import json
 import threading
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, override
 from unittest import mock
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench.benchmarks.blink_ai.blink_ai import BlinkAIBenchmark, \
     BlinkAIStory, BlinkAIStoryFilter

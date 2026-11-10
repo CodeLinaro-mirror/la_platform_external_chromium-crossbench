@@ -15,11 +15,10 @@ import pathlib
 import shlex
 import subprocess
 from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, \
-    MutableMapping, Sequence, TypeAlias
+    MutableMapping, Sequence, TypeAlias, override
 from unittest import mock
 
 import psutil
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt

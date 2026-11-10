@@ -12,11 +12,10 @@ import json
 import math
 import pathlib
 import unittest
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, override
 from urllib import parse as urlparse
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.helper.class_helper import get_all_subclasses

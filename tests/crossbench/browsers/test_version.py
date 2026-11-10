@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import abc
 import unittest
-from typing import Callable, ClassVar, cast
-
-from typing_extensions import override
+from typing import Callable, ClassVar, cast, override
 
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chromium.version import ChromeDriverVersion, \

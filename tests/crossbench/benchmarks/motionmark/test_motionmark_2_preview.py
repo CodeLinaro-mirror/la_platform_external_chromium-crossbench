@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import copy
 import csv
+from typing import override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.benchmarks.motionmark.motionmark_2_preview import \
     MotionMark2PreviewBenchmark, MotionMark2PreviewProbe, \

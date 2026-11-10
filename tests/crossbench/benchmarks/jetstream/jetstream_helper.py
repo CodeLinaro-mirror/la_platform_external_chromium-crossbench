@@ -9,10 +9,8 @@ import copy
 import csv
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Mapping, Sequence
+from typing import TYPE_CHECKING, Mapping, Sequence, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.runner.runner import Runner

@@ -9,10 +9,8 @@ import json
 import logging
 import pathlib
 import unittest
-from typing import TYPE_CHECKING, Any, Iterator
+from typing import TYPE_CHECKING, Any, Iterator, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.webdriver import RemoteWebDriver

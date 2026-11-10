@@ -7,10 +7,8 @@ from __future__ import annotations
 import argparse
 import copy
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from unittest import mock
-
-from typing_extensions import override
 
 import crossbench.benchmarks.webxprt as wx
 from crossbench import path as pth

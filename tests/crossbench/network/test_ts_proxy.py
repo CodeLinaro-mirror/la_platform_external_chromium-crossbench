@@ -6,9 +6,8 @@ from __future__ import annotations
 import argparse
 import contextlib
 import pathlib
+from typing import override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.network.live import LiveNetwork
 from crossbench.network.traffic_shaping.ts_proxy import TsProxyProcess, \

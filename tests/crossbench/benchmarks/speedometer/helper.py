@@ -11,10 +11,8 @@ import csv
 import datetime as dt
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.benchmarks.speedometer.speedometer_3 import \
     MeasurementMethod, Speedometer3Benchmark, Speedometer3Story

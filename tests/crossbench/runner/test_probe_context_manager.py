@@ -4,10 +4,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.helper.state import UnexpectedStateError
 from crossbench.runner.groups.session import ProbeSessionContextManager

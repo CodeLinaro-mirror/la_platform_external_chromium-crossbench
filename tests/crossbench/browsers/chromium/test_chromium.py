@@ -8,11 +8,11 @@ import datetime as dt
 import pathlib
 import re
 import unittest
+from typing import override
 from unittest import mock
 
 import selenium.common.exceptions
 import urllib3
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser

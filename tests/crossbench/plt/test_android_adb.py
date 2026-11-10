@@ -12,14 +12,13 @@ import pathlib
 import struct
 import unittest
 import zipfile
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, override
 from unittest import mock
 
 if TYPE_CHECKING:
   from collections.abc import Iterator
 
 from pyfakefs.fake_filesystem import OSType
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.action_runner.action.enums import ButtonClick

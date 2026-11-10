@@ -9,10 +9,8 @@ import datetime as dt
 import json
 import subprocess
 import unittest
-from typing import Any
+from typing import Any, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.probes.bits import BitsMergePolicy, BitsProbe, \

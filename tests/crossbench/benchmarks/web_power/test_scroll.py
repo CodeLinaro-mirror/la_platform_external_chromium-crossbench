@@ -7,8 +7,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import unittest.mock as mock
-
-from typing_extensions import override
+from typing import override
 
 from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.scroll import WebPowerScrollBenchmark, \

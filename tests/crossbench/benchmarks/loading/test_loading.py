@@ -10,10 +10,8 @@ import json
 import pathlib
 import re
 import unittest
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.get import GetAction

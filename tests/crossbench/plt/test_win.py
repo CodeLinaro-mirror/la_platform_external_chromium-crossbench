@@ -8,10 +8,10 @@ import datetime as dt
 import os
 import pathlib
 import textwrap
+from typing import override
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.helper.version import VersionParseError

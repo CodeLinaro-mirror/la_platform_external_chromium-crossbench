@@ -6,11 +6,10 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, override
 from unittest import mock
 
 import hjson
-from typing_extensions import override
 
 from crossbench import __version__
 from crossbench import path as pth

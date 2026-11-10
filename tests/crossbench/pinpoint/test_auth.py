@@ -4,12 +4,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from unittest import mock
 
 import google.auth
 import google.auth.exceptions
-from typing_extensions import override
 
 from crossbench.cli.ui import ui
 from crossbench.exception import MultiException

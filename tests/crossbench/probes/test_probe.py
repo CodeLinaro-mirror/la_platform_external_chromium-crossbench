@@ -5,10 +5,8 @@ from __future__ import annotations
 
 import abc
 import inspect
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from unittest import mock
-
-from typing_extensions import override
 
 import crossbench.path as pth
 from crossbench.browsers.settings import Settings

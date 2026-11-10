@@ -5,8 +5,7 @@
 from __future__ import annotations
 
 import argparse
-
-from typing_extensions import override
+from typing import override
 
 from crossbench import path as pth
 from crossbench.benchmarks.speedometer.speedometer_3_1 import \

@@ -9,10 +9,8 @@ import datetime as dt
 import io
 import pathlib
 import unittest
-from typing import TYPE_CHECKING, Any, ClassVar, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Mapping, Sequence, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth

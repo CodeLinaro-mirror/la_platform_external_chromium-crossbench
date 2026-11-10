@@ -4,8 +4,7 @@
 from __future__ import annotations
 
 import argparse
-
-from typing_extensions import override
+from typing import override
 
 from crossbench.browsers.edge.version import EdgeVersion
 from crossbench.browsers.edge.webdriver import EdgeWebDriver

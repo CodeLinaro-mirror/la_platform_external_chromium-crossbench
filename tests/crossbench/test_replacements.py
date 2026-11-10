@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 import unittest
-from typing import Self
-
-from typing_extensions import override
+from typing import Self, override
 
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import ObjectParser

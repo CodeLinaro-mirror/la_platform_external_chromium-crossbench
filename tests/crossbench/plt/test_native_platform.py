@@ -19,10 +19,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, Iterator, override
 from unittest import mock
-
-from typing_extensions import override
 
 import crossbench.path as pth
 from crossbench import __version__, plt

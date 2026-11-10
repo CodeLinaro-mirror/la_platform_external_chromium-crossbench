@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-
-from typing_extensions import override
+from typing import override
 
 from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
 from crossbench.benchmarks.web_power.idle import WebPowerIdleBenchmark, \

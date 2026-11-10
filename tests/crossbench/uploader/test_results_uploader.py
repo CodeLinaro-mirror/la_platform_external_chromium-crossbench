@@ -6,10 +6,8 @@ from __future__ import annotations
 
 import argparse
 import tarfile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.uploader import results_uploader

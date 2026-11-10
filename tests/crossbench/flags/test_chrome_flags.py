@@ -4,8 +4,7 @@
 from __future__ import annotations
 
 import argparse
-
-from typing_extensions import override
+from typing import override
 
 from crossbench.flags.chrome import ChromeFlags, ChromePreM139Flags
 from crossbench.flags.chrome_extensions import ChromeExtensions

@@ -8,10 +8,8 @@ import abc
 import argparse
 import datetime as dt
 import pathlib
-from typing import Final
+from typing import Final, override
 from unittest import mock
-
-from typing_extensions import override
 
 import crossbench.path as pth
 from crossbench import plt

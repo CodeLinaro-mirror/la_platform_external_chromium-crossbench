@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing_extensions import override
+from typing import override
 
 from crossbench.benchmarks.speedometer.speedometer_main import \
     SpeedometerMainBenchmark, SpeedometerMainProbe, \

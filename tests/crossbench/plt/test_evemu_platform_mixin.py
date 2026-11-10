@@ -8,10 +8,8 @@ import datetime as dt
 import subprocess
 import time
 import unittest
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.action_runner.action.enums import ButtonClick
 from crossbench.action_runner.input_events import InputEvent, KeyEvent, \

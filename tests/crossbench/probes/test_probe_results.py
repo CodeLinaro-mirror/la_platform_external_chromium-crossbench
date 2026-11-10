@@ -4,9 +4,7 @@
 from __future__ import annotations
 
 import pathlib
-from typing import TYPE_CHECKING
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, override
 
 from crossbench import path as pth
 from crossbench.action_runner.action_runner import ActionRunner

@@ -5,10 +5,8 @@ from __future__ import annotations
 
 import argparse
 import csv
-from typing import TYPE_CHECKING
 import unittest.mock
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, override
 
 import crossbench.benchmarks.memory.memory_benchmark as mb
 from crossbench import path as pth

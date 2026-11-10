@@ -16,9 +16,9 @@ import unittest.mock as mock
 import urllib.error
 import urllib.parse
 import urllib.request
+from typing import override
 
 from pyfakefs.fake_filesystem import OSType
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.plt.bin import Binaries

@@ -6,10 +6,8 @@ from __future__ import annotations
 
 import copy
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.benchmarks.webai.webai import WebAIBenchmark, WebAIProbe, \
     WebAIProbeContext, WebAIStory

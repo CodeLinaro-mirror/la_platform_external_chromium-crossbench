@@ -3,9 +3,7 @@
 # found in the LICENSE file.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, override
 
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup

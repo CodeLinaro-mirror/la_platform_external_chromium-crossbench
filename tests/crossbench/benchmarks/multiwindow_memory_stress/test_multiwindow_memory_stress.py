@@ -8,9 +8,7 @@ import datetime as dt
 import re
 import unittest
 import unittest.mock
-from typing import TYPE_CHECKING, cast
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, cast, override
 
 from crossbench import path as pth
 from crossbench.action_runner.action.get import GetAction

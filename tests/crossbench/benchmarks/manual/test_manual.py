@@ -5,9 +5,8 @@
 from __future__ import annotations
 
 import datetime as dt
+from typing import override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.benchmarks.manual.manual_benchmark import ManualBenchmark
 from crossbench.env.runner_env import EnvConfig, ValidationMode

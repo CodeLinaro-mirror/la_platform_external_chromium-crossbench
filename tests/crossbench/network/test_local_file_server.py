@@ -4,9 +4,8 @@
 from __future__ import annotations
 
 import argparse
+from typing import override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.network.local_file_server import CustomHeadersRequestHandler, \

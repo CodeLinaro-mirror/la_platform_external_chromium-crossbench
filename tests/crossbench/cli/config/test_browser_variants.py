@@ -8,12 +8,11 @@ import argparse
 import contextlib
 import copy
 import json
-from typing import TYPE_CHECKING, Mapping
+from typing import TYPE_CHECKING, Mapping, override
 from unittest import mock
 
 import hjson
 import pytest
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench import plt

@@ -11,11 +11,11 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Any, Callable, Final, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Final, Iterator, Sequence, \
+    override
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
-from typing_extensions import override
 
 import crossbench
 from crossbench import path as pth

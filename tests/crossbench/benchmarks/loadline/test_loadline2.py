@@ -6,11 +6,10 @@ from __future__ import annotations
 
 import abc
 import datetime as dt
-from typing import Sequence
+from typing import Sequence, override
 from unittest import mock
 
 import pandas as pd
-from typing_extensions import override
 
 from crossbench.action_runner.action.js import JsAction
 from crossbench.action_runner.action.wait import WaitAction

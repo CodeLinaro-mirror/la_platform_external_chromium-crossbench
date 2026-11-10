@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import json
 import unittest
+from typing import override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.cli.cli import CrossBenchCLI
 from tests import test_helper

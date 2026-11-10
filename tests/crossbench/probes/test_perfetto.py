@@ -6,9 +6,8 @@ from __future__ import annotations
 import argparse
 import logging
 import unittest
+from typing import override
 from unittest import mock
-
-from typing_extensions import override
 
 import crossbench.path as pth
 from crossbench.browsers.settings import Settings

@@ -7,9 +7,7 @@ from __future__ import annotations
 import abc
 import copy
 import json
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence
-
-from typing_extensions import override
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence, override
 
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.page.combined import CombinedPage

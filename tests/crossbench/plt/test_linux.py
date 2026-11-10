@@ -9,10 +9,10 @@ import gzip
 import pathlib
 import subprocess
 import textwrap
+from typing import override
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.action_runner.virtual_device.virtual_device_type import \

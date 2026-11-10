@@ -7,9 +7,8 @@ from __future__ import annotations
 import json
 import pathlib
 import subprocess
+from typing import override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.action_runner.virtual_device.touchscreen import \
     TouchscreenVirtualDeviceConfig

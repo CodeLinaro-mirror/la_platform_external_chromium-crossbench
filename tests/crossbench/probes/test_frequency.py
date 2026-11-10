@@ -3,10 +3,10 @@
 # found in the LICENSE file.
 from __future__ import annotations
 
+from typing import override
 from unittest import mock
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser

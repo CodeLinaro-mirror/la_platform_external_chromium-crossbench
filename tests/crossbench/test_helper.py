@@ -8,9 +8,7 @@ import datetime as dt
 import enum
 import pathlib
 import unittest
-from typing import Any
-
-from typing_extensions import override
+from typing import Any, override
 
 from crossbench import plt
 from crossbench.helper import collection_helper, fs_helper, url_helper

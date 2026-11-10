@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import subprocess
 import zipfile
+from typing import override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.browsers.downloader import RPMArchiveHelper, ZipArchiveHelper

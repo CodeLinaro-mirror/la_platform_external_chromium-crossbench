@@ -8,10 +8,10 @@ import pathlib
 import plistlib
 import textwrap
 import time
+from typing import override
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.helper.version import VersionParseError

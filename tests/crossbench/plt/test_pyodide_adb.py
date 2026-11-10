@@ -9,10 +9,8 @@ import json
 import pathlib
 import shlex
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.action_runner.input_events import TouchEvent
 from crossbench.action_runner.virtual_device.touchscreen import \

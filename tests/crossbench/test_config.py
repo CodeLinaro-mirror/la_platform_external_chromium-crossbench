@@ -10,11 +10,10 @@ import enum
 import json
 import pathlib
 import unittest
-from typing import Any, Self
+from typing import Any, Self, override
 from unittest import mock
 
 from immutabledict import immutabledict
-from typing_extensions import override
 
 from crossbench import path as pth
 from crossbench.config import ConfigEnum, ConfigObject, ConfigParser, \

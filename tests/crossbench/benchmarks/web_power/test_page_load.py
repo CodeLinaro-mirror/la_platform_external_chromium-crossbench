@@ -6,9 +6,8 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+from typing import override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.web_power.base import WebPowerSiteConfig

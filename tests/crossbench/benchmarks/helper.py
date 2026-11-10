@@ -5,9 +5,7 @@ from __future__ import annotations
 
 import abc
 import argparse
-from typing import Sequence
-
-from typing_extensions import override
+from typing import Sequence, override
 
 from crossbench.benchmarks import base as benchmark_module
 from crossbench.cli.parser import CBArgumentParser

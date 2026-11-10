@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import signal
 import unittest
-
-from typing_extensions import override
+from typing import override
 
 from crossbench import plt
 from crossbench.plt.signals import LinuxSignals, MacOSSignals, \

@@ -5,10 +5,8 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Iterable, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench.browsers.settings import Settings
 from crossbench.probes.screenshot import ScreenshotProbe

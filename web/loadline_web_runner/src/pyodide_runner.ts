@@ -209,7 +209,6 @@ export class PyodideRunner {
     await this.tpEngine.initialize();
     try {
       await this.pyodide.loadPackage([
-        'typing-extensions',
         'packaging',
         'protobuf',
         'micropip',
@@ -220,7 +219,6 @@ export class PyodideRunner {
       ]);
     } catch {
       await this.pyodide.loadPackage([
-        'typing-extensions',
         'packaging',
         'protobuf',
         'micropip',

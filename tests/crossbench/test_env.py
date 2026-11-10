@@ -6,10 +6,8 @@ from __future__ import annotations
 import datetime as dt
 import pathlib
 import unittest
-from typing import Any
+from typing import Any, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench import plt
 from crossbench.browsers.settings import Settings

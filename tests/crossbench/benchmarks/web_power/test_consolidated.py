@@ -6,10 +6,8 @@ from __future__ import annotations
 
 import datetime as dt
 import io
-from typing import Final
+from typing import Final, override
 from unittest import mock
-
-from typing_extensions import override
 
 from crossbench import config
 from crossbench import path as pth
