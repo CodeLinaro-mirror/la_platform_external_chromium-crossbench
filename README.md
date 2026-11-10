@@ -327,8 +327,8 @@ to setup the correct environment for testing and debugging.
 
 ```bash
 # a) On debian:
-sudo apt-get install python3.11 python3.11-dev python3-poetry
-# b) With python 3.11 installed already:
+sudo apt-get install python3.14 python3.14-dev python3-poetry
+# b) With python 3.14 installed already:
 pip3 install poetry
 ```
 
@@ -344,8 +344,8 @@ python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))";
 Install the necessary dependencies from the lock file using poetry:
 
 ```bash
-# Select the python version you want to use (3.11):
-poetry env use 3.11
+# Select the python version you want to use (3.14):
+poetry env use 3.14
 poetry install
 ```
 
