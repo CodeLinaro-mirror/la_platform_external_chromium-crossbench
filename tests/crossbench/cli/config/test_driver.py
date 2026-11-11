@@ -294,6 +294,50 @@ class DriverConfigTestCase(BaseConfigTestCase):
     assert isinstance(adb_platform, AndroidAdbPlatform)
     self.assertEqual(adb_platform.adb.serial_id, serial)
 
+  def test_parse_adb_bypass_oobe(self) -> None:
+    sh_results = [
+        ADB_DEVICES_OUTPUT,
+        ShResult(""),
+        ADB_DEVICES_OUTPUT,
+    ]
+    if self.platform.is_macos:
+      sh_results.insert(1, ShResult(returncode=1))
+    self.platform.sh_results = list(sh_results)
+    default_config = DriverConfig.parse_dict({
+        "type": "adb",
+        "device_id": "0a388e93",
+    })
+    self.assertIsNone(default_config.settings)
+    default_platform = default_config.get_adb_platform()
+    self.assertIsInstance(default_platform, AndroidAdbPlatform)
+    assert isinstance(default_platform, AndroidAdbPlatform)
+    self.assertTrue(default_platform.bypass_oobe)
+
+    self.platform.sh_results = list(sh_results)
+    disabled_config = DriverConfig.parse_dict({
+        "type": "adb",
+        "device_id": "0a388e93",
+        "settings": {
+            "bypass_oobe": False,
+        },
+    })
+    assert disabled_config.settings is not None
+    self.assertFalse(disabled_config.settings["bypass_oobe"])
+    disabled_platform = disabled_config.get_adb_platform()
+    self.assertIsInstance(disabled_platform, AndroidAdbPlatform)
+    assert isinstance(disabled_platform, AndroidAdbPlatform)
+    self.assertFalse(disabled_platform.bypass_oobe)
+
+    with self.assertRaises(argparse.ArgumentTypeError) as cm:
+      DriverConfig.parse_dict({
+          "type": "adb",
+          "device_id": "0a388e93",
+          "settings": {
+              "bypass_oobe": "invalid",
+          },
+      })
+    self.assertIn("bypass_oobe", str(cm.exception))
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)

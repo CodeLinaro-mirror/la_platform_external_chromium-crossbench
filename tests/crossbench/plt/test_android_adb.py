@@ -318,6 +318,7 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.expect_sh("am get-current-user", result="0\n")
     self.expect_sh("getprop ro.build.version.sdk", result="35")
     self.expect_sh("cmd user is-headless-system-user-mode", result="false\n")
+    self.expect_sh("settings get global device_provisioned", result="1\n")
     self.platform.setup()
 
 
@@ -1665,8 +1666,54 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("am switch-user 10")
     self.expect_sh("am get-current-user", result="0\n")
     self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings get global device_provisioned", result="1\n")
     with mock.patch.object(self.platform, "sleep"):
       self.platform.setup()
+
+  def test_setup_unprovisioned_lazily_roots_and_dismisses_oobe(self) -> None:
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings get global device_provisioned", result="0\n")
+    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
+    self.expect_sh("getprop ro.build.type", result="userdebug")
+    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
+    self.expect_adb("root")
+    self.expect_adb("wait-for-device")
+    self.expect_sh("id", result="uid=0(root) gid=0(root)")
+    self.expect_sh("am start -a com.android.setupwizard.FOUR_CORNER_EXIT")
+    self.expect_sh("settings get global device_provisioned", result="1\n")
+    with mock.patch.object(self.platform, "sleep"):
+      self.platform.setup()
+
+  def test_setup_unprovisioned_user_build_skips_oobe(self) -> None:
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings get global device_provisioned", result="0\n")
+    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
+    self.expect_sh("getprop ro.build.type", result="user")
+    with self.assertLogs(level="WARNING") as cm:
+      self.platform.setup()
+    self.assertTrue(
+        any("does not support 'adb root'" in msg for msg in cm.output))
+
+  def test_setup_unprovisioned_root_failure_skips_oobe(self) -> None:
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings get global device_provisioned", result="0\n")
+    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
+    self.expect_sh("getprop ro.build.type", result="userdebug")
+    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
+    self.expect_adb("root")
+    self.expect_adb("wait-for-device")
+    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
+    with self.assertLogs(level="WARNING") as cm:
+      self.platform.setup()
+    self.assertTrue(
+        any("did not acquire root privileges" in msg for msg in cm.output))
+
+  def test_setup_skips_oobe_bypass_when_disabled(self) -> None:
+    platform = AndroidAdbPlatform(
+        self.host_platform, self.DEVICE_ID, adb=self.adb, bypass_oobe=False)
+    self.assertFalse(platform.bypass_oobe)
+    self.expect_sh("am get-current-user", result="10\n")
+    platform.setup()
 
   def _create_axml(self, package_name: str) -> bytes:
     # A very minimal Android Binary XML generator for testing.

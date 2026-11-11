@@ -246,6 +246,7 @@ class DriverConfig(ConfigObject):
       plt.PLATFORM.parse_local_binary_path(self.path)
 
   def validate_android(self) -> None:
+    self._parse_adb_bypass_oobe()
     platform = plt.PLATFORM
     if platform.is_pyodide:
       return
@@ -352,12 +353,24 @@ class DriverConfig(ConfigObject):
         ssh_port=ssh_port,
         ssh_user=ssh_user)
 
+  def _parse_adb_bypass_oobe(self) -> bool:
+    if not self.settings:
+      return True
+    value = self.settings.get("bypass_oobe")
+    if value is None:
+      return True
+    return ObjectParser.bool(value, "settings['bypass_oobe']")
+
   def get_adb_platform(self) -> plt.Platform:
+    bypass_oobe = self._parse_adb_bypass_oobe()
     if plt.PLATFORM.is_pyodide:
       return PyodideAndroidAdbPlatform(
-          plt.PLATFORM, device_identifier=self.device_id)
+          plt.PLATFORM,
+          device_identifier=self.device_id,
+          bypass_oobe=bypass_oobe)
     adb = Adb(plt.PLATFORM, self.device_id, self.adb_bin, self.bundletool)
-    return AndroidAdbPlatform(plt.PLATFORM, self.device_id, adb)
+    return AndroidAdbPlatform(
+        plt.PLATFORM, self.device_id, adb, bypass_oobe=bypass_oobe)
 
   def get_ios_platform(self) -> plt.Platform:
     return IOSPlatform(plt.PLATFORM, self.device_id)

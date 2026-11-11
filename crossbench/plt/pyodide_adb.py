@@ -298,6 +298,7 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
       device_identifier: str | None = None,
       adb: android_adb.Adb | None = None,
       webadb: WebAdb | None = None,
+      bypass_oobe: bool = True,
   ) -> None:
     if host_platform is None:
       host_platform = PyodidePlatform(webadb=webadb)
@@ -310,6 +311,7 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
         host_platform=host_platform,
         device_identifier=device_identifier,
         adb=adb,
+        bypass_oobe=bypass_oobe,
     )
 
   @property

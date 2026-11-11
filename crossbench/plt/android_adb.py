@@ -108,6 +108,8 @@ ANDROID_PERMISSIONS: Final = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
 
 _AAPT_PACKAGE_NAME_RE = re.compile(r"^package: name='([^']+)'")
 _FULL_USER_ID_RE: Final[re.Pattern[str]] = re.compile(r"\bid=(\d+)\b")
+_FOUR_CORNER_EXIT_INTENT: Final[str] = (
+    "com.android.setupwizard.FOUR_CORNER_EXIT")
 _DEFAULT_FULL_USER_ID: Final[str] = "10"
 
 # Template for Perfetto config to capture Java heaps.
@@ -905,15 +907,21 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
       host_platform: Platform,
       device_identifier: str | None = None,
       adb: Adb | None = None,
+      bypass_oobe: bool = True,
   ) -> None:
     assert not host_platform.is_remote, (
         "adb on remote platform is not supported yet")
     self._adb: Final[Adb] = adb or Adb(host_platform, device_identifier)
+    self._bypass_oobe: Final[bool] = bypass_oobe
     self._devtools_client: DevToolsRemoteClient | None = None
     self._uiautomator_device_instance: (android_device.AndroidDevice
                                         | None) = None
     self._uiautomator_device_root: bool = False
     super().__init__(host_platform)
+
+  @property
+  def bypass_oobe(self) -> bool:
+    return self._bypass_oobe
 
   def start_devtools(self) -> None:
     if not self._devtools_client:
@@ -1706,6 +1714,8 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   @override
   def setup(self) -> None:
     self._ensure_foreground_full_user()
+    if self._bypass_oobe:
+      self._dismiss_setup_wizard()
 
   def _is_headless_system_user_mode(self) -> bool:
     if self.adb.sdk_version >= 34:
@@ -1745,6 +1755,51 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
       raise TimeoutError(
           f"Timed out waiting for foreground user {target_user} on {self.adb} "
           f"(active={active!r})") from e
+    self.sleep(2.0)
+
+  def _ensure_adb_root_for_oobe(self) -> bool:
+    if self.adb.has_root():
+      return True
+    if self.adb.build_type == AndroidBuildType.USER.value:
+      logging.warning(
+          "Cannot bypass Android SetupWizard OOBE on %s: production 'user' "
+          "build does not support 'adb root'.",
+          self.adb,
+      )
+      return False
+    logging.info("Restarting adbd as root on %s to bypass SetupWizard OOBE",
+                 self.adb)
+    self.adb.root()
+    if not self.adb.has_root():
+      logging.warning(
+          "Cannot bypass Android SetupWizard OOBE on %s: 'adb root' did not "
+          "acquire root privileges.",
+          self.adb,
+      )
+      return False
+    return True
+
+  def _is_device_provisioned(self) -> bool:
+    return self.adb.shell_stdout(
+        "settings", "get", "global", "device_provisioned",
+        check=False).strip() == "1"
+
+  def _dismiss_setup_wizard(self) -> None:
+    if self._is_device_provisioned():
+      return
+    if not self._ensure_adb_root_for_oobe():
+      return
+    logging.info("Bypassing Android OOBE on %s via %s", self.adb,
+                 _FOUR_CORNER_EXIT_INTENT)
+    self.adb.shell("am", "start", "-a", _FOUR_CORNER_EXIT_INTENT, check=False)
+    try:
+      for _ in WaitRange(timeout=20).wait_with_backoff():
+        if self._is_device_provisioned():
+          break
+    except TimeoutError as e:
+      raise TimeoutError(
+          f"Timed out waiting for SetupWizard OOBE dismissal on {self.adb}",
+      ) from e
     self.sleep(2.0)
 
   @override

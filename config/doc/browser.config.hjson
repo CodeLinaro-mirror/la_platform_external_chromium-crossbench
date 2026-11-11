@@ -113,6 +113,10 @@
         "type": "adb"
         // Use unique name, serial number, or <host>:<port> TCP endpoint
         "device_id": "Pixel_7_Pro"
+        "settings": {
+          // Set false to preserve SetupWizard OOBE during platform setup
+          "bypass_oobe": true
+        }
       }
       "flags": []
     }
@@ -137,6 +141,10 @@
         "type": "adb"
         // Use unique name, serial number, or <host>:<port> TCP endpoint
         "device_id": "Pixel_7_Pro"
+        "settings": {
+          // Set false to preserve SetupWizard OOBE during platform setup
+          "bypass_oobe": true
+        }
       }
       "apk": {
         "path": "out/android_base/apks/ChromePublic.apk"
