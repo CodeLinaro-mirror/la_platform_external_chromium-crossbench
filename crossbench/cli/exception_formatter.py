@@ -114,9 +114,7 @@ def excepthook(ex_type: type[BaseException], ex_value: BaseException,
     if i:
       print("")
     buffer = io.StringIO()
-    # TODO: use better helpers when migrated to 3.11.
-    for line in cause.format(chain=False):
-      print(line, file=buffer, end="")
+    cause.print(file=buffer, chain=False)
     tb_printer(buffer.getvalue())
 
   if len(causes) > 0:
@@ -132,12 +130,8 @@ def _print_outermost_exception(
   buffer = io.StringIO()
   if stack := last_exception.stack:
     innermost_frame: traceback.FrameSummary = stack[-1]
-    # TODO: use better helpers when migrated to 3.11.
-    stack_summary = traceback.StackSummary.from_list((innermost_frame,))
     print("  ...", file=buffer)
-    for line in stack_summary.format():
-      print(line, file=buffer, end="")
-  # TODO: use better helpers when migrated to 3.11.
+    print(stack.format_frame_summary(innermost_frame), file=buffer, end="")
   for line in last_exception.format_exception_only():
     print(line, file=buffer, end=None)
   return buffer.getvalue()

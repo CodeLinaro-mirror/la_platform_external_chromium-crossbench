@@ -425,7 +425,6 @@ class ZipArchiveHelper(ArchiveHelper):
   # Zip archives created on POSIX systems store the entry's st_mode (file type
   # and permission bits) in the upper 16 bits of ZipInfo.external_attr. The
   # lower 16 bits hold MS-DOS attributes.
-  # TODO: Clean up once we require python 3.12+ (zipfile.Path.is_symlink).
   UNIX_MODE_SHIFT: Final[int] = 16
   # Common POSIX st_mode values for zip entries.
   FILE_MODE: Final[int] = stat.S_IFREG | 0o644
@@ -507,11 +506,11 @@ class ZipArchiveHelper(ArchiveHelper):
     if not target_path.is_relative_to(extract_dir):
       raise ValueError(
           f"Unsafe zip entry path outside extract dir: {info.filename}")
-    mode = self.unix_mode(info)
-    if stat.S_ISLNK(mode):
+    if zipfile.Path(zip_file, info.filename).is_symlink():
       self._extract_zip_symlink(zip_file, info, target_path, extract_dir)
       return
     extracted_item = pth.LocalPath(zip_file.extract(info, extract_dir))
+    mode = self.unix_mode(info)
     if not info.is_dir() and (mode &
                               (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)):
       self._platform.chmod(extracted_item, stat.S_IMODE(mode))
