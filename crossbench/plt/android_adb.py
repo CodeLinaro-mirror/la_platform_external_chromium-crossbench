@@ -107,6 +107,8 @@ class _CrossbenchUiAutomatorDevice(android_device.AndroidDevice):
 ANDROID_PERMISSIONS: Final = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
 
 _AAPT_PACKAGE_NAME_RE = re.compile(r"^package: name='([^']+)'")
+_FULL_USER_ID_RE: Final[re.Pattern[str]] = re.compile(r"\bid=(\d+)\b")
+_DEFAULT_FULL_USER_ID: Final[str] = "10"
 
 # Template for Perfetto config to capture Java heaps.
 ANDROID_JAVA_HPROF_PERFETTO_CFG = """buffers {{
@@ -441,7 +443,7 @@ class Adb:
     return self._host_platform.sh_stdout_bytes(
         *adb_cmd, quiet=quiet, check=check, stdin=stdin, input=input)
 
-  def _get_current_user(self) -> str | None:
+  def current_user(self) -> str | None:
     try:
       return self.shell_stdout("am", "get-current-user").strip()
     except SubprocessError as e:
@@ -616,9 +618,10 @@ class Adb:
   def cmd(self,
           *args: str,
           quiet: bool = False,
-          encoding: str = "utf-8") -> str:
+          encoding: str = "utf-8",
+          check: bool = True) -> str:
     cmd: ListCmdArgs = ["cmd", *args]
-    return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding)
+    return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding, check=check)
 
   def dumpsys(self,
               *args: str,
@@ -663,7 +666,7 @@ class Adb:
     except SubprocessError as e:
       logging.debug("pm list users failed: %s", e)
 
-    if current_user := self._get_current_user():
+    if current_user := self.current_user():
       return [current_user]
     return []
 
@@ -771,7 +774,7 @@ class Adb:
       return
     if not package_name:
       raise ValueError("Got empty package name")
-    user: str | None = self._get_current_user()
+    user: str | None = self.current_user()
     for perm in ANDROID_PERMISSIONS:
       cmd: ListCmdArgs = ["pm", "grant"]
       if user:
@@ -1699,6 +1702,50 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
 
   def user_id(self) -> int:
     return NumberParser.any_int(self.sh_stdout("am", "get-current-user"))
+
+  @override
+  def setup(self) -> None:
+    self._ensure_foreground_full_user()
+
+  def _is_headless_system_user_mode(self) -> bool:
+    if self.adb.sdk_version >= 34:
+      out = self.adb.cmd(
+          "user", "is-headless-system-user-mode", check=False).strip()
+      if out in ("true", "false"):
+        return out == "true"
+    prop = self.adb.getprop("ro.fw.mu.headless_system_user").lower()
+    return prop == "true"
+
+  def _find_full_user_id(self) -> str:
+    users_out = self.adb.cmd("user", "list", "-v", check=False)
+    for line in users_out.splitlines():
+      if "type=full" not in line and "usertype.full" not in line:
+        continue
+      if match := _FULL_USER_ID_RE.search(line):
+        return match.group(1)
+    return _DEFAULT_FULL_USER_ID
+
+  def _ensure_foreground_full_user(self) -> None:
+    current_user = self.adb.current_user()
+    if current_user != "0":
+      return
+    if not self._is_headless_system_user_mode():
+      return
+    target_user = self._find_full_user_id()
+    logging.info("Switching active HSUM user 0 -> %s on %s", target_user,
+                 self.adb)
+    self.adb.shell("am", "switch-user", target_user, check=False)
+    active: str | None = current_user
+    try:
+      for _ in WaitRange(timeout=10).wait_with_backoff():
+        active = self.adb.current_user()
+        if active == target_user:
+          break
+    except TimeoutError as e:
+      raise TimeoutError(
+          f"Timed out waiting for foreground user {target_user} on {self.adb} "
+          f"(active={active!r})") from e
+    self.sleep(2.0)
 
   @override
   @contextlib.contextmanager

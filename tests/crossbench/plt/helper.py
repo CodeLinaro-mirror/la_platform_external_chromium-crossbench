@@ -109,6 +109,9 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   def test_get_active_tasks(self) -> None:
     self.assertEqual(self.platform.get_active_tasks(), [])
 
+  def test_setup(self) -> None:
+    self.platform.setup()
+
   def test_pathsep(self):
     expected = ";" if self.platform.is_win else ":"
     self.assertEqual(self.platform.pathsep, expected)

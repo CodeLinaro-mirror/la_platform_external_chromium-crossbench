@@ -313,6 +313,13 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
         ["com.google.android.calculator", "com.dropbox.android"],
     )
 
+  @override
+  def test_setup(self) -> None:
+    self.expect_sh("am get-current-user", result="0\n")
+    self.expect_sh("getprop ro.build.version.sdk", result="35")
+    self.expect_sh("cmd user is-headless-system-user-mode", result="false\n")
+    self.platform.setup()
+
 
 class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   __test__ = True
@@ -1626,6 +1633,40 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.host_platform.expect_sh(
         pathlib.Path("adb"), "devices", "-l", result=online_out)
     adb.root()
+
+  def test_setup_hsum_switches_user_timeout(self) -> None:
+    self.expect_sh("am get-current-user", result="0\n")
+    self.expect_sh("getprop ro.build.version.sdk", result="36")
+    self.expect_sh("cmd user is-headless-system-user-mode", result="true\n")
+    self.expect_sh(
+        "cmd user list -v",
+        result=("0: id=0, name=System, type=system.HEADLESS\n"
+                "1: id=10, name=Owner, type=full.MAIN\n"),
+    )
+    self.expect_sh("am switch-user 10")
+    with (
+        mock.patch.object(
+            WaitRange, "wait_with_backoff",
+            side_effect=TimeoutError("timeout")),
+        self.assertRaisesRegex(TimeoutError,
+                               "Timed out waiting for foreground user 10"),
+    ):
+      self.platform.setup()
+
+  def test_setup_hsum_switches_user(self) -> None:
+    self.expect_sh("am get-current-user", result="0\n")
+    self.expect_sh("getprop ro.build.version.sdk", result="36")
+    self.expect_sh("cmd user is-headless-system-user-mode", result="true\n")
+    self.expect_sh(
+        "cmd user list -v",
+        result=("0: id=0, name=System, type=system.HEADLESS\n"
+                "1: id=10, name=Owner, type=full.MAIN\n"),
+    )
+    self.expect_sh("am switch-user 10")
+    self.expect_sh("am get-current-user", result="0\n")
+    self.expect_sh("am get-current-user", result="10\n")
+    with mock.patch.object(self.platform, "sleep"):
+      self.platform.setup()
 
   def _create_axml(self, package_name: str) -> bytes:
     # A very minimal Android Binary XML generator for testing.

@@ -569,6 +569,10 @@ class MockPlatformMixin(Platform):
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.screenshots.append(result_path)
 
+  @override
+  def setup(self) -> None:
+    pass
+
   @contextlib.contextmanager
   def wakelock(self) -> Iterator[None]:
     yield

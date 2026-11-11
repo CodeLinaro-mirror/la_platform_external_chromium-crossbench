@@ -340,6 +340,18 @@ class RunnerTestCase(BaseRunnerTestCase):
     self.assertEqual(driver.closed_handles, ["leftover-tab"])
     self.assertEqual(driver.window_handles, ["active-tab"])
 
+  def test_dry_run_skips_platform_setup(self) -> None:
+    runner = self.single_story_runner()
+    with mock.patch.object(runner.platform, "setup") as mock_setup:
+      runner.run(is_dry_run=True)
+      mock_setup.assert_not_called()
+
+  def test_run_calls_platform_setup(self) -> None:
+    runner = self.single_story_runner()
+    with mock.patch.object(runner.platform, "setup") as mock_setup:
+      runner.run(is_dry_run=False)
+      mock_setup.assert_called_once_with()
+
   def _validate_successful_run(self, run, runner, probe, probe_data):
     results = run.results[probe]
     with results.json.open() as f:

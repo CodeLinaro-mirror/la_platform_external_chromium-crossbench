@@ -1361,6 +1361,9 @@ class Platform(abc.ABC):
           shutil.copyfileobj(input_f, output_f)
     return output
 
+  def setup(self) -> None:
+    """Prepare the platform before benchmark setup and wakelocks."""
+
   @contextlib.contextmanager
   def wakelock(self) -> Iterator[None]:
     """

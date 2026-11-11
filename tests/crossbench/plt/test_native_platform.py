@@ -1091,6 +1091,9 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     displays_2 = self.platform.display_details()
     self.assertIs(displays, displays_2)
 
+  def test_setup(self) -> None:
+    self.platform.setup()
+
 
 class MockRemotePosixPlatform(RemotePosixPlatform, type(plt.PLATFORM)):
 

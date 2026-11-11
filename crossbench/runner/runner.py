@@ -610,6 +610,8 @@ class Runner:
         self._required_device_config_mode = RequiredDeviceConfigMode.WARN
     self._state.expect(RunnerState.INITIAL)
     logging.info("🏗️  STATUS FILE: %s", self.status.path)
+    if not is_dry_run:
+      self._setup_platforms()
     with (self._wakelocks(), self._disable_secure_windows(),
           self._restoring_device_config()):
       try:
@@ -693,6 +695,11 @@ class Runner:
         actual_config = platform.device_config().get(platform.name, {})
         check_device_config(requirements, actual_config,
                             self._required_device_config_mode)
+
+  def _setup_platforms(self) -> None:
+    for platform in {self._platform, *self.platforms}:
+      with self._exceptions.annotate(f"Preparing platform {platform}"):
+        platform.setup()
 
   @contextlib.contextmanager
   def _wakelocks(self) -> Iterator[None]:
