@@ -37,8 +37,10 @@ from crossbench.action_runner.virtual_device.virtual_device_config import \
     VirtualDeviceConfig
 from crossbench.benchmarks.loading.point import Point
 from crossbench.helper.version import VersionParseError
+from crossbench.helper.wait import WaitRange
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, \
-    AndroidBuildType, AndroidDeviceInfo, AndroidVersion
+    AndroidBuildType, AndroidDeviceInfo, AndroidVersion, adb_connect, \
+    adb_devices, is_adb_tcp_endpoint
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.axml import RES_STRING_POOL_TYPE, \
     RES_XML_START_ELEMENT_TYPE, RES_XML_TYPE, \
@@ -1534,6 +1536,96 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_adb("unroot")
     self.expect_adb("wait-for-device")
     self.adb.unroot()
+
+  def test_is_tcp_endpoint(self) -> None:
+    self.assertTrue(is_adb_tcp_endpoint("192.168.0.5:5555"))
+    self.assertTrue(is_adb_tcp_endpoint("satlab-dut-host1:5555"))
+    self.assertTrue(is_adb_tcp_endpoint("[::1]:5555"))
+    self.assertFalse(is_adb_tcp_endpoint(None))
+    self.assertFalse(is_adb_tcp_endpoint(""))
+    self.assertFalse(is_adb_tcp_endpoint(":"))
+    self.assertFalse(is_adb_tcp_endpoint(":5555"))
+    self.assertFalse(is_adb_tcp_endpoint("0a388e93"))
+    self.assertFalse(is_adb_tcp_endpoint("model:Nexus_7"))
+    self.assertFalse(is_adb_tcp_endpoint("transport_id:3"))
+    self.assertFalse(is_adb_tcp_endpoint("192.168.0.5:0"))
+    self.assertFalse(is_adb_tcp_endpoint("192.168.0.5:70000"))
+    self.assertFalse(is_adb_tcp_endpoint("http://192.168.0.5:5555"))
+    self.assertFalse(is_adb_tcp_endpoint("192.168.0.5:5555/path"))
+    self.assertFalse(is_adb_tcp_endpoint("@192.168.0.5:5555"))
+    self.assertFalse(is_adb_tcp_endpoint("foo bar:5555"))
+
+  def test_adb_devices_skips_offline_entries(self) -> None:
+    raw = ("List of devices attached\n"
+           "192.168.0.5:5555 offline transport_id:4\n"
+           "0a388e93 device usb:1-1 product:razor model:Nexus_7 device:flo\n")
+    self.host_platform.expect_sh(
+        pathlib.Path("adb"), "devices", "-l", result=raw)
+    devices = adb_devices(self.host_platform)
+    self.assertEqual(list(devices.keys()), ["0a388e93"])
+
+  def test_adb_connect_invalid_args(self) -> None:
+    with self.assertRaises(ValueError):
+      adb_connect(self.host_platform, "")
+
+  def test_adb_connect_timeout(self) -> None:
+    with (
+        mock.patch.object(
+            WaitRange,
+            "wait_with_backoff",
+            side_effect=TimeoutError("timeout"),
+        ),
+        self.assertRaises(TimeoutError),
+    ):
+      adb_connect(self.host_platform, "192.168.0.5:5555")
+
+  def test_adb_connect_retries_offline_then_succeeds(self) -> None:
+    serial = "192.168.0.5:5555"
+    offline_out = ("List of devices attached\n"
+                   f"{serial} offline transport_id:4\n")
+    online_out = ("List of devices attached\n"
+                  f"{serial} device product:brya model:mica device:mica\n")
+    self.host_platform.expect_sh(pathlib.Path("adb"), "connect", serial)
+    self.host_platform.expect_sh(
+        pathlib.Path("adb"), "devices", "-l", result=offline_out)
+    self.host_platform.expect_sh(pathlib.Path("adb"), "disconnect", serial)
+    self.host_platform.expect_sh(pathlib.Path("adb"), "connect", serial)
+    self.host_platform.expect_sh(
+        pathlib.Path("adb"), "devices", "-l", result=online_out)
+    devices = adb_connect(self.host_platform, serial)
+    self.assertIn(serial, devices)
+
+  def test_create_tcp_device_auto_connects(self) -> None:
+    serial = "satlab-dut1:5555"
+    empty_out = "List of devices attached\n"
+    online_out = ("List of devices attached\n"
+                  f"{serial} device product:brya model:mica device:mica\n")
+    self.expect_startup_devices(empty_out)
+    self.host_platform.expect_sh(pathlib.Path("adb"), "connect", serial)
+    self.host_platform.expect_sh(
+        pathlib.Path("adb"), "devices", "-l", result=online_out)
+    adb = Adb(self.host_platform, serial)
+    self.assertEqual(adb.serial_id, serial)
+
+  def test_root_tcp_reconnects(self) -> None:
+    serial = "satlab-dut1:5555"
+    online_out = ("List of devices attached\n"
+                  f"{serial} device product:brya model:mica device:mica\n")
+    self.expect_startup_devices(online_out)
+    adb = Adb(self.host_platform, serial)
+    self.host_platform.expect_sh(
+        pathlib.Path("adb"),
+        "-s",
+        serial,
+        "shell",
+        "id",
+        result="uid=2000(shell)",
+    )
+    self.host_platform.expect_sh(pathlib.Path("adb"), "-s", serial, "root")
+    self.host_platform.expect_sh(pathlib.Path("adb"), "connect", serial)
+    self.host_platform.expect_sh(
+        pathlib.Path("adb"), "devices", "-l", result=online_out)
+    adb.root()
 
   def _create_axml(self, package_name: str) -> bytes:
     # A very minimal Android Binary XML generator for testing.

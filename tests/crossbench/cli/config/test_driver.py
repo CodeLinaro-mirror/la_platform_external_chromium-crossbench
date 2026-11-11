@@ -14,10 +14,12 @@ from crossbench.cli.config.driver import AmbiguousDriverIdentifier, \
     DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.exception import ArgumentTypeMultiException
+from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from tests import test_helper
 from tests.crossbench.cli.config.base import ADB_DEVICES_OUTPUT, \
     IOS_DEVICES_SINGLE_OUTPUT, BaseConfigTestCase
+from tests.crossbench.mock_helper import ShResult
 
 
 class DriverConfigTestCase(BaseConfigTestCase):
@@ -261,6 +263,36 @@ class DriverConfigTestCase(BaseConfigTestCase):
     assert isinstance(config, DriverConfig)
     self.assertEqual(config.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config.bundletool, bundletool)
+
+  def test_parse_adb_tcp_defers_auto_connect_to_get_platform(self) -> None:
+    serial = "192.168.0.5:5555"
+    config_dict: dict[str, object] = {"type": "adb", "device_id": serial}
+    config = DriverConfig.parse_dict(config_dict)
+    self.assertEqual(config.driver_type, BrowserDriverType.ANDROID)
+    self.assertEqual(config.device_id, serial)
+
+    short_config = DriverConfig.parse(serial)
+    self.assertEqual(short_config.driver_type, BrowserDriverType.ANDROID)
+    self.assertEqual(short_config.device_id, serial)
+
+    ipv6_config = DriverConfig.parse("[::1]:5555")
+    self.assertEqual(ipv6_config.driver_type, BrowserDriverType.ANDROID)
+    self.assertEqual(ipv6_config.device_id, "[::1]:5555")
+    self.assertEqual(len(self.platform.sh_cmds), 0)
+
+    sh_results = [
+        ShResult(""),
+        ShResult("List of devices attached\n"),
+        ShResult(f"connected to {serial}\n"),
+        ShResult("List of devices attached\n"
+                 f"{serial} device product:brya model:mica device:mica\n"),
+    ]
+    if self.platform.is_macos:
+      sh_results.insert(0, ShResult(returncode=1))
+    self.platform.sh_results = sh_results
+    adb_platform = short_config.get_platform()
+    assert isinstance(adb_platform, AndroidAdbPlatform)
+    self.assertEqual(adb_platform.adb.serial_id, serial)
 
 
 if __name__ == "__main__":

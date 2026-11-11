@@ -111,7 +111,7 @@
       "browser": "chrome-canary"
       "driver": {
         "type": "adb"
-        // Use unique name or serial number from `adb devices -l`
+        // Use unique name, serial number, or <host>:<port> TCP endpoint
         "device_id": "Pixel_7_Pro"
       }
       "flags": []
@@ -135,7 +135,7 @@
       "browser": "chrome-canary"
       "driver": {
         "type": "adb"
-        // Use unique name or serial number from `adb devices -l`
+        // Use unique name, serial number, or <host>:<port> TCP endpoint
         "device_id": "Pixel_7_Pro"
       }
       "apk": {

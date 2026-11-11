@@ -20,6 +20,7 @@ import subprocess
 import time
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Iterator, \
     Mapping, Sequence, cast, override
+from urllib import parse as urlparse
 
 from immutabledict import immutabledict
 from mobly.controllers import android_device
@@ -192,7 +193,12 @@ def adb_devices(
   raw_lines = output.strip().splitlines()[1:]
   result: dict[str, AndroidDeviceInfo] = {}
   for line in raw_lines:
-    serial_id, details_str = line.split(" ", maxsplit=1)
+    parts = line.split(maxsplit=1)
+    if len(parts) != 2:
+      continue
+    serial_id, details_str = parts
+    if details_str.split(maxsplit=1)[0] != "device":
+      continue
     details: dict[str, str] = _parse_adb_device_info(details_str)
     device = AndroidDeviceInfo(
         device_id=serial_id.strip(),
@@ -215,6 +221,64 @@ def _parse_adb_device_info(value: str) -> dict[str, str]:
   parts = value.strip().split(" ")
   assert parts[0], "device"
   return dict(part.split(":") for part in parts[1:] if ":" in part)
+
+
+# Metadata keys emitted by `adb devices -l` (for example,
+# `0a388e93 device usb:1-1 product:razor model:Nexus_7 device:flo
+# transport_id:3`), which DriverConfig also accepts as `<key>:<value>`
+# filters.
+_ADB_DEVICE_INFO_KEYS: Final[frozenset[str]] = frozenset({
+    "transport_id",
+    "usb",
+    "product",
+    "model",
+    "device",
+})
+
+
+def is_adb_tcp_endpoint(identifier: str | None) -> bool:
+  """Returns True if `identifier` is a `<host>:<port>` ADB TCP endpoint.
+
+  Examples of valid endpoints:
+    - "192.168.0.5:5555" (IPv4)
+    - "[::1]:5555" (bracketed IPv6)
+    - "satlab-dut-host1:5555" (hostname)
+
+  Prefixing "//" lets `urlsplit` parse `identifier` as an RFC 3986 authority
+  (`netloc`) with validated port range 1..65535, while rejecting bare serials
+  ("0a388e93"), full URLs ("http://host:5555", "host:5555/path"), userinfo
+  ("user@host:5555"), and `adb devices -l` filters ("transport_id:3").
+  """
+  if not identifier or any(ch.isspace() for ch in identifier):
+    return False
+  try:
+    parsed = urlparse.urlsplit(f"//{identifier}")
+    port = parsed.port
+  except ValueError:
+    return False
+  if parsed.netloc != identifier or parsed.username is not None:
+    return False
+  return bool(port and parsed.hostname and
+              parsed.hostname not in _ADB_DEVICE_INFO_KEYS)
+
+
+def adb_connect(
+    platform: Platform,
+    serial_id: str,
+    adb_bin: pth.AnyPath | None = None,
+) -> dict[str, AndroidDeviceInfo]:
+  if not serial_id:
+    raise ValueError("serial_id must be a non-empty string")
+  resolved_adb_bin = adb_bin or _find_adb_bin(platform)
+  devices: dict[str, AndroidDeviceInfo] = {}
+  for _ in WaitRange(min=0.5, max=2.0, timeout=15).wait_with_backoff():
+    platform.sh_stdout(resolved_adb_bin, "connect", serial_id, check=False)
+    devices = adb_devices(platform, resolved_adb_bin)
+    if serial_id in devices:
+      return devices
+    logging.debug("ADB connect to %s not ready; retrying...", serial_id)
+    platform.sh_stdout(resolved_adb_bin, "disconnect", serial_id, check=False)
+  return devices
 
 
 class Adb:
@@ -246,6 +310,10 @@ class Adb:
       self,
       device_identifier: str | None = None) -> tuple[str, AndroidDeviceInfo]:
     devices = self.devices()
+    if (device_identifier and device_identifier not in devices and
+        is_adb_tcp_endpoint(device_identifier)):
+      devices = adb_connect(self._host_platform, device_identifier,
+                            self._adb_bin)
     if not devices:
       raise ValueError("adb could not find any attached devices."
                        "Connect your device and use 'adb devices' to list all.")
@@ -480,7 +548,11 @@ class Adb:
     self._adb_stdout("kill-server", use_serial_id=False)
 
   def _wait_after_adbd_restart(self) -> None:
-    self._adb("wait-for-device", check=False)
+    if not is_adb_tcp_endpoint(self._serial_id):
+      self._adb("wait-for-device", check=False)
+      return
+    self._host_platform.sleep(1.0)
+    adb_connect(self._host_platform, self._serial_id, self._adb_bin)
 
   def root(self) -> None:
     if self.has_root():

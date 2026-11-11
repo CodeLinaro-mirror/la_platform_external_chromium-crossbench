@@ -307,7 +307,7 @@ class TestBrowserVariantsConfig(BaseConfigTestCase):
     adb_ip_devices = ShResult(
         "List of devices attached\n"
         "192.168.0.1:5555 device product:sdk model:m device:d\n")
-    sh_results = [adb_ip_devices] * 7
+    sh_results = [adb_ip_devices] * 5
     if self.platform.is_macos:
       # For `brew --prefix`.
       sh_results.insert(1, ShResult(returncode=1))

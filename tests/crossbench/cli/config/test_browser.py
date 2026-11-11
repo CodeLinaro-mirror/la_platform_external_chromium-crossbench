@@ -877,19 +877,11 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         BrowserConfig.parse_with_range("ios-all:safari")
 
   def test_parse_adb_ip_serial(self):
-    adb_devices = ShResult(
-        "List of devices attached\n"
-        "192.168.0.1:5555 device product:sdk model:m device:d\n")
-    self.platform.sh_results = [adb_devices, adb_devices]
     config = BrowserConfig.parse("192.168.0.1:5555:chrome")
     self.assertEqual(config.driver.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config.driver.device_id, "192.168.0.1:5555")
 
   def test_parse_adb_ip_serial_with_network(self):
-    adb_devices = ShResult(
-        "List of devices attached\n"
-        "192.168.0.1:5555 device product:sdk model:m device:d\n")
-    self.platform.sh_results = [adb_devices, adb_devices]
     config = BrowserConfig.parse("192.168.0.1:5555:chrome:4G")
     self.assertEqual(config.driver.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config.driver.device_id, "192.168.0.1:5555")
@@ -897,10 +889,6 @@ class BrowserConfigTestCase(BaseConfigTestCase):
                      NetworkConfig.parse_live(NetworkSpeedPreset.MOBILE_4G))
 
   def test_parse_adb_ip_serial_with_network_and_env(self):
-    adb_devices = ShResult(
-        "List of devices attached\n"
-        "192.168.0.1:5555 device product:sdk model:m device:d\n")
-    self.platform.sh_results = [adb_devices, adb_devices]
     config = BrowserConfig.parse("192.168.0.1:5555:chrome:4G:battery")
     self.assertEqual(config.driver.driver_type, BrowserDriverType.ANDROID)
     self.assertEqual(config.driver.device_id, "192.168.0.1:5555")
@@ -913,7 +901,7 @@ class BrowserConfigTestCase(BaseConfigTestCase):
         "List of devices attached\n"
         "192.168.0.1:5555 device product:p1 model:m1 device:d1\n"
         "192.168.0.1:5556 device product:p2 model:m2 device:d2\n")
-    self.platform.sh_results = [adb_devices] * 9
+    self.platform.sh_results = [adb_devices]
     self.assertSequenceEqual(
         BrowserConfig.parse_with_range("adb-all:chrome"),
         (BrowserConfig.parse("192.168.0.1:5555:chrome"),

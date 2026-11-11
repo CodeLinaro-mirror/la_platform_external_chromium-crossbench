@@ -17,7 +17,8 @@ from crossbench import plt
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser, PathParser
-from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, adb_devices
+from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, adb_devices, \
+    is_adb_tcp_endpoint
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.ios import IOSPlatform, ios_devices
 from crossbench.plt.pyodide_adb import PyodideAndroidAdbPlatform
@@ -112,6 +113,8 @@ class DriverConfig(ConfigObject):
   @classmethod
   def try_parse_adb_settings(cls, value: str,
                              platform: plt.Platform) -> Self | None:
+    if is_adb_tcp_endpoint(value):
+      return cls(BrowserDriverType.ANDROID, device_id=value)
     candidate_serials: list[str] = []
     pattern: re.Pattern = cls.compile_search_pattern(value)
     for serial, info in adb_devices(platform).items():
@@ -246,6 +249,14 @@ class DriverConfig(ConfigObject):
     platform = plt.PLATFORM
     if platform.is_pyodide:
       return
+    if not is_adb_tcp_endpoint(self.device_id):
+      self._validate_adb_devices(platform)
+    if self.adb_bin:
+      platform.parse_binary_path(self.adb_bin)
+    if self.bundletool:
+      platform.parse_binary_path(self.bundletool)
+
+  def _validate_adb_devices(self, platform: plt.Platform) -> None:
     devices = adb_devices(platform, self.adb_bin)
     names = list(devices.keys())
     if not devices:
@@ -261,10 +272,6 @@ class DriverConfig(ConfigObject):
       raise argparse.ArgumentTypeError(
           f"Could not find ADB device with device_id={self.device_id!r}. "
           f"Choices are {names}.")
-    if self.adb_bin:
-      platform.parse_binary_path(self.adb_bin)
-    if self.bundletool:
-      platform.parse_binary_path(self.bundletool)
 
   def validate_chromeos(self) -> None:
     platform = self.get_platform()
@@ -358,9 +365,15 @@ class DriverConfig(ConfigObject):
 
 def driver_device_id(device_id: str | None,
                      settings: immutabledict | None) -> str | None:
+  if device_id is not None:
+    device_id = ObjectParser.non_empty_str(device_id, "device_id")
   if not settings:
     return device_id
-  settings_device_id = settings.get("device_id")
+  raw_settings_device_id = settings.get("device_id")
+  if raw_settings_device_id is None:
+    return device_id
+  settings_device_id = ObjectParser.non_empty_str(raw_settings_device_id,
+                                                  "settings['device_id']")
   if not device_id:
     return settings_device_id
   if settings_device_id != device_id:
