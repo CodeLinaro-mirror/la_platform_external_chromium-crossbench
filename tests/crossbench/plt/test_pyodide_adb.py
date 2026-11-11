@@ -624,6 +624,28 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
       self.assertIn(proc_id, self.webadb.closed_stdin_processes)
       self.assertEqual(self.platform._virtual_devices, {})
 
+  @override
+  def test_root_usb_and_noop_when_already_root(self) -> None:
+    with mock.patch.object(self.webadb, "root") as mock_root:
+      self.expect_sh("id", result="uid=0(root) gid=0(root)")
+      self.adb.root()
+      mock_root.assert_not_called()
+
+      self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
+      self.adb.root()
+      mock_root.assert_called_once()
+
+  @override
+  def test_unroot_usb_and_noop_when_not_root(self) -> None:
+    with mock.patch.object(self.webadb, "unroot") as mock_unroot:
+      self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
+      self.adb.unroot()
+      mock_unroot.assert_not_called()
+
+      self.expect_sh("id", result="uid=0(root) gid=0(root)")
+      self.adb.unroot()
+      mock_unroot.assert_called_once()
+
 
 class PyodideStreamingPopenTest(CrossbenchFakeFsTestCase):
   __test__ = True

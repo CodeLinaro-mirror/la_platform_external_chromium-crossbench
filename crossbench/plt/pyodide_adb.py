@@ -88,10 +88,14 @@ class PyodideAdb(android_adb.Adb):
 
   @override
   def root(self) -> None:
+    if self.has_root():
+      return
     self._webadb.root()
 
   @override
   def unroot(self) -> None:
+    if not self.has_root():
+      return
     self._webadb.unroot()
 
   @override

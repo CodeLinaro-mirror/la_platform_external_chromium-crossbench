@@ -479,11 +479,20 @@ class Adb:
   def kill_server(self) -> None:
     self._adb_stdout("kill-server", use_serial_id=False)
 
+  def _wait_after_adbd_restart(self) -> None:
+    self._adb("wait-for-device", check=False)
+
   def root(self) -> None:
-    self._adb("root", use_serial_id=False)
+    if self.has_root():
+      return
+    self._adb("root", check=False)
+    self._wait_after_adbd_restart()
 
   def unroot(self) -> None:
-    self._adb("unroot", use_serial_id=False)
+    if not self.has_root():
+      return
+    self._adb("unroot", check=False)
+    self._wait_after_adbd_restart()
 
   def devices(self) -> dict[str, AndroidDeviceInfo]:
     return adb_devices(self._host_platform, self._adb_bin)

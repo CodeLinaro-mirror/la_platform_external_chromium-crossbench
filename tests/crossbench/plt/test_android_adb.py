@@ -1517,6 +1517,24 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
         self.platform.get_ui_element_rect(ui_selector)
       self.assertIn("Click me", str(cm.exception))
 
+  def test_root_usb_and_noop_when_already_root(self) -> None:
+    self.expect_sh("id", result="uid=0(root) gid=0(root)")
+    self.adb.root()
+
+    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
+    self.expect_adb("root")
+    self.expect_adb("wait-for-device")
+    self.adb.root()
+
+  def test_unroot_usb_and_noop_when_not_root(self) -> None:
+    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
+    self.adb.unroot()
+
+    self.expect_sh("id", result="uid=0(root) gid=0(root)")
+    self.expect_adb("unroot")
+    self.expect_adb("wait-for-device")
+    self.adb.unroot()
+
   def _create_axml(self, package_name: str) -> bytes:
     # A very minimal Android Binary XML generator for testing.
     # 1. String Pool
